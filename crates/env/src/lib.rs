@@ -1,6 +1,5 @@
 use moon_common::consts::CONFIG_DIRNAME;
-use starbase_utils::dirs;
-use starbase_utils::env::{path_var, vendor_home_var};
+use starbase_utils::{dirs, envx};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tracing::debug;
@@ -21,8 +20,8 @@ pub struct MoonEnvironment {
 
 impl MoonEnvironment {
     pub fn new() -> miette::Result<Self> {
-        Self::from(vendor_home_var("MOON_HOME", |user_dir| {
-            path_var("XDG_DATA_HOME")
+        Self::from(envx::vendor_home_var("MOON_HOME", |user_dir| {
+            envx::path_var("XDG_DATA_HOME")
                 .map(|xdg| xdg.join("moon"))
                 .unwrap_or_else(|| user_dir.join(CONFIG_DIRNAME))
         }))

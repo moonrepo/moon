@@ -25,7 +25,7 @@ comparison operator.
 The equals (`=`) and not equals (`!=`) comparison operators can be used for _exact_ value matching.
 
 ```
-projectType=library && language!=javascript
+projectLayer=library && language!=javascript
 ```
 
 You can also define a list of values using square bracket syntax, that will match against one of the
@@ -134,16 +134,6 @@ The project stack, as defined in [`moon.yml`](../config/project#stack).
 
 ```
 projectStack=frontend
-```
-
-### `projectType`
-
-> This field is deprecated, use `projectLayer` instead.
-
-The type of project, as defined in [`moon.yml`](../config/project#layer).
-
-```
-projectType=application
 ```
 
 ### `tag`

@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/templates_test.rs
+expression: assert.output()
+---
+│ CAUTION
+│ No templates located. Configure them with the generator.templates setting.

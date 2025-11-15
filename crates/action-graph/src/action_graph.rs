@@ -1,14 +1,13 @@
 use crate::action_graph_error::ActionGraphError;
 use graph_cycles::Cycles;
 use moon_action::ActionNode;
-use moon_common::is_test_env;
-use petgraph::dot::{Config, Dot};
+use moon_config::TaskDependencyType;
+use moon_graph_utils::*;
 use petgraph::prelude::*;
-use petgraph::visit::{IntoEdgeReferences, IntoNodeReferences};
 use std::collections::BTreeMap;
 use tracing::debug;
 
-pub type ActionGraphType = DiGraph<ActionNode, ()>;
+pub type ActionGraphType = DiGraph<ActionNode, TaskDependencyType>;
 
 pub struct ActionGraph {
     graph: ActionGraphType,
@@ -129,41 +128,18 @@ impl ActionGraph {
             .into()),
         }
     }
+}
 
-    pub fn to_dot(&self) -> String {
-        type DotGraph = DiGraph<String, ()>;
+impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
+    fn get_graph(&self) -> &DiGraph<ActionNode, TaskDependencyType> {
+        &self.graph
+    }
 
-        let is_test = is_test_env() || cfg!(debug_assertions);
-        let graph = self.graph.map(|_, n| n.label(), |_, _| ());
-
-        let edge = |_: &DotGraph, e: <&DotGraph as IntoEdgeReferences>::EdgeRef| {
-            if is_test {
-                String::new()
-            } else if e.source().index() == 0 {
-                String::from("arrowhead=none")
-            } else {
-                String::from("arrowhead=box, arrowtail=box")
-            }
-        };
-
-        let node = |_: &DotGraph, n: <&DotGraph as IntoNodeReferences>::NodeRef| {
-            if is_test {
-                format!("label=\"{}\" ", n.1)
-            } else {
-                format!(
-                    "label=\"{}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black ",
-                    n.1
-                )
-            }
-        };
-
-        let dot = Dot::with_attr_getters(
-            &graph,
-            &[Config::EdgeNoLabel, Config::NodeNoLabel],
-            &edge,
-            &node,
-        );
-
-        format!("{dot:?}")
+    fn get_node_key(&self, node: &ActionNode) -> String {
+        node.label()
     }
 }
+
+impl GraphToDot<ActionNode, TaskDependencyType, String> for ActionGraph {}
+
+impl GraphToJson<ActionNode, TaskDependencyType, String> for ActionGraph {}

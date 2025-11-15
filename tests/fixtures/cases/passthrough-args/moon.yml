@@ -1,15 +1,15 @@
 tasks:
   dep:
     command: bash ./passthroughArgs.sh
-    platform: system
+    toolchain: system
   a:
     command: bash ./passthroughArgs.sh
-    platform: system
+    toolchain: system
   b:
     command: bash ./passthroughArgs.sh
     deps: [dep]
-    platform: system
+    toolchain: system
   c:
     command: bash ./passthroughArgs.sh
     deps: [dep]
-    platform: system
+    toolchain: system

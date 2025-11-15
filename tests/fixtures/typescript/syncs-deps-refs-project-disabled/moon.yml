@@ -4,6 +4,6 @@ dependsOn:
   - 'deps-with-config'
   - 'deps-with-config-disabled'
 
-toolchain:
+toolchains:
   typescript:
     syncProjectReferences: false

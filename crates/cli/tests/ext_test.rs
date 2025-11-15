@@ -1,8 +1,7 @@
 use moon_common::Id;
-use moon_config::PartialExtensionConfig;
-use moon_test_utils::{create_sandbox_with_config, create_sandbox_with_factory, predicates};
+use moon_config::PartialExtensionPluginConfig;
+use moon_test_utils2::{create_moon_sandbox, predicates};
 use proto_core::{PluginLocator, warpgate::FileLocator};
-use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 
 mod ext {
@@ -10,15 +9,15 @@ mod ext {
 
     #[test]
     fn errors_if_unknown_id() {
-        let sandbox = create_sandbox_with_config("base", None, None, None);
+        let sandbox = create_moon_sandbox("extensions");
 
         sandbox
-            .run_moon(|cmd| {
+            .run_bin(|cmd| {
                 cmd.arg("ext").arg("unknown");
             })
             .failure()
             .stderr(predicates::str::contains(
-                "The extension unknown does not exist.",
+                "The extension plugin unknown does not exist",
             ));
     }
 }
@@ -28,10 +27,10 @@ mod ext_download {
 
     #[test]
     fn errors_if_no_args() {
-        let sandbox = create_sandbox_with_config("base", None, None, None);
+        let sandbox = create_moon_sandbox("extensions");
 
         sandbox
-            .run_moon(|cmd| {
+            .run_bin(|cmd| {
                 cmd.arg("ext").arg("download");
             })
             .failure()
@@ -42,49 +41,44 @@ mod ext_download {
 
     #[test]
     fn errors_if_no_plugin_locator() {
-        let sandbox = create_sandbox_with_factory("base", |workspace, _, _| {
-            workspace
-                .extensions
-                .get_or_insert(FxHashMap::default())
-                .insert(
-                    Id::raw("example"),
-                    PartialExtensionConfig {
-                        plugin: None,
-                        config: None,
-                    },
-                );
+        let sandbox = create_moon_sandbox("extensions");
+
+        sandbox.update_extensions_config(|config| {
+            config
+                .plugins
+                .get_or_insert_default()
+                .insert(Id::raw("example"), PartialExtensionPluginConfig::default());
         });
 
         sandbox
-            .run_moon(|cmd| {
+            .run_bin(|cmd| {
                 cmd.arg("ext").arg("example");
             })
             .failure()
             .stderr(predicates::str::contains(
-                "extensions.example.plugin: this setting is required",
+                "example.plugin: a locator is required for plugins",
             ));
     }
 
     #[test]
     fn errors_if_invalid_plugin_locator() {
-        let sandbox = create_sandbox_with_factory("base", |workspace, _, _| {
-            workspace
-                .extensions
-                .get_or_insert(FxHashMap::default())
-                .insert(
-                    Id::raw("example"),
-                    PartialExtensionConfig {
-                        plugin: Some(PluginLocator::File(Box::new(FileLocator {
-                            file: "invalid.wasm".into(),
-                            path: Some(PathBuf::from("invalid.wasm")),
-                        }))),
-                        config: None,
-                    },
-                );
+        let sandbox = create_moon_sandbox("extensions");
+
+        sandbox.update_extensions_config(|config| {
+            config.plugins.get_or_insert_default().insert(
+                Id::raw("example"),
+                PartialExtensionPluginConfig {
+                    plugin: Some(PluginLocator::File(Box::new(FileLocator {
+                        file: "invalid.wasm".into(),
+                        path: Some(PathBuf::from("invalid.wasm")),
+                    }))),
+                    ..Default::default()
+                },
+            );
         });
 
         sandbox
-            .run_moon(|cmd| {
+            .run_bin(|cmd| {
                 cmd.arg("ext").arg("example");
             })
             .failure()
@@ -93,10 +87,10 @@ mod ext_download {
 
     #[test]
     fn executes_the_plugin() {
-        let sandbox = create_sandbox_with_config("base", None, None, None);
+        let sandbox = create_moon_sandbox("extensions");
 
         sandbox
-            .run_moon(|cmd| {
+            .run_bin(|cmd| {
                 cmd.arg("ext").arg("download").args([
                     "--",
                     "--url",
@@ -113,14 +107,13 @@ mod ext_migrate_nx {
 
     #[test]
     fn executes_the_plugin() {
-        let sandbox = create_sandbox_with_config("base", None, None, None);
+        let sandbox = create_moon_sandbox("extensions");
         sandbox.create_file("nx.json", "{}");
 
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("ext").arg("migrate-nx").arg("--").arg("--cleanup");
-        });
-
-        assert
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("ext").arg("migrate-nx").arg("--").arg("--cleanup");
+            })
             .success()
             .stdout(predicates::str::contains("Successfully migrated from Nx"));
 
@@ -133,19 +126,20 @@ mod ext_migrate_turborepo {
 
     #[test]
     fn executes_the_plugin() {
-        let sandbox = create_sandbox_with_config("base", None, None, None);
+        let sandbox = create_moon_sandbox("extensions");
         sandbox.create_file("turbo.json", "{}");
 
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("ext")
-                .arg("migrate-turborepo")
-                .arg("--")
-                .arg("--cleanup");
-        });
-
-        assert.success().stdout(predicates::str::contains(
-            "Successfully migrated from Turborepo",
-        ));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("ext")
+                    .arg("migrate-turborepo")
+                    .arg("--")
+                    .arg("--cleanup");
+            })
+            .success()
+            .stdout(predicates::str::contains(
+                "Successfully migrated from Turborepo",
+            ));
 
         assert!(!sandbox.path().join("turbo.json").exists());
     }

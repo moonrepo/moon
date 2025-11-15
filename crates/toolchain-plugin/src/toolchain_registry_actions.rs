@@ -1,7 +1,7 @@
 use crate::toolchain_plugin::ToolchainPlugin;
-use crate::toolchain_registry::{CallResult, ToolchainRegistry};
+use crate::toolchain_registry::ToolchainRegistry;
 use moon_common::Id;
-use moon_config::ProjectConfig;
+use moon_config::{LanguageType, ProjectConfig};
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineRequirementsInput,
@@ -11,6 +11,7 @@ use moon_pdk_api::{
     ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput,
     SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
+use moon_plugin::CallResult;
 use moon_process::Command;
 use moon_toolchain::{
     get_version_env_key, get_version_env_value, is_using_global_toolchain,
@@ -25,8 +26,7 @@ use std::path::{Path, PathBuf};
 // that were requested to be executed into a better/different format
 // depending on the need of the call site.
 
-// TODO: Remove the Ok(toolchain) checks once everything is on the registry!
-
+#[derive(Debug)]
 pub struct CommandAugment<'a> {
     pub add_env: bool,
     pub add_path: bool,
@@ -130,7 +130,7 @@ impl ToolchainRegistry {
     ) -> FxHashMap<Id, CommandAugment<'a>> {
         let mut map = FxHashMap::default();
 
-        for (id, config) in &self.plugins {
+        for (id, config) in &self.config.plugins {
             if let Some(version) = &config.version {
                 map.insert(
                     Id::raw(id),
@@ -144,7 +144,7 @@ impl ToolchainRegistry {
         }
 
         if let Some(project_config) = project_config {
-            for (id, config) in &project_config.toolchain.plugins {
+            for (id, config) in &project_config.toolchains.plugins {
                 if !config.is_enabled() {
                     map.remove(id);
                     continue;
@@ -190,7 +190,52 @@ impl ToolchainRegistry {
             .collect())
     }
 
-    pub async fn detect_project_usage<InFn>(
+    pub async fn detect_project_language(&self, dir: &Path) -> miette::Result<LanguageType> {
+        let mut detected = vec![];
+
+        for toolchain in self.load_all().await? {
+            if let Some(language) = &toolchain.metadata.language
+                && toolchain.detect_project_usage(dir)?
+                && !language.is_unknown()
+            {
+                detected.push(language.clone());
+            }
+        }
+
+        if detected.is_empty() {
+            return Ok(LanguageType::Unknown);
+        }
+
+        let language = detected.remove(0);
+
+        if language == LanguageType::JavaScript && detected.contains(&LanguageType::TypeScript) {
+            return Ok(LanguageType::TypeScript);
+        }
+
+        Ok(language)
+    }
+
+    pub async fn detect_project_toolchain_from_language(
+        &self,
+        language: &LanguageType,
+    ) -> miette::Result<Vec<Id>> {
+        let mut detected = vec![];
+
+        for toolchain in self.load_all().await? {
+            if toolchain
+                .metadata
+                .language
+                .as_ref()
+                .is_some_and(|lang| lang == language)
+            {
+                detected.push(toolchain.id.clone());
+            }
+        }
+
+        Ok(detected)
+    }
+
+    pub async fn detect_project_toolchain_from_usage<InFn>(
         &self,
         dir: &Path,
         input_factory: InFn,
@@ -200,19 +245,17 @@ impl ToolchainRegistry {
     {
         let mut detected = FxHashSet::default();
 
-        for id in self.get_plugin_ids() {
-            if let Ok(toolchain) = self.load(id).await
-                && toolchain.detect_project_usage(dir)?
-            {
-                detected.insert(Id::raw(id));
+        for toolchain in self.load_all().await? {
+            if toolchain.detect_project_usage(dir)? {
+                detected.insert(toolchain.id.clone());
             }
         }
 
-        for output in self
+        for result in self
             .define_requirements_many(detected.iter().collect(), input_factory)
             .await?
         {
-            for require_id in output.requires {
+            for require_id in result.output.requires {
                 detected.insert(Id::new(require_id)?);
             }
         }
@@ -220,32 +263,17 @@ impl ToolchainRegistry {
         Ok(detected.into_iter().collect())
     }
 
-    pub async fn detect_task_usage<InFn>(
+    pub async fn detect_task_usage(
         &self,
         ids: Vec<&Id>,
         command: &String,
         args: &[String],
-        input_factory: InFn,
-    ) -> miette::Result<Vec<Id>>
-    where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
-    {
+    ) -> miette::Result<Vec<Id>> {
         let mut detected = FxHashSet::default();
 
-        for id in ids {
-            if let Ok(toolchain) = self.load(id).await
-                && toolchain.detect_task_usage(command, args)?
-            {
-                detected.insert(Id::raw(id));
-            }
-        }
-
-        for output in self
-            .define_requirements_many(detected.iter().collect(), input_factory)
-            .await?
-        {
-            for require_id in output.requires {
-                detected.insert(Id::new(require_id)?);
+        for toolchain in self.load_many(ids).await? {
+            if toolchain.detect_task_usage(command, args)? {
+                detected.insert(toolchain.id.clone());
             }
         }
 
@@ -256,7 +284,7 @@ impl ToolchainRegistry {
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<DefineRequirementsOutput>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, DefineRequirementsOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
     {
@@ -269,18 +297,16 @@ impl ToolchainRegistry {
             )
             .await?;
 
-        Ok(results.into_iter().map(|result| result.output).collect())
+        Ok(results)
     }
 
     pub async fn define_toolchain_config_all(
         &self,
     ) -> miette::Result<FxHashMap<String, ConfigSchema>> {
-        let ids = self.get_plugin_ids();
-
         let results = self
             .call_func_all(
                 "define_toolchain_config",
-                ids,
+                self.get_plugin_ids(),
                 |_, _| (),
                 |toolchain, _| async move { toolchain.define_toolchain_config().await },
             )
@@ -299,24 +325,55 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineDockerMetadataInput,
     {
-        let ids = self.get_plugin_ids();
-
         let results = self
-            .call_func_all(
+            .call_func_all_with_check(
                 "define_docker_metadata",
-                ids,
+                self.get_plugin_ids(),
                 input_factory,
                 |toolchain, input| async move { toolchain.define_docker_metadata(input).await },
+                true,
             )
             .await?;
 
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
+    pub async fn expand_task_usage<InFn>(
+        &self,
+        ids: Vec<Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<Id>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
+    {
+        let mut expanded = FxHashSet::from_iter(ids);
+
+        for result in self
+            .define_requirements_many(self.get_plugin_ids(), input_factory)
+            .await?
+        {
+            if expanded.contains(&result.id)
+                || result
+                    .output
+                    .requires
+                    .iter()
+                    .any(|id| expanded.contains(id.as_str()))
+            {
+                for require_id in result.output.requires {
+                    expanded.insert(Id::new(require_id)?);
+                }
+
+                expanded.insert(result.id);
+            }
+        }
+
+        Ok(expanded.into_iter().collect())
+    }
+
     pub async fn extend_project_graph_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ExtendProjectGraphOutput>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, ExtendProjectGraphOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectGraphInput,
     {
@@ -329,7 +386,7 @@ impl ToolchainRegistry {
             )
             .await?;
 
-        Ok(results.into_iter().map(|result| result.output).collect())
+        Ok(results)
     }
 
     pub async fn extend_task_command_many<InFn>(
@@ -399,7 +456,7 @@ impl ToolchainRegistry {
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<LocateDependenciesRootOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, LocateDependenciesRootOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> LocateDependenciesRootInput,
     {
@@ -438,17 +495,16 @@ impl ToolchainRegistry {
     pub async fn setup_toolchain_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<SetupToolchainOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SetupToolchainOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SetupToolchainInput,
     {
-        let ids = self.get_plugin_ids();
-
-        self.call_func_all(
+        self.call_func_all_with_check(
             "setup_toolchain",
-            ids,
+            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.setup_toolchain(input, || Ok(())).await },
+            true,
         )
         .await
     }
@@ -457,7 +513,7 @@ impl ToolchainRegistry {
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<SyncOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SyncOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SyncProjectInput,
     {
@@ -473,15 +529,13 @@ impl ToolchainRegistry {
     pub async fn sync_workspace_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<SyncOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SyncOutput>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SyncWorkspaceInput,
     {
-        let ids = self.get_plugin_ids();
-
         self.call_func_all(
             "sync_workspace",
-            ids,
+            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.sync_workspace(input).await },
         )
@@ -491,17 +545,16 @@ impl ToolchainRegistry {
     pub async fn teardown_toolchain_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<()>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, ()>>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> TeardownToolchainInput,
     {
-        let ids = self.get_plugin_ids();
-
-        self.call_func_all(
+        self.call_func_all_with_check(
             "teardown_toolchain",
-            ids,
+            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.teardown_toolchain(input).await },
+            true,
         )
         .await
     }

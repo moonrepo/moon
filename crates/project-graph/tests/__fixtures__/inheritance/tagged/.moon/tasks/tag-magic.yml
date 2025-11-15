@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['magic']
+
 tasks:
   magic:
     command: magic

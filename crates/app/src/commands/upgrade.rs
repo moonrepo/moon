@@ -1,5 +1,5 @@
 use crate::app_error::AppError;
-use crate::components::create_progress_loader;
+use crate::helpers::create_progress_loader;
 use crate::session::MoonSession;
 use bytes::Buf;
 use iocraft::prelude::element;
@@ -19,21 +19,21 @@ use std::{
 use tracing::{debug, instrument};
 
 pub fn is_musl() -> bool {
-    let Ok(output) = std::process::Command::new("ldd").arg("--version").output() else {
-        return false;
-    };
-
-    String::from_utf8(output.stdout).is_ok_and(|out| out.contains("musl"))
+    match std::process::Command::new("ldd").arg("--version").output() {
+        Ok(output) => String::from_utf8(output.stdout).is_ok_and(|out| out.contains("musl")),
+        Err(_) => false,
+    }
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn upgrade(session: MoonSession) -> AppResult {
     if proto_core::is_offline() {
         return Err(AppError::UpgradeRequiresInternet.into());
     }
 
     let remote_version = match Launchpad::instance()
-        .check_version_without_cache(&session.toolchain_config.moon.manifest_url)
+        .unwrap()
+        .check_version_without_cache(&session.toolchains_config.moon.manifest_url)
         .await
     {
         Ok(Some(result)) if result.update_available => result.remote_version,
@@ -92,7 +92,8 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,
         format!("Upgrading moon to version {remote_version}..."),
-    );
+    )
+    .await;
 
     // Move the old binary to a versioned path
     let versioned_bin_path = bin_dir.join(session.cli_version.to_string()).join(BIN_NAME);
@@ -112,7 +113,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         file.set_permissions(perms).into_diagnostic()?;
     }
 
-    let download_url = &session.toolchain_config.moon.download_url;
+    let download_url = &session.toolchains_config.moon.download_url;
 
     debug!(
         download_url = &download_url,

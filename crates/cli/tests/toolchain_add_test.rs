@@ -49,7 +49,7 @@ mod toolchain_add {
         });
 
         assert_snapshot!(
-            fs::read_to_string(sandbox.path().join(".moon").join("toolchain.yml")).unwrap()
+            fs::read_to_string(sandbox.path().join(".moon").join("toolchains.yml")).unwrap()
         );
     }
 
@@ -66,7 +66,7 @@ mod toolchain_add {
         });
 
         assert_snapshot!(
-            fs::read_to_string(sandbox.path().join(".moon").join("toolchain.yml")).unwrap()
+            fs::read_to_string(sandbox.path().join(".moon").join("toolchains.yml")).unwrap()
         );
     }
 }

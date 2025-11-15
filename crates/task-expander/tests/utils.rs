@@ -79,7 +79,6 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
         };
 
         if task_id == "dev" {
-            task.state.local_only = true;
             task.options.cache = TaskOptionCache::Enabled(false);
             task.options.persistent = true;
         }

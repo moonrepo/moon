@@ -24,6 +24,12 @@ impl ConfigCache {
             ".pkl"
         } else if url.contains(".yaml") || url.contains(".yml") {
             ".yml"
+        } else if url.contains(".jsonc") {
+            ".jsonc"
+        } else if url.contains(".json") {
+            ".json"
+        } else if url.contains(".toml") {
+            ".toml"
         } else {
             ""
         };

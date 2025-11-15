@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_legacy_test.rs
+expression: assert.output()
+---
+▪▪▪▪ base:runFromWorkspace
+echo 'from workspace' (in workspace)
+from workspace
+▪▪▪▪ base:runFromWorkspace (100ms)
+
+Tasks: 1 completed
+ Time: 100ms

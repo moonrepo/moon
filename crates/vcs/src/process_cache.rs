@@ -1,7 +1,6 @@
 use moon_common::is_test_env;
 use moon_process::{Command, Output, output_to_string};
 use rustc_hash::FxHashMap;
-use scc::HashCache;
 use scc::hash_cache::Entry;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -10,7 +9,7 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct ProcessCache {
     /// Output cache of all executed commands.
-    cache: HashCache<String, Arc<String>>,
+    cache: scc::HashCache<String, Arc<String>>,
 
     /// Binary/command to run.
     pub bin: String,
@@ -25,7 +24,7 @@ pub struct ProcessCache {
 impl ProcessCache {
     pub fn new(bin: &str, root: &Path) -> Self {
         Self {
-            cache: HashCache::new(),
+            cache: scc::HashCache::new(),
             bin: bin.to_string(),
             env: FxHashMap::default(),
             workspace_root: root.to_path_buf(),
@@ -46,21 +45,6 @@ impl ProcessCache {
         // The VCS binary should be available on the system,
         // so avoid the shell overhead
         command.without_shell();
-        command
-    }
-
-    pub fn create_command_in_dir<I, A>(&self, args: I, dir: &str) -> Command
-    where
-        I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
-    {
-        let mut command = self.create_command(args);
-
-        // Run in a directory to support submodules
-        if !dir.is_empty() && dir != "." {
-            command.cwd(self.workspace_root.join(dir));
-        }
-
         command
     }
 

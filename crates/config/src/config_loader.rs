@@ -1,12 +1,11 @@
 use crate::config_cache::ConfigCache;
 use crate::config_finder::ConfigFinder;
-use crate::inherited_tasks_config::{
-    InheritedTasksConfig, InheritedTasksManager, PartialInheritedTasksConfig,
-};
+use crate::extensions_config::ExtensionsConfig;
+use crate::inherited_tasks_config::{InheritedTasksConfig, PartialInheritedTasksConfig};
+use crate::inherited_tasks_manager::InheritedTasksManager;
 use crate::project_config::{PartialProjectConfig, ProjectConfig};
 use crate::template_config::TemplateConfig;
-use crate::toolchain_config::ToolchainConfig;
-use crate::validate::check_yml_extension;
+use crate::toolchains_config::ToolchainsConfig;
 use crate::workspace_config::WorkspaceConfig;
 use moon_common::color;
 use moon_common::consts::CONFIG_DIRNAME;
@@ -14,12 +13,34 @@ use schematic::{Config, ConfigLoader as Loader};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct ConfigLoader {
     pub finder: ConfigFinder,
 }
 
 impl ConfigLoader {
+    pub fn create_extensions_loader<P: AsRef<Path>>(
+        &self,
+        workspace_root: P,
+    ) -> miette::Result<Loader<ExtensionsConfig>> {
+        let workspace_root = workspace_root.as_ref();
+        let mut loader = Loader::<ExtensionsConfig>::new();
+
+        loader
+            .set_cacher(ConfigCache::new(workspace_root))
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/extensions",
+            ))
+            .set_root(workspace_root);
+
+        self.prepare_loader(
+            &mut loader,
+            self.finder.get_extensions_files(workspace_root),
+        )?;
+
+        Ok(loader)
+    }
+
     pub fn create_project_loader<P: AsRef<Path>>(
         &self,
         project_root: P,
@@ -69,12 +90,12 @@ impl ConfigLoader {
         Ok(loader)
     }
 
-    pub fn create_toolchain_loader<P: AsRef<Path>>(
+    pub fn create_toolchains_loader<P: AsRef<Path>>(
         &self,
         workspace_root: P,
-    ) -> miette::Result<Loader<ToolchainConfig>> {
+    ) -> miette::Result<Loader<ToolchainsConfig>> {
         let workspace_root = workspace_root.as_ref();
-        let mut loader = Loader::<ToolchainConfig>::new();
+        let mut loader = Loader::<ToolchainsConfig>::new();
 
         loader
             .set_cacher(ConfigCache::new(workspace_root))
@@ -83,7 +104,10 @@ impl ConfigLoader {
             ))
             .set_root(workspace_root);
 
-        self.prepare_loader(&mut loader, self.finder.get_toolchain_files(workspace_root))?;
+        self.prepare_loader(
+            &mut loader,
+            self.finder.get_toolchains_files(workspace_root),
+        )?;
 
         Ok(loader)
     }
@@ -105,6 +129,20 @@ impl ConfigLoader {
         self.prepare_loader(&mut loader, self.finder.get_workspace_files(workspace_root))?;
 
         Ok(loader)
+    }
+
+    pub fn load_extensions_config<P: AsRef<Path>>(
+        &self,
+        workspace_root: P,
+    ) -> miette::Result<ExtensionsConfig> {
+        let mut result = self.create_extensions_loader(workspace_root)?.load()?;
+
+        #[cfg(feature = "proto")]
+        {
+            result.config.inherit_defaults()?;
+        }
+
+        Ok(result.config)
     }
 
     pub fn load_project_config<P: AsRef<Path>>(
@@ -162,7 +200,7 @@ impl ConfigLoader {
     ) -> miette::Result<PartialInheritedTasksConfig> {
         Ok(self
             .create_tasks_loader(workspace_root)?
-            .file_optional(check_yml_extension(path.as_ref()))?
+            .file_optional(path.as_ref())?
             .load_partial(&())?)
     }
 
@@ -183,21 +221,15 @@ impl ConfigLoader {
         let workspace_root = workspace_root.as_ref();
         let moon_dir = moon_dir.as_ref();
         let mut manager = InheritedTasksManager::default();
-        let mut files = vec![];
-
-        // tasks.*
-        files.extend(self.finder.get_tasks_files(moon_dir));
 
         // tasks/**/*.*
-        files.extend(self.finder.get_scoped_tasks_files(moon_dir)?);
-
-        for file in files {
+        for file in self.finder.get_tasks_files(moon_dir)? {
             if file.exists() {
                 manager.add_config(
                     workspace_root,
                     &file,
                     self.load_tasks_partial_config_from_path(workspace_root, &file)?,
-                );
+                )?;
             }
         }
 
@@ -213,14 +245,17 @@ impl ConfigLoader {
         Ok(result.config)
     }
 
-    #[cfg(feature = "proto")]
-    pub fn load_toolchain_config<P: AsRef<Path>>(
+    pub fn load_toolchains_config<P: AsRef<Path>>(
         &self,
         workspace_root: P,
         proto_config: &proto_core::ProtoConfig,
-    ) -> miette::Result<ToolchainConfig> {
-        let mut result = self.create_toolchain_loader(workspace_root)?.load()?;
-        result.config.inherit_proto(proto_config)?;
+    ) -> miette::Result<ToolchainsConfig> {
+        let mut result = self.create_toolchains_loader(workspace_root)?.load()?;
+
+        #[cfg(feature = "proto")]
+        {
+            result.config.inherit_defaults(proto_config)?;
+        }
 
         Ok(result.config)
     }
@@ -229,8 +264,7 @@ impl ConfigLoader {
         &self,
         workspace_root: P,
     ) -> miette::Result<WorkspaceConfig> {
-        let mut result = self.create_workspace_loader(workspace_root)?.load()?;
-        result.config.inherit_default_plugins();
+        let result = self.create_workspace_loader(workspace_root)?.load()?;
 
         Ok(result.config)
     }
@@ -241,14 +275,7 @@ impl ConfigLoader {
         files: Vec<PathBuf>,
     ) -> miette::Result<()> {
         for file in files {
-            if file
-                .extension()
-                .is_some_and(|ext| ext == "yml" || ext == "yaml")
-            {
-                loader.file_optional(check_yml_extension(&file))?;
-            } else {
-                loader.file_optional(file)?;
-            }
+            loader.file_optional(file)?;
         }
 
         Ok(())

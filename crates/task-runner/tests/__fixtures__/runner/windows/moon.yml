@@ -4,19 +4,19 @@ tasks:
 
   success:
     command: 'Write-Output "test"'
-    platform: system
+    toolchain: system
     options:
       shell: true
 
   failure:
     command: 'Exit 1'
-    platform: system
+    toolchain: system
     options:
       shell: true
 
   retry:
     command: 'Exit 1'
-    platform: system
+    toolchain: system
     options:
       shell: true
       retryCount: 3
@@ -25,7 +25,7 @@ tasks:
     command: 'New-Item file.txt'
     outputs:
       - 'file.txt'
-    platform: system
+    toolchain: system
     options:
       shell: true
 

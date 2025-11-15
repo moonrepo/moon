@@ -98,8 +98,8 @@ impl Launchpad {
         Ok(())
     }
 
-    pub fn instance() -> Arc<Launchpad> {
-        Arc::clone(INSTANCE.get().unwrap())
+    pub fn instance() -> Option<Arc<Launchpad>> {
+        INSTANCE.get().map(Arc::clone)
     }
 
     #[instrument(skip_all)]
@@ -109,6 +109,10 @@ impl Launchpad {
         bypass_cache: bool,
         manifest_url: &str,
     ) -> miette::Result<Option<VersionCheck>> {
+        if is_test_env() || proto_core::is_offline() {
+            return Ok(None);
+        }
+
         let mut state = cache_engine
             .state
             .load_state::<CurrentVersionCacheState>("moonVersionCheck.json")?;

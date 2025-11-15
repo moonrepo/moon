@@ -4,6 +4,7 @@ language: typescript
 layer: application
 
 project:
+  title: 'Website'
   description: 'A static website powered by Docusaurus.'
 
 dependsOn:
@@ -28,7 +29,7 @@ tasks:
     command: 'docusaurus start'
     deps:
       - '^:build'
-    local: true
+    preset: 'server'
 
   typecheck:
     command: 'tsc --build --pretty'

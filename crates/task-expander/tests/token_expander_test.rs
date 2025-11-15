@@ -168,8 +168,8 @@ mod token_expander {
 
             let metadata = project.config.project.get_or_insert(Default::default());
 
-            metadata.name = Some("name".into());
-            metadata.description = "description".into();
+            metadata.title = Some("name".into());
+            metadata.description = Some("description".into());
             metadata.channel = Some("#channel".into());
             metadata.owner = Some("owner".into());
             metadata.maintainers.push("user1".into());
@@ -203,7 +203,7 @@ mod token_expander {
 
             let metadata = project.config.project.get_or_insert(Default::default());
 
-            metadata.name = Some("name".into());
+            metadata.title = Some("name".into());
             metadata
                 .metadata
                 .insert("name".into(), JsonValue::String("custom-name".into()));
@@ -284,7 +284,7 @@ mod token_expander {
             );
             assert_eq!(
                 expander
-                    .replace_variable(&task, Cow::Borrowed("$projectType"))
+                    .replace_variable(&task, Cow::Borrowed("$projectLayer"))
                     .unwrap(),
                 "library"
             );
@@ -456,19 +456,19 @@ mod token_expander {
 
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$project $projectStack $projectType")
+                    .replace_variables(&task, "$project $projectStack $projectLayer")
                     .unwrap(),
                 "project unknown unknown"
             );
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$projectStack $project $projectType")
+                    .replace_variables(&task, "$projectStack $project $projectLayer")
                     .unwrap(),
                 "unknown project unknown"
             );
             assert_eq!(
                 expander
-                    .replace_variables(&task, "$projectType $projectStack $project")
+                    .replace_variables(&task, "$projectLayer $projectStack $project")
                     .unwrap(),
                 "unknown unknown project"
             );
@@ -564,7 +564,7 @@ mod token_expander {
                 .config
                 .project
                 .get_or_insert(Default::default())
-                .name = Some("name".into());
+                .title = Some("name".into());
 
             let mut task = create_task();
 
@@ -639,7 +639,7 @@ mod token_expander {
                 .config
                 .project
                 .get_or_insert(Default::default())
-                .name = Some("name".into());
+                .title = Some("name".into());
 
             let mut task = create_task();
 
@@ -964,7 +964,7 @@ mod token_expander {
                 .config
                 .project
                 .get_or_insert(Default::default())
-                .name = Some("name".into());
+                .title = Some("name".into());
 
             let mut task = create_task();
 
@@ -1426,7 +1426,7 @@ mod token_expander {
 
             task.inputs = vec![
                 Input::TokenVar("$target".into()),
-                Input::TokenVar("$taskPlatform".into()),
+                Input::TokenVar("$taskToolchain".into()),
             ];
 
             let context = create_context(sandbox.path());
@@ -1923,7 +1923,7 @@ mod token_expander {
                 .config
                 .project
                 .get_or_insert(Default::default())
-                .name = Some("name".into());
+                .title = Some("name".into());
 
             let mut task = create_task();
 

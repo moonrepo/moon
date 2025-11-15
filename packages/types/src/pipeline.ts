@@ -1,4 +1,5 @@
-import type { Duration, Id, Runtime, ToolchainSpec } from './common';
+import type { Duration, GraphContainer, Id, ToolchainSpec } from './common';
+import type { TaskDependencyType } from './tasks-config';
 
 export type ActionPipelineStatus =
 	| 'aborted'
@@ -11,7 +12,6 @@ export type ActionStatus =
 	| 'aborted'
 	| 'cached-from-remote'
 	| 'cached'
-	| 'failed-and-abort' // Legacy
 	| 'failed'
 	| 'invalid'
 	| 'passed'
@@ -19,21 +19,13 @@ export type ActionStatus =
 	| 'skipped'
 	| 'timed-out';
 
-/** @deprecated */
-export interface Attempt {
-	duration: Duration | null;
-	exitCode: number | null;
-	finishedAt: string | null;
-	index: number;
-	startedAt: string;
-	status: ActionStatus;
-	stderr: string | null;
-	stdout: string | null;
-}
-
 // OPERATIONS
 
-export interface OperationMetaBaseOutput {
+export interface OperationBaseFileChange {
+	changedFiles?: string[];
+}
+
+export interface OperationBaseProcessOutput {
 	command?: string | null;
 	exitCode?: number | null;
 	stderr?: string | null;
@@ -57,16 +49,23 @@ export interface OperationMetaNoOperation {
 	type: 'no-operation';
 }
 
-export interface OperationMetaOutputHydration extends OperationMetaBaseOutput {
+export interface OperationMetaOutputHydration extends OperationBaseProcessOutput {
 	type: 'output-hydration';
 }
 
-export interface OperationMetaSyncOperation {
-	type: 'sync-operation';
-	label: string;
+export interface OperationMetaProcessExecution extends OperationBaseProcessOutput {
+	type: 'process-execution';
 }
 
-export interface OperationMetaTaskExecution extends OperationMetaBaseOutput {
+export interface OperationMetaSetupOperation extends OperationBaseFileChange {
+	type: 'setup-operation';
+}
+
+export interface OperationMetaSyncOperation extends OperationBaseFileChange {
+	type: 'sync-operation';
+}
+
+export interface OperationMetaTaskExecution extends OperationBaseProcessOutput {
 	type: 'task-execution';
 }
 
@@ -76,6 +75,8 @@ export type OperationMeta =
 	| OperationMetaMutexAcquisition
 	| OperationMetaNoOperation
 	| OperationMetaOutputHydration
+	| OperationMetaProcessExecution
+	| OperationMetaSetupOperation
 	| OperationMetaSyncOperation
 	| OperationMetaTaskExecution;
 
@@ -94,8 +95,6 @@ export interface Operation {
 
 export interface Action {
 	allowFailure: boolean;
-	/** @deprecated */
-	attempts: Attempt[] | null;
 	createdAt: string;
 	duration?: Duration | null;
 	error?: string | null;
@@ -114,14 +113,37 @@ export interface TargetState {
 	hash?: string;
 }
 
+export interface AffectedProjectState {
+	files?: string[];
+	tasks?: string[];
+	upstream?: Id[];
+	downstream?: Id[];
+	other: boolean;
+}
+
+export interface AffectedTaskState {
+	env?: string[];
+	files?: string[];
+	projects?: string[];
+	upstream?: Id[];
+	downstream?: Id[];
+	other: boolean;
+}
+
+export interface Affected {
+	projects: Record<string, AffectedProjectState>;
+	tasks: Record<string, AffectedTaskState>;
+	shouldCheck: boolean;
+}
+
 export interface ActionContext {
-	affectedOnly: boolean;
+	affected?: Affected | null;
+	changedFiles: string[];
 	initialTargets: string[];
 	passthroughArgs: string[];
 	primaryTargets: string[];
 	profile: 'cpu' | 'heap' | null;
 	targetStates: Record<string, TargetState>;
-	touchedFiles: string[];
 }
 
 export interface RunReport {
@@ -148,13 +170,10 @@ export interface RunReport {
 
 export type ActionNode =
 	| ActionNodeInstallDependencies
-	| ActionNodeInstallProjectDeps
-	| ActionNodeInstallWorkspaceDeps
 	| ActionNodeRunTask
 	| ActionNodeSetupEnvironment
 	| ActionNodeSetupProto
 	| ActionNodeSetupToolchain
-	| ActionNodeSetupToolchainLegacy
 	| ActionNodeSyncProject
 	| ActionNodeSyncWorkspace;
 
@@ -168,22 +187,6 @@ export interface ActionNodeInstallDependencies {
 	};
 }
 
-export interface ActionNodeInstallWorkspaceDeps {
-	action: 'install-workspace-deps';
-	params: {
-		runtime: Runtime;
-		root: string;
-	};
-}
-
-export interface ActionNodeInstallProjectDeps {
-	action: 'install-project-deps';
-	params: {
-		runtime: Runtime;
-		projectId: Id;
-	};
-}
-
 export interface ActionNodeRunTask {
 	action: 'run-task';
 	params: {
@@ -191,9 +194,9 @@ export interface ActionNodeRunTask {
 		env: Record<string, string>;
 		interactive: boolean;
 		persistent: boolean;
-		runtime: Runtime;
+		priority: number;
 		target: string;
-		id: number | null;
+		id?: number | null;
 	};
 }
 
@@ -206,23 +209,17 @@ export interface ActionNodeSetupEnvironment {
 	};
 }
 
-export interface ActionNodeSetupToolchainLegacy {
-	action: 'setup-toolchain-legacy';
-	params: {
-		runtime: Runtime;
-	};
-}
-
 export interface ActionNodeSetupProto {
 	action: 'setup-proto';
-	params: {};
+	params: {
+		version: string;
+	};
 }
 
 export interface ActionNodeSetupToolchain {
 	action: 'setup-toolchain';
 	params: {
-		projectId: Id | null;
-		spec: ToolchainSpec;
+		toolchain: ToolchainSpec;
 	};
 }
 
@@ -237,21 +234,4 @@ export interface ActionNodeSyncWorkspace {
 	action: 'sync-workspace';
 }
 
-// GRAPH
-
-export interface ActionGraphNode {
-	id: number;
-	label: string;
-}
-
-export interface ActionGraphEdge {
-	id: number;
-	label: string;
-	source: number;
-	target: number;
-}
-
-export interface ActionGraph {
-	edges: ActionGraphEdge[];
-	nodes: ActionGraphNode[];
-}
+export type ActionGraph = GraphContainer<ActionNode, TaskDependencyType>;

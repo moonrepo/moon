@@ -1,0 +1,15 @@
+dependsOn:
+  - no-config
+
+fileGroups:
+  tests:
+    - '**/*_test.rs'
+
+language: javascript
+
+tags: ['vue']
+
+tasks:
+  dev:
+    command: 'vite dev'
+    preset: 'server'

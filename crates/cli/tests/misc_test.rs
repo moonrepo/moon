@@ -1,21 +1,22 @@
-use moon_test_utils::{
-    create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
-};
+use moon_test_utils2::{create_empty_moon_sandbox, predicates::prelude::*};
 use proto_core::VersionReq;
 
-#[test]
-fn fails_on_version_constraint() {
-    let (mut workspace_config, _, _) = get_cases_fixture_configs();
+mod cli {
+    use super::*;
 
-    workspace_config.version_constraint = Some(VersionReq::parse(">=1000.0.0").unwrap());
+    #[test]
+    fn fails_on_version_constraint() {
+        let sandbox = create_empty_moon_sandbox();
 
-    let sandbox = create_sandbox_with_config("cases", Some(workspace_config), None, None);
+        sandbox.update_workspace_config(|config| {
+            config.version_constraint = Some(VersionReq::parse(">=1000.0.0").unwrap());
+        });
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("sync");
-    });
-
-    assert
-        .failure()
-        .stderr(predicate::str::contains(">=1000.0.0"));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("sync");
+            })
+            .failure()
+            .stderr(predicate::str::contains(">=1000.0.0"));
+    }
 }

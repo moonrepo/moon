@@ -3,10 +3,9 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, ExtensionConfig, FilePath, GlobPath, TemplateLocator, VcsProvider,
-    WorkspaceConfig, WorkspaceProjects,
+    ConfigLoader, FilePath, GlobPath, TemplateLocator, VcsProvider, WorkspaceConfig,
+    WorkspaceProjectGlobFormat, WorkspaceProjects,
 };
-use proto_core::warpgate::UrlLocator;
 use rustc_hash::FxHashMap;
 use schematic::ConfigLoader as BaseLoader;
 use semver::Version;
@@ -290,6 +289,29 @@ projects:
                         cfg.sources,
                         FxHashMap::from_iter([(Id::raw("app"), "app".into())])
                     );
+                }
+                _ => panic!(),
+            };
+        }
+
+        #[test]
+        fn supports_globs_with_format() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+projects:
+  globFormat: source-path
+  globs:
+    - packages/*
+",
+                load_config_from_root,
+            );
+
+            match config.projects {
+                WorkspaceProjects::Both(cfg) => {
+                    assert_eq!(cfg.glob_format, WorkspaceProjectGlobFormat::SourcePath);
+                    assert_eq!(cfg.globs, vec!["packages/*".to_owned()]);
+                    assert_eq!(cfg.sources, FxHashMap::default());
                 }
                 _ => panic!(),
             };
@@ -585,7 +607,6 @@ generator:
                 FILENAME,
                 r"
 hasher:
-  batchSize: 1000
   warnOnMissingInputs: false
 ",
                 load_config_from_root,
@@ -667,7 +688,7 @@ notifier:
 
         #[test]
         fn loads_defaults() {
-            let config = test_load_config(FILENAME, "runner: {}", load_config_from_root);
+            let config = test_load_config(FILENAME, "pipeline: {}", load_config_from_root);
 
             assert_eq!(config.pipeline.cache_lifetime, "7 days");
             assert!(config.pipeline.inherit_colors_for_piped_tasks);
@@ -678,7 +699,7 @@ notifier:
             let config = test_load_config(
                 FILENAME,
                 r"
-runner:
+pipeline:
   cacheLifetime: 10 hours
   inheritColorsForPipedTasks: false
 ",
@@ -722,12 +743,12 @@ vcs:
 
         #[test]
         #[should_panic(expected = "unknown variant `mercurial`, expected `git`")]
-        fn errors_on_invalid_manager() {
+        fn errors_on_invalid_client() {
             test_load_config(
                 FILENAME,
                 r"
 vcs:
-  manager: mercurial
+  client: mercurial
 ",
                 load_config_from_root,
             );
@@ -746,105 +767,6 @@ vcs:
         }
     }
 
-    mod extensions {
-        use super::*;
-        use proto_core::PluginLocator;
-
-        //         #[test]
-        //         #[should_panic(
-        //             expected = "Invalid plugin identifier bad.id, must be a valid kebab-case string"
-        //         )]
-        //         fn errors_invalid_id() {
-        //             test_load_config(
-        //                 FILENAME,
-        //                 r"
-        // extensions:
-        //     bad.id: 'https://domain.com'
-        // ",
-        //                 |path| load_config_from_root(path),
-        //             );
-        //         }
-
-        #[test]
-        #[should_panic(expected = "extensions.id.plugin: Missing plugin protocol.")]
-        fn errors_invalid_locator() {
-            test_load_config(
-                FILENAME,
-                r"
-extensions:
-    id:
-        plugin: 'missing-scope'
-",
-                load_config_from_root,
-            );
-        }
-
-        #[test]
-        #[should_panic(expected = "extensions.id.plugin: this setting is required")]
-        fn errors_missing_locator() {
-            test_load_config(
-                FILENAME,
-                r"
-extensions:
-    id:
-        foo: 'bar'
-",
-                load_config_from_root,
-            );
-        }
-
-        #[test]
-        fn can_set_with_object() {
-            let config = test_load_config(
-                FILENAME,
-                r"
-extensions:
-    test-id:
-        plugin: 'https://domain.com'
-",
-                load_config_from_root,
-            );
-
-            assert_eq!(
-                config.extensions.get("test-id").unwrap(),
-                &ExtensionConfig {
-                    config: FxHashMap::default(),
-                    plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://domain.com".into()
-                    }))),
-                }
-            );
-        }
-
-        #[test]
-        fn can_set_additional_object_config() {
-            let config = test_load_config(
-                FILENAME,
-                r"
-extensions:
-    test-id:
-        plugin: 'https://domain.com'
-        fooBar: 'abc'
-        bar-baz: true
-",
-                load_config_from_root,
-            );
-
-            assert_eq!(
-                config.extensions.get("test-id").unwrap(),
-                &ExtensionConfig {
-                    config: FxHashMap::from_iter([
-                        ("fooBar".into(), serde_json::Value::String("abc".into())),
-                        ("bar-baz".into(), serde_json::Value::Bool(true)),
-                    ]),
-                    plugin: Some(PluginLocator::Url(Box::new(UrlLocator {
-                        url: "https://domain.com".into()
-                    }))),
-                }
-            );
-        }
-    }
-
     mod pkl {
         use super::*;
         use indexmap::IndexMap;
@@ -852,7 +774,6 @@ extensions:
         use starbase_sandbox::locate_fixture;
         use std::str::FromStr;
 
-        #[allow(deprecated)]
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
@@ -866,9 +787,9 @@ extensions:
                         "*".to_owned(),
                         vec!["@admins".to_owned()]
                     )]),
-                    order_by: CodeownersOrderBy::ProjectName,
+                    order_by: CodeownersOrderBy::ProjectId,
                     required_approvals: Some(1),
-                    sync_on_run: true,
+                    sync: true,
                 }
             );
             assert_eq!(
@@ -886,12 +807,13 @@ extensions:
                 DockerConfig {
                     prune: DockerPruneConfig {
                         delete_vendor_directories: false,
-                        install_toolchain_deps: false
+                        install_toolchain_dependencies: false
                     },
                     scaffold: DockerScaffoldConfig {
-                        copy_toolchain_files: false,
-                        include: vec![GlobPath("*.js".into())]
-                    }
+                        configs_phase_globs: vec![GlobPath("*.js".into())],
+                        sources_phase_globs: vec![]
+                    },
+                    ..Default::default()
                 }
             );
             assert_eq!(
@@ -906,7 +828,6 @@ extensions:
             assert_eq!(
                 config.hasher,
                 HasherConfig {
-                    batch_size: 1000,
                     ignore_patterns: vec![GlobPath("*.map".into())],
                     ignore_missing_patterns: vec![GlobPath(".env".into())],
                     optimization: HasherOptimization::Performance,
@@ -926,6 +847,7 @@ extensions:
                 config.projects,
                 WorkspaceProjects::Both(WorkspaceProjectsConfig {
                     globs: vec!["apps/*".into(), "packages/*".into()],
+                    glob_format: WorkspaceProjectGlobFormat::DirName,
                     sources: FxHashMap::from_iter([(Id::raw("root"), ".".into())])
                 })
             );
@@ -953,10 +875,10 @@ extensions:
                         ]
                     )]),
                     hook_format: VcsHookFormat::Native,
-                    manager: VcsManager::Git,
+                    client: VcsClient::Git,
                     provider: VcsProvider::GitLab,
                     remote_candidates: vec!["main".into(), "origin/main".into()],
-                    sync_hooks: true,
+                    sync: true,
                 }
             );
         }

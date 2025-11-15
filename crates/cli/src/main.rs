@@ -5,8 +5,8 @@ use lookup::*;
 use mimalloc::MiMalloc;
 use moon_app::commands::debug::DebugCommands;
 use moon_app::commands::docker::DockerCommands;
+use moon_app::commands::extension::ExtensionCommands;
 use moon_app::commands::migrate::MigrateCommands;
-use moon_app::commands::node::NodeCommands;
 use moon_app::commands::query::QueryCommands;
 use moon_app::commands::sync::SyncCommands;
 use moon_app::commands::toolchain::ToolchainCommands;
@@ -100,7 +100,6 @@ async fn main() -> MainResult {
     let _guard = app.setup_tracing(TracingOptions {
         dump_trace: cli.dump,
         filter_modules: get_tracing_modules(),
-        intercept_log: true,
         log_env: "STARBASE_LOG".into(), // Don't conflict with proto
         log_file: cli.log_file.clone(),
         show_spans: cli.log.is_verbose(),
@@ -142,7 +141,7 @@ async fn main() -> MainResult {
         .run(MoonSession::new(cli, version), |session| async {
             match session.cli.command.clone() {
                 Commands::ActionGraph(args) => {
-                    commands::graph::action::action_graph(session, args).await
+                    commands::action_graph::action_graph(session, args).await
                 }
                 Commands::Bin(args) => commands::bin::bin(session, args).await,
                 Commands::Ci(args) => commands::ci::ci(session, args).await,
@@ -164,37 +163,38 @@ async fn main() -> MainResult {
                     DockerCommands::Setup => commands::docker::setup(session).await,
                 },
                 Commands::Ext(args) => commands::ext::ext(session, args).await,
+                Commands::Extension { command } => match command {
+                    ExtensionCommands::Add(args) => {
+                        commands::extension::add::add(session, args).await
+                    }
+                    ExtensionCommands::Info(args) => {
+                        commands::extension::info::info(session, args).await
+                    }
+                },
                 Commands::Generate(args) => commands::generate::generate(session, args).await,
+                Commands::Hash(args) => commands::hash::hash(session, args).await,
                 Commands::Init(args) => commands::init::init(session, args).await,
                 Commands::Mcp(args) => commands::mcp::mcp(session, args).await,
-                Commands::Migrate {
-                    command,
-                    skip_touched_files_check,
-                } => match command {
-                    MigrateCommands::FromPackageJson(mut args) => {
-                        args.skip_touched_files_check = skip_touched_files_check;
-                        commands::migrate::from_package_json(session, args).await
-                    }
-                    MigrateCommands::FromTurborepo => commands::migrate::from_turborepo().await,
-                },
-                Commands::Node { command } => match command {
-                    NodeCommands::RunScript(args) => {
-                        commands::node::run_script(session, args).await
-                    }
+                Commands::Migrate { command, .. } => match command {
+                    MigrateCommands::V2(args) => commands::migrate::v2(session, args).await,
                 },
                 Commands::Project(args) => commands::project::project(session, args).await,
                 Commands::ProjectGraph(args) => {
-                    commands::graph::project::project_graph(session, args).await
+                    commands::project_graph::project_graph(session, args).await
                 }
+                Commands::Projects(args) => commands::projects::projects(session, args).await,
                 Commands::Query { command } => match command {
-                    QueryCommands::Hash(args) => commands::query::hash(session, args).await,
-                    QueryCommands::HashDiff(args) => {
-                        commands::query::hash_diff(session, args).await
+                    QueryCommands::Affected(args) => {
+                        commands::query::affected::affected(session, args).await
                     }
-                    QueryCommands::Projects(args) => commands::query::projects(session, args).await,
-                    QueryCommands::Tasks(args) => commands::query::tasks(session, args).await,
-                    QueryCommands::TouchedFiles(args) => {
-                        commands::query::touched_files(session, args).await
+                    QueryCommands::ChangedFiles(args) => {
+                        commands::query::changed_files::changed_files(session, args).await
+                    }
+                    QueryCommands::Projects(args) => {
+                        commands::query::projects::projects(session, args).await
+                    }
+                    QueryCommands::Tasks(args) => {
+                        commands::query::tasks::tasks(session, args).await
                     }
                 },
                 Commands::Run(args) => commands::run::run(session, args).await,
@@ -206,15 +206,17 @@ async fn main() -> MainResult {
                     Some(SyncCommands::ConfigSchemas(args)) => {
                         commands::syncs::config_schemas::sync(session, args).await
                     }
-                    Some(SyncCommands::Hooks(args)) => {
-                        commands::syncs::hooks::sync(session, args).await
+                    Some(SyncCommands::VcsHooks(args)) => {
+                        commands::syncs::vcs_hooks::sync(session, args).await
                     }
                     Some(SyncCommands::Projects) => commands::syncs::projects::sync(session).await,
                     None => commands::sync::sync(session).await,
                 },
                 Commands::Task(args) => commands::task::task(session, args).await,
-                Commands::TaskGraph(args) => commands::graph::task::task_graph(session, args).await,
+                Commands::TaskGraph(args) => commands::task_graph::task_graph(session, args).await,
+                Commands::Tasks(args) => commands::tasks::tasks(session, args).await,
                 Commands::Teardown => commands::teardown::teardown(session).await,
+                Commands::Template(args) => commands::template::template(session, args).await,
                 Commands::Templates(args) => commands::templates::templates(session, args).await,
                 Commands::Toolchain { command } => match command {
                     ToolchainCommands::Add(args) => {

@@ -41,5 +41,6 @@ impl PluginType {
 #[async_trait]
 pub trait Plugin: Debug + Sized {
     async fn new(registration: PluginRegistration) -> miette::Result<Self>;
+    fn get_id(&self) -> &Id;
     fn get_type(&self) -> PluginType;
 }

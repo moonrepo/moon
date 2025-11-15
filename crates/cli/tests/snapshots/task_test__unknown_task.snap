@@ -1,8 +1,0 @@
----
-source: crates/cli/tests/task_test.rs
-expression: get_assert_stderr_output(&assert.inner)
----
-Error: project::unknown_task
-
-  × Unknown task unknown for project tasks.
-  help: Has this task been configured?

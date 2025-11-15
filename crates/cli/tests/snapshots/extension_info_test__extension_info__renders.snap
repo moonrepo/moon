@@ -1,0 +1,22 @@
+---
+source: crates/cli/tests/extension_info_test.rs
+expression: assert.output_standardized()
+---
+Extension ──────────────────────────────────────────────────
+
+  Download a file from a URL into the current working directory.
+
+  ID: download
+  Title: Download
+
+APIs ───────────────────────────────────────────────────────
+
+  🟢 register_extension (required)
+  ⚫️ define_extension_config
+  ⚫️ initialize_extension
+  🟢 execute_extension
+  ⚫️ sync_project
+  ⚫️ sync_workspace
+  ⚫️ extend_project_graph
+  ⚫️ extend_task_command
+  ⚫️ extend_task_script

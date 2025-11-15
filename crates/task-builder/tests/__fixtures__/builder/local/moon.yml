@@ -9,13 +9,13 @@ tasks:
       - 'abc'
     outputs:
       - 'out'
-    local: false
 
   local-run:
     command: 'local-run'
     inputs:
       - 'xyz'
-    local: true
+    options:
+      runInCI: false
 
   local-test:
     command: 'local-test'

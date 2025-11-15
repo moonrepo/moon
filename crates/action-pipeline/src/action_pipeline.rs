@@ -128,6 +128,12 @@ impl ActionPipeline {
         let total_actions = action_graph.get_node_count();
         let start = Instant::now();
 
+        if total_actions == 0 {
+            debug!(total_actions, "No actions available, not running pipeline");
+
+            return Ok(());
+        }
+
         debug!(
             total_actions,
             concurrency = self.concurrency,
@@ -149,7 +155,6 @@ impl ActionPipeline {
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
-            toolchain_registry: Arc::clone(&self.app_context.toolchain_registry),
             workspace_graph: self.workspace_graph.clone(),
         };
 
@@ -463,7 +468,7 @@ impl ActionPipeline {
 
             self.emitter
                 .subscribe(TelemetrySubscriber::new(Arc::clone(
-                    &self.app_context.toolchain_config,
+                    &self.app_context.toolchains_config,
                 )))
                 .await;
         }

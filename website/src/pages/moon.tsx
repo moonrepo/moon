@@ -83,7 +83,7 @@ const orchestrationFeatures: Feature[] = [
 		title: 'Incremental builds',
 		icon: 'material-symbols:stacked-bar-chart',
 		description:
-			'With our smart hashing, only rebuild projects that have been touched since the last build.',
+			'With our smart hashing, only rebuild projects that have been changed since the last build.',
 	},
 ];
 

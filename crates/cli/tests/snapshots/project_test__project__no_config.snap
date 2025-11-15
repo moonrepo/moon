@@ -1,0 +1,19 @@
+---
+source: crates/cli/tests/project_test.rs
+expression: assert.output()
+---
+About ──────────────────────────────────────────────────────
+
+  Project: no-config
+  Source: no-config
+  Toolchain: system
+  Language: unknown
+  Stack: unknown
+  Layer: unknown
+  Depends on: —
+
+Configuration ──────────────────────────────────────────────
+
+  Inherits from: —
+  Tags: —
+  Environment variables: —

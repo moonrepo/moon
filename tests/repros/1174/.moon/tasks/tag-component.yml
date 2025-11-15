@@ -20,7 +20,7 @@ tasks:
     #   - 'dist/index.js.map'
     #   - 'dist/index.mjs'
     #   - 'dist/index.mjs.map'
-    platform: 'system'
+    toolchain: 'system'
   buildComponentTypes:
     command: 'tsc --build'
     deps:

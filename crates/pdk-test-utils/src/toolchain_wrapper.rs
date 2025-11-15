@@ -221,8 +221,8 @@ impl ToolchainTestWrapper {
         input.input_dir = self.plugin.to_virtual_path(input.input_dir);
         input.output_dir = self.plugin.to_virtual_path(input.output_dir);
 
-        if input.project.id.is_empty() {
-            input.project = self.create_project_fragment();
+        if input.project.as_ref().is_some_and(|p| p.id.is_empty()) {
+            input.project = Some(self.create_project_fragment());
         }
 
         self.plugin

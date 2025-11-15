@@ -18,11 +18,7 @@ generator:
     # - './.moon/templates'
     - './tests/fixtures/generator/templates'
 
-runner:
-  archivableTargets:
-    - ':lint'
-    - ':test'
-    - ':typecheck'
+pipeline:
   logRunningCommand: true
 
 vcs:
@@ -33,14 +29,14 @@ vcs:
 
 docker:
   scaffold:
-    include:
+    configsPhaseGlobs:
       - '*.config.js'
       - '*.json'
 
 notifier:
   terminalNotifications: 'always'
 
-unstable_remote:
+remote:
   # DEPOT
   host: 'grpcs://cache.depot.dev'
   auth:
@@ -67,4 +63,3 @@ unstable_remote:
 
 experiments:
   fasterGlobWalk: true
-  gitV2: true

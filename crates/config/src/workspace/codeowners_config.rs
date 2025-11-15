@@ -9,8 +9,8 @@ config_unit_enum!(
         /// By file source path.
         #[default]
         FileSource,
-        /// By project name.
-        ProjectName,
+        /// By project identifier.
+        ProjectId,
     }
 );
 
@@ -18,8 +18,8 @@ config_struct!(
     /// Configures code ownership rules for generating a `CODEOWNERS` file.
     #[derive(Config)]
     pub struct CodeownersConfig {
-        /// Paths that are applied globally to all projects. Can be relative
-        /// from the workspace root, or a wildcard match for any depth.
+        /// A map of global file paths and glob patterns to a list of owners.
+        /// Can be relative from the workspace root, or a wildcard match for any depth.
         pub global_paths: IndexMap<String, Vec<String>>,
 
         /// How to order ownership rules within the generated file.
@@ -27,10 +27,11 @@ config_struct!(
 
         /// Bitbucket and GitLab only. The number of approvals required for the
         /// request to be satisfied. This will be applied to all paths.
+        /// @since 1.28.0
         pub required_approvals: Option<u8>,
 
-        /// Generates a `CODEOWNERS` file after aggregating all ownership
-        /// rules from each project in the workspace.
-        pub sync_on_run: bool,
+        /// Automatically generate a `CODEOWNERS` file during a sync operation,
+        /// after aggregating all ownership rules from each project in the workspace.
+        pub sync: bool,
     }
 );

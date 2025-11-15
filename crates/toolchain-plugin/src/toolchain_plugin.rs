@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use moon_common::Id;
 use moon_config::schematic::schema::indexmap::IndexSet;
-use moon_feature_flags::glob_walk;
+use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use proto_core::flow::install::InstallOptions;
@@ -9,7 +9,7 @@ use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
-use starbase_utils::glob::GlobSet;
+use starbase_utils::glob::{GlobSet, GlobWalkOptions};
 use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -64,6 +64,10 @@ impl Plugin for ToolchainPlugin {
             metadata,
             plugin,
         })
+    }
+
+    fn get_id(&self) -> &Id {
+        &self.id
     }
 
     fn get_type(&self) -> PluginType {
@@ -138,7 +142,7 @@ impl ToolchainPlugin {
             let mut tool = tool.write().await;
             let spec = ToolSpec::new(version.to_owned());
 
-            tool.resolve_version(&spec, false).await?;
+            tool.resolve_version_if_different(&spec, false).await?;
 
             if let Some(dir) = tool.locate_exe_file().await?.parent() {
                 paths.insert(dir.to_path_buf());
@@ -164,10 +168,16 @@ impl ToolchainPlugin {
         &self,
         input: DefineDockerMetadataInput,
     ) -> miette::Result<DefineDockerMetadataOutput> {
-        let mut output: DefineDockerMetadataOutput = self
-            .plugin
-            .cache_func_with("define_docker_metadata", input)
-            .await?;
+        let mut output: DefineDockerMetadataOutput =
+            // Do this check within this function so that we can
+            // inherit the other globs below!
+            if self.plugin.has_func("define_docker_metadata").await {
+                self.plugin
+                    .cache_func_with("define_docker_metadata", input)
+                    .await?
+            } else {
+                Default::default()
+            };
 
         // Include toolchain metadata in docker
         let mut add_globs = |globs: &[String]| {
@@ -178,11 +188,12 @@ impl ToolchainPlugin {
             }
         };
 
+        add_globs(&self.metadata.config_file_globs);
         add_globs(&self.metadata.lock_file_names);
         add_globs(&self.metadata.manifest_file_names);
 
         if let Some(name) = &self.metadata.vendor_dir_name {
-            add_globs(&[format!("!{name}/**/*")]);
+            add_globs(&[format!("!{name}/**/*"), format!("!**/{name}/**/*")]);
         }
 
         Ok(output)
@@ -220,8 +231,12 @@ impl ToolchainPlugin {
             return Ok(false);
         }
 
-        // Oh no, heavy lookup...
-        let results = glob_walk(dir, &self.metadata.config_file_globs)?;
+        // Oh no, heavy lookup... but at least it's cached
+        let results = glob_walk_with_options(
+            dir,
+            &self.metadata.config_file_globs,
+            GlobWalkOptions::default().cache(),
+        )?;
 
         Ok(!results.is_empty())
     }
@@ -362,6 +377,23 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn is_installed_in_proto(
+        &self,
+        spec: Option<&UnresolvedVersionSpec>,
+    ) -> miette::Result<bool> {
+        if let (Some(tool), Some(spec)) = (&self.tool, spec) {
+            let mut tool = tool.write().await;
+            let spec = ToolSpec::new(spec.to_owned());
+
+            tool.resolve_version_if_different(&spec, false).await?;
+
+            return Ok(tool.is_installed());
+        }
+
+        Ok(false)
+    }
+
+    #[instrument(skip(self))]
     pub async fn locate_dependencies_root(
         &self,
         input: LocateDependenciesRootInput,
@@ -459,7 +491,7 @@ impl ToolchainPlugin {
                 let spec = ToolSpec::new(version.to_owned());
 
                 // Resolve the version first so that it is available
-                input.version = Some(tool.resolve_version(&spec, false).await?);
+                input.version = Some(tool.resolve_version_if_different(&spec, false).await?);
 
                 // Only setup if not already been
                 if !tool.is_setup(&spec).await? {
@@ -535,14 +567,16 @@ impl ToolchainPlugin {
             let mut tool = tool.write().await;
             let spec = ToolSpec::new(version.to_owned());
 
-            input.version = Some(tool.resolve_version(&spec, false).await?);
+            input.version = Some(tool.resolve_version_if_different(&spec, false).await?);
 
             tool.teardown(&spec).await?;
         }
 
-        self.plugin
-            .call_func_without_output("teardown_toolchain", input)
-            .await?;
+        if self.plugin.has_func("teardown_toolchain").await {
+            self.plugin
+                .call_func_without_output("teardown_toolchain", input)
+                .await?;
+        }
 
         Ok(())
     }

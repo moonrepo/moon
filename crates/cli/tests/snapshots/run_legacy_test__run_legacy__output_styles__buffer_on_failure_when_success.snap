@@ -1,0 +1,11 @@
+---
+source: crates/cli/tests/run_legacy_test.rs
+expression: assert.output()
+---
+▪▪▪▪ npm install
+▪▪▪▪ outputStyles:bufferFailurePass
+▪▪▪▪ outputStyles:bufferFailurePass (100ms)
+▪▪▪▪ outputStyles:bufferFailurePassPrimary (no op)
+
+Tasks: 2 completed
+ Time: 100ms

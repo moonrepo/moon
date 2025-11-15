@@ -1,0 +1,17 @@
+$schema: './cache/schemas/toolchains.json'
+
+javascript:
+  packageManager: 'yarn'
+  inferTasksFromScripts: false
+  syncPackageManagerField: true
+  syncProjectWorkspaceDependencies: true
+
+node:
+  version: '22.14.0'
+
+yarn:
+  version: '4.8.0'
+
+typescript:
+  routeOutDirToCache: true
+  syncProjectReferences: true

@@ -2,9 +2,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyScope, Input, LanguageType, LayerType, OwnersPaths, PlatformType,
-    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
-    ToolchainPluginConfig,
+    ConfigLoader, DependencyScope, GlobPath, Input, LanguageType, LayerType, OwnersPaths,
+    PortablePath, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry,
+    TaskArgs, ToolchainPluginConfig,
 };
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
@@ -23,7 +23,7 @@ mod project_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `type`, `owners`, `platform`, `project`, `stack`, `tags`, `tasks`, `toolchain`, `workspace`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `deps`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `toolchains`, `workspace`"
     )]
     fn error_unknown_field() {
         test_load_config("moon.yml", "unknown: 123", |path| {
@@ -49,46 +49,6 @@ tasks:
     command: 'webpack'
     inputs:
       - 'src/**/*'
-  start:
-    <<: *webpack
-    args: 'serve'
-",
-            |path| load_config_from_root(path, "."),
-        );
-
-        let build = config.tasks.get("build").unwrap();
-
-        assert_eq!(build.command, TaskArgs::String("webpack".to_owned()));
-        assert_eq!(build.args, TaskArgs::None);
-        assert_eq!(
-            build.inputs,
-            Some(vec![Input::Glob(stub_glob_input("src/**/*"))])
-        );
-
-        let start = config.tasks.get("start").unwrap();
-
-        assert_eq!(start.command, TaskArgs::String("webpack".to_owned()));
-        assert_eq!(start.args, TaskArgs::String("serve".to_owned()));
-        assert_eq!(
-            start.inputs,
-            Some(vec![Input::Glob(stub_glob_input("src/**/*"))])
-        );
-    }
-
-    // TODO: fix this in schematic?
-    #[test]
-    #[should_panic(expected = "unknown field `_webpack`")]
-    fn can_use_references_from_root() {
-        let config = test_load_config(
-            "moon.yml",
-            r"
-_webpack: &webpack
-    command: 'webpack'
-    inputs:
-      - 'src/**/*'
-
-tasks:
-  build: *webpack
   start:
     <<: *webpack
     args: 'serve'
@@ -190,7 +150,7 @@ dependsOn:
         }
 
         #[test]
-        #[should_panic(expected = "expected a project name or dependency config object")]
+        #[should_panic(expected = "expected a project identifier or dependency config object")]
         fn errors_on_invalid_object_scope() {
             test_load_config(
                 "moon.yml",
@@ -263,11 +223,11 @@ fileGroups:
 
         #[test]
         fn unsupported_variant_becomes_other() {
-            let config = test_load_config("moon.yml", "language: dotnet", |path| {
+            let config = test_load_config("moon.yml", "language: groovy", |path| {
                 load_config_from_root(path, ".")
             });
 
-            assert_eq!(config.language, LanguageType::Other(Id::raw("dotnet")));
+            assert_eq!(config.language, LanguageType::Other(Id::raw("groovy")));
         }
     }
 
@@ -331,7 +291,10 @@ owners:
 
             assert_eq!(
                 config.owners.paths,
-                OwnersPaths::List(vec!["file.txt".into(), "dir/**/*".into()])
+                OwnersPaths::List(vec![
+                    GlobPath::parse("file.txt").unwrap(),
+                    GlobPath::parse("dir/**/*").unwrap()
+                ])
             );
         }
 
@@ -351,8 +314,14 @@ owners:
             assert_eq!(
                 config.owners.paths,
                 OwnersPaths::Map(IndexMap::from_iter([
-                    ("file.txt".into(), vec!["a".into(), "b".into()]),
-                    ("dir/**/*".into(), vec!["c".into(), "d".into()]),
+                    (
+                        GlobPath::parse("file.txt").unwrap(),
+                        vec!["a".into(), "b".into()]
+                    ),
+                    (
+                        GlobPath::parse("dir/**/*").unwrap(),
+                        vec!["c".into(), "d".into()]
+                    ),
                 ]))
             );
         }
@@ -394,14 +363,6 @@ owners:
         use serde_json::Value;
 
         #[test]
-        #[should_panic(expected = "must not be empty")]
-        fn errors_if_empty() {
-            test_load_config("moon.yml", "project: {}", |path| {
-                load_config_from_root(path, ".")
-            });
-        }
-
-        #[test]
         fn can_set_only_description() {
             let config = test_load_config(
                 "moon.yml",
@@ -414,7 +375,7 @@ project:
 
             let meta = config.project.unwrap();
 
-            assert_eq!(meta.description, "Text");
+            assert_eq!(meta.description.unwrap(), "Text");
         }
 
         #[test]
@@ -423,7 +384,7 @@ project:
                 "moon.yml",
                 r"
 project:
-  name: Name
+  title: Name
   description: Description
   owner: team
   maintainers: [a, b, c]
@@ -434,8 +395,8 @@ project:
 
             let meta = config.project.unwrap();
 
-            assert_eq!(meta.name.unwrap(), "Name");
-            assert_eq!(meta.description, "Description");
+            assert_eq!(meta.title.unwrap(), "Name");
+            assert_eq!(meta.description.unwrap(), "Description");
             assert_eq!(meta.owner.unwrap(), "team");
             assert_eq!(meta.maintainers, vec!["a", "b", "c"]);
             assert_eq!(meta.channel.unwrap(), "#abc");
@@ -448,9 +409,8 @@ project:
                 r"
 project:
   description: 'Test'
-  metadata:
-    bool: true
-    string: 'abc'
+  bool: true
+  string: 'abc'
 ",
                 |path| load_config_from_root(path, "."),
             );
@@ -583,7 +543,7 @@ tasks:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
   node:
     version: '18.0.0'
   typescript:
@@ -592,16 +552,20 @@ toolchain:
                 |path| load_config_from_root(path, "."),
             );
 
-            assert!(config.toolchain.node.is_some());
-            assert!(config.toolchain.rust.is_none());
+            assert!(config.toolchains.plugins.contains_key("node"));
+            assert!(config.toolchains.plugins.contains_key("typescript"));
 
-            assert_eq!(
-                config.toolchain.node.unwrap().version,
-                Some(UnresolvedVersionSpec::parse("18.0.0").unwrap())
-            );
+            if let ProjectToolchainEntry::Config(node) =
+                config.toolchains.plugins.get("node").unwrap()
+            {
+                assert_eq!(
+                    node.version,
+                    Some(UnresolvedVersionSpec::parse("18.0.0").unwrap())
+                );
+            }
 
             if let ProjectToolchainEntry::Config(ts) =
-                config.toolchain.plugins.get("typescript").unwrap()
+                config.toolchains.plugins.get("typescript").unwrap()
             {
                 assert_eq!(
                     ts.config.get("routeOutDirToCache").unwrap(),
@@ -615,14 +579,14 @@ toolchain:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
     example: null
 ",
                 |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
-                config.toolchain.plugins.get("example").unwrap(),
+                config.toolchains.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Disabled
             );
         }
@@ -632,14 +596,14 @@ toolchain:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
     example: false
 ",
                 |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
-                config.toolchain.plugins.get("example").unwrap(),
+                config.toolchains.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Enabled(false)
             );
         }
@@ -649,14 +613,14 @@ toolchain:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
     example: true
 ",
                 |path| load_config_from_root(path, "."),
             );
 
             assert_eq!(
-                config.toolchain.plugins.get("example").unwrap(),
+                config.toolchains.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Enabled(true)
             );
         }
@@ -666,7 +630,7 @@ toolchain:
             let config = test_load_config(
                 "moon.yml",
                 r"
-toolchain:
+toolchains:
     example:
         version: '1.2.3'
         custom: true
@@ -675,7 +639,7 @@ toolchain:
             );
 
             assert_eq!(
-                config.toolchain.plugins.get("example").unwrap(),
+                config.toolchains.plugins.get("example").unwrap(),
                 &ProjectToolchainEntry::Config(ToolchainPluginConfig {
                     version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
                     config: BTreeMap::from_iter([("custom".into(), serde_json::Value::Bool(true))]),
@@ -723,8 +687,8 @@ workspace:
         use std::collections::BTreeMap;
 
         #[test]
-        #[allow(deprecated)]
         fn loads_pkl() {
+            use starbase_sandbox::pretty_assertions::assert_eq;
             let config = test_config(locate_fixture("pkl"), |path| {
                 ConfigLoader::default().load_project_config(path)
             });
@@ -742,13 +706,15 @@ workspace:
                         })
                     ],
                     docker: ProjectDockerConfig {
-                        file: ProjectDockerFileConfig {
+                        file: DockerFileConfig {
                             build_task: Some(Id::raw("build")),
                             image: Some("node:latest".into()),
                             start_task: Some(Id::raw("start")),
+                            ..Default::default()
                         },
-                        scaffold: ProjectDockerScaffoldConfig {
-                            include: vec![GlobPath("*.js".into())]
+                        scaffold: DockerScaffoldConfig {
+                            configs_phase_globs: vec![],
+                            sources_phase_globs: vec![GlobPath("*.js".into())]
                         }
                     },
                     env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
@@ -768,13 +734,15 @@ workspace:
                         custom_groups: FxHashMap::default(),
                         default_owner: Some("owner".into()),
                         optional: true,
-                        paths: OwnersPaths::List(vec!["dir/".into(), "file.txt".into()]),
+                        paths: OwnersPaths::List(vec![
+                            GlobPath::parse("dir/").unwrap(),
+                            GlobPath::parse("file.txt").unwrap()
+                        ]),
                         required_approvals: Some(5)
                     },
-                    platform: Some(PlatformType::Node),
                     project: Some(ProjectMetadataConfig {
-                        name: Some("Name".into()),
-                        description: "Does something".into(),
+                        title: Some("Name".into()),
+                        description: Some("Does something".into()),
                         owner: Some("team".into()),
                         maintainers: vec![],
                         channel: Some("#team".into()),
@@ -786,20 +754,26 @@ workspace:
                     stack: StackType::Frontend,
                     tags: vec![Id::raw("a"), Id::raw("b"), Id::raw("c")],
                     tasks: BTreeMap::default(),
-                    toolchain: ProjectToolchainConfig {
-                        deno: Some(ProjectToolchainCommonToolConfig {
-                            version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
-                        }),
-                        plugins: FxHashMap::from_iter([(
-                            Id::raw("typescript"),
-                            ProjectToolchainEntry::Config(ToolchainPluginConfig {
-                                config: BTreeMap::from_iter([(
-                                    "includeSharedTypes".into(),
-                                    serde_json::Value::Bool(true)
-                                )]),
-                                ..Default::default()
-                            })
-                        )]),
+                    toolchains: ProjectToolchainsConfig {
+                        plugins: FxHashMap::from_iter([
+                            (
+                                Id::raw("deno"),
+                                ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                                    version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
+                                    ..Default::default()
+                                })
+                            ),
+                            (
+                                Id::raw("typescript"),
+                                ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                                    config: BTreeMap::from_iter([(
+                                        "includeSharedTypes".into(),
+                                        serde_json::Value::Bool(true)
+                                    )]),
+                                    ..Default::default()
+                                })
+                            )
+                        ]),
                         ..Default::default()
                     },
                     layer: LayerType::Library,

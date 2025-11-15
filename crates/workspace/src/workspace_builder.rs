@@ -11,13 +11,14 @@ use moon_common::{
     path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, DependencyScope, InheritedTasksManager, ProjectDependencyConfig,
-    ProjectsSourcesList, TaskDependencyType, ToolchainConfig, WorkspaceConfig, WorkspaceProjects,
-    finalize_config,
+    ConfigLoader, DependencyScope, ExtensionsConfig, InheritedTasksManager,
+    ProjectDependencyConfig, TaskDependencyType, ToolchainsConfig, WorkspaceConfig,
+    WorkspaceProjectGlobFormat, WorkspaceProjects, finalize_config,
 };
+use moon_extension_plugin::ExtensionRegistry;
 use moon_feature_flags::glob_walk_with_options;
-use moon_pdk_api::ExtendProjectGraphInput;
-use moon_project::{Project, ProjectError};
+use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
+use moon_project::{Project, ProjectAlias, ProjectError};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
@@ -31,7 +32,6 @@ use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use starbase_events::Emitter;
 use starbase_utils::glob::GlobWalkOptions;
 use starbase_utils::json;
 use std::sync::Arc;
@@ -41,10 +41,10 @@ use tracing::{debug, instrument, trace};
 pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
-    pub extend_project: Emitter<ExtendProjectEvent>,
-    pub extend_project_graph: Emitter<ExtendProjectGraphEvent>,
+    pub extensions_config: &'app ExtensionsConfig,
+    pub extension_registry: Arc<ExtensionRegistry>,
     pub inherited_tasks: &'app InheritedTasksManager,
-    pub toolchain_config: &'app ToolchainConfig,
+    pub toolchains_config: &'app ToolchainsConfig,
     pub toolchain_registry: Arc<ToolchainRegistry>,
     pub vcs: Option<Arc<BoxedVcs>>,
     pub working_dir: &'app Path,
@@ -227,7 +227,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 (
                     id,
                     ProjectMetadata {
-                        alias: data.alias,
+                        aliases: data.aliases.keys().cloned().collect(),
                         index: data.node_index.unwrap_or_default(),
                         original_id: data.original_id,
                         source: data.source,
@@ -403,7 +403,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 enabled_toolchains: &context.enabled_toolchains,
                 monorepo: self.repo_type.is_monorepo(),
                 root_project_id: self.root_project_id.as_ref(),
-                toolchain_config: context.toolchain_config,
+                toolchains_config: context.toolchains_config,
                 toolchain_registry: context.toolchain_registry.clone(),
                 workspace_root: context.workspace_root,
             },
@@ -416,24 +416,6 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         builder.inherit_global_config(context.inherited_tasks)?;
-
-        // Inherit from legacy platforms
-        let extended_data = context
-            .extend_project
-            .emit(ExtendProjectEvent {
-                project_id: id.to_owned(),
-                project_source: build_data.source.to_owned(),
-                workspace_root: context.workspace_root.to_owned(),
-            })
-            .await?;
-
-        for dep_config in extended_data.dependencies {
-            builder.extend_with_dependency(dep_config);
-        }
-
-        for (task_id, task_config) in extended_data.tasks {
-            builder.extend_with_task(task_id, task_config);
-        }
 
         // Inherit from build data (toolchains, etc)
         for extended_data in &build_data.extensions {
@@ -450,11 +432,18 @@ impl<'app> WorkspaceBuilder<'app> {
             }
         }
 
-        // Inherit alias before building in case the project
+        // Inherit aliases before building in case the project
         // references itself in tasks or dependencies
-        if let Some(alias) = &build_data.alias {
-            builder.set_alias(alias);
-        }
+        builder.set_aliases(
+            build_data
+                .aliases
+                .iter()
+                .map(|(alias, plugin_id)| ProjectAlias {
+                    alias: alias.to_owned(),
+                    plugin: plugin_id.to_owned(),
+                })
+                .collect(),
+        );
 
         let project = builder.build().await?;
 
@@ -682,6 +671,7 @@ impl<'app> WorkspaceBuilder<'app> {
     /// Then extend the graph with aliases, derived from all event subscribers.
     async fn preload_build_data(&mut self) -> miette::Result<()> {
         let context = self.context();
+        let mut glob_format = WorkspaceProjectGlobFormat::default();
         let mut globs = vec![];
         let mut sources = vec![];
 
@@ -700,6 +690,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 globs.extend(list);
             }
             WorkspaceProjects::Both(cfg) => {
+                glob_format = cfg.glob_format;
                 globs.extend(&cfg.globs);
                 add_sources(&cfg.sources);
             }
@@ -718,7 +709,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 "Locating projects with globs",
             );
 
-            locate_projects_with_globs(&context, &globs, &mut sources)?;
+            locate_projects_with_globs(&context, &globs, &mut sources, glob_format)?;
         }
 
         // Load projects and configs first
@@ -740,7 +731,10 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    fn load_project_build_data(&mut self, sources: ProjectsSourcesList) -> miette::Result<()> {
+    fn load_project_build_data(
+        &mut self,
+        sources: Vec<(Id, WorkspaceRelativePathBuf)>,
+    ) -> miette::Result<()> {
         let context = self.context();
         let config_label = context.config_loader.get_debug_label("moon", false);
         let config_names = context.config_loader.get_project_file_names();
@@ -836,45 +830,22 @@ impl<'app> WorkspaceBuilder<'app> {
 
         debug!("Extending project graph");
 
-        // From platforms
-        let aliases = context
-            .extend_project_graph
-            .emit(ExtendProjectGraphEvent {
-                sources: self
-                    .project_data
-                    .iter()
-                    .map(|(id, build_data)| (id.to_owned(), build_data.source.to_owned()))
-                    .collect(),
-                workspace_root: context.workspace_root.to_owned(),
-            })
-            .await?
-            .aliases;
+        let project_sources = self
+            .project_data
+            .iter()
+            .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
+            .collect::<BTreeMap<_, _>>();
 
-        for (project_id, alias) in aliases {
-            self.track_alias(project_id, alias)?;
-        }
-
-        // From toolchains
-        for output in context
-            .toolchain_registry
-            .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
-                context: registry.create_context(),
-                project_sources: self
-                    .project_data
-                    .iter()
-                    .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
-                    .collect(),
-                toolchain_config: registry.create_config(&toolchain.id, context.toolchain_config),
-            })
-            .await?
-        {
+        let mut process_output = |plugin_id: Id,
+                                  output: ExtendProjectGraphOutput|
+         -> miette::Result<()> {
             for (project_id, mut project_extend) in output.extended_projects {
                 if !self.project_data.contains_key(&project_id) {
                     return Err(ProjectGraphError::UnconfiguredID(project_id.to_string()).into());
                 }
 
                 if let Some(alias) = project_extend.alias.take() {
-                    self.track_alias(project_id.clone(), alias)?;
+                    self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
                 }
 
                 if let Some(build_data) = self.project_data.get_mut(&project_id) {
@@ -891,6 +862,36 @@ impl<'app> WorkspaceBuilder<'app> {
                         .into_diagnostic()?,
                 );
             }
+
+            Ok(())
+        };
+
+        // From toolchains
+        for result in context
+            .toolchain_registry
+            .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
+                context: registry.create_context(),
+                project_sources: project_sources.clone(),
+                toolchain_config: registry.create_config(&toolchain.id),
+                ..Default::default()
+            })
+            .await?
+        {
+            process_output(result.id.clone(), result.output)?;
+        }
+
+        // From extensions
+        for result in context
+            .extension_registry
+            .extend_project_graph_all(|registry, extension| ExtendProjectGraphInput {
+                context: registry.create_context(),
+                project_sources: project_sources.clone(),
+                extension_config: registry.create_config(&extension.id),
+                ..Default::default()
+            })
+            .await?
+        {
+            process_output(result.id.clone(), result.output)?;
         }
 
         debug!("Loaded {} project aliases", self.aliases.len());
@@ -898,7 +899,7 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    fn track_alias(&mut self, id: Id, alias: String) -> miette::Result<()> {
+    fn track_alias(&mut self, id: Id, alias: String, plugin_id: Id) -> miette::Result<()> {
         // Skip aliases that match its own ID
         if alias == id.as_str() {
             return Ok(());
@@ -947,7 +948,8 @@ impl<'app> WorkspaceBuilder<'app> {
         self.project_data
             .get_mut(&id)
             .expect("Project build data not found!")
-            .alias = Some(alias.clone());
+            .aliases
+            .insert(alias.clone(), plugin_id);
 
         self.aliases.insert(alias, id);
 

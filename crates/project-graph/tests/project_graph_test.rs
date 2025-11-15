@@ -1,7 +1,7 @@
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
     DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
-    WorkspaceProjects, WorkspaceProjectsConfig,
+    WorkspaceProjectGlobFormat, WorkspaceProjects, WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project, ProjectAlias};
 use moon_project_graph::*;
@@ -213,6 +213,7 @@ mod project_graph {
                             (Id::raw("b"), "b".into()),
                             (Id::raw("root"), ".".into()),
                         ]),
+                        ..Default::default()
                     });
                 })
                 .mock_workspace_graph()
@@ -268,7 +269,7 @@ mod project_graph {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn supports_id_formats() {
+        async fn supports_different_id_casings() {
             let graph = build_graph_from_fixture("ids").await;
 
             assert_eq!(
@@ -281,6 +282,48 @@ mod project_graph {
                     "kebab-case",
                     "snake_case"
                 ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_id_dir_name_format() {
+            let sandbox = create_sandbox("id-formats");
+
+            let graph = create_workspace_mocker(sandbox.path())
+                .update_workspace_config(|config| {
+                    config.projects = WorkspaceProjects::Both(WorkspaceProjectsConfig {
+                        globs: string_vec!["**/moon.yml"],
+                        glob_format: WorkspaceProjectGlobFormat::DirName,
+                        ..Default::default()
+                    });
+                })
+                .mock_workspace_graph()
+                .await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_projects().unwrap()),
+                ["five", "one", "three", "two"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_id_source_path_format() {
+            let sandbox = create_sandbox("id-formats");
+
+            let graph = create_workspace_mocker(sandbox.path())
+                .update_workspace_config(|config| {
+                    config.projects = WorkspaceProjects::Both(WorkspaceProjectsConfig {
+                        globs: string_vec!["**/moon.yml"],
+                        glob_format: WorkspaceProjectGlobFormat::SourcePath,
+                        ..Default::default()
+                    });
+                })
+                .mock_workspace_graph()
+                .await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_projects().unwrap()),
+                ["four/five", "one", "one/two", "one/two/three"]
             );
         }
     }

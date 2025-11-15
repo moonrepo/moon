@@ -680,6 +680,7 @@ pub fn get_typescript_fixture_configs() -> (
     workspace_config.projects = Some(PartialWorkspaceProjects::Both(
         PartialWorkspaceProjectsConfig {
             globs: Some(vec!["*".into()]),
+            glob_format: None,
             sources: Some(FxHashMap::from_iter([(
                 "root".try_into().unwrap(),
                 ".".into(),

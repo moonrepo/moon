@@ -4,7 +4,7 @@ use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
     ConfigLoader, FilePath, GlobPath, TemplateLocator, VcsProvider, WorkspaceConfig,
-    WorkspaceProjects,
+    WorkspaceProjectGlobFormat, WorkspaceProjects,
 };
 use rustc_hash::FxHashMap;
 use schematic::ConfigLoader as BaseLoader;
@@ -289,6 +289,29 @@ projects:
                         cfg.sources,
                         FxHashMap::from_iter([(Id::raw("app"), "app".into())])
                     );
+                }
+                _ => panic!(),
+            };
+        }
+
+        #[test]
+        fn supports_globs_with_format() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+projects:
+  globFormat: source-path
+  globs:
+    - packages/*
+",
+                load_config_from_root,
+            );
+
+            match config.projects {
+                WorkspaceProjects::Both(cfg) => {
+                    assert_eq!(cfg.glob_format, WorkspaceProjectGlobFormat::SourcePath);
+                    assert_eq!(cfg.globs, vec!["packages/*".to_owned()]);
+                    assert_eq!(cfg.sources, FxHashMap::default());
                 }
                 _ => panic!(),
             };
@@ -824,6 +847,7 @@ vcs:
                 config.projects,
                 WorkspaceProjects::Both(WorkspaceProjectsConfig {
                     globs: vec!["apps/*".into(), "packages/*".into()],
+                    glob_format: WorkspaceProjectGlobFormat::DirName,
                     sources: FxHashMap::from_iter([(Id::raw("root"), ".".into())])
                 })
             );

@@ -288,8 +288,18 @@ export interface PipelineConfig {
 	syncWorkspace?: boolean;
 }
 
+/** The project identifier format for glob located projects. */
+export type WorkspaceProjectGlobFormat = 'dir-name' | 'source-path';
+
 /** Configures projects in the workspace, using both globs and explicit source paths. */
 export interface WorkspaceProjectsConfig {
+	/**
+	 * The project identifier format for glob located projects.
+	 *
+	 * @default 'dir-name'
+	 * @type {'dir-name' | 'source-path'}
+	 */
+	globFormat: WorkspaceProjectGlobFormat;
 	/**
 	 * A list of glob patterns in which to locate project directories.
 	 * Can be suffixed with a `moon.*` config file to only find distinct projects.
@@ -868,6 +878,12 @@ export interface PartialPipelineConfig {
 
 /** Configures projects in the workspace, using both globs and explicit source paths. */
 export interface PartialWorkspaceProjectsConfig {
+	/**
+	 * The project identifier format for glob located projects.
+	 *
+	 * @default 'dir-name'
+	 */
+	globFormat?: WorkspaceProjectGlobFormat | null;
 	/**
 	 * A list of glob patterns in which to locate project directories.
 	 * Can be suffixed with a `moon.*` config file to only find distinct projects.

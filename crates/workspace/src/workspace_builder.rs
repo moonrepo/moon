@@ -13,7 +13,7 @@ use moon_common::{
 use moon_config::{
     ConfigLoader, DependencyScope, ExtensionsConfig, InheritedTasksManager,
     ProjectDependencyConfig, TaskDependencyType, ToolchainsConfig, WorkspaceConfig,
-    WorkspaceProjects, finalize_config,
+    WorkspaceProjectGlobFormat, WorkspaceProjects, finalize_config,
 };
 use moon_extension_plugin::ExtensionRegistry;
 use moon_feature_flags::glob_walk_with_options;
@@ -671,6 +671,7 @@ impl<'app> WorkspaceBuilder<'app> {
     /// Then extend the graph with aliases, derived from all event subscribers.
     async fn preload_build_data(&mut self) -> miette::Result<()> {
         let context = self.context();
+        let mut glob_format = WorkspaceProjectGlobFormat::default();
         let mut globs = vec![];
         let mut sources = vec![];
 
@@ -689,6 +690,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 globs.extend(list);
             }
             WorkspaceProjects::Both(cfg) => {
+                glob_format = cfg.glob_format;
                 globs.extend(&cfg.globs);
                 add_sources(&cfg.sources);
             }
@@ -707,7 +709,7 @@ impl<'app> WorkspaceBuilder<'app> {
                 "Locating projects with globs",
             );
 
-            locate_projects_with_globs(&context, &globs, &mut sources)?;
+            locate_projects_with_globs(&context, &globs, &mut sources, glob_format)?;
         }
 
         // Load projects and configs first

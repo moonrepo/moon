@@ -144,6 +144,26 @@ APIs ─────────────────────────
 
 ## Projects
 
+### Path based IDs
+
+When locating projects with globs via the `projects` workspace configuration, we would historically
+use the directory name as the project ID. While this works in most cases, it can lead to issues when
+the directory name collides with another project, or is not descriptive enough. For example,
+`packages/server/utils` would become `utils`. What if you also had `packages/client/utils`?
+
+To solve this, we've introduced a new `projects.globFormat` setting, which can be configured as
+`source-path` and will use the full relative source path as the project ID.
+
+```yaml title=".moon/workspace.yml"
+projects:
+  globFormat: 'source-path'
+  globs:
+    - 'packages/**/moon.yml'
+```
+
+Using the examples above, the resulting project IDs would now be `packages/server/utils` and
+`packages/client/utils`, respectively.
+
 ### Multiple aliases
 
 In addition to identifiers, projects also support aliases, which are toolchain specific names

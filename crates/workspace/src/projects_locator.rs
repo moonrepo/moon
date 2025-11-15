@@ -1,6 +1,7 @@
 use crate::workspace_builder::WorkspaceBuilderContext;
 use moon_common::path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string};
 use moon_common::{Id, color, consts};
+use moon_config::WorkspaceProjectGlobFormat;
 use moon_feature_flags::glob_walk_with_options;
 use starbase_utils::fs;
 use starbase_utils::glob::GlobWalkOptions;
@@ -17,11 +18,19 @@ fn is_hidden(path: &str) -> bool {
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
-fn infer_project_id_and_source(path: &str) -> miette::Result<(Id, WorkspaceRelativePathBuf)> {
-    let (id, source) = if let Some(index) = path.rfind('/') {
-        (&path[index + 1..], path)
-    } else {
-        (path, path)
+fn infer_project_id_and_source(
+    path: &str,
+    format: WorkspaceProjectGlobFormat,
+) -> miette::Result<(Id, WorkspaceRelativePathBuf)> {
+    let (id, source) = match format {
+        WorkspaceProjectGlobFormat::DirName => {
+            if let Some(index) = path.rfind('/') {
+                (&path[index + 1..], path)
+            } else {
+                (path, path)
+            }
+        }
+        WorkspaceProjectGlobFormat::SourcePath => (path, path),
     };
 
     Ok((Id::clean(id)?, WorkspaceRelativePathBuf::from(source)))
@@ -34,6 +43,7 @@ pub fn locate_projects_with_globs<'glob, I, V>(
     context: &WorkspaceBuilderContext,
     globs: I,
     sources: &mut Vec<(Id, WorkspaceRelativePathBuf)>,
+    format: WorkspaceProjectGlobFormat,
 ) -> miette::Result<()>
 where
     I: IntoIterator<Item = &'glob V>,
@@ -126,7 +136,7 @@ where
                     "Received a project for a hidden folder. These are not supported through globs, but can be mapped explicitly with project sources!"
                 );
             } else {
-                sources.push(infer_project_id_and_source(&project_source)?);
+                sources.push(infer_project_id_and_source(&project_source, format)?);
             }
         }
     }

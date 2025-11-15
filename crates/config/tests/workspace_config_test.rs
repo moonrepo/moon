@@ -139,6 +139,8 @@ telemetry: false
     }
 
     mod projects {
+        use moon_config::WorkspaceProjectGlobFormat;
+
         use super::*;
 
         #[test]
@@ -289,6 +291,29 @@ projects:
                         cfg.sources,
                         FxHashMap::from_iter([(Id::raw("app"), "app".into())])
                     );
+                }
+                _ => panic!(),
+            };
+        }
+
+        #[test]
+        fn supports_globs_with_format() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+projects:
+  globFormat: source-path
+  globs:
+    - packages/*
+",
+                load_config_from_root,
+            );
+
+            match config.projects {
+                WorkspaceProjects::Both(cfg) => {
+                    assert_eq!(cfg.glob_format, WorkspaceProjectGlobFormat::SourcePath);
+                    assert_eq!(cfg.globs, vec!["packages/*".to_owned()]);
+                    assert_eq!(cfg.sources, FxHashMap::default());
                 }
                 _ => panic!(),
             };

@@ -98,8 +98,6 @@ impl ToolchainRegistry {
             return Ok(vec![]);
         }
 
-        debug!("Loading all toolchain plugins");
-
         self.load_many(self.get_plugin_ids()).await
     }
 

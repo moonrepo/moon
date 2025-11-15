@@ -80,7 +80,7 @@ impl MoonSandbox {
         self.update_workspace_config(|config| {
             let mut projects = PartialWorkspaceProjectsConfig {
                 globs: Some(vec![
-                    "*".into(),
+                    "*/moon.yml".into(),
                     "!.home".into(),
                     "!.moon".into(),
                     "!.proto".into(),

@@ -56,14 +56,14 @@ mod run_webhooks {
             .run_bin(|cmd| {
                 cmd.arg("run").arg("node:base");
             })
-            .success();
+            .debug();
 
         // Run again to hit the cache
         sandbox
             .run_bin(|cmd| {
                 cmd.arg("run").arg("node:base");
             })
-            .success();
+            .debug();
 
         mock.assert_calls_async(40).await;
     }

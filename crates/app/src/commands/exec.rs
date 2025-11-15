@@ -81,12 +81,14 @@ pub struct ExecArgs {
 
 #[instrument(skip(session))]
 pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
+    dbg!("BEFORE EXEC");
+
+    // Preload the graph before executing
+
     if args.targets.is_empty() {
         let workspace_graph = session.get_workspace_graph().await?;
-
-        let run_targets = select_targets(&session.console, &[], || {
-            let tasks = workspace_graph.get_tasks()?;
-
+        let tasks = workspace_graph.get_tasks()?;
+        let targets = select_targets(&session.console, &[], || {
             Ok(SelectProps {
                 label: "Which task(s) to run?".into(),
                 options: tasks
@@ -101,12 +103,15 @@ pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
         })
         .await?;
 
-        for target in run_targets {
+        for target in targets {
             args.targets.push(TargetLocator::Qualified(target));
         }
     }
 
-    ExecWorkflow::new(session, args).await?.execute().await
+    let executor = ExecWorkflow::new(session, args)?;
+    let exit_code = executor.execute().await?;
+
+    Ok(exit_code)
 }
 
 pub struct ExecWorkflow {
@@ -137,7 +142,7 @@ pub struct ExecWorkflow {
 }
 
 impl ExecWorkflow {
-    pub async fn new(session: MoonSession, args: ExecArgs) -> miette::Result<Self> {
+    pub fn new(session: MoonSession, args: ExecArgs) -> miette::Result<Self> {
         let ci_env = is_ci();
 
         Ok(Self {
@@ -165,6 +170,8 @@ impl ExecWorkflow {
     }
 
     pub async fn execute(mut self) -> miette::Result<Option<u8>> {
+        dbg!("IN EXEC");
+
         // Force cache to update using write-only mode
         if self.args.force {
             self.affected = false;
@@ -176,8 +183,12 @@ impl ExecWorkflow {
         // Step 1
         let changed_files = self.load_changed_files().await?;
 
+        dbg!(&changed_files);
+
         // Step 2
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
+
+        return Ok(None);
 
         if self.node_indexes.is_empty() {
             return Err(if self.affected {

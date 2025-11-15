@@ -30,7 +30,7 @@ use std::env;
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
-use tokio::sync::Mutex;
+use tokio::sync::OnceCell;
 use tokio::try_join;
 use tracing::debug;
 
@@ -52,8 +52,7 @@ pub struct MoonSession {
     task_graph: OnceLock<Arc<TaskGraph>>,
     toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
     vcs_adapter: OnceLock<Arc<BoxedVcs>>,
-    workspace_graph: OnceLock<Arc<WorkspaceGraph>>,
-    workspace_lock: Arc<Mutex<()>>,
+    workspace_graph: OnceCell<Arc<WorkspaceGraph>>,
 
     // Configs
     pub extensions_config: Arc<ExtensionsConfig>,
@@ -88,8 +87,7 @@ impl MoonSession {
             toolchain_registry: OnceLock::new(),
             working_dir: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
-            workspace_graph: OnceLock::new(),
-            workspace_lock: Arc::new(Mutex::new(())),
+            workspace_graph: OnceCell::new(),
             workspace_root: PathBuf::new(),
             vcs_adapter: OnceLock::new(),
             cli,
@@ -116,6 +114,8 @@ impl MoonSession {
     ) -> miette::Result<ActionGraphBuilder<'graph>> {
         let app_context = self.get_app_context().await?;
         let workspace_graph = self.get_workspace_graph().await?;
+
+        dbg!("WG");
 
         ActionGraphBuilder::new(app_context, workspace_graph, options)
     }
@@ -181,7 +181,7 @@ impl MoonSession {
 
     pub async fn get_project_graph(&self) -> miette::Result<Arc<ProjectGraph>> {
         if self.project_graph.get().is_none() {
-            self.load_workspace_graph().await?;
+            self.get_workspace_graph().await?;
         }
 
         Ok(self.project_graph.get().map(Arc::clone).unwrap())
@@ -189,7 +189,7 @@ impl MoonSession {
 
     pub async fn get_task_graph(&self) -> miette::Result<Arc<TaskGraph>> {
         if self.task_graph.get().is_none() {
-            self.load_workspace_graph().await?;
+            self.get_workspace_graph().await?;
         }
 
         Ok(self.task_graph.get().map(Arc::clone).unwrap())
@@ -230,11 +230,12 @@ impl MoonSession {
     }
 
     pub async fn get_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
-        if self.workspace_graph.get().is_none() {
-            self.load_workspace_graph().await?;
-        }
+        let result = self
+            .workspace_graph
+            .get_or_try_init(async || self.load_workspace_graph().await)
+            .await?;
 
-        Ok(self.workspace_graph.get().map(Arc::clone).unwrap())
+        Ok(Arc::clone(&result))
     }
 
     pub fn is_telemetry_enabled(&self) -> bool {
@@ -248,14 +249,7 @@ impl MoonSession {
         )
     }
 
-    async fn load_workspace_graph(&self) -> miette::Result<()> {
-        let _lock = self.workspace_lock.lock().await;
-
-        // Was initialized in another thread
-        if self.workspace_graph.get().is_some() {
-            return Ok(());
-        }
-
+    async fn load_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
         let cache_engine = self.get_cache_engine()?;
         let context = create_workspace_graph_context(self).await?;
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
@@ -277,9 +271,11 @@ impl MoonSession {
         // Set the internal graphs
         let _ = self.project_graph.set(workspace_graph.projects.clone());
         let _ = self.task_graph.set(workspace_graph.tasks.clone());
-        let _ = self.workspace_graph.set(workspace_graph);
+        let _ = self.workspace_graph.set(workspace_graph.clone());
 
-        Ok(())
+        dbg!("WG LOADED");
+
+        Ok(workspace_graph)
     }
 }
 
@@ -364,7 +360,11 @@ impl AppSession for MoonSession {
         if self.is_telemetry_enabled()
             && matches!(
                 self.cli.command,
-                Commands::Ci(_) | Commands::Check(_) | Commands::Run(_) | Commands::Sync { .. }
+                Commands::Ci(_)
+                    | Commands::Check(_)
+                    | Commands::Exec(_)
+                    | Commands::Run(_)
+                    | Commands::Sync { .. }
             )
         {
             let cache_engine = self.get_cache_engine()?;

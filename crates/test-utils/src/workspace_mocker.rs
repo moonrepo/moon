@@ -146,7 +146,7 @@ impl WorkspaceMocker {
             // Use folders as project names
             let mut projects = WorkspaceProjectsConfig {
                 globs: vec![
-                    "*".into(),
+                    "*/moon.yml".into(),
                     "!.home".into(),
                     "!.moon".into(),
                     "!.proto".into(),

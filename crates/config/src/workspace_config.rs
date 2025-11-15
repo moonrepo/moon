@@ -1,8 +1,9 @@
 use crate::shapes::{FilePath, GlobPath, PortablePath};
-use crate::{config_enum, config_struct, workspace::*};
+use crate::workspace::*;
+use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
-use schematic::{Config, PathSegment, ValidateError, env, validate};
+use schematic::{Config, ConfigEnum, PathSegment, ValidateError, env, validate};
 use semver::VersionReq;
 
 // We can't use serde based types in the enum below to handle validation,
@@ -62,6 +63,19 @@ fn validate_projects<D, C>(
     Ok(())
 }
 
+config_unit_enum!(
+    /// The project identifier format for glob located projects.
+    #[derive(ConfigEnum)]
+    pub enum WorkspaceProjectGlobFormat {
+        /// The project directory name.
+        #[default]
+        DirName,
+
+        /// The relative path from the workspace root to the project root.
+        SourcePath,
+    }
+);
+
 config_struct!(
     /// Configures projects in the workspace, using both globs and explicit source paths.
     #[derive(Config)]
@@ -69,6 +83,9 @@ config_struct!(
         /// A list of glob patterns in which to locate project directories.
         /// Can be suffixed with a `moon.*` config file to only find distinct projects.
         pub globs: Vec<String>,
+
+        /// The project identifier format for glob located projects.
+        pub glob_format: WorkspaceProjectGlobFormat,
 
         /// A map of project identifiers to relative file paths to each project directory.
         pub sources: FxHashMap<Id, String>,

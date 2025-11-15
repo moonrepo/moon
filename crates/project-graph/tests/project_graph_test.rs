@@ -213,6 +213,7 @@ mod project_graph {
                             (Id::raw("b"), "b".into()),
                             (Id::raw("root"), ".".into()),
                         ]),
+                        ..Default::default()
                     });
                 })
                 .mock_workspace_graph()

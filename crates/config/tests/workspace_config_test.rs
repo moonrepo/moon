@@ -824,6 +824,7 @@ vcs:
                 config.projects,
                 WorkspaceProjects::Both(WorkspaceProjectsConfig {
                     globs: vec!["apps/*".into(), "packages/*".into()],
+                    glob_format: WorkspaceProjectGlobFormat::DirName,
                     sources: FxHashMap::from_iter([(Id::raw("root"), ".".into())])
                 })
             );

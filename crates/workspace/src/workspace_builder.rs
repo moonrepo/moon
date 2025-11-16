@@ -728,6 +728,13 @@ impl<'app> WorkspaceBuilder<'app> {
                 .push(file.relative_to(context.workspace_root).into_diagnostic()?);
         }
 
+        // Validate the default project exists
+        if let Some(default_id) = &context.workspace_config.default_project
+            && !self.project_data.contains_key(default_id)
+        {
+            return Err(ProjectGraphError::InvalidDefaultId(default_id.to_string()).into());
+        }
+
         Ok(())
     }
 

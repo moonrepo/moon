@@ -5,6 +5,10 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProjectGraphError {
+    #[diagnostic(code(project_graph::invalid_default_id))]
+    #[error("Invalid default project, no project exists with the identifier {}.", .0.style(Style::Id))]
+    InvalidDefaultId(String),
+
     #[diagnostic(code(project_graph::missing_from_path))]
     #[error("No project could be located starting from path {}.", .0.style(Style::Path))]
     MissingFromPath(PathBuf),

@@ -10,7 +10,6 @@ use moon_feature_flags::{FeatureFlags, Flag};
 use proto_core::ProtoEnvironment;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs};
-use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::spawn;

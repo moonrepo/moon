@@ -85,6 +85,7 @@ config_struct!(
         pub globs: Vec<String>,
 
         /// The project identifier format for glob located projects.
+        /// @since 2.0.0
         pub glob_format: WorkspaceProjectGlobFormat,
 
         /// A map of project identifiers to relative file paths to each project directory.
@@ -129,6 +130,11 @@ config_struct!(
         /// Configures boundaries and constraints between projects.
         #[setting(nested)]
         pub constraints: ConstraintsConfig,
+
+        /// The default/main project within the workspace. When a task is
+        /// ran without a project, the default will be used.
+        /// @since 2.0.0
+        pub default_project: Option<Id>,
 
         /// Configures Docker integration for the workspace.
         /// @since 1.27.0

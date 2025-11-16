@@ -1,4 +1,5 @@
 use crate::app::Commands;
+use crate::commands::exec::OnFailure;
 use crate::session::MoonSession;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
@@ -93,8 +94,12 @@ pub async fn run_action_pipeline(
             pipeline.report_name = "ciReport.json".into();
             pipeline.summarize = true;
         }
+        Commands::Exec(cmd) => {
+            pipeline.bail = cmd.on_failure == OnFailure::Bail;
+            pipeline.summarize = cmd.summary;
+        }
         Commands::Run(cmd) => {
-            pipeline.bail = !cmd.no_bail;
+            pipeline.bail = true;
             pipeline.summarize = cmd.summary;
         }
         Commands::Setup | Commands::Sync { .. } => {

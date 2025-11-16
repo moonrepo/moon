@@ -3420,7 +3420,6 @@ dependencies = [
 name = "moon_action_context"
 version = "0.0.1"
 dependencies = [
- "clap",
  "moon_affected",
  "moon_common",
  "moon_target",
@@ -3607,6 +3606,7 @@ dependencies = [
  "moon_affected",
  "moon_api",
  "moon_app_context",
+ "moon_app_macros",
  "moon_cache",
  "moon_codegen",
  "moon_common",
@@ -3667,6 +3667,15 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_vcs",
  "proto_core",
+]
+
+[[package]]
+name = "moon_app_macros"
+version = "0.0.1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -6838,9 +6847,9 @@ checksum = "b7401a30af6cb5818bb64852270bb722533397edcfc7344954a38f420819ece2"
 
 [[package]]
 name = "syn"
-version = "2.0.109"
+version = "2.0.110"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f17c7e013e88258aa9543dcbe81aca68a667a9ac37cd69c9fbc07858bfe0e2f"
+checksum = "a99801b5bd34ede4cf3fc688c5919368fea4e4814a4664359503e6015b280aea"
 dependencies = [
  "proc-macro2",
  "quote",

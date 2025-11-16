@@ -26,9 +26,9 @@ pub fn gather_args() -> (Vec<OsString>, bool) {
             if check_for_target && !a.starts_with('-') {
                 check_for_target = false;
 
-                // Looks like a target, but is not `run`, so prepend!
+                // Looks like a target, but is not `exec`, so prepend!
                 if a.contains(':') {
-                    leading_args.push(OsString::from("run"));
+                    leading_args.push(OsString::from("exec"));
                 }
             }
         }

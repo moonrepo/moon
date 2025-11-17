@@ -12,8 +12,7 @@
   "files": [
     "moon.js",
     "moonx.js",
-    "utils.js",
-    "postinstall-old.js"
+    "utils.js"
   ],
   "author": "Miles Johnson",
   "license": "MIT",

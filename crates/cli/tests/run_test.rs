@@ -409,28 +409,6 @@ mod run {
         }
 
         #[test]
-        fn can_run_with_shorthand_syntax() {
-            let sandbox = create_pipeline_sandbox();
-
-            sandbox
-                .run_bin(|cmd| {
-                    cmd.arg("shared:base");
-                })
-                .success();
-        }
-
-        #[test]
-        fn can_run_with_shorthand_syntax_with_leading_option() {
-            let sandbox = create_pipeline_sandbox();
-
-            sandbox
-                .run_bin(|cmd| {
-                    cmd.arg("--force").arg("shared:base");
-                })
-                .success();
-        }
-
-        #[test]
         fn bails_on_failing_task() {
             let sandbox = create_pipeline_sandbox();
 

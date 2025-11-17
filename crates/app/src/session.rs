@@ -287,8 +287,6 @@ impl AppSession for MoonSession {
         self.console.set_reporter(MoonReporter::default());
         self.console.set_theme(create_console_theme());
 
-        startup::create_moonx_shims()?;
-
         // Determine paths
 
         self.working_dir = env::current_dir().map_err(|_| AppError::MissingWorkingDir)?;

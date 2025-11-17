@@ -28,9 +28,9 @@ if (isLinux) {
 
 const triple = parts.join('-');
 
-function findMoonExe() {
+function findExe(name) {
 	const pkgPath = require.resolve(`@moonrepo/core-${triple}/package.json`);
-	const exePath = path.join(path.dirname(pkgPath), isWindows ? 'moon.exe' : 'moon');
+	const exePath = path.join(path.dirname(pkgPath), isWindows ? `${name}.exe` : name);
 
 	if (fs.existsSync(exePath)) {
 		return exePath;
@@ -39,4 +39,13 @@ function findMoonExe() {
 	throw new Error(`moon executable "${exePath}" not found!`);
 }
 
+function findMoonExe() {
+	return findExe('moon');
+}
+
+function findMoonxExe() {
+	return findExe('moonx');
+}
+
 exports.findMoonExe = findMoonExe;
+exports.findMoonxExe = findMoonxExe;

@@ -19,6 +19,7 @@ pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
 #[derive(Clone, Debug, Default)]
 pub struct ProjectMetadata {
     pub aliases: FxHashSet<String>,
+    pub default: bool,
     pub index: NodeIndex,
     pub original_id: Option<Id>,
     pub source: WorkspaceRelativePathBuf,
@@ -36,6 +37,9 @@ impl ProjectMetadata {
 #[derive(Default)]
 pub struct ProjectGraph {
     context: GraphExpanderContext,
+
+    /// Identifier for the default project.
+    default_id: Option<Id>,
 
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
     fs_cache: HashMap<PathBuf, Arc<String>>,
@@ -60,6 +64,10 @@ impl ProjectGraph {
 
         Self {
             context,
+            default_id: metadata
+                .iter()
+                .find(|(_, meta)| meta.default)
+                .map(|inner| inner.0.to_owned()),
             graph,
             metadata,
             projects: Arc::new(RwLock::new(FxHashMap::default())),
@@ -94,7 +102,7 @@ impl ProjectGraph {
         let metadata = self
             .metadata
             .get(&id)
-            .ok_or_else(|| ProjectGraphError::UnconfiguredID(id.to_string()))?;
+            .ok_or_else(|| ProjectGraphError::UnconfiguredID { id: id.to_string() })?;
 
         Ok(self.graph.node_weight(metadata.index).unwrap())
     }
@@ -118,6 +126,15 @@ impl ProjectGraph {
             .iter()
             .map(|node| &node.weight)
             .collect()
+    }
+
+    /// Return the default project if it has been configured and exists.
+    pub fn get_default(&self) -> miette::Result<Arc<Project>> {
+        if let Some(id) = &self.default_id {
+            return self.get(id);
+        }
+
+        Err(ProjectGraphError::NoDefaultProject.into())
     }
 
     /// Find and return a project based on the initial path location.
@@ -168,6 +185,7 @@ impl ProjectGraph {
 
         Ok(Self {
             context: self.context.clone(),
+            default_id: self.default_id.clone(),
             fs_cache: HashMap::new(),
             graph,
             metadata,
@@ -229,7 +247,10 @@ impl ProjectGraph {
         }
 
         if possible_id.is_empty() {
-            return Err(ProjectGraphError::MissingFromPath(search.to_path_buf()).into());
+            return Err(ProjectGraphError::MissingFromPath {
+                dir: search.to_path_buf(),
+            }
+            .into());
         }
 
         let id = Arc::new(possible_id);

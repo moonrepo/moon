@@ -54,7 +54,7 @@
     },
     "inheritedBy": {
       "title": "inheritedBy",
-      "description": "A map of conditions that define which projects will inherit these tasks and configuration. If not defined, will be inherited by all projects.",
+      "description": "A map of conditions that define which projects will inherit these tasks and configuration. If not defined, will be inherited by all projects. @since 2.0.0",
       "anyOf": [
         {
           "$ref": "#/definitions/InheritedByConfig"

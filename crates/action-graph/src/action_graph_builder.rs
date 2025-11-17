@@ -17,6 +17,7 @@ use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
 use moon_toolchain::ToolchainSpec;
+use moon_workspace_graph::projects::ProjectGraphError;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -650,11 +651,14 @@ impl<'query> ActionGraphBuilder<'query> {
                         .await?,
                 );
             }
-            TargetLocator::TaskFromWorkingDir(task_id) => {
-                let target = Target::new(
-                    &self.workspace_graph.get_project_from_path(None)?.id,
-                    task_id,
-                )?;
+            TargetLocator::DefaultProject(task_id) => {
+                let project = self.workspace_graph.get_default_project().map_err(|_| {
+                    ProjectGraphError::NoDefaultProjectForTask {
+                        task_id: task_id.to_string(),
+                    }
+                })?;
+
+                let target = Target::new(&project.id, task_id)?;
 
                 tasks.extend(
                     self.internal_resolve_tasks_from_target(&target, allow_internal)

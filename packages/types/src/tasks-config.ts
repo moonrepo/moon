@@ -534,6 +534,7 @@ export interface InheritedTasksConfig {
 	/**
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.
+	 * @since 2.0.0
 	 */
 	inheritedBy: InheritedByConfig | null;
 	/**
@@ -938,6 +939,7 @@ export interface PartialInheritedTasksConfig {
 	/**
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.
+	 * @since 2.0.0
 	 */
 	inheritedBy?: PartialInheritedByConfig | null;
 	/**

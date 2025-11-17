@@ -298,7 +298,7 @@ mod run_legacy {
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
-                    .arg("taskName")
+                    .arg("~:taskName")
                     .current_dir(sandbox.path().join("fakeDir"));
             });
 
@@ -363,7 +363,7 @@ mod run_legacy {
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
-                    .arg("runFromProject")
+                    .arg("~:runFromProject")
                     .current_dir(sandbox.path().join("base"));
             });
             let output = assert.output();
@@ -379,8 +379,8 @@ mod run_legacy {
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
-                    .arg("runFromProject")
-                    .arg("runFromWorkspace")
+                    .arg("~:runFromProject")
+                    .arg("~:runFromWorkspace")
                     .current_dir(sandbox.path().join("base"));
             });
 
@@ -398,7 +398,7 @@ mod run_legacy {
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
-                    .arg("runFromProject")
+                    .arg("~:runFromProject")
                     .arg("noop:noop")
                     .current_dir(sandbox.path().join("base"));
             });

@@ -1697,4 +1697,21 @@ mod project_graph {
             build_graph_from_fixture("custom-id-conflict").await;
         }
     }
+
+    mod default_id {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Invalid default project")]
+        async fn errors_if_default_id_doesnt_exist() {
+            let sandbox = create_sandbox("dependencies");
+
+            create_workspace_mocker(sandbox.path())
+                .update_workspace_config(|config| {
+                    config.default_project = Some(Id::raw("z"));
+                })
+                .mock_workspace_graph()
+                .await;
+        }
+    }
 }

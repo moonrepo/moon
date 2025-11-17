@@ -300,6 +300,7 @@ config_struct!(
 
         /// A map of conditions that define which projects will inherit these
         /// tasks and configuration. If not defined, will be inherited by all projects.
+        /// @since 2.0.0
         #[setting(nested)]
         pub inherited_by: Option<InheritedByConfig>,
 

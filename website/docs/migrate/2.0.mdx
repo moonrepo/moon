@@ -29,6 +29,12 @@ toc_max_heading_level: 6
   - `--platform` from all commands (use `--toolchain` instead)
   - `--to` from `moon init` (use a positional argument instead)
 
+#### `moon run`
+
+- Running a target without a scope no longer locates the closest project and instead uses the new
+  default project feature. To run a target in the closets project, use `~:` scope instead.
+  - Example: `moon run build` -> `moon run ~:build`
+
 ## Workspace
 
 ### Configuration: `.moon/workspace.*`

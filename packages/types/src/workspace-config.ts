@@ -295,6 +295,7 @@ export type WorkspaceProjectGlobFormat = 'dir-name' | 'source-path';
 export interface WorkspaceProjectsConfig {
 	/**
 	 * The project identifier format for glob located projects.
+	 * @since 2.0.0
 	 *
 	 * @default 'dir-name'
 	 * @type {'dir-name' | 'source-path'}
@@ -559,6 +560,12 @@ export interface WorkspaceConfig {
 	codeowners: CodeownersConfig;
 	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
+	/**
+	 * The default/main project within the workspace. When a task is
+	 * ran without a project, the default will be used.
+	 * @since 2.0.0
+	 */
+	defaultProject: Id | null;
 	/**
 	 * Configures Docker integration for the workspace.
 	 * @since 1.27.0
@@ -880,6 +887,7 @@ export interface PartialPipelineConfig {
 export interface PartialWorkspaceProjectsConfig {
 	/**
 	 * The project identifier format for glob located projects.
+	 * @since 2.0.0
 	 *
 	 * @default 'dir-name'
 	 */
@@ -1114,6 +1122,12 @@ export interface PartialWorkspaceConfig {
 	codeowners?: PartialCodeownersConfig | null;
 	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
+	/**
+	 * The default/main project within the workspace. When a task is
+	 * ran without a project, the default will be used.
+	 * @since 2.0.0
+	 */
+	defaultProject?: Id | null;
 	/**
 	 * Configures Docker integration for the workspace.
 	 * @since 1.27.0

@@ -36,6 +36,10 @@ impl WorkspaceGraph {
         }
     }
 
+    pub fn get_default_project(&self) -> miette::Result<Arc<Project>> {
+        self.projects.get_default()
+    }
+
     pub fn get_project(&self, id_or_alias: impl AsRef<str>) -> miette::Result<Arc<Project>> {
         self.projects.get(id_or_alias.as_ref())
     }

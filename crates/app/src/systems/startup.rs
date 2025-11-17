@@ -10,7 +10,6 @@ use moon_feature_flags::{FeatureFlags, Flag};
 use proto_core::ProtoEnvironment;
 use starbase_styles::color;
 use starbase_utils::{dirs, fs};
-use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::spawn;
@@ -201,61 +200,4 @@ pub fn register_feature_flags(config: &WorkspaceConfig) -> miette::Result<()> {
         .register();
 
     Ok(())
-}
-
-#[instrument(skip_all)]
-pub fn create_moonx_shims() -> miette::Result<()> {
-    let Ok(exe_file) = env::current_exe() else {
-        return Ok(());
-    };
-
-    let shim_file =
-        exe_file
-            .parent()
-            .unwrap()
-            .join(if cfg!(windows) { "moonx.ps1" } else { "moonx" });
-
-    if shim_file.exists() {
-        return Ok(());
-    }
-
-    match fs::write_file(&shim_file, get_moonx_shim_content()) {
-        Ok(_) => {
-            if let Err(error) = fs::update_perms(&shim_file, None) {
-                debug!("Failed to make moonx shim executable: {error}");
-
-                let _ = fs::remove_file(shim_file);
-            }
-        }
-        Err(error) => {
-            debug!("Failed to create moonx shim: {error}");
-        }
-    }
-
-    Ok(())
-}
-
-#[cfg(unix)]
-fn get_moonx_shim_content() -> String {
-    r#"#!/usr/bin/env sh
-
-exec moon run "$@"
-exit $?
-"#
-    .into()
-}
-
-#[cfg(windows)]
-fn get_moonx_shim_content() -> String {
-    r#"#!/usr/bin/env pwsh
-
-if ($MyInvocation.ExpectingInput) {
-  $input | & moon run $args
-} else {
-  & moon run $args
-}
-
-exit $LASTEXITCODE
-"#
-    .into()
 }

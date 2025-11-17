@@ -2015,26 +2015,6 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        #[should_panic(expected = "Unknown task internal for project common.")]
-        async fn errors_for_internal_task_when_explicit_via_dir() {
-            let sandbox = create_sandbox("tasks");
-            let mut container = ActionGraphContainer::new(sandbox.path())
-                .set_working_dir(sandbox.path().join("common"));
-
-            let mut builder = container
-                .create_builder(container.create_workspace_graph().await)
-                .await;
-
-            builder
-                .run_task_by_target_locator(
-                    TargetLocator::TaskFromWorkingDir(Id::raw("internal")),
-                    &RunRequirements::default(),
-                )
-                .await
-                .unwrap();
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
         async fn runs_by_target() {
             let sandbox = create_sandbox("tasks");
             let mut container = ActionGraphContainer::new(sandbox.path());

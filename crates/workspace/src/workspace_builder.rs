@@ -224,10 +224,17 @@ impl<'app> WorkspaceBuilder<'app> {
             .project_data
             .into_iter()
             .map(|(id, data)| {
+                let default = context
+                    .workspace_config
+                    .default_project
+                    .as_ref()
+                    .is_some_and(|def_id| def_id == &id);
+
                 (
                     id,
                     ProjectMetadata {
                         aliases: data.aliases.keys().cloned().collect(),
+                        default,
                         index: data.node_index.unwrap_or_default(),
                         original_id: data.original_id,
                         source: data.source,
@@ -310,7 +317,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         {
             let Some(build_data) = self.project_data.get(&id) else {
-                return Err(ProjectGraphError::UnconfiguredID(id.to_string()).into());
+                return Err(ProjectGraphError::UnconfiguredID { id: id.to_string() }.into());
             };
 
             // Already loaded, exit early with existing index
@@ -732,7 +739,10 @@ impl<'app> WorkspaceBuilder<'app> {
         if let Some(default_id) = &context.workspace_config.default_project
             && !self.project_data.contains_key(default_id)
         {
-            return Err(ProjectGraphError::InvalidDefaultId(default_id.to_string()).into());
+            return Err(ProjectGraphError::InvalidDefaultId {
+                id: default_id.to_string(),
+            }
+            .into());
         }
 
         Ok(())
@@ -843,35 +853,37 @@ impl<'app> WorkspaceBuilder<'app> {
             .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
             .collect::<BTreeMap<_, _>>();
 
-        let mut process_output = |plugin_id: Id,
-                                  output: ExtendProjectGraphOutput|
-         -> miette::Result<()> {
-            for (project_id, mut project_extend) in output.extended_projects {
-                if !self.project_data.contains_key(&project_id) {
-                    return Err(ProjectGraphError::UnconfiguredID(project_id.to_string()).into());
+        let mut process_output =
+            |plugin_id: Id, output: ExtendProjectGraphOutput| -> miette::Result<()> {
+                for (project_id, mut project_extend) in output.extended_projects {
+                    if !self.project_data.contains_key(&project_id) {
+                        return Err(ProjectGraphError::UnconfiguredID {
+                            id: project_id.to_string(),
+                        }
+                        .into());
+                    }
+
+                    if let Some(alias) = project_extend.alias.take() {
+                        self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
+                    }
+
+                    if let Some(build_data) = self.project_data.get_mut(&project_id) {
+                        build_data.extensions.push(project_extend);
+                    }
                 }
 
-                if let Some(alias) = project_extend.alias.take() {
-                    self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
+                for input_file in output.input_files {
+                    self.config_paths.push(
+                        context
+                            .toolchain_registry
+                            .from_virtual_path(input_file)
+                            .relative_to(context.workspace_root)
+                            .into_diagnostic()?,
+                    );
                 }
 
-                if let Some(build_data) = self.project_data.get_mut(&project_id) {
-                    build_data.extensions.push(project_extend);
-                }
-            }
-
-            for input_file in output.input_files {
-                self.config_paths.push(
-                    context
-                        .toolchain_registry
-                        .from_virtual_path(input_file)
-                        .relative_to(context.workspace_root)
-                        .into_diagnostic()?,
-                );
-            }
-
-            Ok(())
-        };
+                Ok(())
+            };
 
         // From toolchains
         for result in context

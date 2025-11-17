@@ -1,47 +1,5 @@
 use moon_env_var::GlobalEnvBag;
 use starbase_styles::color::{no_color, supports_color};
-use std::env;
-use std::ffi::OsString;
-
-pub fn is_arg_executable(arg: &str) -> bool {
-    arg.ends_with("moon") || arg.ends_with("moon.exe") || arg.ends_with("moon.js")
-}
-
-pub fn gather_args() -> (Vec<OsString>, bool) {
-    let mut args: Vec<OsString> = vec![];
-    let mut leading_args: Vec<OsString> = vec![];
-    let mut check_for_target = true;
-    let mut has_executable = false;
-
-    env::args_os().enumerate().for_each(|(index, arg)| {
-        if let Some(a) = arg.to_str() {
-            // Script being executed, so persist it
-            if index == 0 && is_arg_executable(a) {
-                leading_args.push(arg);
-                has_executable = true;
-                return;
-            }
-
-            // Find first non-option value
-            if check_for_target && !a.starts_with('-') {
-                check_for_target = false;
-
-                // Looks like a target, but is not `run`, so prepend!
-                if a.contains(':') {
-                    leading_args.push(OsString::from("run"));
-                }
-            }
-        }
-
-        args.push(arg);
-    });
-
-    // We need a separate args list because options before the
-    // target cannot be placed before "run"
-    leading_args.extend(args);
-
-    (leading_args, has_executable)
-}
 
 pub fn setup_no_colors() {
     let bag = GlobalEnvBag::instance();

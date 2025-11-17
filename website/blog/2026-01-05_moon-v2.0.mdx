@@ -63,6 +63,24 @@ $ moon project
 │ ⎵ select ⁃ ↕ cycle ⁃ ↵ submit
 ```
 
+### Stabilized `moonx`
+
+The `moonx` executable, sibling to `moon`, has been stabilized, and is no longer a shim, but a
+proper standalone binary. This executable is simply a shorthand for `moon exec`, and _replaces_ the
+shorthand syntax that previously existed with `moon <target>`.
+
+```shell
+# Before
+$ moon exec app:build
+$ moon app:build
+
+# After
+$ moonx app:build
+```
+
+> The `moonx` binary is only available when moon is installed via the official installers, and is
+> not available through the `@moonrepo/cli` npm package.
+
 ## Toolchains
 
 The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.

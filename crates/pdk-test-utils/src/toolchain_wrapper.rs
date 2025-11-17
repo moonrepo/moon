@@ -63,7 +63,7 @@ impl ToolchainTestWrapper {
     pub async fn extend_task_command(
         &self,
         mut input: ExtendTaskCommandInput,
-    ) -> ExtendTaskCommandOutput {
+    ) -> ExtendCommandOutput {
         input.context = self.create_context();
 
         input.globals_dir = input

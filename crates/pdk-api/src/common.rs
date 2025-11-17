@@ -139,6 +139,55 @@ api_enum!(
 );
 
 api_struct!(
+    /// Input passed to the `extend_command` function.
+    pub struct ExtendCommandInput {
+        /// The current arguments, after the command.
+        pub args: Vec<String>,
+
+        /// Current moon context.
+        pub context: MoonContext,
+
+        /// The current command (binary/program).
+        pub command: String,
+
+        /// The current working directory in which the command will run.
+        pub current_dir: VirtualPath,
+    }
+);
+
+api_struct!(
+    /// Output returned from the `extend_command` and `extend_task_command` functions.
+    #[serde(default)]
+    pub struct ExtendCommandOutput {
+        /// The command (binary/program) to use. Will replace the existing
+        /// command. Can be overwritten by subsequent extend calls.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub command: Option<String>,
+
+        /// List of arguments to merge with.
+        /// Can be modified by subsequent extend calls.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub args: Option<Extend<Vec<String>>>,
+
+        /// Map of environment variables to add.
+        /// Can be overwritten by subsequent extend calls.
+        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        pub env: FxHashMap<String, String>,
+
+        /// List of environment variables to remove.
+        /// Can be overwritten by subsequent extend calls.
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub env_remove: Vec<String>,
+
+        /// List of absolute paths to prepend into the `PATH` environment
+        /// variable, but after the proto prepended paths. These *must*
+        /// be real paths, not virtual!
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub paths: Vec<PathBuf>,
+    }
+);
+
+api_struct!(
     /// Input passed to the `extend_task_command` function.
     pub struct ExtendTaskCommandInput {
         /// The current arguments, after the command.
@@ -168,37 +217,6 @@ api_struct!(
         /// with the latter taking precedence. Is null when
         /// within extensions.
         pub toolchain_config: serde_json::Value,
-    }
-);
-
-api_struct!(
-    /// Output returned from the `extend_task_command` function.
-    #[serde(default)]
-    pub struct ExtendTaskCommandOutput {
-        /// The command (binary/program) to use. Will replace the existing
-        /// command. Can be overwritten by subsequent extend calls.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub command: Option<String>,
-
-        /// List of arguments to merge with.
-        /// Can be modified by subsequent extend calls.
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub args: Option<Extend<Vec<String>>>,
-
-        /// Map of environment variables to add.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub env: FxHashMap<String, String>,
-
-        /// List of environment variables to remove.
-        /// Can be overwritten by subsequent extend calls.
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub env_remove: Vec<String>,
-
-        /// List of absolute paths to prepend into the `PATH` environment
-        /// variable, but after the proto prepended paths. These *must*
-        /// be real paths, not virtual!
-        #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub paths: Vec<PathBuf>,
     }
 );
 

@@ -66,7 +66,7 @@ impl ExtensionTestWrapper {
     pub async fn extend_task_command(
         &self,
         mut input: ExtendTaskCommandInput,
-    ) -> ExtendTaskCommandOutput {
+    ) -> ExtendCommandOutput {
         input.context = self.create_context();
 
         if input.project.id.is_empty() {

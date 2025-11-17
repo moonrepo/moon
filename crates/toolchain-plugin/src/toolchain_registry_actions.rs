@@ -5,11 +5,11 @@ use moon_config::{LanguageType, ProjectConfig};
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineRequirementsInput,
-    DefineRequirementsOutput, ExtendProjectGraphInput, ExtendProjectGraphOutput,
-    ExtendTaskCommandInput, ExtendTaskCommandOutput, ExtendTaskScriptInput, ExtendTaskScriptOutput,
-    HashTaskContentsInput, LocateDependenciesRootInput, LocateDependenciesRootOutput,
-    ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput, SetupToolchainOutput,
-    SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+    DefineRequirementsOutput, ExtendCommandOutput, ExtendProjectGraphInput,
+    ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskScriptInput,
+    ExtendTaskScriptOutput, HashTaskContentsInput, LocateDependenciesRootInput,
+    LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput,
+    SetupToolchainOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use moon_plugin::CallResult;
 use moon_process::Command;
@@ -393,7 +393,7 @@ impl ToolchainRegistry {
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ExtendTaskCommandOutput>>
+    ) -> miette::Result<Vec<ExtendCommandOutput>>
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendTaskCommandInput,
     {

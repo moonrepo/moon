@@ -297,7 +297,7 @@ impl ToolchainPlugin {
     pub async fn extend_task_command(
         &self,
         mut input: ExtendTaskCommandInput,
-    ) -> miette::Result<ExtendTaskCommandOutput> {
+    ) -> miette::Result<ExtendCommandOutput> {
         if let Some(tool) = &self.tool {
             input.globals_dir = tool
                 .write()
@@ -307,7 +307,7 @@ impl ToolchainPlugin {
                 .map(|dir| self.to_virtual_path(dir));
         }
 
-        let output: ExtendTaskCommandOutput = self
+        let output: ExtendCommandOutput = self
             .plugin
             .cache_func_with("extend_task_command", input)
             .await?;

@@ -1,9 +1,9 @@
 use crate::extension_plugin::ExtensionPlugin;
 use crate::extension_registry::ExtensionRegistry;
 use moon_pdk_api::{
-    ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendTaskCommandInput,
-    ExtendTaskCommandOutput, ExtendTaskScriptInput, ExtendTaskScriptOutput, SyncOutput,
-    SyncProjectInput, SyncWorkspaceInput,
+    ExtendCommandOutput, ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendTaskCommandInput,
+    ExtendTaskScriptInput, ExtendTaskScriptOutput, SyncOutput, SyncProjectInput,
+    SyncWorkspaceInput,
 };
 use moon_plugin::CallResult;
 
@@ -30,7 +30,7 @@ impl ExtensionRegistry {
     pub async fn extend_task_command_all<InFn>(
         &self,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ExtendTaskCommandOutput>>
+    ) -> miette::Result<Vec<ExtendCommandOutput>>
     where
         InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> ExtendTaskCommandInput,
     {

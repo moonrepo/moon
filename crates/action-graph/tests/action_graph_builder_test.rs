@@ -2129,7 +2129,7 @@ mod action_graph_builder {
             assert_snapshot!(graph.to_dot());
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
-                [Target::parse("client:test").unwrap(),]
+                [Target::parse("client:test").unwrap()]
             );
         }
 
@@ -2178,6 +2178,77 @@ mod action_graph_builder {
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [Target::parse("misc:requiresInternal").unwrap()]
             );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_in_default_project() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            container.mocker = container.mocker.update_workspace_config(|config| {
+                config.default_project = Some(Id::raw("base"));
+            });
+
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::DefaultProject(Id::raw("build")),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                context.primary_targets.into_iter().collect::<Vec<_>>(),
+                [Target::parse("base:build").unwrap()]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "No default project has been configured")]
+        async fn errors_for_no_default_project() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::DefaultProject(Id::raw("build")),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Invalid default project")]
+        async fn errors_for_invalid_default_project() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            container.mocker = container.mocker.update_workspace_config(|config| {
+                config.default_project = Some(Id::raw("unknown"));
+            });
+
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_task_by_target_locator(
+                    TargetLocator::DefaultProject(Id::raw("build")),
+                    &RunRequirements::default(),
+                )
+                .await
+                .unwrap();
         }
     }
 

@@ -18767,7 +18767,7 @@ telemetry = false
 ```
 
 > The data we track is publicly available and
-> [can be found here](https://github.com/moonrepo/proto/blob/master/legacy/cli/src/telemetry.rs).
+> [can be found here](https://github.com/moonrepo/proto/blob/master/crates/cli/src/telemetry.rs).
 
 #### `unstable-lockfile`
 

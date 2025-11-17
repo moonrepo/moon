@@ -138,6 +138,47 @@ telemetry: false
         }
     }
 
+    mod default_project {
+        use super::*;
+
+        #[test]
+        fn can_set() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+defaultProject: app
+",
+                load_config_from_root,
+            );
+
+            assert_eq!(config.default_project.unwrap(), "app");
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid identifier format for")]
+        fn errors_if_empty() {
+            test_load_config(
+                FILENAME,
+                r"
+defaultProject: ''
+",
+                load_config_from_root,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid identifier format for")]
+        fn errors_if_invalid_format() {
+            test_load_config(
+                FILENAME,
+                r"
+defaultProject: 'nsN@d0n02OS'
+",
+                load_config_from_root,
+            );
+        }
+    }
+
     mod projects {
         use super::*;
 

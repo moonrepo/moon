@@ -162,6 +162,27 @@ APIs ─────────────────────────
 
 ## Projects
 
+### Default project
+
+By request from the community, we've added a new `defaultProject` setting to the workspace
+configuration. This setting allows you to specify a default project that will be used when running
+tasks that require a project identifier, but none was provided. This is especially useful for
+workspaces with a single project, or when you have a primary project that you work on most of the
+time.
+
+```yaml title=".moon/workspace.yml"
+defaultProject: 'app'
+```
+
+```shell
+# Before
+$ moon run app:build
+
+# After
+$ moon run build
+$ moonx build
+```
+
 ### Path based IDs
 
 When locating projects with globs via the `projects` workspace configuration, we would historically

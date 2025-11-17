@@ -27,6 +27,18 @@
         }
       ]
     },
+    "defaultProject": {
+      "title": "defaultProject",
+      "description": "The default/main project within the workspace. When a task is ran without a project, the default will be used. @since 2.0.0",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "docker": {
       "title": "docker",
       "description": "Configures Docker integration for the workspace. @since 1.27.0",
@@ -1002,7 +1014,7 @@
       "properties": {
         "globFormat": {
           "title": "globFormat",
-          "description": "The project identifier format for glob located projects.",
+          "description": "The project identifier format for glob located projects. @since 2.0.0",
           "default": "dir-name",
           "allOf": [
             {

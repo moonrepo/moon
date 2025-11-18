@@ -274,5 +274,7 @@ async fn collect_tier_apis(
         ));
     }
 
+    list.sort_by(|a, d| a.0.cmp(&d.0));
+
     list
 }

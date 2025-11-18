@@ -11,12 +11,13 @@ Extension ───────────────────────�
 
 APIs ───────────────────────────────────────────────────────
 
-  🟢 register_extension (required)
   ⚫️ define_extension_config
-  ⚫️ initialize_extension
   🟢 execute_extension
-  ⚫️ sync_project
-  ⚫️ sync_workspace
+  ⚫️ extend_command
   ⚫️ extend_project_graph
   ⚫️ extend_task_command
   ⚫️ extend_task_script
+  ⚫️ initialize_extension
+  🟢 register_extension (required)
+  ⚫️ sync_project
+  ⚫️ sync_workspace

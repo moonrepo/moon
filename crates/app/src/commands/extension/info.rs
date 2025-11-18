@@ -44,6 +44,7 @@ pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> AppResult {
             "execute_extension",
             "sync_project",
             "sync_workspace",
+            "extend_command",
             "extend_project_graph",
             "extend_task_command",
             "extend_task_script",

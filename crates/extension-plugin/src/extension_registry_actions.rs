@@ -1,13 +1,32 @@
 use crate::extension_plugin::ExtensionPlugin;
 use crate::extension_registry::ExtensionRegistry;
 use moon_pdk_api::{
-    ExtendCommandOutput, ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendTaskCommandInput,
-    ExtendTaskScriptInput, ExtendTaskScriptOutput, SyncOutput, SyncProjectInput,
-    SyncWorkspaceInput,
+    ExtendCommandInput, ExtendCommandOutput, ExtendProjectGraphInput, ExtendProjectGraphOutput,
+    ExtendTaskCommandInput, ExtendTaskScriptInput, ExtendTaskScriptOutput, SyncOutput,
+    SyncProjectInput, SyncWorkspaceInput,
 };
 use moon_plugin::CallResult;
 
 impl ExtensionRegistry {
+    pub async fn extend_command_all<InFn>(
+        &self,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ExtendCommandOutput>>
+    where
+        InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> ExtendCommandInput,
+    {
+        let results = self
+            .call_func_all(
+                "extend_command",
+                self.get_plugin_ids(),
+                input_factory,
+                |extension, input| async move { extension.extend_command(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
     pub async fn extend_project_graph_all<InFn>(
         &self,
         input_factory: InFn,

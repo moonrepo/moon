@@ -5,7 +5,7 @@ use moon_config::{LanguageType, ProjectConfig};
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineRequirementsInput,
-    DefineRequirementsOutput, ExtendCommandOutput, ExtendProjectGraphInput,
+    DefineRequirementsOutput, ExtendCommandInput, ExtendCommandOutput, ExtendProjectGraphInput,
     ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskScriptInput,
     ExtendTaskScriptOutput, HashTaskContentsInput, LocateDependenciesRootInput,
     LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput,
@@ -368,6 +368,26 @@ impl ToolchainRegistry {
         }
 
         Ok(expanded.into_iter().collect())
+    }
+
+    pub async fn extend_command_many<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ExtendCommandOutput>>
+    where
+        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendCommandInput,
+    {
+        let results = self
+            .call_func_all(
+                "extend_command",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.extend_command(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
     }
 
     pub async fn extend_project_graph_all<InFn>(

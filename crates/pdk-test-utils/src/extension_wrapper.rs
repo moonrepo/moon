@@ -51,6 +51,15 @@ impl ExtensionTestWrapper {
             .unwrap()
     }
 
+    pub async fn extend_command(&self, mut input: ExtendCommandInput) -> ExtendCommandOutput {
+        input.context = self.create_context();
+
+        self.plugin
+            .call_func_with("extend_command", input)
+            .await
+            .unwrap()
+    }
+
     pub async fn extend_project_graph(
         &self,
         mut input: ExtendProjectGraphInput,

@@ -279,6 +279,17 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn extend_command(
+        &self,
+        input: ExtendCommandInput,
+    ) -> miette::Result<ExtendCommandOutput> {
+        let output: ExtendCommandOutput =
+            self.plugin.cache_func_with("extend_command", input).await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
     pub async fn extend_project_graph(
         &self,
         input: ExtendProjectGraphInput,

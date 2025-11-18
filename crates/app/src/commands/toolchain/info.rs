@@ -49,6 +49,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
             "prune_docker",
             "sync_project",
             "sync_workspace",
+            "extend_command",
         ],
         &["register_toolchain"],
     )

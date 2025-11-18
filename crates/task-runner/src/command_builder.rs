@@ -178,11 +178,16 @@ impl<'task> CommandBuilder<'task> {
         params.apply_outputs(
             self.app
                 .toolchain_registry
-                .extend_command_many(toolchain_ids.clone(), |registry, _| ExtendCommandInput {
-                    context: registry.create_context(),
-                    command: params.exe.clone(),
-                    args: params.args.clone().into_iter().collect(),
-                    current_dir: registry.to_virtual_path(&project.root),
+                .extend_command_many(toolchain_ids.clone(), |registry, toolchain| {
+                    ExtendCommandInput {
+                        context: registry.create_context(),
+                        command: params.exe.clone(),
+                        args: params.args.clone().into_iter().collect(),
+                        current_dir: registry.to_virtual_path(&project.root),
+                        toolchain_config: registry
+                            .create_merged_config(&toolchain.id, &project.config),
+                        ..Default::default()
+                    }
                 })
                 .await?,
         );
@@ -190,11 +195,13 @@ impl<'task> CommandBuilder<'task> {
         params.apply_outputs(
             self.app
                 .extension_registry
-                .extend_command_all(|registry, _| ExtendCommandInput {
+                .extend_command_all(|registry, extension| ExtendCommandInput {
                     context: registry.create_context(),
                     command: params.exe.clone(),
                     args: params.args.clone().into_iter().collect(),
                     current_dir: registry.to_virtual_path(&project.root),
+                    extension_config: registry.create_config(&extension.id),
+                    ..Default::default()
                 })
                 .await?,
         );

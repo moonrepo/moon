@@ -152,6 +152,15 @@ api_struct!(
 
         /// The current working directory in which the command will run.
         pub current_dir: VirtualPath,
+
+        /// Workspace extension configuration.
+        /// Is null when within toolchains.
+        pub extension_config: serde_json::Value,
+
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence. Is null when
+        /// within extensions.
+        pub toolchain_config: serde_json::Value,
     }
 );
 
@@ -219,6 +228,8 @@ api_struct!(
         pub toolchain_config: serde_json::Value,
     }
 );
+
+pub type ExtendTaskCommandOutput = ExtendCommandOutput;
 
 api_struct!(
     /// Input passed to the `extend_task_script` function.

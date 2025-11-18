@@ -78,6 +78,17 @@ impl ExtensionPlugin {
     }
 
     #[instrument(skip(self))]
+    pub async fn extend_command(
+        &self,
+        input: ExtendCommandInput,
+    ) -> miette::Result<ExtendCommandOutput> {
+        let output: ExtendCommandOutput =
+            self.plugin.cache_func_with("extend_command", input).await?;
+
+        Ok(output)
+    }
+
+    #[instrument(skip(self))]
     pub async fn extend_project_graph(
         &self,
         input: ExtendProjectGraphInput,
@@ -96,8 +107,8 @@ impl ExtensionPlugin {
     pub async fn extend_task_command(
         &self,
         input: ExtendTaskCommandInput,
-    ) -> miette::Result<ExtendTaskCommandOutput> {
-        let output: ExtendTaskCommandOutput = self
+    ) -> miette::Result<ExtendCommandOutput> {
+        let output: ExtendCommandOutput = self
             .plugin
             .cache_func_with("extend_task_command", input)
             .await?;

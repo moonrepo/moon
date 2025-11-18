@@ -49,6 +49,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
             "prune_docker",
             "sync_project",
             "sync_workspace",
+            "extend_command",
         ],
         &["register_toolchain"],
     )
@@ -272,6 +273,8 @@ async fn collect_tier_apis(
             required.contains(api),
         ));
     }
+
+    list.sort_by(|a, d| a.0.cmp(&d.0));
 
     list
 }

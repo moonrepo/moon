@@ -21,8 +21,9 @@ pub enum AppError {
 
     #[diagnostic(code(app::missing_workspace))]
     #[error(
-        "Unable to determine workspace root. Please create a {} configuration folder.",
-        ".moon".style(Style::File)
+        "Unable to determine workspace root. Please create a {} or {} configuration folder.",
+        ".moon".style(Style::File),
+        ".config/moon".style(Style::File),
     )]
     MissingConfigDir,
 

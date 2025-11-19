@@ -753,7 +753,7 @@ impl<'app> WorkspaceBuilder<'app> {
         sources: Vec<(Id, WorkspaceRelativePathBuf)>,
     ) -> miette::Result<()> {
         let context = self.context();
-        let config_label = context.config_loader.get_debug_label("moon", false);
+        let config_label = context.config_loader.get_debug_label("moon");
         let config_names = context.config_loader.get_project_file_names();
         let mut project_data: FxHashMap<Id, ProjectBuildData> = FxHashMap::default();
         let mut renamed_ids = FxHashMap::default();

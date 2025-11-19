@@ -84,18 +84,23 @@ impl ConfigFinder {
         self.get_file_names("workspace")
     }
 
-    pub fn get_debug_label(&self, name: &str, top_level: bool) -> String {
+    pub fn get_debug_label(&self, name: &str) -> String {
+        format!("{name}.{}", self.get_ext_glob())
+    }
+
+    pub fn get_debug_label_root(&self, name: &str, dir: &Path) -> String {
         let mut label = String::new();
         let ext_glob = self.get_ext_glob();
 
-        if top_level {
+        if dir.file_name().is_some_and(|inner| inner == ".moon") {
             label.push_str(".moon/");
+        } else {
+            label.push_str(".config/moon/");
         }
 
         label.push_str(name);
         label.push('.');
         label.push_str(&ext_glob);
-
         label
     }
 

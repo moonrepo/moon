@@ -1,3 +1,4 @@
+use crate::app::EXE_NAME;
 use crate::app_error::AppError;
 use crate::helpers::create_progress_loader;
 use crate::session::MoonSession;
@@ -5,7 +6,6 @@ use bytes::Buf;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_api::Launchpad;
-use moon_common::consts::BIN_NAME;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
 use starbase::AppResult;
@@ -96,13 +96,13 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     .await;
 
     // Move the old binary to a versioned path
-    let versioned_bin_path = bin_dir.join(session.cli_version.to_string()).join(BIN_NAME);
+    let versioned_bin_path = bin_dir.join(session.cli_version.to_string()).join(EXE_NAME);
 
     fs::create_dir_all(versioned_bin_path.parent().unwrap())?;
     fs::rename(&current_bin_path, versioned_bin_path)?;
 
     // Download the new binary
-    let bin_path = bin_dir.join(BIN_NAME);
+    let bin_path = bin_dir.join(EXE_NAME);
     let mut file = File::create(bin_path).into_diagnostic()?;
 
     #[cfg(target_family = "unix")]

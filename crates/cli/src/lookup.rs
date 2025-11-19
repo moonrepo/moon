@@ -1,4 +1,4 @@
-use moon_common::consts::BIN_NAME;
+use moon_app::EXE_NAME;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -58,7 +58,7 @@ pub fn has_locally_installed(home_dir: &Path, current_dir: &Path) -> Option<Path
                 .join("node_modules")
                 .join("@moonrepo")
                 .join("cli")
-                .join(BIN_NAME);
+                .join(EXE_NAME);
 
             if cli_bin.exists() {
                 return Some(cli_bin);

@@ -53,7 +53,7 @@ pub async fn add(session: MoonSession, args: ExtensionAddArgs) -> AppResult {
         &extension.id,
         session
             .config_loader
-            .get_extensions_files(&session.workspace_root),
+            .get_extensions_files(&session.config_dir),
         config,
     )?;
 

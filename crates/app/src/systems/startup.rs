@@ -56,13 +56,8 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
 
         loop {
             if let Some(dir) = current_dir {
-                let moon_dir = dir.join(".moon");
-                let config_moon_dir = dir.join(".config").join("moon");
-
-                if config_moon_dir.exists() {
-                    break config_moon_dir;
-                } else if moon_dir.exists() {
-                    break moon_dir;
+                if dir.join(".moon").exists() || dir.join(".config/moon").exists() {
+                    break dir.to_path_buf();
                 } else {
                     current_dir = dir.parent();
                 }
@@ -124,7 +119,7 @@ pub async fn load_workspace_config(
 
     debug!("Loading {} (required)", color::file(&config_name));
 
-    let config_files = config_loader.get_workspace_files(workspace_root);
+    let config_files = config_loader.get_workspace_files(&config_loader.dir);
 
     if config_files.iter().all(|file| !file.exists()) {
         return Err(AppError::MissingConfigFile(config_name).into());

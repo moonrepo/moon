@@ -58,34 +58,38 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
         value
     };
 
-    if init {
-        let moon_dir = dest_dir.join(".moon");
-        let config_moon_dir = dest_dir.join(".config/moon");
-
-        if !args.force && (moon_dir.exists() || config_moon_dir.exists()) {
-            let mut force = false;
-
-            session
-                .console
-                .render_interactive(element! {
-                    Confirm(
-                        label: "moon has already been initialized, overwrite it?",
-                        on_confirm: &mut force
-                    )
-                })
-                .await?;
-
-            if !force {
-                return Ok(Some(1));
-            }
-        }
-
-        fs::create_dir_all(if config_moon_dir.exists() {
-            config_moon_dir
-        } else {
-            moon_dir
-        })?;
+    if !init {
+        return Ok(None);
     }
+
+    let moon_dir = dest_dir.join(".moon");
+    let config_moon_dir = dest_dir.join(".config").join("moon");
+
+    if !args.force && (moon_dir.exists() || config_moon_dir.exists()) {
+        let mut force = false;
+
+        session
+            .console
+            .render_interactive(element! {
+                Confirm(
+                    label: "moon has already been initialized, overwrite it?",
+                    on_confirm: &mut force
+                )
+            })
+            .await?;
+
+        if !force {
+            return Ok(Some(1));
+        }
+    }
+
+    let config_dir = if config_moon_dir.exists() {
+        config_moon_dir
+    } else {
+        moon_dir
+    };
+
+    fs::create_dir_all(&config_dir)?;
 
     // Load VCS information
     let git = Git::load(&dest_dir, "master", &[])?;
@@ -112,7 +116,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
     generator.generate(
         session
             .config_loader
-            .get_workspace_files(&dest_dir)
+            .get_workspace_files(&config_dir)
             .remove(0),
         YamlTemplateRenderer::new(TemplateOptions {
             // TODO update schematic

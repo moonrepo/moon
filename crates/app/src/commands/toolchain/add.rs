@@ -53,7 +53,7 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
         &toolchain.id,
         session
             .config_loader
-            .get_toolchains_files(&session.workspace_root),
+            .get_toolchains_files(&session.config_dir),
         config,
     )?;
 

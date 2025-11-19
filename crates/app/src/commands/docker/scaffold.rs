@@ -390,7 +390,7 @@ fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 pub async fn scaffold(session: MoonSession, args: DockerScaffoldArgs) -> AppResult {
     check_docker_ignore(&session.workspace_root)?;
 
-    let docker_root = session.config_loader.dir.join("docker");
+    let docker_root = session.config_dir.join("docker");
 
     debug!(
         scaffold_root = ?docker_root,

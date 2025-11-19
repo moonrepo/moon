@@ -300,7 +300,7 @@ impl AppSession for MoonSession {
             self.working_dir.clone()
         };
 
-        self.config_loader.locate_dir(&self.workspace_root);
+        self.config_dir = self.config_loader.locate_dir(&self.workspace_root);
 
         // Load environments
 

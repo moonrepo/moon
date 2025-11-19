@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
 use miette::Diagnostic;
-use moon_common::{Style, Stylize, consts};
+use moon_common::{Style, Stylize};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -22,7 +22,7 @@ pub enum AppError {
     #[diagnostic(code(app::missing_workspace))]
     #[error(
         "Unable to determine workspace root. Please create a {} configuration folder.",
-        consts::CONFIG_DIRNAME.style(Style::File)
+        ".moon".style(Style::File)
     )]
     MissingConfigDir,
 

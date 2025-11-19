@@ -22,7 +22,7 @@ fn create_config() -> VcsConfig {
 async fn run_generator(root: &Path) {
     let mock = WorkspaceMocker::new(root);
 
-    HooksGenerator::new(&mock.mock_app_context(), &create_config(), root)
+    HooksGenerator::new(&mock.mock_app_context(), &create_config())
         .generate()
         .await
         .unwrap();
@@ -31,7 +31,7 @@ async fn run_generator(root: &Path) {
 async fn clean_generator(root: &Path) {
     let mock = WorkspaceMocker::new(root);
 
-    HooksGenerator::new(&mock.mock_app_context(), &create_config(), root)
+    HooksGenerator::new(&mock.mock_app_context(), &create_config())
         .cleanup()
         .await
         .unwrap();
@@ -43,14 +43,10 @@ async fn doesnt_generate_when_no_hooks() {
     sandbox.enable_git();
     let mock = WorkspaceMocker::new(sandbox.path());
 
-    HooksGenerator::new(
-        &mock.mock_app_context(),
-        &VcsConfig::default(),
-        sandbox.path(),
-    )
-    .generate()
-    .await
-    .unwrap();
+    HooksGenerator::new(&mock.mock_app_context(), &VcsConfig::default())
+        .generate()
+        .await
+        .unwrap();
 
     assert!(!sandbox.path().join(".moon/hooks").exists());
 }
@@ -70,7 +66,6 @@ async fn doesnt_generate_when_no_commands() {
             ]),
             ..VcsConfig::default()
         },
-        sandbox.path(),
     )
     .generate()
     .await
@@ -114,7 +109,7 @@ async fn removes_stale_hooks_on_subsequent_runs() {
     let mut config = create_config();
 
     // First
-    HooksGenerator::new(&mock.mock_app_context(), &config, sandbox.path())
+    HooksGenerator::new(&mock.mock_app_context(), &config)
         .generate()
         .await
         .unwrap();
@@ -126,7 +121,7 @@ async fn removes_stale_hooks_on_subsequent_runs() {
     // Second
     config.hooks.remove("pre-commit");
 
-    HooksGenerator::new(&mock.mock_app_context(), &config, sandbox.path())
+    HooksGenerator::new(&mock.mock_app_context(), &config)
         .generate()
         .await
         .unwrap();

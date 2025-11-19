@@ -1,6 +1,6 @@
 use miette::IntoDiagnostic;
 use moon_cache::{CacheEngine, cache_item};
-use moon_common::{consts::CONFIG_DIRNAME, is_ci, is_test_env};
+use moon_common::{is_ci, is_test_env};
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_time::now_millis;
@@ -74,15 +74,13 @@ pub struct Launchpad {
     moon_env: Arc<MoonEnvironment>,
     moon_version: String,
     user_id: String,
-    repo_id: Option<String>,
+    repo_id: String,
 }
 
 impl Launchpad {
     pub fn register(moon_env: Arc<MoonEnvironment>) -> miette::Result<()> {
         let user_id = load_or_create_anonymous_uid(&moon_env.id_file)?;
-
-        let repo_id = fs::find_upwards(CONFIG_DIRNAME, &moon_env.working_dir)
-            .map(|dir| create_anonymous_rid(dir.parent().unwrap()));
+        let repo_id = create_anonymous_rid(&moon_env.workspace_root);
 
         let moon_version = GlobalEnvBag::instance()
             .get("MOON_VERSION")
@@ -210,18 +208,15 @@ impl Launchpad {
     }
 
     fn create_request(&self, url: &str) -> miette::Result<reqwest::RequestBuilder> {
-        let mut client = reqwest::Client::new()
+        let client = reqwest::Client::new()
             .post(url)
             .header("X-Moon-OS", consts::OS.to_owned())
             .header("X-Moon-Arch", consts::ARCH.to_owned())
             .header("X-Moon-Version", self.moon_version.clone())
             .header("X-Moon-CI", ci_env::is_ci().to_string())
             .header("X-Moon-CD", cd_env::is_cd().to_string())
-            .header("X-Moon-UID", self.user_id.clone());
-
-        if let Some(repo_id) = &self.repo_id {
-            client = client.header("X-Moon-RID", repo_id.to_owned());
-        }
+            .header("X-Moon-UID", self.user_id.clone())
+            .header("X-Moon-RID", self.repo_id.clone());
 
         Ok(client)
     }

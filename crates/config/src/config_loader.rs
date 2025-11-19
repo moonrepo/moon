@@ -8,35 +8,44 @@ use crate::template_config::TemplateConfig;
 use crate::toolchains_config::ToolchainsConfig;
 use crate::workspace_config::WorkspaceConfig;
 use moon_common::color;
-use moon_common::consts::CONFIG_DIRNAME;
 use schematic::{Config, ConfigLoader as Loader};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug, Default)]
 pub struct ConfigLoader {
+    pub dir: PathBuf, // .moon
     pub finder: ConfigFinder,
 }
 
 impl ConfigLoader {
+    pub fn locate_dir(&mut self, workspace_root: &Path) -> PathBuf {
+        let moon_dir = workspace_root.join(".moon");
+        let config_moon_dir = workspace_root.join(".config").join("moon");
+
+        if config_moon_dir.exists() {
+            self.dir = config_moon_dir;
+        } else {
+            self.dir = moon_dir;
+        }
+
+        self.dir.clone()
+    }
+
     pub fn create_extensions_loader<P: AsRef<Path>>(
         &self,
         workspace_root: P,
     ) -> miette::Result<Loader<ExtensionsConfig>> {
-        let workspace_root = workspace_root.as_ref();
         let mut loader = Loader::<ExtensionsConfig>::new();
 
         loader
-            .set_cacher(ConfigCache::new(workspace_root))
+            .set_cacher(ConfigCache::new(&self.dir))
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/extensions",
             ))
             .set_root(workspace_root);
 
-        self.prepare_loader(
-            &mut loader,
-            self.finder.get_extensions_files(workspace_root),
-        )?;
+        self.prepare_loader(&mut loader, self.finder.get_extensions_files(&self.dir))?;
 
         Ok(loader)
     }
@@ -61,11 +70,10 @@ impl ConfigLoader {
         &self,
         workspace_root: P,
     ) -> miette::Result<Loader<InheritedTasksConfig>> {
-        let workspace_root = workspace_root.as_ref();
         let mut loader = Loader::<InheritedTasksConfig>::new();
 
         loader
-            .set_cacher(ConfigCache::new(workspace_root))
+            .set_cacher(ConfigCache::new(&self.dir))
             .set_help(color::muted_light("https://moonrepo.dev/docs/config/tasks"))
             .set_root(workspace_root);
 
@@ -94,20 +102,16 @@ impl ConfigLoader {
         &self,
         workspace_root: P,
     ) -> miette::Result<Loader<ToolchainsConfig>> {
-        let workspace_root = workspace_root.as_ref();
         let mut loader = Loader::<ToolchainsConfig>::new();
 
         loader
-            .set_cacher(ConfigCache::new(workspace_root))
+            .set_cacher(ConfigCache::new(&self.dir))
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/toolchain",
             ))
             .set_root(workspace_root);
 
-        self.prepare_loader(
-            &mut loader,
-            self.finder.get_toolchains_files(workspace_root),
-        )?;
+        self.prepare_loader(&mut loader, self.finder.get_toolchains_files(&self.dir))?;
 
         Ok(loader)
     }
@@ -116,17 +120,16 @@ impl ConfigLoader {
         &self,
         workspace_root: P,
     ) -> miette::Result<Loader<WorkspaceConfig>> {
-        let workspace_root = workspace_root.as_ref();
         let mut loader = Loader::<WorkspaceConfig>::new();
 
         loader
-            .set_cacher(ConfigCache::new(workspace_root))
+            .set_cacher(ConfigCache::new(&self.dir))
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/workspace",
             ))
             .set_root(workspace_root);
 
-        self.prepare_loader(&mut loader, self.finder.get_workspace_files(workspace_root))?;
+        self.prepare_loader(&mut loader, self.finder.get_workspace_files(&self.dir))?;
 
         Ok(loader)
     }
@@ -208,22 +211,20 @@ impl ConfigLoader {
         &self,
         workspace_root: P,
     ) -> miette::Result<InheritedTasksManager> {
-        let workspace_root = workspace_root.as_ref();
-
-        self.load_tasks_manager_from(workspace_root, workspace_root.join(CONFIG_DIRNAME))
+        self.load_tasks_manager_from(workspace_root, &self.dir)
     }
 
     pub fn load_tasks_manager_from<P: AsRef<Path>, D: AsRef<Path>>(
         &self,
         workspace_root: P,
-        moon_dir: D,
+        config_dir: D,
     ) -> miette::Result<InheritedTasksManager> {
         let workspace_root = workspace_root.as_ref();
-        let moon_dir = moon_dir.as_ref();
+        let config_dir = config_dir.as_ref();
         let mut manager = InheritedTasksManager::default();
 
         // tasks/**/*.*
-        for file in self.finder.get_tasks_files(moon_dir)? {
+        for file in self.finder.get_tasks_files(config_dir)? {
             if file.exists() {
                 manager.add_config(
                     workspace_root,

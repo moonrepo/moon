@@ -1,4 +1,3 @@
-use moon_common::consts::CONFIG_DIRNAME;
 use schematic::ConfigError;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -26,10 +25,10 @@ impl Default for ConfigFinder {
 }
 
 impl ConfigFinder {
-    pub fn get_extensions_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
+    pub fn get_extensions_files(&self, config_dir: &Path) -> Vec<PathBuf> {
         self.get_extensions_file_names()
             .into_iter()
-            .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
+            .map(|name| config_dir.join(name))
             .collect()
     }
 
@@ -48,8 +47,8 @@ impl ConfigFinder {
         self.get_file_names("moon")
     }
 
-    pub fn get_tasks_files(&self, moon_dir: &Path) -> miette::Result<Vec<PathBuf>> {
-        self.get_from_dir(moon_dir.join("tasks"))
+    pub fn get_tasks_files(&self, config_dir: &Path) -> miette::Result<Vec<PathBuf>> {
+        self.get_from_dir(config_dir.join("tasks"))
     }
 
     pub fn get_template_files(&self, template_root: &Path) -> Vec<PathBuf> {
@@ -63,10 +62,10 @@ impl ConfigFinder {
         self.get_file_names("template")
     }
 
-    pub fn get_toolchains_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
+    pub fn get_toolchains_files(&self, config_dir: &Path) -> Vec<PathBuf> {
         self.get_toolchains_file_names()
             .into_iter()
-            .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
+            .map(|name| config_dir.join(name))
             .collect()
     }
 
@@ -74,10 +73,10 @@ impl ConfigFinder {
         self.get_file_names("toolchains")
     }
 
-    pub fn get_workspace_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
+    pub fn get_workspace_files(&self, config_dir: &Path) -> Vec<PathBuf> {
         self.get_workspace_file_names()
             .into_iter()
-            .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
+            .map(|name| config_dir.join(name))
             .collect()
     }
 
@@ -90,8 +89,7 @@ impl ConfigFinder {
         let ext_glob = self.get_ext_glob();
 
         if top_level {
-            label.push_str(CONFIG_DIRNAME);
-            label.push('/');
+            label.push_str(".moon/");
         }
 
         label.push_str(name);

@@ -1,6 +1,5 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
-use moon_common::consts::*;
 use moon_config::{
     ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
 };
@@ -9,7 +8,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::{FeatureFlags, Flag};
 use proto_core::ProtoEnvironment;
 use starbase_styles::color;
-use starbase_utils::{dirs, fs};
+use starbase_utils::dirs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::spawn;
@@ -47,13 +46,30 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
             .parse()
             .map_err(|_| AppError::InvalidWorkspaceRootEnvVar)?;
 
-        if !root.join(CONFIG_DIRNAME).exists() {
+        if !root.join(".moon").exists() && !root.join(".config/moon").exists() {
             return Err(AppError::MissingConfigDir.into());
         }
 
         root
     } else {
-        fs::find_upwards_root(CONFIG_DIRNAME, working_dir).ok_or(AppError::MissingConfigDir)?
+        let mut current_dir = Some(working_dir);
+
+        loop {
+            if let Some(dir) = current_dir {
+                let moon_dir = dir.join(".moon");
+                let config_moon_dir = dir.join(".config").join("moon");
+
+                if config_moon_dir.exists() {
+                    break config_moon_dir;
+                } else if moon_dir.exists() {
+                    break moon_dir;
+                } else {
+                    current_dir = dir.parent();
+                }
+            } else {
+                return Err(AppError::MissingConfigDir.into());
+            }
+        }
     };
 
     // Avoid finding the ~/.moon directory

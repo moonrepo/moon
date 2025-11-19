@@ -7,7 +7,7 @@ use crate::workspace_cache::*;
 use miette::IntoDiagnostic;
 use moon_cache::CacheEngine;
 use moon_common::{
-    Id, color, consts,
+    Id, color,
     path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
@@ -727,7 +727,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
         // Include all workspace-level config files
         for file in glob_walk_with_options(
-            context.workspace_root.join(consts::CONFIG_DIRNAME),
+            &context.config_loader.dir,
             ["*.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
             GlobWalkOptions::default().cache().log_results(),
         )? {

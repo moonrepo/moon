@@ -2,7 +2,7 @@ use super::{DockerManifest, MANIFEST_NAME};
 use crate::session::MoonSession;
 use async_recursion::async_recursion;
 use clap::Args;
-use moon_common::{Id, consts::*};
+use moon_common::Id;
 use moon_config::{GlobPath, PortablePath};
 use moon_pdk_api::{DefineDockerMetadataInput, ScaffoldDockerInput, ScaffoldDockerPhase};
 use moon_project::Project;
@@ -390,7 +390,7 @@ fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 pub async fn scaffold(session: MoonSession, args: DockerScaffoldArgs) -> AppResult {
     check_docker_ignore(&session.workspace_root)?;
 
-    let docker_root = session.workspace_root.join(CONFIG_DIRNAME).join("docker");
+    let docker_root = session.config_loader.dir.join("docker");
 
     debug!(
         scaffold_root = ?docker_root,

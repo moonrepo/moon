@@ -33,8 +33,8 @@ pub struct CacheEngine {
 }
 
 impl CacheEngine {
-    pub fn new(config_dir: &Path) -> miette::Result<CacheEngine> {
-        let dir = config_dir.join("cache");
+    pub fn new(config_dir: impl AsRef<Path>) -> miette::Result<CacheEngine> {
+        let dir = config_dir.as_ref().join("cache");
         let cache_tag = dir.join("CACHEDIR.TAG");
 
         debug!(

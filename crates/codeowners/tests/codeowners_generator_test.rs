@@ -5,7 +5,7 @@ use std::fs;
 
 fn load_generator(provider: VcsProvider) -> Sandbox {
     let sandbox = create_empty_sandbox();
-    let config_loader = ConfigLoader::new(sandbox.join(".moon"));
+    let config_loader = ConfigLoader::new(sandbox.path().join(".moon"));
 
     sandbox.create_file(
         ".moon/workspace.yml",

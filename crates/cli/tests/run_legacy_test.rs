@@ -41,7 +41,7 @@ where
 }
 
 fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
-    let engine = CacheEngine::new(fixture).unwrap();
+    let engine = CacheEngine::new(fixture.join(".moon")).unwrap();
     let cache: TaskRunCacheState = json::read_file(
         engine
             .state

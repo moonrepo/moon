@@ -314,7 +314,7 @@ mod windows {
         let mut config = create_config();
         config.hook_format = VcsHookFormat::Bash;
 
-        HooksGenerator::new(&mock.mock_app_context(), &config, sandbox.path())
+        HooksGenerator::new(&mock.mock_app_context(), &config)
             .generate()
             .await
             .unwrap();

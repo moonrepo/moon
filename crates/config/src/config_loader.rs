@@ -19,6 +19,13 @@ pub struct ConfigLoader {
 }
 
 impl ConfigLoader {
+    pub fn new(dir: impl AsRef<Path>) -> Self {
+        Self {
+            dir: dir.as_ref().to_path_buf(),
+            finder: ConfigFinder::default(),
+        }
+    }
+
     pub fn locate_dir(&mut self, workspace_root: &Path) -> PathBuf {
         let moon_dir = workspace_root.join(".moon");
         let config_moon_dir = workspace_root.join(".config").join("moon");

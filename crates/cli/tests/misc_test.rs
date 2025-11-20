@@ -45,7 +45,6 @@ mod cli {
         }
 
         #[test]
-        #[should_panic(expected = "Unable to determine workspace root")]
         fn errors_if_not_found() {
             let sandbox = create_moon_sandbox("projects");
 
@@ -57,12 +56,16 @@ mod cli {
             )
             .unwrap();
 
+            sandbox.debug_files();
+
             sandbox
                 .run_bin(|cmd| {
                     cmd.arg("sync");
                 })
                 .failure()
-                .stderr(predicate::str::contains(">=1000.0.0"));
+                .stderr(predicate::str::contains(
+                    "Unable to determine workspace root",
+                ));
         }
     }
 }

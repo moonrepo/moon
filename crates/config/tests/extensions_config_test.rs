@@ -9,7 +9,7 @@ use utils::*;
 const FILENAME: &str = ".moon/extensions.yml";
 
 fn load_config_from_root(root: &Path) -> miette::Result<ExtensionsConfig> {
-    ConfigLoader::default().load_extensions_config(root)
+    ConfigLoader::new(root.join(".moon")).load_extensions_config(root)
 }
 
 mod extensions_config {

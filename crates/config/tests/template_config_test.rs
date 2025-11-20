@@ -7,7 +7,7 @@ use std::path::Path;
 use utils::*;
 
 fn load_config_from_root(root: &Path) -> miette::Result<TemplateConfig> {
-    ConfigLoader::default().load_template_config(root)
+    ConfigLoader::new(root.join(".moon")).load_template_config(root)
 }
 
 mod template_config {
@@ -483,7 +483,7 @@ variables:
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::default().load_template_config(path)
+                ConfigLoader::new(path.join(".moon")).load_template_config(path)
             });
 
             assert_eq!(

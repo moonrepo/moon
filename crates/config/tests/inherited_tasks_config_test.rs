@@ -14,11 +14,11 @@ use utils::*;
 const FILENAME: &str = "tasks/all.yml";
 
 fn load_config_from_file(path: &Path) -> miette::Result<InheritedTasksConfig> {
-    ConfigLoader::default().load_tasks_config_from_path(path)
+    ConfigLoader::new(path.join(".moon")).load_tasks_config_from_path(path)
 }
 
 fn load_manager_from_root(root: &Path, moon_dir: &Path) -> miette::Result<InheritedTasksManager> {
-    ConfigLoader::default().load_tasks_manager_from(root, moon_dir)
+    ConfigLoader::new(moon_dir).load_tasks_manager_from(root, moon_dir)
 }
 
 fn create_inherit_for<'a>(
@@ -280,7 +280,7 @@ fileGroups:
 
             test_config(sandbox.path().join("tasks/all.yml"), |path| {
                 // Use load_partial instead of load since this caches!
-                let partial = ConfigLoader::default()
+                let partial = ConfigLoader::new(sandbox.path().join(".moon"))
                     .load_tasks_partial_config_from_path(sandbox.path(), path)
                     .unwrap();
 
@@ -1405,7 +1405,8 @@ mod task_manager {
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::default().load_tasks_config_from_path(path.join(".moon/tasks.pkl"))
+                ConfigLoader::new(path.join(".moon"))
+                    .load_tasks_config_from_path(path.join(".moon/tasks.pkl"))
             });
 
             assert_eq!(

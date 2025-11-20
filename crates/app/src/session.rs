@@ -62,6 +62,7 @@ pub struct MoonSession {
     pub workspace_config: Arc<WorkspaceConfig>,
 
     // Paths
+    pub config_dir: PathBuf,
     pub working_dir: PathBuf,
     pub workspace_root: PathBuf,
 }
@@ -73,6 +74,7 @@ impl MoonSession {
         Self {
             cache_engine: OnceLock::new(),
             cli_version: Version::parse(&cli_version).unwrap(),
+            config_dir: PathBuf::new(),
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
             extensions_config: Arc::new(ExtensionsConfig::default()),
@@ -130,6 +132,7 @@ impl MoonSession {
         Ok(Arc::new(AppContext {
             cli_version: self.cli_version.clone(),
             cache_engine: self.get_cache_engine()?,
+            config_dir: self.config_dir.clone(),
             console: self.get_console()?,
             moon_env: Arc::clone(&self.moon_env),
             proto_env: Arc::clone(&self.proto_env),
@@ -148,7 +151,7 @@ impl MoonSession {
         if self.cache_engine.get().is_none() {
             let _ = self
                 .cache_engine
-                .set(Arc::new(CacheEngine::new(&self.workspace_root)?));
+                .set(Arc::new(CacheEngine::new(&self.config_dir)?));
         }
 
         Ok(self.cache_engine.get().map(Arc::clone).unwrap())
@@ -296,6 +299,8 @@ impl AppSession for MoonSession {
         } else {
             self.working_dir.clone()
         };
+
+        self.config_dir = self.config_loader.locate_dir(&self.workspace_root);
 
         // Load environments
 

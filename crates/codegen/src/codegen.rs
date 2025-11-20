@@ -3,7 +3,7 @@ use crate::template::Template;
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_common::path::{PathExt, RelativePathBuf};
-use moon_config::{ConfigFinder, GeneratorConfig, PartialTemplateConfig, TemplateLocator};
+use moon_config::{ConfigLoader, GeneratorConfig, PartialTemplateConfig, TemplateLocator};
 use moon_env::MoonEnvironment;
 use moon_process::{Command, Output};
 use moon_time::now_millis;
@@ -52,7 +52,7 @@ impl<'app> CodeGenerator<'app> {
 
         debug!("Loading all available templates from locations");
 
-        let finder = ConfigFinder::default();
+        let finder = ConfigLoader::default();
 
         for location in &self.template_locations {
             debug!(location = ?location, "Scanning location");
@@ -131,7 +131,7 @@ impl<'app> CodeGenerator<'app> {
         };
 
         yaml::write_file(
-            ConfigFinder::default()
+            ConfigLoader::default()
                 .get_template_files(&template_root)
                 .remove(0),
             &template,
@@ -198,7 +198,7 @@ impl<'app> CodeGenerator<'app> {
     async fn resolve_template_locations(&mut self) -> miette::Result<()> {
         let mut locations = vec![];
         let mut futures = vec![];
-        let config_file_names = ConfigFinder::default().get_template_file_names();
+        let config_file_names = ConfigLoader::default().get_template_file_names();
 
         debug!("Resolving template locations to absolute file paths");
 

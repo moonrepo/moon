@@ -15,7 +15,7 @@ use std::path::Path;
 use utils::*;
 
 fn load_config_from_root(root: &Path, source: &str) -> miette::Result<ProjectConfig> {
-    ConfigLoader::default().load_project_config_from_source(root, source)
+    ConfigLoader::new(root.join(".moon")).load_project_config_from_source(root, source)
 }
 
 mod project_config {
@@ -688,9 +688,8 @@ workspace:
 
         #[test]
         fn loads_pkl() {
-            use starbase_sandbox::pretty_assertions::assert_eq;
             let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::default().load_project_config(path)
+                ConfigLoader::new(path.join(".moon")).load_project_config(path)
             });
 
             assert_eq!(

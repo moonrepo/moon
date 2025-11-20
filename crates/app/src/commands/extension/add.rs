@@ -51,9 +51,7 @@ pub async fn add(session: MoonSession, args: ExtensionAddArgs) -> AppResult {
     // Update extension file
     let config_path = append_plugin_to_config_file(
         &extension.id,
-        session
-            .config_loader
-            .get_extensions_files(&session.config_dir),
+        session.config_loader.get_extensions_files(),
         config,
     )?;
 

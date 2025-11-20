@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug, Default)]
 pub struct ConfigLoader {
     pub dir: PathBuf, // .moon
-    pub finder: ConfigFinder,
+    finder: ConfigFinder,
 }
 
 impl ConfigLoader {
@@ -52,7 +52,7 @@ impl ConfigLoader {
             ))
             .set_root(workspace_root);
 
-        self.prepare_loader(&mut loader, self.finder.get_extensions_files(&self.dir))?;
+        self.prepare_loader(&mut loader, self.get_extensions_files())?;
 
         Ok(loader)
     }
@@ -68,7 +68,7 @@ impl ConfigLoader {
             "https://moonrepo.dev/docs/config/project",
         ));
 
-        self.prepare_loader(&mut loader, self.finder.get_project_files(project_root))?;
+        self.prepare_loader(&mut loader, self.get_project_files(project_root))?;
 
         Ok(loader)
     }
@@ -100,7 +100,7 @@ impl ConfigLoader {
             "https://moonrepo.dev/docs/config/template",
         ));
 
-        self.prepare_loader(&mut loader, self.finder.get_template_files(template_root))?;
+        self.prepare_loader(&mut loader, self.get_template_files(template_root))?;
 
         Ok(loader)
     }
@@ -118,7 +118,7 @@ impl ConfigLoader {
             ))
             .set_root(workspace_root);
 
-        self.prepare_loader(&mut loader, self.finder.get_toolchains_files(&self.dir))?;
+        self.prepare_loader(&mut loader, self.get_toolchains_files())?;
 
         Ok(loader)
     }
@@ -136,7 +136,7 @@ impl ConfigLoader {
             ))
             .set_root(workspace_root);
 
-        self.prepare_loader(&mut loader, self.finder.get_workspace_files(&self.dir))?;
+        self.prepare_loader(&mut loader, self.get_workspace_files())?;
 
         Ok(loader)
     }
@@ -231,7 +231,7 @@ impl ConfigLoader {
         let mut manager = InheritedTasksManager::default();
 
         // tasks/**/*.*
-        for file in self.finder.get_tasks_files(config_dir)? {
+        for file in self.get_tasks_files(config_dir)? {
             if file.exists() {
                 manager.add_config(
                     workspace_root,
@@ -287,6 +287,58 @@ impl ConfigLoader {
         }
 
         Ok(())
+    }
+
+    pub fn get_debug_label(&self, name: &str) -> String {
+        self.finder.get_debug_label(name)
+    }
+
+    pub fn get_debug_label_root(&self, name: &str) -> String {
+        self.finder.get_debug_label_root(name, &self.dir)
+    }
+
+    pub fn get_extensions_files(&self) -> Vec<PathBuf> {
+        self.finder
+            .get_extensions_file_names()
+            .into_iter()
+            .map(|name| self.dir.join(name))
+            .collect()
+    }
+
+    pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
+        self.finder
+            .get_project_file_names()
+            .into_iter()
+            .map(|name| project_root.join(name))
+            .collect()
+    }
+
+    pub fn get_tasks_files(&self, tasks_dir: &Path) -> miette::Result<Vec<PathBuf>> {
+        self.finder.get_from_dir(tasks_dir.join("tasks"))
+    }
+
+    pub fn get_template_files(&self, template_root: &Path) -> Vec<PathBuf> {
+        self.finder
+            .get_template_file_names()
+            .into_iter()
+            .map(|name| template_root.join(name))
+            .collect()
+    }
+
+    pub fn get_toolchains_files(&self) -> Vec<PathBuf> {
+        self.finder
+            .get_toolchains_file_names()
+            .into_iter()
+            .map(|name| self.dir.join(name))
+            .collect()
+    }
+
+    pub fn get_workspace_files(&self) -> Vec<PathBuf> {
+        self.finder
+            .get_workspace_file_names()
+            .into_iter()
+            .map(|name| self.dir.join(name))
+            .collect()
     }
 }
 

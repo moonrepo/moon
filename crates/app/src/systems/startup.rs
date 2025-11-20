@@ -115,11 +115,11 @@ pub async fn load_workspace_config(
     config_loader: ConfigLoader,
     workspace_root: &Path,
 ) -> miette::Result<Arc<WorkspaceConfig>> {
-    let config_name = config_loader.get_debug_label_root("workspace", &config_loader.dir);
+    let config_name = config_loader.get_debug_label_root("workspace");
 
     debug!("Loading {} (required)", color::file(&config_name));
 
-    let config_files = config_loader.get_workspace_files(&config_loader.dir);
+    let config_files = config_loader.get_workspace_files();
 
     if config_files.iter().all(|file| !file.exists()) {
         return Err(AppError::MissingConfigFile(config_name).into());
@@ -143,7 +143,7 @@ pub async fn load_toolchains_config(
 ) -> miette::Result<Arc<ToolchainsConfig>> {
     debug!(
         "Attempting to load {} (optional)",
-        color::file(config_loader.get_debug_label_root("toolchains", &config_loader.dir)),
+        color::file(config_loader.get_debug_label_root("toolchains")),
     );
 
     let root = workspace_root.to_owned();
@@ -168,7 +168,7 @@ pub async fn load_extensions_config(
 ) -> miette::Result<Arc<ExtensionsConfig>> {
     debug!(
         "Attempting to load {} (optional)",
-        color::file(config_loader.get_debug_label_root("extensions", &config_loader.dir)),
+        color::file(config_loader.get_debug_label_root("extensions")),
     );
 
     let root = workspace_root.to_owned();
@@ -188,7 +188,7 @@ pub async fn load_tasks_configs(
 ) -> miette::Result<Arc<InheritedTasksManager>> {
     debug!(
         "Attempting to load {} (optional)",
-        color::file(config_loader.get_debug_label_root("tasks/**/*", &config_loader.dir)),
+        color::file(config_loader.get_debug_label_root("tasks/**/*")),
     );
 
     let root = workspace_root.to_owned();

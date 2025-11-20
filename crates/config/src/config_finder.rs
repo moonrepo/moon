@@ -25,59 +25,20 @@ impl Default for ConfigFinder {
 }
 
 impl ConfigFinder {
-    pub fn get_extensions_files(&self, config_dir: &Path) -> Vec<PathBuf> {
-        self.get_extensions_file_names()
-            .into_iter()
-            .map(|name| config_dir.join(name))
-            .collect()
-    }
-
     pub fn get_extensions_file_names(&self) -> Vec<String> {
         self.get_file_names("extensions")
-    }
-
-    pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
-        self.get_project_file_names()
-            .into_iter()
-            .map(|name| project_root.join(name))
-            .collect()
     }
 
     pub fn get_project_file_names(&self) -> Vec<String> {
         self.get_file_names("moon")
     }
 
-    pub fn get_tasks_files(&self, config_dir: &Path) -> miette::Result<Vec<PathBuf>> {
-        self.get_from_dir(config_dir.join("tasks"))
-    }
-
-    pub fn get_template_files(&self, template_root: &Path) -> Vec<PathBuf> {
-        self.get_template_file_names()
-            .into_iter()
-            .map(|name| template_root.join(name))
-            .collect()
-    }
-
     pub fn get_template_file_names(&self) -> Vec<String> {
         self.get_file_names("template")
     }
 
-    pub fn get_toolchains_files(&self, config_dir: &Path) -> Vec<PathBuf> {
-        self.get_toolchains_file_names()
-            .into_iter()
-            .map(|name| config_dir.join(name))
-            .collect()
-    }
-
     pub fn get_toolchains_file_names(&self) -> Vec<String> {
         self.get_file_names("toolchains")
-    }
-
-    pub fn get_workspace_files(&self, config_dir: &Path) -> Vec<PathBuf> {
-        self.get_workspace_file_names()
-            .into_iter()
-            .map(|name| config_dir.join(name))
-            .collect()
     }
 
     pub fn get_workspace_file_names(&self) -> Vec<String> {

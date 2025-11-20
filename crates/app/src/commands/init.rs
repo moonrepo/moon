@@ -114,10 +114,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
     generator.add::<WorkspaceConfig>();
 
     generator.generate(
-        session
-            .config_loader
-            .get_workspace_files(&config_dir)
-            .remove(0),
+        config_dir.join(session.config_loader.get_workspace_file_names().remove(0)),
         YamlTemplateRenderer::new(TemplateOptions {
             // TODO update schematic
             default_values: HashMap::from_iter([

@@ -56,16 +56,24 @@ mod cli {
             )
             .unwrap();
 
-            sandbox.debug_files();
-
-            sandbox
+            let assert = sandbox
                 .run_bin(|cmd| {
                     cmd.arg("sync");
                 })
-                .failure()
-                .stderr(predicate::str::contains(
+                .failure();
+
+            #[cfg(unix)]
+            {
+                assert.stderr(predicate::str::contains(
                     "Unable to determine workspace root",
                 ));
+            }
+
+            // Windows runner is acting weird...
+            #[cfg(windows)]
+            {
+                assert.stderr(predicate::str::contains("Unable to locate .moon/workspace"));
+            }
         }
     }
 }

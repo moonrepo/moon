@@ -46,7 +46,7 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
             .parse()
             .map_err(|_| AppError::InvalidWorkspaceRootEnvVar)?;
 
-        if !root.join(".moon").exists() && !root.join(".config/moon").exists() {
+        if !root.join(".moon").exists() && !root.join(".config").join("moon").exists() {
             return Err(AppError::MissingConfigDir.into());
         }
 
@@ -56,7 +56,7 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
 
         loop {
             if let Some(dir) = current_dir {
-                if dir.join(".moon").exists() || dir.join(".config/moon").exists() {
+                if dir.join(".moon").exists() || dir.join(".config").join("moon").exists() {
                     break dir.to_path_buf();
                 } else {
                     current_dir = dir.parent();

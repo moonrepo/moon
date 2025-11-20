@@ -33,7 +33,7 @@ mod cli {
 
             fs::rename(
                 sandbox.path().join(".moon"),
-                sandbox.path().join(".config/moon"),
+                sandbox.path().join(".config").join("moon"),
             )
             .unwrap();
 
@@ -53,7 +53,7 @@ mod cli {
 
             fs::rename(
                 sandbox.path().join(".moon"),
-                sandbox.path().join(".config/moon-invalid"),
+                sandbox.path().join(".config").join("moon-invalid"),
             )
             .unwrap();
 

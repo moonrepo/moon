@@ -53,7 +53,7 @@ pub fn has_locally_installed(home_dir: &Path, current_dir: &Path) -> Option<Path
     let mut current_dir = Some(current_dir);
 
     while let Some(dir) = current_dir {
-        if dir.join(".moon").exists() || dir.join(".config/moon").exists() {
+        if dir.join(".moon").exists() || dir.join(".config").join("moon").exists() {
             let cli_bin = dir
                 .join("node_modules")
                 .join("@moonrepo")

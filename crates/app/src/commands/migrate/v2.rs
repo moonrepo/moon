@@ -4,7 +4,6 @@ use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
-use moon_common::consts::CONFIG_DIRNAME;
 use moon_config::{LayerType, StackType};
 use moon_console::ui::Confirm;
 use starbase::AppResult;
@@ -196,7 +195,7 @@ fn migrate_inherited_by_setting(file_name: &str) -> Option<YamlValue> {
 
 fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
     for config_path in glob::walk_files(
-        session.workspace_root.join(CONFIG_DIRNAME),
+        &session.config_dir,
         ["tasks.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
     )? {
         if config_path.extension().is_some_and(|ext| ext == "pkl") {
@@ -234,10 +233,7 @@ fn migrate_tasks_config_files(session: &MoonSession) -> miette::Result<()> {
     }
 
     // Rename the old file to a new one
-    for config_path in glob::walk_files(
-        session.workspace_root.join(CONFIG_DIRNAME),
-        ["tasks.{pkl,yml}"],
-    )? {
+    for config_path in glob::walk_files(&session.config_dir, ["tasks.{pkl,yml}"])? {
         if config_path.exists() {
             let ext = config_path
                 .extension()
@@ -340,19 +336,11 @@ fn migrate_toolchain_node_setting(root: &mut YamlMapping, setting: &YamlValue) {
 }
 
 fn migrate_toolchain_config_file(session: &MoonSession) -> miette::Result<()> {
-    if session
-        .workspace_root
-        .join(CONFIG_DIRNAME)
-        .join("toolchain.pkl")
-        .exists()
-    {
+    if session.config_dir.join("toolchain.pkl").exists() {
         warn_pkl_config_files();
     }
 
-    let config_path = session
-        .workspace_root
-        .join(CONFIG_DIRNAME)
-        .join("toolchain.yml");
+    let config_path = session.config_dir.join("toolchain.yml");
 
     if !config_path.exists() {
         return Ok(());
@@ -401,10 +389,7 @@ fn migrate_toolchain_config_file(session: &MoonSession) -> miette::Result<()> {
     fs::remove_file(config_path)?;
 
     yaml::write_file_with_config(
-        session
-            .workspace_root
-            .join(CONFIG_DIRNAME)
-            .join("toolchains.yml"),
+        session.config_dir.join("toolchains.yml"),
         &YamlValue::Mapping(new_data),
     )?;
 
@@ -412,19 +397,11 @@ fn migrate_toolchain_config_file(session: &MoonSession) -> miette::Result<()> {
 }
 
 fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
-    if session
-        .workspace_root
-        .join(CONFIG_DIRNAME)
-        .join("workspace.pkl")
-        .exists()
-    {
+    if session.config_dir.join("workspace.pkl").exists() {
         warn_pkl_config_files();
     }
 
-    let config_path = session
-        .workspace_root
-        .join(CONFIG_DIRNAME)
-        .join("workspace.yml");
+    let config_path = session.config_dir.join("workspace.yml");
 
     if !config_path.exists() {
         return Ok(());
@@ -466,13 +443,7 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
     yaml::write_file_with_config(&config_path, &config)?;
 
     if let Some(extensions) = extensions {
-        yaml::write_file_with_config(
-            session
-                .workspace_root
-                .join(CONFIG_DIRNAME)
-                .join("extensions.yml"),
-            &extensions,
-        )?;
+        yaml::write_file_with_config(session.config_dir.join("extensions.yml"), &extensions)?;
     }
 
     Ok(())

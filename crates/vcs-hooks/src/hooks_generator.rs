@@ -1,6 +1,6 @@
 use moon_app_context::AppContext;
 use moon_cache_item::{CacheItem, cache_item};
-use moon_common::{color, consts, is_docker, path};
+use moon_common::{color, is_docker, path};
 use moon_config::{VcsConfig, VcsHookFormat};
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
@@ -43,15 +43,11 @@ pub struct HooksGenerator<'app> {
 }
 
 impl<'app> HooksGenerator<'app> {
-    pub fn new(
-        app_context: &'app AppContext,
-        config: &'app VcsConfig,
-        workspace_root: &Path,
-    ) -> Self {
+    pub fn new(app_context: &'app AppContext, config: &'app VcsConfig) -> Self {
         Self {
             app_context,
             config,
-            output_dir: workspace_root.join(consts::CONFIG_DIRNAME).join("hooks"),
+            output_dir: app_context.config_dir.join("hooks"),
             shell: ShellType::detect(),
         }
     }

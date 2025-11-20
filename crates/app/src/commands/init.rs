@@ -3,7 +3,7 @@
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{FlexDirection, View, element};
-use moon_common::{consts::CONFIG_DIRNAME, path::clean_components};
+use moon_common::path::clean_components;
 use moon_config::{VcsProvider, WorkspaceConfig};
 use moon_console::ui::{Confirm, Container, Notice, StyledText, Variant};
 use moon_vcs::{Vcs, git::Git};
@@ -58,29 +58,38 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
         value
     };
 
-    if init {
-        let moon_dir = dest_dir.join(CONFIG_DIRNAME);
-
-        if !args.force && moon_dir.exists() {
-            let mut force = false;
-
-            session
-                .console
-                .render_interactive(element! {
-                    Confirm(
-                        label: "moon has already been initialized, overwrite it?",
-                        on_confirm: &mut force
-                    )
-                })
-                .await?;
-
-            if !force {
-                return Ok(Some(1));
-            }
-        }
-
-        fs::create_dir_all(&moon_dir)?;
+    if !init {
+        return Ok(None);
     }
+
+    let moon_dir = dest_dir.join(".moon");
+    let config_moon_dir = dest_dir.join(".config").join("moon");
+
+    if !args.force && (moon_dir.exists() || config_moon_dir.exists()) {
+        let mut force = false;
+
+        session
+            .console
+            .render_interactive(element! {
+                Confirm(
+                    label: "moon has already been initialized, overwrite it?",
+                    on_confirm: &mut force
+                )
+            })
+            .await?;
+
+        if !force {
+            return Ok(Some(1));
+        }
+    }
+
+    let config_dir = if config_moon_dir.exists() {
+        config_moon_dir
+    } else {
+        moon_dir
+    };
+
+    fs::create_dir_all(&config_dir)?;
 
     // Load VCS information
     let git = Git::load(&dest_dir, "master", &[])?;
@@ -105,10 +114,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
     generator.add::<WorkspaceConfig>();
 
     generator.generate(
-        session
-            .config_loader
-            .get_workspace_files(&dest_dir)
-            .remove(0),
+        config_dir.join(session.config_loader.get_workspace_file_names().remove(0)),
         YamlTemplateRenderer::new(TemplateOptions {
             // TODO update schematic
             default_values: HashMap::from_iter([

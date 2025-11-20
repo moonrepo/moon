@@ -1,4 +1,3 @@
-use moon_common::consts::CONFIG_DIRNAME;
 use schematic::ConfigError;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -26,78 +25,43 @@ impl Default for ConfigFinder {
 }
 
 impl ConfigFinder {
-    pub fn get_extensions_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
-        self.get_extensions_file_names()
-            .into_iter()
-            .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
-            .collect()
-    }
-
     pub fn get_extensions_file_names(&self) -> Vec<String> {
         self.get_file_names("extensions")
-    }
-
-    pub fn get_project_files(&self, project_root: &Path) -> Vec<PathBuf> {
-        self.get_project_file_names()
-            .into_iter()
-            .map(|name| project_root.join(name))
-            .collect()
     }
 
     pub fn get_project_file_names(&self) -> Vec<String> {
         self.get_file_names("moon")
     }
 
-    pub fn get_tasks_files(&self, moon_dir: &Path) -> miette::Result<Vec<PathBuf>> {
-        self.get_from_dir(moon_dir.join("tasks"))
-    }
-
-    pub fn get_template_files(&self, template_root: &Path) -> Vec<PathBuf> {
-        self.get_template_file_names()
-            .into_iter()
-            .map(|name| template_root.join(name))
-            .collect()
-    }
-
     pub fn get_template_file_names(&self) -> Vec<String> {
         self.get_file_names("template")
-    }
-
-    pub fn get_toolchains_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
-        self.get_toolchains_file_names()
-            .into_iter()
-            .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
-            .collect()
     }
 
     pub fn get_toolchains_file_names(&self) -> Vec<String> {
         self.get_file_names("toolchains")
     }
 
-    pub fn get_workspace_files(&self, workspace_root: &Path) -> Vec<PathBuf> {
-        self.get_workspace_file_names()
-            .into_iter()
-            .map(|name| workspace_root.join(CONFIG_DIRNAME).join(name))
-            .collect()
-    }
-
     pub fn get_workspace_file_names(&self) -> Vec<String> {
         self.get_file_names("workspace")
     }
 
-    pub fn get_debug_label(&self, name: &str, top_level: bool) -> String {
+    pub fn get_debug_label(&self, name: &str) -> String {
+        format!("{name}.{}", self.get_ext_glob())
+    }
+
+    pub fn get_debug_label_root(&self, name: &str, dir: &Path) -> String {
         let mut label = String::new();
         let ext_glob = self.get_ext_glob();
 
-        if top_level {
-            label.push_str(CONFIG_DIRNAME);
-            label.push('/');
+        if dir.file_name().is_some_and(|inner| inner == ".moon") {
+            label.push_str(".moon/");
+        } else {
+            label.push_str(".config/moon/");
         }
 
         label.push_str(name);
         label.push('.');
         label.push_str(&ext_glob);
-
         label
     }
 

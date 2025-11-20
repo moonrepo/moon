@@ -1,6 +1,6 @@
 use crate::workspace_builder::WorkspaceBuilderContext;
 use moon_common::path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string};
-use moon_common::{Id, color, consts};
+use moon_common::{Id, color};
 use moon_config::WorkspaceProjectGlobFormat;
 use moon_feature_flags::glob_walk_with_options;
 use starbase_utils::fs;
@@ -112,9 +112,7 @@ where
             let project_source =
                 to_virtual_string(project_root.strip_prefix(context.workspace_root).unwrap())?;
 
-            if project_source == consts::CONFIG_DIRNAME
-                || project_source.starts_with(consts::CONFIG_DIRNAME)
-            {
+            if project_source.starts_with(".moon") || project_source.starts_with(".config/moon") {
                 continue;
             }
 

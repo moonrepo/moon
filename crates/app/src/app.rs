@@ -30,11 +30,16 @@ use crate::systems::bootstrap;
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use moon_cache::CacheMode;
-use moon_common::consts::BIN_NAME;
 use moon_env_var::GlobalEnvBag;
 use starbase_styles::color::Color as ColorType;
 use std::env;
 use std::path::PathBuf;
+
+#[cfg(windows)]
+pub const EXE_NAME: &str = "moon.exe";
+
+#[cfg(not(windows))]
+pub const EXE_NAME: &str = "moon";
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum Commands {
@@ -247,7 +252,7 @@ fn create_styles() -> Styles {
 
 #[derive(Clone, Debug, Parser)]
 #[command(
-    bin_name = BIN_NAME,
+    bin_name = EXE_NAME,
     name = "moon",
     about = "Take your repo to the moon!",
     version = env::var("MOON_VERSION").unwrap_or_default(),

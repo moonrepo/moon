@@ -1,4 +1,3 @@
-use moon_common::consts::CONFIG_DIRNAME;
 use starbase_utils::{dirs, envx};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -23,7 +22,7 @@ impl MoonEnvironment {
         Self::from(envx::vendor_home_var("MOON_HOME", |user_dir| {
             envx::path_var("XDG_DATA_HOME")
                 .map(|xdg| xdg.join("moon"))
-                .unwrap_or_else(|| user_dir.join(CONFIG_DIRNAME))
+                .unwrap_or_else(|| user_dir.join(".moon"))
         }))
     }
 

@@ -25,7 +25,7 @@ fn load_config_from_file(path: &Path) -> WorkspaceConfig {
 }
 
 fn load_config_from_root(root: &Path) -> miette::Result<WorkspaceConfig> {
-    ConfigLoader::default().load_workspace_config(root)
+    ConfigLoader::new(root.join(".moon")).load_workspace_config(root)
 }
 
 mod workspace_config {
@@ -818,7 +818,7 @@ vcs:
         #[test]
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::default().load_workspace_config(path)
+                ConfigLoader::new(path.join(".moon")).load_workspace_config(path)
             });
 
             assert_eq!(

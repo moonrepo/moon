@@ -30,6 +30,7 @@ pub struct AppContext {
     pub toolchain_registry: Arc<ToolchainRegistry>,
 
     // Paths
+    pub config_dir: PathBuf,
     pub working_dir: PathBuf,
     pub workspace_root: PathBuf,
 }

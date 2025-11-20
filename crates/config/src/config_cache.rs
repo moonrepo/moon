@@ -1,21 +1,20 @@
-use moon_common::consts::CONFIG_DIRNAME;
 use moon_common::path::hash_component;
 use rustc_hash::FxHashMap;
 use schematic::{Cacher, HandlerError};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 pub struct ConfigCache {
+    config_dir: PathBuf,
     memory: FxHashMap<String, String>,
-    workspace_root: PathBuf,
 }
 
 impl ConfigCache {
-    pub fn new(workspace_root: &std::path::Path) -> Self {
+    pub fn new(config_dir: &Path) -> Self {
         Self {
+            config_dir: config_dir.to_path_buf(),
             memory: FxHashMap::default(),
-            workspace_root: workspace_root.to_path_buf(),
         }
     }
 
@@ -34,8 +33,7 @@ impl ConfigCache {
             ""
         };
 
-        self.workspace_root
-            .join(CONFIG_DIRNAME)
+        self.config_dir
             .join("cache")
             .join("temp")
             .join(format!("{}{ext}", hash_component(url)))

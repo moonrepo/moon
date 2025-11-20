@@ -24,7 +24,7 @@ fn load_config_from_file(path: &Path) -> ToolchainsConfig {
 }
 
 fn load_config_from_root(root: &Path, proto: &ProtoConfig) -> miette::Result<ToolchainsConfig> {
-    ConfigLoader::default().load_toolchains_config(root, proto)
+    ConfigLoader::new(root.join(".moon")).load_toolchains_config(root, proto)
 }
 
 mod toolchain_config {
@@ -308,7 +308,7 @@ plugin:
         fn loads_pkl() {
             let config = test_config(locate_fixture("pkl"), |path| {
                 let proto = proto_core::ProtoConfig::default();
-                ConfigLoader::default().load_toolchains_config(path, &proto)
+                ConfigLoader::new(path.join(".moon")).load_toolchains_config(path, &proto)
             });
 
             assert_eq!(

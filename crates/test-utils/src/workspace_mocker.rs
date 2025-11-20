@@ -23,6 +23,7 @@ use std::sync::{Arc, OnceLock};
 
 #[derive(Debug, Default)]
 pub struct WorkspaceMocker {
+    pub config_dir: PathBuf,
     pub config_loader: ConfigLoader,
     pub inherited_tasks: InheritedTasksManager,
     pub monorepo: bool,
@@ -39,7 +40,7 @@ impl WorkspaceMocker {
     pub fn new(root: impl AsRef<Path>) -> Self {
         let root = root.as_ref();
 
-        Self {
+        let mut mocker = Self {
             monorepo: true,
             moon_env: MoonEnvironment::new_testing(root),
             proto_env: ProtoEnvironment::new_testing(root).unwrap(),
@@ -58,7 +59,9 @@ impl WorkspaceMocker {
                 config
             },
             ..Default::default()
-        }
+        };
+        mocker.config_dir = mocker.config_loader.locate_dir(&mocker.workspace_root);
+        mocker
     }
 
     pub fn load_default_configs(mut self) -> Self {
@@ -330,6 +333,7 @@ impl WorkspaceMocker {
         AppContext {
             cli_version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
             cache_engine: Arc::new(self.mock_cache_engine()),
+            config_dir: self.config_dir.clone(),
             console: Arc::new(self.mock_console()),
             moon_env: Arc::new(self.moon_env.clone()),
             proto_env: Arc::new(self.proto_env.clone()),
@@ -345,7 +349,7 @@ impl WorkspaceMocker {
     }
 
     pub fn mock_cache_engine(&self) -> CacheEngine {
-        CacheEngine::new(&self.workspace_root).unwrap()
+        CacheEngine::new(&self.config_dir).unwrap()
     }
 
     pub fn mock_console(&self) -> Console {

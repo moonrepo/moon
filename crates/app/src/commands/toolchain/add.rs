@@ -51,9 +51,7 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
     // Update toolchain file
     let config_path = append_plugin_to_config_file(
         &toolchain.id,
-        session
-            .config_loader
-            .get_toolchains_files(&session.workspace_root),
+        session.config_loader.get_toolchains_files(),
         config,
     )?;
 

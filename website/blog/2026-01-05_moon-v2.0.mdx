@@ -81,6 +81,16 @@ $ moonx app:build
 > The `moonx` binary is only available when moon is installed via the official installers, and is
 > not available through the `@moonrepo/cli` npm package.
 
+### Support for `.config`
+
+The `.moon` directory denotes the root of the workspace, but if you don't like clutter, this may
+feel overwhelming. To help with this, we've introduced support for the
+[`.config` directory pattern](https://dot-config.github.io/), allowing you to define your workspace
+configuration in a more organized manner.
+
+Simply use `.config/moon` instead of `.moon`! The workspace root will now be the directory that
+contains the `.config` directory.
+
 ## Toolchains
 
 The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.

@@ -421,7 +421,7 @@ impl<'app> WorkspaceBuilder<'app> {
             builder.load_local_config().await?;
         }
 
-        builder.inherit_global_config(context.inherited_tasks)?;
+        builder.inherit_global_configs(context.inherited_tasks)?;
 
         // Inherit from build data (toolchains, etc)
         for extended_data in &build_data.extensions {

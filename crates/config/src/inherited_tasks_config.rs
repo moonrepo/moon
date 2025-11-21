@@ -320,7 +320,10 @@ cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasksResult {
         pub order: Vec<String>,
+        #[deprecated]
         pub config: InheritedTasksConfig,
+        pub configs: IndexMap<String, InheritedTasksConfig>,
+        #[deprecated]
         pub layers: IndexMap<String, PartialInheritedTasksConfig>,
         pub task_layers: FxHashMap<String, Vec<String>>,
     }

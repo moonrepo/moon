@@ -13,7 +13,9 @@ use std::path::Path;
 #[derive(Debug, Default)]
 pub struct InheritedTasksEntry {
     pub input: WorkspaceRelativePathBuf,
-    pub config: PartialInheritedTasksConfig,
+    pub config: InheritedTasksConfig,
+    #[deprecated]
+    pub partial_config: PartialInheritedTasksConfig,
 }
 
 #[derive(Debug, Default)]
@@ -30,7 +32,8 @@ impl InheritedTasksManager {
     ) -> miette::Result<()> {
         self.configs.push(InheritedTasksEntry {
             input: config_path.relative_to(workspace_root).into_diagnostic()?,
-            config,
+            config: InheritedTasksConfig::from_partial(config.clone()),
+            partial_config: config,
         });
 
         Ok(())
@@ -38,6 +41,7 @@ impl InheritedTasksManager {
 
     pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<InheritedTasksResult> {
         let mut partial_config = PartialInheritedTasksConfig::default();
+        let mut configs = IndexMap::default();
         let mut layers = IndexMap::default();
         let mut task_layers = FxHashMap::<String, Vec<String>>::default();
         let mut lookup_order = vec![];
@@ -47,7 +51,7 @@ impl InheritedTasksManager {
 
         for config_entry in self.match_inherited_configs_in_order(input) {
             let source_path = standardize_separators(config_entry.input.as_str());
-            let mut config = config_entry.config.clone();
+            let mut config = config_entry.partial_config.clone();
 
             if let Some(tasks) = &mut config.tasks {
                 let default_toolchain = config
@@ -76,6 +80,10 @@ impl InheritedTasksManager {
                 }
             }
 
+            configs.insert(
+                source_path.clone(),
+                InheritedTasksConfig::from_partial(config.clone()),
+            );
             layers.insert(source_path.clone(), config.clone());
             partial_config.merge(&context, config)?;
             lookup_order.push(source_path);
@@ -95,6 +103,7 @@ impl InheritedTasksManager {
             })?;
 
         let result = InheritedTasksResult {
+            configs,
             config: InheritedTasksConfig::from_partial(full_config),
             layers,
             order: lookup_order,
@@ -109,7 +118,7 @@ impl InheritedTasksManager {
             .configs
             .iter()
             .filter(|entry| {
-                match &entry.config.inherited_by {
+                match &entry.partial_config.inherited_by {
                     Some(by) => by.matches(&input),
                     // If no `inheritedBy` setting, then it's inherited by all!
                     None => true,
@@ -120,7 +129,7 @@ impl InheritedTasksManager {
         entries.sort_by_key(|entry| {
             (
                 entry
-                    .config
+                    .partial_config
                     .inherited_by
                     .as_ref()
                     .map_or(0, |by| by.order()),

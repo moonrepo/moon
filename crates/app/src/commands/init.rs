@@ -8,7 +8,8 @@ use moon_config::{VcsProvider, WorkspaceConfig};
 use moon_console::ui::{Confirm, Container, Notice, StyledText, Variant};
 use moon_vcs::{Vcs, git::Git};
 use schematic::schema::{
-    ArrayType, SchemaGenerator, SchemaType, StringType, TemplateOptions, YamlTemplateRenderer,
+    ArrayType, Schema, SchemaGenerator, SchemaType, StringType, TemplateOptions,
+    YamlTemplateRenderer,
 };
 use starbase::AppResult;
 use starbase_utils::{fs, string_vec};
@@ -116,21 +117,20 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
     generator.generate(
         config_dir.join(session.config_loader.get_workspace_file_names().remove(0)),
         YamlTemplateRenderer::new(TemplateOptions {
-            // TODO update schematic
-            default_values: HashMap::from_iter([
+            custom_values: HashMap::from_iter([
                 (
                     "projects".into(),
-                    SchemaType::Array(Box::new(ArrayType::new(SchemaType::String(Box::new(
+                    Schema::array(ArrayType::new(SchemaType::String(Box::new(
                         StringType::new("packages/*"),
-                    ))))),
+                    )))),
                 ),
                 (
                     "vcs.defaultBranch".into(),
-                    SchemaType::String(Box::new(StringType::new(default_branch.as_str()))),
+                    Schema::string(StringType::new(default_branch.as_str())),
                 ),
                 (
                     "vcs.provider".into(),
-                    SchemaType::String(Box::new(StringType::new(git_provider.to_string()))),
+                    Schema::string(StringType::new(git_provider.to_string())),
                 ),
             ]),
             expand_fields: string_vec!["projects"],

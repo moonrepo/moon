@@ -8,13 +8,13 @@ use moon_config::{
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
-use schematic::{ConfigLoader as BaseLoader, Format, RegexSetting};
+use schematic::{ConfigLoader as BaseLoader, RegexSetting};
 use std::path::Path;
 use utils::*;
 
 fn load_config_from_code(code: &str) -> miette::Result<TaskConfig> {
     Ok(BaseLoader::<TaskConfig>::new()
-        .code(code, Format::Yaml)?
+        .code(code, "config.yml")?
         .load()?
         .config)
 }

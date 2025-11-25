@@ -17,7 +17,7 @@ moon_target = { version = "0.2.0", path = "../target" }
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
-rpkl = "0.5.2"
+rpkl = "0.6.1"
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",
@@ -31,7 +31,7 @@ schematic = { workspace = true, features = [
 	"type_semver",
 	"validate",
 	"validate_url",
-	"yml",
+	"yaml",
 ] }
 semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true }

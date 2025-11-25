@@ -84,15 +84,16 @@ projects:
         }
 
         #[test]
-        #[should_panic(expected = "invalid file format, try a supported extension")]
+        #[should_panic(expected = "no matching source format")]
         fn not_a_yaml_file() {
             test_load_config(FILENAME, "extends: './file.txt'", |path| {
+                std::fs::write(path.join(".moon/file.txt"), "").unwrap();
                 load_config_from_root(path)
             });
         }
 
         #[test]
-        #[should_panic(expected = "invalid file format, try a supported extension")]
+        #[should_panic(expected = "no matching source format")]
         fn not_a_yaml_url() {
             test_load_config(
                 FILENAME,

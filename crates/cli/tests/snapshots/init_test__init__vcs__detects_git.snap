@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/init_test.rs
+expression: content
+---
+# Configures all projects within the workspace to create a project graph.
+# Accepts a list of globs, a mapping of projects to relative file paths,
+# or both values.
+projects: ["packages/*"]
+
+# Configures the version control system (VCS). Also known as
+# source code management (SCM).
+vcs:
+  # The default branch / base.
+  defaultBranch: "sandbox-test"
+
+  # The upstream version control provider, where the repository
+  # source code is stored.
+  # @since 1.8.0
+  # @values "bitbucket" | "github" | "gitlab" | "other"
+  provider: "github"

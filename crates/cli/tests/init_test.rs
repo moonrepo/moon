@@ -1,4 +1,5 @@
 use moon_test_utils2::{create_empty_sandbox, predicates::prelude::*};
+use starbase_sandbox::assert_snapshot;
 use std::fs;
 
 mod init {
@@ -91,9 +92,7 @@ mod init {
 
             let content = fs::read_to_string(workspace_config).unwrap();
 
-            assert!(predicate::str::contains("client: \"git\"").eval(&content));
-            // TODO fix in command
-            // assert!(predicate::str::contains("defaultBranch: \"sandbox-test\"").eval(&content));
+            assert_snapshot!(content);
         }
     }
 }

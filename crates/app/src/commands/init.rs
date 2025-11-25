@@ -8,8 +8,8 @@ use moon_config::{VcsProvider, WorkspaceConfig};
 use moon_console::ui::{Confirm, Container, Notice, StyledText, Variant};
 use moon_vcs::{Vcs, git::Git};
 use schematic::schema::{
-    ArrayType, Schema, SchemaGenerator, SchemaType, StringType, TemplateOptions,
-    YamlTemplateRenderer,
+    ArrayType, EnumType, LiteralValue, Schema, SchemaGenerator, SchemaType, StringType,
+    TemplateOptions, UnionType, YamlTemplateRenderer,
 };
 use starbase::AppResult;
 use starbase_utils::{fs, string_vec};
@@ -105,7 +105,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
     };
 
     let default_branch = if git.is_enabled() {
-        git.get_remote_default_branch().await?
+        git.get_local_branch().await?
     } else {
         git.get_default_branch().await?
     };
@@ -120,9 +120,9 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
             custom_values: HashMap::from_iter([
                 (
                     "projects".into(),
-                    Schema::array(ArrayType::new(SchemaType::String(Box::new(
-                        StringType::new("packages/*"),
-                    )))),
+                    Schema::union(UnionType::new_any([Schema::array(ArrayType::new(
+                        SchemaType::String(Box::new(StringType::new("packages/*"))),
+                    ))])),
                 ),
                 (
                     "vcs.defaultBranch".into(),
@@ -130,28 +130,13 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
                 ),
                 (
                     "vcs.provider".into(),
-                    Schema::string(StringType::new(git_provider.to_string())),
+                    Schema::enumerable(EnumType::new([LiteralValue::String(
+                        git_provider.to_string(),
+                    )])),
                 ),
             ]),
             expand_fields: string_vec!["projects"],
-            hide_fields: string_vec![
-                "codeowners",
-                "constraints",
-                "docker",
-                "experiments",
-                "extends",
-                "generator",
-                "hasher",
-                "notifier",
-                "pipeline",
-                "remote",
-                "telemetry",
-                "vcs.hookFormat",
-                "vcs.hooks",
-                "vcs.remoteCandidates",
-                "vcs.sync",
-                "versionConstraint",
-            ],
+            only_fields: string_vec!["projects", "vcs", "vcs.defaultBranch", "vcs.provider"],
             ..Default::default()
         }),
     )?;

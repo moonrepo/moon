@@ -19767,11 +19767,15 @@ tool-c = ">=2000-10"
 ### Guidelines
 
 - op - `=`, `>`, `>=`, `<=`, `<`, `~`, `^`
-  - If omitted, defaults to `~` when not in a range.
+  - If omitted, defaults to `~` when a partial version is provided (i.e. allow the minimum specified version component to increase)
+  - If a full version is provided, defaults to `^` (i.e. allow any newer version that is nominally compatible)
+  - To specify an *exact* version, use the `=` operator explicitly.
 - pattern
   - Dot-separated semver, with optional major and patch numbers.
   - Dash-separated calver, with optional month and day numbers.
   - Pre-release and build metadata are only supported when suffixed to full versions.
+
+For example, if you want to use `npm` 11.6.2 but 11.6.3 has an issue, use: `npm = "^11.6.4 || =11.6.2"`
 
 ---
 

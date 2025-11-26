@@ -1406,4 +1406,9 @@ mod task_manager {
     fn supports_pkl() {
         load_tasks_config_in_format("pkl");
     }
+
+    #[test]
+    fn supports_toml() {
+        load_tasks_config_in_format("toml");
+    }
 }

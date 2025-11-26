@@ -1,0 +1,58 @@
+telemetry = false
+versionConstraint = ">=1.2.3"
+
+[codeowners]
+orderBy = "project-id"
+requiredApprovals = 1
+sync = true
+
+[codeowners.globalPaths]
+"*" = ["@admins"]
+
+[constraints]
+enforceLayerRelationships = false
+
+[constraints.tagRelationships]
+a = ["b", "c"]
+
+[docker.prune]
+deleteVendorDirectories = false
+installToolchainDependencies = false
+
+[docker.scaffold]
+configsPhaseGlobs = ["*.js"]
+
+[generator]
+templates = ["/shared-templates", "./templates"]
+
+[hasher]
+ignorePatterns = ["*.map"]
+ignoreMissingPatterns = [".env"]
+optimization = "performance"
+walkStrategy = "vcs"
+warnOnMissingInputs = true
+
+[notifier]
+webhookUrl = "http://localhost"
+
+[projects]
+globs = ["apps/*", "packages/*"]
+
+[projects.sources]
+root = "."
+
+[pipeline]
+autoCleanCache = false
+cacheLifetime = "1 day"
+inheritColorsForPipedTasks = false
+logRunningCommand = true
+
+[vcs]
+defaultBranch = "main"
+client = "git"
+provider = "gitlab"
+remoteCandidates = ["main", "origin/main"]
+sync = true
+
+[vcs.hooks]
+"pre-commit" = ["moon check --all --affected", "moon run :pre-commit"]

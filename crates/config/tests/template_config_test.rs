@@ -484,4 +484,9 @@ variables:
     fn supports_pkl() {
         load_template_config_in_format("pkl");
     }
+
+    #[test]
+    fn supports_toml() {
+        load_template_config_in_format("toml");
+    }
 }

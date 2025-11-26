@@ -688,4 +688,9 @@ workspace:
     fn supports_pkl() {
         load_project_config_in_format("pkl");
     }
+
+    #[test]
+    fn supports_toml() {
+        load_project_config_in_format("toml");
+    }
 }

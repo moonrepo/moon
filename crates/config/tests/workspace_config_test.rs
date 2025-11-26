@@ -818,4 +818,9 @@ vcs:
     fn supports_pkl() {
         load_workspace_config_in_format("pkl");
     }
+
+    #[test]
+    fn supports_toml() {
+        load_workspace_config_in_format("toml");
+    }
 }

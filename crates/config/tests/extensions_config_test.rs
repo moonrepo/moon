@@ -99,4 +99,9 @@ test-id:
     fn supports_pkl() {
         load_extensions_config_in_format("pkl");
     }
+
+    #[test]
+    fn supports_toml() {
+        load_extensions_config_in_format("toml");
+    }
 }

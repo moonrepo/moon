@@ -198,6 +198,7 @@ impl ConfigLoader {
         path: P,
     ) -> miette::Result<InheritedTasksConfig> {
         let result = Loader::<InheritedTasksConfig>::new()
+            .add_format(HclFormat::default())
             .file_optional(path.as_ref())?
             .load()?;
 

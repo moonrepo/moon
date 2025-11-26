@@ -1,3 +1,9 @@
+
+locals {
+	someCondition = true
+	sharedInputs = ["src/**/*"]
+}
+
 fileGroups {
 	sources = [
 		"src/**/*"
@@ -18,7 +24,7 @@ implicitDeps = [
 	{
 		target = "project:task-d"
 		args = "--foo --bar"
-		env {
+		env = {
 			KEY = "value"
 		}
 	}
@@ -60,43 +66,41 @@ taskOptions {
 	windowsShell = "pwsh"
 }
 
-local _someCondition = true
+tasks "example" {
+	options {
+		cache = local.someCondition
+		cacheLifetime = local.someCondition ? "1 hour" : null
+	}
+}
 
-local _sharedInputs = ["src/**/*"]
+tasks "test" {
+	inputs = concat(local.sharedInputs, ["tests/**/*"])
+}
 
-# tasks {
-# 	["example"] {
-# 		options {
-# 			when (_someCondition) {
-# 				cache = true
-# 				cacheLifetime = "1 hour"
-# 			} else {
-# 				cache = false
-# 			}
-# 		}
-# 	}
+tasks "lint" {
+	inputs = concat(["**/*.graphql"], local.sharedInputs)
+}
 
-# 	["test"] {
-# 		inputs = _sharedInputs + List("tests/**/*")
-# 	}
+tasks "build-linux" {
+	command = "cargo"
+	args = ["--target", "x86_64-unknown-linux-gnu", "--verbose"]
+	options {
+		os = "linux"
+	}
+}
 
-# 	["lint"] {
-# 		inputs = List("**/*.graphql") + _sharedInputs
-# 	}
+tasks "build-macos" {
+	command = "cargo"
+	args = ["--target", "x86_64-apple-darwin", "--verbose"]
+	options {
+		os = "macos"
+	}
+}
 
-# 	for (_os in List("linux", "macos", "windows")) {
-# 		["build-\(_os)"] {
-# 			command = "cargo"
-# 			args = List(
-# 				"--target",
-# 				if (_os == "linux") "x86_64-unknown-linux-gnu"
-# 					else if (_os == "macos") "x86_64-apple-darwin"
-# 					else "i686-pc-windows-msvc",
-# 				"--verbose"
-# 			)
-# 			options {
-# 				os = _os
-# 			}
-# 		}
-# 	}
-# }
+tasks "build-windows" {
+	command = "cargo"
+	args = ["--target", "i686-pc-windows-msvc", "--verbose"]
+	options {
+		os = "windows"
+	}
+}

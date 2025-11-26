@@ -679,113 +679,13 @@ workspace:
         }
     }
 
-    mod pkl {
-        use super::*;
-        use moon_common::Id;
-        use moon_config::*;
-        use starbase_sandbox::locate_fixture;
-        use std::collections::BTreeMap;
+    #[test]
+    fn supports_hcl() {
+        load_project_config_in_format("hcl");
+    }
 
-        #[test]
-        fn loads_pkl() {
-            let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::new(path.join(".moon")).load_project_config(path)
-            });
-
-            assert_eq!(
-                config,
-                ProjectConfig {
-                    depends_on: vec![
-                        ProjectDependsOn::String(Id::raw("a")),
-                        ProjectDependsOn::Object(ProjectDependencyConfig {
-                            id: Id::raw("b"),
-                            scope: DependencyScope::Build,
-                            source: DependencySource::Implicit,
-                            via: None
-                        })
-                    ],
-                    docker: ProjectDockerConfig {
-                        file: DockerFileConfig {
-                            build_task: Some(Id::raw("build")),
-                            image: Some("node:latest".into()),
-                            start_task: Some(Id::raw("start")),
-                            ..Default::default()
-                        },
-                        scaffold: DockerScaffoldConfig {
-                            configs_phase_globs: vec![],
-                            sources_phase_globs: vec![GlobPath("*.js".into())]
-                        }
-                    },
-                    env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
-                    file_groups: FxHashMap::from_iter([
-                        (
-                            Id::raw("sources"),
-                            vec![Input::Glob(stub_glob_input("src/**/*"))]
-                        ),
-                        (
-                            Id::raw("tests"),
-                            vec![Input::Glob(stub_glob_input("/**/*.test.*"))]
-                        )
-                    ]),
-                    id: Some(Id::raw("custom-id")),
-                    language: LanguageType::Rust,
-                    owners: OwnersConfig {
-                        custom_groups: FxHashMap::default(),
-                        default_owner: Some("owner".into()),
-                        optional: true,
-                        paths: OwnersPaths::List(vec![
-                            GlobPath::parse("dir/").unwrap(),
-                            GlobPath::parse("file.txt").unwrap()
-                        ]),
-                        required_approvals: Some(5)
-                    },
-                    project: Some(ProjectMetadataConfig {
-                        title: Some("Name".into()),
-                        description: Some("Does something".into()),
-                        owner: Some("team".into()),
-                        maintainers: vec![],
-                        channel: Some("#team".into()),
-                        metadata: FxHashMap::from_iter([
-                            ("bool".into(), serde_json::Value::Bool(true)),
-                            ("string".into(), serde_json::Value::String("abc".into()))
-                        ]),
-                    }),
-                    stack: StackType::Frontend,
-                    tags: vec![Id::raw("a"), Id::raw("b"), Id::raw("c")],
-                    tasks: BTreeMap::default(),
-                    toolchains: ProjectToolchainsConfig {
-                        plugins: FxHashMap::from_iter([
-                            (
-                                Id::raw("deno"),
-                                ProjectToolchainEntry::Config(ToolchainPluginConfig {
-                                    version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
-                                    ..Default::default()
-                                })
-                            ),
-                            (
-                                Id::raw("typescript"),
-                                ProjectToolchainEntry::Config(ToolchainPluginConfig {
-                                    config: BTreeMap::from_iter([(
-                                        "includeSharedTypes".into(),
-                                        serde_json::Value::Bool(true)
-                                    )]),
-                                    ..Default::default()
-                                })
-                            )
-                        ]),
-                        ..Default::default()
-                    },
-                    layer: LayerType::Library,
-                    workspace: ProjectWorkspaceConfig {
-                        inherited_tasks: ProjectWorkspaceInheritedTasksConfig {
-                            exclude: vec![Id::raw("build")],
-                            include: Some(vec![Id::raw("test")]),
-                            rename: FxHashMap::from_iter([(Id::raw("old"), Id::raw("new"))])
-                        }
-                    },
-                    ..Default::default()
-                }
-            );
-        }
+    #[test]
+    fn supports_pkl() {
+        load_project_config_in_format("pkl");
     }
 }

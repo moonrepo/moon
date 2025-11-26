@@ -8,7 +8,7 @@ use serde::de::DeserializeOwned;
 use std::path::Path;
 
 #[derive(Default)]
-pub struct HclFormat;
+pub struct HclFormat {}
 
 impl<T: DeserializeOwned> SourceFormat<T> for HclFormat {
     fn should_parse(&self, source: &Source) -> bool {

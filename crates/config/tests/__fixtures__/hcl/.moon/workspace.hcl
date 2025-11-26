@@ -1,0 +1,74 @@
+codeowners {
+	globalPaths = new Mapping {
+		["*"] = List("@admins")
+	}
+	orderBy = "project-id"
+	requiredApprovals = 1
+	sync = true
+}
+
+constraints {
+	enforceLayerRelationships = false
+	tagRelationships = Map("a", List("b", "c"))
+}
+
+docker {
+	prune {
+		deleteVendorDirectories = false
+		installToolchainDependencies = false
+	}
+	scaffold {
+		configsPhaseGlobs = List("*.js")
+	}
+}
+
+generator {
+	templates = new Listing {
+		"/shared-templates"
+		"./templates"
+	}
+}
+
+hasher {
+	ignorePatterns = List("*.map")
+	ignoreMissingPatterns = Set(".env")
+	optimization = "performance"
+	walkStrategy = "vcs"
+	warnOnMissingInputs = true
+}
+
+notifier {
+	webhookUrl = "http://localhost"
+}
+
+projects {
+	globs = List("apps/*", "packages/*")
+	sources = new Mapping {
+		["root"] = "."
+	}
+}
+
+pipeline {
+	autoCleanCache = false
+	cacheLifetime = "1 day"
+	inheritColorsForPipedTasks = false
+	logRunningCommand = true
+}
+
+telemetry = false
+
+vcs {
+	defaultBranch = "main"
+	hooks = new Mapping {
+		["pre-commit"] = List("moon check --all --affected", "moon run :pre-commit")
+	}
+	client = "git"
+	provider = "gitlab"
+	remoteCandidates = new Listing {
+		"main"
+		"origin/main"
+	}
+	sync = true
+}
+
+versionConstraint = ">=1.2.3"

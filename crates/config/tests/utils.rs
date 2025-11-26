@@ -513,8 +513,7 @@ pub fn load_extensions_config_in_format(format: &str) {
         config.plugins.get("custom").unwrap(),
         &ExtensionPluginConfig {
             plugin: Some(PluginLocator::from_str("file://node.wasm").unwrap()),
-            config: FxHashMap::from_iter([("key".into(), Value::String("value".into())),]),
-            ..Default::default()
+            config: FxHashMap::from_iter([("key".into(), Value::String("value".into()))]),
         }
     );
 }

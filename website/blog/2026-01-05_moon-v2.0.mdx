@@ -91,6 +91,26 @@ configuration in a more organized manner.
 Simply use `.config/moon` instead of `.moon`! The workspace root will now be the directory that
 contains the `.config` directory.
 
+## Configuration
+
+### New file formats
+
+We've been pretty strict about only supporting YAML based configuration for quite some time, but we
+understand that people have different preferences (many of you hate YAML, which is fair). We've
+experimented in the past a bit by adding support for [Pkl](https://pkl-lang.org/), which is a
+programmable configuration, but it required a learning curve.
+
+Over time, we've come to loosen our stance on YAML, and are now introducing support for not just
+one, but many additional formats! The following file formats are now supported for all moon
+configuration files:
+
+- JSON (`.json`)
+- JSON with comments (`.jsonc`)
+- [HCL](https://github.com/hashicorp/hcl) (`.hcl`)
+- [Pkl](https://pkl-lang.org/) (`.pkl`)
+- [Ron](https://github.com/ron-rs/ron) (`.ron`)
+- YAML (`.yml`, `.yaml`)
+
 ## Toolchains
 
 The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.

@@ -26,7 +26,6 @@ schematic = { workspace = true, features = [
 	"extends",
 	"json",
 	"pkl",
-	"ron",
 	"schema",
 	"type_indexmap",
 	"type_regex",

@@ -18,7 +18,6 @@ impl Default for ConfigFinder {
                 "json".into(),
                 "pkl".into(),
                 "hcl".into(),
-                "ron".into(),
             ],
         }
     }

@@ -475,79 +475,13 @@ variables:
         }
     }
 
-    mod pkl {
-        use super::*;
-        use moon_common::Id;
-        use starbase_sandbox::locate_fixture;
+    #[test]
+    fn supports_hcl() {
+        load_template_config_in_format("hcl");
+    }
 
-        #[test]
-        fn loads_pkl() {
-            let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::new(path.join(".moon")).load_template_config(path)
-            });
-
-            assert_eq!(
-                config,
-                TemplateConfig {
-                    description: "Description".into(),
-                    destination: Some("./out".into()),
-                    id: Some(Id::raw("template-name")),
-                    title: "Title".into(),
-                    variables: FxHashMap::from_iter([
-                        (
-                            "boolean".into(),
-                            TemplateVariable::Boolean(TemplateVariableBoolSetting {
-                                default: false,
-                                internal: false,
-                                order: None,
-                                prompt: Some("Why?".into()),
-                                required: Some(true)
-                            })
-                        ),
-                        (
-                            "enum".into(),
-                            TemplateVariable::Enum(TemplateVariableEnumSetting {
-                                default: TemplateVariableEnumDefault::default(),
-                                internal: false,
-                                multiple: Some(true),
-                                order: Some(4),
-                                prompt: None,
-                                values: vec![
-                                    TemplateVariableEnumValue::String("a".into()),
-                                    TemplateVariableEnumValue::Object(
-                                        TemplateVariableEnumValueConfig {
-                                            label: "B".into(),
-                                            value: "b".into()
-                                        }
-                                    ),
-                                    TemplateVariableEnumValue::String("c".into())
-                                ]
-                            })
-                        ),
-                        (
-                            "number".into(),
-                            TemplateVariable::Number(TemplateVariableNumberSetting {
-                                default: 123,
-                                internal: false,
-                                order: Some(1),
-                                prompt: Some("Why?".into()),
-                                required: None
-                            })
-                        ),
-                        (
-                            "string".into(),
-                            TemplateVariable::String(TemplateVariableStringSetting {
-                                default: "abc".into(),
-                                internal: true,
-                                order: None,
-                                prompt: Some("Why?".into()),
-                                required: None
-                            })
-                        ),
-                    ]),
-                    ..Default::default()
-                }
-            );
-        }
+    #[test]
+    fn supports_pkl() {
+        load_template_config_in_format("pkl");
     }
 }

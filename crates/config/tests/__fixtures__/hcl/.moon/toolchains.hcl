@@ -9,3 +9,12 @@ typescript {
 	syncProjectReferences = false
 	syncProjectReferencesToPaths = true
 }
+
+node {
+	plugin = "file://node.wasm"
+	version = "20"
+}
+
+proto {
+	version = "1.2.3"
+}

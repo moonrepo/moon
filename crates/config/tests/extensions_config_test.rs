@@ -89,4 +89,14 @@ test-id:
             }
         );
     }
+
+    #[test]
+    fn supports_hcl() {
+        load_extensions_config_in_format("hcl");
+    }
+
+    #[test]
+    fn supports_pkl() {
+        load_extensions_config_in_format("pkl");
+    }
 }

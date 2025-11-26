@@ -1,6 +1,6 @@
 codeowners {
-	globalPaths = new Mapping {
-		["*"] = List("@admins")
+	globalPaths = {
+		"*" = ["@admins"]
 	}
 	orderBy = "project-id"
 	requiredApprovals = 1
@@ -9,7 +9,9 @@ codeowners {
 
 constraints {
 	enforceLayerRelationships = false
-	tagRelationships = Map("a", List("b", "c"))
+	tagRelationships = {
+		a = ["b", "c"]
+	}
 }
 
 docker {
@@ -18,20 +20,20 @@ docker {
 		installToolchainDependencies = false
 	}
 	scaffold {
-		configsPhaseGlobs = List("*.js")
+		configsPhaseGlobs = ["*.js"]
 	}
 }
 
 generator {
-	templates = new Listing {
-		"/shared-templates"
-		"./templates"
-	}
+	templates = [
+		"/shared-templates",
+		"./templates",
+	]
 }
 
 hasher {
-	ignorePatterns = List("*.map")
-	ignoreMissingPatterns = Set(".env")
+	ignorePatterns = ["*.map"]
+	ignoreMissingPatterns = [".env"]
 	optimization = "performance"
 	walkStrategy = "vcs"
 	warnOnMissingInputs = true
@@ -42,9 +44,9 @@ notifier {
 }
 
 projects {
-	globs = List("apps/*", "packages/*")
-	sources = new Mapping {
-		["root"] = "."
+	globs = ["apps/*", "packages/*"]
+	sources = {
+		root = "."
 	}
 }
 
@@ -59,15 +61,15 @@ telemetry = false
 
 vcs {
 	defaultBranch = "main"
-	hooks = new Mapping {
-		["pre-commit"] = List("moon check --all --affected", "moon run :pre-commit")
+	hooks = {
+		pre-commit = ["moon check --all --affected", "moon run :pre-commit"]
 	}
 	client = "git"
 	provider = "gitlab"
-	remoteCandidates = new Listing {
-		"main"
-		"origin/main"
-	}
+	remoteCandidates = [
+		"main",
+		"origin/main",
+	]
 	sync = true
 }
 

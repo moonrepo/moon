@@ -87,4 +87,14 @@ pub trait Vcs: Debug {
 
         Ok(VersionReq::parse(req).into_diagnostic()?.matches(&version))
     }
+
+    /// Setup the hooks environment and return an absolute path to the hooks directory, when applicable.
+    async fn setup_hooks(&self) -> miette::Result<Option<PathBuf>> {
+        Ok(None)
+    }
+
+    /// Teardown the hooks environment when applicable.
+    async fn teardown_hooks(&self) -> miette::Result<()> {
+        Ok(())
+    }
 }

@@ -567,4 +567,62 @@ impl Vcs for Git {
 
         Ok(result)
     }
+
+    async fn setup_hooks(&self) -> miette::Result<Option<PathBuf>> {
+        let use_new_commands = self.is_version_supported(">=2.46.0").await?;
+
+        // Check if the path has already been configured
+        if let Ok(output) = self
+            .get_process()
+            .run(
+                if use_new_commands {
+                    vec!["config", "get", "core.hooksPath"]
+                } else {
+                    vec!["config", "core.hooksPath"]
+                },
+                true,
+            )
+            .await
+        {
+            let dir = PathBuf::from(output.as_str());
+
+            if !output.is_empty() && dir.starts_with(&self.workspace_root) {
+                return Ok(Some(dir));
+            }
+        }
+
+        // Otherwise update the config with the path
+        let hooks_path = self.workspace_root.join(".moon").join("hooks");
+        let hooks_path_string = hooks_path.to_string_lossy().to_string();
+
+        self.get_process()
+            .run(
+                if use_new_commands {
+                    vec!["config", "set", "core.hooksPath", &hooks_path_string]
+                } else {
+                    vec!["config", "core.hooksPath", &hooks_path_string]
+                },
+                true,
+            )
+            .await?;
+
+        Ok(Some(hooks_path))
+    }
+
+    async fn teardown_hooks(&self) -> miette::Result<()> {
+        let use_new_commands = self.is_version_supported(">=2.46.0").await?;
+
+        self.get_process()
+            .run(
+                if use_new_commands {
+                    vec!["config", "unset", "core.hooksPath"]
+                } else {
+                    vec!["config", "--unset", "core.hooksPath"]
+                },
+                true,
+            )
+            .await?;
+
+        Ok(())
+    }
 }

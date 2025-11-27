@@ -598,9 +598,15 @@ impl Vcs for Git {
         self.get_process()
             .run(
                 if use_new_commands {
-                    vec!["config", "set", "core.hooksPath", &hooks_path_string]
+                    vec![
+                        "config",
+                        "set",
+                        "--worktree",
+                        "core.hooksPath",
+                        &hooks_path_string,
+                    ]
                 } else {
-                    vec!["config", "core.hooksPath", &hooks_path_string]
+                    vec!["config", "--worktree", "core.hooksPath", &hooks_path_string]
                 },
                 true,
             )
@@ -615,9 +621,9 @@ impl Vcs for Git {
         self.get_process()
             .run(
                 if use_new_commands {
-                    vec!["config", "unset", "core.hooksPath"]
+                    vec!["config", "unset", "--worktree", "core.hooksPath"]
                 } else {
-                    vec!["config", "--unset", "core.hooksPath"]
+                    vec!["config", "--unset", "--worktree", "core.hooksPath"]
                 },
                 true,
             )

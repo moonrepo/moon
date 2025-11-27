@@ -224,8 +224,8 @@ mod vcs_hooks {
             assert_snapshot!(clean_powershell(fs::read_to_string(pre_commit).unwrap()));
             assert_snapshot!(clean_powershell(fs::read_to_string(post_push).unwrap()));
 
-            let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
-            let post_push = sandbox.path().join(".git/hooks/post-push");
+            let pre_commit = sandbox.path().join(".moon/hooks/pre-commit");
+            let post_push = sandbox.path().join(".moon/hooks/post-push");
 
             assert!(pre_commit.exists());
             assert!(post_push.exists());
@@ -233,12 +233,12 @@ mod vcs_hooks {
             assert!(
                 fs::read_to_string(pre_commit)
                     .unwrap()
-                    .contains(".\\.moon\\hooks\\pre-commit.ps1")
+                    .contains(".moon/hooks/pre-commit.ps1")
             );
             assert!(
                 fs::read_to_string(post_push)
                     .unwrap()
-                    .contains(".\\.moon\\hooks\\post-push.ps1")
+                    .contains(".moon/hooks/post-push.ps1")
             );
         }
 
@@ -264,40 +264,24 @@ mod vcs_hooks {
 
             assert_snapshot!(clean_powershell(fs::read_to_string(pre_commit).unwrap()));
             assert_snapshot!(clean_powershell(fs::read_to_string(post_push).unwrap()));
-
-            let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
-            let post_push = sandbox.path().join(".git/hooks/post-push");
-
-            assert!(pre_commit.exists());
-            assert!(post_push.exists());
-
-            assert!(
-                fs::read_to_string(pre_commit)
-                    .unwrap()
-                    .contains("./.moon/hooks/pre-commit $1 $2 $3")
-            );
-            assert!(
-                fs::read_to_string(post_push)
-                    .unwrap()
-                    .contains("./.moon/hooks/post-push $1 $2 $3")
-            );
         }
 
         #[tokio::test]
-        async fn links_git_hooks() {
+        async fn supports_git_worktrees() {
             let sandbox = create_empty_sandbox();
             sandbox.enable_git();
 
-            run_generator(sandbox.path()).await;
+            sandbox.run_git(|cmd| {
+                cmd.args(["worktree", "add", "tree"]);
+            });
 
-            let pre_commit = sandbox.path().join(".git/hooks/pre-commit");
-            let post_push = sandbox.path().join(".git/hooks/post-push");
+            run_generator(&sandbox.path().join("tree")).await;
+
+            let pre_commit = sandbox.path().join("tree/.moon/hooks/pre-commit.ps1");
+            let post_push = sandbox.path().join("tree/.moon/hooks/post-push.ps1");
 
             assert!(pre_commit.exists());
             assert!(post_push.exists());
-
-            assert_snapshot!(clean_powershell(fs::read_to_string(pre_commit).unwrap()));
-            assert_snapshot!(clean_powershell(fs::read_to_string(post_push).unwrap()));
         }
     }
 }

@@ -72,11 +72,7 @@ impl<'app> HooksGenerator<'app> {
     }
 
     fn cleanup_previous_state(&self) -> miette::Result<CacheItem<HooksState>> {
-        let state = self
-            .app_context
-            .cache_engine
-            .state
-            .load_state::<HooksState>("vcsHooks.json")?;
+        let state = self.load_state()?;
 
         if let Some(dir) = &state.data.relative_hooks_dir {
             self.remove_hook_files(

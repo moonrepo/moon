@@ -587,10 +587,11 @@ impl Vcs for Git {
     }
 
     async fn setup_hooks(&self) -> miette::Result<Option<VcsHookEnvironment>> {
-        let mut env = VcsHookEnvironment::default();
-
-        // The working directory is the worktree root, not the workspace root
-        env.working_dir = self.worktree.work_dir.clone();
+        let mut env = VcsHookEnvironment {
+            // The working directory is the worktree root, not the workspace root
+            working_dir: self.worktree.work_dir.clone(),
+            ..Default::default()
+        };
 
         // Check if the path has already been configured
         if let Ok(output) = self

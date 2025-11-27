@@ -1,6 +1,7 @@
 use crate::config_cache::ConfigCache;
 use crate::config_finder::ConfigFinder;
 use crate::extensions_config::ExtensionsConfig;
+use crate::formats::hcl::HclFormat;
 use crate::inherited_tasks_config::{InheritedTasksConfig, PartialInheritedTasksConfig};
 use crate::inherited_tasks_manager::InheritedTasksManager;
 use crate::project_config::{PartialProjectConfig, ProjectConfig};
@@ -197,6 +198,7 @@ impl ConfigLoader {
         path: P,
     ) -> miette::Result<InheritedTasksConfig> {
         let result = Loader::<InheritedTasksConfig>::new()
+            .add_format(HclFormat::default())
             .file_optional(path.as_ref())?
             .load()?;
 
@@ -282,6 +284,8 @@ impl ConfigLoader {
         loader: &mut Loader<T>,
         files: Vec<PathBuf>,
     ) -> miette::Result<()> {
+        loader.add_format(HclFormat::default());
+
         for file in files {
             loader.file_optional(file)?;
         }

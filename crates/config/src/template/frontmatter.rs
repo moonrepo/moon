@@ -24,7 +24,7 @@ config_struct!(
 impl TemplateFrontmatterConfig {
     pub fn parse<T: AsRef<str>>(content: T) -> miette::Result<TemplateFrontmatterConfig> {
         use moon_common::color;
-        use schematic::{ConfigLoader, Format};
+        use schematic::ConfigLoader;
 
         let mut content = content.as_ref();
 
@@ -36,7 +36,7 @@ impl TemplateFrontmatterConfig {
             .set_help(color::muted_light(
                 "https://moonrepo.dev/docs/config/template",
             ))
-            .code(content, Format::Yaml)?
+            .code(content, "frontmatter.yml")?
             .load()?;
 
         Ok(result.config)

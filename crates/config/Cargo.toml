@@ -14,10 +14,11 @@ features = ["loader"]
 [dependencies]
 moon_common = { version = "0.2.0", path = "../common" }
 moon_target = { version = "0.2.0", path = "../target" }
+hcl-rs = "0.19.4"
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
-rpkl = "0.5.2"
+rpkl = "0.6.1"
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",
@@ -26,16 +27,18 @@ schematic = { workspace = true, features = [
 	"json",
 	"pkl",
 	"schema",
+	"toml",
 	"type_indexmap",
 	"type_regex",
 	"type_semver",
 	"validate",
 	"validate_url",
-	"yml",
+	"yaml",
 ] }
 semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+serde_path_to_error = "0.1.20"
 version_spec = { workspace = true, features = ["schematic"] }
 warpgate_api = { workspace = true, features = ["schematic"] }
 

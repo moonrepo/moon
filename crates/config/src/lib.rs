@@ -6,6 +6,7 @@ mod config_finder;
 #[cfg(feature = "loader")]
 mod config_loader;
 mod extensions_config;
+mod formats;
 mod inherited_tasks_config;
 #[cfg(feature = "loader")]
 mod inherited_tasks_manager;

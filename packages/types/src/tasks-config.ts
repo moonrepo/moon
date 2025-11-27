@@ -332,7 +332,7 @@ export interface TaskOptionsConfig {
 	 * The style in which task output will be printed to the console.
 	 *
 	 * @default 'buffer'
-	 * @envvar MOON_OUTPUT_STYLE
+	 * @env MOON_OUTPUT_STYLE
 	 */
 	outputStyle: TaskOutputStyle | null;
 	/**
@@ -351,7 +351,7 @@ export interface TaskOptionsConfig {
 	/**
 	 * The number of times a failing task will be retried to succeed.
 	 *
-	 * @envvar MOON_RETRY_COUNT
+	 * @env MOON_RETRY_COUNT
 	 */
 	retryCount: number | null;
 	/**
@@ -767,7 +767,7 @@ export interface PartialTaskOptionsConfig {
 	 * The style in which task output will be printed to the console.
 	 *
 	 * @default 'buffer'
-	 * @envvar MOON_OUTPUT_STYLE
+	 * @env MOON_OUTPUT_STYLE
 	 */
 	outputStyle?: TaskOutputStyle | null;
 	/**
@@ -786,7 +786,7 @@ export interface PartialTaskOptionsConfig {
 	/**
 	 * The number of times a failing task will be retried to succeed.
 	 *
-	 * @envvar MOON_RETRY_COUNT
+	 * @env MOON_RETRY_COUNT
 	 */
 	retryCount?: number | null;
 	/**

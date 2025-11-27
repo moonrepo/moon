@@ -84,15 +84,16 @@ projects:
         }
 
         #[test]
-        #[should_panic(expected = "invalid file format, try a supported extension")]
+        #[should_panic(expected = "no matching source format")]
         fn not_a_yaml_file() {
             test_load_config(FILENAME, "extends: './file.txt'", |path| {
+                std::fs::write(path.join(".moon/file.txt"), "").unwrap();
                 load_config_from_root(path)
             });
         }
 
         #[test]
-        #[should_panic(expected = "invalid file format, try a supported extension")]
+        #[should_panic(expected = "no matching source format")]
         fn not_a_yaml_url() {
             test_load_config(
                 FILENAME,
@@ -808,120 +809,18 @@ vcs:
         }
     }
 
-    mod pkl {
-        use super::*;
-        use indexmap::IndexMap;
-        use moon_config::*;
-        use starbase_sandbox::locate_fixture;
-        use std::str::FromStr;
+    #[test]
+    fn supports_hcl() {
+        load_workspace_config_in_format("hcl");
+    }
 
-        #[test]
-        fn loads_pkl() {
-            let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::new(path.join(".moon")).load_workspace_config(path)
-            });
+    #[test]
+    fn supports_pkl() {
+        load_workspace_config_in_format("pkl");
+    }
 
-            assert_eq!(
-                config.codeowners,
-                CodeownersConfig {
-                    global_paths: IndexMap::from_iter([(
-                        "*".to_owned(),
-                        vec!["@admins".to_owned()]
-                    )]),
-                    order_by: CodeownersOrderBy::ProjectId,
-                    required_approvals: Some(1),
-                    sync: true,
-                }
-            );
-            assert_eq!(
-                config.constraints,
-                ConstraintsConfig {
-                    enforce_layer_relationships: false,
-                    tag_relationships: FxHashMap::from_iter([(
-                        Id::raw("a"),
-                        vec![Id::raw("b"), Id::raw("c")]
-                    )]),
-                }
-            );
-            assert_eq!(
-                config.docker,
-                DockerConfig {
-                    prune: DockerPruneConfig {
-                        delete_vendor_directories: false,
-                        install_toolchain_dependencies: false
-                    },
-                    scaffold: DockerScaffoldConfig {
-                        configs_phase_globs: vec![GlobPath("*.js".into())],
-                        sources_phase_globs: vec![]
-                    },
-                    ..Default::default()
-                }
-            );
-            assert_eq!(
-                config.generator,
-                GeneratorConfig {
-                    templates: vec![
-                        TemplateLocator::from_str("/shared-templates").unwrap(),
-                        TemplateLocator::from_str("./templates").unwrap()
-                    ]
-                }
-            );
-            assert_eq!(
-                config.hasher,
-                HasherConfig {
-                    ignore_patterns: vec![GlobPath("*.map".into())],
-                    ignore_missing_patterns: vec![GlobPath(".env".into())],
-                    optimization: HasherOptimization::Performance,
-                    walk_strategy: HasherWalkStrategy::Vcs,
-                    warn_on_missing_inputs: true
-                }
-            );
-            assert_eq!(
-                config.notifier,
-                NotifierConfig {
-                    terminal_notifications: None,
-                    webhook_url: Some("http://localhost".into()),
-                    webhook_acknowledge: false
-                }
-            );
-            assert_eq!(
-                config.projects,
-                WorkspaceProjects::Both(WorkspaceProjectsConfig {
-                    globs: vec!["apps/*".into(), "packages/*".into()],
-                    glob_format: WorkspaceProjectGlobFormat::DirName,
-                    sources: FxHashMap::from_iter([(Id::raw("root"), ".".into())])
-                })
-            );
-            assert_eq!(
-                config.pipeline,
-                PipelineConfig {
-                    auto_clean_cache: false,
-                    cache_lifetime: "1 day".into(),
-                    inherit_colors_for_piped_tasks: false,
-                    kill_process_threshold: 2000,
-                    log_running_command: true,
-                    ..Default::default()
-                }
-            );
-            assert!(!config.telemetry);
-            assert_eq!(
-                config.vcs,
-                VcsConfig {
-                    default_branch: "main".into(),
-                    hooks: FxHashMap::from_iter([(
-                        "pre-commit".into(),
-                        vec![
-                            "moon check --all --affected".into(),
-                            "moon run :pre-commit".into()
-                        ]
-                    )]),
-                    hook_format: VcsHookFormat::Native,
-                    client: VcsClient::Git,
-                    provider: VcsProvider::GitLab,
-                    remote_candidates: vec!["main".into(), "origin/main".into()],
-                    sync: true,
-                }
-            );
-        }
+    #[test]
+    fn supports_toml() {
+        load_workspace_config_in_format("toml");
     }
 }

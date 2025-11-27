@@ -1,0 +1,54 @@
+id = "custom-id"
+
+language = "rust"
+
+layer = "library"
+
+stack = "frontend"
+
+tags = ["a", "b", "c"]
+
+dependsOn = ["a", { id = "b", scope = "build", source = "implicit" }]
+
+[docker.file]
+buildTask = "build"
+image = "node:latest"
+startTask = "start"
+
+[docker.scaffold]
+sourcesPhaseGlobs = ["*.js"]
+
+[env]
+KEY = "value"
+
+[fileGroups]
+sources = ["src/**/*"]
+tests = ["/**/*.test.*"]
+
+[owners]
+customGroups = {}
+defaultOwner = "owner"
+optional = true
+paths = ["dir/", "file.txt"]
+requiredApprovals = 5
+
+[project]
+title = "Name"
+description = "Does something"
+owner = "team"
+channel = "#team"
+bool = true
+string = "abc"
+
+[tasks]
+
+[toolchains.deno]
+version = "1.2.3"
+
+[toolchains.typescript]
+includeSharedTypes = true
+
+[workspace.inheritedTasks]
+exclude = ["build"]
+include = ["test"]
+rename = { old = "new" }

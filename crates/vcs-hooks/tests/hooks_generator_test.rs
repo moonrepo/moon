@@ -170,7 +170,7 @@ mod vcs_hooks {
 
             run_generator(sandbox.path()).await;
 
-            let pre_commit = sandbox.path().join(".moon/hooks/pre-commit.sh");
+            let pre_commit = sandbox.path().join(".moon/hooks/pre-commit");
 
             assert!(pre_commit.exists());
             assert_eq!(
@@ -256,8 +256,8 @@ mod vcs_hooks {
                 .await
                 .unwrap();
 
-            let pre_commit = sandbox.path().join(".moon/hooks/pre-commit.sh");
-            let post_push = sandbox.path().join(".moon/hooks/post-push.sh");
+            let pre_commit = sandbox.path().join(".moon/hooks/pre-commit");
+            let post_push = sandbox.path().join(".moon/hooks/post-push");
 
             assert!(pre_commit.exists());
             assert!(post_push.exists());
@@ -274,12 +274,12 @@ mod vcs_hooks {
             assert!(
                 fs::read_to_string(pre_commit)
                     .unwrap()
-                    .contains("./.moon/hooks/pre-commit.sh $1 $2 $3")
+                    .contains("./.moon/hooks/pre-commit $1 $2 $3")
             );
             assert!(
                 fs::read_to_string(post_push)
                     .unwrap()
-                    .contains("./.moon/hooks/post-push.sh $1 $2 $3")
+                    .contains("./.moon/hooks/post-push $1 $2 $3")
             );
         }
 

@@ -5,6 +5,7 @@ use moon_common::{
     path::{PathExt, WorkspaceRelativePathBuf},
 };
 use moon_config::{VcsConfig, VcsHookFormat};
+use moon_vcs::VcsHookEnvironment;
 use starbase_utils::fs;
 use std::path::Path;
 use tracing::{debug, instrument, warn};
@@ -110,7 +111,7 @@ impl<'app> HooksGenerator<'app> {
             return Ok(false);
         }
 
-        let Some(hooks_dir) = vcs.setup_hooks().await? else {
+        let Some(env) = vcs.setup_hooks().await? else {
             return Ok(false);
         };
 
@@ -118,11 +119,14 @@ impl<'app> HooksGenerator<'app> {
 
         debug!("Generating {} hooks", self.config.client);
 
-        self.create_hook_files(&hooks_dir)?;
+        self.create_hook_files(&env)?;
 
         state.data.hook_names = self.config.hooks.keys().cloned().collect();
-        state.data.relative_hooks_dir =
-            hooks_dir.relative_to(&self.app_context.workspace_root).ok();
+        state.data.relative_hooks_dir = env
+            .hooks_dir
+            .relative_to(&self.app_context.workspace_root)
+            .ok();
+
         state.save()?;
 
         Ok(true)
@@ -154,10 +158,10 @@ impl<'app> HooksGenerator<'app> {
         Ok(true)
     }
 
-    fn create_hook_files(&self, hooks_dir: &Path) -> miette::Result<()> {
+    fn create_hook_files(&self, env: &VcsHookEnvironment) -> miette::Result<()> {
         for (hook_name, commands) in &self.config.hooks {
             if !commands.is_empty() {
-                self.create_hook_file(hooks_dir, hook_name, commands)?;
+                self.create_hook_file(env, hook_name, commands)?;
             }
         }
 
@@ -166,7 +170,7 @@ impl<'app> HooksGenerator<'app> {
 
     fn create_hook_file(
         &self,
-        hooks_dir: &Path,
+        env: &VcsHookEnvironment,
         hook_name: &str,
         commands: &[String],
     ) -> miette::Result<()> {
@@ -174,7 +178,7 @@ impl<'app> HooksGenerator<'app> {
 
         // Bash only
         if self.is_bash_format() {
-            let hook_path = hooks_dir.join(hook_name);
+            let hook_path = env.hooks_dir.join(hook_name);
 
             debug!(file = ?hook_path, "Creating Bash {} hook", color::file(hook_name));
 
@@ -182,22 +186,23 @@ impl<'app> HooksGenerator<'app> {
         }
         // Bash + PowerShell
         else {
-            let hook_path = hooks_dir.join(format!("{hook_name}.ps1"));
+            let hook_path = env.hooks_dir.join(format!("{hook_name}.ps1"));
 
             debug!(file = ?hook_path, "Creating PowerShell {} hook", color::file(hook_name));
 
             self.write_file(&hook_path, hook)?;
 
             // Create a bash hook to call the PowerShell script
-            let bash_hook_path = hooks_dir.join(hook_name);
+            let bash_hook_path = env.hooks_dir.join(hook_name);
 
             self.write_file(&bash_hook_path, format!(
-                "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"./{hook_name}.ps1\" $1 $2 $3 $4 $5",
+                "#!/bin/sh\n{} -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"{}\" $1 $2 $3 $4 $5",
                 if matches!(self.shell, ShellType::Pwsh) {
                     "pwsh.exe"
                 } else {
                     "powershell.exe"
                 },
+                hook_path.relative_to(&env.working_dir).unwrap(),
             ))?;
         }
 

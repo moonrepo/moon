@@ -11,16 +11,16 @@ cached = "0.56.0"
 chrono = { version = "0.4.42", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.51", default-features = false, features = [
+clap = { version = "4.5.53", default-features = false, features = [
     "derive",
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.60"
+clap_complete = "4.5.61"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
 ] }
-convert_case = "0.8.0"
+convert_case = "0.10.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.12.0"
@@ -43,7 +43,7 @@ reqwest = { version = "0.12.24", default-features = false, features = [
 ] }
 rustc-hash = "2.1.1"
 scc = "2.4.0"
-schematic = { version = "0.18.15", default-features = false, features = [
+schematic = { version = "0.19.1", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"
@@ -58,11 +58,11 @@ starbase_archive = { version = "0.12.0", default-features = false, features = [
     "zip-all",
 ] }
 starbase_console = { version = "0.6.18", features = ["miette"] }
-starbase_id = { version = "0.2.6", features = ["miette", "schematic"] }
-starbase_sandbox = "0.10.1"
+starbase_id = { version = "0.3.0", features = ["miette", "schematic"] }
+starbase_sandbox = "0.10.2"
 starbase_shell = "0.10.2"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.12.0", default-features = false, features = [
+starbase_utils = { version = "0.12.1", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",
@@ -88,14 +88,14 @@ uuid = { version = "1.18.1", features = ["v4"] }
 # proto/plugin related
 extism = "=1.12.0"
 extism-pdk = "1.4.1"
-proto_core = "0.54.0"
-proto_pdk_api = "0.31.2"
-proto_pdk_test_utils = "0.42.0"
-system_env = "0.8.3"
-version_spec = "0.9.6"
-warpgate = "0.28.3"
-warpgate_api = "0.17.1"
-warpgate_pdk = "0.16.1"
+proto_core = "0.54.1"
+proto_pdk_api = "0.31.3"
+proto_pdk_test_utils = "0.42.1"
+system_env = "0.9.0"
+version_spec = "0.10.0"
+warpgate = "0.28.4"
+warpgate_api = "0.17.2"
+warpgate_pdk = "0.16.2"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_pdk_api = { path = "../proto/crates/pdk-api" }

@@ -1397,176 +1397,18 @@ mod task_manager {
         }
     }
 
-    mod pkl {
-        use super::*;
-        use moon_common::Id;
-        use starbase_sandbox::locate_fixture;
+    #[test]
+    fn supports_hcl() {
+        load_tasks_config_in_format("hcl");
+    }
 
-        #[test]
-        fn loads_pkl() {
-            let config = test_config(locate_fixture("pkl"), |path| {
-                ConfigLoader::new(path.join(".moon"))
-                    .load_tasks_config_from_path(path.join(".moon/tasks.pkl"))
-            });
+    #[test]
+    fn supports_pkl() {
+        load_tasks_config_in_format("pkl");
+    }
 
-            assert_eq!(
-                config,
-                InheritedTasksConfig {
-                    file_groups: FxHashMap::from_iter([
-                        (
-                            Id::raw("sources"),
-                            vec![Input::Glob(stub_glob_input("src/**/*"))]
-                        ),
-                        (
-                            Id::raw("tests"),
-                            vec![
-                                Input::Glob(stub_glob_input("*.test.ts")),
-                                Input::Glob(stub_glob_input("*.test.tsx"))
-                            ]
-                        ),
-                    ]),
-                    implicit_deps: vec![
-                        TaskDependency::Target(Target::parse("project:task-a").unwrap()),
-                        TaskDependency::Config(TaskDependencyConfig {
-                            target: Target::parse("project:task-b").unwrap(),
-                            optional: Some(true),
-                            ..Default::default()
-                        }),
-                        TaskDependency::Target(Target::parse("project:task-c").unwrap()),
-                        TaskDependency::Config(TaskDependencyConfig {
-                            args: TaskArgs::String("--foo --bar".into()),
-                            env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
-                            target: Target::parse("project:task-d").unwrap(),
-                            ..Default::default()
-                        }),
-                    ],
-                    implicit_inputs: vec![
-                        Input::EnvVar("ENV".into()),
-                        Input::EnvVarGlob("ENV_*".into()),
-                        Input::File(stub_file_input("file.txt")),
-                        Input::Glob(stub_glob_input("file.*")),
-                        Input::File(stub_file_input("/file.txt")),
-                        Input::Glob(stub_glob_input("/file.*")),
-                    ],
-                    task_options: Some(TaskOptionsConfig {
-                        affected_files: Some(TaskOptionAffectedFiles::Args),
-                        affected_pass_inputs: Some(true),
-                        allow_failure: Some(true),
-                        cache: Some(TaskOptionCache::Enabled(false)),
-                        cache_key: None,
-                        cache_lifetime: None,
-                        env_file: Some(TaskOptionEnvFile::File(FilePath(".env".into()))),
-                        infer_inputs: None,
-                        interactive: Some(false),
-                        internal: Some(true),
-                        merge: None,
-                        merge_args: Some(TaskMergeStrategy::Append),
-                        merge_deps: Some(TaskMergeStrategy::Prepend),
-                        merge_env: Some(TaskMergeStrategy::Replace),
-                        merge_inputs: Some(TaskMergeStrategy::Preserve),
-                        merge_outputs: None,
-                        merge_toolchains: None,
-                        mutex: Some("lock".into()),
-                        os: Some(OneOrMany::Many(vec![
-                            TaskOperatingSystem::Linux,
-                            TaskOperatingSystem::Macos
-                        ])),
-                        output_style: Some(TaskOutputStyle::Stream),
-                        persistent: Some(true),
-                        priority: None,
-                        retry_count: Some(3),
-                        run_deps_in_parallel: Some(false),
-                        run_in_ci: Some(TaskOptionRunInCI::Enabled(true)),
-                        run_from_workspace_root: Some(false),
-                        shell: Some(false),
-                        timeout: Some(60),
-                        unix_shell: Some(TaskUnixShell::Zsh),
-                        windows_shell: Some(TaskWindowsShell::Pwsh)
-                    }),
-                    tasks: BTreeMap::from_iter([
-                        (
-                            Id::raw("build-linux"),
-                            TaskConfig {
-                                command: TaskArgs::String("cargo".into()),
-                                args: TaskArgs::List(vec![
-                                    "--target".into(),
-                                    "x86_64-unknown-linux-gnu".into(),
-                                    "--verbose".into(),
-                                ]),
-                                options: TaskOptionsConfig {
-                                    os: Some(OneOrMany::One(TaskOperatingSystem::Linux)),
-                                    ..Default::default()
-                                },
-                                ..Default::default()
-                            }
-                        ),
-                        (
-                            Id::raw("build-macos"),
-                            TaskConfig {
-                                command: TaskArgs::String("cargo".into()),
-                                args: TaskArgs::List(vec![
-                                    "--target".into(),
-                                    "x86_64-apple-darwin".into(),
-                                    "--verbose".into(),
-                                ]),
-                                options: TaskOptionsConfig {
-                                    os: Some(OneOrMany::One(TaskOperatingSystem::Macos)),
-                                    ..Default::default()
-                                },
-                                ..Default::default()
-                            }
-                        ),
-                        (
-                            Id::raw("build-windows"),
-                            TaskConfig {
-                                command: TaskArgs::String("cargo".into()),
-                                args: TaskArgs::List(vec![
-                                    "--target".into(),
-                                    "i686-pc-windows-msvc".into(),
-                                    "--verbose".into(),
-                                ]),
-                                options: TaskOptionsConfig {
-                                    os: Some(OneOrMany::One(TaskOperatingSystem::Windows)),
-                                    ..Default::default()
-                                },
-                                ..Default::default()
-                            }
-                        ),
-                        (
-                            Id::raw("example"),
-                            TaskConfig {
-                                options: TaskOptionsConfig {
-                                    cache: Some(TaskOptionCache::Enabled(true)),
-                                    cache_lifetime: Some("1 hour".into()),
-                                    ..Default::default()
-                                },
-                                ..Default::default()
-                            }
-                        ),
-                        (
-                            Id::raw("lint"),
-                            TaskConfig {
-                                inputs: Some(vec![
-                                    Input::Glob(stub_glob_input("**/*.graphql")),
-                                    Input::Glob(stub_glob_input("src/**/*")),
-                                ]),
-                                ..Default::default()
-                            }
-                        ),
-                        (
-                            Id::raw("test"),
-                            TaskConfig {
-                                inputs: Some(vec![
-                                    Input::Glob(stub_glob_input("src/**/*")),
-                                    Input::Glob(stub_glob_input("tests/**/*")),
-                                ]),
-                                ..Default::default()
-                            }
-                        ),
-                    ]),
-                    ..Default::default()
-                }
-            );
-        }
+    #[test]
+    fn supports_toml() {
+        load_tasks_config_in_format("toml");
     }
 }

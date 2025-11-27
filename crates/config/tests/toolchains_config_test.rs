@@ -299,41 +299,18 @@ plugin:
         }
     }
 
-    mod pkl {
-        use super::*;
-        use starbase_sandbox::locate_fixture;
-        use std::collections::BTreeMap;
+    #[test]
+    fn supports_hcl() {
+        load_toolchains_config_in_format("hcl");
+    }
 
-        #[test]
-        fn loads_pkl() {
-            let config = test_config(locate_fixture("pkl"), |path| {
-                let proto = proto_core::ProtoConfig::default();
-                ConfigLoader::new(path.join(".moon")).load_toolchains_config(path, &proto)
-            });
+    #[test]
+    fn supports_pkl() {
+        load_toolchains_config_in_format("pkl");
+    }
 
-            assert_eq!(
-                config.plugins.get("typescript").unwrap().config,
-                BTreeMap::from_iter([
-                    ("createMissingConfig".into(), Value::Bool(false)),
-                    ("includeProjectReferenceSources".into(), Value::Bool(true)),
-                    ("includeSharedTypes".into(), Value::Bool(true)),
-                    (
-                        "projectConfigFileName".into(),
-                        Value::String("tsconfig.app.json".into())
-                    ),
-                    (
-                        "rootConfigFileName".into(),
-                        Value::String("tsconfig.root.json".into())
-                    ),
-                    (
-                        "rootOptionsConfigFileName".into(),
-                        Value::String("tsconfig.opts.json".into())
-                    ),
-                    ("routeOutDirToCache".into(), Value::Bool(true)),
-                    ("syncProjectReferences".into(), Value::Bool(false)),
-                    ("syncProjectReferencesToPaths".into(), Value::Bool(true)),
-                ])
-            );
-        }
+    #[test]
+    fn supports_toml() {
+        load_toolchains_config_in_format("toml");
     }
 }

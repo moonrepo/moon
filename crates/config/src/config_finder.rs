@@ -14,11 +14,11 @@ impl Default for ConfigFinder {
             extensions: vec![
                 "yml".into(),
                 "yaml".into(),
+                "jsonc".into(),
                 "json".into(),
-                // TODO add to schematic
-                // "jsonc".into(),
-                "toml".into(),
                 "pkl".into(),
+                "hcl".into(),
+                "toml".into(),
             ],
         }
     }

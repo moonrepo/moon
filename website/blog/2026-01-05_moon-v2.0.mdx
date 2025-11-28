@@ -358,6 +358,14 @@ v2. We've made this the default implementation and removed the legacy implementa
 implementation is faster, more reliable, and has better support for complex repositories (worktrees,
 submodules, etc). The `experiments.gitV2` setting should now be removed.
 
+### Worktree compatible hooks
+
+We've rewritten our Git hooks system to be compatible with Git worktrees, and to better handle the
+`core.hooksPath` Git configuration. Previously hooks were written to `.git/hooks` at the repository
+root, but we now don't write to `.git` at all, and entirely rely on `.moon/hooks` in each tree.
+
+> You may need to enable the `extensions.worktreeConfig` Git setting for this to work properly:
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.0.0) for a full list of

@@ -103,12 +103,12 @@ mod sync_hooks {
 
         assert!(dir.exists());
 
+        assert!(dir.join("pre-commit").exists());
+        assert!(dir.join("post-push").exists());
+
         if cfg!(windows) {
             assert!(dir.join("pre-commit.ps1").exists());
             assert!(dir.join("post-push.ps1").exists());
-        } else {
-            assert!(dir.join("pre-commit.sh").exists());
-            assert!(dir.join("post-push.sh").exists());
         }
     }
 

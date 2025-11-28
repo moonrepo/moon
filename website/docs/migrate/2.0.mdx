@@ -243,6 +243,24 @@ tasks:
       runInCI: false
 ```
 
+## VCS
+
+### New hooks system
+
+We've rewritten our Git hooks from the ground up to be based around the `core.hooksPath` setting.
+The following changes have been made:
+
+- We no longer write hooks to the `.git/hooks` directory.
+- Instead, all hooks are written to `.moon/hooks` and Git is configured to use this directory.
+- Bash scripts no longer end in `.sh`.
+
+:::caution
+
+We currently don't have an easy way to clean the previous implementation of hooks. You may need to
+manually remove the old scripts from `.git/hooks` and `.moon/hooks` if they are causing issues.
+
+:::
+
 ## Other changes
 
 ### Changed (touched) files

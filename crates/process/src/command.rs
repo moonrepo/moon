@@ -14,10 +14,36 @@ use std::hash::Hasher;
 use std::sync::Arc;
 
 #[derive(Debug)]
+pub enum CommandExecutable {
+    /// Single file name: git
+    Binary(OsString),
+    /// Full script: git commit -m ""
+    Script(OsString),
+}
+
+impl CommandExecutable {
+    pub fn as_os_str(&self) -> &OsStr {
+        match &self {
+            Self::Binary(inner) => inner,
+            Self::Script(inner) => inner,
+        }
+    }
+
+    pub fn into_inner(self) -> OsString {
+        match self {
+            Self::Binary(inner) => inner,
+            Self::Script(inner) => inner,
+        }
+    }
+
+    pub fn is_script(&self) -> bool {
+        matches!(self, Self::Script(_))
+    }
+}
+
+#[derive(Debug)]
 pub struct Command {
     pub args: VecDeque<OsString>,
-
-    pub bin: OsString,
 
     /// Continuously write to stdin and read from stdout.
     pub continuous_pipe: bool,
@@ -25,6 +51,8 @@ pub struct Command {
     pub cwd: Option<OsString>,
 
     pub env: FxHashMap<OsString, Option<OsString>>,
+
+    pub exe: CommandExecutable,
 
     /// Convert non-zero exits to errors
     pub error_on_nonzero: bool,
@@ -55,13 +83,13 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
+    pub fn new<T: AsRef<OsStr>>(bin: T) -> Self {
         Command {
-            bin: bin.as_ref().to_os_string(),
             args: VecDeque::new(),
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
+            exe: CommandExecutable::Binary(bin.as_ref().to_os_string()),
             error_on_nonzero: true,
             escape_args: true,
             input: vec![],
@@ -72,6 +100,12 @@ impl Command {
             shell: Some(Shell::default()),
             console: None,
         }
+    }
+
+    pub fn new_script<T: AsRef<OsStr>>(script: T) -> Self {
+        let mut command = Self::new(script);
+        command.exe = CommandExecutable::Script(command.exe.into_inner());
+        command
     }
 
     pub fn arg<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
@@ -269,7 +303,10 @@ impl Command {
     }
 
     pub fn get_bin_name(&self) -> String {
-        self.bin.to_string_lossy().to_string()
+        match &self.exe {
+            CommandExecutable::Binary(bin) => bin.to_string_lossy().to_string(),
+            CommandExecutable::Script(_) => String::from("(script)"),
+        }
     }
 
     pub fn get_cache_key(&self) -> String {
@@ -286,7 +323,14 @@ impl Command {
             }
         }
 
-        write(&self.bin);
+        match &self.exe {
+            CommandExecutable::Binary(exe) => {
+                write(exe);
+            }
+            CommandExecutable::Script(exe) => {
+                write(exe);
+            }
+        };
 
         for arg in &self.args {
             write(arg);
@@ -307,6 +351,11 @@ impl Command {
         self.prefix.as_deref()
     }
 
+    pub fn set_bin<T: AsRef<OsStr>>(&mut self, bin: T) -> &mut Self {
+        self.exe = CommandExecutable::Binary(bin.as_ref().to_os_string());
+        self
+    }
+
     pub fn set_continuous_pipe(&mut self, state: bool) -> &mut Self {
         self.continuous_pipe = state;
         self
@@ -324,6 +373,11 @@ impl Command {
 
     pub fn set_print_command(&mut self, state: bool) -> &mut Self {
         self.print_command = state;
+        self
+    }
+
+    pub fn set_script<T: AsRef<OsStr>>(&mut self, script: T) -> &mut Self {
+        self.exe = CommandExecutable::Script(script.as_ref().to_os_string());
         self
     }
 

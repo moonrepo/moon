@@ -73,7 +73,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("extension", "command").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.bin, "new-command");
+            assert_eq!(command.exe.as_os_str(), "new-command");
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -81,7 +81,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("toolchain", "command").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.bin, "new-command");
+            assert_eq!(command.exe.as_os_str(), "new-command");
         }
     }
 
@@ -94,7 +94,7 @@ mod command_builder {
                 TaskRunnerContainer::new_for_project("extension", "script", "script").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.bin, "wrapped=$(bin --flag)");
+            assert_eq!(command.exe.as_os_str(), "wrapped=$(bin --flag)");
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -103,7 +103,7 @@ mod command_builder {
                 TaskRunnerContainer::new_for_project("toolchain", "script", "script").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.bin, "wrapped=$(bin --flag)");
+            assert_eq!(command.exe.as_os_str(), "wrapped=$(bin --flag)");
         }
     }
 

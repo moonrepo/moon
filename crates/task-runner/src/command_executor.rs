@@ -97,7 +97,7 @@ impl<'task> CommandExecutor<'task> {
 
             debug!(
                 task_target = self.task.target.as_str(),
-                command = self.command.bin.to_str(),
+                command = self.command.get_bin_name(),
                 "Running task (attempt {} of {})",
                 self.attempt_index,
                 self.attempt_total
@@ -159,7 +159,7 @@ impl<'task> CommandExecutor<'task> {
 
                         debug!(
                             task_target = self.task.target.as_str(),
-                            command = self.command.bin.to_str(),
+                            command = self.command.get_bin_name(),
                             exit_code = output.code(),
                             "Ran task, checking conditions",
                         );
@@ -168,7 +168,7 @@ impl<'task> CommandExecutor<'task> {
                     } else {
                         debug!(
                             task_target = self.task.target.as_str(),
-                            command = self.command.bin.to_str(),
+                            command = self.command.get_bin_name(),
                             "Task timed out",
                         );
 
@@ -219,7 +219,7 @@ impl<'task> CommandExecutor<'task> {
                 Err(error) => {
                     debug!(
                         task_target = self.task.target.as_str(),
-                        command = self.command.bin.to_str(),
+                        command = self.command.get_bin_name(),
                         "Failed to run task, an unexpected error occurred",
                     );
 

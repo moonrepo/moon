@@ -134,6 +134,20 @@ features:
 - Hook into the task hashing process
 - Manages downloading and installing tools (via proto)
 
+### Improved `PATH` handling
+
+Toolchain (and extension) plugins have the ability to modify the `PATH` environment variable for
+most child processes that occur during task execution, but the way we handled this has been improved
+significantly. Previously, there were some inconsistencies around when and how the `PATH` was
+modified, leading to unexpected behavior in certain scenarios. Going forward, we inherit paths using
+a strict order of operations:
+
+- Inherit for all commands using `extend_command` extension and toolchain calls
+- Inherit for task commands using `extend_task_command` or `extend_task_script` toolchain calls
+- Inherit toolchain executable directories
+- Inherit proto shims and bins directories
+- Inherit proto and moon store directories
+
 ## Extensions
 
 Extensions are a WASM plugin based system that has existed for some time now, but they only

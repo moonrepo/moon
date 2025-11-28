@@ -361,7 +361,7 @@ impl<'app> CommandAugmenter<'app> {
             let paths = self
                 .context
                 .toolchain_registry
-                .get_command_paths(map.keys().map(|id| *id).collect(), |_, toolchain| {
+                .get_command_paths(map.keys().copied().collect(), |_, toolchain| {
                     map.get(&toolchain.id).map(|version| (*version).to_owned())
                 })
                 .await?;

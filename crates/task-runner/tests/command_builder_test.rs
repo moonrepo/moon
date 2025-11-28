@@ -395,7 +395,7 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths_before.iter().last().unwrap(),
+                    command.paths.iter().last().unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -411,7 +411,7 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths_before.iter().last().unwrap(),
+                    command.paths.iter().last().unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -470,7 +470,7 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths_before.iter().last().unwrap(),
+                    command.paths.iter().last().unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -486,7 +486,7 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths_before.iter().last().unwrap(),
+                    command.paths.iter().last().unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -802,7 +802,7 @@ mod command_builder {
 
             assert!(
                 !command
-                    .paths_before
+                    .paths
                     .iter()
                     .any(|path| path.to_str().unwrap().contains(if cfg!(windows) {
                         ".proto\\tools\\proto"

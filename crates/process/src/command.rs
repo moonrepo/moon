@@ -45,7 +45,7 @@ impl CommandExecutable {
 pub struct Command {
     pub args: VecDeque<OsString>,
 
-    /// Continuously write to stdin and read from stdout.
+    /// Continuously write to stdin and read from stdout
     pub continuous_pipe: bool,
 
     pub cwd: Option<OsString>,
@@ -57,17 +57,14 @@ pub struct Command {
     /// Convert non-zero exits to errors
     pub error_on_nonzero: bool,
 
-    /// Escape/quote arguments when joining.
+    /// Escape/quote arguments when joining
     pub escape_args: bool,
 
     /// Values to pass to stdin
     pub input: Vec<OsString>,
 
-    /// Paths to append to `PATH`
-    pub paths_after: VecDeque<OsString>,
-
     /// Paths to prepend to `PATH`
-    pub paths_before: VecDeque<OsString>,
+    pub paths: VecDeque<OsString>,
 
     /// Prefix to prepend to all log lines
     pub prefix: Option<String>,
@@ -93,8 +90,7 @@ impl Command {
             error_on_nonzero: true,
             escape_args: true,
             input: vec![],
-            paths_after: VecDeque::new(),
-            paths_before: VecDeque::new(),
+            paths: VecDeque::new(),
             prefix: None,
             print_command: false,
             shell: Some(Shell::default()),
@@ -191,6 +187,31 @@ impl Command {
         self
     }
 
+    pub fn envs_remove<I, V>(&mut self, vars: I) -> &mut Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<OsStr>,
+    {
+        for v in vars {
+            self.env_remove(v);
+        }
+
+        self
+    }
+
+    pub fn envs_if_missing<I, K, V>(&mut self, vars: I) -> &mut Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        for (k, v) in vars {
+            self.env_if_missing(k, v);
+        }
+
+        self
+    }
+
     pub fn envs_if_not_global<I, K, V>(&mut self, vars: I) -> &mut Self
     where
         I: IntoIterator<Item = (K, V)>,
@@ -239,21 +260,17 @@ impl Command {
     pub fn inherit_path(&mut self) -> miette::Result<&mut Self> {
         let key = OsString::from("PATH");
 
-        if self.env.contains_key(&key)
-            || (self.paths_before.is_empty() && self.paths_after.is_empty())
-        {
+        if self.env.contains_key(&key) || self.paths.is_empty() {
             return Ok(self);
         }
 
         let mut paths = vec![];
 
-        paths.extend(self.paths_before.clone());
+        paths.extend(self.paths.clone());
 
         for path in env::split_paths(&env::var_os(&key).unwrap_or_default()) {
             paths.push(path.into_os_string());
         }
-
-        paths.extend(self.paths_after.clone());
 
         self.env(&key, env::join_paths(paths).into_diagnostic()?);
 
@@ -278,7 +295,7 @@ impl Command {
         V: AsRef<OsStr>,
     {
         for path in list {
-            self.paths_after.push_back(path.as_ref().to_os_string());
+            self.paths.push_back(path.as_ref().to_os_string());
         }
 
         self
@@ -296,10 +313,17 @@ impl Command {
         }
 
         for path in paths.into_iter().rev() {
-            self.paths_before.push_front(path);
+            self.paths.push_front(path);
         }
 
         self
+    }
+
+    pub fn get_args_list(&self) -> Vec<String> {
+        self.args
+            .iter()
+            .map(|arg| arg.to_string_lossy().to_string())
+            .collect()
     }
 
     pub fn get_bin_name(&self) -> String {
@@ -349,6 +373,13 @@ impl Command {
 
     pub fn get_prefix(&self) -> Option<&str> {
         self.prefix.as_deref()
+    }
+
+    pub fn get_script(&self) -> String {
+        match &self.exe {
+            CommandExecutable::Binary(_) => String::new(),
+            CommandExecutable::Script(script) => script.to_string_lossy().to_string(),
+        }
     }
 
     pub fn set_bin<T: AsRef<OsStr>>(&mut self, bin: T) -> &mut Self {

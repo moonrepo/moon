@@ -265,10 +265,10 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                     element! {
                         Entry(
                             name: "Lookup paths",
-                            no_children: command.paths_before.is_empty()
+                            no_children: command.paths.is_empty()
                         ) {
                             List {
-                                #(command.paths_before.iter().map(|path| {
+                                #(command.paths.iter().map(|path| {
                                     element! {
                                         ListItem {
                                             StyledText(

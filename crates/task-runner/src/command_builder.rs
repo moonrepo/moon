@@ -5,7 +5,7 @@ use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_env_var::GlobalEnvBag;
 use moon_process::{Command, Shell, ShellType};
-use moon_process_augment::CommandBuilder as BaseCommandBuilder;
+use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
 use moon_task::Task;
 use std::path::Path;
@@ -80,16 +80,16 @@ impl<'task> CommandBuilder<'task> {
     }
 
     async fn build_command(&mut self) -> miette::Result<Command> {
-        let mut builder = BaseCommandBuilder::from_task(self.app, self.env_bag, self.task);
+        let mut command = AugmentedCommand::from_task(self.app, self.env_bag, self.task);
 
-        builder
+        command
             .inherit_from_plugins(Some(self.project), Some(self.task))
             .await?;
 
         // Scripts should be used as-is
-        builder.escape_args = self.task.script.is_none();
+        command.escape_args = self.task.script.is_none();
 
-        Ok(builder.build())
+        Ok(command.augment())
     }
 
     #[instrument(skip_all)]
@@ -170,7 +170,7 @@ impl<'task> CommandBuilder<'task> {
             if let Some(shell) = &self.task.options.unix_shell {
                 use moon_config::TaskUnixShell;
 
-                self.command.with_shell(match shell {
+                self.command.set_shell(match shell {
                     TaskUnixShell::Bash => Shell::new(ShellType::Bash),
                     TaskUnixShell::Elvish => Shell::new(ShellType::Elvish),
                     TaskUnixShell::Fish => Shell::new(ShellType::Fish),
@@ -198,7 +198,7 @@ impl<'task> CommandBuilder<'task> {
                 });
             }
         } else {
-            self.command.without_shell();
+            self.command.no_shell();
         }
     }
 

@@ -52,7 +52,7 @@ impl<'task> CommandExecutor<'task> {
         node: &ActionNode,
         mut command: Command,
     ) -> Self {
-        command.with_console(app.console.clone());
+        command.set_console(app.console.clone());
 
         Self {
             attempts: OperationList::default(),

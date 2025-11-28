@@ -31,15 +31,15 @@ use std::path::PathBuf;
 // - proto store/shims/bin paths
 // - moon store paths
 
-pub struct CommandBuilder<'app> {
+pub struct AugmentedCommand<'app> {
     command: Command,
     bag: &'app GlobalEnvBag,
     context: &'app AppContext,
 }
 
-impl<'app> CommandBuilder<'app> {
+impl<'app> AugmentedCommand<'app> {
     pub fn new(context: &'app AppContext, bag: &'app GlobalEnvBag, bin: impl AsRef<OsStr>) -> Self {
-        CommandBuilder {
+        AugmentedCommand {
             command: Command::new(bin),
             bag,
             context,
@@ -70,7 +70,7 @@ impl<'app> CommandBuilder<'app> {
         builder
     }
 
-    pub fn build(self) -> Command {
+    pub fn augment(self) -> Command {
         self.command
     }
 
@@ -356,7 +356,7 @@ impl<'app> CommandBuilder<'app> {
     }
 }
 
-impl Deref for CommandBuilder<'_> {
+impl Deref for AugmentedCommand<'_> {
     type Target = Command;
 
     fn deref(&self) -> &Self::Target {
@@ -364,7 +364,7 @@ impl Deref for CommandBuilder<'_> {
     }
 }
 
-impl DerefMut for CommandBuilder<'_> {
+impl DerefMut for AugmentedCommand<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.command
     }

@@ -2,7 +2,7 @@ use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;
 use moon_env_var::GlobalEnvBag;
-use moon_process_augment::CommandBuilder;
+use moon_process_augment::AugmentedCommand;
 use starbase::AppResult;
 use tracing::instrument;
 
@@ -18,15 +18,11 @@ pub async fn bin(session: MoonSession, args: BinArgs) -> AppResult {
 
     let app_context = session.get_app_context().await?;
 
-    let mut builder = CommandBuilder::new(&app_context, GlobalEnvBag::instance(), "proto");
-    builder.inherit_from_plugins(None, None).await?;
+    let mut command = AugmentedCommand::new(&app_context, GlobalEnvBag::instance(), "proto");
+    command.arg("bin").arg(&args.toolchain);
+    command.inherit_from_plugins(None, None).await?;
 
-    let result = builder
-        .build()
-        .arg("bin")
-        .arg(&args.toolchain)
-        .exec_stream_output()
-        .await?;
+    let result = command.exec_stream_output().await?;
 
     if !result.success() {
         return Ok(Some(result.code().unwrap_or(1) as u8));

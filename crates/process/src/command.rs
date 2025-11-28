@@ -382,8 +382,18 @@ impl Command {
         }
     }
 
+    pub fn no_shell(&mut self) -> &mut Self {
+        self.shell = None;
+        self
+    }
+
     pub fn set_bin<T: AsRef<OsStr>>(&mut self, bin: T) -> &mut Self {
         self.exe = CommandExecutable::Binary(bin.as_ref().to_os_string());
+        self
+    }
+
+    pub fn set_console(&mut self, console: Arc<Console>) -> &mut Self {
+        self.console = Some(console);
         self
     }
 
@@ -412,6 +422,11 @@ impl Command {
         self
     }
 
+    pub fn set_shell(&mut self, shell: Shell) -> &mut Self {
+        self.shell = Some(shell);
+        self
+    }
+
     pub fn should_error_nonzero(&self) -> bool {
         self.error_on_nonzero
     }
@@ -425,20 +440,5 @@ impl Command {
 
     pub fn should_pass_stdin(&self) -> bool {
         !self.input.is_empty() || self.should_pass_args_stdin()
-    }
-
-    pub fn with_console(&mut self, console: Arc<Console>) -> &mut Self {
-        self.console = Some(console);
-        self
-    }
-
-    pub fn with_shell(&mut self, shell: Shell) -> &mut Self {
-        self.shell = Some(shell);
-        self
-    }
-
-    pub fn without_shell(&mut self) -> &mut Self {
-        self.shell = None;
-        self
     }
 }

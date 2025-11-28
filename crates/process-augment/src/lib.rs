@@ -1,3 +1,3 @@
-mod command_augmenter;
+mod augmented_command;
 
-pub use command_augmenter::*;
+pub use augmented_command::*;

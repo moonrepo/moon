@@ -79,7 +79,6 @@ async fn internal_exec_plugin_command(
     augment
         .inherit_from_plugins(options.project.as_deref(), None)
         .await?;
-    augment.inherit_for_proto();
 
     let mut cmd = augment.create_command();
 

@@ -84,7 +84,6 @@ impl<'task> CommandBuilder<'task> {
         augment
             .inherit_from_plugins(Some(self.project), Some(self.task))
             .await?;
-        augment.inherit_for_proto();
 
         let mut command = augment.create_command();
 

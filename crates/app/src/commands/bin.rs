@@ -20,7 +20,6 @@ pub async fn bin(session: MoonSession, args: BinArgs) -> AppResult {
 
     let mut augment = CommandAugmenter::new(&app_context, GlobalEnvBag::instance(), "proto");
     augment.inherit_from_plugins(None, None).await?;
-    augment.inherit_for_proto();
 
     let result = augment
         .create_command()

@@ -370,6 +370,9 @@ impl<'app> CommandAugmenter<'app> {
             self.augment.paths.extend(paths);
         }
 
+        // Inherit proto/moon last
+        self.inherit_for_proto();
+
         Ok(())
     }
 

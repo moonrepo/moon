@@ -196,10 +196,6 @@ mod git {
             );
             assert_eq!(git.get_repository_root().await.unwrap(), sandbox.path());
             assert_eq!(git.get_working_root().await.unwrap(), sandbox.path());
-            assert_eq!(
-                git.get_hooks_dir().await.unwrap(),
-                sandbox.path().join(".git/hooks")
-            );
 
             // Change branches
             sandbox.run_git(|cmd| {
@@ -215,10 +211,6 @@ mod git {
 
             assert_eq!(git.get_repository_root().await.unwrap(), sandbox.path());
             assert_eq!(git.get_working_root().await.unwrap(), sandbox.path());
-            assert_eq!(
-                git.get_hooks_dir().await.unwrap(),
-                sandbox.path().join("hooks")
-            );
         }
 
         #[tokio::test]
@@ -433,10 +425,6 @@ mod git {
             assert_eq!(
                 git.get_working_root().await.unwrap(),
                 sandbox.path().join("trees/one")
-            );
-            assert_eq!(
-                git.get_hooks_dir().await.unwrap(),
-                sandbox.path().join(".git/hooks")
             );
 
             // Change branches

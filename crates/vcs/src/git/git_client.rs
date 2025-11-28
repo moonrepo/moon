@@ -3,12 +3,11 @@ use super::git_error::GitError;
 use super::tree::*;
 use crate::changed_files::*;
 use crate::process_cache::ProcessCache;
-use crate::vcs::Vcs;
+use crate::vcs::{Vcs, VcsHookEnvironment};
 use async_trait::async_trait;
 use git_url_parse::types::provider::GenericProvider;
 use miette::IntoDiagnostic;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use moon_env_var::GlobalEnvBag;
 use moon_process::find_command_on_path;
 use semver::Version;
 use std::collections::BTreeMap;
@@ -16,6 +15,12 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::debug;
+
+enum GitConfigAction {
+    Get(String),
+    Set(String, String),
+    Unset(String),
+}
 
 #[derive(Debug)]
 pub struct Git {
@@ -190,6 +195,50 @@ impl Git {
 
         Ok(self.default_branch.clone())
     }
+
+    async fn exec_config(
+        &self,
+        action: GitConfigAction,
+        other_args: Vec<String>,
+    ) -> miette::Result<Arc<String>> {
+        let use_new_commands = self.is_version_supported(">=2.46.0").await?;
+        let other_args = other_args.iter().map(|arg| arg.as_str());
+        let mut args = vec!["config"];
+
+        match &action {
+            GitConfigAction::Get(key) => {
+                if use_new_commands {
+                    args.push("get");
+                } else {
+                    args.push("--get");
+                }
+
+                args.extend(other_args);
+                args.push(key);
+            }
+            GitConfigAction::Set(key, value) => {
+                if use_new_commands {
+                    args.push("set");
+                }
+
+                args.extend(other_args);
+                args.push(key);
+                args.push(value);
+            }
+            GitConfigAction::Unset(key) => {
+                if use_new_commands {
+                    args.push("unset");
+                } else {
+                    args.push("--unset");
+                }
+
+                args.extend(other_args);
+                args.push(key);
+            }
+        };
+
+        self.get_process().run(args, true).await
+    }
 }
 
 #[async_trait]
@@ -338,37 +387,6 @@ impl Vcs for Git {
         }
 
         Ok(new_paths)
-    }
-
-    async fn get_hooks_dir(&self) -> miette::Result<PathBuf> {
-        // Only use the hooks path if it's within the current repository
-        let is_in_repo = |dir: &Path| dir.is_absolute() && dir.starts_with(&self.repository_root);
-
-        if let Ok(output) = self
-            .get_process()
-            .run(["config", "--get", "core.hooksPath"], true)
-            .await
-        {
-            let dir = PathBuf::from(output.as_str());
-
-            if is_in_repo(&dir) {
-                return Ok(dir);
-            }
-        }
-
-        if let Some(dir) = GlobalEnvBag::instance().get("GIT_DIR") {
-            let dir = PathBuf::from(dir).join("hooks");
-
-            if is_in_repo(&dir) {
-                return Ok(dir);
-            }
-        }
-
-        // Worktrees do not support a hooks folder at `.git/worktrees/<name>/hooks`,
-        // so we need to use the hooks folder at `.git/hooks` instead
-        Ok(self
-            .repository_root
-            .join(if self.bare { "hooks" } else { ".git/hooks" }))
     }
 
     async fn get_repository_root(&self) -> miette::Result<PathBuf> {
@@ -566,5 +584,65 @@ impl Vcs for Git {
         };
 
         Ok(result)
+    }
+
+    async fn setup_hooks(&self) -> miette::Result<Option<VcsHookEnvironment>> {
+        let mut env = VcsHookEnvironment {
+            // The working directory is the worktree root, not the workspace root
+            working_dir: self.worktree.work_dir.clone(),
+            ..Default::default()
+        };
+
+        // Check if the path has already been configured
+        if let Ok(output) = self
+            .exec_config(
+                GitConfigAction::Get("core.hooksPath".into()),
+                vec!["--worktree".into()],
+            )
+            .await
+        {
+            let dir = PathBuf::from(output.as_str());
+
+            if !output.is_empty() && dir.starts_with(&self.workspace_root) {
+                env.hooks_dir = dir;
+
+                return Ok(Some(env));
+            }
+        }
+
+        // Enable config support for worktrees
+        if self.worktree.is_worktree() {
+            self.exec_config(
+                GitConfigAction::Set("extensions.worktreeConfig".into(), "true".into()),
+                vec![],
+            )
+            .await?;
+        }
+
+        // Otherwise update the config with the path
+        let hooks_dir = self.workspace_root.join(".moon").join("hooks");
+
+        self.exec_config(
+            GitConfigAction::Set(
+                "core.hooksPath".into(),
+                hooks_dir.to_string_lossy().to_string(),
+            ),
+            vec!["--worktree".into()],
+        )
+        .await?;
+
+        env.hooks_dir = hooks_dir;
+
+        Ok(Some(env))
+    }
+
+    async fn teardown_hooks(&self) -> miette::Result<()> {
+        self.exec_config(
+            GitConfigAction::Unset("core.hooksPath".into()),
+            vec!["--worktree".into()],
+        )
+        .await?;
+
+        Ok(())
     }
 }

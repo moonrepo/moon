@@ -7,6 +7,7 @@ use moon_common::{color, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
+use std::collections::VecDeque;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
@@ -14,7 +15,7 @@ use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct Command {
-    pub args: Vec<OsString>,
+    pub args: VecDeque<OsString>,
 
     pub bin: OsString,
 
@@ -35,10 +36,10 @@ pub struct Command {
     pub input: Vec<OsString>,
 
     /// Paths to append to `PATH`
-    pub paths_after: Vec<OsString>,
+    pub paths_after: VecDeque<OsString>,
 
     /// Paths to prepend to `PATH`
-    pub paths_before: Vec<OsString>,
+    pub paths_before: VecDeque<OsString>,
 
     /// Prefix to prepend to all log lines
     pub prefix: Option<String>,
@@ -57,15 +58,15 @@ impl Command {
     pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
         Command {
             bin: bin.as_ref().to_os_string(),
-            args: vec![],
+            args: VecDeque::new(),
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
             error_on_nonzero: true,
             escape_args: true,
             input: vec![],
-            paths_after: vec![],
-            paths_before: vec![],
+            paths_after: VecDeque::new(),
+            paths_before: VecDeque::new(),
             prefix: None,
             print_command: false,
             shell: Some(Shell::default()),
@@ -74,7 +75,7 @@ impl Command {
     }
 
     pub fn arg<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
-        self.args.push(arg.as_ref().to_os_string());
+        self.args.push_back(arg.as_ref().to_os_string());
         self
     }
 
@@ -127,9 +128,11 @@ impl Command {
         V: AsRef<OsStr>,
     {
         let key = key.as_ref();
+
         if !self.env.contains_key(key) {
             self.env(key, val);
         }
+
         self
     }
 
@@ -240,8 +243,9 @@ impl Command {
         I: IntoIterator<Item = V>,
         V: AsRef<OsStr>,
     {
-        self.paths_after
-            .extend(list.into_iter().map(|path| path.as_ref().to_os_string()));
+        for path in list {
+            self.paths_after.push_back(path.as_ref().to_os_string());
+        }
 
         self
     }
@@ -251,14 +255,16 @@ impl Command {
         I: IntoIterator<Item = V>,
         V: AsRef<OsStr>,
     {
-        let mut list = list
-            .into_iter()
-            .map(|path| path.as_ref().to_os_string())
-            .collect::<Vec<_>>();
+        let mut paths = vec![];
 
-        list.extend(std::mem::take(&mut self.paths_before));
+        for path in list {
+            paths.push(path.as_ref().to_os_string());
+        }
 
-        self.paths_before = list;
+        for path in paths.into_iter().rev() {
+            self.paths_before.push_front(path);
+        }
+
         self
     }
 
@@ -306,11 +312,6 @@ impl Command {
         self
     }
 
-    pub fn set_print_command(&mut self, state: bool) -> &mut Self {
-        self.print_command = state;
-        self
-    }
-
     pub fn set_error_on_nonzero(&mut self, state: bool) -> &mut Self {
         self.error_on_nonzero = state;
         self
@@ -321,12 +322,13 @@ impl Command {
         self
     }
 
-    pub fn should_error_nonzero(&self) -> bool {
-        self.error_on_nonzero
+    pub fn set_print_command(&mut self, state: bool) -> &mut Self {
+        self.print_command = state;
+        self
     }
 
-    pub fn should_pass_stdin(&self) -> bool {
-        !self.input.is_empty() || self.should_pass_args_stdin()
+    pub fn should_error_nonzero(&self) -> bool {
+        self.error_on_nonzero
     }
 
     pub fn should_pass_args_stdin(&self) -> bool {
@@ -334,6 +336,10 @@ impl Command {
             .as_ref()
             .map(|shell| shell.command.pass_args_stdin)
             .unwrap_or(false)
+    }
+
+    pub fn should_pass_stdin(&self) -> bool {
+        !self.input.is_empty() || self.should_pass_args_stdin()
     }
 
     pub fn with_console(&mut self, console: Arc<Console>) -> &mut Self {

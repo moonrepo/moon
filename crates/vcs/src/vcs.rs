@@ -8,6 +8,12 @@ use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+#[derive(Default)]
+pub struct VcsHookEnvironment {
+    pub hooks_dir: PathBuf,
+    pub working_dir: PathBuf,
+}
+
 #[async_trait]
 pub trait Vcs: Debug {
     /// Get the local checkout branch name.
@@ -36,9 +42,6 @@ pub trait Vcs: Debug {
         &self,
         dir: &WorkspaceRelativePath,
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>>;
-
-    /// Return an absolute path to the hooks directory, when applicable.
-    async fn get_hooks_dir(&self) -> miette::Result<PathBuf>;
 
     /// Return an absolute path to the repository root.
     async fn get_repository_root(&self) -> miette::Result<PathBuf>;
@@ -86,5 +89,15 @@ pub trait Vcs: Debug {
         let version = self.get_version().await?;
 
         Ok(VersionReq::parse(req).into_diagnostic()?.matches(&version))
+    }
+
+    /// Setup the hooks environment and return an absolute path to the hooks directory, when applicable.
+    async fn setup_hooks(&self) -> miette::Result<Option<VcsHookEnvironment>> {
+        Ok(None)
+    }
+
+    /// Teardown the hooks environment when applicable.
+    async fn teardown_hooks(&self) -> miette::Result<()> {
+        Ok(())
     }
 }

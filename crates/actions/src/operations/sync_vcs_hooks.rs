@@ -15,7 +15,7 @@ pub async fn sync_vcs_hooks(app_context: &AppContext, force: bool) -> miette::Re
     }
 
     // Force run the generator
-    if force || !generator.verify_hooks_exist().await? {
+    if force || !generator.verify_hooks_exist()? {
         generator.generate().await?;
 
         app_context

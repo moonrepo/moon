@@ -4120,6 +4120,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_process_augment"
+version = "0.0.1"
+dependencies = [
+ "miette 7.6.0",
+ "moon_app_context",
+ "moon_env_var",
+ "moon_pdk_api",
+ "moon_process",
+ "moon_project",
+ "moon_task",
+ "moon_toolchain",
+ "rustc-hash",
+]
+
+[[package]]
 name = "moon_project"
 version = "0.2.0"
 dependencies = [

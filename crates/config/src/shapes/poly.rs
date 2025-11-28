@@ -3,6 +3,7 @@ use schematic::schema::UnionType;
 use schematic::{Schema, SchemaBuilder, Schematic};
 
 config_enum!(
+    /// Represents a single value, or a list of multiple values.
     #[serde(untagged, expecting = "expected a single value, or a list of values")]
     pub enum OneOrMany<T: Schematic> {
         One(T),
@@ -13,6 +14,15 @@ config_enum!(
 impl<T: Schematic> Default for OneOrMany<T> {
     fn default() -> Self {
         Self::Many(vec![])
+    }
+}
+
+impl<T: Schematic + Clone + PartialEq> OneOrMany<T> {
+    pub fn matches(&self, value: &T) -> bool {
+        match self {
+            Self::One(item) => item == value,
+            Self::Many(list) => list.contains(value),
+        }
     }
 }
 

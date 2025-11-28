@@ -1,5 +1,5 @@
 tasks:
   no-dupes:
     deps:
-      - '@one:global'
+      - 'one:global'
       - 'alias-one:global'

@@ -1,0 +1,15 @@
+language: typescript
+
+tasks:
+  test:
+    command: jest --cache --color
+    inputs:
+      - 'tests/**/*'
+  lint:
+    command: eslint --cache --report-unused-disable-directives
+    outputs:
+      - 'cache'
+  internal:
+    command: build
+    options:
+      internal: true

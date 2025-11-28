@@ -1,6 +1,5 @@
 use crate::{HashEngine, StateEngine, merge_clean_results, resolve_path};
 use moon_cache_item::*;
-use moon_common::consts;
 use moon_common::path::encode_component;
 use moon_env_var::GlobalEnvBag;
 use moon_time::parse_duration;
@@ -34,8 +33,8 @@ pub struct CacheEngine {
 }
 
 impl CacheEngine {
-    pub fn new(workspace_root: &Path) -> miette::Result<CacheEngine> {
-        let dir = workspace_root.join(consts::CONFIG_DIRNAME).join("cache");
+    pub fn new(config_dir: impl AsRef<Path>) -> miette::Result<CacheEngine> {
+        let dir = config_dir.as_ref().join("cache");
         let cache_tag = dir.join("CACHEDIR.TAG");
 
         debug!(

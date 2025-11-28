@@ -21,12 +21,12 @@ pub async fn debug_vcs(session: MoonSession) -> AppResult {
         vcs.get_local_branch_revision().await?
     );
 
-    println!("touched_files");
-    dbg!(vcs.get_touched_files().await?);
+    println!("changed_files");
+    dbg!(vcs.get_changed_files().await?);
 
-    println!("touched_files_against_previous_revision");
+    println!("changed_files_against_previous_revision");
     dbg!(
-        vcs.get_touched_files_against_previous_revision("HEAD")
+        vcs.get_changed_files_against_previous_revision("HEAD")
             .await?
     );
 

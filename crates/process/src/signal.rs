@@ -13,6 +13,17 @@ pub enum SignalType {
     Terminate,
 }
 
+impl SignalType {
+    pub fn get_code(&self) -> i32 {
+        match self {
+            SignalType::Interrupt => 2,  // SIGINT
+            SignalType::Quit => 3,       // SIGQUIT
+            SignalType::Kill => 9,       // SIGKILL
+            SignalType::Terminate => 15, // SIGTERM
+        }
+    }
+}
+
 #[cfg(unix)]
 mod unix {
     use super::*;
@@ -43,17 +54,7 @@ mod unix {
     }
 
     pub fn kill(pid: u32, signal: SignalType) -> io::Result<()> {
-        let result = unsafe {
-            libc::kill(
-                pid as i32,
-                match signal {
-                    SignalType::Interrupt => 2,  // SIGINT
-                    SignalType::Quit => 3,       // SIGQUIT
-                    SignalType::Kill => 9,       // SIGKILL
-                    SignalType::Terminate => 15, // SIGTERM
-                },
-            )
-        };
+        let result = unsafe { libc::kill(pid as i32, signal.get_code()) };
 
         if result != 0 {
             let error = io::Error::last_os_error();

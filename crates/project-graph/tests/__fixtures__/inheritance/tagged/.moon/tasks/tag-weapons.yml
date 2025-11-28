@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['weapons']
+
 tasks:
   weapons:
     command: weapons

@@ -14,7 +14,7 @@ docker {
 		startTask = "start"
 	}
 	scaffold {
-		include = List("*.js")
+		sourcesPhaseGlobs = List("*.js")
 	}
 }
 
@@ -41,17 +41,13 @@ owners {
 	requiredApprovals = 5
 }
 
-platform = "node"
-
 project {
-	name = "Name"
+	title = "Name"
 	description = "Does something"
 	owner = "team"
 	channel = "#team"
-	metadata {
-		["bool"] = true
-		["string"] = "abc"
-	}
+	bool = true
+	string = "abc"
 }
 
 stack = "frontend"
@@ -60,7 +56,7 @@ tags = List("a", "b", "c")
 
 tasks {}
 
-toolchain {
+toolchains {
 	deno {
 		version = "1.2.3"
 	}
@@ -69,7 +65,7 @@ toolchain {
 	}
 }
 
-type = "library"
+layer = "library"
 
 workspace {
 	inheritedTasks {

@@ -1,0 +1,14 @@
+language: javascript
+
+dependsOn:
+  - basic
+  - build-c
+  # Will not include a task when using ^
+  - no-tasks
+
+tasks:
+  build:
+    command: do-build
+    deps:
+      - 'basic:build'
+      - '^:build'

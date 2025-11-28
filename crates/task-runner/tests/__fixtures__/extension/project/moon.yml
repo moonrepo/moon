@@ -1,0 +1,28 @@
+tasks:
+  base: {}
+
+  command:
+    command: 'bin --flag'
+
+  args-empty:
+    command: 'bin --flag'
+
+  args-append:
+    command: 'bin --flag'
+
+  args-prepend:
+    command: 'bin --flag'
+
+  args-replace:
+    command: 'bin --flag'
+
+  env:
+    command: 'bin --flag'
+
+  env-remove:
+    command: 'bin --flag'
+    env:
+      REMOVE_VAR: 'true'
+
+  path:
+    command: 'bin --flag'

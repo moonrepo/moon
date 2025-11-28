@@ -27,11 +27,12 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
         .map(|_| true)
     } else {
         let files = vec![
+            out_dir.join("extensions.json"),
             out_dir.join("project.json"),
             out_dir.join("tasks.json"),
             out_dir.join("template-frontmatter.json"),
             out_dir.join("template.json"),
-            out_dir.join("toolchain.json"),
+            out_dir.join("toolchains.json"),
             out_dir.join("workspace.json"),
         ];
 

@@ -57,24 +57,24 @@ mod affected_projects {
         state
     }
 
-    #[tokio::test]
-    async fn empty_if_no_touched_files() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn empty_if_no_changed_files() {
         let workspace_graph = build_graph("projects").await;
-        let touched_files = FxHashSet::default();
+        let changed_files = FxHashSet::default();
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.track_projects().unwrap();
         let affected = tracker.build();
 
         assert!(affected.projects.is_empty());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn tracks_projects() {
         let workspace_graph = build_graph("projects").await;
-        let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.track_projects().unwrap();
         let affected = tracker.build();
 
@@ -90,16 +90,16 @@ mod affected_projects {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn tracks_multiple_projects() {
         let workspace_graph = build_graph("projects").await;
-        let touched_files = FxHashSet::from_iter([
+        let changed_files = FxHashSet::from_iter([
             "a/file.txt".into(),
             "b/file.txt".into(),
             "e/file.txt".into(),
         ]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
         tracker.track_projects().unwrap();
         let affected = tracker.build();
@@ -118,12 +118,12 @@ mod affected_projects {
     mod project_upstream {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn none() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -137,12 +137,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -158,12 +158,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct_no_deps() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -177,12 +177,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["a/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -199,12 +199,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_no_deps() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -218,12 +218,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -247,12 +247,12 @@ mod affected_projects {
     mod project_downstream {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn none() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -266,12 +266,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -287,12 +287,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct_no_deps() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -306,12 +306,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["c/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -327,12 +327,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_no_deps() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["e/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -346,12 +346,12 @@ mod affected_projects {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
             let workspace_graph = build_graph("projects").await;
-            let touched_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
@@ -415,24 +415,24 @@ mod affected_tasks {
         state
     }
 
-    #[tokio::test]
-    async fn empty_if_no_touched_files() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn empty_if_no_changed_files() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::default();
+        let changed_files = FxHashSet::default();
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.track_tasks().unwrap();
         let affected = tracker.build();
 
         assert!(affected.tasks.is_empty());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn not_affected_if_no_inputs() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:no-inputs").unwrap()])
             .unwrap();
@@ -441,12 +441,12 @@ mod affected_tasks {
         assert!(affected.tasks.is_empty());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_file() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-file").unwrap()])
             .unwrap();
@@ -461,14 +461,14 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_file_if_content_matches() {
         let (workspace_graph, sandbox) = build_graph_with_sandbox("tasks").await;
         sandbox.create_file("base/file.txt", "bar");
 
-        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
             .unwrap();
@@ -483,14 +483,14 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn not_affected_by_file_if_content_doesnt_match() {
         let (workspace_graph, sandbox) = build_graph_with_sandbox("tasks").await;
         sandbox.create_file("base/file.txt", "foo");
 
-        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
             .unwrap();
@@ -499,12 +499,12 @@ mod affected_tasks {
         assert!(affected.tasks.is_empty());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_glob() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::from_iter(["base/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-glob").unwrap()])
             .unwrap();
@@ -519,15 +519,15 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn affected_by_env_var() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::default();
+        let changed_files = FxHashSet::default();
         let bag = GlobalEnvBag::instance();
 
         bag.set("ENV", "affected");
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("base:by-env").unwrap()])
             .unwrap();
@@ -544,12 +544,12 @@ mod affected_tasks {
         bag.remove("ENV");
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn self_scope() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::from_iter(["self/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["self/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("self:c").unwrap()])
             .unwrap();
@@ -574,12 +574,12 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn parent_scope() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::from_iter(["parent/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["parent/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
             .track_tasks_by_target(&[Target::parse("parent:child").unwrap()])
             .unwrap();
@@ -608,12 +608,12 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
-    async fn marks_dependency_if_dependent_is_touched() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_dependency_if_dependent_is_changed() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::from_iter(["downstream/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["downstream/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
         tracker.track_tasks().unwrap();
         let affected = tracker.build();
@@ -637,12 +637,12 @@ mod affected_tasks {
         );
     }
 
-    #[tokio::test]
-    async fn marks_dependent_if_dependency_is_touched() {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn marks_dependent_if_dependency_is_changed() {
         let workspace_graph = build_graph("tasks").await;
-        let touched_files = FxHashSet::from_iter(["upstream/file.txt".into()]);
+        let changed_files = FxHashSet::from_iter(["upstream/file.txt".into()]);
 
-        let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
         tracker.track_tasks().unwrap();
         let affected = tracker.build();
@@ -672,12 +672,12 @@ mod affected_tasks {
     mod task_upstream {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn none() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -697,12 +697,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -726,12 +726,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct_no_deps() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -751,12 +751,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -784,12 +784,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_no_deps() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -809,12 +809,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -847,12 +847,12 @@ mod affected_tasks {
     mod task_downstream {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn none() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -872,12 +872,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -905,12 +905,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn direct_no_deps() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -930,12 +930,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/c.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -963,12 +963,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_no_deps() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["chain/z.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -988,12 +988,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -1031,12 +1031,12 @@ mod affected_tasks {
             state
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn any_file() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["dep/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["dep/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -1056,12 +1056,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn using_file_group() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["dep/src/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["dep/src/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -1085,12 +1085,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn using_filter_glob() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -1118,12 +1118,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn using_project_deps() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
@@ -1155,12 +1155,12 @@ mod affected_tasks {
     mod ci {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_tracks_for_true() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
@@ -1176,12 +1176,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_not_ci_tracks_for_true() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
@@ -1197,12 +1197,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_doesnt_track_for_false() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
@@ -1212,12 +1212,12 @@ mod affected_tasks {
             assert!(affected.tasks.is_empty());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_not_ci_tracks_for_false() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
@@ -1233,12 +1233,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
-        async fn when_ci_always_tracks_if_not_touched() {
+        #[tokio::test(flavor = "multi_thread")]
+        async fn when_ci_always_tracks_if_not_changed() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::default();
+            let changed_files = FxHashSet::default();
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:always").unwrap()])
@@ -1257,12 +1257,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_only_tracks_when_ci() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:only").unwrap()])
@@ -1278,12 +1278,12 @@ mod affected_tasks {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_only_doesnt_track_when_not_in_ci() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:only").unwrap()])
@@ -1293,12 +1293,12 @@ mod affected_tasks {
             assert!(affected.tasks.is_empty());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_ci_doesnt_track_for_skip() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
@@ -1308,12 +1308,12 @@ mod affected_tasks {
             assert!(affected.tasks.is_empty());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn when_not_ci_tracks_for_skip() {
             let workspace_graph = build_graph("tasks").await;
-            let touched_files = FxHashSet::from_iter(["ci/file.txt".into()]);
+            let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTracker::new(workspace_graph.into(), touched_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(false);
             tracker
                 .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])

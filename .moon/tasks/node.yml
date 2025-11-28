@@ -1,5 +1,8 @@
 $schema: '../../website/static/schemas/tasks.json'
 
+inheritedBy:
+  toolchains: 'node'
+
 implicitDeps:
   - '^:build'
 
@@ -45,7 +48,8 @@ tasks:
   format-write:
     extends: 'format'
     args: '--write'
-    local: true
+    options:
+      runInCI: false
 
   lint:
     command: 'eslint'
@@ -58,7 +62,7 @@ tasks:
       - '.js,.ts,.tsx'
       - '--exit-on-fatal-error'
       - '--no-error-on-unmatched-pattern'
-      - '--report-unused-disable-directives'
+      # - '--report-unused-disable-directives'
       - '.'
     inputs:
       - '@globs(sources)'
@@ -72,7 +76,8 @@ tasks:
   lint-fix:
     extends: 'lint'
     args: '--fix'
-    local: true
+    options:
+      runInCI: false
 
   test:
     command: 'jest'

@@ -1,0 +1,10 @@
+---
+source: crates/cli/tests/run_legacy_test.rs
+expression: assert.output()
+---
+▪▪▪▪ npm install
+▪▪▪▪ depsC:dependencyOrder (no op)
+▪▪▪▪ depsB:dependencyOrder (no op)
+
+Tasks: 2 completed
+ Time: 100ms

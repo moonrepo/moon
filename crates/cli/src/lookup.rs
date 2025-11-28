@@ -1,4 +1,4 @@
-use moon_common::consts::{BIN_NAME, CONFIG_DIRNAME};
+use moon_app::EXE_NAME;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -53,12 +53,12 @@ pub fn has_locally_installed(home_dir: &Path, current_dir: &Path) -> Option<Path
     let mut current_dir = Some(current_dir);
 
     while let Some(dir) = current_dir {
-        if dir.join(CONFIG_DIRNAME).exists() {
+        if dir.join(".moon").exists() || dir.join(".config").join("moon").exists() {
             let cli_bin = dir
                 .join("node_modules")
                 .join("@moonrepo")
                 .join("cli")
-                .join(BIN_NAME);
+                .join(EXE_NAME);
 
             if cli_bin.exists() {
                 return Some(cli_bin);

@@ -1,3 +1,6 @@
+inheritedBy:
+  toolchains: 'kotlin'
+
 tasks:
   global-kotlin:
     command: global-kotlin

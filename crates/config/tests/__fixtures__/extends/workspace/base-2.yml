@@ -1,4 +1,4 @@
 extends: './base-1.yml'
 
-runner:
+pipeline:
   logRunningCommand: false

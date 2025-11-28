@@ -5,4 +5,4 @@ tasks:
     command: node ./affected.js
     options:
       affectedFiles: true
-    platform: node
+    toolchain: node

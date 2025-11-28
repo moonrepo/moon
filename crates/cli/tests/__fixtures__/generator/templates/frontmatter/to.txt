@@ -1,0 +1,5 @@
+---
+to: to-{{ "new" | upper_case }}.txt
+---
+
+Route to a new path!

@@ -1,7 +1,7 @@
 use crate::workspace_builder::WorkspaceBuilderContext;
 use moon_common::path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string};
-use moon_common::{Id, color, consts};
-use moon_config::{ProjectSourceEntry, ProjectsSourcesList};
+use moon_common::{Id, color};
+use moon_config::WorkspaceProjectGlobFormat;
 use moon_feature_flags::glob_walk_with_options;
 use starbase_utils::fs;
 use starbase_utils::glob::GlobWalkOptions;
@@ -18,11 +18,19 @@ fn is_hidden(path: &str) -> bool {
 
 /// Infer a project name from a source path, by using the name of
 /// the project folder.
-fn infer_project_id_and_source(path: &str) -> miette::Result<ProjectSourceEntry> {
-    let (id, source) = if let Some(index) = path.rfind('/') {
-        (&path[index + 1..], path)
-    } else {
-        (path, path)
+fn infer_project_id_and_source(
+    path: &str,
+    format: WorkspaceProjectGlobFormat,
+) -> miette::Result<(Id, WorkspaceRelativePathBuf)> {
+    let (id, source) = match format {
+        WorkspaceProjectGlobFormat::DirName => {
+            if let Some(index) = path.rfind('/') {
+                (&path[index + 1..], path)
+            } else {
+                (path, path)
+            }
+        }
+        WorkspaceProjectGlobFormat::SourcePath => (path, path),
     };
 
     Ok((Id::clean(id)?, WorkspaceRelativePathBuf::from(source)))
@@ -34,7 +42,8 @@ fn infer_project_id_and_source(path: &str) -> miette::Result<ProjectSourceEntry>
 pub fn locate_projects_with_globs<'glob, I, V>(
     context: &WorkspaceBuilderContext,
     globs: I,
-    sources: &mut ProjectsSourcesList,
+    sources: &mut Vec<(Id, WorkspaceRelativePathBuf)>,
+    format: WorkspaceProjectGlobFormat,
 ) -> miette::Result<()>
 where
     I: IntoIterator<Item = &'glob V>,
@@ -103,9 +112,7 @@ where
             let project_source =
                 to_virtual_string(project_root.strip_prefix(context.workspace_root).unwrap())?;
 
-            if project_source == consts::CONFIG_DIRNAME
-                || project_source.starts_with(consts::CONFIG_DIRNAME)
-            {
+            if project_source.starts_with(".moon") || project_source.starts_with(".config/moon") {
                 continue;
             }
 
@@ -127,7 +134,7 @@ where
                     "Received a project for a hidden folder. These are not supported through globs, but can be mapped explicitly with project sources!"
                 );
             } else {
-                sources.push(infer_project_id_and_source(&project_source)?);
+                sources.push(infer_project_id_and_source(&project_source, format)?);
             }
         }
     }

@@ -1,0 +1,16 @@
+tasks:
+  base:
+    command: 'exit 0'
+
+  internalOnly:
+    extends: 'base'
+    options:
+      internal: true
+
+  willFail:
+    command: exit 1
+
+  willFailButAllowed:
+    command: exit 1
+    options:
+      allowFailure: true

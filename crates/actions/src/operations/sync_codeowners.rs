@@ -22,7 +22,7 @@ pub async fn sync_codeowners(
 
     projects.sort_by(|a, d| match order_by {
         CodeownersOrderBy::FileSource => a.source.cmp(&d.source),
-        CodeownersOrderBy::ProjectName => a.id.cmp(&d.id),
+        CodeownersOrderBy::ProjectId => a.id.cmp(&d.id),
     });
 
     // Generate a hash for the codeowners file

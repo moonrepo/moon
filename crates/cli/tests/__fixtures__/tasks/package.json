@@ -1,0 +1,5 @@
+{
+  "name": "test-tasks",
+  "private": true,
+  "workspaces": ["*"]
+}

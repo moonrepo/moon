@@ -155,7 +155,7 @@ impl<'task> TaskHasher<'task> {
         // Include local file changes so that development builds work.
         // Also run this LAST as it should take highest precedence!
         if vcs_enabled {
-            for local_file in self.app_context.vcs.get_touched_files().await?.all() {
+            for local_file in self.app_context.vcs.get_changed_files().await?.all() {
                 let abs_file = local_file.to_logical_path(workspace_root);
 
                 // Deleted files are listed in `git status` but are
@@ -218,7 +218,7 @@ impl<'task> TaskHasher<'task> {
         }
 
         // Remove outputs first
-        if sources_globset.is_negated(workspace_relative_path.as_str()) {
+        if sources_globset.is_excluded(workspace_relative_path.as_str()) {
             return false;
         }
 
@@ -277,7 +277,7 @@ impl<'task> TaskHasher<'task> {
 
                 if self.hasher_config.warn_on_missing_inputs
                     && (self.hasher_config.ignore_missing_patterns.is_empty()
-                        || !ignore_missing.is_match(abs_path))
+                        || !ignore_missing.is_included(abs_path))
                 {
                     warn!(
                         "Attempted to hash input {} but it does not exist, skipping",
@@ -297,7 +297,7 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
-            if ignore.is_match(abs_path) {
+            if ignore.is_included(abs_path) {
                 trace!(
                     "Not hashing input {} as it matches an ignore pattern",
                     color::rel_path(&rel_path),

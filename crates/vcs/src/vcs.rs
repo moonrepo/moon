@@ -1,4 +1,4 @@
-use crate::touched_files::TouchedFiles;
+use crate::changed_files::ChangedFiles;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
@@ -7,6 +7,12 @@ use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
+#[derive(Default)]
+pub struct VcsHookEnvironment {
+    pub hooks_dir: PathBuf,
+    pub working_dir: PathBuf,
+}
 
 #[async_trait]
 pub trait Vcs: Debug {
@@ -37,30 +43,27 @@ pub trait Vcs: Debug {
         dir: &WorkspaceRelativePath,
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>>;
 
-    /// Return an absolute path to the hooks directory, when applicable.
-    async fn get_hooks_dir(&self) -> miette::Result<PathBuf>;
-
     /// Return an absolute path to the repository root.
     async fn get_repository_root(&self) -> miette::Result<PathBuf>;
 
     /// Return the repository slug ("moonrepo/moon") of the current checkout.
     async fn get_repository_slug(&self) -> miette::Result<Arc<String>>;
 
-    /// Determine touched files from the local index / working tree.
-    async fn get_touched_files(&self) -> miette::Result<TouchedFiles>;
+    /// Determine changed files from the local index / working tree.
+    async fn get_changed_files(&self) -> miette::Result<ChangedFiles>;
 
-    /// Determine touched files between a revision and its self (-1 revision).
-    async fn get_touched_files_against_previous_revision(
+    /// Determine changed files between a revision and its self (-1 revision).
+    async fn get_changed_files_against_previous_revision(
         &self,
         revision: &str,
-    ) -> miette::Result<TouchedFiles>;
+    ) -> miette::Result<ChangedFiles>;
 
-    /// Determine touched files between 2 revisions.
-    async fn get_touched_files_between_revisions(
+    /// Determine changed files between 2 revisions.
+    async fn get_changed_files_between_revisions(
         &self,
         base_revision: &str,
         revision: &str,
-    ) -> miette::Result<TouchedFiles>;
+    ) -> miette::Result<ChangedFiles>;
 
     /// Get the version of the current VCS binary
     async fn get_version(&self) -> miette::Result<Version>;
@@ -86,5 +89,15 @@ pub trait Vcs: Debug {
         let version = self.get_version().await?;
 
         Ok(VersionReq::parse(req).into_diagnostic()?.matches(&version))
+    }
+
+    /// Setup the hooks environment and return an absolute path to the hooks directory, when applicable.
+    async fn setup_hooks(&self) -> miette::Result<Option<VcsHookEnvironment>> {
+        Ok(None)
+    }
+
+    /// Teardown the hooks environment when applicable.
+    async fn teardown_hooks(&self) -> miette::Result<()> {
+        Ok(())
     }
 }

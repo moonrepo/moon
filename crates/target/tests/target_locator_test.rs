@@ -153,14 +153,14 @@ mod target_locator {
         }
     }
 
-    mod cwd {
+    mod default_project {
         use super::*;
 
         #[test]
         fn returns_task() {
             assert_eq!(
                 TargetLocator::parse("build").unwrap(),
-                TargetLocator::TaskFromWorkingDir(Id::raw("build"))
+                TargetLocator::DefaultProject(Id::raw("build"))
             );
         }
     }

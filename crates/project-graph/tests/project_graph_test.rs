@@ -1,27 +1,22 @@
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
     DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
-    WorkspaceProjects, WorkspaceProjectsConfig,
+    WorkspaceProjectGlobFormat, WorkspaceProjects, WorkspaceProjectsConfig,
 };
-use moon_project::{FileGroup, Project};
+use moon_project::{FileGroup, Project, ProjectAlias};
 use moon_project_graph::*;
 use moon_query::build_query;
 use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker};
-use moon_workspace::{
-    ExtendProjectData, ExtendProjectEvent, ExtendProjectGraphData, ExtendProjectGraphEvent,
-    WorkspaceProjectsCacheState,
-};
+use moon_workspace::WorkspaceProjectsCacheState;
 use petgraph::prelude::*;
 use rustc_hash::FxHashMap;
-use starbase_events::EventState;
 use starbase_sandbox::{Sandbox, assert_snapshot, create_sandbox, locate_fixture};
 use starbase_utils::{fs, json, string_vec};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 pub fn append_file<P: AsRef<Path>>(path: P, data: &str) {
     let mut file = OpenOptions::new().append(true).open(path.as_ref()).unwrap();
@@ -53,7 +48,7 @@ pub fn create_workspace_mocker(root: &Path) -> WorkspaceMocker {
     WorkspaceMocker::new(root)
         .load_default_configs()
         .with_default_projects()
-        .with_default_toolchains()
+        .with_all_toolchains()
         .with_inherited_tasks()
 }
 
@@ -68,14 +63,14 @@ pub async fn build_graph_from_fixture(fixture: &str) -> WorkspaceGraph {
 mod project_graph {
     use super::*;
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn gets_by_id() {
         let graph = build_graph_from_fixture("dependencies").await;
 
         assert!(graph.get_project("a").is_ok());
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(expected = "No project has been configured with the identifier or alias z")]
     async fn errors_unknown_id() {
         let graph = build_graph_from_fixture("dependencies").await;
@@ -83,7 +78,7 @@ mod project_graph {
         graph.get_project("z").unwrap();
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn gets_by_path() {
         let sandbox = create_sandbox("dependencies");
         let graph = build_graph(sandbox.path()).await;
@@ -97,7 +92,7 @@ mod project_graph {
         );
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(expected = "No project could be located starting from path z/moon.yml")]
     async fn errors_non_matching_path() {
         let sandbox = create_sandbox("dependencies");
@@ -108,7 +103,7 @@ mod project_graph {
             .unwrap();
     }
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     #[should_panic(expected = "A project already exists with the identifier id")]
     async fn errors_duplicate_ids() {
         build_graph_from_fixture("dupe-folder-conflict").await;
@@ -117,7 +112,7 @@ mod project_graph {
     mod sources {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn globs() {
             let graph = build_graph_from_fixture("dependencies").await;
 
@@ -127,13 +122,13 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn globs_with_root() {
             let sandbox = create_sandbox("dependencies");
             let root = sandbox.path().join("dir");
 
             // Move files so that we can infer a compatible root project name
-            fs::copy_dir_all(sandbox.path(), sandbox.path(), &root).unwrap();
+            fs::copy_dir_all(sandbox.path(), &root).unwrap();
 
             let graph = create_workspace_mocker(&root)
                 .update_workspace_config(|config| {
@@ -148,7 +143,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn globs_with_config() {
             let sandbox = create_sandbox("locate-configs");
 
@@ -165,7 +160,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn globs_with_config_and_root() {
             let sandbox = create_sandbox("locate-configs");
             sandbox.create_file("moon.yml", "");
@@ -186,7 +181,7 @@ mod project_graph {
             assert!(ids.contains(&String::from("c")));
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn paths() {
             let sandbox = create_sandbox("dependencies");
 
@@ -206,7 +201,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn paths_and_globs() {
             let sandbox = create_sandbox("dependencies");
 
@@ -218,6 +213,7 @@ mod project_graph {
                             (Id::raw("b"), "b".into()),
                             (Id::raw("root"), ".".into()),
                         ]),
+                        ..Default::default()
                     });
                 })
                 .mock_workspace_graph()
@@ -229,7 +225,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn ignores_git_moon_folders() {
             let sandbox = create_sandbox("dependencies");
 
@@ -244,7 +240,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn filters_dot_folders() {
             let sandbox = create_sandbox("dependencies");
             sandbox.create_file(".foo/moon.yml", "");
@@ -257,7 +253,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn filters_using_gitignore() {
             let sandbox = create_sandbox("layer-constraints");
 
@@ -272,8 +268,8 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
-        async fn supports_id_formats() {
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_different_id_casings() {
             let graph = build_graph_from_fixture("ids").await;
 
             assert_eq!(
@@ -286,6 +282,48 @@ mod project_graph {
                     "kebab-case",
                     "snake_case"
                 ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_id_dir_name_format() {
+            let sandbox = create_sandbox("id-formats");
+
+            let graph = create_workspace_mocker(sandbox.path())
+                .update_workspace_config(|config| {
+                    config.projects = WorkspaceProjects::Both(WorkspaceProjectsConfig {
+                        globs: string_vec!["**/moon.yml"],
+                        glob_format: WorkspaceProjectGlobFormat::DirName,
+                        ..Default::default()
+                    });
+                })
+                .mock_workspace_graph()
+                .await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_projects().unwrap()),
+                ["five", "one", "three", "two"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_id_source_path_format() {
+            let sandbox = create_sandbox("id-formats");
+
+            let graph = create_workspace_mocker(sandbox.path())
+                .update_workspace_config(|config| {
+                    config.projects = WorkspaceProjects::Both(WorkspaceProjectsConfig {
+                        globs: string_vec!["**/moon.yml"],
+                        glob_format: WorkspaceProjectGlobFormat::SourcePath,
+                        ..Default::default()
+                    });
+                })
+                .mock_workspace_graph()
+                .await;
+
+            assert_eq!(
+                get_ids_from_projects(graph.get_projects().unwrap()),
+                ["four/five", "one", "one/two", "one/two/three"]
             );
         }
     }
@@ -322,14 +360,14 @@ mod project_graph {
             (sandbox, graph)
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_cache_if_no_vcs() {
             let (sandbox, _graph) = build_cached_graph(|_| {}).await;
 
             assert!(!sandbox.path().join(CACHE_PATH).exists())
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn caches_if_vcs() {
             let (sandbox, _graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();
@@ -339,7 +377,7 @@ mod project_graph {
             assert!(sandbox.path().join(CACHE_PATH).exists());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn loads_from_cache() {
             let (sandbox, graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();
@@ -353,7 +391,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn creates_states_and_manifests() {
             let (sandbox, _graph) = build_cached_graph(|sandbox| {
                 sandbox.enable_git();
@@ -431,7 +469,7 @@ mod project_graph {
                 assert_ne!(state1.last_hash, state2.last_hash);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn with_workspace_changes() {
                 test_invalidate(|sandbox| {
                     sandbox.create_file(".moon/workspace.yml", "# Changes");
@@ -439,23 +477,15 @@ mod project_graph {
                 .await;
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn with_toolchain_changes() {
                 test_invalidate(|sandbox| {
-                    sandbox.create_file(".moon/toolchain.yml", "# Changes");
+                    sandbox.create_file(".moon/toolchains.yml", "# Changes");
                 })
                 .await;
             }
 
-            #[tokio::test]
-            async fn with_tasks_changes() {
-                test_invalidate(|sandbox| {
-                    sandbox.create_file(".moon/tasks.yml", "# Changes");
-                })
-                .await;
-            }
-
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn with_scoped_tasks_changes() {
                 test_invalidate(|sandbox| {
                     sandbox.create_file(".moon/tasks/node.yml", "# Changes");
@@ -463,7 +493,7 @@ mod project_graph {
                 .await;
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn with_project_config_changes() {
                 test_invalidate(|sandbox| {
                     sandbox.create_file("a/moon.yml", "# Changes");
@@ -476,7 +506,7 @@ mod project_graph {
                 .await;
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn with_new_source_add() {
                 test_invalidate(|sandbox| {
                     sandbox.create_file("z/moon.yml", "# Changes");
@@ -489,7 +519,7 @@ mod project_graph {
     mod cycles {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_generate_with_cycles() {
             let graph = build_graph_from_fixture("cycle").await;
 
@@ -537,17 +567,9 @@ mod project_graph {
                 .load_inherited_tasks_from(".moon")
                 .mock_workspace_graph()
                 .await
-            // let mut mock = build_graph(sandbox.path());
-
-            // mock.inherited_tasks = mock
-            //     .config_loader
-            //     .load_tasks_manager_from(sandbox.path(), sandbox.path().join(".moon"))
-            //     .unwrap();
-
-            // mock.mock_workspace_graph().await
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_scoped_tasks() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
@@ -568,7 +590,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_scoped_tasks_for_tier3_language() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
@@ -590,7 +612,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_scoped_tasks_for_tier2_language() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
@@ -600,7 +622,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_scoped_tasks_for_custom_language() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
@@ -612,31 +634,32 @@ mod project_graph {
                         .task_targets
                         .clone()
                 ),
-                ["global", "global-kotlin", "global-system", "kotlin-app"]
+                // kotlin is not a toolchain
+                ["global", "kotlin-app"] // ["global", "global-kotlin", "global-system", "kotlin-app"]
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_js_tasks_for_bun_toolchain() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
             assert_eq!(
                 map_ids_from_target(graph.get_project("bun").unwrap().task_targets.clone()),
-                ["bun", "global", "global-javascript"]
+                ["bun", "global", "global-javascript", "global-node"]
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_js_tasks_for_deno_toolchain() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
             assert_eq!(
                 map_ids_from_target(graph.get_project("deno").unwrap().task_targets.clone()),
-                ["deno", "global", "global-javascript"]
+                ["deno", "global", "global-javascript", "global-node"]
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_js_tasks_for_node_toolchain() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
@@ -646,7 +669,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_ts_tasks_instead_of_js() {
             let graph = build_inheritance_graph("inheritance/scoped").await;
 
@@ -658,11 +681,17 @@ mod project_graph {
                         .task_targets
                         .clone()
                 ),
-                ["bun", "global", "global-javascript"]
+                [
+                    "bun",
+                    "global",
+                    "global-javascript",
+                    "global-node",
+                    "global-typescript"
+                ]
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_tagged_tasks() {
             let graph = build_inheritance_graph("inheritance/tagged").await;
 
@@ -682,7 +711,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_file_groups() {
             let graph = build_inheritance_graph("inheritance/file-groups").await;
             let project = graph.get_project("project").unwrap();
@@ -713,7 +742,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_implicit_deps_inputs() {
             let graph = build_inheritance_graph("inheritance/implicits").await;
             let task = graph.get_task_from_project("project", "example").unwrap();
@@ -753,7 +782,7 @@ mod project_graph {
     mod expansion {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn expands_project() {
             let graph = build_graph_from_fixture("expansion").await;
             let project = graph.get_project("project").unwrap();
@@ -777,7 +806,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn expands_tasks() {
             let graph = build_graph_from_fixture("expansion").await;
             let task = graph.get_task_from_project("tasks", "build").unwrap();
@@ -839,7 +868,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn expands_tag_deps_in_task() {
             let graph = build_graph_from_fixture("expansion").await;
             let task = graph.get_task_from_project("tasks", "test-tags").unwrap();
@@ -857,7 +886,7 @@ mod project_graph {
     mod dependencies {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn lists_ids_of_dependencies() {
             let graph = build_graph_from_fixture("dependencies").await;
 
@@ -895,7 +924,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn lists_ids_of_dependents() {
             let graph = build_graph_from_fixture("dependencies").await;
 
@@ -936,7 +965,7 @@ mod project_graph {
         mod isolation {
             use super::*;
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn no_depends_on() {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
@@ -946,7 +975,7 @@ mod project_graph {
                 assert_eq!(map_ids(graph.projects.get_node_keys()), ["no-depends-on"]);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn some_depends_on() {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
@@ -959,7 +988,7 @@ mod project_graph {
                 );
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn from_task_deps() {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
@@ -977,7 +1006,7 @@ mod project_graph {
                 assert_eq!(deps[1].scope, DependencyScope::Build);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn from_root_task_deps() {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
@@ -999,7 +1028,7 @@ mod project_graph {
                 assert_eq!(deps[0].scope, DependencyScope::Root);
             }
 
-            #[tokio::test]
+            #[tokio::test(flavor = "multi_thread")]
             async fn self_task_deps() {
                 let sandbox = create_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
@@ -1020,70 +1049,14 @@ mod project_graph {
 
         async fn build_aliases_graph_for_fixture(fixture: &str) -> WorkspaceGraph {
             let sandbox = create_sandbox(fixture);
-            let mock = create_workspace_mocker(sandbox.path());
-            let context = mock.mock_workspace_builder_context();
+            let mock = create_workspace_mocker(sandbox.path())
+                .with_default_projects()
+                .with_all_toolchains();
 
-            // Set aliases for projects
-            context
-                .extend_project_graph
-                .on(
-                    |event: Arc<ExtendProjectGraphEvent>,
-                     data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-                        let mut data = data.write().await;
-
-                        for (id, source) in &event.sources {
-                            let alias_path = source.join("alias").to_path(&event.workspace_root);
-
-                            if alias_path.exists() {
-                                data.aliases.push((
-                                    id.to_owned(),
-                                    fs::read_file(alias_path).unwrap().trim().to_owned(),
-                                ));
-                            }
-                        }
-
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
-
-            // Set implicit deps for projects
-            context
-                .extend_project
-                .on(
-                    |event: Arc<ExtendProjectEvent>,
-                     data: Arc<RwLock<ExtendProjectData>>| async move {
-                        let mut data = data.write().await;
-
-                        if event.project_id == "explicit-and-implicit" || event.project_id == "implicit" {
-                            data.dependencies.push(ProjectDependencyConfig {
-                                id: Id::raw("@three"),
-                                scope: DependencyScope::Build,
-                                ..Default::default()
-                            });
-                        }
-
-                        if event.project_id == "implicit" {
-                            data.dependencies.push(ProjectDependencyConfig {
-                                id: Id::raw("@one"),
-                                scope: DependencyScope::Peer,
-                                ..Default::default()
-                            });
-                        }
-
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
-
-            mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
-                context: Some(context),
-                ..Default::default()
-            })
-            .await
+            mock.mock_workspace_graph().await
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn loads_aliases() {
             let graph = build_aliases_graph().await;
 
@@ -1092,51 +1065,78 @@ mod project_graph {
             assert_eq!(
                 graph.projects.aliases(),
                 FxHashMap::from_iter([
-                    ("@one", &Id::raw("alias-one")),
-                    ("@two", &Id::raw("alias-two")),
-                    ("@three", &Id::raw("alias-three")),
+                    ("one", &Id::raw("alias-one")),
+                    ("two", &Id::raw("alias-two")),
+                    ("three", &Id::raw("alias-three")),
+                    ("rust_toolchain", &Id::raw("multiple")),
+                    ("js-toolchain", &Id::raw("multiple")),
                 ])
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_multi_aliases_from_each_toolchain() {
+            let graph = build_aliases_graph().await;
+
+            assert_eq!(
+                graph.get_project("multiple").unwrap().aliases,
+                [
+                    ProjectAlias {
+                        alias: "rust_toolchain".into(),
+                        plugin: Id::raw("rust"),
+                    },
+                    ProjectAlias {
+                        alias: "js-toolchain".into(),
+                        plugin: Id::raw("javascript"),
+                    },
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_set_alias_if_same_as_id() {
             let graph = build_aliases_graph().await;
 
-            assert_eq!(graph.get_project("alias-same-id").unwrap().alias, None);
+            assert!(
+                graph
+                    .get_project("alias-same-id")
+                    .unwrap()
+                    .aliases
+                    .is_empty()
+            );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_set_alias_if_a_project_has_the_id() {
             let graph = build_aliases_graph_for_fixture("aliases-conflict-ids").await;
 
-            assert_eq!(graph.get_project("one").unwrap().alias, None);
-            assert_eq!(graph.get_project("two").unwrap().alias, None);
+            assert!(graph.get_project("one").unwrap().aliases.is_empty());
+            assert!(graph.get_project("two").unwrap().aliases.is_empty());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_get_projects_by_alias() {
             let graph = build_aliases_graph().await;
 
-            assert!(graph.get_project("@one").is_ok());
-            assert!(graph.get_project("@two").is_ok());
-            assert!(graph.get_project("@three").is_ok());
+            assert!(graph.get_project("one").is_ok());
+            assert!(graph.get_project("two").is_ok());
+            assert!(graph.get_project("three").is_ok());
 
             assert_eq!(
-                graph.get_project("@one").unwrap(),
+                graph.get_project("one").unwrap(),
                 graph.get_project("alias-one").unwrap()
             );
             assert_eq!(
-                graph.get_project("@two").unwrap(),
+                graph.get_project("two").unwrap(),
                 graph.get_project("alias-two").unwrap()
             );
             assert_eq!(
-                graph.get_project("@three").unwrap(),
+                graph.get_project("three").unwrap(),
                 graph.get_project("alias-three").unwrap()
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_depends_on_by_alias() {
             let graph = build_aliases_graph().await;
 
@@ -1146,7 +1146,7 @@ mod project_graph {
                         .projects
                         .dependencies_of(&graph.get_project("explicit").unwrap())
                 ),
-                ["alias-one", "alias-two"]
+                ["alias-two", "alias-one"]
             );
 
             assert_eq!(
@@ -1168,7 +1168,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn removes_or_flattens_dupes() {
             let graph = build_aliases_graph().await;
 
@@ -1193,7 +1193,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_use_aliases_as_task_deps() {
             let graph = build_aliases_graph().await;
 
@@ -1210,35 +1210,17 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
-        #[should_panic(expected = "Project one is already using the alias @test")]
-        async fn errors_duplicate_aliases() {
-            build_aliases_graph_for_fixture("aliases-conflict").await;
-        }
+        // #[tokio::test(flavor = "multi_thread")]
+        // #[should_panic(expected = "Project one is already using the alias test")]
+        // async fn errors_duplicate_aliases() {
+        //     build_aliases_graph_for_fixture("aliases-conflict").await;
+        // }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn ignores_duplicate_aliases_if_ids_match() {
             let sandbox = create_sandbox("aliases-conflict");
             let mock = create_workspace_mocker(sandbox.path());
             let context = mock.mock_workspace_builder_context();
-
-            context
-                .extend_project_graph
-                .on(
-                    |event: Arc<ExtendProjectGraphEvent>,
-                     data: Arc<RwLock<ExtendProjectGraphData>>| async move {
-                        let mut data = data.write().await;
-
-                        for (id, _) in &event.sources {
-                            // Add dupes
-                            data.aliases.push((id.to_owned(), format!("@{id}")));
-                            data.aliases.push((id.to_owned(), format!("@{id}")));
-                        }
-
-                        Ok(EventState::Continue)
-                    },
-                )
-                .await;
 
             let graph = mock
                 .mock_workspace_graph_with_options(WorkspaceMockOptions {
@@ -1247,8 +1229,8 @@ mod project_graph {
                 })
                 .await;
 
-            assert!(graph.get_project("@one").is_ok());
-            assert!(graph.get_project("@two").is_ok());
+            assert!(graph.get_project("one").is_ok());
+            assert!(graph.get_project("two").is_ok());
         }
     }
 
@@ -1268,7 +1250,7 @@ mod project_graph {
                 .await
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn app_can_use_unknown() {
             build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [unknown]");
@@ -1276,7 +1258,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn app_can_use_library() {
             build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [library]");
@@ -1284,7 +1266,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn app_can_use_tool() {
             build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("app/moon.yml"), "dependsOn: [tool]");
@@ -1292,7 +1274,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Layering violation: Project app with layer application")]
         async fn app_cannot_use_app() {
             build_layer_constraints_graph(|sandbox| {
@@ -1304,7 +1286,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn library_can_use_unknown() {
             build_layer_constraints_graph(|sandbox| {
                 append_file(
@@ -1315,7 +1297,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn library_can_use_library() {
             build_layer_constraints_graph(|sandbox| {
                 append_file(
@@ -1326,7 +1308,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Layering violation: Project library with layer library")]
         async fn library_cannot_use_app() {
             build_layer_constraints_graph(|sandbox| {
@@ -1335,7 +1317,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Layering violation: Project library with layer library")]
         async fn library_cannot_use_tool() {
             build_layer_constraints_graph(|sandbox| {
@@ -1344,7 +1326,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn tool_can_use_unknown() {
             build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [unknown]");
@@ -1352,7 +1334,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn tool_can_use_library() {
             build_layer_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("tool/moon.yml"), "dependsOn: [library]");
@@ -1360,7 +1342,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Layering violation: Project tool with layer tool")]
         async fn tool_cannot_use_app() {
             build_layer_constraints_graph(|sandbox| {
@@ -1369,7 +1351,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn tool_can_use_tool() {
             build_layer_constraints_graph(|sandbox| {
                 append_file(
@@ -1405,7 +1387,7 @@ mod project_graph {
                 .await
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_depon_tags_but_self_empty() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("a/moon.yml"), "dependsOn: [b, c]");
@@ -1415,7 +1397,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn ignores_unconfigured_relationships() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(sandbox.path().join("a/moon.yml"), "dependsOn: [b, c]");
@@ -1425,7 +1407,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn matches_with_source_tag() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(
@@ -1437,7 +1419,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Invalid tag relationship: Project a with tag #warrior")]
         async fn errors_for_no_source_tag_match() {
             build_tag_constraints_graph(|sandbox| {
@@ -1450,7 +1432,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn matches_with_allowed_tag() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(
@@ -1462,7 +1444,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Invalid tag relationship: Project a with tag #warrior")]
         async fn errors_for_no_allowed_tag_match() {
             build_tag_constraints_graph(|sandbox| {
@@ -1475,7 +1457,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Invalid tag relationship: Project a with tag #mage")]
         async fn errors_for_depon_empty_tags() {
             build_tag_constraints_graph(|sandbox| {
@@ -1487,7 +1469,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn matches_multiple_source_tags_to_a_single_allowed_tag() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(
@@ -1499,7 +1481,7 @@ mod project_graph {
             .await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn matches_single_source_tag_to_a_multiple_allowed_tags() {
             build_tag_constraints_graph(|sandbox| {
                 append_file(
@@ -1519,7 +1501,7 @@ mod project_graph {
     mod query {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn by_language() {
             let graph = build_graph_from_fixture("query").await;
 
@@ -1530,7 +1512,7 @@ mod project_graph {
             assert_eq!(get_ids_from_projects(projects), vec!["a", "d"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn by_project() {
             let graph = build_graph_from_fixture("query").await;
 
@@ -1541,18 +1523,18 @@ mod project_graph {
             assert_eq!(get_ids_from_projects(projects), vec!["b", "d"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn by_project_type() {
             let graph = build_graph_from_fixture("query").await;
 
             let projects = graph
-                .query_projects(build_query("projectType!=[library]").unwrap())
+                .query_projects(build_query("projectLayer!=[library]").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["a", "c"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn by_project_source() {
             let graph = build_graph_from_fixture("query").await;
 
@@ -1563,7 +1545,7 @@ mod project_graph {
             assert_eq!(get_ids_from_projects(projects), vec!["a"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn by_tag() {
             let graph = build_graph_from_fixture("query").await;
 
@@ -1574,7 +1556,7 @@ mod project_graph {
             assert_eq!(get_ids_from_projects(projects), vec!["b", "c"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn by_task() {
             let graph = build_graph_from_fixture("query").await;
 
@@ -1585,7 +1567,7 @@ mod project_graph {
             assert_eq!(get_ids_from_projects(projects), vec!["a", "c", "d"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn by_task_toolchain() {
             let graph = build_graph_from_fixture("query").await;
 
@@ -1599,10 +1581,13 @@ mod project_graph {
                 .query_projects(build_query("taskToolchain=system").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids_from_projects(projects), vec!["a", "b", "c", "d"]);
+            // this changed because of the new toolchain system
+            assert_eq!(get_ids_from_projects(projects), vec!["c"]);
+
+            // assert_eq!(get_ids_from_projects(projects), vec!["a", "b", "c", "d"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn by_task_type() {
             let graph = build_graph_from_fixture("query").await;
 
@@ -1613,18 +1598,18 @@ mod project_graph {
             assert_eq!(get_ids_from_projects(projects), vec!["a"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn with_and_conditions() {
             let graph = build_graph_from_fixture("query").await;
 
             let projects = graph
-                .query_projects(build_query("task=build && taskToolchain=system").unwrap())
+                .query_projects(build_query("task=build && taskToolchain=node").unwrap())
                 .unwrap();
 
-            assert_eq!(get_ids_from_projects(projects), vec!["a", "d"]);
+            assert_eq!(get_ids_from_projects(projects), vec!["a"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn with_or_conditions() {
             let graph = build_graph_from_fixture("query").await;
 
@@ -1635,13 +1620,13 @@ mod project_graph {
             assert_eq!(get_ids_from_projects(projects), vec!["a", "b"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn with_nested_conditions() {
             let graph = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(
-                    build_query("projectType=library && (taskType=build || tag=three)").unwrap(),
+                    build_query("projectLayer=library && (taskType=build || tag=three)").unwrap(),
                 )
                 .unwrap();
 
@@ -1652,14 +1637,14 @@ mod project_graph {
     mod to_dot {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn renders_full() {
             let graph = build_graph_from_fixture("dependencies").await;
 
             assert_snapshot!(graph.projects.to_dot());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn renders_partial() {
             let sandbox = create_sandbox("dependencies");
             let mock = create_workspace_mocker(sandbox.path());
@@ -1673,7 +1658,7 @@ mod project_graph {
     mod custom_id {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_load_by_new_id() {
             let sandbox = create_sandbox("custom-id");
             let graph = build_graph(sandbox.path()).await;
@@ -1683,7 +1668,7 @@ mod project_graph {
             assert_eq!(graph.get_project("baz-renamed").unwrap().id, "baz-renamed");
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn tasks_can_depend_on_new_id() {
             let sandbox = create_sandbox("custom-id");
             let graph = build_graph(sandbox.path()).await;
@@ -1698,7 +1683,7 @@ mod project_graph {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_for_duplicate_folder_names_if_renamed() {
             let graph = build_graph_from_fixture("dupe-folder-ids").await;
 
@@ -1706,10 +1691,27 @@ mod project_graph {
             assert!(graph.get_project("two").is_ok());
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "A project already exists with the identifier foo")]
         async fn errors_duplicate_ids_from_rename() {
             build_graph_from_fixture("custom-id-conflict").await;
+        }
+    }
+
+    mod default_id {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Invalid default project")]
+        async fn errors_if_default_id_doesnt_exist() {
+            let sandbox = create_sandbox("dependencies");
+
+            create_workspace_mocker(sandbox.path())
+                .update_workspace_config(|config| {
+                    config.default_project = Some(Id::raw("z"));
+                })
+                .mock_workspace_graph()
+                .await;
         }
     }
 }

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 const cp = require('child_process');
-const { findMoonExe } = require('./utils');
+const { findMoonxExe } = require('./utils');
 
-const result = cp.spawnSync(findMoonExe(), ['run', ...process.argv.slice(2)], {
+const result = cp.spawnSync(findMoonxExe(), process.argv.slice(2), {
 	shell: false,
 	stdio: 'inherit',
 });

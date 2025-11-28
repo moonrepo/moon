@@ -15,7 +15,7 @@ pub struct SyncCodeownersArgs {
     force: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn sync(session: MoonSession, args: SyncCodeownersArgs) -> AppResult {
     let context = session.get_app_context().await?;
 

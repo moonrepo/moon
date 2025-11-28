@@ -1,4 +1,3 @@
-pub mod consts;
 #[cfg(not(target_arch = "wasm32"))]
 mod env;
 mod id;

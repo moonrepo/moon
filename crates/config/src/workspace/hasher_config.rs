@@ -30,18 +30,15 @@ config_struct!(
     /// Configures aspects of the content hashing engine.
     #[derive(Config)]
     pub struct HasherConfig {
-        /// The number of files to include in each hash operation.
-        #[deprecated]
-        #[setting(default = 2500)]
-        pub batch_size: u16,
-
         /// Filters file paths that match a configured glob pattern
         /// when a hash is being generated. Patterns are workspace relative,
         /// so prefixing with `**` is recommended.
+        /// @since 1.10.0
         pub ignore_patterns: Vec<GlobPath>,
 
         /// When `warnOnMissingInputs` is enabled, filters missing file
         /// paths from logging a warning.
+        /// @since 1.10.0
         pub ignore_missing_patterns: Vec<GlobPath>,
 
         /// The optimization to use when hashing.

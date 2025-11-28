@@ -37,6 +37,23 @@ impl HashEngine {
         ContentHasher::new(label.as_ref())
     }
 
+    pub fn find_manifest_path(&self, hash: &str) -> miette::Result<Option<PathBuf>> {
+        debug!(hash, "Finding hash manifest");
+
+        for file in fs::read_dir(&self.hashes_dir)? {
+            let path = file.path();
+            let name = fs::file_name(&path).replace(".json", "");
+
+            if hash == name || name.starts_with(hash) {
+                debug!(hash, name, "Found hash manifest");
+
+                return Ok(Some(path));
+            }
+        }
+
+        Ok(None)
+    }
+
     pub fn get_archive_path(&self, hash: &str) -> PathBuf {
         self.outputs_dir.join(format!("{hash}.tar.gz"))
     }

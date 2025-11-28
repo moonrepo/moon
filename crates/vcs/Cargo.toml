@@ -15,7 +15,7 @@ moon_process = { path = "../process" }
 async-trait = { workspace = true }
 futures = { workspace = true }
 git-url-parse = "0.6.0"
-ignore = "0.4.23"
+ignore = "0.4.25"
 miette = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }

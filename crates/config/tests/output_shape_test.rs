@@ -45,8 +45,8 @@ mod output_shape {
                 Output::TokenVar("$workspaceRoot".into())
             );
             assert_eq!(
-                Output::parse("$projectType").unwrap(),
-                Output::TokenVar("$projectType".into())
+                Output::parse("$projectLayer").unwrap(),
+                Output::TokenVar("$projectLayer".into())
             );
         }
 

@@ -6,7 +6,7 @@ use std::mem;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
-pub struct OperationList(Vec<Operation>);
+pub struct OperationList(pub Vec<Operation>);
 
 impl OperationList {
     pub fn get_final_status(&self) -> ActionStatus {

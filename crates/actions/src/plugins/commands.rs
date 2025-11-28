@@ -11,7 +11,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_hash::hash_content;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
 use moon_process::Output;
-use moon_process_augment::CommandAugmenter;
+use moon_process_augment::CommandBuilder;
 use moon_project::Project;
 use moon_time::to_millis;
 use starbase_utils::fs;
@@ -75,12 +75,13 @@ async fn internal_exec_plugin_command(
 ) -> miette::Result<Output> {
     let input = &command.command;
 
-    let mut augment = CommandAugmenter::from_input(&app_context, GlobalEnvBag::instance(), input);
-    augment
+    let mut builder = CommandBuilder::from_input(&app_context, GlobalEnvBag::instance(), input);
+
+    builder
         .inherit_from_plugins(options.project.as_deref(), None)
         .await?;
 
-    let mut cmd = augment.create_command();
+    let mut cmd = builder.build();
 
     if let Some(cwd) = input.cwd.as_ref().and_then(|dir| dir.real_path()) {
         cmd.cwd(cwd);

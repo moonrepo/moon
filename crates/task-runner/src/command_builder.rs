@@ -5,7 +5,7 @@ use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_env_var::GlobalEnvBag;
 use moon_process::{Command, Shell, ShellType};
-use moon_process_augment::CommandAugmenter;
+use moon_process_augment::CommandBuilder as BaseCommandBuilder;
 use moon_project::Project;
 use moon_task::Task;
 use std::path::Path;
@@ -80,17 +80,16 @@ impl<'task> CommandBuilder<'task> {
     }
 
     async fn build_command(&mut self) -> miette::Result<Command> {
-        let mut augment = CommandAugmenter::from_task(self.app, self.env_bag, self.task);
-        augment
+        let mut builder = BaseCommandBuilder::from_task(self.app, self.env_bag, self.task);
+
+        builder
             .inherit_from_plugins(Some(self.project), Some(self.task))
             .await?;
 
-        let mut command = augment.create_command();
-
         // Scripts should be used as-is
-        command.escape_args = self.task.script.is_none();
+        builder.escape_args = self.task.script.is_none();
 
-        Ok(command)
+        Ok(builder.build())
     }
 
     #[instrument(skip_all)]

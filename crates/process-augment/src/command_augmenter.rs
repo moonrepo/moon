@@ -12,7 +12,7 @@ use moon_toolchain::{
     is_using_global_toolchains,
 };
 use rustc_hash::FxHashMap;
-use std::collections::VecDeque;
+use std::ffi::{OsStr, OsString};
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 
@@ -31,70 +31,98 @@ use std::path::PathBuf;
 // - proto store/shims/bin paths
 // - moon store paths
 
-#[derive(Default)]
-pub struct CommandAugment {
-    pub exe: String,
-    pub args: VecDeque<String>,
-    pub env: FxHashMap<String, String>,
-    pub env_remove: Vec<String>,
-    pub paths: VecDeque<PathBuf>,
-    pub paths_store: VecDeque<PathBuf>,
+pub struct CommandBuilder<'app> {
+    command: Command,
+    bag: &'app GlobalEnvBag,
+    context: &'app AppContext,
 }
 
-impl CommandAugment {
+impl<'app> CommandBuilder<'app> {
+    pub fn new(context: &'app AppContext, bag: &'app GlobalEnvBag, bin: impl AsRef<OsStr>) -> Self {
+        CommandBuilder {
+            command: Command::new(bin),
+            bag,
+            context,
+        }
+    }
+
+    pub fn from_input(
+        context: &'app AppContext,
+        bag: &'app GlobalEnvBag,
+        input: &ExecCommandInput,
+    ) -> Self {
+        let mut builder = Self::new(context, bag, &input.command);
+        builder.args(&input.args);
+        builder.envs(&input.env);
+        builder
+    }
+
+    pub fn from_task(context: &'app AppContext, bag: &'app GlobalEnvBag, task: &Task) -> Self {
+        let mut builder = Self::new(context, bag, &task.command);
+
+        if let Some(script) = &task.script {
+            builder.set_script(script);
+        } else {
+            builder.args(&task.args);
+        }
+
+        builder.envs(&task.env);
+        builder
+    }
+
+    pub fn build(self) -> Command {
+        self.command
+    }
+
     pub fn apply_command_outputs(&mut self, outputs: Vec<ExtendCommandOutput>) {
         for output in outputs {
-            if let Some(new_exe) = output.command {
-                self.exe = new_exe;
+            if let Some(new_bin) = output.command {
+                self.set_bin(new_bin);
             }
 
             if let Some(new_args) = output.args {
-                self.extend_args(new_args);
+                self.apply_args(new_args);
             }
 
-            self.remove_env(output.env_remove);
-            self.extend_env(output.env);
-            self.extend_paths(output.paths);
+            self.envs(output.env);
+            self.envs_remove(output.env_remove);
+            self.apply_paths(output.paths);
         }
     }
 
     pub fn apply_script_outputs(&mut self, outputs: Vec<ExtendTaskScriptOutput>) {
         for output in outputs {
             if let Some(new_script) = output.script {
-                self.exe = new_script;
+                self.set_script(new_script);
             }
 
-            self.remove_env(output.env_remove);
-            self.extend_env(output.env);
-            self.extend_paths(output.paths);
+            self.envs(output.env);
+            self.envs_remove(output.env_remove);
+            self.apply_paths(output.paths);
         }
     }
 
-    pub fn extend_args(&mut self, args: Extend<Vec<String>>) {
+    pub fn apply_args(&mut self, args: Extend<Vec<String>>) {
         match args {
             Extend::Empty => {
                 self.args.clear();
             }
             Extend::Append(next) => {
-                self.args.extend(next);
+                self.args(next);
             }
             Extend::Prepend(next) => {
                 for arg in next.into_iter().rev() {
-                    self.args.push_front(arg);
+                    self.args.push_front(OsString::from(arg));
                 }
             }
             Extend::Replace(next) => {
                 self.args.clear();
-                self.args.extend(next);
+                self.args(next);
             }
         }
     }
 
-    pub fn extend_env(&mut self, env: FxHashMap<String, String>) {
-        self.env.extend(env);
-    }
-
-    pub fn extend_paths(&mut self, paths: Vec<PathBuf>) {
+    pub fn apply_paths(&mut self, paths: Vec<PathBuf>) {
         if paths.is_empty() {
             return;
         }
@@ -107,77 +135,7 @@ impl CommandAugment {
             ))
         });
 
-        for path in paths.into_iter().rev() {
-            self.paths.push_front(path);
-        }
-    }
-
-    pub fn remove_env(&mut self, env_remove: Vec<String>) {
-        self.env_remove.extend(env_remove);
-    }
-}
-
-pub struct CommandAugmenter<'app> {
-    augment: CommandAugment,
-    bag: &'app GlobalEnvBag,
-    context: &'app AppContext,
-}
-
-impl<'app> CommandAugmenter<'app> {
-    pub fn new(context: &'app AppContext, bag: &'app GlobalEnvBag, exe: impl AsRef<str>) -> Self {
-        CommandAugmenter {
-            augment: CommandAugment {
-                exe: exe.as_ref().to_string(),
-                ..Default::default()
-            },
-            bag,
-            context,
-        }
-    }
-
-    pub fn from_input(
-        context: &'app AppContext,
-        bag: &'app GlobalEnvBag,
-        input: &ExecCommandInput,
-    ) -> Self {
-        let mut augment = Self::new(context, bag, &input.command);
-        augment.args.extend(input.args.clone());
-        augment.env.extend(input.env.clone());
-        augment
-    }
-
-    pub fn from_task(context: &'app AppContext, bag: &'app GlobalEnvBag, task: &Task) -> Self {
-        let mut augment = Self::new(
-            context,
-            bag,
-            task.script.clone().unwrap_or_else(|| task.command.clone()),
-        );
-
-        if task.script.is_none() {
-            augment.args.extend(task.args.clone());
-        }
-
-        augment.env.extend(task.env.clone());
-        augment
-    }
-
-    pub fn create_command(self) -> Command {
-        let mut command = Command::new(self.augment.exe.clone());
-
-        self.augment_command(&mut command);
-
-        command
-    }
-
-    pub fn augment_command(self, command: &mut Command) {
-        command.args(self.augment.args);
-        command.prepend_paths(self.augment.paths);
-        command.append_paths(self.augment.paths_store);
-        command.envs_if_not_global(self.augment.env);
-
-        for key in self.augment.env_remove {
-            command.env_remove(key);
-        }
+        self.append_paths(paths);
     }
 
     /// Inherit command augmentations (args, env, paths) from extension and toolchain plugins
@@ -200,14 +158,14 @@ impl<'app> CommandAugmenter<'app> {
         };
 
         // Inherit for shared
-        self.augment.apply_command_outputs(
+        self.apply_command_outputs(
             self.context
                 .toolchain_registry
                 .extend_command_many(toolchain_ids.clone(), |registry, toolchain| {
                     ExtendCommandInput {
                         context: registry.create_context(),
-                        command: self.augment.exe.clone(),
-                        args: self.args.clone().into_iter().collect(),
+                        command: self.get_bin_name(),
+                        args: self.get_args_list(),
                         current_dir: registry.to_virtual_path(current_dir),
                         toolchain_config: match project {
                             Some(p) => registry.create_merged_config(&toolchain.id, &p.config),
@@ -219,13 +177,13 @@ impl<'app> CommandAugmenter<'app> {
                 .await?,
         );
 
-        self.augment.apply_command_outputs(
+        self.apply_command_outputs(
             self.context
                 .extension_registry
                 .extend_command_all(|registry, extension| ExtendCommandInput {
                     context: registry.create_context(),
-                    command: self.augment.exe.clone(),
-                    args: self.augment.args.clone().into_iter().collect(),
+                    command: self.get_bin_name(),
+                    args: self.get_args_list(),
                     current_dir: registry.to_virtual_path(current_dir),
                     extension_config: registry.create_config(&extension.id),
                     ..Default::default()
@@ -241,13 +199,13 @@ impl<'app> CommandAugmenter<'app> {
                 // Scripts don't use arguments
                 self.args.clear();
 
-                self.augment.apply_script_outputs(
+                self.apply_script_outputs(
                     self.context
                         .toolchain_registry
                         .extend_task_script_many(toolchain_ids, |registry, toolchain| {
                             ExtendTaskScriptInput {
                                 context: registry.create_context(),
-                                script: self.augment.exe.clone(),
+                                script: self.get_script(),
                                 project: project.to_fragment(),
                                 task: task.to_fragment(),
                                 toolchain_config: registry
@@ -258,12 +216,12 @@ impl<'app> CommandAugmenter<'app> {
                         .await?,
                 );
 
-                self.augment.apply_script_outputs(
+                self.apply_script_outputs(
                     self.context
                         .extension_registry
                         .extend_task_script_all(|registry, extension| ExtendTaskScriptInput {
                             context: registry.create_context(),
-                            script: self.augment.exe.clone(),
+                            script: self.get_script(),
                             project: project.to_fragment(),
                             task: task.to_fragment(),
                             extension_config: registry.create_config(&extension.id),
@@ -272,14 +230,14 @@ impl<'app> CommandAugmenter<'app> {
                         .await?,
                 );
             } else {
-                self.augment.apply_command_outputs(
+                self.apply_command_outputs(
                     self.context
                         .toolchain_registry
                         .extend_task_command_many(toolchain_ids, |registry, toolchain| {
                             ExtendTaskCommandInput {
                                 context: registry.create_context(),
-                                command: self.augment.exe.clone(),
-                                args: self.augment.args.clone().into_iter().collect(),
+                                command: self.get_bin_name(),
+                                args: self.get_args_list(),
                                 project: project.to_fragment(),
                                 task: task.to_fragment(),
                                 toolchain_config: registry
@@ -290,13 +248,13 @@ impl<'app> CommandAugmenter<'app> {
                         .await?,
                 );
 
-                self.augment.apply_command_outputs(
+                self.apply_command_outputs(
                     self.context
                         .extension_registry
                         .extend_task_command_all(|registry, extension| ExtendTaskCommandInput {
                             context: registry.create_context(),
-                            command: self.augment.exe.clone(),
-                            args: self.augment.args.clone().into_iter().collect(),
+                            command: self.get_bin_name(),
+                            args: self.get_args_list(),
                             project: project.to_fragment(),
                             task: task.to_fragment(),
                             extension_config: registry.create_config(&extension.id),
@@ -346,9 +304,7 @@ impl<'app> CommandAugmenter<'app> {
 
         // Add each toolchain as an env var
         for (id, version) in &map {
-            self.augment
-                .env
-                .insert(get_version_env_key(id), get_version_env_value(version));
+            self.env(get_version_env_key(id), get_version_env_value(version));
         }
 
         // If forced to globals, don't inject any paths but keep env vars
@@ -366,8 +322,7 @@ impl<'app> CommandAugmenter<'app> {
                 })
                 .await?;
 
-            // They go after the extended paths above
-            self.augment.paths.extend(paths);
+            self.append_paths(paths);
         }
 
         // Inherit proto/moon last
@@ -380,20 +335,18 @@ impl<'app> CommandAugmenter<'app> {
         let proto_version = self.context.toolchains_config.proto.version.to_string();
 
         // Inherit common proto env vars
-        self.env.insert("PROTO_AUTO_INSTALL".into(), "false".into());
-        self.env
-            .insert("PROTO_IGNORE_MIGRATE_WARNING".into(), "true".into());
-        self.env.insert("PROTO_NO_PROGRESS".into(), "true".into());
-        self.env
-            .insert("PROTO_VERSION".into(), proto_version.clone());
-        self.env.insert("STARBASE_FORCE_TTY".into(), "true".into());
+        self.env("PROTO_AUTO_INSTALL", "false");
+        self.env("PROTO_IGNORE_MIGRATE_WARNING", "true");
+        self.env("PROTO_NO_PROGRESS", "true");
+        self.env("PROTO_VERSION", &proto_version);
+        self.env("STARBASE_FORCE_TTY", "true");
 
         // If not using globals, inherit proto and moon paths
         if !is_using_global_toolchains(self.bag) {
             let moon = &self.context.toolchain_registry.host_data.moon_env;
             let proto = &self.context.toolchain_registry.host_data.proto_env;
 
-            self.augment.paths_store.extend([
+            self.append_paths([
                 proto.store.inventory_dir.join("proto").join(proto_version),
                 proto.store.shims_dir.clone(),
                 proto.store.bin_dir.clone(),
@@ -403,16 +356,16 @@ impl<'app> CommandAugmenter<'app> {
     }
 }
 
-impl Deref for CommandAugmenter<'_> {
-    type Target = CommandAugment;
+impl Deref for CommandBuilder<'_> {
+    type Target = Command;
 
     fn deref(&self) -> &Self::Target {
-        &self.augment
+        &self.command
     }
 }
 
-impl DerefMut for CommandAugmenter<'_> {
+impl DerefMut for CommandBuilder<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.augment
+        &mut self.command
     }
 }

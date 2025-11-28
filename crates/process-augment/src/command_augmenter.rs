@@ -1,8 +1,8 @@
 use moon_app_context::AppContext;
 use moon_env_var::GlobalEnvBag;
 use moon_pdk_api::{
-    Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput, ExtendTaskScriptInput,
-    ExtendTaskScriptOutput,
+    ExecCommandInput, Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput,
+    ExtendTaskScriptInput, ExtendTaskScriptOutput,
 };
 use moon_process::Command;
 use moon_project::Project;
@@ -124,17 +124,34 @@ pub struct CommandAugmenter<'app> {
 }
 
 impl<'app> CommandAugmenter<'app> {
-    pub fn new(context: &'app AppContext, bag: &'app GlobalEnvBag) -> Self {
+    pub fn new(context: &'app AppContext, bag: &'app GlobalEnvBag, exe: impl AsRef<str>) -> Self {
         CommandAugmenter {
-            augment: CommandAugment::default(),
+            augment: CommandAugment {
+                exe: exe.as_ref().to_string(),
+                ..Default::default()
+            },
             bag,
             context,
         }
     }
 
+    pub fn from_input(
+        context: &'app AppContext,
+        bag: &'app GlobalEnvBag,
+        input: &ExecCommandInput,
+    ) -> Self {
+        let mut augment = Self::new(context, bag, &input.command);
+        augment.args.extend(input.args.clone());
+        augment.env.extend(input.env.clone());
+        augment
+    }
+
     pub fn from_task(context: &'app AppContext, bag: &'app GlobalEnvBag, task: &Task) -> Self {
-        let mut augment = Self::new(context, bag);
-        augment.exe = task.script.clone().unwrap_or_else(|| task.command.clone());
+        let mut augment = Self::new(
+            context,
+            bag,
+            task.script.clone().unwrap_or_else(|| task.command.clone()),
+        );
 
         if task.script.is_none() {
             augment.args.extend(task.args.clone());
@@ -155,6 +172,7 @@ impl<'app> CommandAugmenter<'app> {
     pub fn augment_command(self, command: &mut Command) {
         command.args(self.augment.args);
         command.prepend_paths(self.augment.paths);
+        command.append_paths(self.augment.paths_store);
         command.envs_if_not_global(self.augment.env);
 
         for key in self.augment.env_remove {

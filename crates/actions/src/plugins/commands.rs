@@ -10,7 +10,8 @@ use moon_console::{Checkpoint, Console};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::hash_content;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
-use moon_process::{Command, Output};
+use moon_process::Output;
+use moon_process_augment::CommandAugmenter;
 use moon_project::Project;
 use moon_time::to_millis;
 use starbase_utils::fs;
@@ -74,9 +75,13 @@ async fn internal_exec_plugin_command(
 ) -> miette::Result<Output> {
     let input = &command.command;
 
-    let mut cmd = Command::new(&input.command);
-    cmd.args(&input.args);
-    cmd.envs(&input.env);
+    let mut augment = CommandAugmenter::from_input(&app_context, GlobalEnvBag::instance(), input);
+    augment
+        .inherit_from_plugins(options.project.as_deref(), None)
+        .await?;
+    augment.inherit_for_proto();
+
+    let mut cmd = augment.create_command();
 
     if let Some(cwd) = input.cwd.as_ref().and_then(|dir| dir.real_path()) {
         cmd.cwd(cwd);
@@ -87,20 +92,6 @@ async fn internal_exec_plugin_command(
     cmd.with_console(app_context.console.clone());
     cmd.set_error_on_nonzero(!command.allow_failure);
     cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
-
-    // Must be last!
-    let toolchain_registry = &app_context.toolchain_registry;
-
-    if let Some(project) = &options.project {
-        toolchain_registry
-            .augment_command_for_project(&mut cmd, GlobalEnvBag::instance(), &project.config)
-            .await?;
-    } else {
-        toolchain_registry
-            .augment_command_for_workspace(&mut cmd, GlobalEnvBag::instance())
-            .await?;
-    }
-
     cmd.inherit_colors();
     cmd.inherit_path()?;
 

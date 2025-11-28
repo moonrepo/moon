@@ -4,97 +4,12 @@ use moon_app_context::AppContext;
 use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_env_var::GlobalEnvBag;
-use moon_pdk_api::{
-    Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput, ExtendTaskScriptInput,
-    ExtendTaskScriptOutput,
-};
 use moon_process::{Command, Shell, ShellType};
+use moon_process_augment::CommandAugmenter;
 use moon_project::Project;
 use moon_task::Task;
-use rustc_hash::FxHashMap;
-use std::collections::VecDeque;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tracing::{debug, instrument, trace};
-
-#[derive(Default)]
-struct CommandParams {
-    exe: String,
-    args: VecDeque<String>,
-    env: FxHashMap<String, String>,
-    env_remove: Vec<String>,
-    paths: VecDeque<PathBuf>,
-}
-
-impl CommandParams {
-    fn apply_outputs(&mut self, outputs: Vec<ExtendCommandOutput>) {
-        for output in outputs {
-            if let Some(new_bin) = output.command {
-                self.exe = new_bin;
-            }
-
-            if let Some(new_args) = output.args {
-                self.extend_args(new_args);
-            }
-
-            self.extend_env(output.env, output.env_remove);
-            self.extend_paths(output.paths);
-        }
-    }
-
-    fn apply_script_outputs(&mut self, outputs: Vec<ExtendTaskScriptOutput>) {
-        for output in outputs {
-            if let Some(new_script) = output.script {
-                self.exe = new_script;
-            }
-
-            self.extend_env(output.env, output.env_remove);
-            self.extend_paths(output.paths);
-        }
-    }
-
-    fn extend_args(&mut self, args: Extend<Vec<String>>) {
-        match args {
-            Extend::Empty => {
-                self.args.clear();
-            }
-            Extend::Append(next) => {
-                self.args.extend(next);
-            }
-            Extend::Prepend(next) => {
-                for arg in next.into_iter().rev() {
-                    self.args.push_front(arg);
-                }
-            }
-            Extend::Replace(next) => {
-                self.args.clear();
-                self.args.extend(next);
-            }
-        }
-    }
-
-    fn extend_env(&mut self, env: FxHashMap<String, String>, env_remove: Vec<String>) {
-        self.env.extend(env);
-        self.env_remove.extend(env_remove);
-    }
-
-    fn extend_paths(&mut self, paths: Vec<PathBuf>) {
-        if paths.is_empty() {
-            return;
-        }
-
-        // Normalize separators since WASM always uses forward slashes
-        #[cfg(windows)]
-        let paths = paths.into_iter().map(|path| {
-            PathBuf::from(moon_common::path::normalize_separators(
-                path.to_string_lossy(),
-            ))
-        });
-
-        for path in paths.into_iter().rev() {
-            self.paths.push_front(path);
-        }
-    }
-}
 
 pub struct CommandBuilder<'task> {
     app: &'task AppContext,
@@ -157,7 +72,6 @@ impl<'task> CommandBuilder<'task> {
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
-        self.inherit_proto().await?;
 
         // Must be last!
         self.command.inherit_path()?;
@@ -166,132 +80,16 @@ impl<'task> CommandBuilder<'task> {
     }
 
     async fn build_command(&mut self) -> miette::Result<Command> {
-        let project = self.project;
-        let task = self.task;
-        let toolchain_ids = project.get_enabled_toolchains_for_task(task);
+        let mut augment = CommandAugmenter::from_task(self.app, self.env_bag, self.task);
+        augment
+            .inherit_from_plugins(Some(self.project), Some(self.task))
+            .await?;
+        augment.inherit_for_proto();
 
-        let mut escape_args = true;
-        let mut params = CommandParams::default();
-        params.args.extend(task.args.clone());
-        params.env.extend(task.env.clone());
+        let mut command = augment.create_command();
 
-        params.apply_outputs(
-            self.app
-                .toolchain_registry
-                .extend_command_many(toolchain_ids.clone(), |registry, toolchain| {
-                    ExtendCommandInput {
-                        context: registry.create_context(),
-                        command: params.exe.clone(),
-                        args: params.args.clone().into_iter().collect(),
-                        current_dir: registry.to_virtual_path(&project.root),
-                        toolchain_config: registry
-                            .create_merged_config(&toolchain.id, &project.config),
-                        ..Default::default()
-                    }
-                })
-                .await?,
-        );
-
-        params.apply_outputs(
-            self.app
-                .extension_registry
-                .extend_command_all(|registry, extension| ExtendCommandInput {
-                    context: registry.create_context(),
-                    command: params.exe.clone(),
-                    args: params.args.clone().into_iter().collect(),
-                    current_dir: registry.to_virtual_path(&project.root),
-                    extension_config: registry.create_config(&extension.id),
-                    ..Default::default()
-                })
-                .await?,
-        );
-
-        match &task.script {
-            Some(script) => {
-                // Scripts should be used as-is
-                escape_args = false;
-
-                params.exe = script.into();
-                params.args.clear();
-
-                params.apply_script_outputs(
-                    self.app
-                        .toolchain_registry
-                        .extend_task_script_many(toolchain_ids, |registry, toolchain| {
-                            ExtendTaskScriptInput {
-                                context: registry.create_context(),
-                                script: params.exe.clone(),
-                                project: project.to_fragment(),
-                                task: task.to_fragment(),
-                                toolchain_config: registry
-                                    .create_merged_config(&toolchain.id, &project.config),
-                                ..Default::default()
-                            }
-                        })
-                        .await?,
-                );
-
-                params.apply_script_outputs(
-                    self.app
-                        .extension_registry
-                        .extend_task_script_all(|registry, extension| ExtendTaskScriptInput {
-                            context: registry.create_context(),
-                            script: params.exe.clone(),
-                            project: project.to_fragment(),
-                            task: task.to_fragment(),
-                            extension_config: registry.create_config(&extension.id),
-                            ..Default::default()
-                        })
-                        .await?,
-                );
-            }
-            None => {
-                params.exe = task.command.clone();
-
-                params.apply_outputs(
-                    self.app
-                        .toolchain_registry
-                        .extend_task_command_many(toolchain_ids, |registry, toolchain| {
-                            ExtendTaskCommandInput {
-                                context: registry.create_context(),
-                                command: params.exe.clone(),
-                                args: params.args.clone().into_iter().collect(),
-                                project: project.to_fragment(),
-                                task: task.to_fragment(),
-                                toolchain_config: registry
-                                    .create_merged_config(&toolchain.id, &project.config),
-                                ..Default::default()
-                            }
-                        })
-                        .await?,
-                );
-
-                params.apply_outputs(
-                    self.app
-                        .extension_registry
-                        .extend_task_command_all(|registry, extension| ExtendTaskCommandInput {
-                            context: registry.create_context(),
-                            command: params.exe.clone(),
-                            args: params.args.clone().into_iter().collect(),
-                            project: project.to_fragment(),
-                            task: task.to_fragment(),
-                            extension_config: registry.create_config(&extension.id),
-                            ..Default::default()
-                        })
-                        .await?,
-                );
-            }
-        };
-
-        let mut command = Command::new(params.exe);
-        command.escape_args = escape_args;
-        command.args(params.args);
-        command.prepend_paths(params.paths);
-        command.envs_if_not_global(params.env);
-
-        for key in params.env_remove {
-            command.env_remove(key);
-        }
+        // Scripts should be used as-is
+        command.escape_args = self.task.script.is_none();
 
         Ok(command)
     }
@@ -506,23 +304,5 @@ impl<'task> CommandBuilder<'task> {
         {
             self.command.inherit_colors();
         }
-    }
-
-    async fn inherit_proto(&mut self) -> miette::Result<()> {
-        let toolchain_registry = &self.app.toolchain_registry;
-        let toolchain_ids = self.project.get_enabled_toolchains_for_task(self.task);
-        let mut augments = toolchain_registry.create_command_augments(Some(&self.project.config));
-
-        // Only include paths for toolchains that this task explicitly needs,
-        // but keep environment variables and other parameters
-        augments.iter_mut().for_each(|(id, augment)| {
-            augment.add_path = toolchain_ids.contains(&id);
-        });
-
-        toolchain_registry
-            .augment_command(&mut self.command, self.env_bag, augments)
-            .await?;
-
-        Ok(())
     }
 }

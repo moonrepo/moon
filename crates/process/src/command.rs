@@ -29,15 +29,11 @@ impl CommandExecutable {
         }
     }
 
-    pub fn into_inner(self) -> OsString {
+    pub fn into_os_string(self) -> OsString {
         match self {
             Self::Binary(inner) => inner,
             Self::Script(inner) => inner,
         }
-    }
-
-    pub fn is_script(&self) -> bool {
-        matches!(self, Self::Script(_))
     }
 }
 
@@ -100,7 +96,7 @@ impl Command {
 
     pub fn new_script<T: AsRef<OsStr>>(script: T) -> Self {
         let mut command = Self::new(script);
-        command.exe = CommandExecutable::Script(command.exe.into_inner());
+        command.exe = CommandExecutable::Script(command.exe.into_os_string());
         command
     }
 
@@ -329,7 +325,29 @@ impl Command {
     pub fn get_bin_name(&self) -> String {
         match &self.exe {
             CommandExecutable::Binary(bin) => bin.to_string_lossy().to_string(),
-            CommandExecutable::Script(_) => String::from("(script)"),
+            CommandExecutable::Script(script) => {
+                if let Some(inner) = script.to_str() {
+                    match inner.find(' ') {
+                        Some(index) => &inner[0..index],
+                        None => inner,
+                    }
+                    .into()
+                } else {
+                    let mut bytes = vec![];
+
+                    for ch in script.as_encoded_bytes() {
+                        if *ch == b' ' {
+                            break;
+                        }
+
+                        bytes.push(*ch);
+                    }
+
+                    unsafe { OsString::from_encoded_bytes_unchecked(bytes) }
+                        .to_string_lossy()
+                        .to_string()
+                }
+            }
         }
     }
 

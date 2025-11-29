@@ -325,13 +325,10 @@ impl<'app> AugmentedCommand<'app> {
             self.append_paths(paths);
         }
 
-        // Inherit proto/moon last
-        self.inherit_for_proto();
-
         Ok(())
     }
 
-    pub fn inherit_for_proto(&mut self) {
+    pub fn inherit_proto(&mut self) {
         let proto_version = self.context.toolchains_config.proto.version.to_string();
 
         // Inherit common proto env vars

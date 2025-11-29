@@ -2,13 +2,11 @@
 // https://github.com/rust-lang/cargo/blob/master/crates/cargo-util/src/process_builder.rs
 
 use crate::shell::Shell;
-use miette::IntoDiagnostic;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::collections::VecDeque;
-use std::env;
 use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
 use std::sync::Arc;
@@ -251,26 +249,6 @@ impl Command {
         self.env("LINES", "24");
 
         self
-    }
-
-    pub fn inherit_path(&mut self) -> miette::Result<&mut Self> {
-        let key = OsString::from("PATH");
-
-        if self.env.contains_key(&key) || self.paths.is_empty() {
-            return Ok(self);
-        }
-
-        let mut paths = vec![];
-
-        paths.extend(self.paths.clone());
-
-        for path in env::split_paths(&env::var_os(&key).unwrap_or_default()) {
-            paths.push(path.into_os_string());
-        }
-
-        self.env(&key, env::join_paths(paths).into_diagnostic()?);
-
-        Ok(self)
     }
 
     pub fn input<I, V>(&mut self, input: I) -> &mut Self

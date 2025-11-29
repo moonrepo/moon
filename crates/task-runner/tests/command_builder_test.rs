@@ -470,7 +470,7 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths.iter().last().unwrap(),
+                    command.paths.iter().first().unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -486,7 +486,7 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths.iter().last().unwrap(),
+                    command.paths.iter().first().unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {

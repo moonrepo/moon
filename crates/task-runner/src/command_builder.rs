@@ -20,7 +20,7 @@ pub struct CommandBuilder<'task> {
     env_bag: &'task GlobalEnvBag,
 
     // To be built
-    command: Command,
+    command: AugmentedCommand<'task>,
 }
 
 impl<'task> CommandBuilder<'task> {
@@ -43,7 +43,7 @@ impl<'task> CommandBuilder<'task> {
             task,
             working_dir,
             env_bag: GlobalEnvBag::instance(),
-            command: Command::new("noop"),
+            command: AugmentedCommand::new(app, GlobalEnvBag::instance(), "noop"),
         }
     }
 
@@ -59,12 +59,17 @@ impl<'task> CommandBuilder<'task> {
             "Creating task child process to execute",
         );
 
-        self.command = self.build_command().await?;
+        self.command = AugmentedCommand::from_task(self.app, self.env_bag, self.task);
+        self.command
+            .inherit_from_plugins(Some(self.project), Some(self.task))
+            .await?;
+
+        // Scripts should be used as-is
+        self.command.escape_args = self.task.script.is_none();
 
         // We need to handle non-zero exit code's manually
-        self.command
-            .cwd(self.working_dir)
-            .set_error_on_nonzero(false);
+        self.command.cwd(self.working_dir);
+        self.command.set_error_on_nonzero(false);
 
         // Order is important!
         self.inject_args(context);
@@ -74,22 +79,9 @@ impl<'task> CommandBuilder<'task> {
         self.inherit_config();
 
         // Must be last!
-        self.command.inherit_path()?;
+        self.command.inherit_proto();
 
-        Ok(self.command)
-    }
-
-    async fn build_command(&mut self) -> miette::Result<Command> {
-        let mut command = AugmentedCommand::from_task(self.app, self.env_bag, self.task);
-
-        command
-            .inherit_from_plugins(Some(self.project), Some(self.task))
-            .await?;
-
-        // Scripts should be used as-is
-        command.escape_args = self.task.script.is_none();
-
-        Ok(command.augment())
+        Ok(self.command.augment())
     }
 
     #[instrument(skip_all)]

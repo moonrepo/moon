@@ -21,6 +21,7 @@ pub async fn bin(session: MoonSession, args: BinArgs) -> AppResult {
     let mut command = AugmentedCommand::new(&app_context, GlobalEnvBag::instance(), "proto");
     command.arg("bin").arg(&args.toolchain);
     command.inherit_from_plugins(None, None).await?;
+    command.inherit_proto();
 
     let result = command.exec_stream_output().await?;
 

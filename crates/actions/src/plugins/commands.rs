@@ -76,7 +76,6 @@ async fn internal_exec_plugin_command(
     let input = &command.command;
 
     let mut cmd = AugmentedCommand::from_input(&app_context, GlobalEnvBag::instance(), input);
-
     cmd.inherit_from_plugins(options.project.as_deref(), None)
         .await?;
 
@@ -90,7 +89,7 @@ async fn internal_exec_plugin_command(
     cmd.set_error_on_nonzero(!command.allow_failure);
     cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
     cmd.inherit_colors();
-    cmd.inherit_path()?;
+    cmd.inherit_proto();
 
     if let Some(on_exec) = &options.on_exec {
         on_exec(command, attempts)?;

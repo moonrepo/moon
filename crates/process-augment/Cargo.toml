@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 moon_app_context = { path = "../app-context" }
+moon_common = { path = "../common" }
 moon_env_var = { path = "../env-var" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_process = { path = "../process" }

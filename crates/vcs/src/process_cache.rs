@@ -44,7 +44,7 @@ impl ProcessCache {
         command.cwd(&self.workspace_root);
         // The VCS binary should be available on the system,
         // so avoid the shell overhead
-        command.without_shell();
+        command.no_shell();
         command
     }
 

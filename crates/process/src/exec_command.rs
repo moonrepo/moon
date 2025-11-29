@@ -27,7 +27,7 @@ impl Command {
         }
 
         let registry = ProcessRegistry::instance();
-        let (mut command, line, instant) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command()?;
 
         let child = if self.should_pass_stdin() {
             command
@@ -77,7 +77,7 @@ impl Command {
 
     pub async fn exec_capture_continuous_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line, instant) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command()?;
 
         command
             .stdin(Stdio::piped())
@@ -177,7 +177,7 @@ impl Command {
 
     pub async fn exec_stream_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line, instant) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command()?;
 
         let child = if self.should_pass_stdin() {
             command.stdin(Stdio::piped());
@@ -227,7 +227,7 @@ impl Command {
 
     pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line, instant) = self.create_async_command();
+        let (mut command, line, instant) = self.create_async_command()?;
 
         command
             .stdin(if self.should_pass_stdin() {
@@ -453,7 +453,7 @@ impl Command {
     //     Ok(output)
     // }
 
-    fn create_async_command(&self) -> (TokioCommand, CommandLine, Instant) {
+    fn create_async_command(&self) -> miette::Result<(TokioCommand, CommandLine, Instant)> {
         let command_line = self.create_command_line();
 
         let mut command = TokioCommand::new(&command_line.command[0]);
@@ -483,12 +483,20 @@ impl Command {
             command.current_dir(cwd);
         }
 
-        // #[cfg(windows)]
-        // {
-        //     command.creation_flags(windows_sys::Win32::System::Threading::CREATE_NEW_PROCESS_GROUP);
-        // }
+        // And lastly inherit lookup paths
+        let path_key = OsString::from("PATH");
 
-        (command, command_line, Instant::now())
+        if !self.env.contains_key(&path_key) && !self.paths.is_empty() {
+            let mut paths = self.paths.iter().map(PathBuf::from).collect::<Vec<_>>();
+
+            if let Some(path_value) = env::var_os(&path_key) {
+                paths.extend(env::split_paths(&path_value));
+            }
+
+            command.env(path_key, env::join_paths(paths).into_diagnostic()?);
+        }
+
+        Ok((command, command_line, Instant::now()))
     }
 
     fn create_command_line(&self) -> CommandLine {

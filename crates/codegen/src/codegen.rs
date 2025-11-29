@@ -326,7 +326,7 @@ async fn clone_and_checkout_git_repository(
         Command::new("git")
             .args(args)
             .cwd(cwd)
-            .without_shell()
+            .no_shell()
             .exec_capture_output()
             .await
     }

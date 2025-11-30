@@ -2,9 +2,8 @@ use crate::workspace_builder::WorkspaceBuilderContext;
 use moon_common::path::{WorkspaceRelativePathBuf, is_root_level_source, to_virtual_string};
 use moon_common::{Id, color};
 use moon_config::WorkspaceProjectGlobFormat;
-use moon_feature_flags::glob_walk_with_options;
 use starbase_utils::fs;
-use starbase_utils::glob::GlobWalkOptions;
+use starbase_utils::glob::{self, GlobWalkOptions};
 use tracing::{debug, instrument, warn};
 
 fn is_hidden(path: &str) -> bool {
@@ -68,7 +67,7 @@ where
 
     // Glob for all other projects
     let config_names = context.config_loader.get_project_file_names();
-    let mut potential_projects = glob_walk_with_options(
+    let mut potential_projects = glob::walk_fast_with_options(
         context.workspace_root,
         locate_globs,
         GlobWalkOptions::default().log_results(),

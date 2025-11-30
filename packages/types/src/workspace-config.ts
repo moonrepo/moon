@@ -143,14 +143,7 @@ export interface DockerConfig {
 }
 
 /** Configures experiments across the entire moon workspace. */
-export interface ExperimentsConfig {
-	/**
-	 * Enable faster glob file system walking.
-	 *
-	 * @default true
-	 */
-	fasterGlobWalk?: boolean;
-}
+export interface ExperimentsConfig {}
 
 /** Configures the generator for scaffolding from templates. */
 export interface GeneratorConfig {
@@ -749,14 +742,7 @@ export interface PartialDockerConfig {
 }
 
 /** Configures experiments across the entire moon workspace. */
-export interface PartialExperimentsConfig {
-	/**
-	 * Enable faster glob file system walking.
-	 *
-	 * @default true
-	 */
-	fasterGlobWalk?: boolean | null;
-}
+export interface PartialExperimentsConfig {}
 
 /** Configures the generator for scaffolding from templates. */
 export interface PartialGeneratorConfig {

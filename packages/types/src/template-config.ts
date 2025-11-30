@@ -79,6 +79,8 @@ export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig
 
 export interface TemplateVariableEnumSetting {
 	/** The default value of the variable if none was provided. */
+	defaultValue?: TemplateVariableEnumDefault;
+	/** The default value of the variable if none was provided. */
 	default: TemplateVariableEnumDefault;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
 	internal: boolean;
@@ -224,6 +226,8 @@ export interface PartialTemplateVariableEnumValueConfig {
 export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableEnumValueConfig;
 
 export interface PartialTemplateVariableEnumSetting {
+	/** The default value of the variable if none was provided. */
+	defaultValue?: PartialTemplateVariableEnumDefault | null;
 	/** The default value of the variable if none was provided. */
 	default?: PartialTemplateVariableEnumDefault | null;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */

@@ -3,7 +3,6 @@ use common_path::common_path_all;
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::Input;
-use moon_feature_flags::glob_walk_with_options;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
 use std::path::{Path, PathBuf};
@@ -192,7 +191,7 @@ impl FileGroup {
 
         if !self.globs.is_empty() {
             // Glob results are absolute paths!
-            for path in glob_walk_with_options(
+            for path in glob::walk_fast_with_options(
                 workspace_root,
                 &self.globs,
                 GlobWalkOptions::default().cache(),

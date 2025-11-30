@@ -62,6 +62,3 @@ remote:
   #   # assumeHttp2: true
   #   cert: 'crates/remote/tests/__fixtures__/certs-local/client.pem'
   #   domain: 'localhost'
-
-experiments:
-  fasterGlobWalk: true

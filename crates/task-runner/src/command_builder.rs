@@ -179,7 +179,7 @@ impl<'task> CommandBuilder<'task> {
             if let Some(shell) = &self.task.options.windows_shell {
                 use moon_config::TaskWindowsShell;
 
-                self.command.with_shell(match shell {
+                self.command.set_shell(match shell {
                     TaskWindowsShell::Bash => Shell::new(ShellType::Bash),
                     TaskWindowsShell::Elvish => Shell::new(ShellType::Elvish),
                     TaskWindowsShell::Fish => Shell::new(ShellType::Fish),

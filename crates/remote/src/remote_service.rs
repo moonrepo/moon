@@ -18,7 +18,7 @@ use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
 use tokio::sync::RwLock;
 use tokio::task::{JoinHandle, JoinSet};
-use tracing::{debug, info, instrument, trace, warn};
+use tracing::{instrument, trace, warn};
 
 static INSTANCE: OnceLock<Arc<RemoteService>> = OnceLock::new();
 
@@ -44,19 +44,13 @@ impl RemoteService {
     #[instrument]
     pub async fn connect(config: &RemoteConfig, workspace_root: &Path) -> miette::Result<()> {
         if is_ci() && config.is_localhost() {
-            debug!(
+            warn!(
                 host = &config.host,
                 "Remote service is configured with a localhost endpoint, but we are in a CI environment; disabling service",
             );
 
             return Ok(());
         }
-
-        info!(
-            docs = "https://github.com/bazelbuild/remote-apis",
-            "Remote service, powered by the Bazel Remote Execution API, is currently unstable"
-        );
-        info!("Please report any issues to GitHub or Discord");
 
         let mut client: Box<dyn RemoteClient> = match config.api {
             RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
@@ -121,7 +115,7 @@ impl RemoteService {
                     host,
                     "Remote service does not support {} compression for streaming, but it has been configured and enabled through the {} setting",
                     compression,
-                    color::property("unstable_remote.cache.compression"),
+                    color::property("remote.cache.compression"),
                 );
             }
 
@@ -134,7 +128,7 @@ impl RemoteService {
                     host,
                     "Remote service does not support {} compression for batching, but it has been configured and enabled through the {} setting",
                     compression,
-                    color::property("unstable_remote.cache.compression"),
+                    color::property("remote.cache.compression"),
                 );
             }
 
@@ -158,8 +152,6 @@ impl RemoteService {
         }
 
         self.cache_enabled = enabled;
-
-        // TODO check low_api_version/high_api_version
 
         Ok(())
     }

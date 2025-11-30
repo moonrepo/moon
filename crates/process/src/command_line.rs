@@ -21,7 +21,7 @@ impl CommandLine {
 
         // Extract the main command, without shell, for other purposes!
         let mut main_line: Vec<OsString> = vec![];
-        main_line.push(command.bin.clone());
+        main_line.push(command.exe.as_os_str().to_os_string());
 
         for arg in &command.args {
             main_line.push(arg.to_owned());

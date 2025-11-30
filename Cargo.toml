@@ -24,7 +24,7 @@ convert_case = "0.10.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.12.0"
-iocraft = "0.7.14"
+iocraft = "=0.7.14"
 md5 = "0.8.0"
 miette = "7.6.0"
 pathdiff = "0.2.3"
@@ -81,12 +81,12 @@ tokio = { version = "1.48.0", default-features = false, features = [
 ] }
 tokio-util = "0.7.17"
 typescript_tsconfig_json = { version = "0.5.0", features = ["serialize"] }
-tracing = "0.1.41"
+tracing = "0.1.43"
 url = "2.5.7"
 uuid = { version = "1.18.1", features = ["v4"] }
 
 # proto/plugin related
-extism = "=1.12.0"
+extism = "=1.13.0"
 extism-pdk = "1.4.1"
 proto_core = "0.54.1"
 proto_pdk_api = "0.31.3"

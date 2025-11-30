@@ -73,7 +73,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("extension", "command").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.bin, "new-command");
+            assert_eq!(command.exe.as_os_str(), "new-command");
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -81,7 +81,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("toolchain", "command").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.bin, "new-command");
+            assert_eq!(command.exe.as_os_str(), "new-command");
         }
     }
 
@@ -94,7 +94,7 @@ mod command_builder {
                 TaskRunnerContainer::new_for_project("extension", "script", "script").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.bin, "wrapped=$(bin --flag)");
+            assert_eq!(command.exe.as_os_str(), "wrapped=$(bin --flag)");
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -103,7 +103,7 @@ mod command_builder {
                 TaskRunnerContainer::new_for_project("toolchain", "script", "script").await;
             let command = container.create_command(ActionContext::default()).await;
 
-            assert_eq!(command.bin, "wrapped=$(bin --flag)");
+            assert_eq!(command.exe.as_os_str(), "wrapped=$(bin --flag)");
         }
     }
 
@@ -395,7 +395,14 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths_before.last().unwrap(),
+                    command
+                        .paths
+                        .iter()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -411,7 +418,14 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths_before.last().unwrap(),
+                    command
+                        .paths
+                        .iter()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -470,7 +484,14 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths_before.last().unwrap(),
+                    command
+                        .paths
+                        .iter()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -486,7 +507,14 @@ mod command_builder {
                 let command = container.create_command(ActionContext::default()).await;
 
                 assert_eq!(
-                    command.paths_before.last().unwrap(),
+                    command
+                        .paths
+                        .iter()
+                        .collect::<Vec<_>>()
+                        .first()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
                     if cfg!(windows) {
                         "\\extended\\path"
                     } else {
@@ -802,7 +830,7 @@ mod command_builder {
 
             assert!(
                 !command
-                    .paths_before
+                    .paths
                     .iter()
                     .any(|path| path.to_str().unwrap().contains(if cfg!(windows) {
                         ".proto\\tools\\proto"
@@ -823,33 +851,33 @@ mod command_builder {
             );
         }
 
-        // #[tokio::test(flavor = "multi_thread")]
-        // async fn doesnt_inherit_proto_tool_version_if_disabled() {
-        //     let container = TaskRunnerContainer::new("toolchain", "with-version").await;
-        //     container
-        //         .env_bag
-        //         .set("MOON_TOOLCHAIN_FORCE_GLOBALS", "true");
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inherit_proto_tool_version_if_disabled() {
+            let container = TaskRunnerContainer::new("toolchain", "with-version").await;
+            container
+                .env_bag
+                .set("MOON_TOOLCHAIN_FORCE_GLOBALS", "true");
 
-        //     let command = container.create_command(ActionContext::default()).await;
+            let command = container.create_command(ActionContext::default()).await;
 
-        //     container.env_bag.remove("MOON_TOOLCHAIN_FORCE_GLOBALS");
+            container.env_bag.remove("MOON_TOOLCHAIN_FORCE_GLOBALS");
 
-        //     assert!(get_env(&command, "PROTO_TC_TIER3_VERSION").is_none());
-        // }
+            assert!(get_env(&command, "PROTO_TC_TIER3_VERSION").is_none());
+        }
 
-        // #[tokio::test(flavor = "multi_thread")]
-        // async fn doesnt_inherit_proto_tool_version_if_disabled_by_id() {
-        //     let container = TaskRunnerContainer::new("toolchain", "with-version").await;
-        //     container
-        //         .env_bag
-        //         .set("MOON_TOOLCHAIN_FORCE_GLOBALS", "tc-tier3");
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inherit_proto_tool_version_if_disabled_by_id() {
+            let container = TaskRunnerContainer::new("toolchain", "with-version").await;
+            container
+                .env_bag
+                .set("MOON_TOOLCHAIN_FORCE_GLOBALS", "tc-tier3");
 
-        //     let command = container.create_command(ActionContext::default()).await;
+            let command = container.create_command(ActionContext::default()).await;
 
-        //     container.env_bag.remove("MOON_TOOLCHAIN_FORCE_GLOBALS");
+            container.env_bag.remove("MOON_TOOLCHAIN_FORCE_GLOBALS");
 
-        //     assert!(get_env(&command, "PROTO_TC_TIER3_VERSION").is_none());
-        // }
+            assert!(get_env(&command, "PROTO_TC_TIER3_VERSION").is_none());
+        }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn inherits_proto_tool_version_project_override() {
@@ -857,7 +885,7 @@ mod command_builder {
             let command = container.create_command(ActionContext::default()).await;
 
             assert_eq!(
-                get_env(&command, "PROTO_TC_CUSTOM_VERSION").unwrap(),
+                get_env(&command, "PROTO_TC_TIER1_VERSION").unwrap(),
                 "4.5.6"
             );
         }

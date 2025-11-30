@@ -39,5 +39,5 @@ tasks:
     toolchain: tc-tier2
 
 toolchains:
-  tc-custom:
+  tc-tier1:
     version: '4.5.6'

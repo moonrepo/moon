@@ -214,6 +214,8 @@ toolchains:
 - Changed option defaults:
   - `tasks.*.options.inferInputs` now defaults to `false` instead of `true`.
   - `tasks.*.options.shell` now defaults to `true` instead of `false`.
+  - `tasks.*.options.unixShell` now defaults to `bash` instead of nothing.
+  - `tasks.*.options.windowsShell` now defaults to `pwsh` instead of nothing.
 
 ### Local mode
 
@@ -244,6 +246,20 @@ tasks:
     command: 'start-dev'
     options:
       runInCI: false
+```
+
+### Shells by default
+
+Tasks now run in a shell by default, and will use Bash on Unix (`options.unixShell`), and pwsh on
+Windows (`options.windowsShell`). You can disable this behavior by setting `options.shell` to
+`false`.
+
+```yaml title="moon.yml"
+tasks:
+  dev:
+    command: 'start-dev'
+    options:
+      shell: false
 ```
 
 ## VCS

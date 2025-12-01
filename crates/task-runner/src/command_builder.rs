@@ -156,13 +156,11 @@ impl<'task> CommandBuilder<'task> {
     #[instrument(skip_all)]
     fn inject_shell(&mut self) {
         if self.task.options.shell == Some(true) {
-            // Process command set's a shell by default!
-
             #[cfg(unix)]
-            if let Some(shell) = &self.task.options.unix_shell {
+            {
                 use moon_config::TaskUnixShell;
 
-                self.command.set_shell(match shell {
+                self.command.set_shell(match self.task.options.unix_shell {
                     TaskUnixShell::Bash => Shell::new(ShellType::Bash),
                     TaskUnixShell::Elvish => Shell::new(ShellType::Elvish),
                     TaskUnixShell::Fish => Shell::new(ShellType::Fish),
@@ -176,18 +174,19 @@ impl<'task> CommandBuilder<'task> {
             }
 
             #[cfg(windows)]
-            if let Some(shell) = &self.task.options.windows_shell {
+            {
                 use moon_config::TaskWindowsShell;
 
-                self.command.set_shell(match shell {
-                    TaskWindowsShell::Bash => Shell::new(ShellType::Bash),
-                    TaskWindowsShell::Elvish => Shell::new(ShellType::Elvish),
-                    TaskWindowsShell::Fish => Shell::new(ShellType::Fish),
-                    TaskWindowsShell::Murex => Shell::new(ShellType::Murex),
-                    TaskWindowsShell::Nu => Shell::new(ShellType::Nu),
-                    TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
-                    TaskWindowsShell::Xonsh => Shell::new(ShellType::Xonsh),
-                });
+                self.command
+                    .set_shell(match self.task.options.windows_shell {
+                        TaskWindowsShell::Bash => Shell::new(ShellType::Bash),
+                        TaskWindowsShell::Elvish => Shell::new(ShellType::Elvish),
+                        TaskWindowsShell::Fish => Shell::new(ShellType::Fish),
+                        TaskWindowsShell::Murex => Shell::new(ShellType::Murex),
+                        TaskWindowsShell::Nu => Shell::new(ShellType::Nu),
+                        TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
+                        TaskWindowsShell::Xonsh => Shell::new(ShellType::Xonsh),
+                    });
             }
         } else {
             self.command.no_shell();

@@ -72,11 +72,9 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub timeout: Option<u64>,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub unix_shell: Option<TaskUnixShell>,
+        pub unix_shell: TaskUnixShell,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub windows_shell: Option<TaskWindowsShell>,
+        pub windows_shell: TaskWindowsShell,
     }
 );
 
@@ -110,8 +108,8 @@ impl Default for TaskOptions {
             run_in_ci: TaskOptionRunInCI::Affected,
             shell: Some(true),
             timeout: None,
-            unix_shell: None,
-            windows_shell: None,
+            unix_shell: TaskUnixShell::Bash,
+            windows_shell: TaskWindowsShell::Pwsh,
         }
     }
 }

@@ -318,10 +318,7 @@ mod tasks_builder {
 
             assert_eq!(task.command, "test");
             assert_eq!(task.args, vec!["./tests"]);
-            assert_eq!(
-                task.options.shell,
-                if cfg!(windows) { Some(true) } else { None }
-            );
+            assert_eq!(task.options.shell, Some(true));
 
             let task = tasks.get("with-glob-string").unwrap();
 
@@ -333,10 +330,7 @@ mod tasks_builder {
 
             assert_eq!(task.command, "test");
             assert_eq!(task.args, vec!["./tests"]);
-            assert_eq!(
-                task.options.shell,
-                if cfg!(windows) { Some(true) } else { None }
-            );
+            assert_eq!(task.options.shell, Some(true));
 
             let task = tasks.get("with-glob-list").unwrap();
 
@@ -723,17 +717,9 @@ tasks:
 
             let tasks = container.build_tasks("toolchains").await;
 
-            // True for system
             assert_eq!(tasks.get("system").unwrap().options.shell, Some(true));
-
-            // None for others (except windows)
-            if cfg!(windows) {
-                assert_eq!(tasks.get("bun").unwrap().options.shell, Some(true));
-                assert_eq!(tasks.get("node").unwrap().options.shell, Some(true));
-            } else {
-                assert_eq!(tasks.get("bun").unwrap().options.shell, None);
-                assert_eq!(tasks.get("node").unwrap().options.shell, None);
-            }
+            assert_eq!(tasks.get("bun").unwrap().options.shell, Some(true));
+            assert_eq!(tasks.get("node").unwrap().options.shell, Some(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]

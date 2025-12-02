@@ -117,6 +117,7 @@ mod task_expander {
 
             let mut task = create_task();
             task.command = "./$FOO/${BAR}/$BAZ_QUX".into();
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -138,6 +139,7 @@ mod task_expander {
             let mut task = create_task();
             task.command = "./$FOO".into();
             task.env.insert("FOO".into(), "foo-self".into());
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project, &context)
@@ -238,6 +240,7 @@ mod task_expander {
                 "b".into(),
                 "c/${BAR_BAZ}/d".into(),
             ];
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
@@ -257,6 +260,7 @@ mod task_expander {
 
             let mut task = create_task();
             task.options.env_files = Some(vec![Input::parse("/.env").unwrap()]);
+            task.options.infer_inputs = true;
             task.args = vec![
                 "a".into(),
                 "$FOO_BAR".into(),
@@ -281,6 +285,7 @@ mod task_expander {
             let mut task = create_task();
             task.args = vec!["a".into(), "${FOO_BAR}".into(), "b".into()];
             task.env.insert("FOO_BAR".into(), "foo-bar-self".into());
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
@@ -445,6 +450,7 @@ mod task_expander {
             task.env.insert("KEY1".into(), "value1".into());
             task.env.insert("KEY2".into(), "inner-${FOO}".into());
             task.env.insert("KEY3".into(), "$KEY1-self".into());
+            task.options.infer_inputs = true;
 
             let bag = GlobalEnvBag::instance();
             bag.set("FOO", "foo");

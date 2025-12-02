@@ -124,7 +124,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TemplateVariableEnumSetting {
         /// The default value of the variable if none was provided.
-        #[setting(nested, validate = validate_enum_default)]
+        #[setting(alias = "defaultValue", nested, validate = validate_enum_default)]
         pub default: TemplateVariableEnumDefault,
 
         /// Marks the variable as internal, and won't be overwritten via CLI arguments.

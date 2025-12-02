@@ -106,6 +106,7 @@ mod file_group {
             assert_eq!(
                 file_group.dirs(&workspace_root, false).unwrap(),
                 vec![
+                    RelativePathBuf::from("project"),
                     RelativePathBuf::from("project/dir"),
                     RelativePathBuf::from("project/dir/subdir")
                 ]
@@ -280,7 +281,9 @@ mod file_group {
 
             assert_eq!(
                 file_group.root(workspace_root, "project").unwrap(),
-                RelativePathBuf::from("project/dir")
+                // Note: globbing results changed in starbase!
+                // RelativePathBuf::from("project/dir")
+                RelativePathBuf::from(".")
             );
         }
 

@@ -9,13 +9,15 @@ use moon_app_context::AppContext;
 use moon_common::path::PathExt;
 use moon_common::{color, is_ci, path::WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
-use moon_feature_flags::glob_walk_with_options;
 use moon_hash::hash_content;
 use moon_pdk_api::{InstallDependenciesInput, ManifestDependency, ParseManifestInput};
 use moon_project::ProjectFragment;
 use moon_toolchain_plugin::ToolchainPlugin;
 use moon_workspace_graph::WorkspaceGraph;
-use starbase_utils::{glob::GlobWalkOptions, json::JsonValue};
+use starbase_utils::{
+    glob::{self, GlobWalkOptions},
+    json::JsonValue,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::Arc;
@@ -308,7 +310,7 @@ async fn hash_manifest_contents<'action>(
     let deps_members = node.members.clone().unwrap_or_default();
 
     let mut manifest_paths =
-        glob_walk_with_options(deps_root, &deps_members, GlobWalkOptions::default().cache())?
+        glob::walk_fast_with_options(deps_root, &deps_members, GlobWalkOptions::default().cache())?
             .into_iter()
             .filter_map(|path| {
                 if path.ends_with(manifest_file_name) {

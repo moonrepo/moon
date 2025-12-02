@@ -16,7 +16,6 @@ use moon_config::{
     WorkspaceProjectGlobFormat, WorkspaceProjects, finalize_config,
 };
 use moon_extension_plugin::ExtensionRegistry;
-use moon_feature_flags::glob_walk_with_options;
 use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
 use moon_project::{Project, ProjectAlias, ProjectError};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
@@ -32,7 +31,7 @@ use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use starbase_utils::glob::GlobWalkOptions;
+use starbase_utils::glob::{self, GlobWalkOptions};
 use starbase_utils::json;
 use std::sync::Arc;
 use std::{collections::BTreeMap, path::Path};
@@ -726,7 +725,7 @@ impl<'app> WorkspaceBuilder<'app> {
         self.extend_project_build_data().await?;
 
         // Include all workspace-level config files
-        for file in glob_walk_with_options(
+        for file in glob::walk_fast_with_options(
             &context.config_loader.dir,
             ["*.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
             GlobWalkOptions::default().cache().log_results(),

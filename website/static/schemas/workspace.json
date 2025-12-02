@@ -415,14 +415,6 @@
     "ExperimentsConfig": {
       "description": "Configures experiments across the entire moon workspace.",
       "type": "object",
-      "properties": {
-        "fasterGlobWalk": {
-          "title": "fasterGlobWalk",
-          "description": "Enable faster glob file system walking.",
-          "default": true,
-          "type": "boolean"
-        }
-      },
       "additionalProperties": false
     },
     "ExtendsFrom": {

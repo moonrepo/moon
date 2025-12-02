@@ -207,9 +207,9 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                             Entry(
                                 name: "Shell",
                                 content: if cfg!(unix) {
-                                    task.options.unix_shell.unwrap_or_default().to_string()
+                                    task.options.unix_shell.to_string()
                                 } else if cfg!(windows) {
-                                    task.options.windows_shell.unwrap_or_default().to_string()
+                                    task.options.windows_shell.to_string()
                                 } else {
                                     "unknown".to_string()
                                 }

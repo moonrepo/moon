@@ -8,7 +8,6 @@
 - [x] `parse_version_file`
 - [x] `define_toolchain_config`
 - [x] `define_docker_metadata`
-- [x] `extend_command`
 - [x] `prune_docker`
 - [x] `scaffold_docker`
 - [x] `sync_workspace`
@@ -17,6 +16,7 @@
 ## Tier 2 - 9/9
 
 - [x] `extend_project_graph`
+- [x] `extend_command`
 - [x] `extend_task_command`
 - [x] `extend_task_script`
 - [x] `hash_task_contents`

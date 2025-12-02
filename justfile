@@ -1,5 +1,8 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
+export MOON_TEST := "true"
+export STARBASE_TEST := "true"
+
 init:
 	cargo install cargo-binstall
 	cargo binstall cargo-insta cargo-nextest cargo-llvm-cov

@@ -1,9 +1,8 @@
 use crate::file_group_error::FileGroupError;
 use common_path::common_path_all;
 use moon_common::Id;
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_config::Input;
-use moon_feature_flags::glob_walk_with_options;
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
 use std::path::{Path, PathBuf};
@@ -158,10 +157,7 @@ impl FileGroup {
             .map(|files| {
                 files
                     .into_iter()
-                    .filter_map(|file| match file.strip_prefix(workspace_root) {
-                        Ok(suffix) => WorkspaceRelativePathBuf::from_path(suffix).ok(),
-                        Err(_) => None,
-                    })
+                    .filter_map(|file| file.relative_to(workspace_root).ok())
                     .collect::<Vec<_>>()
             })
     }
@@ -192,7 +188,7 @@ impl FileGroup {
 
         if !self.globs.is_empty() {
             // Glob results are absolute paths!
-            for path in glob_walk_with_options(
+            for path in glob::walk_fast_with_options(
                 workspace_root,
                 &self.globs,
                 GlobWalkOptions::default().cache(),

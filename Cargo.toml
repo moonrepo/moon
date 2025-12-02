@@ -62,7 +62,7 @@ starbase_id = { version = "0.3.0", features = ["miette", "schematic"] }
 starbase_sandbox = "0.10.2"
 starbase_shell = "0.10.2"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.12.1", default-features = false, features = [
+starbase_utils = { version = "0.12.2", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",

@@ -18,6 +18,7 @@ use moon_workspace::*;
 pub use moon_workspace_graph::WorkspaceGraph;
 use proto_core::{ProtoConfig, ProtoEnvironment};
 use std::collections::BTreeMap;
+use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 
@@ -39,6 +40,10 @@ pub struct WorkspaceMocker {
 impl WorkspaceMocker {
     pub fn new(root: impl AsRef<Path>) -> Self {
         let root = root.as_ref();
+
+        // Starbase APIs conditionally depend on this env var,
+        // so when tests are ran outside of just, they will break!
+        unsafe { env::set_var("STARBASE_TEST", "true") };
 
         let mut mocker = Self {
             monorepo: true,

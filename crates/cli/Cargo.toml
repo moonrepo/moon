@@ -31,9 +31,9 @@ tracing = { workspace = true }
 
 # For extism/wastime (keep in sync with proto)
 extism = { workspace = true }
-wasmtime = "~30.0.2"
-wasi-common = "~30.0.2"
-wiggle = "~30.0.2"
+wasmtime = "~37.0.3"
+wasi-common = "~37.0.3"
+wiggle = "~37.0.3"
 
 # Overrides
 liblzma = { version = "0.4.5", features = ["static"] }

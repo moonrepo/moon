@@ -9,7 +9,7 @@ moon_config = { path = "../crates/config" }
 moon_pdk = { path = "../crates/pdk" }
 moon_pdk_api = { path = "../crates/pdk-api" }
 moon_target = { path = "../crates/target" }
-extism = "=1.12.0"
+extism = "=1.13.0"
 extism-pdk = "1.4.1"
 
 [profile.release]

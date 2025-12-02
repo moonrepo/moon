@@ -15,6 +15,7 @@ cache_item!(
 );
 
 hash_content!(
+    #[derive(Debug)]
     pub struct WorkspaceGraphHash<'graph> {
         // Data derived from the workspace graph builder.
         projects: BTreeMap<&'graph Id, &'graph ProjectBuildData>,

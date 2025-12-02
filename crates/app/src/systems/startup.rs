@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
-use moon_feature_flags::{FeatureFlags, Flag};
+use moon_feature_flags::FeatureFlags;
 use proto_core::ProtoEnvironment;
 use starbase_styles::color;
 use starbase_utils::dirs;
@@ -205,10 +205,8 @@ pub async fn load_tasks_configs(
 }
 
 #[instrument(skip_all)]
-pub fn register_feature_flags(config: &WorkspaceConfig) -> miette::Result<()> {
-    FeatureFlags::default()
-        .set(Flag::FastGlobWalk, config.experiments.faster_glob_walk)
-        .register();
+pub fn register_feature_flags(_config: &WorkspaceConfig) -> miette::Result<()> {
+    FeatureFlags::default().register();
 
     Ok(())
 }

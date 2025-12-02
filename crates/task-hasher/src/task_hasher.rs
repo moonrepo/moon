@@ -6,12 +6,11 @@ use moon_common::color;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
 use moon_config::{HasherConfig, HasherWalkStrategy, Input, ProjectInput};
 use moon_env_var::GlobalEnvBag;
-use moon_feature_flags::glob_walk_with_options;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob::{GlobSet, GlobWalkOptions};
+use starbase_utils::glob::{self, GlobSet, GlobWalkOptions};
 use std::path::PathBuf;
 use tracing::{trace, warn};
 
@@ -189,7 +188,7 @@ impl<'task> TaskHasher<'task> {
         } else {
             let default_globs = vec!["**/*".to_owned()];
 
-            files.extend(glob_walk_with_options(
+            files.extend(glob::walk_fast_with_options(
                 &project.root,
                 if input.filter.is_empty() {
                     &default_globs

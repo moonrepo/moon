@@ -4,7 +4,6 @@ use moon_config::{
     Input, Output, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType, is_false,
     schematic::RegexSetting,
 };
-use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob::{self, GlobWalkOptions, split_patterns};
@@ -229,7 +228,7 @@ impl Task {
         }
 
         if !cached_globs.is_empty() {
-            list.extend(glob_walk_with_options(
+            list.extend(glob::walk_fast_with_options(
                 workspace_root,
                 cached_globs,
                 GlobWalkOptions::default().cache().files(),
@@ -237,7 +236,7 @@ impl Task {
         }
 
         if !non_cached_globs.is_empty() {
-            list.extend(glob_walk_with_options(
+            list.extend(glob::walk_fast_with_options(
                 workspace_root,
                 non_cached_globs,
                 GlobWalkOptions::default().files(),
@@ -262,7 +261,7 @@ impl Task {
         }
 
         if !self.output_globs.is_empty() {
-            list.extend(glob_walk_with_options(
+            list.extend(glob::walk_fast_with_options(
                 workspace_root,
                 self.output_globs.keys(),
                 GlobWalkOptions::default().files(),

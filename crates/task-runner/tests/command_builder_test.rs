@@ -555,7 +555,7 @@ mod command_builder {
             let command = container
                 .create_command_with_config(ActionContext::default(), |task, _| {
                     task.options.shell = Some(true);
-                    task.options.unix_shell = Some(moon_config::TaskUnixShell::Elvish);
+                    task.options.unix_shell = moon_config::TaskUnixShell::Elvish;
                 })
                 .await;
 
@@ -569,7 +569,7 @@ mod command_builder {
             let command = container
                 .create_command_with_config(ActionContext::default(), |task, _| {
                     task.options.shell = Some(true);
-                    task.options.windows_shell = Some(moon_config::TaskWindowsShell::Bash);
+                    task.options.windows_shell = moon_config::TaskWindowsShell::Bash;
                 })
                 .await;
 

@@ -583,6 +583,7 @@ mod token_expander {
             let mut task = create_task();
 
             task.command = "$FOO".into();
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -658,6 +659,7 @@ mod token_expander {
             let mut task = create_task();
 
             task.args.push("$FOO".into());
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -689,6 +691,7 @@ mod token_expander {
             let mut task = create_task();
 
             task.args.push("@group(all)".into());
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -814,6 +817,7 @@ mod token_expander {
             let mut task = create_task();
 
             task.env.insert("GROUP".into(), "@group(all)".into());
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1800,6 +1804,7 @@ mod token_expander {
             let mut task = create_task();
 
             task.script = Some("$FOO".into());
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);
@@ -1831,6 +1836,7 @@ mod token_expander {
             let mut task = create_task();
 
             task.script = Some("bin @group(all)".into());
+            task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project, &context);

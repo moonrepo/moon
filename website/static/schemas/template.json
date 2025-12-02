@@ -267,6 +267,15 @@
             }
           ]
         },
+        "defaultValue": {
+          "title": "defaultValue",
+          "description": "The default value of the variable if none was provided.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TemplateVariableEnumDefault"
+            }
+          ]
+        },
         "internal": {
           "title": "internal",
           "description": "Marks the variable as internal, and won't be overwritten via CLI arguments.",

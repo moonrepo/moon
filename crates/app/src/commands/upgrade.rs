@@ -77,7 +77,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         .any(|comp| comp == Component::Normal(".moon".as_ref()));
 
     if !upgradeable {
-        session.console.render(element! {
+        session.console.render_err(element! {
             Container {
                 Notice(variant: Variant::Caution) {
                     StyledText(content: "moon can only upgrade itself when installed in the <path>~/.moon</path> directory.")

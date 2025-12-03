@@ -24,7 +24,7 @@ convert_case = "0.10.0"
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.12.0"
-iocraft = "=0.7.14"
+iocraft = "0.7.16"
 md5 = "0.8.0"
 miette = "7.6.0"
 pathdiff = "0.2.3"
@@ -57,7 +57,7 @@ starbase_archive = { version = "0.12.0", default-features = false, features = [
     "tar-all",
     "zip-all",
 ] }
-starbase_console = { version = "0.6.18", features = ["miette"] }
+starbase_console = { version = "0.6.19", features = ["miette"] }
 starbase_id = { version = "0.3.0", features = ["miette", "schematic"] }
 starbase_sandbox = "0.10.2"
 starbase_shell = "0.10.2"

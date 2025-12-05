@@ -1,4 +1,4 @@
-use crate::task_hash::TaskHash;
+use crate::task_fingerprint::TaskFingerprint;
 use crate::task_hasher_error::TaskHasherError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
@@ -22,7 +22,7 @@ pub struct TaskHasher<'task> {
     pub task: &'task Task,
     pub hasher_config: &'task HasherConfig,
 
-    content: TaskHash<'task>,
+    fingerprint: TaskFingerprint<'task>,
 }
 
 impl<'task> TaskHasher<'task> {
@@ -39,32 +39,32 @@ impl<'task> TaskHasher<'task> {
             project_graph,
             task,
             hasher_config,
-            content: TaskHash::new(project, task),
+            fingerprint: TaskFingerprint::new(project, task),
         }
     }
 
-    pub fn hash(mut self) -> TaskHash<'task> {
+    pub fn hash(mut self) -> TaskFingerprint<'task> {
         // Ensure hashing is deterministic
-        self.content.args.sort();
-        self.content.project_deps.sort();
+        self.fingerprint.args.sort();
+        self.fingerprint.project_deps.sort();
 
         // Consume the hasher and return the content
-        self.content
+        self.fingerprint
     }
 
     pub fn hash_args(&mut self, args: impl IntoIterator<Item = &'task String>) {
         for arg in args {
-            self.content.args.push(arg);
+            self.fingerprint.args.push(arg);
         }
     }
 
     pub fn hash_deps(&mut self, deps: impl IntoIterator<Item = (&'task Target, String)>) {
-        self.content.deps.extend(deps);
+        self.fingerprint.deps.extend(deps);
     }
 
     pub fn hash_env(&mut self, env: impl IntoIterator<Item = (&'task String, &'task String)>) {
         for (key, value) in env {
-            self.content.env.insert(key.as_ref(), value.as_ref());
+            self.fingerprint.env.insert(key.as_ref(), value.as_ref());
         }
     }
 
@@ -75,14 +75,14 @@ impl<'task> TaskHasher<'task> {
         if !processed_inputs.is_empty() && self.app_context.vcs.is_enabled() {
             let files = processed_inputs.into_iter().collect::<Vec<_>>();
 
-            self.content.inputs = self.app_context.vcs.get_file_hashes(&files, true).await?;
+            self.fingerprint.inputs = self.app_context.vcs.get_file_hashes(&files, true).await?;
         }
 
         if !self.task.input_env.is_empty() {
             let bag = GlobalEnvBag::instance();
 
             for input in &self.task.input_env {
-                self.content
+                self.fingerprint
                     .input_env
                     .insert(input, bag.get(input).unwrap_or_default());
             }

@@ -143,14 +143,14 @@ impl<'app> WorkspaceBuilder<'app> {
         }
 
         // Hash the project graph based on the preloaded state
-        let mut graph_contents = WorkspaceGraphHash::default();
-        graph_contents.add_projects(&graph.project_data);
-        graph_contents.add_configs(graph.hash_required_configs().await?);
-        graph_contents.gather_env();
+        let mut fingerprint = WorkspaceGraphFingerprint::default();
+        fingerprint.add_projects(&graph.project_data);
+        fingerprint.add_configs(graph.hash_required_configs().await?);
+        fingerprint.gather_env();
 
         let hash = cache_engine
             .hash
-            .save_manifest_without_hasher("workspace-graph", &graph_contents)?;
+            .save_manifest_without_hasher("workspace-graph", &fingerprint)?;
 
         debug!(hash, "Generated hash for workspace graph");
 

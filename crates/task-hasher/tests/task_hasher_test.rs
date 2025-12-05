@@ -3,7 +3,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
 use moon_project::Project;
 use moon_task::Task;
-use moon_task_hasher::{TaskHash, TaskHasher};
+use moon_task_hasher::{TaskFingerprint, TaskHasher};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
@@ -52,7 +52,7 @@ async fn generate_hash<'a>(
     wg: &'a WorkspaceGraph,
     app: &'a AppContext,
     config: &'a HasherConfig,
-) -> TaskHash<'a> {
+) -> TaskFingerprint<'a> {
     let mut hasher = TaskHasher::new(app, &wg.projects, project, task, config);
     hasher.hash_inputs().await.unwrap();
     hasher.hash()

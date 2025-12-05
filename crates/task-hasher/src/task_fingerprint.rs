@@ -1,13 +1,13 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::Output;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use moon_project::Project;
 use moon_task::{Target, Task};
 use std::collections::BTreeMap;
 
-hash_content!(
-    pub struct TaskHash<'task> {
+hash_fingerprint!(
+    pub struct TaskFingerprint<'task> {
         // Task option `cacheKey`
         #[serde(skip_serializing_if = "Option::is_none")]
         pub cache_key: Option<&'task str>,
@@ -51,7 +51,7 @@ hash_content!(
     }
 );
 
-impl<'task> TaskHash<'task> {
+impl<'task> TaskFingerprint<'task> {
     pub fn new(project: &'task Project, task: &'task Task) -> Self {
         Self {
             cache_key: task.options.cache_key.as_deref(),

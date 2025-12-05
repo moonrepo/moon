@@ -527,7 +527,6 @@ async fn batch_download_blobs(
     let mut blob_map = FxHashMap::default();
     let mut blob_digests = vec![];
 
-    // // TODO support directories
     for file in &result.output_files {
         if file.contents.is_empty()
             && let Some(digest) = &file.digest

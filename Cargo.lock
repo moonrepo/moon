@@ -3396,7 +3396,7 @@ dependencies = [
  "moon_common",
  "moon_target",
  "rustc-hash",
- "scc 2.4.0",
+ "scc 3.4.2",
  "serde",
  "tokio",
 ]
@@ -3503,7 +3503,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash",
- "scc 2.4.0",
+ "scc 3.4.2",
  "serde",
  "serial_test",
  "starbase_sandbox",
@@ -3865,7 +3865,7 @@ version = "0.0.1"
 dependencies = [
  "regex",
  "rustc-hash",
- "scc 2.4.0",
+ "scc 3.4.2",
 ]
 
 [[package]]
@@ -4032,7 +4032,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash",
- "scc 2.4.0",
+ "scc 3.4.2",
  "serde",
  "serde_json",
  "starbase_sandbox",
@@ -4156,7 +4156,7 @@ dependencies = [
  "moon_workspace",
  "petgraph 0.8.3",
  "rustc-hash",
- "scc 2.4.0",
+ "scc 3.4.2",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.17",
@@ -4197,7 +4197,7 @@ dependencies = [
  "moon_task",
  "reqwest",
  "rustc-hash",
- "scc 2.4.0",
+ "scc 3.4.2",
  "serde",
  "sha2",
  "starbase_utils",
@@ -4483,7 +4483,7 @@ dependencies = [
  "moon_process",
  "regex",
  "rustc-hash",
- "scc 2.4.0",
+ "scc 3.4.2",
  "semver",
  "serde",
  "starbase_sandbox",
@@ -4555,7 +4555,7 @@ dependencies = [
  "moon_project_graph",
  "moon_query",
  "moon_task_graph",
- "scc 2.4.0",
+ "scc 3.4.2",
  "tracing",
 ]
 
@@ -6104,7 +6104,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "46e6f046b7fef48e2660c57ed794263155d713de679057f2d0c169bfc6e756cc"
 dependencies = [
  "sdd 3.0.10",
- "serde",
 ]
 
 [[package]]
@@ -6114,7 +6113,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b6f8686af8563182fc6b63ab7bd7b5cad8f40fbe660675627caedc6c073eca8"
 dependencies = [
  "saa",
+<<<<<<< HEAD
  "sdd 4.5.0",
+=======
+ "sdd 4.3.4",
+ "serde",
+>>>>>>> e0d818d3fb (Update deps.)
 ]
 
 [[package]]

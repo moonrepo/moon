@@ -3780,6 +3780,7 @@ dependencies = [
 name = "moon_console"
 version = "0.0.1"
 dependencies = [
+ "iocraft",
  "miette 7.6.0",
  "moon_action",
  "moon_common",
@@ -6590,9 +6591,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_console"
-version = "0.6.19"
+version = "0.6.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6cdcd5d9f0b949e814bb0eeaddbcf3349fb9d32621c0061ac63721b2f58aa8e0"
+checksum = "7cae1cd017b8c5b7bc222ee5e90835f4bebaa829ead762c563fee77d91b598ef"
 dependencies = [
  "crossterm",
  "iocraft",

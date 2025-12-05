@@ -48,7 +48,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
 
         session
             .console
-            .render_interactive(element! {
+            .render_prompt(element! {
                 Confirm(
                     label: format!("Initialize moon into <path>{}</path>?", dest_dir.display()),
                     on_confirm: &mut value
@@ -71,7 +71,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
 
         session
             .console
-            .render_interactive(element! {
+            .render_prompt(element! {
                 Confirm(
                     label: "moon has already been initialized, overwrite it?",
                     on_confirm: &mut force

@@ -96,24 +96,26 @@ pub async fn setup(session: MoonSession) -> AppResult {
         "All toolchains are already up to date!".to_string()
     };
 
-    let variant = if failed_count > 0 {
-        Variant::Caution
-    } else {
-        Variant::Success
-    };
+    // Return error code if any setup failed
+    if failed_count > 0 {
+        session.console.render_err(element! {
+            Container {
+                Notice(variant: Variant::Caution) {
+                    StyledText(content: message)
+                }
+            }
+        })?;
+
+        return Ok(Some(1));
+    }
 
     session.console.render(element! {
         Container {
-            Notice(variant: variant) {
+            Notice(variant: Variant::Success) {
                 StyledText(content: message)
             }
         }
     })?;
-
-    // Return error code if any setup failed
-    if failed_count > 0 {
-        return Ok(Some(1));
-    }
 
     Ok(None)
 }

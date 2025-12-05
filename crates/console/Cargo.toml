@@ -14,6 +14,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_target = { path = "../target" }
 moon_time = { path = "../time" }
+iocraft = { workspace = true }
 miette = { workspace = true }
 starbase_console = { workspace = true, features = ["ui"] }
 starbase_styles = { workspace = true }

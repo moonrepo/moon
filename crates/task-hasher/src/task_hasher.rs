@@ -1,4 +1,4 @@
-use crate::task_hash::TaskFingerprint;
+use crate::task_fingerprint::TaskFingerprint;
 use crate::task_hasher_error::TaskHasherError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;

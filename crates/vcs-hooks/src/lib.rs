@@ -1,5 +1,5 @@
+mod hooks_fingerprint;
 mod hooks_generator;
-mod hooks_hash;
 
+pub use hooks_fingerprint::*;
 pub use hooks_generator::*;
-pub use hooks_hash::*;

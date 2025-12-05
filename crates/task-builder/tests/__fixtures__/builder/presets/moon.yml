@@ -13,9 +13,9 @@ tasks:
   server-extends:
     extends: 'server-extends-middle'
 
-  watcher:
-    preset: 'watcher'
-  watcher-custom:
-    preset: 'watcher'
+  utility:
+    preset: 'utility'
+  utility-custom:
+    preset: 'utility'
     options:
       interactive: false

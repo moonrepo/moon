@@ -4,13 +4,13 @@ use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use moon_config::{HasherConfig, HasherWalkStrategy, Input, ProjectInput};
+use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob::{self, GlobSet, GlobWalkOptions};
+use starbase_utils::glob::GlobSet;
 use std::path::PathBuf;
 use tracing::{trace, warn};
 
@@ -143,14 +143,6 @@ impl<'task> TaskHasher<'task> {
             }
         }
 
-        for input in &self.task.inputs {
-            if let Input::Project(inner) = &input
-                && !inner.is_all_deps()
-            {
-                files.extend(self.aggregate_inputs_from_project(inner).await?);
-            }
-        }
-
         // Include local file changes so that development builds work.
         // Also run this LAST as it should take highest precedence!
         if vcs_enabled {
@@ -167,36 +159,6 @@ impl<'task> TaskHasher<'task> {
                     files.remove(&abs_file);
                 }
             }
-        }
-
-        Ok(files)
-    }
-
-    async fn aggregate_inputs_from_project(
-        &mut self,
-        input: &ProjectInput,
-    ) -> miette::Result<FxHashSet<PathBuf>> {
-        let mut files = FxHashSet::default();
-        let project = self.project_graph.get(&input.project)?;
-
-        if let Some(group_id) = &input.group {
-            files.extend(project.get_file_group(group_id)?.walk_absolute(
-                false,
-                &self.app_context.workspace_root,
-                false,
-            )?)
-        } else {
-            let default_globs = vec!["**/*".to_owned()];
-
-            files.extend(glob::walk_fast_with_options(
-                &project.root,
-                if input.filter.is_empty() {
-                    &default_globs
-                } else {
-                    &input.filter
-                },
-                GlobWalkOptions::default().cache().files(),
-            )?);
         }
 
         Ok(files)

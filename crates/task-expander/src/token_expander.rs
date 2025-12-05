@@ -1,10 +1,11 @@
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
-use moon_common::path::{self, WorkspaceRelativePathBuf};
+use moon_common::path::{self, RelativeFrom, WorkspaceRelativePathBuf};
 use moon_config::{Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
+use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
@@ -55,18 +56,22 @@ impl TokenScope {
 
 pub struct TokenExpander<'graph> {
     pub scope: TokenScope,
-
     pub context: &'graph GraphExpanderContext,
-
     pub project: &'graph Project,
+    pub project_graph: &'graph ProjectGraph,
 }
 
 impl<'graph> TokenExpander<'graph> {
-    pub fn new(project: &'graph Project, context: &'graph GraphExpanderContext) -> Self {
+    pub fn new(
+        project_graph: &'graph ProjectGraph,
+        project: &'graph Project,
+        context: &'graph GraphExpanderContext,
+    ) -> Self {
         Self {
             scope: TokenScope::Args,
             context,
             project,
+            project_graph,
         }
     }
 
@@ -276,13 +281,11 @@ impl<'graph> TokenExpander<'graph> {
                     );
                 }
                 Input::File(inner) => {
-                    let file = self.create_path_for_task(
-                        task,
-                        inner.to_workspace_relative(&self.project.source),
-                    )?;
-
                     result.files_for_input.insert(
-                        file,
+                        self.create_path_for_task(
+                            task,
+                            inner.to_workspace_relative(&self.project.source),
+                        )?,
                         TaskFileInput {
                             content: inner.content.clone(),
                             optional: inner.optional,
@@ -297,17 +300,42 @@ impl<'graph> TokenExpander<'graph> {
                     )?;
                 }
                 Input::Glob(inner) => {
-                    let glob = self.create_path_for_task(
-                        task,
-                        inner.to_workspace_relative(&self.project.source),
-                    )?;
-
-                    result
-                        .globs_for_input
-                        .insert(glob, TaskGlobInput { cache: inner.cache });
+                    result.globs_for_input.insert(
+                        self.create_path_for_task(
+                            task,
+                            inner.to_workspace_relative(&self.project.source),
+                        )?,
+                        TaskGlobInput { cache: inner.cache },
+                    );
                 }
-                Input::Project(_) => {
-                    // Skip
+                Input::Project(inner) => {
+                    let project = self.project_graph.get_unexpanded(&inner.project)?;
+
+                    if let Some(group_id) = &inner.group {
+                        self.update_result_for_file_group(
+                            project.get_file_group(group_id)?,
+                            "static",
+                            &mut result,
+                        )?;
+                    } else if !inner.filter.is_empty() {
+                        for glob in &inner.filter {
+                            result.globs_for_input.insert(
+                                self.create_path_for_task(
+                                    task,
+                                    path::expand_to_workspace_relative(
+                                        RelativeFrom::Project(project.source.as_str()),
+                                        glob,
+                                    ),
+                                )?,
+                                TaskGlobInput::default(),
+                            );
+                        }
+                    } else {
+                        result.globs_for_input.insert(
+                            self.create_path_for_task(task, project.source.join("**/*"))?,
+                            TaskGlobInput::default(),
+                        );
+                    }
                 }
             };
         }
@@ -338,25 +366,24 @@ impl<'graph> TokenExpander<'graph> {
                     );
                 }
                 Output::File(inner) => {
-                    let file = self.create_path_for_task(
-                        task,
-                        inner.to_workspace_relative(&self.project.source),
-                    )?;
-
                     result.files_for_output.insert(
-                        file,
+                        self.create_path_for_task(
+                            task,
+                            inner.to_workspace_relative(&self.project.source),
+                        )?,
                         TaskFileOutput {
                             optional: inner.optional.unwrap_or_default(),
                         },
                     );
                 }
                 Output::Glob(inner) => {
-                    let glob = self.create_path_for_task(
-                        task,
-                        inner.to_workspace_relative(&self.project.source),
-                    )?;
-
-                    result.globs_for_output.insert(glob, TaskGlobOutput {});
+                    result.globs_for_output.insert(
+                        self.create_path_for_task(
+                            task,
+                            inner.to_workspace_relative(&self.project.source),
+                        )?,
+                        TaskGlobOutput {},
+                    );
                 }
             };
         }

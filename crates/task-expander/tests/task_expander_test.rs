@@ -16,6 +16,7 @@ mod task_expander {
     #[test]
     fn doesnt_overlap_input_file() {
         let sandbox = create_sandbox("file-group");
+        let project_graph = create_project_graph();
         let project = create_project(sandbox.path());
 
         let mut task = create_task();
@@ -24,7 +25,9 @@ mod task_expander {
             .insert("project/source/out".into(), TaskFileInput::default());
 
         let context = create_context(sandbox.path());
-        let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
+        let task = TaskExpander::new(&project_graph, &project, &context)
+            .expand(&task)
+            .unwrap();
 
         assert!(task.input_files.is_empty());
         assert_eq!(
@@ -36,6 +39,7 @@ mod task_expander {
     #[test]
     fn doesnt_overlap_input_glob() {
         let sandbox = create_sandbox("file-group");
+        let project_graph = create_project_graph();
         let project = create_project(sandbox.path());
 
         let mut task = create_task();
@@ -45,7 +49,9 @@ mod task_expander {
             .insert("project/source/out/**/*".into(), TaskGlobInput::default());
 
         let context = create_context(sandbox.path());
-        let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
+        let task = TaskExpander::new(&project_graph, &project, &context)
+            .expand(&task)
+            .unwrap();
 
         assert!(task.input_globs.is_empty());
         assert_eq!(
@@ -61,13 +67,16 @@ mod task_expander {
         // Dir has to exist!
         sandbox.create_file("project/source/dir/file", "");
 
+        let project_graph = create_project_graph();
         let project = create_project(sandbox.path());
 
         let mut task = create_task();
         task.inputs = vec![Input::parse("dir").unwrap()];
 
         let context = create_context(sandbox.path());
-        let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
+        let task = TaskExpander::new(&project_graph, &project, &context)
+            .expand(&task)
+            .unwrap();
 
         assert!(task.input_files.is_empty());
         assert_eq!(
@@ -83,13 +92,14 @@ mod task_expander {
         #[should_panic(expected = "Token @dirs(group) in task project:task cannot be used")]
         fn errors_on_token_funcs() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
             task.command = "@dirs(group)".into();
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_command(&mut task)
                 .unwrap();
         }
@@ -97,13 +107,14 @@ mod task_expander {
         #[test]
         fn replaces_token_vars() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
             task.command = "./$project/bin".into();
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
@@ -113,6 +124,7 @@ mod task_expander {
         #[test]
         fn replaces_env_vars() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -120,7 +132,7 @@ mod task_expander {
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
@@ -134,6 +146,7 @@ mod task_expander {
         #[test]
         fn replaces_env_var_from_self() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -142,7 +155,7 @@ mod task_expander {
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_command(&mut task)
                 .unwrap();
 
@@ -157,13 +170,14 @@ mod task_expander {
         #[test]
         fn replaces_token_funcs() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
             task.args = vec!["a".into(), "@files(all)".into(), "b".into()];
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_args(&mut task)
                 .unwrap();
 
@@ -183,6 +197,7 @@ mod task_expander {
         #[test]
         fn replaces_token_funcs_from_workspace_root() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -190,7 +205,7 @@ mod task_expander {
             task.options.run_from_workspace_root = true;
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_args(&mut task)
                 .unwrap();
 
@@ -210,6 +225,7 @@ mod task_expander {
         #[test]
         fn replaces_token_vars() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -221,7 +237,7 @@ mod task_expander {
             ];
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_args(&mut task)
                 .unwrap();
 
@@ -231,6 +247,7 @@ mod task_expander {
         #[test]
         fn replaces_env_vars() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -243,7 +260,9 @@ mod task_expander {
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
-            let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
+            let task = TaskExpander::new(&project_graph, &project, &context)
+                .expand(&task)
+                .unwrap();
 
             assert_eq!(task.args, ["a", "$FOO_BAR", "b", "c/${BAR_BAZ}/d"]);
 
@@ -256,6 +275,7 @@ mod task_expander {
             let sandbox = create_empty_sandbox();
             sandbox.create_file(".env", "FOO_BAR=foo-bar\nBAR_BAZ=bar-baz");
 
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -269,7 +289,9 @@ mod task_expander {
             ];
 
             let context = create_context(sandbox.path());
-            let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
+            let task = TaskExpander::new(&project_graph, &project, &context)
+                .expand(&task)
+                .unwrap();
 
             assert_eq!(task.args, ["a", "$FOO_BAR", "b", "c/${BAR_BAZ}/d"]);
 
@@ -280,6 +302,7 @@ mod task_expander {
         #[test]
         fn replaces_env_var_from_self() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -288,7 +311,9 @@ mod task_expander {
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
-            let task = TaskExpander::new(&project, &context).expand(&task).unwrap();
+            let task = TaskExpander::new(&project_graph, &project, &context)
+                .expand(&task)
+                .unwrap();
 
             assert_eq!(task.args, ["a", "${FOO_BAR}", "b"]);
             assert!(task.input_env.contains("FOO_BAR"));
@@ -301,6 +326,7 @@ mod task_expander {
         #[test]
         fn passes_args_through() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project_with_tasks(sandbox.path(), "project");
             let mut task = create_task();
 
@@ -311,7 +337,7 @@ mod task_expander {
             });
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_deps(&mut task)
                 .unwrap();
 
@@ -328,6 +354,7 @@ mod task_expander {
         #[test]
         fn supports_tokens_in_args() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project_with_tasks(sandbox.path(), "project");
             let mut task = create_task();
 
@@ -338,7 +365,7 @@ mod task_expander {
             });
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_deps(&mut task)
                 .unwrap();
 
@@ -355,6 +382,7 @@ mod task_expander {
         #[test]
         fn passes_env_through() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project_with_tasks(sandbox.path(), "project");
             let mut task = create_task();
 
@@ -365,7 +393,7 @@ mod task_expander {
             });
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_deps(&mut task)
                 .unwrap();
 
@@ -383,6 +411,7 @@ mod task_expander {
         #[test]
         fn supports_token_in_env() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project_with_tasks(sandbox.path(), "project");
             let mut task = create_task();
 
@@ -393,7 +422,7 @@ mod task_expander {
             });
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_deps(&mut task)
                 .unwrap();
 
@@ -411,6 +440,7 @@ mod task_expander {
         #[test]
         fn passes_args_and_env_through() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project_with_tasks(sandbox.path(), "project");
             let mut task = create_task();
 
@@ -422,7 +452,7 @@ mod task_expander {
             });
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_deps(&mut task)
                 .unwrap();
 
@@ -444,6 +474,7 @@ mod task_expander {
         #[test]
         fn replaces_env_vars() {
             let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -456,7 +487,7 @@ mod task_expander {
             bag.set("FOO", "foo");
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -475,6 +506,7 @@ mod task_expander {
         #[test]
         fn replaces_tokens() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -482,7 +514,7 @@ mod task_expander {
             task.env.insert("KEY2".into(), "$project-$task".into());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -498,6 +530,7 @@ mod task_expander {
         #[test]
         fn replaces_tokens_from_workspace_root() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -507,7 +540,7 @@ mod task_expander {
             task.env.insert("KEY2".into(), "$project-$task".into());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -526,6 +559,7 @@ mod task_expander {
         #[test]
         fn can_use_env_vars_and_token_vars() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -536,7 +570,7 @@ mod task_expander {
             bag.set("FOO", "foo");
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -551,6 +585,7 @@ mod task_expander {
         #[test]
         fn loads_from_env_file() {
             let sandbox = create_sandbox("env-file");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -559,7 +594,7 @@ mod task_expander {
             task.options.env_files = Some(vec![Input::parse(".env").unwrap()]);
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -578,6 +613,7 @@ mod task_expander {
             use std::env;
 
             let sandbox = create_sandbox("env-file");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -587,7 +623,7 @@ mod task_expander {
             unsafe { env::set_var("EXTERNAL", "external-value") };
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -608,6 +644,7 @@ mod task_expander {
         #[test]
         fn can_substitute_var_from_env_file() {
             let sandbox = create_sandbox("env-file");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -615,7 +652,7 @@ mod task_expander {
             task.env.insert("TOP_LEVEL".into(), "$BASE".into());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -625,6 +662,7 @@ mod task_expander {
         #[test]
         fn can_substitute_self_from_system() {
             let sandbox = create_sandbox("env-file");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let bag = GlobalEnvBag::instance();
@@ -634,7 +672,7 @@ mod task_expander {
             task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -646,13 +684,14 @@ mod task_expander {
         #[test]
         fn doesnt_substitute_self_from_local() {
             let sandbox = create_sandbox("env-file");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
             task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -662,6 +701,7 @@ mod task_expander {
         #[test]
         fn loads_from_multiple_env_file() {
             let sandbox = create_sandbox("env-file");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -673,7 +713,7 @@ mod task_expander {
             ]);
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -696,6 +736,7 @@ mod task_expander {
         #[test]
         fn skips_missing_env_file() {
             let sandbox = create_sandbox("env-file");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -704,7 +745,7 @@ mod task_expander {
             task.options.env_files = Some(vec![Input::parse(".env-missing").unwrap()]);
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
@@ -721,13 +762,14 @@ mod task_expander {
         #[should_panic(expected = "Failed to parse env file")]
         fn errors_invalid_env_file() {
             let sandbox = create_sandbox("env-file");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
             task.options.env_files = Some(vec![Input::parse(".env-invalid").unwrap()]);
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
         }
@@ -739,6 +781,7 @@ mod task_expander {
         #[test]
         fn inherits_file_input_params() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -750,7 +793,7 @@ mod task_expander {
                 .push(Input::parse("file:///root/c.txt?optional=false&content=a|b|c").unwrap());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_inputs(&mut task)
                 .unwrap();
 
@@ -785,6 +828,7 @@ mod task_expander {
         #[test]
         fn inherits_glob_input_params() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -795,7 +839,7 @@ mod task_expander {
                 .push(Input::parse("glob:///root/c.*?cache=true").unwrap());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_inputs(&mut task)
                 .unwrap();
 
@@ -815,13 +859,14 @@ mod task_expander {
         #[test]
         fn extracts_env_var() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
             task.inputs.push(Input::EnvVar("FOO_BAR".into()));
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_inputs(&mut task)
                 .unwrap();
 
@@ -833,6 +878,7 @@ mod task_expander {
         #[test]
         fn replaces_token_funcs() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -840,7 +886,7 @@ mod task_expander {
             task.inputs.push(Input::TokenFunc("@files(all)".into()));
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_inputs(&mut task)
                 .unwrap();
 
@@ -860,6 +906,7 @@ mod task_expander {
         #[test]
         fn splits_token_func_into_files_globs() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -867,7 +914,7 @@ mod task_expander {
             task.inputs.push(Input::TokenFunc("@group(all)".into()));
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_inputs(&mut task)
                 .unwrap();
 
@@ -888,6 +935,7 @@ mod task_expander {
         #[test]
         fn replaces_token_vars() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -896,7 +944,7 @@ mod task_expander {
                 .push(Input::parse("/$project/index.js").unwrap());
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_inputs(&mut task)
                 .unwrap();
 
@@ -917,6 +965,7 @@ mod task_expander {
         #[test]
         fn replaces_token_funcs() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -925,7 +974,7 @@ mod task_expander {
             task.outputs.push(Output::TokenFunc("@files(all)".into()));
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 
@@ -945,6 +994,7 @@ mod task_expander {
         #[test]
         fn splits_token_func_into_files_globs() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -953,7 +1003,7 @@ mod task_expander {
             task.outputs.push(Output::TokenFunc("@group(all)".into()));
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 
@@ -974,6 +1024,7 @@ mod task_expander {
         #[test]
         fn replaces_token_vars() {
             let sandbox = create_sandbox("file-group");
+            let project_graph = create_project_graph();
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
@@ -983,7 +1034,7 @@ mod task_expander {
                 .push(Output::File(stub_file_output("/$project/index.js")));
 
             let context = create_context(sandbox.path());
-            TaskExpander::new(&project, &context)
+            TaskExpander::new(&project_graph, &project, &context)
                 .expand_outputs(&mut task)
                 .unwrap();
 

@@ -1594,7 +1594,7 @@ mod run_legacy {
 
             assert
                 .failure()
-                .stdout(predicate::str::contains("Using query projectSource=fake"));
+                .stderr(predicate::str::contains("Using query projectSource=fake"));
         }
 
         #[test]

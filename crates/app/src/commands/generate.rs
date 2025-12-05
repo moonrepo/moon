@@ -136,7 +136,7 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
                 let mut value = String::new();
 
                 console
-                    .render_interactive(element! {
+                    .render_prompt(element! {
                         Input(
                             label: "Where to generate code to?",
                             description: "Relative from the current directory.".to_owned(),
@@ -191,7 +191,7 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
                 has_prompts = true;
 
                 console
-                    .render_interactive(element! {
+                    .render_prompt(element! {
                         Select(
                             label: format!(
                                 "File <path>{}</path> already exists, what to do?",
@@ -222,7 +222,7 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
             has_prompts = true;
 
             console
-                .render_interactive(element! {
+                .render_prompt(element! {
                     Confirm(
                         label: format!(
                             "File <path>{}</path> already exists, overwrite?",
@@ -554,7 +554,7 @@ pub async fn gather_variables(
                     let mut value = String::new();
 
                     console
-                        .render_interactive(element! {
+                        .render_prompt(element! {
                             Input(
                                 label: cfg.prompt.as_ref().unwrap(),
                                 description: Some("As a JSON string".into()),
@@ -602,7 +602,7 @@ pub async fn gather_variables(
                     let mut value = cfg.default;
 
                     console
-                        .render_interactive(element! {
+                        .render_prompt(element! {
                             Confirm(
                                 label: cfg.prompt.as_ref().unwrap(),
                                 on_confirm: &mut value,
@@ -624,7 +624,7 @@ pub async fn gather_variables(
                     let mut value = String::new();
 
                     console
-                        .render_interactive(element! {
+                        .render_prompt(element! {
                             Input(
                                 label: cfg.prompt.as_ref().unwrap(),
                                 default_value: cfg.default.to_string(),
@@ -658,7 +658,7 @@ pub async fn gather_variables(
                     let mut value = String::new();
 
                     console
-                        .render_interactive(element! {
+                        .render_prompt(element! {
                             Input(
                                 label: cfg.prompt.as_ref().unwrap(),
                                 description: Some("As a JSON string".into()),
@@ -706,7 +706,7 @@ pub async fn gather_variables(
                     let mut value = String::new();
 
                     console
-                        .render_interactive(element! {
+                        .render_prompt(element! {
                             Input(
                                 label: cfg.prompt.as_ref().unwrap(),
                                 default_value: &cfg.default,
@@ -755,7 +755,7 @@ pub async fn gather_variables(
                     let mut indexes = vec![];
 
                     console
-                        .render_interactive(element! {
+                        .render_prompt(element! {
                             Select(
                                 label: cfg.prompt.as_ref().unwrap(),
                                 multiple: true,
@@ -803,7 +803,7 @@ pub async fn gather_variables(
                     let mut index = 0;
 
                     console
-                        .render_interactive(element! {
+                        .render_prompt(element! {
                             Select(
                                 label: cfg.prompt.as_ref().unwrap(),
                                 options: labels

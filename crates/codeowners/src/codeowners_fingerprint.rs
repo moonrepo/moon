@@ -1,18 +1,18 @@
 use moon_config::{CodeownersConfig, OwnersConfig};
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use std::collections::BTreeMap;
 
-hash_content!(
-    pub struct CodeownersHash<'cfg> {
+hash_fingerprint!(
+    pub struct CodeownersFingerprint<'cfg> {
         pub file_exists: bool,
         pub projects: BTreeMap<&'cfg str, &'cfg OwnersConfig>,
         pub workspace: &'cfg CodeownersConfig,
     }
 );
 
-impl<'cfg> CodeownersHash<'cfg> {
-    pub fn new(workspace: &CodeownersConfig) -> CodeownersHash<'_> {
-        CodeownersHash {
+impl<'cfg> CodeownersFingerprint<'cfg> {
+    pub fn new(workspace: &CodeownersConfig) -> CodeownersFingerprint<'_> {
+        CodeownersFingerprint {
             file_exists: false,
             projects: BTreeMap::new(),
             workspace,

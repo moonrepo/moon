@@ -9,7 +9,7 @@ use moon_app_context::AppContext;
 use moon_common::path::PathExt;
 use moon_common::{color, is_ci, path::WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use moon_pdk_api::{InstallDependenciesInput, ManifestDependency, ParseManifestInput};
 use moon_project::ProjectFragment;
 use moon_toolchain_plugin::ToolchainPlugin;
@@ -23,8 +23,8 @@ use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
-hash_content!(
-    struct InstallDependenciesHash<'action> {
+hash_fingerprint!(
+    struct InstallDependenciesFingerprint<'action> {
         action_node: &'action InstallDependenciesNode,
         lockfile_hash: Option<String>,
         manifest_dependencies: BTreeMap<String, BTreeSet<String>>,
@@ -238,8 +238,8 @@ async fn create_hash_content<'action>(
     deps_root: &Path,
     node: &'action InstallDependenciesNode,
     input: &'action InstallDependenciesInput,
-) -> miette::Result<InstallDependenciesHash<'action>> {
-    let mut content = InstallDependenciesHash {
+) -> miette::Result<InstallDependenciesFingerprint<'action>> {
+    let mut fingerprint = InstallDependenciesFingerprint {
         action_node: node,
         lockfile_hash: None,
         manifest_dependencies: BTreeMap::default(),
@@ -251,7 +251,7 @@ async fn create_hash_content<'action>(
 
     // Check if vendored already
     if let Some(vendor_dir_name) = &toolchain.metadata.vendor_dir_name {
-        content.vendor_dir_exists = deps_root.join(vendor_dir_name).exists();
+        fingerprint.vendor_dir_exists = deps_root.join(vendor_dir_name).exists();
     }
 
     // Extract lockfile last modification
@@ -267,7 +267,7 @@ async fn create_hash_content<'action>(
                 .await?;
 
             if let Some(hash) = lock_hashes.remove(&rel_lock_path) {
-                content.lockfile_hash = Some(hash);
+                fingerprint.lockfile_hash = Some(hash);
                 break;
             }
         }
@@ -289,13 +289,13 @@ async fn create_hash_content<'action>(
                 deps_root,
                 node,
                 manifest_file_name,
-                &mut content,
+                &mut fingerprint,
             )
             .await?;
         }
     }
 
-    Ok(content)
+    Ok(fingerprint)
 }
 
 async fn hash_manifest_contents<'action>(
@@ -304,7 +304,7 @@ async fn hash_manifest_contents<'action>(
     deps_root: &Path,
     node: &'action InstallDependenciesNode,
     manifest_file_name: &str,
-    hash_content: &mut InstallDependenciesHash<'action>,
+    fingerprint: &mut InstallDependenciesFingerprint<'action>,
 ) -> miette::Result<()> {
     // Find all manifests in the workspace
     let deps_members = node.members.clone().unwrap_or_default();
@@ -343,7 +343,7 @@ async fn hash_manifest_contents<'action>(
         let deps_root = deps_root.to_owned();
 
         if let Ok(rel_path) = manifest_path.relative_to(&app_context.workspace_root) {
-            hash_content.manifest_paths.insert(rel_path);
+            fingerprint.manifest_paths.insert(rel_path);
         }
 
         futures.push_back(tokio::spawn(async move {
@@ -361,7 +361,7 @@ async fn hash_manifest_contents<'action>(
     let mut inject_deps = |deps: BTreeMap<String, ManifestDependency>| {
         for (name, dep) in deps {
             if let Some(version) = dep.get_version() {
-                hash_content
+                fingerprint
                     .manifest_dependencies
                     .entry(name)
                     .or_default()

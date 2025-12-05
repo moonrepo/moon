@@ -1796,8 +1796,8 @@
       "description": "Preset options to inherit.",
       "type": "string",
       "enum": [
-        "server",
-        "watcher"
+        "utility",
+        "server"
       ]
     },
     "TaskPriority": {

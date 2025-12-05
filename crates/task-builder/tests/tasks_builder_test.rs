@@ -815,29 +815,29 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn watcher() {
+        async fn utility() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path());
 
             let tasks = container.build_tasks("presets").await;
 
-            let task = tasks.get("watcher").unwrap();
+            let task = tasks.get("utility").unwrap();
 
-            assert_eq!(task.preset, Some(TaskPreset::Watcher));
+            assert_eq!(task.preset, Some(TaskPreset::Utility));
             assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert!(task.options.interactive);
-            assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci.is_enabled());
+            assert!(!task.options.persistent);
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Skip);
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             // Custom overrides
-            let task = tasks.get("watcher-custom").unwrap();
+            let task = tasks.get("utility-custom").unwrap();
 
-            assert_eq!(task.preset, Some(TaskPreset::Watcher));
+            assert_eq!(task.preset, Some(TaskPreset::Utility));
             assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert!(!task.options.interactive);
-            assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci.is_enabled());
+            assert!(!task.options.persistent);
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Skip);
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
     }

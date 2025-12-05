@@ -328,6 +328,28 @@ tasks:
       mergeToolchains: 'replace'
 ```
 
+### New `utility` preset
+
+Task presets are helpful as the provide a set of default options and behaviors for common task
+types. However, we haven't fully utilized (pun intended) this feature yet, so are adding a new
+preset called `utility`. This preset is designed for simple one-off tasks that primarily run
+locally, like running a migration, or validating data.
+
+This preset configures the following options:
+
+- `cache` disabled
+- `interactive` enabled
+- `persistent` disabled
+- `outputStyle` as `stream`
+- `runInCI` as `skip`
+
+```yaml title="moon.yml"
+tasks:
+  validate-schema:
+    # ...
+    preset: 'utility'
+```
+
 ## Docker
 
 ### Defaults with overrides

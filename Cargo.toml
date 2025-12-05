@@ -42,7 +42,7 @@ reqwest = { version = "0.12.24", default-features = false, features = [
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
-scc = "2.4.0"
+scc = "3.4.2"
 schematic = { version = "0.19.1", default-features = false, features = [
     "schema",
 ] }

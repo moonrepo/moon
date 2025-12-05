@@ -1,5 +1,5 @@
 use moon_app_context::AppContext;
-use moon_codeowners::{CodeownersGenerator, CodeownersHash};
+use moon_codeowners::{CodeownersFingerprint, CodeownersGenerator};
 use moon_config::CodeownersOrderBy;
 use moon_workspace_graph::WorkspaceGraph;
 use std::path::PathBuf;
@@ -26,8 +26,8 @@ pub async fn sync_codeowners(
     });
 
     // Generate a hash for the codeowners file
-    let mut codeowners_hash = CodeownersHash::new(&app_context.workspace_config.codeowners);
-    codeowners_hash.file_exists = generator.file_path.exists();
+    let mut fingerprint = CodeownersFingerprint::new(&app_context.workspace_config.codeowners);
+    fingerprint.file_exists = generator.file_path.exists();
 
     if !app_context
         .workspace_config
@@ -40,7 +40,7 @@ pub async fn sync_codeowners(
 
     for project in projects {
         if !project.config.owners.paths.is_empty() {
-            codeowners_hash.add_project(&project.id, &project.config.owners);
+            fingerprint.add_project(&project.id, &project.config.owners);
 
             generator.add_project_entry(
                 &project.id,
@@ -60,7 +60,7 @@ pub async fn sync_codeowners(
         app_context
             .cache_engine
             .hash
-            .save_manifest_without_hasher("codeowners", codeowners_hash)?;
+            .save_manifest_without_hasher("codeowners", fingerprint)?;
 
         return Ok(Some(file_path));
     }
@@ -68,9 +68,7 @@ pub async fn sync_codeowners(
     // Only generate if the hash has changed
     if app_context
         .cache_engine
-        .execute_if_changed("codeowners", codeowners_hash, async |_| {
-            generator.generate()
-        })
+        .execute_if_changed("codeowners", fingerprint, async |_| generator.generate())
         .await?
         .unwrap_or_default()
     {

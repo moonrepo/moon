@@ -140,7 +140,7 @@ impl CacheEngine {
     pub async fn execute_if_changed<K, T, F, R>(
         &self,
         label: K,
-        data: T,
+        fingerprint: T,
         op: F,
     ) -> miette::Result<Option<R>>
     where
@@ -149,7 +149,7 @@ impl CacheEngine {
         F: AsyncFnOnce(&str) -> miette::Result<R>,
     {
         let mut hasher = self.hash.create_hasher(label.as_ref());
-        hasher.hash_content(data)?;
+        hasher.hash_content(fingerprint)?;
 
         let hash = hasher.generate_hash()?;
 

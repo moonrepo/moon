@@ -1,7 +1,6 @@
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
-use moon_common::path::{self, WorkspaceRelativePathBuf};
-use moon_common::path::{RelativeFrom, expand_to_workspace_relative};
+use moon_common::path::{self, RelativeFrom, WorkspaceRelativePathBuf};
 use moon_config::{Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
@@ -323,7 +322,7 @@ impl<'graph> TokenExpander<'graph> {
                             result.globs_for_input.insert(
                                 self.create_path_for_task(
                                     task,
-                                    expand_to_workspace_relative(
+                                    path::expand_to_workspace_relative(
                                         RelativeFrom::Project(project.source.as_str()),
                                         glob,
                                     ),

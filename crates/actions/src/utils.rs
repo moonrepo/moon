@@ -50,9 +50,9 @@ pub fn create_hash_and_return_lock(
 pub async fn create_hash_and_return_lock_if_changed(
     action: &mut Action,
     app_context: &AppContext,
-    data: impl Serialize,
+    fingerprint: impl Serialize,
 ) -> miette::Result<Option<FileLock>> {
-    let mut hasher = create_hasher(action, app_context, data)?;
+    let mut hasher = create_hasher(action, app_context, fingerprint)?;
     let hash = hasher.generate_hash()?;
 
     // If the hash manifest exists, then it has ran before

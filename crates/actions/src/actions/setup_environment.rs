@@ -4,7 +4,7 @@ use moon_action::{Action, ActionStatus, Operation, SetupEnvironmentNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use moon_pdk_api::{ExecCommand, Operation as PluginOperation, SetupEnvironmentInput};
 use moon_project::ProjectFragment;
 use moon_workspace_graph::WorkspaceGraph;
@@ -12,8 +12,8 @@ use starbase_utils::json::JsonValue;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-hash_content!(
-    struct SetupEnvironmentHash<'action> {
+hash_fingerprint!(
+    struct SetupEnvironmentFingerprint<'action> {
         action_node: &'action SetupEnvironmentNode,
         // Input
         project: Option<&'action ProjectFragment>,
@@ -92,7 +92,7 @@ pub async fn setup_environment(
     let Some(_lock) = create_hash_and_return_lock_if_changed(
         action,
         &app_context,
-        SetupEnvironmentHash {
+        SetupEnvironmentFingerprint {
             action_node: node,
             project: input.project.as_ref(),
             toolchain_config: &input.toolchain_config,

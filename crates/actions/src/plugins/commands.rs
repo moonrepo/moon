@@ -8,7 +8,7 @@ use moon_common::{
 };
 use moon_console::{Checkpoint, Console};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
 use moon_process::Output;
 use moon_process_augment::AugmentedCommand;
@@ -21,8 +21,8 @@ use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, warn};
 
-hash_content!(
-    struct ExecCommandHash<'data> {
+hash_fingerprint!(
+    struct ExecCommandFingerprint<'data> {
         key: &'data str,
 
         command: &'data ExecCommandInput,
@@ -112,7 +112,7 @@ async fn internal_exec_plugin_command_as_operation(
 
     let result = match &command.cache {
         Some(key) => {
-            let mut hash_item = ExecCommandHash {
+            let mut fingerprint = ExecCommandFingerprint {
                 key,
                 command: &command.command,
                 input_env: BTreeMap::new(),
@@ -120,7 +120,7 @@ async fn internal_exec_plugin_command_as_operation(
             };
 
             if !command.inputs.is_empty() {
-                gather_cache_inputs(&app_context, &command.inputs, &mut hash_item).await?;
+                gather_cache_inputs(&app_context, &command.inputs, &mut fingerprint).await?;
             }
 
             app_context
@@ -132,7 +132,7 @@ async fn internal_exec_plugin_command_as_operation(
                         options.prefix,
                         encode_component(key).to_lowercase()
                     ),
-                    hash_item,
+                    fingerprint,
                     async move |_| {
                         internal_exec_plugin_command(app_context, command, options, attempts).await
                     },
@@ -258,7 +258,7 @@ pub async fn exec_plugin_commands(
 async fn gather_cache_inputs(
     app_context: &AppContext,
     inputs: &[CacheInput],
-    hash_item: &mut ExecCommandHash<'_>,
+    fingerprint: &mut ExecCommandFingerprint<'_>,
 ) -> miette::Result<()> {
     let mut hash_files = vec![];
     let mut size_files = vec![];
@@ -289,7 +289,7 @@ async fn gather_cache_inputs(
     for input in inputs {
         match input {
             CacheInput::EnvVar(name) => {
-                hash_item.input_env.insert(
+                fingerprint.input_env.insert(
                     name.into(),
                     GlobalEnvBag::instance().get(name).unwrap_or_default(),
                 );
@@ -315,7 +315,7 @@ async fn gather_cache_inputs(
                     let metadata = fs::metadata(&abs_path)?;
 
                     if let Ok(timestamp) = metadata.modified().or_else(|_| metadata.created()) {
-                        hash_item
+                        fingerprint
                             .input_files
                             .insert(rel_path, format!("timestamp:{}", to_millis(timestamp)));
                     }
@@ -328,7 +328,7 @@ async fn gather_cache_inputs(
         let hash_files = hash_files.into_iter().map(|f| f.1).collect::<Vec<_>>();
 
         for (rel_path, hash) in app_context.vcs.get_file_hashes(&hash_files, true).await? {
-            hash_item
+            fingerprint
                 .input_files
                 .insert(rel_path, format!("hash:{hash}"));
         }
@@ -336,7 +336,7 @@ async fn gather_cache_inputs(
 
     if !size_files.is_empty() {
         for (abs_path, rel_path) in size_files {
-            hash_item
+            fingerprint
                 .input_files
                 .insert(rel_path, format!("size:{}", fs::metadata(&abs_path)?.len()));
         }

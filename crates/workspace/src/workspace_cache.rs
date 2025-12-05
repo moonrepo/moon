@@ -3,7 +3,7 @@ use moon_cache::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, is_docker};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
@@ -14,9 +14,9 @@ cache_item!(
     }
 );
 
-hash_content!(
+hash_fingerprint!(
     #[derive(Debug)]
-    pub struct WorkspaceGraphHash<'graph> {
+    pub struct WorkspaceGraphFingerprint<'graph> {
         // Data derived from the workspace graph builder.
         projects: BTreeMap<&'graph Id, &'graph ProjectBuildData>,
 
@@ -39,9 +39,9 @@ hash_content!(
     }
 );
 
-impl Default for WorkspaceGraphHash<'_> {
+impl Default for WorkspaceGraphFingerprint<'_> {
     fn default() -> Self {
-        WorkspaceGraphHash {
+        WorkspaceGraphFingerprint {
             projects: BTreeMap::default(),
             configs: BTreeMap::default(),
             env: BTreeMap::default(),
@@ -53,7 +53,7 @@ impl Default for WorkspaceGraphHash<'_> {
     }
 }
 
-impl<'graph> WorkspaceGraphHash<'graph> {
+impl<'graph> WorkspaceGraphFingerprint<'graph> {
     pub fn add_projects(&mut self, projects: &'graph FxHashMap<Id, ProjectBuildData>) {
         self.projects.extend(projects.iter());
     }

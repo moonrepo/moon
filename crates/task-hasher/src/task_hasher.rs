@@ -1,4 +1,4 @@
-use crate::task_hash::TaskHash;
+use crate::task_hash::TaskFingerprint;
 use crate::task_hasher_error::TaskHasherError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
@@ -22,7 +22,7 @@ pub struct TaskHasher<'task> {
     pub task: &'task Task,
     pub hasher_config: &'task HasherConfig,
 
-    content: TaskHash<'task>,
+    content: TaskFingerprint<'task>,
 }
 
 impl<'task> TaskHasher<'task> {
@@ -39,11 +39,11 @@ impl<'task> TaskHasher<'task> {
             project_graph,
             task,
             hasher_config,
-            content: TaskHash::new(project, task),
+            content: TaskFingerprint::new(project, task),
         }
     }
 
-    pub fn hash(mut self) -> TaskHash<'task> {
+    pub fn hash(mut self) -> TaskFingerprint<'task> {
         // Ensure hashing is deterministic
         self.content.args.sort();
         self.content.project_deps.sort();

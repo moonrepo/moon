@@ -3,7 +3,7 @@ use moon_action::ActionNode;
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_config::{DependencyScope, HasherOptimization, ProjectConfig, UnresolvedVersionSpec};
-use moon_hash::{ContentHasher, hash_content};
+use moon_hash::{ContentHasher, hash_fingerprint};
 use moon_pdk_api::{
     HashTaskContentsInput, LocateDependenciesRootInput, LockDependency, ManifestDependency,
     ParseLockInput, ParseLockOutput, ParseManifestInput, ParseManifestOutput,
@@ -73,8 +73,8 @@ pub async fn hash_common_task_contents(
     Ok(())
 }
 
-hash_content!(
-    struct TaskToolchainHash {
+hash_fingerprint!(
+    struct TaskToolchainFingerprint {
         toolchain: String,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -145,9 +145,9 @@ async fn apply_toolchain(
     project: ProjectFragment,
     project_config: Arc<ProjectConfig>,
     task: TaskFragment,
-) -> miette::Result<Option<TaskToolchainHash>> {
+) -> miette::Result<Option<TaskToolchainFingerprint>> {
     let mut inject = false;
-    let mut content = TaskToolchainHash {
+    let mut fingerprint = TaskToolchainFingerprint {
         toolchain: toolchain.id.to_string(),
         contents: vec![],
         dependencies: FxHashMap::default(),
@@ -160,7 +160,7 @@ async fn apply_toolchain(
         .get_plugin_config(toolchain.id.as_str())
         .and_then(|config| config.get_version())
     {
-        content.version = Some(version.to_owned());
+        fingerprint.version = Some(version.to_owned());
         inject = true;
     }
     // Or an inherited version
@@ -169,7 +169,7 @@ async fn apply_toolchain(
         .get_plugin_config(toolchain.id.as_str())
         .and_then(|config| config.version.as_ref())
     {
-        content.version = Some(version.to_owned());
+        fingerprint.version = Some(version.to_owned());
         inject = true;
     }
 
@@ -179,7 +179,7 @@ async fn apply_toolchain(
         &toolchain,
         app_context.workspace_root.join(&project.source),
         &project_config,
-        &mut content,
+        &mut fingerprint,
     )
     .await?
     {
@@ -200,12 +200,12 @@ async fn apply_toolchain(
             .await?;
 
         if !output.contents.is_empty() {
-            content.contents = output.contents;
+            fingerprint.contents = output.contents;
             inject = true;
         }
     }
 
-    Ok(if inject { Some(content) } else { None })
+    Ok(if inject { Some(fingerprint) } else { None })
 }
 
 async fn apply_toolchain_dependencies(
@@ -213,7 +213,7 @@ async fn apply_toolchain_dependencies(
     toolchain: &ToolchainPlugin,
     project_root: PathBuf,
     project_config: &ProjectConfig,
-    hash_content: &mut TaskToolchainHash,
+    fingerprint: &mut TaskToolchainFingerprint,
 ) -> miette::Result<bool> {
     let mut lock_files = vec![];
     let mut workspace_manifests = vec![];
@@ -300,7 +300,7 @@ async fn apply_toolchain_dependencies(
         project_manifests,
         workspace_manifests,
         lock_files,
-        hash_content,
+        fingerprint,
     );
 
     Ok(inject)
@@ -310,7 +310,7 @@ fn apply_toolchain_dependencies_by_manifest(
     project_manifests: Vec<ParseManifestOutput>,
     workspace_manifests: Vec<ParseManifestOutput>,
     locks: Vec<ParseLockOutput>,
-    hash_content: &mut TaskToolchainHash,
+    fingerprint: &mut TaskToolchainFingerprint,
 ) -> bool {
     // Flatten locked deps
     let locked_deps = locks.iter().fold(BTreeMap::default(), |mut map, lock| {
@@ -356,7 +356,7 @@ fn apply_toolchain_dependencies_by_manifest(
                 project_deps,
                 workspace_deps.get(&scope).unwrap_or(&empty_deps),
                 &locked_deps,
-                hash_content,
+                fingerprint,
             ) {
                 inject = true;
             }
@@ -370,7 +370,7 @@ fn apply_toolchain_dependencies_by_scope(
     project_deps: &BTreeMap<String, ManifestDependency>,
     workspace_deps: &BTreeMap<&String, &ManifestDependency>,
     locked_deps: &BTreeMap<&String, &Vec<LockDependency>>,
-    hash_content: &mut TaskToolchainHash,
+    fingerprint: &mut TaskToolchainFingerprint,
 ) -> bool {
     let mut inject = false;
 
@@ -409,7 +409,7 @@ fn apply_toolchain_dependencies_by_scope(
                 .or_else(|| lock_dep.version.as_ref().map(|v| v.to_string()))
                 .or_else(|| lock_dep.meta.clone())
             {
-                hash_content.dependencies.insert(name.to_owned(), hash);
+                fingerprint.dependencies.insert(name.to_owned(), hash);
                 inject = true;
 
                 continue;
@@ -417,7 +417,7 @@ fn apply_toolchain_dependencies_by_scope(
         }
 
         // None found, so just record the requirement
-        hash_content
+        fingerprint
             .dependencies
             .insert(name.to_owned(), req.to_string());
         inject = true;

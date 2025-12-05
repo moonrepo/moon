@@ -6,14 +6,14 @@ use moon_app_context::AppContext;
 use moon_common::color;
 use moon_console::Checkpoint;
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use moon_pdk_api::SetupToolchainInput;
 use moon_toolchain::is_using_global_toolchain;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-hash_content!(
-    struct SetupToolchainHash<'action> {
+hash_fingerprint!(
+    struct SetupToolchainFingerprint<'action> {
         action_node: &'action SetupToolchainNode,
         installed_in_proto: bool,
     }
@@ -73,7 +73,7 @@ pub async fn setup_toolchain_plugin(
     let _lock = create_hash_and_return_lock(
         action,
         &app_context,
-        SetupToolchainHash {
+        SetupToolchainFingerprint {
             action_node: node,
             installed_in_proto: toolchain
                 .is_installed_in_proto(node.toolchain.req.as_ref())

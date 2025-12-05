@@ -1025,12 +1025,6 @@ mod affected_tasks {
     mod project_sources {
         use super::*;
 
-        fn create_project_dep_state() -> AffectedTaskState {
-            let mut state = AffectedTaskState::default();
-            state.projects.insert(Id::raw("dep"));
-            state
-        }
-
         #[tokio::test(flavor = "multi_thread")]
         async fn any_file() {
             let workspace_graph = build_graph("tasks").await;
@@ -1046,7 +1040,7 @@ mod affected_tasks {
                 FxHashMap::from_iter([
                     (
                         Target::parse("project-sources:by-any").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/file.txt")
                     ),
                     (
                         Target::parse("dep:global").unwrap(),
@@ -1071,11 +1065,11 @@ mod affected_tasks {
                 FxHashMap::from_iter([
                     (
                         Target::parse("project-sources:by-group").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/src/file.txt")
                     ),
                     (
                         Target::parse("project-sources:by-any").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/src/file.txt")
                     ),
                     (
                         Target::parse("dep:global").unwrap(),
@@ -1100,15 +1094,15 @@ mod affected_tasks {
                 FxHashMap::from_iter([
                     (
                         Target::parse("project-sources:by-filter").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/tests/file.txt")
                     ),
                     (
                         Target::parse("project-sources:by-any").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/tests/file.txt")
                     ),
                     (
                         Target::parse("project-sources:by-deps").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/tests/file.txt")
                     ),
                     (
                         Target::parse("dep:global").unwrap(),
@@ -1133,15 +1127,15 @@ mod affected_tasks {
                 FxHashMap::from_iter([
                     (
                         Target::parse("project-sources:by-filter").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/tests/file.txt")
                     ),
                     (
                         Target::parse("project-sources:by-any").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/tests/file.txt")
                     ),
                     (
                         Target::parse("project-sources:by-deps").unwrap(),
-                        create_project_dep_state()
+                        create_state_from_file("dep/tests/file.txt")
                     ),
                     (
                         Target::parse("dep:global").unwrap(),

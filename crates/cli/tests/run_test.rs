@@ -385,7 +385,7 @@ mod run {
                 cmd.arg("run").arg(":unknown");
             });
 
-            assert.failure().stdout(predicate::str::contains(
+            assert.failure().stderr(predicate::str::contains(
                 "No tasks found for target(s) :unknown",
             ));
         }

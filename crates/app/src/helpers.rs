@@ -140,7 +140,7 @@ pub async fn create_progress_loader(
 
     let handle = tokio::task::spawn(async move {
         console
-            .render_interactive(element! {
+            .render_prompt(element! {
                 Progress(
                     default_message: message,
                     display: ProgressDisplay::Loader,

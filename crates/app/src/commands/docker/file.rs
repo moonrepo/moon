@@ -143,7 +143,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         options.image = default_image;
     } else {
         console
-            .render_interactive(element! {
+            .render_prompt(element! {
                 Input(
                     label: "Docker image?",
                     default_value: default_image,
@@ -171,7 +171,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         let mut index = default_index.unwrap_or(0);
 
         console
-            .render_interactive(element! {
+            .render_prompt(element! {
                 Select(
                     label: "Build task?",
                     options: {
@@ -221,7 +221,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         let mut index = default_index.unwrap_or(0);
 
         console
-            .render_interactive(element! {
+            .render_prompt(element! {
                 Select(
                     label: "Start task?",
                     options: {

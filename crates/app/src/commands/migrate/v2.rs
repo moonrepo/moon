@@ -30,7 +30,7 @@ pub async fn v2(session: MoonSession, args: MigrateV2Args) -> AppResult {
     if !skip_prompts {
         session
             .console
-            .render_interactive(element! {
+            .render_prompt(element! {
                 Confirm(
                     label: "Migrate configuration files?".to_string(),
                     description: "This will strip comments and re-format the files.".to_string(),

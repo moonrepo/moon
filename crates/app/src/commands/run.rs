@@ -229,7 +229,7 @@ pub async fn run_target(
             format!("No tasks found for target(s) {targets_list}")
         };
 
-        session.console.render(element! {
+        session.console.render_err(element! {
             Container {
                 Notice(variant: Variant::Caution) {
                     StyledText(content: message)

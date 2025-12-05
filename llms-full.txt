@@ -17127,7 +17127,7 @@ To help achieve this vision, language support is broken down into 4 tiers, allow
 incrementally integrate and improve them over time. The 4 tiers are as follows:
 
 - &nbsp; &nbsp; **No direct integration** - Tool is not
-  directly supported in moon, but can still be ran using the
+  directly supported in moon, but can still be run using the
   ["system" task toolchain](/docs/faq#can-we-run-other-languages), which expects the tool to exist
   in the current environment.
 - &nbsp; &nbsp; **Project categorization** - Projects can

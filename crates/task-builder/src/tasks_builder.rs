@@ -10,7 +10,7 @@ use moon_config::{
     InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig, ProjectInput,
     ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
-    TaskOutputStyle, TaskPreset, TaskType, ToolchainsConfig, is_glob_like,
+    TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig, is_glob_like,
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
@@ -480,9 +480,9 @@ impl<'proj> TasksBuilder<'proj> {
         if !has_set_type {
             task.type_of = if !task.outputs.is_empty() {
                 TaskType::Build
-            } else if preset
-                .is_some_and(|set| matches!(set, TaskPreset::Server | TaskPreset::Watcher))
-            {
+            } else if let Some(set) = preset {
+                set.get_type()
+            } else if task.options.persistent {
                 TaskType::Run
             } else {
                 TaskType::Test
@@ -687,11 +687,13 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
+        // Interactive has special handling
         if options.interactive {
-            // options.cache = false;
             options.output_style = Some(TaskOutputStyle::Stream);
-            // options.persistent = false;
-            options.run_in_ci = TaskOptionRunInCI::Enabled(false);
+
+            if options.run_in_ci != TaskOptionRunInCI::Skip {
+                options.run_in_ci = TaskOptionRunInCI::Enabled(false);
+            }
         }
 
         Ok(options)
@@ -884,13 +886,21 @@ impl<'proj> TasksBuilder<'proj> {
 
     fn get_task_options_from_preset(&self, preset: Option<TaskPreset>) -> TaskOptions {
         match preset {
-            Some(TaskPreset::Server | TaskPreset::Watcher) => TaskOptions {
+            Some(TaskPreset::Utility) => TaskOptions {
                 cache: TaskOptionCache::Enabled(false),
-                interactive: preset.is_some_and(|set| set == TaskPreset::Watcher),
+                interactive: true,
+                output_style: Some(TaskOutputStyle::Stream),
+                persistent: false,
+                run_in_ci: TaskOptionRunInCI::Skip,
+                ..Default::default()
+            },
+            Some(TaskPreset::Server) => TaskOptions {
+                cache: TaskOptionCache::Enabled(false),
                 output_style: Some(TaskOutputStyle::Stream),
                 persistent: true,
+                priority: TaskPriority::Low,
                 run_in_ci: TaskOptionRunInCI::Enabled(false),
-                ..TaskOptions::default()
+                ..Default::default()
             },
             _ => TaskOptions::default(),
         }

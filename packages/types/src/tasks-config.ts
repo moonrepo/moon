@@ -414,7 +414,7 @@ export interface GlobOutput {
 export type Output = string | FileOutput | GlobOutput;
 
 /** Preset options to inherit. */
-export type TaskPreset = 'server' | 'watcher';
+export type TaskPreset = 'utility' | 'server';
 
 /** The type of task. */
 export type TaskType = 'build' | 'run' | 'test';

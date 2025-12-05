@@ -71,10 +71,16 @@ config_enum!(
     /// Preset options to inherit.
     #[derive(ConfigEnum, Copy)]
     pub enum TaskPreset {
+        Utility,
         Server,
-        Watcher,
     }
 );
+
+impl TaskPreset {
+    pub fn get_type(&self) -> TaskType {
+        TaskType::Run
+    }
+}
 
 config_unit_enum!(
     /// The type of task.

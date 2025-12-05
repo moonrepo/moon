@@ -155,6 +155,7 @@ impl TaskGraph {
         let mut cache = self.write_cache();
 
         let expander = TaskExpander::new(
+            &self.project_graph,
             self.project_graph
                 .get_unexpanded(target.get_project_id()?)?,
             &self.context,

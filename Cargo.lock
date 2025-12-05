@@ -4242,6 +4242,7 @@ dependencies = [
  "moon_env_var",
  "moon_graph_utils",
  "moon_project",
+ "moon_project_graph",
  "moon_task",
  "moon_task_args",
  "moon_time",

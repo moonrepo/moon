@@ -1,7 +1,6 @@
 use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
-use moon_config::Input;
 use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
 use moon_task::{Target, Task, TaskOptionRunInCI};
@@ -448,51 +447,6 @@ impl AffectedTracker {
             if affected {
                 return Ok(Some(AffectedBy::ChangedFile(file.to_owned())));
             }
-        }
-
-        // By other inputs
-        let mut has_all_project_sources = false;
-
-        for input in &task.inputs {
-            match input {
-                Input::Project(inner) => {
-                    if has_all_project_sources {
-                        continue;
-                    }
-
-                    let projects = if inner.is_all_deps() {
-                        has_all_project_sources = true;
-
-                        let parent = self
-                            .workspace_graph
-                            .get_project(task.target.get_project_id()?)?;
-
-                        self.workspace_graph
-                            .get_projects_by_id(parent.dependencies.iter().map(|dep| &dep.id))?
-                    } else {
-                        vec![self.workspace_graph.get_project(&inner.project)?]
-                    };
-
-                    for project in projects {
-                        let affected = if let Some(group_id) = &inner.group {
-                            self.is_project_affected_using_file_group(&project, group_id)?
-                                .is_some()
-                        } else if !inner.filter.is_empty() {
-                            self.is_project_affected_using_globs(&project, &inner.filter)?
-                                .is_some()
-                        } else {
-                            self.is_project_affected(&project).is_some()
-                        };
-
-                        if affected {
-                            return Ok(Some(AffectedBy::UpstreamProject(project.id.clone())));
-                        }
-                    }
-                }
-                _ => {
-                    // Skip
-                }
-            };
         }
 
         Ok(None)

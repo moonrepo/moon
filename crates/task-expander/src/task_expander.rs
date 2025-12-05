@@ -5,6 +5,7 @@ use moon_config::{Input, TaskArgs};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
+use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use moon_task_args::parse_task_args;
 use rustc_hash::FxHashMap;
@@ -15,14 +16,20 @@ pub struct TaskExpander<'graph> {
     pub context: &'graph GraphExpanderContext,
     pub token: TokenExpander<'graph>,
     pub project: &'graph Project,
+    pub project_graph: &'graph ProjectGraph,
 }
 
 impl<'graph> TaskExpander<'graph> {
-    pub fn new(project: &'graph Project, context: &'graph GraphExpanderContext) -> Self {
+    pub fn new(
+        project_graph: &'graph ProjectGraph,
+        project: &'graph Project,
+        context: &'graph GraphExpanderContext,
+    ) -> Self {
         Self {
-            token: TokenExpander::new(project, context),
+            token: TokenExpander::new(project_graph, project, context),
             context,
             project,
+            project_graph,
         }
     }
 

@@ -5,6 +5,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{Input, TaskOptionCache};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
+use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -19,6 +20,10 @@ pub fn create_context(workspace_root: &Path) -> GraphExpanderContext {
         working_dir: workspace_root.to_path_buf(),
         workspace_root: workspace_root.to_path_buf(),
     }
+}
+
+pub fn create_project_graph() -> ProjectGraph {
+    ProjectGraph::default()
 }
 
 pub fn create_project(workspace_root: &Path) -> Project {

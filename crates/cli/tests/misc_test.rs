@@ -1,21 +1,79 @@
-use moon_test_utils::{
-    create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
-};
+use moon_test_utils2::{create_empty_moon_sandbox, create_moon_sandbox, predicates::prelude::*};
 use proto_core::VersionReq;
+use std::fs;
 
-#[test]
-fn fails_on_version_constraint() {
-    let (mut workspace_config, _, _) = get_cases_fixture_configs();
+mod cli {
+    use super::*;
 
-    workspace_config.version_constraint = Some(VersionReq::parse(">=1000.0.0").unwrap());
+    #[test]
+    fn fails_on_version_constraint() {
+        let sandbox = create_empty_moon_sandbox();
 
-    let sandbox = create_sandbox_with_config("cases", Some(workspace_config), None, None);
+        sandbox.update_workspace_config(|config| {
+            config.version_constraint = Some(VersionReq::parse(">=1000.0.0").unwrap());
+        });
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("sync");
-    });
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("sync");
+            })
+            .failure()
+            .stderr(predicate::str::contains(">=1000.0.0"));
+    }
 
-    assert
-        .failure()
-        .stderr(predicate::str::contains(">=1000.0.0"));
+    // .config/moon
+    mod config_dir {
+        use super::*;
+
+        #[test]
+        fn supports() {
+            let sandbox = create_moon_sandbox("projects");
+
+            fs::create_dir_all(sandbox.path().join(".config")).unwrap();
+
+            fs::rename(
+                sandbox.path().join(".moon"),
+                sandbox.path().join(".config").join("moon"),
+            )
+            .unwrap();
+
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("sync");
+                })
+                .success();
+        }
+
+        #[test]
+        fn errors_if_not_found() {
+            let sandbox = create_moon_sandbox("projects");
+
+            fs::create_dir_all(sandbox.path().join(".config")).unwrap();
+
+            fs::rename(
+                sandbox.path().join(".moon"),
+                sandbox.path().join(".config").join("moon-invalid"),
+            )
+            .unwrap();
+
+            let assert = sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("sync");
+                })
+                .failure();
+
+            #[cfg(unix)]
+            {
+                assert.stderr(predicate::str::contains(
+                    "Unable to determine workspace root",
+                ));
+            }
+
+            // Windows runner is acting weird...
+            #[cfg(windows)]
+            {
+                assert.stderr(predicate::str::contains("Unable to locate .moon/workspace"));
+            }
+        }
+    }
 }

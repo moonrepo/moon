@@ -5,7 +5,10 @@ use std::str::FromStr;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum TargetLocator {
-    // proj-*:task_id, proj:task-*
+    // task_id
+    DefaultProject(Id),
+
+    // scope-*:task_id, scope:task-*
     GlobMatch {
         original: String,
         scope: Option<TargetScope>,
@@ -15,9 +18,6 @@ pub enum TargetLocator {
 
     // scope:task_id
     Qualified(Target),
-
-    // task_id
-    TaskFromWorkingDir(Id),
 }
 
 impl TargetLocator {
@@ -40,9 +40,9 @@ impl AsRef<TargetLocator> for TargetLocator {
 impl AsRef<str> for TargetLocator {
     fn as_ref(&self) -> &str {
         match self {
+            Self::DefaultProject(id) => id.as_str(),
             Self::GlobMatch { original, .. } => original.as_str(),
             Self::Qualified(target) => target.as_str(),
-            Self::TaskFromWorkingDir(id) => id.as_str(),
         }
     }
 }
@@ -85,7 +85,7 @@ impl FromStr for TargetLocator {
                 Ok(TargetLocator::Qualified(Target::parse(value)?))
             }
         } else {
-            Ok(TargetLocator::TaskFromWorkingDir(Id::new(value)?))
+            Ok(TargetLocator::DefaultProject(Id::new(value)?))
         }
     }
 }

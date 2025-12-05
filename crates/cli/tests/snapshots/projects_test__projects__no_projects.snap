@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/projects_test.rs
+expression: assert.output()
+---
+│ INFO
+│ No projects exist. Have any been configured?

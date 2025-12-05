@@ -1,33 +1,29 @@
-use crate::components::create_progress_loader;
+use crate::helpers::create_progress_loader;
 use crate::session::MoonSession;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_pdk_api::TeardownToolchainInput;
-use moon_platform::PlatformManager;
 use starbase::AppResult;
 use tracing::instrument;
 
-#[instrument]
+#[instrument(skip(session))]
 pub async fn teardown(session: MoonSession) -> AppResult {
     let progress = create_progress_loader(
         session.get_console()?,
         "Tearing down and uninstalling toolchains...",
-    );
-
-    for platform in PlatformManager::write().list_mut() {
-        platform.teardown_toolchain().await?;
-    }
+    )
+    .await;
 
     session
         .get_toolchain_registry()
         .await?
         .teardown_toolchain_all(|registry, toolchain| TeardownToolchainInput {
             configured_version: session
-                .toolchain_config
+                .toolchains_config
                 .get_plugin_config(toolchain.id.as_str())
                 .and_then(|plugin| plugin.version.clone()),
             context: registry.create_context(),
-            toolchain_config: registry.create_config(&toolchain.id, &session.toolchain_config),
+            toolchain_config: registry.create_config(&toolchain.id),
             version: None,
         })
         .await?;

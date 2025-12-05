@@ -16,6 +16,7 @@
 ## Tier 2 - 9/9
 
 - [x] `extend_project_graph`
+- [x] `extend_command`
 - [x] `extend_task_command`
 - [x] `extend_task_script`
 - [x] `hash_task_contents`

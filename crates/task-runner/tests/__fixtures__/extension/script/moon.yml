@@ -1,0 +1,14 @@
+tasks:
+  script:
+    script: 'bin --flag'
+
+  env:
+    script: 'bin --flag'
+
+  env-remove:
+    script: 'bin --flag'
+    env:
+      REMOVE_VAR: 'true'
+
+  path:
+    script: 'bin --flag'

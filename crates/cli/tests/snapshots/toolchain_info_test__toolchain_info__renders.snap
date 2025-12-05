@@ -7,7 +7,7 @@ Toolchain ───────────────────────�
   Provides sync operations that keep tsconfig.json's in a healthy state.
 
   ID: typescript
-  Name: TypeScript
+  Title: TypeScript
 
 Configuration ──────────────────────────────────────────────
 
@@ -56,40 +56,39 @@ Configuration ──────────────────────
 Tier 1 - Usage detection ───────────────────────────────────
 
   Config files: tsconfig.json, tsconfig.*.json, *.tsconfig.json, .tsbuildinfo, *.tsbuildinfo
-  APIs:
-    🟢 register_toolchain (required)
-    🟢 define_toolchain_config
-    🟢 initialize_toolchain
-    ⚫️ detect_version_files
-    ⚫️ parse_version_file
-    🟢 define_docker_metadata
-    ⚫️ scaffold_docker
-    ⚫️ prune_docker
-    🟢 sync_project
-    ⚫️ sync_workspace
+
+  🟢 define_docker_metadata
+  🟢 define_toolchain_config
+  ⚫️ detect_version_files
+  ⚫️ extend_command
+  🟢 initialize_toolchain
+  ⚫️ parse_version_file
+  ⚫️ prune_docker
+  🟢 register_toolchain (required)
+  ⚫️ scaffold_docker
+  🟢 sync_project
+  ⚫️ sync_workspace
 
 Tier 2 - Ecosystem integration ─────────────────────────────
 
-  APIs:
-    ⚫️ extend_project_graph
-    ⚫️ extend_task_command
-    ⚫️ extend_task_script
-    ⚫️ define_requirements
-    ⚫️ locate_dependencies_root
-    ⚫️ install_dependencies
-    ⚫️ hash_task_contents
-    ⚫️ parse_lock
-    ⚫️ parse_manifest
-    ⚫️ setup_environment
+  ⚫️ define_requirements
+  ⚫️ extend_project_graph
+  ⚫️ extend_task_command
+  ⚫️ extend_task_script
+  ⚫️ hash_task_contents
+  ⚫️ install_dependencies
+  ⚫️ locate_dependencies_root
+  ⚫️ parse_lock
+  ⚫️ parse_manifest
+  ⚫️ setup_environment
 
 Tier 3 - Tool management ───────────────────────────────────
 
-  APIs:
-    ⚫️ register_tool (required)
-    ⚫️ load_versions
-    ⚫️ resolve_version
-    ⚫️ download_prebuilt (required)
-    ⚫️ unpack_archive
-    ⚫️ locate_executables (required)
-    ⚫️ setup_toolchain
-    ⚫️ teardown_toolchain
+  ⚫️ download_prebuilt (required)
+  ⚫️ load_versions
+  ⚫️ locate_executables (required)
+  ⚫️ register_tool (required)
+  ⚫️ resolve_version
+  ⚫️ setup_toolchain
+  ⚫️ teardown_toolchain
+  ⚫️ unpack_archive

@@ -1,0 +1,4 @@
+custom {
+	plugin = "file://node.wasm"
+	key = "value"
+}

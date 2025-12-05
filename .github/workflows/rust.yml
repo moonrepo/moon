@@ -99,6 +99,11 @@ jobs:
     env:
       # Windows runs out of disk space
       COVERAGE: ${{ needs.test-plan.outputs.coverage == 'true' && !contains(matrix.os, 'windows') }}
+      # Temporary until we upgrade starbase
+      GIT_AUTHOR_NAME: "Sandbox"
+      GIT_AUTHOR_EMAIL: "fakeemail@somedomain.dev"
+      GIT_COMMITTER_NAME: "Sandbox"
+      GIT_COMMITTER_EMAIL: "fakeemail@somedomain.dev"
     steps:
       - uses: actions/checkout@v4
       - uses: moonrepo/setup-rust@v1
@@ -111,7 +116,7 @@ jobs:
         with:
           auto-install: true
           cache: true
-          proto-version: "0.53.2" # Keep in sync
+          proto-version: "0.54.0" # Keep in sync
       - uses: mozilla-actions/sccache-action@v0.0.7
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       # Fixes issues where proto can't find a version because nothing is pinned globally

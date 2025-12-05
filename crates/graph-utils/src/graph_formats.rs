@@ -1,4 +1,5 @@
 use crate::graph_traits::*;
+use moon_common::is_test_env;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
 use petgraph::visit::{EdgeRef, NodeRef};
@@ -12,6 +13,10 @@ pub struct GraphCache<'graph, N, E> {
     // data: &'graph FxHashMap<K, N>,
 }
 
+fn should_use_compact_view() -> bool {
+    is_test_env() || cfg!(debug_assertions)
+}
+
 pub trait GraphToDot<N: Debug + Display, E: Debug + Display, K: Display>:
     GraphData<N, E, K>
 {
@@ -22,19 +27,25 @@ pub trait GraphToDot<N: Debug + Display, E: Debug + Display, K: Display>:
             &[Config::EdgeNoLabel, Config::NodeNoLabel],
             &|_, e| {
                 let label = e.weight().to_string();
+                let prefix = format!("label=\"{label}\"");
 
-                if e.source().index() == 0 {
-                    format!("label=\"{label}\" arrowhead=none")
+                if should_use_compact_view() {
+                    prefix
+                } else if e.source().index() == 0 {
+                    format!("{prefix} arrowhead=none")
                 } else {
-                    format!("label=\"{label}\" arrowhead=box, arrowtail=box")
+                    format!("{prefix} arrowhead=box, arrowtail=box")
                 }
             },
             &|_, n| {
                 let label = n.weight().to_string();
+                let prefix = format!("label=\"{label}\"");
 
-                format!(
-                    "label=\"{label}\" style=filled, shape=oval, fillcolor=gray, fontcolor=black"
-                )
+                if should_use_compact_view() {
+                    prefix
+                } else {
+                    format!("{prefix} style=filled, shape=oval, fillcolor=gray, fontcolor=black")
+                }
             },
         );
 

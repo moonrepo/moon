@@ -3,7 +3,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
 use moon_project::Project;
 use moon_task::Task;
-use moon_task_hasher::{TaskHash, TaskHasher};
+use moon_task_hasher::{TaskFingerprint, TaskHasher};
 use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
@@ -39,7 +39,7 @@ async fn mock_workspace(workspace_root: &Path) -> (WorkspaceGraph, AppContext) {
     let mock = WorkspaceMocker::new(workspace_root)
         .load_default_configs()
         .with_default_projects()
-        .with_default_toolchains()
+        .with_all_toolchains()
         .with_inherited_tasks()
         .with_global_envs();
 
@@ -52,7 +52,7 @@ async fn generate_hash<'a>(
     wg: &'a WorkspaceGraph,
     app: &'a AppContext,
     config: &'a HasherConfig,
-) -> TaskHash<'a> {
+) -> TaskFingerprint<'a> {
     let mut hasher = TaskHasher::new(app, &wg.projects, project, task, config);
     hasher.hash_inputs().await.unwrap();
     hasher.hash()
@@ -68,7 +68,7 @@ fn get_input_files(
 mod task_hasher {
     use super::*;
 
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread")]
     async fn filters_out_files_matching_ignore_pattern() {
         let sandbox = create_sandbox("ignore-patterns");
         sandbox.enable_git();
@@ -93,7 +93,7 @@ mod task_hasher {
     mod input_aggregation {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_files() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -116,7 +116,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_dirs() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -139,7 +139,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_globs_star() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -162,7 +162,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_globs_nested_star() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -192,7 +192,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_globs_groups() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -215,7 +215,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn excludes_glob_negations() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -238,7 +238,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_none() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -254,8 +254,8 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), Vec::<&str>::new());
         }
 
-        #[tokio::test]
-        async fn includes_local_touched_files() {
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_local_changed_files() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
             sandbox.create_file("created.txt", "");
@@ -266,7 +266,7 @@ mod task_hasher {
 
             let (wg, app) = mock_workspace(sandbox.path()).await;
             let project = wg.get_project("root").unwrap();
-            let task = wg.get_task_from_project("root", "touched").unwrap();
+            let task = wg.get_task_from_project("root", "changed").unwrap();
 
             let hasher_config = HasherConfig::default();
 
@@ -275,7 +275,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), ["created.txt"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_env_file() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -299,7 +299,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_custom_env_files() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -324,7 +324,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_include_moon_project_config() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -339,7 +339,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), ["moon.yml"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "task_hasher::missing_input_file")]
         async fn errors_if_optional_false_and_file_missing() {
             let sandbox = create_sandbox("inputs");
@@ -353,7 +353,7 @@ mod task_hasher {
             generate_hash(&project, &task, &wg, &app, &vcs_config).await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_if_optional_true_and_file_missing() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();
@@ -366,7 +366,7 @@ mod task_hasher {
             let _ = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_include_external_project() {
             let sandbox = create_sandbox("projects");
             sandbox.enable_git();
@@ -388,7 +388,7 @@ mod task_hasher {
             );
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_include_external_project_using_file_group() {
             let sandbox = create_sandbox("projects");
             sandbox.enable_git();
@@ -403,7 +403,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), ["external/docs.md"]);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn can_include_external_project_using_filter_globs() {
             let sandbox = create_sandbox("projects");
             sandbox.enable_git();
@@ -422,7 +422,7 @@ mod task_hasher {
     mod output_filtering {
         use super::*;
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_file_output_file() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -433,7 +433,7 @@ mod task_hasher {
             let task = wg.get_task_from_project("root", "inFileOutFile").unwrap();
 
             let expected = [
-                ".moon/toolchain.yml",
+                ".moon/toolchains.yml",
                 ".moon/workspace.yml",
                 "out/1",
                 "out/3",
@@ -450,7 +450,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_file_output_dir() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -460,7 +460,7 @@ mod task_hasher {
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inFileOutDir").unwrap();
 
-            let expected = [".moon/toolchain.yml", ".moon/workspace.yml"];
+            let expected = [".moon/toolchains.yml", ".moon/workspace.yml"];
 
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
@@ -473,7 +473,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_file_output_glob() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -483,7 +483,7 @@ mod task_hasher {
             let project = wg.get_project("root").unwrap();
             let task = wg.get_task_from_project("root", "inFileOutGlob").unwrap();
 
-            let expected = [".moon/toolchain.yml", ".moon/workspace.yml"];
+            let expected = [".moon/toolchains.yml", ".moon/workspace.yml"];
 
             // VCS
             let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
@@ -496,7 +496,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_glob_output_file() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -508,7 +508,7 @@ mod task_hasher {
 
             let expected = [
                 ".gitignore",
-                ".moon/toolchain.yml",
+                ".moon/toolchains.yml",
                 ".moon/workspace.yml",
                 "out/1",
                 "out/3",
@@ -527,7 +527,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_glob_output_dir() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -539,7 +539,7 @@ mod task_hasher {
 
             let expected = [
                 ".gitignore",
-                ".moon/toolchain.yml",
+                ".moon/toolchains.yml",
                 ".moon/workspace.yml",
                 "package.json",
             ];
@@ -555,7 +555,7 @@ mod task_hasher {
             assert_eq!(get_input_files(result.inputs), expected);
         }
 
-        #[tokio::test]
+        #[tokio::test(flavor = "multi_thread")]
         async fn input_glob_output_glob() {
             let sandbox = create_sandbox("output-filters");
             sandbox.enable_git();
@@ -567,7 +567,7 @@ mod task_hasher {
 
             let expected = [
                 ".gitignore",
-                ".moon/toolchain.yml",
+                ".moon/toolchains.yml",
                 ".moon/workspace.yml",
                 "package.json",
             ];

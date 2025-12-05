@@ -6,8 +6,8 @@ tags: [one]
 tasks:
   dev:
     command: dev
-    platform: node
-    local: true
+    toolchain: node
+    preset: server
   build:
     command: build
     outputs: [dist]

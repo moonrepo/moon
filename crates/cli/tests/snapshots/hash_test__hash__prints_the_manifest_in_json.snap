@@ -1,0 +1,12 @@
+---
+source: crates/cli/tests/hash_test.rs
+expression: assert.output()
+---
+{
+  "command": "base",
+  "args": [
+    "a",
+    "b",
+    "c"
+  ]
+}

@@ -1,17 +1,16 @@
-use crate::task_hash::TaskHash;
+use crate::task_fingerprint::TaskFingerprint;
 use crate::task_hasher_error::TaskHasherError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use moon_config::{HasherConfig, HasherWalkStrategy, Input, ProjectInput};
+use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_env_var::GlobalEnvBag;
-use moon_feature_flags::glob_walk_with_options;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::glob::{GlobSet, GlobWalkOptions};
+use starbase_utils::glob::GlobSet;
 use std::path::PathBuf;
 use tracing::{trace, warn};
 
@@ -23,7 +22,7 @@ pub struct TaskHasher<'task> {
     pub task: &'task Task,
     pub hasher_config: &'task HasherConfig,
 
-    content: TaskHash<'task>,
+    fingerprint: TaskFingerprint<'task>,
 }
 
 impl<'task> TaskHasher<'task> {
@@ -40,32 +39,32 @@ impl<'task> TaskHasher<'task> {
             project_graph,
             task,
             hasher_config,
-            content: TaskHash::new(project, task),
+            fingerprint: TaskFingerprint::new(project, task),
         }
     }
 
-    pub fn hash(mut self) -> TaskHash<'task> {
+    pub fn hash(mut self) -> TaskFingerprint<'task> {
         // Ensure hashing is deterministic
-        self.content.args.sort();
-        self.content.project_deps.sort();
+        self.fingerprint.args.sort();
+        self.fingerprint.project_deps.sort();
 
         // Consume the hasher and return the content
-        self.content
+        self.fingerprint
     }
 
     pub fn hash_args(&mut self, args: impl IntoIterator<Item = &'task String>) {
         for arg in args {
-            self.content.args.push(arg);
+            self.fingerprint.args.push(arg);
         }
     }
 
     pub fn hash_deps(&mut self, deps: impl IntoIterator<Item = (&'task Target, String)>) {
-        self.content.deps.extend(deps);
+        self.fingerprint.deps.extend(deps);
     }
 
     pub fn hash_env(&mut self, env: impl IntoIterator<Item = (&'task String, &'task String)>) {
         for (key, value) in env {
-            self.content.env.insert(key.as_ref(), value.as_ref());
+            self.fingerprint.env.insert(key.as_ref(), value.as_ref());
         }
     }
 
@@ -76,14 +75,14 @@ impl<'task> TaskHasher<'task> {
         if !processed_inputs.is_empty() && self.app_context.vcs.is_enabled() {
             let files = processed_inputs.into_iter().collect::<Vec<_>>();
 
-            self.content.inputs = self.app_context.vcs.get_file_hashes(&files, true).await?;
+            self.fingerprint.inputs = self.app_context.vcs.get_file_hashes(&files, true).await?;
         }
 
         if !self.task.input_env.is_empty() {
             let bag = GlobalEnvBag::instance();
 
             for input in &self.task.input_env {
-                self.content
+                self.fingerprint
                     .input_env
                     .insert(input, bag.get(input).unwrap_or_default());
             }
@@ -144,18 +143,10 @@ impl<'task> TaskHasher<'task> {
             }
         }
 
-        for input in &self.task.inputs {
-            if let Input::Project(inner) = &input
-                && !inner.is_all_deps()
-            {
-                files.extend(self.aggregate_inputs_from_project(inner).await?);
-            }
-        }
-
         // Include local file changes so that development builds work.
         // Also run this LAST as it should take highest precedence!
         if vcs_enabled {
-            for local_file in self.app_context.vcs.get_touched_files().await?.all() {
+            for local_file in self.app_context.vcs.get_changed_files().await?.all() {
                 let abs_file = local_file.to_logical_path(workspace_root);
 
                 // Deleted files are listed in `git status` but are
@@ -168,36 +159,6 @@ impl<'task> TaskHasher<'task> {
                     files.remove(&abs_file);
                 }
             }
-        }
-
-        Ok(files)
-    }
-
-    async fn aggregate_inputs_from_project(
-        &mut self,
-        input: &ProjectInput,
-    ) -> miette::Result<FxHashSet<PathBuf>> {
-        let mut files = FxHashSet::default();
-        let project = self.project_graph.get(&input.project)?;
-
-        if let Some(group_id) = &input.group {
-            files.extend(project.get_file_group(group_id)?.walk_absolute(
-                false,
-                &self.app_context.workspace_root,
-                false,
-            )?)
-        } else {
-            let default_globs = vec!["**/*".to_owned()];
-
-            files.extend(glob_walk_with_options(
-                &project.root,
-                if input.filter.is_empty() {
-                    &default_globs
-                } else {
-                    &input.filter
-                },
-                GlobWalkOptions::default().cache().files(),
-            )?);
         }
 
         Ok(files)
@@ -218,7 +179,7 @@ impl<'task> TaskHasher<'task> {
         }
 
         // Remove outputs first
-        if sources_globset.is_negated(workspace_relative_path.as_str()) {
+        if sources_globset.is_excluded(workspace_relative_path.as_str()) {
             return false;
         }
 
@@ -277,7 +238,7 @@ impl<'task> TaskHasher<'task> {
 
                 if self.hasher_config.warn_on_missing_inputs
                     && (self.hasher_config.ignore_missing_patterns.is_empty()
-                        || !ignore_missing.is_match(abs_path))
+                        || !ignore_missing.is_included(abs_path))
                 {
                     warn!(
                         "Attempted to hash input {} but it does not exist, skipping",
@@ -297,7 +258,7 @@ impl<'task> TaskHasher<'task> {
                 continue;
             }
 
-            if ignore.is_match(abs_path) {
+            if ignore.is_included(abs_path) {
                 trace!(
                     "Not hashing input {} as it matches an ignore pattern",
                     color::rel_path(&rel_path),

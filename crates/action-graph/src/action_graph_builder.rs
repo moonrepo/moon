@@ -1,9 +1,8 @@
-use crate::action_graph::ActionGraph;
+use crate::action_graph::{ActionGraph, ActionGraphType};
 use crate::action_graph_error::ActionGraphError;
 use miette::IntoDiagnostic;
 use moon_action::{
-    ActionNode, InstallDependenciesNode, InstallProjectDepsNode, InstallWorkspaceDepsNode,
-    RunTaskNode, SetupEnvironmentNode, SetupToolchainLegacyNode, SetupToolchainNode,
+    ActionNode, InstallDependenciesNode, RunTaskNode, SetupEnvironmentNode, SetupToolchainNode,
     SyncProjectNode,
 };
 use moon_action_context::{ActionContext, TargetState};
@@ -11,19 +10,32 @@ use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
-use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
+use moon_config::{PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
-use moon_platform::{PlatformManager, Runtime, ToolchainSpec};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
 use moon_task_args::parse_task_args;
+use moon_toolchain::ToolchainSpec;
+use moon_workspace_graph::projects::ProjectGraphError;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
+use std::fmt::Debug;
 use std::mem;
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
+
+macro_rules! insert_node_if_missing {
+    ($builder:ident, $node:expr) => {{
+        let node = $node;
+
+        match $builder.get_index_from_node(&node) {
+            Some(index) => index,
+            None => $builder.insert_node(node),
+        }
+    }};
+}
 
 macro_rules! insert_node_or_exit {
     ($builder:ident, $node:expr) => {{
@@ -38,7 +50,7 @@ macro_rules! insert_node_or_exit {
     }};
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct RunRequirements {
     pub ci: bool,            // Are we in a CI environment
     pub ci_check: bool,      // Check the `runInCI` option
@@ -78,15 +90,14 @@ impl ActionGraphBuilderOptions {
 pub struct ActionGraphBuilder<'query> {
     all_query: Option<Criteria<'query>>,
     app_context: Arc<AppContext>,
-    graph: DiGraph<ActionNode, ()>,
+    graph: ActionGraphType,
     nodes: FxHashMap<ActionNode, NodeIndex>,
     options: ActionGraphBuilderOptions,
-    platform_manager: Option<PlatformManager>,
     workspace_graph: Arc<WorkspaceGraph>,
 
     // Affected tracking
     affected: Option<AffectedTracker>,
-    touched_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
+    changed_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
     // initial_targets: FxHashSet<Target>,
@@ -110,9 +121,8 @@ impl<'query> ActionGraphBuilder<'query> {
             nodes: FxHashMap::default(),
             options,
             passthrough_targets: FxHashSet::default(),
-            platform_manager: None,
             primary_targets: FxHashSet::default(),
-            touched_files: None,
+            changed_files: None,
             workspace_graph,
         })
     }
@@ -133,56 +143,41 @@ impl<'query> ActionGraphBuilder<'query> {
             context.primary_targets = mem::take(&mut self.primary_targets);
         }
 
-        if let Some(files) = self.touched_files.take() {
-            context.touched_files = files.to_owned();
+        if let Some(files) = self.changed_files.take() {
+            context.changed_files = files.to_owned();
         }
 
         (context, ActionGraph::new(self.graph))
     }
 
-    pub fn get_runtime(
-        &self,
-        project: &Project,
-        toolchain_id: &Id,
-        allow_override: bool,
-    ) -> Option<Runtime> {
-        let manager = match &self.platform_manager {
-            Some(manager) => manager,
-            None => PlatformManager::read(),
-        };
-
-        if let Ok(platform) = manager.get_by_toolchain(toolchain_id) {
-            return Some(platform.get_runtime_from_config(if allow_override {
-                Some(&project.config)
-            } else {
-                None
-            }));
+    pub fn get_spec(&self, toolchain_id: &Id, project: Option<&Project>) -> Option<ToolchainSpec> {
+        match project {
+            Some(project) => self.get_project_spec(toolchain_id, project),
+            None => self.get_workspace_spec(toolchain_id),
         }
-
-        None
     }
 
-    pub fn get_spec(&self, project: &Project, toolchain_id: &Id) -> Option<ToolchainSpec> {
-        if let Some(config) = project.config.toolchain.get_plugin_config(toolchain_id) {
+    pub fn get_project_spec(&self, toolchain_id: &Id, project: &Project) -> Option<ToolchainSpec> {
+        if let Some(config) = project.config.toolchains.get_plugin_config(toolchain_id) {
             if !config.is_enabled() {
                 return None;
             }
 
             if let Some(version) = config.get_version() {
-                return Some(ToolchainSpec::new_override(
+                return Some(ToolchainSpec::new(
                     toolchain_id.to_owned(),
                     version.to_owned(),
                 ));
             }
         }
 
-        self.get_root_spec(toolchain_id)
+        self.get_workspace_spec(toolchain_id)
     }
 
-    pub fn get_root_spec(&self, toolchain_id: &Id) -> Option<ToolchainSpec> {
+    pub fn get_workspace_spec(&self, toolchain_id: &Id) -> Option<ToolchainSpec> {
         if let Some(config) = self
             .app_context
-            .toolchain_config
+            .toolchains_config
             .get_plugin_config(toolchain_id)
         {
             return Some(match &config.version {
@@ -198,18 +193,12 @@ impl<'query> ActionGraphBuilder<'query> {
         if self.affected.is_none() {
             self.affected = Some(AffectedTracker::new(
                 Arc::clone(&self.workspace_graph),
-                self.touched_files
+                self.changed_files
                     .as_ref()
-                    .expect("Touched files are required for affected tracking.")
+                    .expect("Changed files are required for affected tracking.")
                     .to_owned(),
             ));
         }
-
-        Ok(())
-    }
-
-    pub fn set_platform_manager(&mut self, manager: PlatformManager) -> miette::Result<()> {
-        self.platform_manager = Some(manager);
 
         Ok(())
     }
@@ -220,11 +209,11 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(())
     }
 
-    pub fn set_touched_files(
+    pub fn set_changed_files(
         &mut self,
-        touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+        changed_files: FxHashSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<()> {
-        self.touched_files = Some(touched_files);
+        self.changed_files = Some(changed_files);
 
         Ok(())
     }
@@ -256,87 +245,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(())
     }
 
-    #[instrument(skip_all)]
-    pub async fn install_dependencies_legacy(
-        &mut self,
-        runtime: &Runtime,
-        project: &Project,
-    ) -> miette::Result<Option<NodeIndex>> {
-        if !self
-            .options
-            .install_dependencies
-            .is_enabled(&runtime.toolchain)
-            || runtime.is_system()
-        {
-            return Ok(None);
-        };
-
-        let mut edges = FxHashSet::from_iter([
-            self.sync_workspace().await?,
-            self.setup_toolchain_legacy(runtime).await?,
-        ]);
-
-        let platform_manager = match &self.platform_manager {
-            Some(manager) => manager,
-            None => PlatformManager::read(),
-        };
-
-        // If Bun and Node.js are enabled, they will both attempt to install
-        // dependencies in the target root. We need to avoid this problem,
-        // so always prefer Node.js instead. Revisit in the future.
-        let new_runtime = if runtime.toolchain == "bun"
-            && platform_manager
-                .enabled()
-                .any(|enabled_platform| enabled_platform == "node")
-        {
-            debug!(
-                "Already installing dependencies with node, skipping a conflicting install from bun"
-            );
-
-            self.get_runtime(project, &Id::raw("node"), true)
-        } else {
-            None
-        }
-        .unwrap_or_else(|| self.get_compat_runtime(runtime));
-
-        let platform = platform_manager.get_by_toolchain(&new_runtime.toolchain)?;
-        let packages_root = platform.find_dependency_workspace_root(project.source.as_str())?;
-        let mut in_project = false;
-
-        // If project is NOT in the package manager workspace, then we should
-        // install dependencies in the project, not the workspace root.
-        if !platform.is_project_in_dependency_workspace(&packages_root, project.source.as_str())? {
-            in_project = true;
-
-            debug!(
-                "Project {} is not within the dependency manager workspace, dependencies will be installed within the project instead of the root",
-                color::id(&project.id),
-            );
-        }
-
-        edges.insert(self.setup_toolchain_legacy(&new_runtime).await?);
-
-        let index = insert_node_or_exit!(
-            self,
-            if in_project {
-                ActionNode::install_project_deps(InstallProjectDepsNode {
-                    project_id: project.id.to_owned(),
-                    runtime: new_runtime,
-                })
-            } else {
-                ActionNode::install_workspace_deps(InstallWorkspaceDepsNode {
-                    runtime: new_runtime,
-                    root: packages_root,
-                })
-            }
-        );
-
-        self.link_optional_requirements(index, edges.into_iter().collect());
-
-        Ok(Some(index))
-    }
-
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     pub async fn install_dependencies(
         &mut self,
         spec: &ToolchainSpec,
@@ -348,7 +257,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         let sync_workspace_index = self.sync_workspace().await?;
-        let setup_toolchain_index = self.setup_toolchain(spec).await?;
+        let setup_toolchain_index = self.setup_toolchain(spec, Some(project)).await?;
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
 
@@ -361,11 +270,8 @@ impl<'query> ActionGraphBuilder<'query> {
             .locate_dependencies_root(LocateDependenciesRootInput {
                 context: toolchain_registry.create_context(),
                 starting_dir: toolchain.to_virtual_path(&project.root),
-                toolchain_config: toolchain_registry.create_merged_config(
-                    &toolchain.id,
-                    &self.app_context.toolchain_config,
-                    &project.config,
-                ),
+                toolchain_config: toolchain_registry
+                    .create_merged_config(&toolchain.id, &project.config),
             })
             .await?;
 
@@ -395,7 +301,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
             // Only create this action if the plugin supports it
             if toolchain.has_func("install_dependencies").await {
-                let index = insert_node_or_exit!(
+                let index = insert_node_if_missing!(
                     self,
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: if in_workspace { output.members } else { None },
@@ -428,7 +334,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(setup_toolchain_index)
     }
 
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     pub async fn install_dependencies_by_project(
         &mut self,
         project: &Project,
@@ -437,7 +343,7 @@ impl<'query> ActionGraphBuilder<'query> {
             .await
     }
 
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     pub async fn install_dependencies_by_toolchains(
         &mut self,
         project: &Project,
@@ -446,21 +352,15 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut indexes = vec![];
 
         for toolchain_id in toolchains {
-            #[allow(clippy::collapsible_else_if)]
-            if self.app_context.toolchain_config.is_plugin(toolchain_id) {
-                if let Some(spec) = self.get_spec(project, toolchain_id) {
-                    indexes.push(self.install_dependencies(&spec, project).await?);
-                }
-            } else {
-                if let Some(runtime) = self.get_runtime(project, toolchain_id, true) {
-                    indexes.push(self.install_dependencies_legacy(&runtime, project).await?);
-                }
+            if let Some(spec) = self.get_project_spec(toolchain_id, project) {
+                indexes.push(self.install_dependencies(&spec, project).await?);
             }
         }
 
         Ok(indexes)
     }
 
+    #[instrument(skip(self))]
     pub async fn run_task(
         &mut self,
         task: &Task,
@@ -487,7 +387,8 @@ impl<'query> ActionGraphBuilder<'query> {
         self.internal_run_task(task, reqs, Some(config)).await
     }
 
-    pub async fn run_task_by_target<T: AsRef<Target>>(
+    #[instrument(skip(self))]
+    pub async fn run_task_by_target<T: AsRef<Target> + Debug>(
         &mut self,
         target: T,
         reqs: &RunRequirements,
@@ -507,7 +408,8 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(indexes)
     }
 
-    pub async fn run_task_by_target_locator<T: AsRef<TargetLocator>>(
+    #[instrument(skip(self))]
+    pub async fn run_task_by_target_locator<T: AsRef<TargetLocator> + Debug>(
         &mut self,
         locator: T,
         reqs: &RunRequirements,
@@ -527,6 +429,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(indexes)
     }
 
+    #[instrument(skip(self))]
     pub async fn run_task_dependencies(
         &mut self,
         task: &Task,
@@ -563,6 +466,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(indexes)
     }
 
+    #[instrument(skip(self))]
     pub async fn run_task_dependents(
         &mut self,
         task: &Task,
@@ -582,7 +486,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(indexes)
     }
 
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     async fn internal_resolve_tasks_from_target(
         &mut self,
         target: &Target,
@@ -665,7 +569,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(tasks)
     }
 
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     async fn internal_resolve_tasks_from_target_locator(
         &mut self,
         locator: &TargetLocator,
@@ -747,11 +651,14 @@ impl<'query> ActionGraphBuilder<'query> {
                         .await?,
                 );
             }
-            TargetLocator::TaskFromWorkingDir(task_id) => {
-                let target = Target::new(
-                    &self.workspace_graph.get_project_from_path(None)?.id,
-                    task_id,
-                )?;
+            TargetLocator::DefaultProject(task_id) => {
+                let project = self.workspace_graph.get_default_project().map_err(|_| {
+                    ProjectGraphError::NoDefaultProjectForTask {
+                        task_id: task_id.to_string(),
+                    }
+                })?;
+
+                let target = Target::new(&project.id, task_id)?;
 
                 tasks.extend(
                     self.internal_resolve_tasks_from_target(&target, allow_internal)
@@ -763,7 +670,6 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(tasks)
     }
 
-    #[instrument(skip_all)]
     async fn internal_run_task(
         &mut self,
         task: &Task,
@@ -837,9 +743,6 @@ impl<'query> ActionGraphBuilder<'query> {
             interactive: task.is_interactive() || reqs.interactive,
             persistent: task.is_persistent(),
             priority: task.options.priority.get_level(),
-            runtime: self
-                .get_runtime(&project, &task.toolchains[0], true)
-                .unwrap_or_else(Runtime::system),
             target: task.target.to_owned(),
             id: None,
         });
@@ -881,7 +784,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(Some(index))
     }
 
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     pub async fn setup_environment(
         &mut self,
         spec: &ToolchainSpec,
@@ -901,7 +804,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         let sync_workspace_index = self.sync_workspace().await?;
-        let setup_toolchain_index = self.setup_toolchain(spec).await?;
+        let setup_toolchain_index = self.setup_toolchain(spec, project).await?;
 
         let index = insert_node_or_exit!(
             self,
@@ -917,64 +820,25 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(Some(index))
     }
 
+    #[instrument(skip(self))]
     pub async fn setup_proto(&mut self) -> miette::Result<Option<NodeIndex>> {
         let index = insert_node_or_exit!(
             self,
-            ActionNode::setup_proto(self.app_context.toolchain_config.proto.version.clone())
+            ActionNode::setup_proto(self.app_context.toolchains_config.proto.version.clone())
         );
 
         Ok(Some(index))
     }
 
-    #[instrument(skip_all)]
-    pub async fn setup_toolchain_legacy(
-        &mut self,
-        runtime: &Runtime,
-    ) -> miette::Result<Option<NodeIndex>> {
-        // Explicitly disabled
-        if !self.options.setup_toolchains.is_enabled(&runtime.toolchain) || runtime.is_system() {
-            return Ok(None);
-        }
-
-        let sync_workspace_index = self.sync_workspace().await?;
-
-        let setup_proto_index = if !runtime.requirement.is_global()
-            || self.app_context.toolchain_config.requires_proto()
-        {
-            self.setup_proto().await?
-        } else {
-            None
-        };
-
-        let index = insert_node_or_exit!(
-            self,
-            ActionNode::setup_toolchain_legacy(SetupToolchainLegacyNode {
-                runtime: self.get_compat_runtime(runtime),
-            })
-        );
-
-        self.link_optional_requirements(index, vec![sync_workspace_index, setup_proto_index]);
-
-        Ok(Some(index))
-    }
-
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     pub async fn setup_toolchain(
         &mut self,
         spec: &ToolchainSpec,
+        project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
         if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
             return Ok(None);
-        }
-
-        let node = ActionNode::setup_toolchain(SetupToolchainNode {
-            toolchain: spec.to_owned(),
-        });
-
-        // Check if the node exists to avoid all the overhead below
-        if let Some(index) = self.get_index_from_node(&node) {
-            return Ok(Some(index));
         }
 
         let toolchain_registry = &self.app_context.toolchain_registry;
@@ -986,8 +850,7 @@ impl<'query> ActionGraphBuilder<'query> {
             let output = toolchain
                 .define_requirements(DefineRequirementsInput {
                     context: toolchain_registry.create_context(),
-                    toolchain_config: toolchain_registry
-                        .create_config(&toolchain.id, &self.app_context.toolchain_config),
+                    toolchain_config: toolchain_registry.create_config(&toolchain.id),
                 })
                 .await?;
 
@@ -996,9 +859,9 @@ impl<'query> ActionGraphBuilder<'query> {
                     let require_id = Id::new(require_id)?;
 
                     if require_id != spec.id
-                        && let Some(dep_spec) = self.get_root_spec(&require_id)
+                        && let Some(require_spec) = self.get_spec(&require_id, project)
                     {
-                        edges.push(Box::pin(self.setup_toolchain(&dep_spec)).await?);
+                        edges.push(Box::pin(self.setup_toolchain(&require_spec, project)).await?);
                     } else {
                         return Err(ActionGraphError::MissingToolchainRequirement {
                             id: spec.id.to_string(),
@@ -1017,18 +880,23 @@ impl<'query> ActionGraphBuilder<'query> {
 
         edges.push(self.sync_workspace().await?);
 
-        if spec.req.is_some() || self.app_context.toolchain_config.requires_proto() {
+        if spec.req.is_some() || self.app_context.toolchains_config.requires_proto() {
             edges.push(self.setup_proto().await?);
         }
 
-        let index = self.insert_node(node);
+        let index = insert_node_if_missing!(
+            self,
+            ActionNode::setup_toolchain(SetupToolchainNode {
+                toolchain: spec.to_owned(),
+            })
+        );
 
         self.link_optional_requirements(index, edges);
 
         Ok(Some(index))
     }
 
-    #[instrument(skip_all)]
+    #[instrument(skip(self))]
     pub async fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
         self.internal_sync_project(project, &mut FxHashSet::default())
             .await
@@ -1092,6 +960,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(Some(index))
     }
 
+    #[instrument(skip(self))]
     pub async fn sync_workspace(&mut self) -> miette::Result<Option<NodeIndex>> {
         if !self.options.sync_workspace {
             return Ok(None);
@@ -1103,14 +972,6 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     // PRIVATE
-
-    fn get_compat_runtime(&self, runtime: &Runtime) -> Runtime {
-        let mut next = runtime.to_owned();
-        // Disable this, so that the index for both override and not-override
-        // is the same, as we only care about the toolchain ID + version
-        next.overridden = false;
-        next
-    }
 
     fn get_index_from_node(&self, node: &ActionNode) -> Option<NodeIndex> {
         self.nodes.get(node).cloned()
@@ -1131,16 +992,22 @@ impl<'query> ActionGraphBuilder<'query> {
             return;
         }
 
-        trace!(
-            index = index.index(),
-            requires = ?edges.iter().map(|edge| edge.index()).collect::<Vec<_>>(),
-            "Linking requirements for index"
-        );
+        let mut added_edges = vec![];
 
         for edge in edges {
-            // Use `update_edge` instead of `add_edge` as it avoids
-            // duplicate edges from being inserted
-            self.graph.update_edge(index, edge, ());
+            if self.graph.find_edge(index, edge).is_none() {
+                self.graph
+                    .add_edge(index, edge, TaskDependencyType::Required);
+                added_edges.push(edge);
+            }
+        }
+
+        if !added_edges.is_empty() {
+            trace!(
+                index = index.index(),
+                requires = ?added_edges.iter().map(|edge| edge.index()).collect::<Vec<_>>(),
+                "Linking requirements for index"
+            );
         }
     }
 

@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/generate_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\"./test/control.txt\")).unwrap()"
+---
+Should NOT show
+
+
+Looping multenum:
+
+1. a
+
+
+Including partial:
+THIS WAS INCLUDED
+
+
+Filters:
+XYZ
+246
+1

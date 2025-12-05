@@ -2,43 +2,63 @@
 // https://github.com/rust-lang/cargo/blob/master/crates/cargo-util/src/process_builder.rs
 
 use crate::shell::Shell;
-use miette::IntoDiagnostic;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
-use std::env;
+use std::collections::VecDeque;
 use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
 use std::sync::Arc;
 
 #[derive(Debug)]
+pub enum CommandExecutable {
+    /// Single file name: git
+    Binary(OsString),
+    /// Full script: git commit -m ""
+    Script(OsString),
+}
+
+impl CommandExecutable {
+    pub fn as_os_str(&self) -> &OsStr {
+        match &self {
+            Self::Binary(inner) => inner,
+            Self::Script(inner) => inner,
+        }
+    }
+
+    pub fn into_os_string(self) -> OsString {
+        match self {
+            Self::Binary(inner) => inner,
+            Self::Script(inner) => inner,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Command {
-    pub args: Vec<OsString>,
+    pub args: VecDeque<OsString>,
 
-    pub bin: OsString,
-
-    /// Continuously write to stdin and read from stdout.
+    /// Continuously write to stdin and read from stdout
     pub continuous_pipe: bool,
 
     pub cwd: Option<OsString>,
 
     pub env: FxHashMap<OsString, Option<OsString>>,
 
+    pub exe: CommandExecutable,
+
     /// Convert non-zero exits to errors
     pub error_on_nonzero: bool,
 
-    /// Escape/quote arguments when joining.
+    /// Escape/quote arguments when joining
     pub escape_args: bool,
 
     /// Values to pass to stdin
     pub input: Vec<OsString>,
 
-    /// Paths to append to `PATH`
-    pub paths_after: Vec<OsString>,
-
     /// Paths to prepend to `PATH`
-    pub paths_before: Vec<OsString>,
+    pub paths: VecDeque<OsString>,
 
     /// Prefix to prepend to all log lines
     pub prefix: Option<String>,
@@ -54,18 +74,17 @@ pub struct Command {
 }
 
 impl Command {
-    pub fn new<S: AsRef<OsStr>>(bin: S) -> Self {
+    pub fn new<T: AsRef<OsStr>>(bin: T) -> Self {
         Command {
-            bin: bin.as_ref().to_os_string(),
-            args: vec![],
+            args: VecDeque::new(),
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
+            exe: CommandExecutable::Binary(bin.as_ref().to_os_string()),
             error_on_nonzero: true,
             escape_args: true,
             input: vec![],
-            paths_after: vec![],
-            paths_before: vec![],
+            paths: VecDeque::new(),
             prefix: None,
             print_command: false,
             shell: Some(Shell::default()),
@@ -73,8 +92,14 @@ impl Command {
         }
     }
 
+    pub fn new_script<T: AsRef<OsStr>>(script: T) -> Self {
+        let mut command = Self::new(script);
+        command.exe = CommandExecutable::Script(command.exe.into_os_string());
+        command
+    }
+
     pub fn arg<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
-        self.args.push(arg.as_ref().to_os_string());
+        self.args.push_back(arg.as_ref().to_os_string());
         self
     }
 
@@ -127,9 +152,11 @@ impl Command {
         V: AsRef<OsStr>,
     {
         let key = key.as_ref();
+
         if !self.env.contains_key(key) {
             self.env(key, val);
         }
+
         self
     }
 
@@ -149,6 +176,31 @@ impl Command {
     {
         for (k, v) in vars {
             self.env(k, v);
+        }
+
+        self
+    }
+
+    pub fn envs_remove<I, V>(&mut self, vars: I) -> &mut Self
+    where
+        I: IntoIterator<Item = V>,
+        V: AsRef<OsStr>,
+    {
+        for v in vars {
+            self.env_remove(v);
+        }
+
+        self
+    }
+
+    pub fn envs_if_missing<I, K, V>(&mut self, vars: I) -> &mut Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        for (k, v) in vars {
+            self.env_if_missing(k, v);
         }
 
         self
@@ -199,30 +251,6 @@ impl Command {
         self
     }
 
-    pub fn inherit_path(&mut self) -> miette::Result<&mut Self> {
-        let key = OsString::from("PATH");
-
-        if self.env.contains_key(&key)
-            || (self.paths_before.is_empty() && self.paths_after.is_empty())
-        {
-            return Ok(self);
-        }
-
-        let mut paths = vec![];
-
-        paths.extend(self.paths_before.clone());
-
-        for path in env::split_paths(&env::var_os(&key).unwrap_or_default()) {
-            paths.push(path.into_os_string());
-        }
-
-        paths.extend(self.paths_after.clone());
-
-        self.env(&key, env::join_paths(paths).into_diagnostic()?);
-
-        Ok(self)
-    }
-
     pub fn input<I, V>(&mut self, input: I) -> &mut Self
     where
         I: IntoIterator<Item = V>,
@@ -240,8 +268,9 @@ impl Command {
         I: IntoIterator<Item = V>,
         V: AsRef<OsStr>,
     {
-        self.paths_after
-            .extend(list.into_iter().map(|path| path.as_ref().to_os_string()));
+        for path in list {
+            self.paths.push_back(path.as_ref().to_os_string());
+        }
 
         self
     }
@@ -251,19 +280,53 @@ impl Command {
         I: IntoIterator<Item = V>,
         V: AsRef<OsStr>,
     {
-        let mut list = list
-            .into_iter()
-            .map(|path| path.as_ref().to_os_string())
-            .collect::<Vec<_>>();
+        let mut paths = vec![];
 
-        list.extend(std::mem::take(&mut self.paths_before));
+        for path in list {
+            paths.push(path.as_ref().to_os_string());
+        }
 
-        self.paths_before = list;
+        for path in paths.into_iter().rev() {
+            self.paths.push_front(path);
+        }
+
         self
     }
 
+    pub fn get_args_list(&self) -> Vec<String> {
+        self.args
+            .iter()
+            .map(|arg| arg.to_string_lossy().to_string())
+            .collect()
+    }
+
     pub fn get_bin_name(&self) -> String {
-        self.bin.to_string_lossy().to_string()
+        match &self.exe {
+            CommandExecutable::Binary(bin) => bin.to_string_lossy().to_string(),
+            CommandExecutable::Script(script) => {
+                if let Some(inner) = script.to_str() {
+                    match inner.find(' ') {
+                        Some(index) => &inner[0..index],
+                        None => inner,
+                    }
+                    .into()
+                } else {
+                    let mut bytes = vec![];
+
+                    for ch in script.as_encoded_bytes() {
+                        if *ch == b' ' {
+                            break;
+                        }
+
+                        bytes.push(*ch);
+                    }
+
+                    unsafe { OsString::from_encoded_bytes_unchecked(bytes) }
+                        .to_string_lossy()
+                        .to_string()
+                }
+            }
+        }
     }
 
     pub fn get_cache_key(&self) -> String {
@@ -280,7 +343,14 @@ impl Command {
             }
         }
 
-        write(&self.bin);
+        match &self.exe {
+            CommandExecutable::Binary(exe) => {
+                write(exe);
+            }
+            CommandExecutable::Script(exe) => {
+                write(exe);
+            }
+        };
 
         for arg in &self.args {
             write(arg);
@@ -301,13 +371,30 @@ impl Command {
         self.prefix.as_deref()
     }
 
-    pub fn set_continuous_pipe(&mut self, state: bool) -> &mut Self {
-        self.continuous_pipe = state;
+    pub fn get_script(&self) -> String {
+        match &self.exe {
+            CommandExecutable::Binary(_) => String::new(),
+            CommandExecutable::Script(script) => script.to_string_lossy().to_string(),
+        }
+    }
+
+    pub fn no_shell(&mut self) -> &mut Self {
+        self.shell = None;
         self
     }
 
-    pub fn set_print_command(&mut self, state: bool) -> &mut Self {
-        self.print_command = state;
+    pub fn set_bin<T: AsRef<OsStr>>(&mut self, bin: T) -> &mut Self {
+        self.exe = CommandExecutable::Binary(bin.as_ref().to_os_string());
+        self
+    }
+
+    pub fn set_console(&mut self, console: Arc<Console>) -> &mut Self {
+        self.console = Some(console);
+        self
+    }
+
+    pub fn set_continuous_pipe(&mut self, state: bool) -> &mut Self {
+        self.continuous_pipe = state;
         self
     }
 
@@ -321,12 +408,23 @@ impl Command {
         self
     }
 
-    pub fn should_error_nonzero(&self) -> bool {
-        self.error_on_nonzero
+    pub fn set_print_command(&mut self, state: bool) -> &mut Self {
+        self.print_command = state;
+        self
     }
 
-    pub fn should_pass_stdin(&self) -> bool {
-        !self.input.is_empty() || self.should_pass_args_stdin()
+    pub fn set_script<T: AsRef<OsStr>>(&mut self, script: T) -> &mut Self {
+        self.exe = CommandExecutable::Script(script.as_ref().to_os_string());
+        self
+    }
+
+    pub fn set_shell(&mut self, shell: Shell) -> &mut Self {
+        self.shell = Some(shell);
+        self
+    }
+
+    pub fn should_error_nonzero(&self) -> bool {
+        self.error_on_nonzero
     }
 
     pub fn should_pass_args_stdin(&self) -> bool {
@@ -336,18 +434,7 @@ impl Command {
             .unwrap_or(false)
     }
 
-    pub fn with_console(&mut self, console: Arc<Console>) -> &mut Self {
-        self.console = Some(console);
-        self
-    }
-
-    pub fn with_shell(&mut self, shell: Shell) -> &mut Self {
-        self.shell = Some(shell);
-        self
-    }
-
-    pub fn without_shell(&mut self) -> &mut Self {
-        self.shell = None;
-        self
+    pub fn should_pass_stdin(&self) -> bool {
+        !self.input.is_empty() || self.should_pass_args_stdin()
     }
 }

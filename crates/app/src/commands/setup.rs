@@ -1,14 +1,13 @@
-use crate::components::run_action_pipeline;
+use crate::helpers::run_action_pipeline;
 use crate::session::MoonSession;
 use iocraft::prelude::element;
 use moon_action::ActionStatus;
 use moon_action_graph::ActionGraphBuilderOptions;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use moon_platform::{PlatformManager, ToolchainSpec};
 use starbase::AppResult;
 use tracing::instrument;
 
-#[instrument]
+#[instrument(skip(session))]
 pub async fn setup(session: MoonSession) -> AppResult {
     let mut action_graph_builder = session
         .build_action_graph_with_options(ActionGraphBuilderOptions {
@@ -25,36 +24,16 @@ pub async fn setup(session: MoonSession) -> AppResult {
     // First ensure proto is set up (this will be a dependency for toolchain setups)
     action_graph_builder.setup_proto().await?;
 
+    // Add new toolchain plugin setups
     let mut toolchain_count = 0;
 
-    // Add legacy platform toolchains (for backward compatibility)
-    let platform_manager = PlatformManager::read();
-    for platform in platform_manager.list() {
-        // Legacy platforms don't expose runtime directly, we need to check if they have toolchains
-        if platform.is_toolchain_enabled().unwrap_or(false) {
-            let runtime = platform.get_runtime_from_config(None);
-            // Only setup non-system runtimes that have specific versions
-            if !runtime.is_system() && !runtime.requirement.is_global() {
-                action_graph_builder
-                    .setup_toolchain_legacy(&runtime)
-                    .await?;
+    for toolchain_id in session.toolchains_config.plugins.keys() {
+        if let Some(spec) = action_graph_builder.get_workspace_spec(toolchain_id) {
+            action_graph_builder.setup_toolchain(&spec, None).await?;
+
+            if !spec.is_system() {
                 toolchain_count += 1;
             }
-        }
-    }
-
-    // Add new toolchain plugin setups
-    for (toolchain_id, config) in &session.toolchain_config.plugins {
-        // Check if plugin has a valid version configuration
-        if let Some(version) = &config.version {
-            let spec = ToolchainSpec::new(toolchain_id.to_owned(), version.to_owned());
-            action_graph_builder.setup_toolchain(&spec).await?;
-            toolchain_count += 1;
-        } else {
-            // For global toolchains, we still create the action but it will likely be skipped
-            let spec = ToolchainSpec::new_global(toolchain_id.to_owned());
-            action_graph_builder.setup_toolchain(&spec).await?;
-            toolchain_count += 1;
         }
     }
 
@@ -63,7 +42,7 @@ pub async fn setup(session: MoonSession) -> AppResult {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Info) {
-                    StyledText(content: "No toolchains are configured for setup")
+                    StyledText(content: "Unable to setup, no toolchains are configured!")
                 }
             }
         })?;
@@ -107,32 +86,36 @@ pub async fn setup(session: MoonSession) -> AppResult {
 
     let message = if failed_count > 0 {
         format!(
-            "Setup toolchains completed with {passed_count} success, {skipped_count} skipped, {failed_count} failed"
+            "Setup toolchains with {passed_count} passed, {skipped_count} skipped, and {failed_count} failed"
         )
+    } else if passed_count == 1 {
+        format!("Setup {passed_count} toolchain successfully!")
     } else if passed_count > 0 {
-        format!("Setup {passed_count} toolchain(s) successfully!")
+        format!("Setup {passed_count} toolchains successfully!")
     } else {
         "All toolchains are already up to date!".to_string()
     };
 
-    let variant = if failed_count > 0 {
-        Variant::Caution
-    } else {
-        Variant::Success
-    };
+    // Return error code if any setup failed
+    if failed_count > 0 {
+        session.console.render_err(element! {
+            Container {
+                Notice(variant: Variant::Caution) {
+                    StyledText(content: message)
+                }
+            }
+        })?;
+
+        return Ok(Some(1));
+    }
 
     session.console.render(element! {
         Container {
-            Notice(variant: variant) {
+            Notice(variant: Variant::Success) {
                 StyledText(content: message)
             }
         }
     })?;
-
-    // Return error code if any setup failed
-    if failed_count > 0 {
-        return Ok(Some(1));
-    }
 
     Ok(None)
 }

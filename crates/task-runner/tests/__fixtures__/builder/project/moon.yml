@@ -1,7 +1,7 @@
 tasks:
   base:
     command: 'build arg --opt'
-    platform: system
+    toolchain: system
     env:
       KEY: value
     inputs:

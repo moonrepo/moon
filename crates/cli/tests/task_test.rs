@@ -1,78 +1,69 @@
-use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_assert_stderr_output,
-    get_projects_fixture_configs,
-};
+mod utils;
 
-#[test]
-fn unknown_task() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+use moon_test_utils2::predicates::prelude::*;
+use starbase_sandbox::assert_snapshot;
+use utils::create_projects_sandbox;
 
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
+mod task {
+    use super::*;
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("task").arg("tasks:unknown");
-    });
+    #[test]
+    fn unknown_task() {
+        let sandbox = create_projects_sandbox();
 
-    assert_snapshot!(get_assert_stderr_output(&assert.inner));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("task").arg("tasks:unknown");
+            })
+            .failure()
+            .code(1)
+            .stderr(predicate::str::contains(
+                "Unknown task unknown for project tasks.",
+            ));
+    }
 
-    assert.failure().code(1);
-}
+    #[test]
+    fn shows_inputs() {
+        let sandbox = create_projects_sandbox();
 
-#[test]
-fn shows_inputs() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("task").arg("tasks:test");
+        });
 
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
+        assert_snapshot!(assert.output_standardized());
+    }
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("task").arg("tasks:test");
-    });
+    #[test]
+    fn shows_outputs() {
+        let sandbox = create_projects_sandbox();
 
-    assert_snapshot!(assert.output_standardized());
-}
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("task").arg("tasks:lint");
+        });
 
-#[test]
-fn shows_outputs() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+        assert_snapshot!(assert.output_standardized());
+    }
 
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
+    #[test]
+    fn can_show_internal() {
+        let sandbox = create_projects_sandbox();
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("task").arg("tasks:lint");
-    });
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("task").arg("tasks:internal");
+        });
 
-    assert_snapshot!(assert.output_standardized());
-}
+        assert_snapshot!(assert.output_standardized());
+    }
 
-#[test]
-fn can_show_internal() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
+    #[test]
+    fn can_output_json() {
+        let sandbox = create_projects_sandbox();
 
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("task").arg("tasks:internal");
-    });
-
-    assert_snapshot!(assert.output_standardized());
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("task").arg("tasks:lint").arg("--json");
+            })
+            .success()
+            .stdout(predicate::str::starts_with("{"));
+    }
 }

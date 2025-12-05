@@ -8,4 +8,4 @@ tasks:
     command: build
     outputs: [dist]
     # Fallsback to system since deno is not enabled
-    platform: deno
+    toolchain: deno

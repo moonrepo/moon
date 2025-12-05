@@ -24,3 +24,7 @@ tasks:
   outputs:
     options:
       mergeOutputs: replace
+
+  toolchains:
+    options:
+      mergeToolchains: replace

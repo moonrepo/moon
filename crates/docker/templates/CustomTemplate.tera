@@ -1,0 +1,11 @@
+# Custom template
+FROM {{ image }}
+WORKDIR /app
+
+{%- if build_task %}
+RUN moon run {{ build_task }}
+{%- endif %}
+
+{%- if start_task %}
+CMD moon run {{ start_task }}
+{% endif %}

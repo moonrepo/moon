@@ -1,3 +1,6 @@
+inheritedBy:
+  toolchains: 'bun'
+
 tasks:
   bun:
     command: bun

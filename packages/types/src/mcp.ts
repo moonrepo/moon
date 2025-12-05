@@ -1,5 +1,6 @@
 import type { Action } from './pipeline';
-import type { Project, Task } from './project';
+import type { Project } from './project';
+import type { Task } from './task';
 
 export interface GetProjectTool {
 	id: string;
@@ -37,13 +38,13 @@ export interface GetTasksToolResponse {
 	tasks: Task[];
 }
 
-export interface GetTouchedFilesTool {
+export interface GetChangedFilesTool {
 	base?: string;
 	head?: string;
 	remote?: boolean;
 }
 
-export interface GetTouchedFilesToolResponse {
+export interface GetChangedFilesToolResponse {
 	files: string[];
 }
 

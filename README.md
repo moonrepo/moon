@@ -1,8 +1,8 @@
 # moon
 
-moon is a repository ***m***anagement, ***o***rganization, ***o***rchestration, and ***n***otification tool for the
-web ecosystem, written in Rust. Many of the concepts within moon are heavily inspired from Bazel and
-other popular build systems.
+moon is a repository **_m_**anagement, **_o_**rganization, **_o_**rchestration, and
+**_n_**otification tool for the web ecosystem, written in Rust. Many of the concepts within moon are
+heavily inspired from Bazel and other popular build systems.
 
 - [Documentation](https://moonrepo.dev)
 - [Contributing](./CONTRIBUTING.md)
@@ -58,7 +58,7 @@ provide a first-class developer experience.
 - **Action pipeline** - Executes actions in parallel and in order using a thread pool and our
   dependency graph.
 - **Action distribution** - Distributes actions across multiple machines to increase throughput.
-- **Incremental builds** - With our smart hashing, only rebuild projects that have been touched
+- **Incremental builds** - With our smart hashing, only rebuild projects that have been changed
   since the last build.
 
 #### Notification

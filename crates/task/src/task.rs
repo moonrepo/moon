@@ -1,10 +1,9 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    Input, Output, PlatformType, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType,
-    is_false, schematic::RegexSetting,
+    Input, Output, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType, is_false,
+    schematic::RegexSetting,
 };
-use moon_feature_flags::glob_walk_with_options;
 use moon_target::Target;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob::{self, GlobWalkOptions, split_patterns};
@@ -26,10 +25,6 @@ cacheable!(
         // Has the task (and parent project) been expanded
         #[serde(skip_serializing_if = "is_false")]
         pub expanded: bool,
-
-        // Was configured as a local running task
-        #[serde(skip_serializing_if = "is_false")]
-        pub local_only: bool,
 
         // Is task defined in a root-level project
         #[serde(skip_serializing_if = "is_false")]
@@ -121,9 +116,6 @@ cacheable!(
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
         pub output_globs: FxHashMap<WorkspaceRelativePathBuf, TaskGlobOutput>,
 
-        #[deprecated]
-        pub platform: PlatformType,
-
         #[serde(skip_serializing_if = "Option::is_none")]
         pub preset: Option<TaskPreset>,
 
@@ -165,18 +157,18 @@ impl Task {
     }
 
     /// Return a list of project-relative affected files filtered down from
-    /// the provided touched files list.
+    /// the provided changed files list.
     pub fn get_affected_files<S: AsRef<str>>(
         &self,
         workspace_root: &Path,
-        touched_files: &FxHashSet<WorkspaceRelativePathBuf>,
+        changed_files: &FxHashSet<WorkspaceRelativePathBuf>,
         project_source: S,
     ) -> miette::Result<Vec<PathBuf>> {
         let mut files = vec![];
         let globset = self.create_globset()?;
         let project_source = project_source.as_ref();
 
-        for file in touched_files {
+        for file in changed_files {
             // Don't run on files outside of the project
             if file.starts_with(project_source)
                 && (self.input_files.contains_key(file) || globset.matches(file.as_str()))
@@ -236,7 +228,7 @@ impl Task {
         }
 
         if !cached_globs.is_empty() {
-            list.extend(glob_walk_with_options(
+            list.extend(glob::walk_fast_with_options(
                 workspace_root,
                 cached_globs,
                 GlobWalkOptions::default().cache().files(),
@@ -244,7 +236,7 @@ impl Task {
         }
 
         if !non_cached_globs.is_empty() {
-            list.extend(glob_walk_with_options(
+            list.extend(glob::walk_fast_with_options(
                 workspace_root,
                 non_cached_globs,
                 GlobWalkOptions::default().files(),
@@ -269,7 +261,7 @@ impl Task {
         }
 
         if !self.output_globs.is_empty() {
-            list.extend(glob_walk_with_options(
+            list.extend(glob::walk_fast_with_options(
                 workspace_root,
                 self.output_globs.keys(),
                 GlobWalkOptions::default().files(),
@@ -299,11 +291,6 @@ impl Task {
         self.options.interactive
     }
 
-    /// Return true if a local only task.
-    pub fn is_local(&self) -> bool {
-        self.state.local_only
-    }
-
     /// Return true if the task is a "no operation" and does nothing.
     pub fn is_no_op(&self) -> bool {
         (self.command == "nop" || self.command == "noop" || self.command == "no-op")
@@ -312,7 +299,7 @@ impl Task {
 
     /// Return true if the task is a "run" type.
     pub fn is_run_type(&self) -> bool {
-        matches!(self.type_of, TaskType::Run) || self.is_local()
+        matches!(self.type_of, TaskType::Run)
     }
 
     /// Return true of the task will run in the system toolchain.
@@ -350,7 +337,6 @@ impl Task {
 }
 
 impl Default for Task {
-    #[allow(deprecated)]
     fn default() -> Self {
         Self {
             args: vec![],
@@ -367,7 +353,6 @@ impl Default for Task {
             outputs: vec![],
             output_files: FxHashMap::default(),
             output_globs: FxHashMap::default(),
-            platform: PlatformType::default(),
             preset: None,
             script: None,
             state: TaskState::default(),

@@ -8,9 +8,10 @@ use moon_common::{
 };
 use moon_console::{Checkpoint, Console};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
-use moon_process::{Command, Output};
+use moon_process::Output;
+use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
 use moon_time::to_millis;
 use starbase_utils::fs;
@@ -20,8 +21,8 @@ use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, warn};
 
-hash_content!(
-    struct ExecCommandHash<'data> {
+hash_fingerprint!(
+    struct ExecCommandFingerprint<'data> {
         key: &'data str,
 
         command: &'data ExecCommandInput,
@@ -74,9 +75,9 @@ async fn internal_exec_plugin_command(
 ) -> miette::Result<Output> {
     let input = &command.command;
 
-    let mut cmd = Command::new(&input.command);
-    cmd.args(&input.args);
-    cmd.envs(&input.env);
+    let mut cmd = AugmentedCommand::from_input(&app_context, GlobalEnvBag::instance(), input);
+    cmd.inherit_from_plugins(options.project.as_deref(), None)
+        .await?;
 
     if let Some(cwd) = input.cwd.as_ref().and_then(|dir| dir.real_path()) {
         cmd.cwd(cwd);
@@ -84,25 +85,11 @@ async fn internal_exec_plugin_command(
         cmd.cwd(cwd);
     }
 
-    cmd.with_console(app_context.console.clone());
+    cmd.set_console(app_context.console.clone());
     cmd.set_error_on_nonzero(!command.allow_failure);
     cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
-
-    // Must be last!
-    let toolchain_registry = &app_context.toolchain_registry;
-
-    if let Some(project) = &options.project {
-        toolchain_registry
-            .augment_command_for_project(&mut cmd, GlobalEnvBag::instance(), &project.config)
-            .await?;
-    } else {
-        toolchain_registry
-            .augment_command_for_workspace(&mut cmd, GlobalEnvBag::instance())
-            .await?;
-    }
-
     cmd.inherit_colors();
-    cmd.inherit_path()?;
+    cmd.inherit_proto();
 
     if let Some(on_exec) = &options.on_exec {
         on_exec(command, attempts)?;
@@ -125,7 +112,7 @@ async fn internal_exec_plugin_command_as_operation(
 
     let result = match &command.cache {
         Some(key) => {
-            let mut hash_item = ExecCommandHash {
+            let mut fingerprint = ExecCommandFingerprint {
                 key,
                 command: &command.command,
                 input_env: BTreeMap::new(),
@@ -133,7 +120,7 @@ async fn internal_exec_plugin_command_as_operation(
             };
 
             if !command.inputs.is_empty() {
-                gather_cache_inputs(&app_context, &command.inputs, &mut hash_item).await?;
+                gather_cache_inputs(&app_context, &command.inputs, &mut fingerprint).await?;
             }
 
             app_context
@@ -145,7 +132,7 @@ async fn internal_exec_plugin_command_as_operation(
                         options.prefix,
                         encode_component(key).to_lowercase()
                     ),
-                    hash_item,
+                    fingerprint,
                     async move |_| {
                         internal_exec_plugin_command(app_context, command, options, attempts).await
                     },
@@ -271,7 +258,7 @@ pub async fn exec_plugin_commands(
 async fn gather_cache_inputs(
     app_context: &AppContext,
     inputs: &[CacheInput],
-    hash_item: &mut ExecCommandHash<'_>,
+    fingerprint: &mut ExecCommandFingerprint<'_>,
 ) -> miette::Result<()> {
     let mut hash_files = vec![];
     let mut size_files = vec![];
@@ -302,7 +289,7 @@ async fn gather_cache_inputs(
     for input in inputs {
         match input {
             CacheInput::EnvVar(name) => {
-                hash_item.input_env.insert(
+                fingerprint.input_env.insert(
                     name.into(),
                     GlobalEnvBag::instance().get(name).unwrap_or_default(),
                 );
@@ -328,7 +315,7 @@ async fn gather_cache_inputs(
                     let metadata = fs::metadata(&abs_path)?;
 
                     if let Ok(timestamp) = metadata.modified().or_else(|_| metadata.created()) {
-                        hash_item
+                        fingerprint
                             .input_files
                             .insert(rel_path, format!("timestamp:{}", to_millis(timestamp)));
                     }
@@ -341,7 +328,7 @@ async fn gather_cache_inputs(
         let hash_files = hash_files.into_iter().map(|f| f.1).collect::<Vec<_>>();
 
         for (rel_path, hash) in app_context.vcs.get_file_hashes(&hash_files, true).await? {
-            hash_item
+            fingerprint
                 .input_files
                 .insert(rel_path, format!("hash:{hash}"));
         }
@@ -349,7 +336,7 @@ async fn gather_cache_inputs(
 
     if !size_files.is_empty() {
         for (abs_path, rel_path) in size_files {
-            hash_item
+            fingerprint
                 .input_files
                 .insert(rel_path, format!("size:{}", fs::metadata(&abs_path)?.len()));
         }

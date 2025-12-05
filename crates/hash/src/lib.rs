@@ -1,11 +1,9 @@
-mod deps_hash;
 mod hasher;
 
-pub use deps_hash::*;
 pub use hasher::*;
 
 #[macro_export]
-macro_rules! hash_content {
+macro_rules! hash_fingerprint {
     ($impl:item) => {
         #[derive(serde::Serialize)]
         #[serde(default, rename_all = "camelCase")]

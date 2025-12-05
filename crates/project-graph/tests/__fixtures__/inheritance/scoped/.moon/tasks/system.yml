@@ -1,3 +1,6 @@
+inheritedBy:
+  toolchains: 'system'
+
 tasks:
   global-system:
     command: global-system

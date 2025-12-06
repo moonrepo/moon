@@ -75,7 +75,11 @@ impl FileGroup {
     }
 
     /// Add multiple inputs into the input group.
-    pub fn add_many(&mut self, inputs: &[Input], project_source: &str) -> miette::Result<()> {
+    pub fn add_many<'a, I: IntoIterator<Item = &'a Input>>(
+        &mut self,
+        inputs: I,
+        project_source: &str,
+    ) -> miette::Result<()> {
         for input in inputs {
             self.add(input, project_source)?;
         }

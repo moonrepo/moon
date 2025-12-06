@@ -720,7 +720,10 @@ mod project_graph {
                 project.file_groups.get("sources").unwrap(),
                 &FileGroup::new_with_source(
                     "sources",
-                    [WorkspaceRelativePathBuf::from("project/src/**/*")]
+                    [
+                        WorkspaceRelativePathBuf::from("project/sources/**/*"),
+                        WorkspaceRelativePathBuf::from("project/src/**/*")
+                    ]
                 )
                 .unwrap()
             );

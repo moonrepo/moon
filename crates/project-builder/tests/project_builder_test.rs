@@ -122,7 +122,10 @@ mod project_builder {
                         "sources".try_into().unwrap(),
                         FileGroup::new_with_source(
                             "sources",
-                            [WorkspaceRelativePathBuf::from("foo/node")]
+                            [
+                                WorkspaceRelativePathBuf::from("foo/global"),
+                                WorkspaceRelativePathBuf::from("foo/node")
+                            ]
                         )
                         .unwrap()
                     ),
@@ -147,7 +150,7 @@ mod project_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn inherits_from_global_but_local_overrides() {
+        async fn inherits_from_global_and_merges_with_local() {
             let sandbox = create_sandbox("builder");
             let project = build_project("bar", sandbox.path()).await;
 
@@ -175,7 +178,11 @@ mod project_builder {
                         "other".try_into().unwrap(),
                         FileGroup::new_with_source(
                             "other",
-                            [WorkspaceRelativePathBuf::from("bar/bar")]
+                            [
+                                // Inherits global
+                                WorkspaceRelativePathBuf::from("bar/global"),
+                                WorkspaceRelativePathBuf::from("bar/bar")
+                            ]
                         )
                         .unwrap()
                     )

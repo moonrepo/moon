@@ -1,14 +1,14 @@
 #![allow(dead_code)]
 
 use crate::tasks_builder_error::TasksBuilderError;
-use indexmap::IndexSet;
+use indexmap::{IndexMap, IndexSet};
 use moon_common::{
     Id, color,
     path::{WorkspaceRelativePath, is_root_level_source},
 };
 use moon_config::{
-    InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig, ProjectInput,
-    ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
+    ConfigLoader, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
+    ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
     TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig, is_glob_like,
 };
@@ -34,42 +34,46 @@ struct ConfigChain<'proj> {
 fn extract_config<'builder, 'proj>(
     task_id: &'builder Id,
     local_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-    global_tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
+    global_tasks: &'builder FxHashMap<&'proj Id, Vec<&'proj TaskConfig>>,
 ) -> miette::Result<Vec<ConfigChain<'proj>>> {
     let mut stack = vec![];
 
-    let mut extract = |tasks: &'builder FxHashMap<&'proj Id, &'proj TaskConfig>,
-                       inherited: bool|
-     -> miette::Result<()> {
-        if let Some(config) = tasks.get(task_id) {
-            stack.push(ConfigChain { config, inherited });
+    let mut extract = |config: &'proj TaskConfig, inherited: bool| -> miette::Result<()> {
+        if let Some(extend_task_id) = &config.extends {
+            let extended_stack = extract_config(extend_task_id, local_tasks, global_tasks)?;
 
-            if let Some(extend_task_id) = &config.extends {
-                let extended_stack = extract_config(extend_task_id, local_tasks, global_tasks)?;
-
-                if extended_stack.is_empty() {
-                    return Err(TasksBuilderError::UnknownExtendsSource {
-                        source_id: task_id.to_string(),
-                        target_id: extend_task_id.to_string(),
-                    }
-                    .into());
-                } else {
-                    stack.extend(extended_stack);
+            if extended_stack.is_empty() {
+                return Err(TasksBuilderError::UnknownExtendsSource {
+                    source_id: task_id.to_string(),
+                    target_id: extend_task_id.to_string(),
                 }
+                .into());
+            } else {
+                stack.extend(extended_stack);
             }
         }
+
+        stack.push(ConfigChain { config, inherited });
 
         Ok(())
     };
 
-    extract(local_tasks, false)?;
-    extract(global_tasks, true)?;
+    if let Some(configs) = global_tasks.get(task_id) {
+        for config in configs {
+            extract(config, true)?;
+        }
+    }
+
+    if let Some(config) = local_tasks.get(task_id) {
+        extract(config, false)?;
+    }
 
     Ok(stack)
 }
 
 #[derive(Debug)]
 pub struct TasksBuilderContext<'proj> {
+    pub config_loader: &'proj ConfigLoader,
     pub enabled_toolchains: &'proj [Id],
     pub monorepo: bool,
     pub toolchains_config: &'proj ToolchainsConfig,
@@ -93,8 +97,8 @@ pub struct TasksBuilder<'proj> {
 
     // Tasks to merge and build
     task_ids: FxHashSet<&'proj Id>,
-    global_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
-    global_task_options: Option<&'proj TaskOptionsConfig>,
+    global_tasks: FxHashMap<&'proj Id, Vec<&'proj TaskConfig>>,
+    global_task_options: Vec<&'proj TaskOptionsConfig>,
     local_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
     filters: Option<&'proj ProjectWorkspaceInheritedTasksConfig>,
 }
@@ -118,7 +122,7 @@ impl<'proj> TasksBuilder<'proj> {
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
-            global_task_options: None,
+            global_task_options: vec![],
             local_tasks: FxHashMap::default(),
             filters: None,
         }
@@ -127,7 +131,7 @@ impl<'proj> TasksBuilder<'proj> {
     #[instrument(skip_all)]
     pub fn inherit_global_tasks(
         &mut self,
-        global_config: &'proj InheritedTasksConfig,
+        global_configs: &'proj IndexMap<String, InheritedTasksConfig>,
         global_filters: Option<&'proj ProjectWorkspaceInheritedTasksConfig>,
     ) -> &mut Self {
         let mut include_all = true;
@@ -145,76 +149,86 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
-        trace!(
-            project_id = self.project_id.as_str(),
-            task_ids = ?global_config.tasks.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
-            "Filtering global tasks",
-        );
+        if include_set.is_empty() {
+            trace!(
+                project_id = self.project_id.as_str(),
+                "Not inheriting any global tasks, empty include filter",
+            );
+        } else {
+            trace!(
+                project_id = self.project_id.as_str(),
+                "Inheriting and filtering global tasks",
+            );
+        }
 
-        for (task_id, task_config) in &global_config.tasks {
-            let target = Target::new(self.project_id, task_id).unwrap();
+        for global_config in global_configs.values() {
+            for (task_id, task_config) in &global_config.tasks {
+                let target = Target::new(self.project_id, task_id).unwrap();
 
-            // None = Include all
-            // [] = Include none
-            // ["a"] = Include "a"
-            if !include_all {
-                if include_set.is_empty() {
+                // None = Include all
+                // [] = Include none
+                // ["a"] = Include "a"
+                if !include_all {
+                    if include_set.is_empty() {
+                        break;
+                    } else if !include_set.contains(task_id) {
+                        trace!(
+                            task_target = target.as_str(),
+                            "Not inheriting global task {}, not included",
+                            color::id(task_id)
+                        );
+
+                        continue;
+                    }
+                }
+
+                // None, [] = Exclude none
+                // ["a"] = Exclude "a"
+                if !exclude.is_empty() && exclude.contains(&task_id) {
                     trace!(
                         task_target = target.as_str(),
-                        "Not inheriting any global tasks, empty include filter",
-                    );
-
-                    break;
-                } else if !include_set.contains(task_id) {
-                    trace!(
-                        task_target = target.as_str(),
-                        "Not inheriting global task {}, not included",
+                        "Not inheriting global task {}, excluded",
                         color::id(task_id)
                     );
 
                     continue;
                 }
+
+                let task_key = if let Some(renamed_task_id) = rename.get(task_id) {
+                    trace!(
+                        task_target = target.as_str(),
+                        "Inheriting global task {} and renaming to {}",
+                        color::id(task_id),
+                        color::id(renamed_task_id)
+                    );
+
+                    renamed_task_id
+                } else {
+                    trace!(
+                        task_target = target.as_str(),
+                        "Inheriting global task {}",
+                        color::id(task_id),
+                    );
+
+                    task_id
+                };
+
+                self.global_tasks
+                    .entry(task_key)
+                    .or_default()
+                    .push(task_config);
+                self.task_ids.insert(task_key);
             }
 
-            // None, [] = Exclude none
-            // ["a"] = Exclude "a"
-            if !exclude.is_empty() && exclude.contains(&task_id) {
-                trace!(
-                    task_target = target.as_str(),
-                    "Not inheriting global task {}, excluded",
-                    color::id(task_id)
-                );
-
-                continue;
+            if let Some(options) = &global_config.task_options {
+                self.global_task_options.push(options);
             }
 
-            let task_key = if let Some(renamed_task_id) = rename.get(task_id) {
-                trace!(
-                    task_target = target.as_str(),
-                    "Inheriting global task {} and renaming to {}",
-                    color::id(task_id),
-                    color::id(renamed_task_id)
-                );
-
-                renamed_task_id
-            } else {
-                trace!(
-                    task_target = target.as_str(),
-                    "Inheriting global task {}",
-                    color::id(task_id),
-                );
-
-                task_id
-            };
-
-            self.global_tasks.insert(task_key, task_config);
-            self.task_ids.insert(task_key);
+            self.implicit_deps.extend(&global_config.implicit_deps);
+            self.implicit_inputs.extend(&global_config.implicit_inputs);
         }
 
         self.filters = global_filters;
-        self.global_task_options = global_config.task_options.as_ref();
-        self.implicit_deps.extend(&global_config.implicit_deps);
-        self.implicit_inputs.extend(&global_config.implicit_inputs);
         self
     }
 
@@ -551,11 +565,7 @@ impl<'proj> TasksBuilder<'proj> {
         preset: Option<TaskPreset>,
     ) -> miette::Result<TaskOptions> {
         let mut options = self.get_task_options_from_preset(preset);
-        let mut chain = vec![];
-
-        if let Some(default_options) = self.global_task_options {
-            chain.push(default_options);
-        }
+        let mut chain = self.global_task_options.clone();
 
         chain.extend(
             self.get_config_inherit_chain(id)?
@@ -813,7 +823,13 @@ impl<'proj> TasksBuilder<'proj> {
             .map(|dep| (*dep).to_owned())
             .collect::<Vec<_>>();
 
-        global_inputs.push(Input::parse("/.moon/*.{pkl,yml}").unwrap());
+        global_inputs.push(
+            Input::parse(format!(
+                "/.moon/*.{}",
+                self.context.config_loader.get_ext_glob()
+            ))
+            .unwrap(),
+        );
 
         if let Some(env_files) = &options.env_files {
             global_inputs.extend(env_files.to_owned());
@@ -882,8 +898,7 @@ impl<'proj> TasksBuilder<'proj> {
     }
 
     fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain<'_>>> {
-        let mut stack = extract_config(id, &self.local_tasks, &self.global_tasks)?;
-        stack.reverse();
+        let stack = extract_config(id, &self.local_tasks, &self.global_tasks)?;
 
         Ok(stack)
     }

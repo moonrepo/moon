@@ -39,7 +39,7 @@ impl InheritedTasksManager {
         Ok(())
     }
 
-    pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<InheritedTasksResult> {
+    pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<InheritedTasks> {
         let mut partial_config = PartialInheritedTasksConfig::default();
         let mut configs = IndexMap::default();
         let mut layers = IndexMap::default();
@@ -102,7 +102,7 @@ impl InheritedTasksManager {
                 _ => error,
             })?;
 
-        let result = InheritedTasksResult {
+        let result = InheritedTasks {
             configs,
             config: InheritedTasksConfig::from_partial(full_config),
             layers,

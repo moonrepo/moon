@@ -725,9 +725,11 @@ impl<'app> WorkspaceBuilder<'app> {
         self.extend_project_build_data().await?;
 
         // Include all workspace-level config files
+        let ext_glob = context.config_loader.get_ext_glob();
+
         for file in glob::walk_fast_with_options(
             &context.config_loader.dir,
-            ["*.{pkl,yml}", "tasks/**/*.{pkl,yml}"],
+            [&format!("*.{ext_glob}"), &format!("tasks/**/*.{ext_glob}")],
             GlobWalkOptions::default().cache().log_results(),
         )? {
             self.config_paths

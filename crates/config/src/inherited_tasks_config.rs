@@ -318,7 +318,7 @@ config_struct!(
 
 cacheable!(
     #[derive(Clone, Debug, Default)]
-    pub struct InheritedTasksResult {
+    pub struct InheritedTasks {
         pub order: Vec<String>,
         #[deprecated]
         pub config: InheritedTasksConfig,

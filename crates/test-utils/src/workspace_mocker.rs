@@ -283,6 +283,7 @@ impl WorkspaceMocker {
             &project.source,
             &project.toolchains,
             TasksBuilderContext {
+                config_loader: &self.config_loader,
                 enabled_toolchains: &enabled_toolchains,
                 monorepo: self.monorepo,
                 toolchains_config: &self.toolchains_config,
@@ -311,7 +312,7 @@ impl WorkspaceMocker {
             .unwrap();
 
         builder.inherit_global_tasks(
-            &global_config.config,
+            &global_config.configs,
             Some(&project.config.workspace.inherited_tasks),
         );
 

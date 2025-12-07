@@ -1,6 +1,6 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
-    ConfigLoader, DependencySource, InheritFor, InheritedTasksManager, InheritedTasksResult,
+    ConfigLoader, DependencySource, InheritFor, InheritedTasks, InheritedTasksManager,
     LanguageType, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig,
     ToolchainsConfig,
 };
@@ -30,7 +30,7 @@ pub struct ProjectBuilder<'app> {
     context: ProjectBuilderContext<'app>,
 
     // Configs to derive information from
-    global_configs: Option<InheritedTasksResult>,
+    global_configs: Option<InheritedTasks>,
     local_config: Option<ProjectConfig>,
 
     // Values to be continually built
@@ -387,6 +387,7 @@ impl<'app> ProjectBuilder<'app> {
             self.source,
             &self.toolchains,
             TasksBuilderContext {
+                config_loader: self.context.config_loader,
                 enabled_toolchains: &self.enabled_toolchains,
                 monorepo: self.context.monorepo,
                 toolchains_config: self.context.toolchains_config,
@@ -395,9 +396,9 @@ impl<'app> ProjectBuilder<'app> {
             },
         );
 
-        if let Some(global_config) = &self.global_configs {
+        if let Some(global_configs) = &self.global_configs {
             tasks_builder.inherit_global_tasks(
-                &global_config.config,
+                &global_configs.configs,
                 self.local_config
                     .as_ref()
                     .map(|cfg| &cfg.workspace.inherited_tasks),

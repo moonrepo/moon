@@ -770,7 +770,9 @@ mod project_graph {
                 task.input_globs,
                 FxHashMap::from_iter([
                     (
-                        WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
+                        WorkspaceRelativePathBuf::from(
+                            ".moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        ),
                         TaskGlobInput::default()
                     ),
                     (
@@ -845,7 +847,9 @@ mod project_graph {
                 task.input_globs,
                 FxHashMap::from_iter([
                     (
-                        WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
+                        WorkspaceRelativePathBuf::from(
+                            ".moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        ),
                         TaskGlobInput::default()
                     ),
                     (

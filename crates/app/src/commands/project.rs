@@ -218,7 +218,7 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                             no_children: inherited.layers.is_empty()
                         ) {
                             List {
-                                #(inherited.layers.keys().map(|layer| {
+                                #(inherited.layers.iter().map(|layer| {
                                     element! {
                                         ListItem {
                                             StyledText(

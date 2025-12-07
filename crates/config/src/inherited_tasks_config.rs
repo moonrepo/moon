@@ -70,7 +70,7 @@ config_struct!(
     }
 );
 
-impl PartialInheritedClauseConfig {
+impl InheritedClauseConfig {
     pub fn matches(&self, values: &[Id]) -> bool {
         if values.is_empty() || self.not.is_none() && self.and.is_none() && self.or.is_none() {
             return false;
@@ -116,7 +116,7 @@ config_struct!(
     }
 );
 
-impl PartialInheritedConditionConfig {
+impl InheritedConditionConfig {
     pub fn matches(&self, values: &[Id]) -> bool {
         match self {
             Self::Clause(inner) => inner.matches(values),
@@ -167,11 +167,11 @@ config_struct!(
     }
 );
 
-impl PartialInheritedByConfig {
+impl InheritedByConfig {
     pub fn default_toolchain(&self) -> Option<Id> {
         self.toolchains.as_ref().and_then(|entry| match entry {
-            PartialInheritedConditionConfig::One(id) => Some(id.to_owned()),
-            PartialInheritedConditionConfig::Many(ids) => {
+            InheritedConditionConfig::One(id) => Some(id.to_owned()),
+            InheritedConditionConfig::Many(ids) => {
                 if ids.len() == 1 {
                     Some(ids[0].to_owned())
                 } else {
@@ -319,12 +319,8 @@ config_struct!(
 cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasks {
-        pub order: Vec<String>,
-        #[deprecated]
-        pub config: InheritedTasksConfig,
         pub configs: IndexMap<String, InheritedTasksConfig>,
-        #[deprecated]
-        pub layers: IndexMap<String, PartialInheritedTasksConfig>,
+        pub layers: Vec<String>,
         pub task_layers: FxHashMap<String, Vec<String>>,
     }
 );

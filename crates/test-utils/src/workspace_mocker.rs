@@ -3,7 +3,6 @@ use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
-use moon_config::schematic::Config;
 use moon_config::*;
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
@@ -202,18 +201,12 @@ impl WorkspaceMocker {
     }
 
     pub fn with_inherited_tasks(mut self) -> Self {
-        let partial = PartialInheritedTasksConfig {
-            tasks: Some(BTreeMap::from_iter([(
-                "global".try_into().unwrap(),
-                PartialTaskConfig::default(),
-            )])),
-            ..Default::default()
-        };
-
         self.inherited_tasks.configs.push(InheritedTasksEntry {
             input: ".moon/tasks/all.yml".into(),
-            config: InheritedTasksConfig::from_partial(partial.clone()),
-            partial_config: partial,
+            config: InheritedTasksConfig {
+                tasks: BTreeMap::from_iter([("global".try_into().unwrap(), TaskConfig::default())]),
+                ..Default::default()
+            },
         });
 
         self

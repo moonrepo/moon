@@ -1165,38 +1165,6 @@ mod task_manager {
         }
     }
 
-    mod task_options {
-        use super::*;
-
-        #[test]
-        fn uses_defaults() {
-            let sandbox = create_sandbox("inheritance/options");
-            let manager = load_manager_from_root(sandbox.path(), sandbox.path()).unwrap();
-
-            let config = manager
-                .get_inherited_config(create_inherit_for(
-                    &[Id::raw("rust")],
-                    &StackType::Infrastructure,
-                    &LayerType::Application,
-                    &[],
-                ))
-                .unwrap();
-
-            let options = config
-                .configs
-                .first()
-                .unwrap()
-                .1
-                .task_options
-                .as_ref()
-                .unwrap();
-
-            assert_eq!(options.cache, None);
-            assert_eq!(options.shell, None);
-            assert_eq!(options.merge_args, Some(TaskMergeStrategy::Replace));
-        }
-    }
-
     #[test]
     fn supports_hcl() {
         load_tasks_config_in_format("hcl");

@@ -1,8 +1,0 @@
-inheritedBy:
-  toolchains: 'dotnet'
-  layers: 'application'
-
-tasks:
-  command:
-    command: 'dotnet-application'
-    inputs: ['c']

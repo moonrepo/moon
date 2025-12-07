@@ -34,8 +34,7 @@ impl InheritedTasksManager {
 
     pub fn get_inherited_config(&self, input: InheritFor) -> miette::Result<InheritedTasks> {
         let mut configs = IndexMap::default();
-        let mut task_layers = FxHashMap::<String, Vec<String>>::default();
-        let mut layers = vec![];
+        let mut layers = FxHashMap::<String, Vec<String>>::default();
 
         for config_entry in self.match_inherited_configs_in_order(input) {
             let source_path = standardize_separators(config_entry.input.as_str());
@@ -59,21 +58,16 @@ impl InheritedTasksManager {
                 }
 
                 // Keep track of what layers a task inherited
-                task_layers
+                layers
                     .entry(task_id.to_string())
                     .or_default()
                     .push(source_path.clone());
             }
 
-            configs.insert(source_path.clone(), config);
-            layers.push(source_path);
+            configs.insert(source_path, config);
         }
 
-        Ok(InheritedTasks {
-            configs,
-            layers,
-            task_layers,
-        })
+        Ok(InheritedTasks { configs, layers })
     }
 
     pub fn match_inherited_configs_in_order(&self, input: InheritFor) -> Vec<&InheritedTasksEntry> {

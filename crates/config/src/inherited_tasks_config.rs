@@ -319,8 +319,10 @@ config_struct!(
 cacheable!(
     #[derive(Clone, Debug, Default)]
     pub struct InheritedTasks {
+        // Inherited configs in order
         pub configs: IndexMap<String, InheritedTasksConfig>,
-        pub layers: Vec<String>,
-        pub task_layers: FxHashMap<String, Vec<String>>,
+
+        // What was inherited for eash task
+        pub layers: FxHashMap<String, Vec<String>>,
     }
 );

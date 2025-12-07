@@ -104,7 +104,7 @@ impl<'app> ProjectBuilder<'app> {
 
         trace!(
             project_id = self.id.as_str(),
-            lookup = ?global_configs.layers,
+            lookup = ?global_configs.configs.keys(),
             "Inheriting global file groups and tasks",
         );
 

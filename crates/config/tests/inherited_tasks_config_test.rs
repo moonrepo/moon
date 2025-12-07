@@ -1037,7 +1037,7 @@ mod task_manager {
                 .unwrap();
 
             assert_eq!(
-                config.layers,
+                config.configs.keys().collect::<Vec<_>>(),
                 vec![
                     "tasks/all.yml",
                     "tasks/javascript.yml",
@@ -1062,7 +1062,7 @@ mod task_manager {
                 .unwrap();
 
             assert_eq!(
-                config.layers,
+                config.configs.keys().collect::<Vec<_>>(),
                 vec!["tasks/all.yml", "tasks/bun.yml", "tasks/javascript.yml"]
             );
         }
@@ -1082,7 +1082,7 @@ mod task_manager {
                 .unwrap();
 
             assert_eq!(
-                config.layers,
+                config.configs.keys().collect::<Vec<_>>(),
                 vec!["tasks/all.yml", "tasks/node.yml", "tasks/typescript.yml"]
             );
         }
@@ -1101,7 +1101,10 @@ mod task_manager {
                 ))
                 .unwrap();
 
-            assert_eq!(config.layers, vec!["tasks/all.yml", "tasks/python.yml"]);
+            assert_eq!(
+                config.configs.keys().collect::<Vec<_>>(),
+                vec!["tasks/all.yml", "tasks/python.yml"]
+            );
         }
 
         #[test]
@@ -1118,7 +1121,10 @@ mod task_manager {
                 ))
                 .unwrap();
 
-            assert_eq!(config.layers, vec!["tasks/all.yml", "tasks/rust.yml"]);
+            assert_eq!(
+                config.configs.keys().collect::<Vec<_>>(),
+                vec!["tasks/all.yml", "tasks/rust.yml"]
+            );
         }
 
         #[test]
@@ -1136,7 +1142,7 @@ mod task_manager {
                 .unwrap();
 
             assert_eq!(
-                config.layers,
+                config.configs.keys().collect::<Vec<_>>(),
                 vec![
                     "tasks/all.yml",
                     "tasks/node.yml",
@@ -1161,7 +1167,10 @@ mod task_manager {
                 ))
                 .unwrap();
 
-            assert_eq!(config.layers, vec!["tasks/all.yml", "tasks/kotlin.yml"]);
+            assert_eq!(
+                config.configs.keys().collect::<Vec<_>>(),
+                vec!["tasks/all.yml", "tasks/kotlin.yml"]
+            );
         }
     }
 

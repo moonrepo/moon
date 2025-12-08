@@ -1,7 +1,0 @@
-inheritedBy:
-  toolchains: 'node'
-
-tasks:
-  command:
-    command: 'dotnet'
-    inputs: ['b']

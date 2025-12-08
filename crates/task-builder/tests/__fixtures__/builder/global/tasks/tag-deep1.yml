@@ -1,0 +1,12 @@
+inheritedBy:
+  tags: ['deep1']
+
+fileGroups:
+  sources:
+    - 'one/**/*'
+
+tasks:
+  build:
+    command: 'build --one'
+    options:
+      mutex: 'lock'

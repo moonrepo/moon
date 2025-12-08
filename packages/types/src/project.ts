@@ -7,8 +7,7 @@ import type {
 	ProjectDependencyConfig,
 	StackType,
 } from './project-config';
-import type { Task } from './task';
-import type { InheritedTasksConfig, PartialInheritedTasksConfig } from './tasks-config';
+import type { InheritedTasks, Task } from './task';
 
 export interface FileGroup {
 	env: string[];
@@ -28,12 +27,7 @@ export interface Project {
 	dependencies?: ProjectDependencyConfig[];
 	fileGroups?: Record<string, FileGroup>;
 	id: Id;
-	inherited?: {
-		order: string[];
-		config: InheritedTasksConfig;
-		layers: Record<string, PartialInheritedTasksConfig>;
-		taskLayers: Record<string, string[]>;
-	} | null;
+	inherited?: InheritedTasks | null;
 	language: LanguageType;
 	layer: LayerType;
 	root: string;

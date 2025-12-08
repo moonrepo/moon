@@ -720,7 +720,10 @@ mod project_graph {
                 project.file_groups.get("sources").unwrap(),
                 &FileGroup::new_with_source(
                     "sources",
-                    [WorkspaceRelativePathBuf::from("project/src/**/*")]
+                    [
+                        WorkspaceRelativePathBuf::from("project/sources/**/*"),
+                        WorkspaceRelativePathBuf::from("project/src/**/*")
+                    ]
                 )
                 .unwrap()
             );
@@ -767,7 +770,9 @@ mod project_graph {
                 task.input_globs,
                 FxHashMap::from_iter([
                     (
-                        WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
+                        WorkspaceRelativePathBuf::from(
+                            ".moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        ),
                         TaskGlobInput::default()
                     ),
                     (
@@ -842,7 +847,9 @@ mod project_graph {
                 task.input_globs,
                 FxHashMap::from_iter([
                     (
-                        WorkspaceRelativePathBuf::from(".moon/*.{pkl,yml}"),
+                        WorkspaceRelativePathBuf::from(
+                            ".moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                        ),
                         TaskGlobInput::default()
                     ),
                     (

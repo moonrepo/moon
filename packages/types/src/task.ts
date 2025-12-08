@@ -1,5 +1,6 @@
 import type { GraphContainer, Id } from './common';
 import type {
+	InheritedTasksConfig,
 	Input,
 	Output,
 	TaskDependencyConfig,
@@ -13,6 +14,11 @@ import type {
 	TaskUnixShell,
 	TaskWindowsShell,
 } from './tasks-config';
+
+export interface InheritedTasks {
+	configs: Record<string, InheritedTasksConfig>;
+	layers: Record<string, string[]>;
+}
 
 export interface TaskOptions {
 	affectedFiles?: boolean | 'args' | 'env' | null;

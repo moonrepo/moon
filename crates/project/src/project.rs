@@ -4,7 +4,7 @@ use moon_common::{
     path::{WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    DependencyScope, InheritedTasksResult, LanguageType, LayerType, ProjectConfig,
+    DependencyScope, InheritedTasks, LanguageType, LayerType, ProjectConfig,
     ProjectDependencyConfig, StackType,
 };
 use moon_file_group::FileGroup;
@@ -51,7 +51,7 @@ cacheable!(
 
         /// Task configuration that was inherited from ".moon/tasks".
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub inherited: Option<InheritedTasksResult>,
+        pub inherited: Option<InheritedTasks>,
 
         /// Primary programming language of the project.
         pub language: LanguageType,

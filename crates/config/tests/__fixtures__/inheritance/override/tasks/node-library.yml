@@ -1,8 +1,0 @@
-inheritedBy:
-  toolchains: 'node'
-  layers: 'library'
-
-tasks:
-  command:
-    command: 'node-library'
-    inputs: ['c']

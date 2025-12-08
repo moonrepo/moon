@@ -303,7 +303,7 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
             Section(title: "Configuration") {
                 #(project.inherited
                     .as_ref()
-                    .and_then(|inherited| inherited.task_layers.get(task.id.as_str()))
+                    .and_then(|inherited| inherited.layers.get(task.id.as_str()))
                     .map(|layers| {
                     element! {
                         Entry(

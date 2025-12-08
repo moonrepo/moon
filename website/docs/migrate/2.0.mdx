@@ -264,6 +264,72 @@ tasks:
       shell: false
 ```
 
+## Task inheritance
+
+### Deep merged instead of shallow merged
+
+In v1, when inheriting tasks, all global configs (those in `.moon`) were _shallow merged_ into a
+single config ignoring merge task options, and _then_ merged with the local config (`moon.*`) using
+merge task options. This was not intuitive, as users expected all configs to be merged in sequence.
+To demonstrate this, take the following example configs, in order of inherited:
+
+```yaml
+# .moon/tasks.yml
+tasks:
+  build:
+    command: 'build --cache'
+    options:
+      mutex: 'build'
+
+# .moon/tasks/tag-a.yml
+tasks:
+  build:
+    args: '--force'
+
+# .moon/tasks/tag-b.yml
+tasks:
+  build:
+    args: '--clean'
+```
+
+Users would expect the final `build` task to be `build --cache --force --clean` with the mutex
+option set. However, since the `tasks` setting was shallow merged, only the last config (`tag-b`)
+would be used, resulting in the task being `noop --clean` without the mutex. The `noop` pops up
+because the `command` setting was not configured in the last config.
+
+To remedy this, and to improve task composition overall, global configs are no longer shallow merged
+into a single config before merging with the local config. Instead, all configs are merged in
+sequence, while respecting the task merge options. This is the order of operations for the new
+system:
+
+- Load all global configs (`.moon`) into a list, in order, based on the `inheritedBy` setting.
+- Load the local config (`moon.*`).
+- Create an inheritance chain by resolving global configs first, then the local config last, while
+  respecting `extend` and other composition settings.
+- Merge all task options in order, to create the final task options.
+- Merge all tasks in order, using the final task options to guide the merging behavior.
+
+### File groups are merged
+
+Because of the new deep merging behavior, file groups defined in inherited configs are now merged
+together, instead of being replaced by the following config in the sequence. For example, given the
+configs:
+
+```yaml
+# .moon/tasks/tag-a.yml
+fileGroups:
+  sources:
+    - 'src/**'
+
+# .moon/tasks/tag-b.yml
+fileGroups:
+  sources:
+    - 'docs/**'
+```
+
+In v1, the final `sources` file group would only include `docs/**`, as the second config would
+replace the first. In v2, the final `sources` file group includes both `src/**` and `docs/**`.
+
 ## VCS
 
 ### New hooks system

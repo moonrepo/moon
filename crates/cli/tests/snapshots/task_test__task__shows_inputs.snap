@@ -21,6 +21,6 @@ Process ────────────────────────
 Configuration ──────────────────────────────────────────────
 
   Inputs:
-    - .moon/*.{pkl,yml}
+    - .moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}
     - tasks/tests/**/*
   Outputs: —

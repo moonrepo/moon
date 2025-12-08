@@ -226,7 +226,7 @@ pub fn load_tasks_config_in_format(format: &str) {
 
     let config = test_config(locate_fixture(format), |path| {
         ConfigLoader::new(path.join(".moon"))
-            .load_tasks_config_from_path(path.join(format!(".moon/tasks.{format}")))
+            .load_tasks_config_from_path(path, path.join(format!(".moon/tasks.{format}")))
     });
 
     assert_eq!(

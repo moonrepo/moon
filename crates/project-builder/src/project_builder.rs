@@ -1,6 +1,6 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
-    ConfigLoader, DependencySource, InheritFor, InheritedTasksManager, InheritedTasksResult,
+    ConfigLoader, DependencySource, InheritFor, InheritedTasks, InheritedTasksManager,
     LanguageType, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig,
     ToolchainsConfig,
 };
@@ -30,7 +30,7 @@ pub struct ProjectBuilder<'app> {
     context: ProjectBuilderContext<'app>,
 
     // Configs to derive information from
-    global_config: Option<InheritedTasksResult>,
+    global_configs: Option<InheritedTasks>,
     local_config: Option<ProjectConfig>,
 
     // Values to be continually built
@@ -74,7 +74,7 @@ impl<'app> ProjectBuilder<'app> {
             id,
             source,
             aliases: vec![],
-            global_config: None,
+            global_configs: None,
             local_config: None,
             language: LanguageType::Unknown,
             toolchains: vec![],
@@ -84,7 +84,7 @@ impl<'app> ProjectBuilder<'app> {
 
     /// Inherit tasks, file groups, and more from global `.moon/tasks` configs.
     #[instrument(skip_all)]
-    pub fn inherit_global_config(
+    pub fn inherit_global_configs(
         &mut self,
         tasks_manager: &InheritedTasksManager,
     ) -> miette::Result<&mut Self> {
@@ -93,7 +93,7 @@ impl<'app> ProjectBuilder<'app> {
             .as_ref()
             .expect("Local config must be loaded before global config!");
 
-        let global_config = tasks_manager.get_inherited_config(InheritFor {
+        let global_configs = tasks_manager.get_inherited_config(InheritFor {
             language: Some(&local_config.language),
             layer: Some(&local_config.layer),
             root: Some(&self.root),
@@ -104,11 +104,11 @@ impl<'app> ProjectBuilder<'app> {
 
         trace!(
             project_id = self.id.as_str(),
-            lookup = ?global_config.order,
+            lookup = ?global_configs.configs.keys(),
             "Inheriting global file groups and tasks",
         );
 
-        self.global_config = Some(global_config);
+        self.global_configs = Some(global_configs);
 
         Ok(self)
     }
@@ -268,7 +268,7 @@ impl<'app> ProjectBuilder<'app> {
             ..Project::default()
         };
 
-        project.inherited = self.global_config.take();
+        project.inherited = self.global_configs.take();
 
         let config = self.local_config.take().unwrap_or_default();
 
@@ -325,16 +325,24 @@ impl<'app> ProjectBuilder<'app> {
         trace!(project_id = self.id.as_str(), "Building file groups");
 
         // Inherit global first
-        if let Some(global) = &self.global_config {
+        if let Some(global) = &self.global_configs {
+            let mut group_names = FxHashSet::default();
+
+            for config in global.configs.values() {
+                for (id, inputs) in &config.file_groups {
+                    group_names.insert(id.as_str());
+                    file_inputs
+                        .entry(id.to_owned())
+                        .or_insert(vec![])
+                        .extend(inputs);
+                }
+            }
+
             trace!(
                 project_id = self.id.as_str(),
-                groups = ?global.config.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
+                groups = ?group_names.into_iter().collect::<Vec<_>>(),
                 "Inheriting global file groups",
             );
-
-            for (id, inputs) in &global.config.file_groups {
-                file_inputs.insert(id, inputs);
-            }
         }
 
         // Override with local second
@@ -346,7 +354,10 @@ impl<'app> ProjectBuilder<'app> {
             );
 
             for (id, inputs) in &local.file_groups {
-                file_inputs.insert(id, inputs);
+                file_inputs
+                    .entry(id.to_owned())
+                    .or_insert(vec![])
+                    .extend(inputs);
             }
         }
 
@@ -354,10 +365,10 @@ impl<'app> ProjectBuilder<'app> {
         let mut file_groups = BTreeMap::default();
 
         for (id, inputs) in file_inputs {
-            let mut group = FileGroup::new(id)?;
+            let mut group = FileGroup::new(&id)?;
             group.add_many(inputs, project_source.as_str())?;
 
-            file_groups.insert(id.to_owned(), group);
+            file_groups.insert(id, group);
         }
 
         Ok(file_groups)
@@ -376,6 +387,7 @@ impl<'app> ProjectBuilder<'app> {
             self.source,
             &self.toolchains,
             TasksBuilderContext {
+                config_loader: self.context.config_loader,
                 enabled_toolchains: &self.enabled_toolchains,
                 monorepo: self.context.monorepo,
                 toolchains_config: self.context.toolchains_config,
@@ -384,9 +396,9 @@ impl<'app> ProjectBuilder<'app> {
             },
         );
 
-        if let Some(global_config) = &self.global_config {
+        if let Some(global_configs) = &self.global_configs {
             tasks_builder.inherit_global_tasks(
-                &global_config.config,
+                &global_configs.configs,
                 self.local_config
                     .as_ref()
                     .map(|cfg| &cfg.workspace.inherited_tasks),

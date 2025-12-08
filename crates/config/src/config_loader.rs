@@ -2,7 +2,7 @@ use crate::config_cache::ConfigCache;
 use crate::config_finder::ConfigFinder;
 use crate::extensions_config::ExtensionsConfig;
 use crate::formats::hcl::HclFormat;
-use crate::inherited_tasks_config::{InheritedTasksConfig, PartialInheritedTasksConfig};
+use crate::inherited_tasks_config::InheritedTasksConfig;
 use crate::inherited_tasks_manager::InheritedTasksManager;
 use crate::project_config::{PartialProjectConfig, ProjectConfig};
 use crate::template_config::TemplateConfig;
@@ -192,28 +192,16 @@ impl ConfigLoader {
         Ok(result.config)
     }
 
-    #[cfg(debug_assertions)]
-    pub fn load_tasks_config_from_path<P: AsRef<Path>>(
-        &self,
-        path: P,
-    ) -> miette::Result<InheritedTasksConfig> {
-        let result = Loader::<InheritedTasksConfig>::new()
-            .add_format(HclFormat::default())
-            .file_optional(path.as_ref())?
-            .load()?;
-
-        Ok(result.config)
-    }
-
-    pub fn load_tasks_partial_config_from_path<T: AsRef<Path>, P: AsRef<Path>>(
+    pub fn load_tasks_config_from_path<T: AsRef<Path>, P: AsRef<Path>>(
         &self,
         workspace_root: T,
         path: P,
-    ) -> miette::Result<PartialInheritedTasksConfig> {
-        Ok(self
-            .create_tasks_loader(workspace_root)?
-            .file_optional(path.as_ref())?
-            .load_partial(&())?)
+    ) -> miette::Result<InheritedTasksConfig> {
+        let mut loader = self.create_tasks_loader(workspace_root)?;
+
+        self.prepare_loader(&mut loader, vec![path.as_ref().to_path_buf()])?;
+
+        Ok(loader.load()?.config)
     }
 
     pub fn load_tasks_manager<P: AsRef<Path>>(
@@ -238,7 +226,7 @@ impl ConfigLoader {
                 manager.add_config(
                     workspace_root,
                     &file,
-                    self.load_tasks_partial_config_from_path(workspace_root, &file)?,
+                    self.load_tasks_config_from_path(workspace_root, &file)?,
                 )?;
             }
         }

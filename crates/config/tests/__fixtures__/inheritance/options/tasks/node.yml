@@ -1,6 +1,0 @@
-inheritedBy:
-  toolchains: 'node'
-
-taskOptions:
-  mergeArgs: append
-  shell: true

@@ -1,0 +1,12 @@
+inheritedBy:
+  tags: ['deep3']
+
+fileGroups:
+  sources:
+    - 'three/**/*'
+
+tasks:
+  build:
+    args: ['--three']
+    options:
+      cacheLifetime: '7 days'

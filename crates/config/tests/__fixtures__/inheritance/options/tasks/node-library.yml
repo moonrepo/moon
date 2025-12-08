@@ -1,7 +1,0 @@
-inheritedBy:
-  toolchains: 'node'
-  layers: 'library'
-
-taskOptions:
-  mergeArgs: prepend
-  cache: false

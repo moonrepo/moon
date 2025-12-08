@@ -2,7 +2,7 @@ use moon_action::{
     Action, ActionNode, ActionPipelineStatus, ActionStatus, Operation, OperationList,
 };
 use moon_common::{color, is_test_env};
-use moon_config::TaskOutputStyle;
+use moon_config::{TaskOutputStyle, TaskType};
 use moon_target::Target;
 use moon_time as time;
 use starbase_console::{ConsoleStream, ConsoleStreamType, Reporter};
@@ -25,6 +25,7 @@ pub struct TaskReportItem {
     pub output_prefix: Option<String>,
     pub output_streamed: bool,
     pub output_style: Option<TaskOutputStyle>,
+    pub task_type: TaskType,
 }
 
 const STEP_CHAR: &str = "▪";
@@ -107,9 +108,25 @@ impl MoonReporter {
         hash[0..8].to_owned()
     }
 
-    pub fn format_checkpoint<M: AsRef<str>, C: AsRef<[String]>>(
+    fn format_block(&self, label: &str, bg: u8) -> String {
+        let body = format!(" {:>6} ", label.to_uppercase());
+
+        if no_color() {
+            body
+        } else {
+            OwoStyle::new()
+                .style(body)
+                .bold()
+                .color(XtermColors::from(Color::Black as u8))
+                .on_color(XtermColors::from(bg))
+                .to_string()
+        }
+    }
+
+    pub fn format_checkpoint<L: AsRef<str>, M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
+        label: L,
         message: M,
         comments: C,
     ) -> String {
@@ -122,13 +139,19 @@ impl MoonReporter {
             Checkpoint::Setup => SETUP_COLORS,
         };
 
+        // let mut out = format!(
+        //     "{}{}{}{} {}",
+        //     color::paint(colors[0], STEP_CHAR),
+        //     color::paint(colors[1], STEP_CHAR),
+        //     color::paint(colors[2], STEP_CHAR),
+        //     color::paint(colors[3], STEP_CHAR),
+        //     bold(message.as_ref()),
+        // );
+
         let mut out = format!(
-            "{}{}{}{} {}",
-            color::paint(colors[0], STEP_CHAR),
-            color::paint(colors[1], STEP_CHAR),
-            color::paint(colors[2], STEP_CHAR),
-            color::paint(colors[3], STEP_CHAR),
-            bold(message.as_ref()),
+            "{} {}",
+            self.format_block(label.as_ref(), colors[3]),
+            bold(message.as_ref())
         );
 
         let suffix = self.format_comments(comments);
@@ -155,23 +178,25 @@ impl MoonReporter {
         color::muted_light(format!("{}:", key.as_ref()))
     }
 
-    pub fn print_checkpoint<M: AsRef<str>>(
+    pub fn print_checkpoint<L: AsRef<str>, M: AsRef<str>>(
         &self,
         checkpoint: Checkpoint,
+        label: L,
         message: M,
     ) -> miette::Result<()> {
-        self.print_checkpoint_with_comments(checkpoint, message, &[])
+        self.print_checkpoint_with_comments(checkpoint, label, message, &[])
     }
 
-    pub fn print_checkpoint_with_comments<M: AsRef<str>, C: AsRef<[String]>>(
+    pub fn print_checkpoint_with_comments<L: AsRef<str>, M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
+        label: L,
         message: M,
         comments: C,
     ) -> miette::Result<()> {
         if !self.out.is_quiet() {
             self.out
-                .write_line(self.format_checkpoint(checkpoint, message, comments))?;
+                .write_line(self.format_checkpoint(checkpoint, label, message, comments))?;
         }
 
         Ok(())
@@ -189,19 +214,9 @@ impl MoonReporter {
     }
 
     pub fn print_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
-        let header = format!(" {} ", message.as_ref().to_uppercase());
-
         self.out.write_newline()?;
-        self.out.write_line(if no_color() {
-            header
-        } else {
-            OwoStyle::new()
-                .style(header)
-                .bold()
-                .color(XtermColors::from(Color::Black as u8))
-                .on_color(XtermColors::from(Color::Purple as u8))
-                .to_string()
-        })?;
+        self.out
+            .write_line(self.format_block(message.as_ref(), Color::Purple as u8))?;
         self.out.write_newline()?;
 
         Ok(())
@@ -257,6 +272,11 @@ impl MoonReporter {
                 Checkpoint::RunPassed
             } else {
                 Checkpoint::RunStarted
+            },
+            match item.task_type {
+                TaskType::Build => "build",
+                TaskType::Run => "run",
+                TaskType::Test => "test",
             },
             target,
             comments,
@@ -329,6 +349,7 @@ impl MoonReporter {
 
             self.print_checkpoint(
                 Checkpoint::RunFailed,
+                "failed",
                 match &*action.node {
                     ActionNode::RunTask(inner) => inner.target.as_str(),
                     _ => &action.label,
@@ -563,6 +584,7 @@ impl MoonReporter {
     pub fn on_task_running(&self, target: &Target, secs: u32) -> miette::Result<()> {
         self.print_checkpoint_with_comments(
             Checkpoint::RunStarted,
+            "status",
             target,
             [format!("running for {secs}s")],
         )?;

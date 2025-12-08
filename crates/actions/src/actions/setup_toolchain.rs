@@ -101,6 +101,7 @@ pub async fn setup_toolchain_plugin(
             || {
                 app_context.console.print_checkpoint(
                     Checkpoint::Setup,
+                    "setup",
                     format!("installing {}", node.toolchain.label()),
                 )
             },

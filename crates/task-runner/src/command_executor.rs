@@ -1,7 +1,7 @@
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList};
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
-use moon_common::{is_ci, is_test_env};
+use moon_common::is_ci_env;
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
 use moon_process::{Command, CommandLine, Output, args::join_args};
@@ -12,10 +12,6 @@ use tokio::task::{self, JoinHandle};
 use tokio::time::{sleep, timeout};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument};
-
-fn is_ci_env() -> bool {
-    is_ci() && !is_test_env()
-}
 
 #[derive(Debug)]
 pub struct CommandExecuteResult {
@@ -312,11 +308,6 @@ impl<'task> CommandExecutor<'task> {
         } else {
             is_primary || is_ci
         };
-
-        // If only a single persistent task is being ran, we should not prefix the output.
-        if is_only_primary && (self.task.is_persistent() || self.task.deps.is_empty()) {
-            report_item.output_prefix = None;
-        }
 
         if let Some(prefix) = &report_item.output_prefix {
             self.command.set_prefix(prefix);

@@ -78,6 +78,7 @@ impl<'task> TaskRunner<'task> {
             remote_state: None,
             report_item: TaskReportItem {
                 output_style: task.options.output_style,
+                task_type: task.type_of,
                 ..Default::default()
             },
             target_state: None,

@@ -142,6 +142,12 @@ fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
             YamlValue::String("server".into()),
         );
     }
+
+    change_setting(task, "preset", false, |node, key| {
+        if node.get(key).is_some_and(|value| value == "watcher") {
+            node.remove(key);
+        }
+    });
 }
 
 fn migrate_inherited_by_setting(file_name: &str) -> Option<YamlValue> {
@@ -411,6 +417,14 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
     let mut extensions = None;
 
     if let Some(root) = config.as_mapping_mut() {
+        change_setting(root, "codeowners.orderBy", false, |node, key| {
+            if node.get(key).is_some_and(|value| value == "project-name") {
+                node.insert(
+                    YamlValue::String(key.into()),
+                    YamlValue::String("project-id".into()),
+                );
+            }
+        });
         rename_setting(root, "codeowners.syncOnRun", "codeowners.sync");
         rename_setting(
             root,
@@ -428,7 +442,7 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
             "docker.scaffold.include",
             "docker.scaffold.configsPhaseGlobs",
         );
-        remove_setting(root, "experiments.gitV2");
+        remove_setting(root, "experiments");
         change_setting(root, "extensions", false, |node, key| {
             extensions = node.remove(key);
         });
@@ -436,8 +450,8 @@ fn migrate_workspace_config_file(session: &MoonSession) -> miette::Result<()> {
         rename_setting(root, "runner", "pipeline");
         remove_setting(root, "pipeline.archivableTargets");
         rename_setting(root, "unstable_remote", "remote");
-        rename_setting(root, "vcs.manager", "client");
-        rename_setting(root, "vcs.syncHooks", "sync");
+        rename_setting(root, "vcs.manager", "vcs.client");
+        rename_setting(root, "vcs.syncHooks", "vcs.sync");
     }
 
     yaml::write_file_with_config(&config_path, &config)?;
@@ -472,6 +486,10 @@ fn migrate_project_config_files(session: &MoonSession) -> miette::Result<()> {
                 .get_mut("project")
                 .and_then(|project| project.as_mapping_mut())
             {
+                if let Some(value) = project.remove("name") {
+                    project.insert(YamlValue::String("title".into()), value);
+                }
+
                 if let Some(YamlValue::Mapping(metadata)) = project.remove("metadata") {
                     project.extend(metadata);
                 }

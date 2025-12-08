@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['deep1']
+
 fileGroups:
   sources:
     - 'one/**/*'

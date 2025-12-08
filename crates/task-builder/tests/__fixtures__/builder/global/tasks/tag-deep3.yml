@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['deep3']
+
 fileGroups:
   sources:
     - 'three/**/*'

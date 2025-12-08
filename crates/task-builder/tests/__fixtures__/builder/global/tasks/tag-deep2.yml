@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['deep2']
+
 fileGroups:
   sources:
     - 'two/**/*'

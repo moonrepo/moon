@@ -116,6 +116,24 @@ mod tasks_builder {
                 ]
             );
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn deep_merges_global_tasks() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let mut tasks = container.build_tasks("inheritance").await;
+            let task = tasks.remove("build").unwrap();
+
+            assert_eq!(task.command, "build");
+            assert_eq!(task.args, ["--one", "--two", "--three", "value"]);
+            assert_eq!(task.preset.unwrap(), TaskPreset::Server);
+            assert_eq!(task.options.cache_lifetime.unwrap(), "7 days");
+            assert_eq!(task.options.mutex.unwrap(), "lock-overwrite");
+            assert!(task.options.interactive);
+            // Off because of interactive
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(false));
+        }
     }
 
     mod defaults {

@@ -1,0 +1,11 @@
+fileGroups:
+  sources:
+    - 'two/**/*'
+
+tasks:
+  build:
+    args: '--two'
+    preset: 'server'
+    options:
+      cacheLifetime: '1 day'
+      interactive: true

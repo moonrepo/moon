@@ -18,7 +18,8 @@
   "author": "Miles Johnson",
   "license": "MIT",
   "bin": {
-    "moon": "moon.js"
+    "moon": "moon.js",
+    "moonx": "moonx.js"
   },
   "repository": {
     "type": "git",

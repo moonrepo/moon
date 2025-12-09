@@ -2,8 +2,8 @@
 source: crates/cli/tests/run_legacy_test.rs
 expression: assert.output()
 ---
-▪▪▪▪ npm install
-▪▪▪▪ noop:noop (no op)
+▮▮▮▮ npm install
+▮▮▮▮ noop:noop (no op)
 
 Tasks: 1 completed
  Time: 100ms

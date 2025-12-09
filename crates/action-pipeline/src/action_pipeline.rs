@@ -15,6 +15,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
+use moon_console::Level;
 use moon_process::{ProcessRegistry, SignalType};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -31,7 +32,7 @@ pub struct ActionPipeline {
     pub concurrency: usize,
     pub quiet: bool,
     pub report_name: String,
-    pub summarize: bool,
+    pub summary: Option<Level>,
 
     // State
     actions: Vec<Action>,
@@ -60,7 +61,7 @@ impl ActionPipeline {
             quiet: false,
             report_name: "runReport.json".into(),
             status: ActionPipelineStatus::Pending,
-            summarize: false,
+            summary: None,
             workspace_graph,
         }
     }
@@ -390,7 +391,7 @@ impl ActionPipeline {
             self.emitter
                 .subscribe(ConsoleSubscriber::new(
                     Arc::clone(&self.app_context.console),
-                    self.summarize,
+                    self.summary.clone(),
                 ))
                 .await;
         }

@@ -278,7 +278,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
         inner: session.get_console()?,
         output: ci_env::get_output().unwrap_or(CiOutput {
             close_log_group: "",
-            open_log_group: "▪▪▪▪ {name}",
+            open_log_group: "▮▮▮▮ {name}",
         }),
         last_title: String::new(),
     };

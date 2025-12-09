@@ -2,10 +2,10 @@
 source: crates/cli/tests/run_test.rs
 expression: assert.output()
 ---
-▪▪▪▪ npm install
-▪▪▪▪ outputStyles:hash
-▪▪▪▪ outputStyles:hash (100ms)
-▪▪▪▪ outputStyles:hashPrimary (no op)
+▮▮▮▮ npm install
+▮▮▮▮ outputStyles:hash
+▮▮▮▮ outputStyles:hash (100ms)
+▮▮▮▮ outputStyles:hashPrimary (no op)
 
 Tasks: 2 completed
  Time: 100ms

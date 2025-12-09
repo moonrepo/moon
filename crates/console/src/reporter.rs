@@ -10,10 +10,32 @@ use starbase_styles::color::owo::{OwoColorize, XtermColors};
 use starbase_styles::color::{Color, OwoStyle, no_color};
 use std::time::Duration;
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Level {
+    Zero,
+    One,
+    Two,
+    Three,
+}
+
+impl Level {
+    fn is(&self, level: Level) -> bool {
+        match level {
+            Self::Zero => false,
+            Self::One => matches!(self, Level::One | Level::Two | Level::Three),
+            Self::Two => matches!(self, Level::Two | Level::Three),
+            Self::Three => matches!(self, Level::Three),
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct PipelineReportItem {
     pub duration: Option<Duration>,
-    pub summarize: bool,
+    // 1 - Summary
+    // 2 - + Stats
+    // 3 - + Review
+    pub summary: Option<Level>,
     pub status: ActionPipelineStatus,
 }
 
@@ -25,9 +47,10 @@ pub struct TaskReportItem {
     pub output_prefix: Option<String>,
     pub output_streamed: bool,
     pub output_style: Option<TaskOutputStyle>,
+    pub primary: bool,
 }
 
-const STEP_CHAR: &str = "▪";
+const STEP_CHAR: &str = "▮"; // "■"; // "▪";
 const CACHED_COLORS: [u8; 4] = [57, 63, 69, 75]; // blue
 const PASSED_COLORS: [u8; 4] = [35, 42, 49, 86]; // green
 const FAILED_COLORS: [u8; 4] = [124, 125, 126, 127]; // red
@@ -38,10 +61,10 @@ const ANNOUNCEMENT_COLORS: [u8; 4] = [208, 214, 220, 226]; // yellow
 #[derive(Clone, Copy)]
 pub enum Checkpoint {
     Announcement,
-    RunCached,
-    RunFailed,
-    RunPassed,
-    RunStarted,
+    Cached,
+    Default,
+    Failed,
+    Passed,
     Setup,
 }
 
@@ -107,6 +130,21 @@ impl MoonReporter {
         hash[0..8].to_owned()
     }
 
+    fn format_block(&self, label: &str, bg: u8) -> String {
+        let body = format!(" {} ", label.to_uppercase());
+
+        if no_color() {
+            body
+        } else {
+            OwoStyle::new()
+                .style(body)
+                .bold()
+                .color(XtermColors::from(Color::Black as u8))
+                .on_color(XtermColors::from(bg))
+                .to_string()
+        }
+    }
+
     pub fn format_checkpoint<M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
@@ -115,10 +153,10 @@ impl MoonReporter {
     ) -> String {
         let colors = match checkpoint {
             Checkpoint::Announcement => ANNOUNCEMENT_COLORS,
-            Checkpoint::RunCached => CACHED_COLORS,
-            Checkpoint::RunFailed => FAILED_COLORS,
-            Checkpoint::RunPassed => PASSED_COLORS,
-            Checkpoint::RunStarted => MUTED_COLORS,
+            Checkpoint::Cached => CACHED_COLORS,
+            Checkpoint::Failed => FAILED_COLORS,
+            Checkpoint::Passed => PASSED_COLORS,
+            Checkpoint::Default => MUTED_COLORS,
             Checkpoint::Setup => SETUP_COLORS,
         };
 
@@ -189,19 +227,9 @@ impl MoonReporter {
     }
 
     pub fn print_header<M: AsRef<str>>(&self, message: M) -> miette::Result<()> {
-        let header = format!(" {} ", message.as_ref().to_uppercase());
-
         self.out.write_newline()?;
-        self.out.write_line(if no_color() {
-            header
-        } else {
-            OwoStyle::new()
-                .style(header)
-                .bold()
-                .color(XtermColors::from(Color::Black as u8))
-                .on_color(XtermColors::from(Color::Purple as u8))
-                .to_string()
-        })?;
+        self.out
+            .write_line(self.format_block(message.as_ref(), Color::Purple as u8))?;
         self.out.write_newline()?;
 
         Ok(())
@@ -213,6 +241,10 @@ impl MoonReporter {
         operation: &Operation,
         item: &TaskReportItem,
     ) -> miette::Result<()> {
+        if self.out.is_quiet() {
+            return Ok(());
+        }
+
         let mut comments = vec![];
 
         if operation.meta.is_no_operation() {
@@ -250,13 +282,13 @@ impl MoonReporter {
 
         self.print_checkpoint_with_comments(
             if operation.has_failed() {
-                Checkpoint::RunFailed
+                Checkpoint::Failed
             } else if operation.is_cached() {
-                Checkpoint::RunCached
+                Checkpoint::Cached
             } else if operation.has_passed() {
-                Checkpoint::RunPassed
+                Checkpoint::Passed
             } else {
-                Checkpoint::RunStarted
+                Checkpoint::Default
             },
             target,
             comments,
@@ -328,7 +360,7 @@ impl MoonReporter {
             }
 
             self.print_checkpoint(
-                Checkpoint::RunFailed,
+                Checkpoint::Failed,
                 match &*action.node {
                     ActionNode::RunTask(inner) => inner.target.as_str(),
                     _ => &action.label,
@@ -363,7 +395,7 @@ impl MoonReporter {
         let mut skipped_count = 0;
 
         for action in actions {
-            if !item.summarize && !matches!(*action.node, ActionNode::RunTask { .. }) {
+            if item.summary.is_none() && !matches!(*action.node, ActionNode::RunTask { .. }) {
                 continue;
             }
 
@@ -434,7 +466,11 @@ impl MoonReporter {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         }
 
-        if item.summarize {
+        if item
+            .summary
+            .as_ref()
+            .is_some_and(|level| level.is(Level::Two))
+        {
             self.print_entry("Actions", counts_message)?;
             self.print_entry("   Time", elapsed_time)?;
         } else {
@@ -511,7 +547,7 @@ impl MoonReporter {
         item: &PipelineReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        if actions.is_empty() || self.out.is_quiet() {
+        if actions.is_empty() {
             return Ok(());
         }
 
@@ -522,25 +558,44 @@ impl MoonReporter {
         }
 
         // If no summary, only show stats. This is typically for local!
-        if !item.summarize {
-            self.out.write_newline()?;
-            self.print_pipeline_stats(actions, item)?;
-            self.out.write_newline()?;
+        if item.summary.is_none() {
+            if !self.out.is_quiet() {
+                self.out.write_newline()?;
+                self.print_pipeline_stats(actions, item)?;
+                self.out.write_newline()?;
+            }
 
             return Ok(());
         }
 
         // Otherwise, show all the information we can.
-        if actions.iter().any(|action| action.has_failed()) {
+        if item
+            .summary
+            .as_ref()
+            .is_some_and(|level| level.is(Level::Three))
+            && actions.iter().any(|action| action.has_failed())
+        {
             self.print_header("Review")?;
             self.print_pipeline_failures(actions)?;
         }
 
-        self.print_header("Summary")?;
-        self.print_pipeline_summary(actions)?;
+        if item
+            .summary
+            .as_ref()
+            .is_some_and(|level| level.is(Level::Two))
+        {
+            self.print_header("Summary")?;
+            self.print_pipeline_summary(actions)?;
+        }
 
-        self.print_header("Stats")?;
-        self.print_pipeline_stats(actions, item)?;
+        if item
+            .summary
+            .as_ref()
+            .is_some_and(|level| level.is(Level::One))
+        {
+            self.print_header("Stats")?;
+            self.print_pipeline_stats(actions, item)?;
+        }
 
         self.out.write_newline()?;
 
@@ -562,7 +617,7 @@ impl MoonReporter {
     // If the task has been running for a long time, print a checkpoint
     pub fn on_task_running(&self, target: &Target, secs: u32) -> miette::Result<()> {
         self.print_checkpoint_with_comments(
-            Checkpoint::RunStarted,
+            Checkpoint::Default,
             target,
             [format!("running for {secs}s")],
         )?;

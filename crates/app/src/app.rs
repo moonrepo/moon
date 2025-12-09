@@ -275,6 +275,7 @@ pub struct Cli {
     #[arg(
         long,
         global = true,
+        env = "MOON_COLOR",
         help = "Force colored output",
         help_heading = "Global options"
     )]
@@ -324,7 +325,7 @@ pub struct Cli {
         short = 'q',
         global = true,
         env = "MOON_QUIET",
-        help = "Hide all non-important terminal output",
+        help = "Hide all moon console output",
         help_heading = "Global options"
     )]
     pub quiet: bool,

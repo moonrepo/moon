@@ -1,17 +1,16 @@
 use crate::event_emitter::{Event, Subscriber};
 use async_trait::async_trait;
-use moon_console::Console;
-use moon_console::PipelineReportItem;
+use moon_console::{Console, Level, PipelineReportItem};
 use std::sync::Arc;
 
 pub struct ConsoleSubscriber {
     console: Arc<Console>,
-    summarize: bool,
+    summary: Option<Level>,
 }
 
 impl ConsoleSubscriber {
-    pub fn new(console: Arc<Console>, summarize: bool) -> Self {
-        Self { console, summarize }
+    pub fn new(console: Arc<Console>, summary: Option<Level>) -> Self {
+        Self { console, summary }
     }
 }
 
@@ -31,7 +30,7 @@ impl Subscriber for ConsoleSubscriber {
             } => {
                 let item = PipelineReportItem {
                     duration: *duration,
-                    summarize: self.summarize,
+                    summary: self.summary.clone(),
                     status: **status,
                 };
 

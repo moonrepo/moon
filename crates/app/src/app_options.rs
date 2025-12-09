@@ -1,5 +1,6 @@
 use clap::ValueEnum;
 use moon_common::is_ci;
+use moon_console::Level;
 use std::fmt;
 use std::str::FromStr;
 
@@ -16,12 +17,10 @@ impl fmt::Display for AppTheme {
             f,
             "{}",
             match self {
-                AppTheme::Dark => "dark",
-                AppTheme::Light => "light",
+                Self::Dark => "dark",
+                Self::Light => "light",
             }
-        )?;
-
-        Ok(())
+        )
     }
 }
 
@@ -49,17 +48,50 @@ impl fmt::Display for LogLevel {
             f,
             "{}",
             match self {
-                LogLevel::Off => "off",
-                LogLevel::Error => "error",
-                LogLevel::Warn => "warn",
-                LogLevel::Info => "info",
-                LogLevel::Debug => "debug",
+                Self::Off => "off",
+                Self::Error => "error",
+                Self::Warn => "warn",
+                Self::Info => "info",
+                Self::Debug => "debug",
                 // Must map to tracing levels
-                LogLevel::Trace | LogLevel::Verbose => "trace",
+                Self::Trace | Self::Verbose => "trace",
             }
-        )?;
+        )
+    }
+}
 
-        Ok(())
+#[derive(ValueEnum, Clone, Debug, Default)]
+pub enum SummaryLevel {
+    None,
+    Minimal,
+    Normal,
+    #[default]
+    Detailed,
+}
+
+impl SummaryLevel {
+    pub fn to_level(&self) -> Level {
+        match self {
+            Self::None => Level::Zero,
+            Self::Minimal => Level::One,
+            Self::Normal => Level::Three,
+            Self::Detailed => Level::Three,
+        }
+    }
+}
+
+impl fmt::Display for SummaryLevel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::None => "none",
+                Self::Minimal => "minimal",
+                Self::Normal => "normal",
+                Self::Detailed => "detailed",
+            }
+        )
     }
 }
 

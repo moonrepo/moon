@@ -1,3 +1,4 @@
+use crate::app_options::SummaryLevel;
 use crate::helpers::run_action_pipeline;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
@@ -45,7 +46,7 @@ pub struct RunArgs {
         env = "MOON_SUMMARY",
         help = "Include a summary of all actions that were processed in the pipeline"
     )]
-    pub summary: bool,
+    pub summary: Option<Option<SummaryLevel>>,
 
     #[arg(
         short = 'u',

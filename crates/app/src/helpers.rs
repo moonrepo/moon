@@ -8,7 +8,7 @@ use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
 use moon_common::Id;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
-use moon_console::{Console, ConsoleError};
+use moon_console::{Console, ConsoleError, Level};
 use moon_workspace::WorkspaceBuilderContext;
 use serde::Serialize;
 use starbase_utils::{fs, json, toml, yaml};
@@ -87,18 +87,24 @@ pub async fn run_action_pipeline(
     match &session.cli.command {
         Commands::Check(cmd) => {
             pipeline.bail = true;
-            pipeline.summarize = cmd.summary;
+            pipeline.summary = cmd
+                .summary
+                .clone()
+                .map(|sum| sum.unwrap_or_default().to_level());
         }
         Commands::Ci(_) => {
             pipeline.report_name = "ciReport.json".into();
-            pipeline.summarize = true;
+            pipeline.summary = Some(Level::Three);
         }
         Commands::Run(cmd) => {
             pipeline.bail = !cmd.no_bail;
-            pipeline.summarize = cmd.summary;
+            pipeline.summary = cmd
+                .summary
+                .clone()
+                .map(|sum| sum.unwrap_or_default().to_level());
         }
         Commands::Setup | Commands::Sync { .. } => {
-            pipeline.summarize = true;
+            pipeline.summary = Some(Level::Two);
         }
         _ => {}
     };

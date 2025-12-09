@@ -10,10 +10,32 @@ use starbase_styles::color::owo::{OwoColorize, XtermColors};
 use starbase_styles::color::{Color, OwoStyle, no_color};
 use std::time::Duration;
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Level {
+    Zero,
+    One,
+    Two,
+    Three,
+}
+
+impl Level {
+    fn is(&self, level: Level) -> bool {
+        match level {
+            Self::Zero => false,
+            Self::One => matches!(self, Level::One | Level::Two | Level::Three),
+            Self::Two => matches!(self, Level::Two | Level::Three),
+            Self::Three => matches!(self, Level::Three),
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct PipelineReportItem {
     pub duration: Option<Duration>,
-    pub summarize: bool,
+    // 1 - Summary
+    // 2 - + Stats
+    // 3 - + Review
+    pub summary: Option<Level>,
     pub status: ActionPipelineStatus,
 }
 
@@ -27,7 +49,7 @@ pub struct TaskReportItem {
     pub output_style: Option<TaskOutputStyle>,
 }
 
-const STEP_CHAR: &str = "❭"; // "▪";
+const STEP_CHAR: &str = "￭"; // "▪";
 const CACHED_COLORS: [u8; 4] = [57, 63, 69, 75]; // blue
 const PASSED_COLORS: [u8; 4] = [35, 42, 49, 86]; // green
 const FAILED_COLORS: [u8; 4] = [124, 125, 126, 127]; // red
@@ -108,7 +130,7 @@ impl MoonReporter {
     }
 
     fn format_block(&self, label: &str, bg: u8) -> String {
-        let body = format!(" {:>6} ", label.to_uppercase());
+        let body = format!(" {} ", label.to_uppercase());
 
         if no_color() {
             body
@@ -218,6 +240,10 @@ impl MoonReporter {
         operation: &Operation,
         item: &TaskReportItem,
     ) -> miette::Result<()> {
+        if self.out.is_quiet() {
+            return Ok(());
+        }
+
         let mut comments = vec![];
 
         if operation.meta.is_no_operation() {
@@ -368,7 +394,7 @@ impl MoonReporter {
         let mut skipped_count = 0;
 
         for action in actions {
-            if !item.summarize && !matches!(*action.node, ActionNode::RunTask { .. }) {
+            if item.summary.is_none() && !matches!(*action.node, ActionNode::RunTask { .. }) {
                 continue;
             }
 
@@ -439,7 +465,11 @@ impl MoonReporter {
             elapsed_time = format!("{} {}", elapsed_time, label_to_the_moon());
         }
 
-        if item.summarize {
+        if item
+            .summary
+            .as_ref()
+            .is_some_and(|level| level.is(Level::Two))
+        {
             self.print_entry("Actions", counts_message)?;
             self.print_entry("   Time", elapsed_time)?;
         } else {
@@ -516,7 +546,7 @@ impl MoonReporter {
         item: &PipelineReportItem,
         _error: Option<&miette::Report>,
     ) -> miette::Result<()> {
-        if actions.is_empty() || self.out.is_quiet() {
+        if actions.is_empty() {
             return Ok(());
         }
 
@@ -527,25 +557,44 @@ impl MoonReporter {
         }
 
         // If no summary, only show stats. This is typically for local!
-        if !item.summarize {
-            self.out.write_newline()?;
-            self.print_pipeline_stats(actions, item)?;
-            self.out.write_newline()?;
+        if item.summary.is_none() {
+            if !self.out.is_quiet() {
+                self.out.write_newline()?;
+                self.print_pipeline_stats(actions, item)?;
+                self.out.write_newline()?;
+            }
 
             return Ok(());
         }
 
         // Otherwise, show all the information we can.
-        if actions.iter().any(|action| action.has_failed()) {
+        if item
+            .summary
+            .as_ref()
+            .is_some_and(|level| level.is(Level::Three))
+            && actions.iter().any(|action| action.has_failed())
+        {
             self.print_header("Review")?;
             self.print_pipeline_failures(actions)?;
         }
 
-        self.print_header("Summary")?;
-        self.print_pipeline_summary(actions)?;
+        if item
+            .summary
+            .as_ref()
+            .is_some_and(|level| level.is(Level::Two))
+        {
+            self.print_header("Summary")?;
+            self.print_pipeline_summary(actions)?;
+        }
 
-        self.print_header("Stats")?;
-        self.print_pipeline_stats(actions, item)?;
+        if item
+            .summary
+            .as_ref()
+            .is_some_and(|level| level.is(Level::One))
+        {
+            self.print_header("Stats")?;
+            self.print_pipeline_stats(actions, item)?;
+        }
 
         self.out.write_newline()?;
 

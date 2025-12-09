@@ -1,3 +1,4 @@
+use crate::app_options::SummaryLevel;
 use crate::commands::run::{RunArgs, run_target};
 use crate::session::MoonSession;
 use clap::Args;
@@ -24,7 +25,7 @@ pub struct CheckArgs {
         env = "MOON_SUMMARY",
         help = "Include a summary of all actions that were processed in the pipeline"
     )]
-    pub summary: bool,
+    pub summary: Option<Option<SummaryLevel>>,
 
     #[arg(
         short = 'u',

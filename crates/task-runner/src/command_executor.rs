@@ -293,6 +293,7 @@ impl<'task> CommandExecutor<'task> {
     fn prepare_state(&mut self, context: &ActionContext, report_item: &mut TaskReportItem) {
         let is_ci = is_ci_env();
         let is_primary = context.is_primary_target(&self.task.target);
+        let is_only_primary = is_primary && context.primary_targets.len() == 1;
 
         // When the primary target, always stream the output for a better developer experience.
         // However, transitive targets can opt into streaming as well.
@@ -301,6 +302,11 @@ impl<'task> CommandExecutor<'task> {
         } else {
             is_primary || is_ci
         };
+
+        // If only a single persistent task is being ran, we should not prefix the output.
+        if is_only_primary && (self.task.is_persistent() || self.task.deps.is_empty()) {
+            report_item.output_prefix = None;
+        }
 
         if let Some(prefix) = &report_item.output_prefix {
             self.command.set_prefix(prefix);

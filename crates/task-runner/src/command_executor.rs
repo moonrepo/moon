@@ -293,13 +293,6 @@ impl<'task> CommandExecutor<'task> {
     fn prepare_state(&mut self, context: &ActionContext, report_item: &mut TaskReportItem) {
         let is_ci = is_ci_env();
         let is_primary = context.is_primary_target(&self.task.target);
-        let is_only_primary = is_primary && context.primary_targets.len() == 1;
-
-        // When a task is configured as local (no caching), or the interactive flag is passed,
-        // we don't "capture" stdout/stderr (which breaks stdin) and let it stream natively.
-        if !self.task.options.cache.is_enabled() && is_only_primary && !is_ci {
-            self.interactive = true;
-        }
 
         // When the primary target, always stream the output for a better developer experience.
         // However, transitive targets can opt into streaming as well.
@@ -316,6 +309,7 @@ impl<'task> CommandExecutor<'task> {
         report_item.attempt_current = self.attempt_index;
         report_item.attempt_total = self.attempt_total;
         report_item.output_streamed = self.stream;
+        report_item.primary = is_primary;
     }
 
     fn get_command_line(&self, context: &ActionContext) -> String {

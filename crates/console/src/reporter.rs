@@ -47,6 +47,7 @@ pub struct TaskReportItem {
     pub output_prefix: Option<String>,
     pub output_streamed: bool,
     pub output_style: Option<TaskOutputStyle>,
+    pub primary: bool,
 }
 
 const STEP_CHAR: &str = "▮"; // "■"; // "▪";

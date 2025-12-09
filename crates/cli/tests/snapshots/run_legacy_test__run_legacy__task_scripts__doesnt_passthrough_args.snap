@@ -3,7 +3,7 @@ source: crates/cli/tests/run_legacy_test.rs
 expression: assert.output()
 ---
 ▮▮▮▮ taskScript:args
-Args:
+Args: 
 ▮▮▮▮ taskScript:args (100ms)
 
 Tasks: 1 completed

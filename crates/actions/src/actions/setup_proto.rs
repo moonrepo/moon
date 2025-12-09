@@ -72,7 +72,6 @@ pub async fn setup_proto(
 
     app_context.console.print_checkpoint(
         Checkpoint::Setup,
-        "setup",
         format!("installing proto {proto_version}"),
     )?;
 

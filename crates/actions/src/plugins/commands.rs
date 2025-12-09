@@ -51,12 +51,11 @@ pub fn handle_on_exec(
     if attempts.0 > 1 {
         console.print_checkpoint_with_comments(
             Checkpoint::Setup,
-            "setup",
             label,
             [format!("attempt {} of {}", attempts.0, attempts.1)],
         )
     } else {
-        console.print_checkpoint(Checkpoint::Setup, "setup", label)
+        console.print_checkpoint(Checkpoint::Setup, label)
     }
 }
 

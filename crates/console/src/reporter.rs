@@ -2,7 +2,7 @@ use moon_action::{
     Action, ActionNode, ActionPipelineStatus, ActionStatus, Operation, OperationList,
 };
 use moon_common::{color, is_test_env};
-use moon_config::{TaskOutputStyle, TaskType};
+use moon_config::TaskOutputStyle;
 use moon_target::Target;
 use moon_time as time;
 use starbase_console::{ConsoleStream, ConsoleStreamType, Reporter};
@@ -25,10 +25,9 @@ pub struct TaskReportItem {
     pub output_prefix: Option<String>,
     pub output_streamed: bool,
     pub output_style: Option<TaskOutputStyle>,
-    pub task_type: TaskType,
 }
 
-const STEP_CHAR: &str = "▪";
+const STEP_CHAR: &str = "❭"; // "▪";
 const CACHED_COLORS: [u8; 4] = [57, 63, 69, 75]; // blue
 const PASSED_COLORS: [u8; 4] = [35, 42, 49, 86]; // green
 const FAILED_COLORS: [u8; 4] = [124, 125, 126, 127]; // red
@@ -39,10 +38,10 @@ const ANNOUNCEMENT_COLORS: [u8; 4] = [208, 214, 220, 226]; // yellow
 #[derive(Clone, Copy)]
 pub enum Checkpoint {
     Announcement,
-    RunCached,
-    RunFailed,
-    RunPassed,
-    RunStarted,
+    Cached,
+    Default,
+    Failed,
+    Passed,
     Setup,
 }
 
@@ -123,35 +122,28 @@ impl MoonReporter {
         }
     }
 
-    pub fn format_checkpoint<L: AsRef<str>, M: AsRef<str>, C: AsRef<[String]>>(
+    pub fn format_checkpoint<M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
-        label: L,
         message: M,
         comments: C,
     ) -> String {
         let colors = match checkpoint {
             Checkpoint::Announcement => ANNOUNCEMENT_COLORS,
-            Checkpoint::RunCached => CACHED_COLORS,
-            Checkpoint::RunFailed => FAILED_COLORS,
-            Checkpoint::RunPassed => PASSED_COLORS,
-            Checkpoint::RunStarted => MUTED_COLORS,
+            Checkpoint::Cached => CACHED_COLORS,
+            Checkpoint::Failed => FAILED_COLORS,
+            Checkpoint::Passed => PASSED_COLORS,
+            Checkpoint::Default => MUTED_COLORS,
             Checkpoint::Setup => SETUP_COLORS,
         };
 
-        // let mut out = format!(
-        //     "{}{}{}{} {}",
-        //     color::paint(colors[0], STEP_CHAR),
-        //     color::paint(colors[1], STEP_CHAR),
-        //     color::paint(colors[2], STEP_CHAR),
-        //     color::paint(colors[3], STEP_CHAR),
-        //     bold(message.as_ref()),
-        // );
-
         let mut out = format!(
-            "{} {}",
-            self.format_block(label.as_ref(), colors[3]),
-            bold(message.as_ref())
+            "{}{}{}{} {}",
+            color::paint(colors[0], STEP_CHAR),
+            color::paint(colors[1], STEP_CHAR),
+            color::paint(colors[2], STEP_CHAR),
+            color::paint(colors[3], STEP_CHAR),
+            bold(message.as_ref()),
         );
 
         let suffix = self.format_comments(comments);
@@ -178,25 +170,23 @@ impl MoonReporter {
         color::muted_light(format!("{}:", key.as_ref()))
     }
 
-    pub fn print_checkpoint<L: AsRef<str>, M: AsRef<str>>(
+    pub fn print_checkpoint<M: AsRef<str>>(
         &self,
         checkpoint: Checkpoint,
-        label: L,
         message: M,
     ) -> miette::Result<()> {
-        self.print_checkpoint_with_comments(checkpoint, label, message, &[])
+        self.print_checkpoint_with_comments(checkpoint, message, &[])
     }
 
-    pub fn print_checkpoint_with_comments<L: AsRef<str>, M: AsRef<str>, C: AsRef<[String]>>(
+    pub fn print_checkpoint_with_comments<M: AsRef<str>, C: AsRef<[String]>>(
         &self,
         checkpoint: Checkpoint,
-        label: L,
         message: M,
         comments: C,
     ) -> miette::Result<()> {
         if !self.out.is_quiet() {
             self.out
-                .write_line(self.format_checkpoint(checkpoint, label, message, comments))?;
+                .write_line(self.format_checkpoint(checkpoint, message, comments))?;
         }
 
         Ok(())
@@ -265,18 +255,13 @@ impl MoonReporter {
 
         self.print_checkpoint_with_comments(
             if operation.has_failed() {
-                Checkpoint::RunFailed
+                Checkpoint::Failed
             } else if operation.is_cached() {
-                Checkpoint::RunCached
+                Checkpoint::Cached
             } else if operation.has_passed() {
-                Checkpoint::RunPassed
+                Checkpoint::Passed
             } else {
-                Checkpoint::RunStarted
-            },
-            match item.task_type {
-                TaskType::Build => "build",
-                TaskType::Run => "run",
-                TaskType::Test => "test",
+                Checkpoint::Default
             },
             target,
             comments,
@@ -348,8 +333,7 @@ impl MoonReporter {
             }
 
             self.print_checkpoint(
-                Checkpoint::RunFailed,
-                "failed",
+                Checkpoint::Failed,
                 match &*action.node {
                     ActionNode::RunTask(inner) => inner.target.as_str(),
                     _ => &action.label,
@@ -583,8 +567,7 @@ impl MoonReporter {
     // If the task has been running for a long time, print a checkpoint
     pub fn on_task_running(&self, target: &Target, secs: u32) -> miette::Result<()> {
         self.print_checkpoint_with_comments(
-            Checkpoint::RunStarted,
-            "status",
+            Checkpoint::Default,
             target,
             [format!("running for {secs}s")],
         )?;

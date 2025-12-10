@@ -50,7 +50,7 @@ pub struct TaskReportItem {
     pub primary: bool,
 }
 
-const STEP_CHAR: &str = "▮"; // "■"; // "▪";
+const STEP_CHAR: &str = "▮"; // ■ ▪
 const CACHED_COLORS: [u8; 4] = [57, 63, 69, 75]; // blue
 const PASSED_COLORS: [u8; 4] = [35, 42, 49, 86]; // green
 const FAILED_COLORS: [u8; 4] = [124, 125, 126, 127]; // red

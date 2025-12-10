@@ -11,7 +11,7 @@ use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements}
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
-use moon_common::{is_ci, is_test_env, path::WorkspaceRelativePathBuf};
+use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
 use moon_console::Console;
 use moon_console::ui::{SelectOption, SelectProps};
 use moon_task::TargetLocator;
@@ -78,6 +78,7 @@ pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
     if args.targets.is_empty() {
         let workspace_graph = session.get_workspace_graph().await?;
         let tasks = workspace_graph.get_tasks()?;
+
         let targets = select_targets(&session.console, &[], || {
             Ok(SelectProps {
                 label: "Which task(s) to run?".into(),
@@ -153,7 +154,7 @@ impl ExecWorkflow {
             args,
             ui: ci_env::get_output().unwrap_or(CiOutput {
                 close_log_group: "",
-                open_log_group: "▪▪▪▪ {name}",
+                open_log_group: "▮▮▮▮ {name}",
             }),
             last_title: String::new(),
         })
@@ -174,8 +175,6 @@ impl ExecWorkflow {
         // Step 2
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
 
-        // return Ok(None);
-
         if self.node_indexes.is_empty() {
             return Err(if self.affected {
                 AppError::NoExecAffectedTasks {
@@ -191,9 +190,12 @@ impl ExecWorkflow {
         }
 
         // Step 3
-        let action_graph = self.partition_action_graph(action_graph).await?;
+        self.display_affected(&action_context)?;
 
         // Step 4
+        let action_graph = self.partition_action_graph(action_graph).await?;
+
+        // Step 5
         let results = self
             .execute_action_pipeline(action_context, action_graph)
             .await?;
@@ -251,11 +253,11 @@ impl ExecWorkflow {
         }
 
         self.print(format!(
-            "Base revision: {}",
+            "Base revision: <symbol>{}</symbol>",
             base.as_deref().unwrap_or("N/A")
         ))?;
         self.print(format!(
-            "Head revision: {}",
+            "Head revision:<symbol>{}</symbol>",
             head.as_deref().unwrap_or("HEAD")
         ))?;
 
@@ -356,12 +358,61 @@ impl ExecWorkflow {
         // Build the graph
         let (action_context, action_graph) = action_graph_builder.build();
 
-        self.print(format!("Target count: {}", self.args.targets.len()))?;
-        self.print(format!("Action count: {}", action_graph.get_node_count()))?;
+        self.print(format!(
+            "Target count: <mutedlight>{}</mutedlight>",
+            self.args.targets.len()
+        ))?;
+        self.print(format!(
+            "Action count: <mutedlight>{}</mutedlight>",
+            action_graph.get_node_count()
+        ))?;
 
         Ok((action_context, action_graph))
     }
 
+    // Step 3
+    fn display_affected(&mut self, context: &ActionContext) -> miette::Result<()> {
+        let Some(affected) = &context.affected else {
+            return Ok(());
+        };
+
+        self.print_step("Tracking affected tasks")?;
+
+        for (target, state) in &affected.tasks {
+            if !state.env.is_empty() {
+                self.print(format!(
+                    "<id>{target}</id> by environment variable <property>{}</property>",
+                    state.env.iter().next().unwrap()
+                ))?;
+            } else if !state.files.is_empty() {
+                self.print(format!(
+                    "<id>{target}</id> by file <file>{}</file>",
+                    state.files.iter().next().unwrap()
+                ))?;
+            } else if !state.projects.is_empty() {
+                self.print(format!(
+                    "<id>{target}</id> by project <id>{}</id>",
+                    state.projects.iter().next().unwrap()
+                ))?;
+            } else if !state.upstream.is_empty() {
+                self.print(format!(
+                    "<id>{target}</id> by dependency task <label>{}</label>",
+                    state.upstream.iter().next().unwrap()
+                ))?;
+            } else if !state.downstream.is_empty() {
+                self.print(format!(
+                    "<id>{target}</id> by dependent task <label>{}</label>",
+                    state.downstream.iter().next().unwrap()
+                ))?;
+            } else {
+                self.print(format!("<id>{target}</id>"))?;
+            }
+        }
+
+        Ok(())
+    }
+
+    // Step 4
     async fn partition_action_graph(
         &mut self,
         action_graph: ActionGraph,
@@ -376,14 +427,14 @@ impl ExecWorkflow {
 
         self.print_step("Distibuting actions across jobs")?;
 
-        self.print(format!("Job index: {job_index}"))?;
-        self.print(format!("Job total: {job_total}"))?;
-        self.print(format!("Batch size: {batch_size}"))?;
+        self.print(format!("Job index: <mutedlight>{job_index}</mutedlight>"))?;
+        self.print(format!("Job total: <mutedlight>{job_total}</mutedlight>"))?;
+        self.print(format!("Batch size: <mutedlight>{batch_size}</mutedlight>"))?;
 
         Ok(action_graph)
     }
 
-    // Step 4
+    // Step 5
     async fn execute_action_pipeline(
         &mut self,
         mut action_context: ActionContext,
@@ -443,7 +494,7 @@ impl ExecWorkflow {
     }
 
     fn print(&self, message: impl AsRef<str>) -> miette::Result<()> {
-        let message = message.as_ref();
+        let message = apply_style_tags(message.as_ref());
 
         if self.should_print_ci() {
             self.console.err.write_line(message)?;

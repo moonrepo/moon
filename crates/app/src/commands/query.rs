@@ -7,7 +7,7 @@ use crate::session::MoonSession;
 use clap::{ArgAction, Args, Subcommand};
 use iocraft::prelude::{Size, element};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
-use moon_common::is_ci;
+use moon_common::{is_ci, is_test_env};
 use moon_console::ui::{Container, Style, StyledText, Table, TableCol, TableHeader, TableRow};
 use moon_vcs::TouchedStatus;
 use starbase::AppResult;
@@ -167,6 +167,14 @@ pub struct QueryProjectsArgs {
     )]
     affected: bool,
 
+    #[arg(
+        long,
+        help = "Determine affected against remote by comparing against a base revision",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
+    remote: bool,
+
     #[deprecated]
     #[arg(
         long,
@@ -241,7 +249,18 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResul
     // Filter down to affected projects only
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
-        let touched_files = load_touched_files(&vcs).await?;
+        let local = !args.remote;
+        let result = query_touched_files_with_stdin(
+            &vcs,
+            &QueryTouchedFilesOptions {
+                default_branch: !local && !is_test_env(),
+                local,
+                stdin: true,
+                ..QueryTouchedFilesOptions::default()
+            },
+        )
+        .await?;
+        let touched_files = result.files;
         let workspace_graph = session.get_workspace_graph().await?;
         let mut affected_tracker = AffectedTracker::new(workspace_graph, touched_files);
 
@@ -364,6 +383,14 @@ pub struct QueryTasksArgs {
 
     #[arg(
         long,
+        help = "Determine affected against remote by comparing against a base revision",
+        help_heading = HEADING_AFFECTED,
+        requires = "affected-args",
+    )]
+    remote: bool,
+
+    #[arg(
+        long,
         default_value_t,
         help = "Include downstream dependents of queried tasks",
         help_heading = HEADING_AFFECTED,
@@ -428,7 +455,18 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
     // Filter down to affected tasks only
     if args.affected {
         let vcs = session.get_vcs_adapter()?;
-        let touched_files = load_touched_files(&vcs).await?;
+        let local = !args.remote;
+        let result = query_touched_files_with_stdin(
+            &vcs,
+            &QueryTouchedFilesOptions {
+                default_branch: !local && !is_test_env(),
+                local,
+                stdin: true,
+                ..QueryTouchedFilesOptions::default()
+            },
+        )
+        .await?;
+        let touched_files = result.files;
         let workspace_graph = session.get_workspace_graph().await?;
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph, touched_files);

@@ -188,7 +188,7 @@ impl ExecWorkflow {
         // Step 2
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
 
-        return Ok(None);
+        // return Ok(None);
 
         if self.node_indexes.is_empty() {
             return Err(if self.affected {

@@ -115,8 +115,6 @@ impl MoonSession {
         let app_context = self.get_app_context().await?;
         let workspace_graph = self.get_workspace_graph().await?;
 
-        dbg!("WG");
-
         ActionGraphBuilder::new(app_context, workspace_graph, options)
     }
 
@@ -272,8 +270,6 @@ impl MoonSession {
         let _ = self.project_graph.set(workspace_graph.projects.clone());
         let _ = self.task_graph.set(workspace_graph.tasks.clone());
         let _ = self.workspace_graph.set(workspace_graph.clone());
-
-        dbg!("WG LOADED");
 
         Ok(workspace_graph)
     }

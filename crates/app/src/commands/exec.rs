@@ -81,10 +81,6 @@ pub struct ExecArgs {
 
 #[instrument(skip(session))]
 pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
-    dbg!("BEFORE EXEC");
-
-    // Preload the graph before executing
-
     if args.targets.is_empty() {
         let workspace_graph = session.get_workspace_graph().await?;
         let tasks = workspace_graph.get_tasks()?;
@@ -170,8 +166,6 @@ impl ExecWorkflow {
     }
 
     pub async fn execute(mut self) -> miette::Result<Option<u8>> {
-        dbg!("IN EXEC");
-
         // Force cache to update using write-only mode
         if self.args.force {
             self.affected = false;
@@ -182,8 +176,6 @@ impl ExecWorkflow {
 
         // Step 1
         let changed_files = self.load_changed_files().await?;
-
-        dbg!(&changed_files);
 
         // Step 2
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;

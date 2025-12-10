@@ -14,7 +14,7 @@ use std::future::Future;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::{debug, trace};
+use tracing::trace;
 
 #[derive(Debug)]
 pub struct ToolchainRegistry {

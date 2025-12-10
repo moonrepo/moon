@@ -2,12 +2,13 @@ use super::exec::*;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
-use moon_app_macros::with_shared_exec_args;
+use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_task::TargetLocator;
 use starbase::AppResult;
 use std::mem;
 use tracing::instrument;
 
+#[with_affected_args]
 #[with_shared_exec_args]
 #[derive(Args, Clone, Debug, Default)]
 pub struct RunArgs {

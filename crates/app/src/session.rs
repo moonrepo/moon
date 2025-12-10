@@ -233,7 +233,7 @@ impl MoonSession {
             .get_or_try_init(async || self.load_workspace_graph().await)
             .await?;
 
-        Ok(Arc::clone(&result))
+        Ok(Arc::clone(result))
     }
 
     pub fn is_telemetry_enabled(&self) -> bool {

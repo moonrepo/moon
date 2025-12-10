@@ -1,11 +1,54 @@
+use darling::FromMeta;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse::Parser;
-use syn::{DeriveInput, parse_macro_input};
+use syn::{DeriveInput, Field, parse_macro_input};
+
+fn inject_args(item: TokenStream, fields: Vec<Field>, add_impl: bool) -> TokenStream {
+    let mut ast = parse_macro_input!(item as DeriveInput);
+    let struct_name = &ast.ident;
+
+    match &mut ast.data {
+        syn::Data::Struct(struct_data) => {
+            let mut into_rows = vec![];
+
+            for field in &fields {
+                let key = field.ident.as_ref().unwrap();
+
+                into_rows.push(quote! {
+                    #key: self.#key,
+                });
+            }
+
+            if let syn::Fields::Named(named_fields) = &mut struct_data.fields {
+                named_fields.named.extend(fields);
+            }
+
+            if add_impl {
+                quote! {
+                    #ast
+
+                    impl #struct_name {
+                        pub fn into_exec_args(self) -> ExecArgs {
+                            ExecArgs {
+                                #(#into_rows)*
+                                ..Default::default()
+                            }
+                        }
+                    }
+                }
+                .into()
+            } else {
+                quote! { #ast }.into()
+            }
+        }
+        _ => panic!("`with_args` macros can only be used with structs!"),
+    }
+}
 
 #[proc_macro_attribute]
 pub fn with_shared_exec_args(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let shared_fields = [
+    let fields = [
         // COMMON
         quote! {
             #[arg(
@@ -37,55 +80,6 @@ pub fn with_shared_exec_args(_attr: TokenStream, item: TokenStream) -> TokenStre
                 help = "Print a summary of all actions that were ran in the pipeline"
             )]
             pub summary: Option<Option<crate::app_options::SummaryLevel>>
-        },
-        // AFFECTED
-        quote! {
-            #[arg(
-                long,
-                env = "MOON_AFFECTED",
-                help = "Only run tasks if affected by changed files",
-                help_heading = super::HEADING_AFFECTED,
-                group = "affected-args"
-            )]
-            pub affected: Option<Option<crate::app_options::AffectedOption>>
-        },
-        quote! {
-             #[arg(
-                long,
-                env = "MOON_BASE",
-                help = "Base branch, commit, or revision to compare against",
-                help_heading = super::HEADING_AFFECTED,
-                requires = "affected-args",
-            )]
-            pub base: Option<String>
-        },
-        quote! {
-            #[arg(
-                long,
-                env = "MOON_HEAD",
-                help = "Current branch, commit, or revision to compare with",
-                help_heading = super::HEADING_AFFECTED,
-                requires = "affected-args",
-            )]
-            pub head: Option<String>
-        },
-        quote! {
-            #[arg(
-                long,
-                help = "Filter changed files based on a changed status",
-                help_heading = super::HEADING_AFFECTED,
-                requires = "affected-args",
-            )]
-            pub status: Vec<moon_vcs::ChangedStatus>
-        },
-        quote! {
-            #[arg(
-                long,
-                help = "Accept changed files from stdin for affected checks",
-                help_heading = super::HEADING_AFFECTED,
-                requires = "affected-args",
-            )]
-            pub stdin: bool
         },
         // GRAPH
         quote! {
@@ -128,39 +122,116 @@ pub fn with_shared_exec_args(_attr: TokenStream, item: TokenStream) -> TokenStre
     ]
     .map(|tokens| syn::Field::parse_named.parse2(tokens).unwrap());
 
-    let mut ast = parse_macro_input!(item as DeriveInput);
-    let struct_name = &ast.ident;
+    inject_args(item, fields.to_vec(), true)
+}
 
-    match &mut ast.data {
-        syn::Data::Struct(struct_data) => {
-            let mut into_rows = vec![];
+#[derive(Debug, FromMeta)]
+#[darling(derive_syn_parse)]
+struct AffectedParams {
+    #[darling(default)]
+    always_affected: bool,
+}
 
-            for field in &shared_fields {
-                let key = field.ident.as_ref().unwrap();
+#[proc_macro_attribute]
+pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let params: AffectedParams = syn::parse(attr).unwrap();
 
-                into_rows.push(quote! {
-                    #key: self.#key,
-                });
-            }
-
-            if let syn::Fields::Named(fields) = &mut struct_data.fields {
-                fields.named.extend(shared_fields);
-            }
-
+    let fields = if params.always_affected {
+        vec![
             quote! {
-                #ast
+                 #[arg(
+                    long,
+                    env = "MOON_BASE",
+                    help = "Base branch, commit, or revision to compare against",
+                    help_heading = super::HEADING_AFFECTED,
+                )]
+                pub base: Option<String>
+            },
+            quote! {
+                #[arg(
+                    long,
+                    env = "MOON_HEAD",
+                    help = "Current branch, commit, or revision to compare with",
+                    help_heading = super::HEADING_AFFECTED,
+                )]
+                pub head: Option<String>
+            },
+            quote! {
+                #[arg(
+                    long,
+                    help = "Filter changed files based on a changed status",
+                    help_heading = super::HEADING_AFFECTED,
+                )]
+                pub status: Vec<moon_vcs::ChangedStatus>
+            },
+            quote! {
+                #[arg(
+                    long,
+                    help = "Accept changed files from stdin for affected checks",
+                    help_heading = super::HEADING_AFFECTED,
+                )]
+                pub stdin: bool
+            },
+        ]
+    } else {
+        vec![
+            quote! {
+                #[arg(
+                    long,
+                    env = "MOON_AFFECTED",
+                    help = "Only run tasks if affected by changed files",
+                    help_heading = super::HEADING_AFFECTED,
+                    group = "affected-args"
+                )]
+                pub affected: Option<Option<crate::app_options::AffectedOption>>
+            },
+            quote! {
+                 #[arg(
+                    long,
+                    env = "MOON_BASE",
+                    help = "Base branch, commit, or revision to compare against",
+                    help_heading = super::HEADING_AFFECTED,
+                    requires = "affected-args",
+                )]
+                pub base: Option<String>
+            },
+            quote! {
+                #[arg(
+                    long,
+                    env = "MOON_HEAD",
+                    help = "Current branch, commit, or revision to compare with",
+                    help_heading = super::HEADING_AFFECTED,
+                    requires = "affected-args",
+                )]
+                pub head: Option<String>
+            },
+            quote! {
+                #[arg(
+                    long,
+                    help = "Filter changed files based on a changed status",
+                    help_heading = super::HEADING_AFFECTED,
+                    requires = "affected-args",
+                )]
+                pub status: Vec<moon_vcs::ChangedStatus>
+            },
+            quote! {
+                #[arg(
+                    long,
+                    help = "Accept changed files from stdin for affected checks",
+                    help_heading = super::HEADING_AFFECTED,
+                    requires = "affected-args",
+                )]
+                pub stdin: bool
+            },
+        ]
+    };
 
-                impl #struct_name {
-                    pub fn into_exec_args(self) -> ExecArgs {
-                        ExecArgs {
-                            #(#into_rows)*
-                            ..Default::default()
-                        }
-                    }
-                }
-            }
-            .into()
-        }
-        _ => panic!("`with_shared_exec_args` can only be used with structs!"),
-    }
+    inject_args(
+        item,
+        fields
+            .into_iter()
+            .map(|tokens| syn::Field::parse_named.parse2(tokens).unwrap())
+            .collect(),
+        false,
+    )
 }

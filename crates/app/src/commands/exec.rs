@@ -9,7 +9,7 @@ use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
 use moon_affected::{DownstreamScope, UpstreamScope};
-use moon_app_macros::with_shared_exec_args;
+use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
 use moon_common::{is_ci, is_test_env, path::WorkspaceRelativePathBuf};
 use moon_console::Console;
@@ -42,6 +42,7 @@ impl fmt::Display for OnFailure {
     }
 }
 
+#[with_affected_args]
 #[with_shared_exec_args]
 #[derive(Args, Clone, Debug, Default)]
 pub struct ExecArgs {

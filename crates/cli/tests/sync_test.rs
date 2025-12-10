@@ -99,7 +99,7 @@ mod sync_hooks {
             .run_bin(|cmd| {
                 cmd.arg("sync").arg("hooks");
             })
-            .debug();
+            .success();
 
         assert!(dir.exists());
 

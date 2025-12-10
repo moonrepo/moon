@@ -3,7 +3,7 @@ use crate::prompts::select_identifiers;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
-use moon_app_macros::with_shared_exec_args;
+use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_common::Id;
 use moon_console::ui::{SelectOption, SelectProps};
 use moon_project::Project;
@@ -12,6 +12,7 @@ use starbase::AppResult;
 use std::sync::Arc;
 use tracing::instrument;
 
+#[with_affected_args]
 #[with_shared_exec_args]
 #[derive(Args, Clone, Debug)]
 pub struct CheckArgs {

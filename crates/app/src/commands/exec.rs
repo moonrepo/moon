@@ -257,7 +257,7 @@ impl ExecWorkflow {
             base.as_deref().unwrap_or("N/A")
         ))?;
         self.print(format!(
-            "Head revision:<symbol>{}</symbol>",
+            "Head revision: <symbol>{}</symbol>",
             head.as_deref().unwrap_or("HEAD")
         ))?;
 
@@ -284,6 +284,7 @@ impl ExecWorkflow {
                 .collect::<Vec<_>>();
             files.sort();
 
+            self.print("")?;
             self.print(files.join("\n"))?;
         }
 
@@ -381,31 +382,31 @@ impl ExecWorkflow {
         for (target, state) in &affected.tasks {
             if !state.env.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> by environment variable <property>{}</property>",
+                    "<id>{target}</id> affected by environment variable <property>{}</property>",
                     state.env.iter().next().unwrap()
                 ))?;
             } else if !state.files.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> by file <file>{}</file>",
+                    "<id>{target}</id> affected by file <file>{}</file>",
                     state.files.iter().next().unwrap()
                 ))?;
             } else if !state.projects.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> by project <id>{}</id>",
+                    "<id>{target}</id> affected by project <id>{}</id>",
                     state.projects.iter().next().unwrap()
                 ))?;
             } else if !state.upstream.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> by dependency task <label>{}</label>",
+                    "<id>{target}</id> affected by dependency task <label>{}</label>",
                     state.upstream.iter().next().unwrap()
                 ))?;
             } else if !state.downstream.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> by dependent task <label>{}</label>",
+                    "<id>{target}</id> affected by dependent task <label>{}</label>",
                     state.downstream.iter().next().unwrap()
                 ))?;
             } else {
-                self.print(format!("<id>{target}</id>"))?;
+                self.print(format!("<id>{target}</id> affected"))?;
             }
         }
 

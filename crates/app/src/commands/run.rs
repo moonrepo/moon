@@ -9,25 +9,18 @@ use std::mem;
 use tracing::instrument;
 
 #[with_affected_args]
-#[with_shared_exec_args]
+#[with_shared_exec_args(passthrough)]
 #[derive(Args, Clone, Debug, Default)]
 pub struct RunArgs {
     #[arg(help = "List of explicit task targets to run")]
-    pub targets: Vec<TargetLocator>,
+    targets: Vec<TargetLocator>,
 
     #[arg(
         long,
         help = "Filter tasks based on the result of a query",
         help_heading = super::HEADING_WORKFLOW,
     )]
-    pub query: Option<String>,
-
-    // Passthrough args (after --)
-    #[arg(
-        last = true,
-        help = "Arguments to pass through to the underlying command"
-    )]
-    pub passthrough: Vec<String>,
+    query: Option<String>,
 }
 
 #[instrument(skip(session))]

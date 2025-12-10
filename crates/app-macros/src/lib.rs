@@ -46,9 +46,18 @@ fn inject_args(item: TokenStream, fields: Vec<Field>, add_impl: bool) -> TokenSt
     }
 }
 
+#[derive(Debug, FromMeta)]
+#[darling(derive_syn_parse)]
+struct SharedExecParams {
+    #[darling(default)]
+    passthrough: bool,
+}
+
 #[proc_macro_attribute]
-pub fn with_shared_exec_args(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let fields = [
+pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let params: SharedExecParams = syn::parse(attr.clone()).unwrap();
+
+    let mut fields = vec![
         // COMMON
         quote! {
             #[arg(
@@ -79,7 +88,7 @@ pub fn with_shared_exec_args(_attr: TokenStream, item: TokenStream) -> TokenStre
                 env = "MOON_SUMMARY",
                 help = "Print a summary of all actions that were ran in the pipeline"
             )]
-            pub summary: Option<Option<crate::app_options::SummaryLevel>>
+            pub summary: Option<Option<crate::app_options::SummaryOption>>
         },
         // GRAPH
         quote! {
@@ -119,10 +128,27 @@ pub fn with_shared_exec_args(_attr: TokenStream, item: TokenStream) -> TokenStre
             )]
             pub job_total: Option<usize>
         },
-    ]
-    .map(|tokens| syn::Field::parse_named.parse2(tokens).unwrap());
+    ];
 
-    inject_args(item, fields.to_vec(), true)
+    if params.passthrough {
+        fields.push(quote! {
+            // Passthrough args (after --)
+            #[arg(
+                last = true,
+                help = "Arguments to pass through to the underlying command"
+            )]
+            pub passthrough: Vec<String>
+        });
+    }
+
+    inject_args(
+        item,
+        fields
+            .into_iter()
+            .map(|tokens| syn::Field::parse_named.parse2(tokens).unwrap())
+            .collect(),
+        true,
+    )
 }
 
 #[derive(Debug, FromMeta)]

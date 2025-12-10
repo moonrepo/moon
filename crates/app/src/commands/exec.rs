@@ -43,7 +43,7 @@ impl fmt::Display for OnFailure {
 }
 
 #[with_affected_args]
-#[with_shared_exec_args]
+#[with_shared_exec_args(passthrough)]
 #[derive(Args, Clone, Debug, Default)]
 pub struct ExecArgs {
     #[arg(help = "List of task targets to execute in the action pipeline")]
@@ -71,13 +71,6 @@ pub struct ExecArgs {
         help_heading = super::HEADING_WORKFLOW,
     )]
     pub query: Option<String>,
-
-    // Passthrough args (after --)
-    #[arg(
-        last = true,
-        help = "Arguments to pass through to the underlying command"
-    )]
-    pub passthrough: Vec<String>,
 }
 
 #[instrument(skip(session))]

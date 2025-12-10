@@ -1,4 +1,5 @@
 use super::exec::*;
+use crate::app_options::AffectedOption;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
@@ -35,7 +36,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
 
         // If not provided by the user, always check affected
         if args.affected.is_none() {
-            args.affected = Some(None);
+            args.affected = Some(Some(AffectedOption::Bool(true)));
         }
 
         // Include direct dependents for regression checks

@@ -18,7 +18,7 @@ use tracing::instrument;
 pub struct CheckArgs {
     #[arg(help = "List of explicit project IDs to check")]
     #[clap(group = "projects")]
-    pub ids: Vec<Id>,
+    ids: Vec<Id>,
 
     #[arg(long, help = "Check all projects in the workspace")]
     #[clap(group = "projects")]

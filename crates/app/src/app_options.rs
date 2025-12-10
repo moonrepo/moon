@@ -61,7 +61,7 @@ impl fmt::Display for LogLevel {
 }
 
 #[derive(ValueEnum, Clone, Debug, Default)]
-pub enum SummaryLevel {
+pub enum SummaryOption {
     None,
     Minimal,
     Normal,
@@ -69,7 +69,7 @@ pub enum SummaryLevel {
     Detailed,
 }
 
-impl SummaryLevel {
+impl SummaryOption {
     pub fn to_level(&self) -> Level {
         match self {
             Self::None => Level::Zero,
@@ -80,7 +80,7 @@ impl SummaryLevel {
     }
 }
 
-impl fmt::Display for SummaryLevel {
+impl fmt::Display for SummaryOption {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(
             f,

@@ -1698,8 +1698,7 @@ mod run_legacy {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            sandbox.create_file("files/other.txt", "");
-            sandbox.create_file("noop/other.txt", "");
+            change_files(&sandbox, ["files/other.txt", "noop/other.txt"]);
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg(":noop").arg("--affected");

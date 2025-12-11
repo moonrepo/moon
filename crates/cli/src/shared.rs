@@ -81,6 +81,8 @@ fn exec_local_bin(mut command: Command) -> std::io::Result<u8> {
 }
 
 pub async fn run_cli(args: Vec<OsString>) -> MainResult {
+    sigpipe::reset();
+
     // Detect info about the current process
     let version = get_version();
 

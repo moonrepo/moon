@@ -73,7 +73,6 @@ mod sync_hooks {
 
     fn create_hooks_sandbox() -> MoonSandbox {
         let sandbox = create_empty_moon_sandbox();
-        sandbox.enable_git();
 
         sandbox.update_workspace_config(|config| {
             config.vcs.get_or_insert_default().hooks = Some(FxHashMap::from_iter([
@@ -85,6 +84,7 @@ mod sync_hooks {
             ]));
         });
 
+        sandbox.enable_git();
         sandbox
     }
 

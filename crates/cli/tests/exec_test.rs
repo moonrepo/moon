@@ -4,7 +4,7 @@ use moon_task_runner::TaskRunCacheState;
 use moon_test_utils2::predicates::prelude::*;
 use starbase_utils::{fs, json};
 use std::path::MAIN_SEPARATOR_STR;
-use utils::create_pipeline_sandbox;
+use utils::{change_files, create_pipeline_sandbox};
 
 const PROJECT_DIR: &str = if cfg!(windows) { "windows" } else { "unix" };
 
@@ -615,8 +615,13 @@ mod exec {
         fn uses_rel_paths_when_affected() {
             let sandbox = create_pipeline_sandbox();
 
-            sandbox.create_file(format!("{PROJECT_DIR}/input1.txt"), "");
-            sandbox.create_file(format!("{PROJECT_DIR}/input2.txt"), "");
+            change_files(
+                &sandbox,
+                [
+                    format!("{PROJECT_DIR}/input1.txt"),
+                    format!("{PROJECT_DIR}/input2.txt"),
+                ],
+            );
 
             let assert = sandbox.run_bin(|cmd| {
                 cmd.arg("exec")
@@ -634,8 +639,13 @@ mod exec {
         fn sets_args_only() {
             let sandbox = create_pipeline_sandbox();
 
-            sandbox.create_file(format!("{PROJECT_DIR}/input1.txt"), "");
-            sandbox.create_file(format!("{PROJECT_DIR}/input2.txt"), "");
+            change_files(
+                &sandbox,
+                [
+                    format!("{PROJECT_DIR}/input1.txt"),
+                    format!("{PROJECT_DIR}/input2.txt"),
+                ],
+            );
 
             let assert = sandbox.run_bin(|cmd| {
                 cmd.arg("exec")
@@ -653,8 +663,13 @@ mod exec {
         fn sets_env_var_only() {
             let sandbox = create_pipeline_sandbox();
 
-            sandbox.create_file(format!("{PROJECT_DIR}/input1.txt"), "");
-            sandbox.create_file(format!("{PROJECT_DIR}/input2.txt"), "");
+            change_files(
+                &sandbox,
+                [
+                    format!("{PROJECT_DIR}/input1.txt"),
+                    format!("{PROJECT_DIR}/input2.txt"),
+                ],
+            );
 
             let assert = sandbox.run_bin(|cmd| {
                 cmd.arg("exec")

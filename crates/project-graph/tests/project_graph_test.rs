@@ -229,8 +229,8 @@ mod project_graph {
         async fn ignores_git_moon_folders() {
             let sandbox = create_sandbox("dependencies");
 
-            sandbox.enable_git();
             sandbox.create_file(".moon/workspace.yml", "projects: ['*']");
+            sandbox.enable_git();
 
             let graph = build_graph(sandbox.path()).await;
 
@@ -257,8 +257,8 @@ mod project_graph {
         async fn filters_using_gitignore() {
             let sandbox = create_sandbox("layer-constraints");
 
-            sandbox.enable_git();
             sandbox.create_file(".gitignore", "*-other");
+            sandbox.enable_git();
 
             let graph = build_graph(sandbox.path()).await;
 

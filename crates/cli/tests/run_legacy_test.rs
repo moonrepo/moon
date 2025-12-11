@@ -1,4 +1,5 @@
 use moon_cache::CacheEngine;
+use moon_common::is_ci;
 use moon_config::{
     HasherWalkStrategy, PartialCodeownersConfig, PartialHasherConfig, PartialVcsConfig,
     PartialWorkspaceConfig, VcsProvider,
@@ -12,6 +13,32 @@ use rustc_hash::FxHashMap;
 use starbase_utils::json;
 use std::fs;
 use std::path::Path;
+
+pub fn change_files<I: IntoIterator<Item = V>, V: AsRef<str>>(sandbox: &Sandbox, files: I) {
+    let files = files
+        .into_iter()
+        .map(|file| file.as_ref().to_string())
+        .collect::<Vec<_>>();
+
+    for file in &files {
+        sandbox.create_file(file, "contents");
+    }
+
+    // CI uses `git diff` while local uses `git status`
+    if is_ci() {
+        sandbox.run_git(|cmd| {
+            cmd.args(["checkout", "-b", "other-branch"]);
+        });
+
+        sandbox.run_git(|cmd| {
+            cmd.arg("add").args(files);
+        });
+
+        sandbox.run_git(|cmd| {
+            cmd.args(["commit", "-m", "Change"]);
+        });
+    }
+}
 
 fn cases_sandbox() -> Sandbox {
     let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
@@ -1241,7 +1268,7 @@ mod run_legacy {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            sandbox.create_file("files/other.txt", "");
+            change_files(&sandbox, ["files/other.txt"]);
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("files:noop").arg("--affected");
@@ -1310,7 +1337,7 @@ mod run_legacy {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            sandbox.create_file("affected/primary.js", "");
+            change_files(&sandbox, ["affected/primary.js"]);
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
@@ -1382,7 +1409,7 @@ mod run_legacy {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            sandbox.create_file("files/other.txt", "");
+            change_files(&sandbox, ["files/other.txt"]);
 
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
@@ -1415,7 +1442,15 @@ mod run_legacy {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+            // CI doesn't check the local index
+            if is_ci() {
+                assert!(
+                    predicate::str::contains("not affected by changed files with status untracked")
+                        .eval(&output)
+                );
+            } else {
+                assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+            }
         }
 
         #[test]

@@ -6,6 +6,5 @@ use std::env;
 
 #[tokio::main]
 async fn main() -> MainResult {
-    sigpipe::reset();
     shared::run_cli(env::args_os().collect()).await
 }

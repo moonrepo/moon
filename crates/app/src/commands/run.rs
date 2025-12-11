@@ -5,7 +5,6 @@ use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_task::TargetLocator;
 use starbase::AppResult;
-use std::mem;
 use tracing::instrument;
 
 #[with_affected_args]
@@ -24,18 +23,15 @@ pub struct RunArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn run(session: MoonSession, mut args: RunArgs) -> AppResult {
-    let targets = mem::take(&mut args.targets);
-    let passthrough = mem::take(&mut args.passthrough);
-    let query = args.query.take();
-
+pub async fn run(session: MoonSession, args: RunArgs) -> AppResult {
     exec(session, {
-        let mut args = args.into_exec_args();
-        args.targets = targets;
-        args.on_failure = OnFailure::Bail;
-        args.passthrough = passthrough;
-        args.query = query;
-        args
+        let mut exec = args.to_exec_args();
+        args.apply_affected_to_exec_args(&mut exec);
+
+        exec.targets = args.targets;
+        exec.on_failure = OnFailure::Bail;
+        exec.query = args.query;
+        exec
     })
     .await
 }

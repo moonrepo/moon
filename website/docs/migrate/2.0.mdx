@@ -8,6 +8,7 @@ toc_max_heading_level: 6
 
 ### Commands
 
+- We've done a large polish pass for all commands, based on the [CLI guidelines](https://clig.dev).
 - Updated the `moonx` binary and task running shorthand syntax (`moon <task>`) to use `moon exec`
   instead of `moon run` under the hood.
   - Example: `moonx app:build` / `moon app:build` now runs `moon exec app:build`
@@ -28,6 +29,8 @@ toc_max_heading_level: 6
 #### `moon check`
 
 - Now runs `moon exec` under the hood, with some arguments/options pre-filled.
+- If the project ID is not specifed, it will no longer find the closest project. Instead you must
+  pass `--closest`.
 - Renamed options:
   - `--update-cache, -u` -> `--force, -f`
 

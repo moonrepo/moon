@@ -2,49 +2,7 @@ use darling::FromMeta;
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::parse::Parser;
-use syn::{DeriveInput, Field, parse_macro_input};
-
-fn inject_args(item: TokenStream, fields: Vec<Field>, add_impl: bool) -> TokenStream {
-    let mut ast = parse_macro_input!(item as DeriveInput);
-    let struct_name = &ast.ident;
-
-    match &mut ast.data {
-        syn::Data::Struct(struct_data) => {
-            let mut into_rows = vec![];
-
-            for field in &fields {
-                let key = field.ident.as_ref().unwrap();
-
-                into_rows.push(quote! {
-                    #key: self.#key,
-                });
-            }
-
-            if let syn::Fields::Named(named_fields) = &mut struct_data.fields {
-                named_fields.named.extend(fields);
-            }
-
-            if add_impl {
-                quote! {
-                    #ast
-
-                    impl #struct_name {
-                        pub fn into_exec_args(self) -> ExecArgs {
-                            ExecArgs {
-                                #(#into_rows)*
-                                ..Default::default()
-                            }
-                        }
-                    }
-                }
-                .into()
-            } else {
-                quote! { #ast }.into()
-            }
-        }
-        _ => panic!("`with_args` macros can only be used with structs!"),
-    }
-}
+use syn::{DeriveInput, parse_macro_input};
 
 #[derive(Debug, FromMeta)]
 #[darling(derive_syn_parse)]
@@ -141,14 +99,46 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
         });
     }
 
-    inject_args(
-        item,
-        fields
-            .into_iter()
-            .map(|tokens| syn::Field::parse_named.parse2(tokens).unwrap())
-            .collect(),
-        true,
-    )
+    let fields = fields
+        .into_iter()
+        .map(|tokens| syn::Field::parse_named.parse2(tokens).unwrap())
+        .collect::<Vec<_>>();
+
+    let mut ast = parse_macro_input!(item as DeriveInput);
+    let struct_name = &ast.ident;
+
+    match &mut ast.data {
+        syn::Data::Struct(struct_data) => {
+            let mut rows = vec![];
+
+            for field in &fields {
+                let key = field.ident.as_ref().unwrap();
+
+                rows.push(quote! {
+                    #key: self.#key.clone(),
+                });
+            }
+
+            if let syn::Fields::Named(named_fields) = &mut struct_data.fields {
+                named_fields.named.extend(fields);
+            }
+
+            quote! {
+                #ast
+
+                impl #struct_name {
+                    pub fn to_exec_args(&self) -> ExecArgs {
+                        ExecArgs {
+                            #(#rows)*
+                            ..Default::default()
+                        }
+                    }
+                }
+            }
+            .into()
+        }
+        _ => panic!("`with_shared_exec_args` macros can only be used with structs!"),
+    }
 }
 
 #[derive(Debug, FromMeta)]
@@ -252,12 +242,47 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
         ]
     };
 
-    inject_args(
-        item,
-        fields
-            .into_iter()
-            .map(|tokens| syn::Field::parse_named.parse2(tokens).unwrap())
-            .collect(),
-        false,
-    )
+    let fields = fields
+        .into_iter()
+        .map(|tokens| syn::Field::parse_named.parse2(tokens).unwrap())
+        .collect::<Vec<_>>();
+
+    let mut ast = parse_macro_input!(item as DeriveInput);
+    let struct_name = &ast.ident;
+
+    match &mut ast.data {
+        syn::Data::Struct(struct_data) => {
+            let mut rows = vec![];
+
+            if params.always_affected {
+                rows.push(quote! {
+                    args.affected = Some(None);
+                });
+            }
+
+            for field in &fields {
+                let key = field.ident.as_ref().unwrap();
+
+                rows.push(quote! {
+                    args.#key = self.#key.clone();
+                });
+            }
+
+            if let syn::Fields::Named(named_fields) = &mut struct_data.fields {
+                named_fields.named.extend(fields);
+            }
+
+            quote! {
+                #ast
+
+                impl #struct_name {
+                    pub fn apply_affected_to_exec_args(&self, args: &mut ExecArgs) {
+                        #(#rows)*
+                    }
+                }
+            }
+            .into()
+        }
+        _ => panic!("`with_affected_args` can only be used with structs!"),
+    }
 }

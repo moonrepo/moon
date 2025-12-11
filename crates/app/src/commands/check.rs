@@ -20,9 +20,13 @@ pub struct CheckArgs {
     #[clap(group = "projects")]
     ids: Vec<Id>,
 
-    #[arg(long, help = "Check all projects in the workspace")]
+    #[arg(long, help = "Check all projects")]
     #[clap(group = "projects")]
     all: bool,
+
+    #[arg(long, help = "Check the closest project")]
+    #[clap(group = "projects")]
+    closest: bool,
 }
 
 #[instrument(skip(session))]
@@ -33,6 +37,10 @@ pub async fn check(session: MoonSession, args: CheckArgs) -> AppResult {
     // Check all projects
     if args.all {
         projects.extend(workspace_graph.get_projects()?);
+    }
+    // Check the closest project
+    else if args.closest {
+        projects.push(workspace_graph.get_project_from_path(Some(&session.working_dir))?);
     }
     // Check selected projects
     else {
@@ -75,10 +83,12 @@ pub async fn check(session: MoonSession, args: CheckArgs) -> AppResult {
     }
 
     exec(session, {
-        let mut args = args.into_exec_args();
-        args.targets = targets;
-        args.on_failure = OnFailure::Bail;
-        args
+        let mut exec = args.to_exec_args();
+        args.apply_affected_to_exec_args(&mut exec);
+
+        exec.targets = targets;
+        exec.on_failure = OnFailure::Bail;
+        exec
     })
     .await
 }

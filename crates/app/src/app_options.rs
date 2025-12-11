@@ -64,8 +64,8 @@ impl fmt::Display for LogLevel {
 pub enum SummaryOption {
     None,
     Minimal,
-    Normal,
     #[default]
+    Normal,
     Detailed,
 }
 
@@ -74,7 +74,7 @@ impl SummaryOption {
         match self {
             Self::None => Level::Zero,
             Self::Minimal => Level::One,
-            Self::Normal => Level::Three,
+            Self::Normal => Level::Two,
             Self::Detailed => Level::Three,
         }
     }

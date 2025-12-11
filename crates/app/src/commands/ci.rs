@@ -1,5 +1,5 @@
 use super::exec::*;
-use crate::app_options::AffectedOption;
+use crate::app_options::SummaryOption;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
@@ -29,22 +29,24 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
     }
 
     exec(session, {
-        let mut args = args.into_exec_args();
-        args.targets = targets;
-        args.on_failure = OnFailure::Continue;
-        args.only_ci_tasks = true;
+        let mut exec = args.to_exec_args();
+        args.apply_affected_to_exec_args(&mut exec);
 
-        // If not provided by the user, always check affected
-        if args.affected.is_none() {
-            args.affected = Some(Some(AffectedOption::Bool(true)));
+        exec.targets = targets;
+        exec.on_failure = OnFailure::Continue;
+        exec.only_ci_tasks = true;
+
+        // Show full output in CI
+        if exec.summary.is_none() {
+            exec.summary = Some(Some(SummaryOption::Detailed));
         }
 
         // Include direct dependents for regression checks
-        if args.downstream.is_none() {
-            args.downstream = Some(DownstreamScope::Direct);
+        if exec.downstream.is_none() {
+            exec.downstream = Some(DownstreamScope::Direct);
         }
 
-        args
+        exec
     })
     .await
 }

@@ -12,8 +12,8 @@ use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
 use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
-use moon_console::Console;
 use moon_console::ui::{SelectOption, SelectProps};
+use moon_console::{Console, Level};
 use moon_task::TargetLocator;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashSet;
@@ -110,8 +110,9 @@ pub struct ExecWorkflow {
     console: Arc<Console>,
     session: MoonSession,
 
-    ui: CiOutput,
     last_title: String,
+    summary: Level,
+    ui: CiOutput,
 
     /// Whether we should run affected logic or not
     affected: bool,
@@ -144,6 +145,12 @@ impl ExecWorkflow {
                     Some(inner) => inner.is_enabled(),
                     None => true, // no arg value
                 }),
+            summary: args
+                .summary
+                .clone()
+                .map(|sum| sum.unwrap_or_default())
+                .unwrap_or_default()
+                .to_level(),
             ci_check: args.only_ci_tasks,
             ci_env,
             console: session.get_console()?,
@@ -180,10 +187,12 @@ impl ExecWorkflow {
                 AppError::NoExecAffectedTasks {
                     targets: self.args.targets.clone(),
                     status: self.args.status.clone(),
+                    query: self.args.query.clone(),
                 }
             } else {
                 AppError::NoExecTasks {
                     targets: self.args.targets.clone(),
+                    query: self.args.query.clone(),
                 }
             }
             .into());
@@ -235,6 +244,7 @@ impl ExecWorkflow {
         // If we're in CI, extract PR information for base and head
         if self.ci_env
             && !self.test_env
+            && (base.is_none() || head.is_none())
             && let Some(env) = ci_env::get_environment()
         {
             let is_pr = env.request_id.is_some_and(|id| !id.is_empty());
@@ -256,10 +266,27 @@ impl ExecWorkflow {
             "Base revision: <symbol>{}</symbol>",
             base.as_deref().unwrap_or("N/A")
         ))?;
+
         self.print(format!(
             "Head revision: <symbol>{}</symbol>",
             head.as_deref().unwrap_or("HEAD")
         ))?;
+
+        if self.affected {
+            self.print(format!(
+                "Affected by changes: {}",
+                if self.args.status.is_empty() {
+                    "<symbol>all</symbol>".to_owned()
+                } else {
+                    self.args
+                        .status
+                        .iter()
+                        .map(|status| format!("<symbol>{status}</symbol>"))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                }
+            ))?;
+        }
 
         let mut options = QueryChangedFilesOptions {
             default_branch: !self.test_env,
@@ -276,7 +303,9 @@ impl ExecWorkflow {
 
         let result = query_changed_files(&vcs, options).await?;
 
-        if self.ci_env {
+        // Without this check, the newlines in the file list
+        // will cause the message to break out of the tracing debug!
+        if self.should_print() {
             let mut files = result
                 .files
                 .iter()
@@ -363,6 +392,7 @@ impl ExecWorkflow {
             "Target count: <mutedlight>{}</mutedlight>",
             self.args.targets.len()
         ))?;
+
         self.print(format!(
             "Action count: <mutedlight>{}</mutedlight>",
             action_graph.get_node_count()
@@ -453,16 +483,16 @@ impl ExecWorkflow {
         Ok(results)
     }
 
-    fn should_print_ci(&self) -> bool {
-        self.ci_env && !self.test_env
+    fn should_print(&self) -> bool {
+        !self.console.out.is_quiet() && self.summary.is(Level::Three) && !self.test_env
     }
 
-    fn print_group_header(&mut self, title: &str) -> miette::Result<()> {
+    fn print_header(&mut self, title: &str) -> miette::Result<()> {
         self.last_title = title.to_owned();
 
-        if self.should_print_ci() {
+        if self.should_print() {
             self.console
-                .err
+                .out
                 .write_line(self.ui.open_log_group.replace("{name}", title))?;
         } else {
             debug!("Step {}: {title}", self.step);
@@ -472,9 +502,9 @@ impl ExecWorkflow {
     }
 
     fn print_footer(&mut self) -> miette::Result<()> {
-        if self.should_print_ci() && !self.ui.close_log_group.is_empty() {
+        if self.should_print() && !self.ui.close_log_group.is_empty() {
             self.console
-                .err
+                .out
                 .write_line(self.ui.close_log_group.replace("{name}", &self.last_title))?;
         }
 
@@ -489,7 +519,7 @@ impl ExecWorkflow {
         }
 
         self.step += 1;
-        self.print_group_header(message)?;
+        self.print_header(message)?;
 
         Ok(())
     }
@@ -497,8 +527,8 @@ impl ExecWorkflow {
     fn print(&self, message: impl AsRef<str>) -> miette::Result<()> {
         let message = apply_style_tags(message.as_ref());
 
-        if self.should_print_ci() {
-            self.console.err.write_line(message)?;
+        if self.should_print() {
+            self.console.out.write_line(message)?;
         } else {
             debug!("{message}");
         }

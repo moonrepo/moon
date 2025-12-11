@@ -831,7 +831,7 @@ mod run_legacy {
             assert!(predicate::str::contains("cached").eval(&assert.output()));
 
             let assert = sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("outputs:generateFixed").arg("-u");
+                cmd.arg("run").arg("outputs:generateFixed").arg("-f");
             });
 
             assert!(!predicate::str::contains("cached").eval(&assert.output()));
@@ -1201,7 +1201,8 @@ mod run_legacy {
             let output = assert.output();
 
             assert!(predicate::str::contains("not affected by changed files").eval(&output));
-            assert!(predicate::str::contains("status untracked, deleted").eval(&output));
+            assert!(predicate::str::contains("untracked").eval(&output));
+            assert!(predicate::str::contains("deleted").eval(&output));
         }
 
         #[test]
@@ -1335,7 +1336,6 @@ mod run_legacy {
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
                     .arg("files:affected")
-                    .arg("-u")
                     .arg("--affected")
                     .arg("--status")
                     .arg("modified");
@@ -1344,6 +1344,8 @@ mod run_legacy {
             assert!(predicate::str::contains("\nfile.txt\n").eval(&assert.output()));
 
             // Then test added
+            fs::remove_dir_all(sandbox.path().join(".moon/cache")).unwrap();
+
             sandbox.create_file("files/other.txt", "added");
             sandbox.run_git(|cmd| {
                 cmd.args(["add", "files/other.txt"]);
@@ -1352,7 +1354,6 @@ mod run_legacy {
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
                     .arg("files:affected")
-                    .arg("-u")
                     .arg("--affected")
                     .arg("--status")
                     .arg("added");
@@ -1361,10 +1362,11 @@ mod run_legacy {
             assert!(predicate::str::contains("\nother.txt\n").eval(&assert.output()));
 
             // Then test both
+            fs::remove_dir_all(sandbox.path().join(".moon/cache")).unwrap();
+
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run")
                     .arg("files:affected")
-                    .arg("-u")
                     .arg("--affected")
                     .arg("--status")
                     .arg("modified")
@@ -1847,6 +1849,8 @@ mod run_legacy {
             let assert = sandbox.run_moon(|cmd| {
                 cmd.arg("run").arg("taskScript:pipe");
             });
+
+            assert.debug();
 
             assert_snapshot!(assert.output());
 

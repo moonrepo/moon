@@ -86,18 +86,25 @@ pub enum AppError {
 
     #[diagnostic(code(app::exec::no_tasks))]
     #[error(
-        "No tasks found for provided targets {}, unable to execute action pipeline.",
+        "No tasks found for provided targets {}, unable to execute action pipeline.{}",
         .targets
             .iter()
             .map(|target| target.as_str().to_string().style(Style::Id))
             .collect::<Vec<_>>()
-            .join(", ")
+            .join(", "),
+        .query
+            .as_ref()
+            .map(|q| format!("\nUsing query {}.", q.style(Style::Shell)))
+            .unwrap_or_default()
     )]
-    NoExecTasks { targets: Vec<TargetLocator> },
+    NoExecTasks {
+        targets: Vec<TargetLocator>,
+        query: Option<String>,
+    },
 
     #[diagnostic(code(app::exec::no_affected_tasks))]
     #[error(
-        "Tasks {} not affected by changed files using status {}, unable to execute action pipeline.",
+        "Tasks {} not affected by changed files with status {}, unable to execute action pipeline.{}",
         .targets
             .iter()
             .map(|target| target.as_str().to_string().style(Style::Id))
@@ -111,10 +118,15 @@ pub enum AppError {
                 .map(|status| status.to_string().style(Style::Symbol))
                 .collect::<Vec<_>>()
                 .join(", ")
-        }
+        },
+        .query
+            .as_ref()
+            .map(|q| format!("\nUsing query {}.", q.style(Style::Shell)))
+            .unwrap_or_default()
     )]
     NoExecAffectedTasks {
         targets: Vec<TargetLocator>,
         status: Vec<ChangedStatus>,
+        query: Option<String>,
     },
 }

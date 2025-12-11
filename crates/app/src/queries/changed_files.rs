@@ -11,7 +11,7 @@ use starbase_utils::json;
 use std::io::{IsTerminal, Read, stdin};
 use tracing::{debug, trace, warn};
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QueryChangedFilesOptions {
     pub base: Option<String>,

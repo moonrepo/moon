@@ -19,7 +19,7 @@ pub enum Level {
 }
 
 impl Level {
-    fn is(&self, level: Level) -> bool {
+    pub fn is(&self, level: Level) -> bool {
         match level {
             Self::Zero => false,
             Self::One => matches!(self, Level::One | Level::Two | Level::Three),

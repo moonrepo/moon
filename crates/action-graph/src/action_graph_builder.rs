@@ -836,10 +836,32 @@ impl<'query> ActionGraphBuilder<'query> {
         spec: &ToolchainSpec,
         project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
+        self.internal_setup_toolchain(spec, project, &mut FxHashSet::default())
+            .await
+    }
+
+    async fn internal_setup_toolchain(
+        &mut self,
+        spec: &ToolchainSpec,
+        project: Option<&Project>,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
         if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
             return Ok(None);
         }
+
+        let node = ActionNode::setup_toolchain(SetupToolchainNode {
+            toolchain: spec.to_owned(),
+        });
+
+        // Check for circular dependencies
+        if cycle.contains(&spec.id) {
+            return Ok(self.get_index_from_node(&node));
+        }
+
+        // Mark this toolchain as being processed
+        cycle.insert(spec.id.clone());
 
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
@@ -861,7 +883,10 @@ impl<'query> ActionGraphBuilder<'query> {
                     if require_id != spec.id
                         && let Some(require_spec) = self.get_spec(&require_id, project)
                     {
-                        edges.push(Box::pin(self.setup_toolchain(&require_spec, project)).await?);
+                        edges.push(
+                            Box::pin(self.internal_setup_toolchain(&require_spec, project, cycle))
+                                .await?,
+                        );
                     } else {
                         return Err(ActionGraphError::MissingToolchainRequirement {
                             id: spec.id.to_string(),
@@ -884,12 +909,7 @@ impl<'query> ActionGraphBuilder<'query> {
             edges.push(self.setup_proto().await?);
         }
 
-        let index = insert_node_if_missing!(
-            self,
-            ActionNode::setup_toolchain(SetupToolchainNode {
-                toolchain: spec.to_owned(),
-            })
-        );
+        let index = insert_node_if_missing!(self, node);
 
         self.link_optional_requirements(index, edges);
 

@@ -851,24 +851,35 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
-        let node = ActionNode::setup_toolchain(SetupToolchainNode {
-            toolchain: spec.to_owned(),
-        });
+        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
 
-        // Check for circular dependencies
-        if cycle.contains(&spec.id) {
-            return Ok(self.get_index_from_node(&node));
+        // Toolchain does not support tier 3 and has no requirements
+        if !toolchain.has_func("define_requirements").await && !toolchain.supports_tier_3().await {
+            return Ok(None);
         }
 
-        // Mark this toolchain as being processed
-        cycle.insert(spec.id.clone());
-
-        let toolchain_registry = &self.app_context.toolchain_registry;
-        let toolchain = toolchain_registry.load(&spec.id).await?;
         let mut edges = vec![];
+
+        edges.push(self.sync_workspace().await?);
+
+        if spec.req.is_some() || self.app_context.toolchains_config.requires_proto() {
+            edges.push(self.setup_proto().await?);
+        }
+
+        // Insert the node first - this handles deduplication
+        let index = insert_node_or_exit!(
+            self,
+            ActionNode::setup_toolchain(SetupToolchainNode {
+                toolchain: spec.to_owned(),
+            })
+        );
+
+        // Now track this toolchain in the cycle detector
+        cycle.insert(spec.id.clone());
 
         // Toolchain may depend on others
         if toolchain.has_func("define_requirements").await {
+            let toolchain_registry = &self.app_context.toolchain_registry;
             let output = toolchain
                 .define_requirements(DefineRequirementsInput {
                     context: toolchain_registry.create_context(),
@@ -880,38 +891,36 @@ impl<'query> ActionGraphBuilder<'query> {
                 for require_id in output.requires {
                     let require_id = Id::new(require_id)?;
 
-                    if require_id != spec.id
-                        && let Some(require_spec) = self.get_spec(&require_id, project)
-                    {
-                        edges.push(
-                            Box::pin(self.internal_setup_toolchain(&require_spec, project, cycle))
-                                .await?,
-                        );
-                    } else {
-                        return Err(ActionGraphError::MissingToolchainRequirement {
-                            id: spec.id.to_string(),
-                            dep_id: require_id.to_string(),
+                    if require_id != spec.id {
+                        // Skip if already in cycle
+                        if cycle.contains(&require_id) {
+                            continue;
                         }
-                        .into());
+
+                        if let Some(require_spec) = self.get_spec(&require_id, project) {
+                            edges.push(
+                                Box::pin(self.internal_setup_toolchain(
+                                    &require_spec,
+                                    project,
+                                    cycle,
+                                ))
+                                .await?,
+                            );
+                        } else {
+                            return Err(ActionGraphError::MissingToolchainRequirement {
+                                id: spec.id.to_string(),
+                                dep_id: require_id.to_string(),
+                            }
+                            .into());
+                        }
                     }
                 }
             }
         }
 
-        // Toolchain does not support tier 3 and does not require other toolchains
-        if !toolchain.supports_tier_3().await && edges.is_empty() {
-            return Ok(None);
+        if !edges.is_empty() {
+            self.link_optional_requirements(index, edges);
         }
-
-        edges.push(self.sync_workspace().await?);
-
-        if spec.req.is_some() || self.app_context.toolchains_config.requires_proto() {
-            edges.push(self.setup_proto().await?);
-        }
-
-        let index = insert_node_if_missing!(self, node);
-
-        self.link_optional_requirements(index, edges);
 
         Ok(Some(index))
     }

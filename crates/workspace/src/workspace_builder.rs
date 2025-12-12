@@ -289,8 +289,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
     /// Load a single project by ID or alias into the graph.
     pub async fn load_project(&mut self, id_or_alias: &str) -> miette::Result<()> {
-        self.internal_load_project(id_or_alias, &mut FxHashSet::default())
-            .await?;
+        Box::pin(self.internal_load_project(id_or_alias, &mut FxHashSet::default())).await?;
 
         Ok(())
     }
@@ -311,8 +310,12 @@ impl<'app> WorkspaceBuilder<'app> {
         &mut self,
         id_or_alias: &str,
         cycle: &mut FxHashSet<Id>,
-    ) -> miette::Result<(Id, NodeIndex)> {
+    ) -> miette::Result<Option<(Id, NodeIndex)>> {
         let id = ProjectBuildData::resolve_id(id_or_alias, &self.project_data);
+
+        if cycle.contains(&id) {
+            return Ok(None);
+        }
 
         {
             let Some(build_data) = self.project_data.get(&id) else {
@@ -321,7 +324,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
             // Already loaded, exit early with existing index
             if let Some(index) = &build_data.node_index {
-                return Ok((id, *index));
+                return Ok(Some((id, *index)));
             }
         }
 
@@ -366,20 +369,20 @@ impl<'app> WorkspaceBuilder<'app> {
                 continue;
             }
 
-            let dep = Box::pin(self.internal_load_project(&dep_config.id, cycle)).await?;
-
-            // Don't link the root project to any project, but still load it
-            if !dep_config.is_root_scope() {
-                self.project_graph.add_edge(index, dep.1, dep_config.scope);
+            if let Some(dep) = Box::pin(self.internal_load_project(&dep_config.id, cycle)).await? {
+                // Don't link the root project to any project, but still load it
+                if !dep_config.is_root_scope() {
+                    self.project_graph.add_edge(index, dep.1, dep_config.scope);
+                }
             }
         }
 
         // And finally, update the node weight state
         *self.project_graph.node_weight_mut(index).unwrap() = NodeState::Loaded(project);
 
-        cycle.clear();
+        // cycle.clear();
 
-        Ok((id, index))
+        Ok(Some((id, index)))
     }
 
     /// Create and build the project with the provided ID and source.
@@ -458,8 +461,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
     /// Load a single task by target into the graph.
     pub async fn load_task(&mut self, target: &Target) -> miette::Result<()> {
-        self.internal_load_task(target, &mut FxHashSet::default())
-            .await?;
+        Box::pin(self.internal_load_task(target, &mut FxHashSet::default())).await?;
 
         Ok(())
     }
@@ -488,8 +490,12 @@ impl<'app> WorkspaceBuilder<'app> {
         &mut self,
         target: &Target,
         cycle: &mut FxHashSet<Target>,
-    ) -> miette::Result<NodeIndex> {
+    ) -> miette::Result<Option<NodeIndex>> {
         let target = TaskBuildData::resolve_target(target, &self.project_data)?;
+
+        if cycle.contains(&target) {
+            return Ok(None);
+        }
 
         {
             let Some(build_data) = self.task_data.get(&target) else {
@@ -502,14 +508,18 @@ impl<'app> WorkspaceBuilder<'app> {
 
             // Already loaded, exit early with existing index
             if let Some(index) = &build_data.node_index {
-                return Ok(*index);
+                return Ok(Some(*index));
             }
         }
 
         // Not loaded, resolve the task
-        let (_, project_index) = self
-            .internal_load_project(target.get_project_id()?, &mut FxHashSet::default())
-            .await?;
+        let Some((_, project_index)) = Box::pin(
+            self.internal_load_project(target.get_project_id()?, &mut FxHashSet::default()),
+        )
+        .await?
+        else {
+            panic!("Unable to load task, owning project does not exist!");
+        };
 
         let NodeState::Loaded(project) = self.project_graph.node_weight_mut(project_index).unwrap()
         else {
@@ -551,25 +561,27 @@ impl<'app> WorkspaceBuilder<'app> {
                 continue;
             }
 
-            let dep_index = Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?;
-
-            self.task_graph.add_edge(
-                index,
-                dep_index,
-                if dep_config.optional.is_some_and(|v| v) {
-                    TaskDependencyType::Optional
-                } else {
-                    TaskDependencyType::Required
-                },
-            );
+            if let Some(dep_index) =
+                Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?
+            {
+                self.task_graph.add_edge(
+                    index,
+                    dep_index,
+                    if dep_config.optional.is_some_and(|v| v) {
+                        TaskDependencyType::Optional
+                    } else {
+                        TaskDependencyType::Required
+                    },
+                );
+            }
         }
 
         // And finally, update the node weight state
         *self.task_graph.node_weight_mut(index).unwrap() = NodeState::Loaded(task);
 
-        cycle.clear();
+        // cycle.clear();
 
-        Ok(index)
+        Ok(Some(index))
     }
 
     /// Determine the repository type/structure based on the number of project

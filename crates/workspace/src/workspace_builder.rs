@@ -24,7 +24,7 @@ use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relation
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
 use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskMetadata};
+use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
@@ -93,7 +93,7 @@ pub struct WorkspaceBuilder<'app> {
     task_data: FxHashMap<Target, TaskBuildData>,
 
     /// The task DAG.
-    task_graph: DiGraph<NodeState<Task>, TaskDependencyType>,
+    task_graph: Dag<NodeState<Task>, TaskDependencyType>,
 }
 
 impl<'app> WorkspaceBuilder<'app> {
@@ -109,12 +109,12 @@ impl<'app> WorkspaceBuilder<'app> {
             aliases: FxHashMap::default(),
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
-            project_graph: Dag::default(),
+            project_graph: Dag::new(),
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
             task_data: FxHashMap::default(),
-            task_graph: DiGraph::default(),
+            task_graph: Dag::new(),
         };
 
         graph.preload_build_data().await?;
@@ -570,15 +570,20 @@ impl<'app> WorkspaceBuilder<'app> {
             if let Some(dep_index) =
                 Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?
             {
-                self.task_graph.add_edge(
-                    index,
-                    dep_index,
-                    if dep_config.optional.is_some_and(|v| v) {
-                        TaskDependencyType::Optional
-                    } else {
-                        TaskDependencyType::Required
-                    },
-                );
+                self.task_graph
+                    .add_edge(
+                        index,
+                        dep_index,
+                        if dep_config.optional.is_some_and(|v| v) {
+                            TaskDependencyType::Optional
+                        } else {
+                            TaskDependencyType::Required
+                        },
+                    )
+                    .map_err(|_| TaskGraphError::WouldCycle {
+                        source_target: task.target.to_string(),
+                        target_target: dep_config.target.to_string(),
+                    })?;
             }
         }
 

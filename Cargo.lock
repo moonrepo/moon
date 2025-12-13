@@ -4314,6 +4314,7 @@ dependencies = [
 name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
+ "daggy",
  "miette 7.6.0",
  "moon_common",
  "moon_config",

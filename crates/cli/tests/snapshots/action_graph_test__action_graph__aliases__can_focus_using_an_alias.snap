@@ -2,23 +2,30 @@
 source: crates/cli/tests/action_graph_test.rs
 expression: assert.output()
 ---
+
 digraph {
     0 [ label="SyncWorkspace"]
     1 [ label="SyncProject(node)"]
     2 [ label="SetupProto(1.2.3)"]
     3 [ label="SetupToolchain(node:24.0.0)"]
-    4 [ label="RunTask(node:b)"]
-    5 [ label="RunTask(node:c)"]
-    6 [ label="RunTask(node:d)"]
+    4 [ label="SetupToolchain(javascript)"]
+    5 [ label="RunTask(node:b)"]
+    6 [ label="RunTask(node:c)"]
+    7 [ label="RunTask(node:d)"]
     1 -> 0 [ label="required"]
     3 -> 0 [ label="required"]
     3 -> 2 [ label="required"]
+    4 -> 0 [ label="required"]
+    4 -> 2 [ label="required"]
+    7 -> 1 [ label="required"]
+    7 -> 3 [ label="required"]
+    7 -> 4 [ label="required"]
     6 -> 1 [ label="required"]
     6 -> 3 [ label="required"]
+    6 -> 4 [ label="required"]
+    6 -> 7 [ label="required"]
     5 -> 1 [ label="required"]
     5 -> 3 [ label="required"]
+    5 -> 4 [ label="required"]
     5 -> 6 [ label="required"]
-    4 -> 1 [ label="required"]
-    4 -> 3 [ label="required"]
-    4 -> 5 [ label="required"]
 }

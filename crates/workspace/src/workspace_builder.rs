@@ -380,7 +380,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // And finally, update the node weight state
         *self.project_graph.node_weight_mut(index).unwrap() = NodeState::Loaded(project);
 
-        // cycle.clear();
+        cycle.clear();
 
         Ok(Some((id, index)))
     }
@@ -579,7 +579,7 @@ impl<'app> WorkspaceBuilder<'app> {
         // And finally, update the node weight state
         *self.task_graph.node_weight_mut(index).unwrap() = NodeState::Loaded(task);
 
-        // cycle.clear();
+        cycle.clear();
 
         Ok(Some(index))
     }

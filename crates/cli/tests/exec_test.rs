@@ -2,9 +2,9 @@ mod utils;
 
 use moon_task_runner::TaskRunCacheState;
 use moon_test_utils2::predicates::prelude::*;
-use starbase_utils::json;
-use std::fs;
-use utils::create_pipeline_sandbox;
+use starbase_utils::{fs, json};
+use std::path::MAIN_SEPARATOR_STR;
+use utils::{change_files, create_pipeline_sandbox};
 
 const PROJECT_DIR: &str = if cfg!(windows) { "windows" } else { "unix" };
 
@@ -12,14 +12,10 @@ fn target(task: &str) -> String {
     format!("{PROJECT_DIR}:{task}")
 }
 
-mod run {
+mod exec {
     use super::*;
 
     mod general {
-        use std::path::MAIN_SEPARATOR_STR;
-
-        use starbase_utils::fs;
-
         use super::*;
 
         #[test]
@@ -29,7 +25,7 @@ mod run {
             sandbox
                 .run_bin(|cmd| {
                     cmd.arg("--log-file=output.log")
-                        .arg("run")
+                        .arg("exec")
                         .arg("shared:base");
                 })
                 .success();
@@ -44,7 +40,7 @@ mod run {
             sandbox
                 .run_bin(|cmd| {
                     cmd.arg("--log-file=nested/output.log")
-                        .arg("run")
+                        .arg("exec")
                         .arg("shared:base");
                 })
                 .success();
@@ -57,7 +53,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("echo"));
+                cmd.arg("exec").arg(target("echo"));
             });
 
             assert.success().stdout(predicate::str::contains("hello"));
@@ -68,7 +64,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("ls"));
+                cmd.arg("exec").arg(target("ls"));
             });
 
             assert
@@ -85,7 +81,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("exitZero"));
+                cmd.arg("exec").arg(target("exitZero"));
             });
 
             assert
@@ -101,7 +97,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("exitNonZero"));
+                cmd.arg("exec").arg(target("exitNonZero"));
             });
 
             assert
@@ -117,7 +113,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run")
+                cmd.arg("exec")
                     .arg(target("passthroughArgs"))
                     .arg("--")
                     .arg("-aBc")
@@ -142,7 +138,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run")
+                cmd.arg("exec")
                     .arg(target("passthroughArgs"))
                     .arg("--")
                     .arg("-aBc")
@@ -168,7 +164,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("envVars"));
+                cmd.arg("exec").arg(target("envVars"));
             });
 
             assert
@@ -182,7 +178,7 @@ mod run {
             let id = target("envVarsMoon");
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(&id);
+                cmd.arg("exec").arg(&id);
             });
 
             assert
@@ -195,7 +191,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("runFromProject"));
+                cmd.arg("exec").arg(target("runFromProject"));
             });
 
             assert.success().stdout(predicate::str::contains(format!(
@@ -209,7 +205,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("runFromWorkspace"));
+                cmd.arg("exec").arg(target("runFromWorkspace"));
             });
 
             assert.success().stdout(
@@ -229,7 +225,7 @@ mod run {
             let id = target("retryCount");
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(&id);
+                cmd.arg("exec").arg(&id);
             });
 
             assert
@@ -247,7 +243,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("noShell"));
+                cmd.arg("exec").arg(target("noShell"));
             });
 
             assert.success().stdout(predicate::str::contains("hello"));
@@ -259,7 +255,7 @@ mod run {
 
             sandbox
                 .run_bin(|cmd| {
-                    cmd.arg("run").arg(target("multiAmpersand"));
+                    cmd.arg("exec").arg(target("multiAmpersand"));
                 })
                 .success();
 
@@ -273,7 +269,7 @@ mod run {
 
             sandbox
                 .run_bin(|cmd| {
-                    cmd.arg("run").arg(target("multiSemicolon"));
+                    cmd.arg("exec").arg(target("multiSemicolon"));
                 })
                 .success();
 
@@ -286,7 +282,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("syntaxVar"));
+                cmd.arg("exec").arg(target("syntaxVar"));
             });
 
             assert
@@ -303,7 +299,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("syntaxExpansion"));
+                cmd.arg("exec").arg(target("syntaxExpansion"));
             });
 
             assert.success().stdout(predicate::str::contains("cd"));
@@ -314,7 +310,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("syntaxSubstitution"));
+                cmd.arg("exec").arg(target("syntaxSubstitution"));
             });
 
             assert
@@ -328,7 +324,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("syntaxSubstitutionTick"));
+                cmd.arg("exec").arg(target("syntaxSubstitutionTick"));
             });
 
             assert.success().stdout(predicate::str::contains("subtick"));
@@ -343,7 +339,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("unknown:task");
+                cmd.arg("exec").arg("unknown:task");
             });
 
             assert.failure().stderr(predicate::str::contains(
@@ -356,7 +352,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("shared:unknown");
+                cmd.arg("exec").arg("shared:unknown");
             });
 
             assert.failure().stderr(predicate::str::contains(
@@ -369,7 +365,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("shared:internalOnly");
+                cmd.arg("exec").arg("shared:internalOnly");
             });
 
             assert.failure().stderr(predicate::str::contains(
@@ -382,11 +378,11 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(":unknown");
+                cmd.arg("exec").arg(":unknown");
             });
 
             assert.failure().stderr(predicate::str::contains(
-                "No tasks found for target(s) :unknown",
+                "No tasks found for provided targets :unknown",
             ));
         }
 
@@ -395,7 +391,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run")
+                cmd.arg("exec")
                     .arg(target("outFoo"))
                     .arg(target("outBar"))
                     .arg(target("outBaz"));
@@ -413,7 +409,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("shared:willFail");
+                cmd.arg("exec").arg("shared:willFail");
             });
 
             assert.failure().stderr(predicate::str::contains(
@@ -426,7 +422,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("shared:willFailButAllowed");
+                cmd.arg("exec").arg("shared:willFailButAllowed");
             });
 
             assert.success().stdout(
@@ -444,9 +440,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run")
-                    .arg(target("envVarsMoon"))
-                    .arg("--update-cache");
+                cmd.arg("exec").arg(target("envVarsMoon")).arg("--force");
             });
 
             assert
@@ -460,7 +454,7 @@ mod run {
 
             sandbox
                 .run_bin(|cmd| {
-                    cmd.arg("run").arg(target("outputs"));
+                    cmd.arg("exec").arg(target("outputs"));
                 })
                 .success();
 
@@ -473,7 +467,7 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("outputs"));
+                cmd.arg("exec").arg(target("outputs"));
             });
 
             assert
@@ -481,7 +475,7 @@ mod run {
                 .stdout(predicate::str::contains("cached").not());
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("outputs"));
+                cmd.arg("exec").arg(target("outputs"));
             });
 
             assert.success().stdout(predicate::str::contains("cached"));
@@ -493,7 +487,7 @@ mod run {
 
             sandbox
                 .run_bin(|cmd| {
-                    cmd.arg("run").arg("shared:base");
+                    cmd.arg("exec").arg("shared:base");
                 })
                 .success();
 
@@ -506,7 +500,7 @@ mod run {
 
             sandbox
                 .run_bin(|cmd| {
-                    cmd.arg("run").arg(target("outputs"));
+                    cmd.arg("exec").arg(target("outputs"));
                 })
                 .success();
 
@@ -526,7 +520,7 @@ mod run {
 
             sandbox
                 .run_bin(|cmd| {
-                    cmd.arg("run").arg(target("outputs"));
+                    cmd.arg("exec").arg(target("outputs"));
                 })
                 .success();
 
@@ -546,7 +540,7 @@ mod run {
 
             sandbox
                 .run_bin(|cmd| {
-                    cmd.arg("run").arg(target("outputs"));
+                    cmd.arg("exec").arg(target("outputs"));
                 })
                 .success();
 
@@ -585,16 +579,16 @@ mod run {
             let sandbox = create_pipeline_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg(target("affectedFiles"));
+                cmd.arg("exec").arg(target("affectedFiles"));
             });
 
             let root = sandbox.path().join(PROJECT_DIR);
 
             let mut files = fs::read_dir(&root)
                 .unwrap()
+                .into_iter()
                 .map(|f| {
-                    f.unwrap()
-                        .path()
+                    f.path()
                         .strip_prefix(&root)
                         .unwrap()
                         .to_string_lossy()
@@ -621,11 +615,16 @@ mod run {
         fn uses_rel_paths_when_affected() {
             let sandbox = create_pipeline_sandbox();
 
-            sandbox.create_file(format!("{PROJECT_DIR}/input1.txt"), "");
-            sandbox.create_file(format!("{PROJECT_DIR}/input2.txt"), "");
+            change_files(
+                &sandbox,
+                [
+                    format!("{PROJECT_DIR}/input1.txt"),
+                    format!("{PROJECT_DIR}/input2.txt"),
+                ],
+            );
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run")
+                cmd.arg("exec")
                     .arg(target("affectedFiles"))
                     .arg("--affected");
             });
@@ -640,11 +639,16 @@ mod run {
         fn sets_args_only() {
             let sandbox = create_pipeline_sandbox();
 
-            sandbox.create_file(format!("{PROJECT_DIR}/input1.txt"), "");
-            sandbox.create_file(format!("{PROJECT_DIR}/input2.txt"), "");
+            change_files(
+                &sandbox,
+                [
+                    format!("{PROJECT_DIR}/input1.txt"),
+                    format!("{PROJECT_DIR}/input2.txt"),
+                ],
+            );
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run")
+                cmd.arg("exec")
                     .arg(target("affectedFilesArgs"))
                     .arg("--affected");
             });
@@ -659,11 +663,16 @@ mod run {
         fn sets_env_var_only() {
             let sandbox = create_pipeline_sandbox();
 
-            sandbox.create_file(format!("{PROJECT_DIR}/input1.txt"), "");
-            sandbox.create_file(format!("{PROJECT_DIR}/input2.txt"), "");
+            change_files(
+                &sandbox,
+                [
+                    format!("{PROJECT_DIR}/input1.txt"),
+                    format!("{PROJECT_DIR}/input2.txt"),
+                ],
+            );
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run")
+                cmd.arg("exec")
                     .arg(target("affectedFilesEnvVar"))
                     .arg("--affected");
             });
@@ -685,7 +694,7 @@ mod run {
             sandbox.create_file(".moon/workspace.yml", "projects: true");
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("shared:base");
+                cmd.arg("exec").arg("shared:base");
             });
 
             assert.failure().stderr(predicate::str::contains(
@@ -700,7 +709,7 @@ mod run {
             sandbox.create_file(".moon/tasks/all.yml", "tasks: 123");
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("run").arg("shared:base");
+                cmd.arg("exec").arg("shared:base");
             });
 
             assert.failure().stderr(predicate::str::contains(

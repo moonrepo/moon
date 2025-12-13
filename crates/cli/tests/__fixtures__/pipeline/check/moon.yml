@@ -1,0 +1,11 @@
+tasks:
+  build:
+    command: 'touch file.txt'
+    outputs: ['file.txt']
+
+  test:
+    command: 'exit 0'
+
+  internal:
+    options:
+      internal: true

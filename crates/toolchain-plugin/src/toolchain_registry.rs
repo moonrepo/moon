@@ -14,7 +14,7 @@ use std::future::Future;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::{debug, trace};
+use tracing::trace;
 
 #[derive(Debug)]
 pub struct ToolchainRegistry {
@@ -97,8 +97,6 @@ impl ToolchainRegistry {
         if !self.has_plugin_configs() {
             return Ok(vec![]);
         }
-
-        debug!("Loading all toolchain plugins");
 
         self.load_many(self.get_plugin_ids()).await
     }

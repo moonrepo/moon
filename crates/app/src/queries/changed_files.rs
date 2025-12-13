@@ -11,7 +11,7 @@ use starbase_utils::json;
 use std::io::{IsTerminal, Read, stdin};
 use tracing::{debug, trace, warn};
 
-#[derive(Clone, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QueryChangedFilesOptions {
     pub base: Option<String>,
@@ -20,6 +20,23 @@ pub struct QueryChangedFilesOptions {
     pub local: bool,
     pub status: Vec<ChangedStatus>,
     pub stdin: bool,
+}
+
+impl QueryChangedFilesOptions {
+    pub fn apply_affected(&mut self, by: &AffectedOption) {
+        let local = by.is_local();
+
+        if self.base.is_none() {
+            self.base = by.get_base();
+        }
+
+        if self.head.is_none() {
+            self.head = by.get_head();
+        }
+
+        self.default_branch = !local;
+        self.local = local;
+    }
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -208,18 +225,7 @@ pub async fn query_changed_files_for_affected(
     };
 
     if let Some(by) = by {
-        let local = by.is_local();
-
-        if options.base.is_none() {
-            options.base = by.get_base();
-        }
-
-        if options.head.is_none() {
-            options.head = by.get_head();
-        }
-
-        options.default_branch = !local;
-        options.local = local;
+        options.apply_affected(by);
     }
 
     query_changed_files(vcs, options)

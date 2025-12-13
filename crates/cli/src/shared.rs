@@ -81,6 +81,8 @@ fn exec_local_bin(mut command: Command) -> std::io::Result<u8> {
 }
 
 pub async fn run_cli(args: Vec<OsString>) -> MainResult {
+    sigpipe::reset();
+
     // Detect info about the current process
     let version = get_version();
 
@@ -155,6 +157,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                     }
                     DockerCommands::Setup => commands::docker::setup(session).await,
                 },
+                Commands::Exec(args) => commands::exec::exec(session, args).await,
                 Commands::Ext(args) => commands::ext::ext(session, args).await,
                 Commands::Extension { command } => match command {
                     ExtensionCommands::Add(args) => {

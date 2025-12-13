@@ -59,7 +59,7 @@ mod docker_scaffold {
                 .run_bin(|cmd| {
                     cmd.arg("docker").arg("scaffold").arg("scaffold");
                 })
-                .debug();
+                .success();
 
             let docker = sandbox.path().join(".moon/docker/configs");
 
@@ -100,7 +100,7 @@ mod docker_scaffold {
                 .run_bin(|cmd| {
                     cmd.arg("docker").arg("scaffold").arg("scaffold");
                 })
-                .debug();
+                .success();
 
             let docker = sandbox.path().join(".moon/docker/sources");
 

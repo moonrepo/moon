@@ -24,6 +24,7 @@ As part of this release, we went through every CLI command and made improvements
 functionality, and rendered output. On top of this, we're also introducing a handful of new commands
 to fill some missing gaps. Here are some highlights:
 
+- `moon exec` - Low-level command for running tasks. Read more below!
 - `moon extension` - Top-level command to [manage extensions](#management-commands) in the
   workspace.
 - `moon hash` - Inspect a hash, or diff two hashes.
@@ -31,6 +32,32 @@ to fill some missing gaps. Here are some highlights:
 - `moon query affected` - Query affected status for projects and tasks.
 - `moon tasks` - Display a table of all tasks or for a specific project.
 - `moon template` - Display information about a template.
+
+### New `exec` command
+
+To simplify running tasks and improve consistency across commands, we've introduced a new low-level
+`moon exec` command. This command is now used under the hood by `moon check`, `moon ci`, and
+`moon run`, with some arguments/options pre-filled. This allows us to have a single command that is
+responsible for executing tasks, while still providing higher-level commands for specific use cases.
+
+This paves the way for future commands that can leverage `moon exec`, such as a potential
+`moon deploy` or `moon watch` command.
+
+```shell
+$ moon exec app:build --dependents direct
+```
+
+### Updated `ci`, `check`, and `run` commands
+
+As mentioned previously, all of these commands have been reworked to use `moon exec` under the hood.
+This means that they now share the same core functionality and behavior, while still providing their
+own unique features and options.
+
+```shell
+$ moon ci
+$ moon check app
+$ moon run app:dev --affected
+```
 
 ### Dynamic identifier & target selection
 
@@ -41,6 +68,7 @@ this:
 
 - `moon check`
 - `moon ci`
+- `moon exec`
 - `moon generate`
 - `moon project`
 - `moon run`
@@ -113,6 +141,8 @@ configuration files:
 
 ## Toolchains
 
+### Plugin based system
+
 The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.
 Toolchains are now powered by WASM plugins, instead of hard-coded in core, allowing for more
 flexibility, extensibility, and the ability for the community to create their own toolchains!
@@ -150,6 +180,8 @@ a strict order of operations:
 
 ## Extensions
 
+### Stand-alone configuration
+
 Extensions are a WASM plugin based system that has existed for some time now, but they only
 supported a single functionality: custom execution through the [`moon ext`](/docs/commands/ext)
 command. With the introduction of toolchain plugins, we wanted to expand the extension system to
@@ -159,7 +191,7 @@ To start, we're intoducing a new `.moon/extensions.*` configuration file, that w
 extensions, similar to how toolchains are configured in `.moon/toolchains.*`. Because of this
 change, the `extensions` setting has been removed from the workspace configuration.
 
-### New APIs
+### New plugin APIs
 
 With extensions now being first-class citizens in moon, we've expanded the PDK API to allow for more
 functionality. Extensions can now utilize the following API functions, similar to toolchains:

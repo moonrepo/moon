@@ -30,4 +30,15 @@ pub enum ProjectGraphError {
     #[diagnostic(code(project_graph::unknown_id))]
     #[error("No project has been configured with the identifier or alias {}.", .id.style(Style::Id))]
     UnconfiguredID { id: String },
+
+    #[diagnostic(code(project_graph::would_cycle))]
+    #[error(
+        "Unable to create project graph, adding a relationship from {} to {} would introduce a cycle.",
+        .source_id.style(Style::Id),
+        .target_id.style(Style::Id),
+    )]
+    WouldCycle {
+        source_id: String,
+        target_id: String,
+    },
 }

@@ -1320,6 +1320,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "daggy"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "804169db156b21258a2545757336922d93dfa229892c75911a0ad141aa0ff241"
+dependencies = [
+ "petgraph 0.8.3",
+ "serde",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4143,6 +4153,7 @@ dependencies = [
 name = "moon_project_graph"
 version = "0.0.1"
 dependencies = [
+ "daggy",
  "miette 7.6.0",
  "moon_cache",
  "moon_common",
@@ -4518,6 +4529,7 @@ dependencies = [
 name = "moon_workspace"
 version = "0.0.1"
 dependencies = [
+ "daggy",
  "miette 7.6.0",
  "moon_cache",
  "moon_common",

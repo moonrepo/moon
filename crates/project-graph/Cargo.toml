@@ -15,6 +15,7 @@ moon_graph_utils = { path = "../graph-utils" }
 moon_project = { path = "../project" }
 moon_project_expander = { path = "../project-expander" }
 moon_task = { path = "../task" }
+daggy = { workspace = true }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

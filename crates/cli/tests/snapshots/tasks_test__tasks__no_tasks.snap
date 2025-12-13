@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/tasks_test.rs
+expression: assert.output()
+---
+│ INFO
+│ No tasks exist. Have any been configured?

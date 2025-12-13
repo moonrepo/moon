@@ -1,134 +1,66 @@
-use moon_test_utils::{
-    Sandbox, create_sandbox_with_config, get_cases_fixture_configs, predicates::prelude::*,
-};
+mod utils;
 
-fn cases_sandbox() -> Sandbox {
-    let (workspace_config, toolchain_config, tasks_config) = get_cases_fixture_configs();
+use moon_test_utils2::predicates::prelude::*;
+use utils::create_pipeline_sandbox;
 
-    create_sandbox_with_config(
-        "cases",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    )
-}
+mod check {
+    use super::*;
 
-#[test]
-fn forces_cache_to_write_only() {
-    let sandbox = cases_sandbox();
+    #[test]
+    fn runs_tasks_in_one_project() {
+        let sandbox = create_pipeline_sandbox();
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("check").arg("base").arg("--updateCache");
-    });
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("check").arg("check");
+        });
 
-    let output = assert.output();
+        assert.success().stdout(
+            predicate::str::contains("check:build").and(predicate::str::contains("check:test")),
+        );
+    }
 
-    assert!(!predicate::str::contains("cached").eval(&output));
-}
+    #[test]
+    fn runs_tasks_in_one_project_using_cwd() {
+        let sandbox = create_pipeline_sandbox();
 
-#[test]
-fn runs_tasks_in_project() {
-    let sandbox = cases_sandbox();
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.current_dir(sandbox.path().join("check"))
+                .arg("check")
+                .arg("--closest");
+        });
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("check").arg("base");
-    });
+        assert.success().stdout(
+            predicate::str::contains("check:build").and(predicate::str::contains("check:test")),
+        );
+    }
 
-    let output = assert.output();
+    #[test]
+    fn runs_tasks_in_many_projects() {
+        let sandbox = create_pipeline_sandbox();
 
-    assert!(predicate::str::contains("base:standard").eval(&output));
-    assert!(predicate::str::contains("base:runFromProject").eval(&output));
-    assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
-    assert!(!predicate::str::contains("base:localOnly").eval(&output));
-}
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("check").arg("check").arg("shared");
+        });
 
-#[test]
-fn runs_tasks_in_project_using_cwd() {
-    let sandbox = cases_sandbox();
+        // Fails because of `shared:willFail`
+        assert.failure().stdout(
+            predicate::str::contains("check:build")
+                .and(predicate::str::contains("check:test"))
+                .and(predicate::str::contains("shared:base"))
+                .and(predicate::str::contains("shared:willFail")),
+        );
+    }
 
-    let cwd = sandbox.path().join("base");
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.current_dir(cwd).arg("check");
-    });
+    #[test]
+    fn doesnt_run_internal_tasks() {
+        let sandbox = create_pipeline_sandbox();
 
-    let output = assert.output();
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("check").arg("check");
+        });
 
-    assert!(predicate::str::contains("base:standard").eval(&output));
-    assert!(predicate::str::contains("base:runFromProject").eval(&output));
-    assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
-    assert!(!predicate::str::contains("base:localOnly").eval(&output));
-}
-
-#[test]
-fn runs_tasks_from_multiple_project() {
-    let sandbox = cases_sandbox();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("check").arg("base").arg("noop");
-    });
-
-    assert.debug();
-
-    let output = assert.output();
-
-    assert!(predicate::str::contains("base:standard").eval(&output));
-    assert!(predicate::str::contains("base:runFromProject").eval(&output));
-    assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
-    assert!(!predicate::str::contains("base:localOnly").eval(&output));
-
-    assert!(predicate::str::contains("noop:noop").eval(&output));
-    assert!(predicate::str::contains("noop:noopWithDeps").eval(&output));
-    assert!(predicate::str::contains("outputs:generateFile").eval(&output)); // dep of noop
-}
-
-#[test]
-fn runs_for_all_projects_even_when_not_in_root_dir() {
-    let sandbox = cases_sandbox();
-
-    let cwd = sandbox.path().join("base");
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.current_dir(cwd).arg("check").arg("--all");
-    });
-
-    assert
-        .inner
-        .stderr(predicate::str::contains("all projects"));
-}
-
-#[test]
-fn runs_on_all_projects_from_root_directory() {
-    let sandbox = cases_sandbox();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("check").arg("--all");
-    });
-
-    assert
-        .inner
-        .stderr(predicate::str::contains("all projects"));
-}
-
-#[test]
-fn creates_run_report() {
-    let sandbox = cases_sandbox();
-
-    sandbox.run_moon(|cmd| {
-        cmd.arg("check").arg("base");
-    });
-
-    assert!(sandbox.path().join(".moon/cache/runReport.json").exists());
-}
-
-#[test]
-fn doesnt_run_internal_tasks() {
-    let sandbox = cases_sandbox();
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("check").arg("base");
-    });
-
-    let output = assert.output();
-
-    assert!(!predicate::str::contains("base:internalOnly").eval(&output));
+        assert
+            .success()
+            .stdout(predicate::str::contains("check:internal").not());
+    }
 }

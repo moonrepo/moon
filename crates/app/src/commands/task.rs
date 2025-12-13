@@ -1,4 +1,5 @@
 use crate::app_error::AppError;
+use crate::prompts::select_target;
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
@@ -6,7 +7,8 @@ use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_common::is_test_env;
 use moon_console::ui::{
-    Container, Entry, List, ListItem, Map, MapItem, Section, Style, StyledText,
+    Container, Entry, List, ListItem, Map, MapItem, Section, SelectOption, SelectProps, Style,
+    StyledText,
 };
 use moon_process::Command;
 use moon_project::Project;
@@ -18,22 +20,39 @@ use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct TaskArgs {
-    #[arg(help = "Target of task to display")]
-    target: Target,
+    #[arg(help = "Task target to inspect")]
+    target: Option<Target>,
 
     #[arg(long, help = "Print in JSON format")]
     json: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
-    let TargetScope::Project(project_locator) = &args.target.scope else {
+    let workspace_graph = session.get_workspace_graph().await?;
+
+    let target = select_target(&session.console, &args.target, || {
+        let tasks = workspace_graph.get_tasks()?;
+
+        Ok(SelectProps {
+            label: "Which task to view?".into(),
+            options: tasks
+                .iter()
+                .map(|task| {
+                    SelectOption::new(&task.target).description_opt(task.description.clone())
+                })
+                .collect(),
+            ..Default::default()
+        })
+    })
+    .await?;
+
+    let TargetScope::Project(project_locator) = &target.scope else {
         return Err(AppError::ProjectIdRequired.into());
     };
 
-    let workspace_graph = session.get_workspace_graph().await?;
     let project = workspace_graph.get_project(project_locator)?;
-    let task = workspace_graph.get_task(&args.target)?;
+    let task = workspace_graph.get_task(&target)?;
     let console = &session.console;
 
     if args.json {
@@ -44,9 +63,6 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
 
     let mut modes = vec![];
 
-    if task.is_local() {
-        modes.push("local");
-    }
     if task.is_internal() {
         modes.push("internal");
     }
@@ -191,9 +207,9 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                             Entry(
                                 name: "Shell",
                                 content: if cfg!(unix) {
-                                    task.options.unix_shell.unwrap_or_default().to_string()
+                                    task.options.unix_shell.to_string()
                                 } else if cfg!(windows) {
-                                    task.options.windows_shell.unwrap_or_default().to_string()
+                                    task.options.windows_shell.to_string()
                                 } else {
                                     "unknown".to_string()
                                 }
@@ -249,10 +265,10 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                     element! {
                         Entry(
                             name: "Lookup paths",
-                            no_children: command.paths_before.is_empty()
+                            no_children: command.paths.is_empty()
                         ) {
                             List {
-                                #(command.paths_before.iter().map(|path| {
+                                #(command.paths.iter().map(|path| {
                                     element! {
                                         ListItem {
                                             StyledText(
@@ -269,9 +285,9 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                 Entry(
                     name: "Runs dependencies",
                     content: if task.options.run_deps_in_parallel {
-                        "Concurrently"
+                        "Parallel"
                     } else {
-                        "Serially"
+                        "Serial"
                     }.to_string(),
                 )
                 Entry(
@@ -287,7 +303,7 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
             Section(title: "Configuration") {
                 #(project.inherited
                     .as_ref()
-                    .and_then(|inherited| inherited.task_layers.get(task.id.as_str()))
+                    .and_then(|inherited| inherited.layers.get(task.id.as_str()))
                     .map(|layers| {
                     element! {
                         Entry(
@@ -361,7 +377,7 @@ async fn build_command(
 ) -> miette::Result<Command> {
     let app_context = session.get_app_context().await?;
     let action_context = ActionContext::default();
-    let node = ActionNode::run_task(RunTaskNode::new_global(task.target.clone()));
+    let node = ActionNode::run_task(RunTaskNode::new(task.target.clone()));
 
     // Use command builder so that we inherit all paths and env vars
     let builder = CommandBuilder::new(&app_context, project, task, &node);

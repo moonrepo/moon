@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 
 use miette::Diagnostic;
-use moon_common::{Style, Stylize, consts};
+use moon_common::{Style, Stylize};
+use moon_task::TargetLocator;
+use moon_vcs::ChangedStatus;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -21,8 +23,9 @@ pub enum AppError {
 
     #[diagnostic(code(app::missing_workspace))]
     #[error(
-        "Unable to determine workspace root. Please create a {} configuration folder.",
-        consts::CONFIG_DIRNAME.style(Style::File)
+        "Unable to determine workspace root. Please create a {} or {} configuration folder.",
+        ".moon".style(Style::File),
+        ".config/moon".style(Style::File),
     )]
     MissingConfigDir,
 
@@ -48,15 +51,6 @@ pub enum AppError {
     #[error("Unable to determine your current working directory.")]
     MissingWorkingDir,
 
-    #[diagnostic(code(app::extensions::unknown_id))]
-    #[error(
-        "The extension {} does not exist. Configure the {} setting in {} and try again.",
-        .id.style(Style::Id),
-        "extensions".style(Style::Property),
-        ".moon/workspace.yml".style(Style::File),
-    )]
-    UnknownExtension { id: String },
-
     #[diagnostic(code(app::upgrade::requires_internet))]
     #[error("Upgrading moon requires an internet connection!")]
     UpgradeRequiresInternet,
@@ -68,9 +62,13 @@ pub enum AppError {
     #[error("A plugin locator string is required for non-built-in plugins.")]
     PluginLocatorRequired,
 
-    #[diagnostic(code(app::id_required))]
-    #[error("A project ID is required.")]
+    #[diagnostic(code(app::project_id_required))]
+    #[error("A project identifier is required.")]
     ProjectIdRequired,
+
+    #[diagnostic(code(app::template_id_required))]
+    #[error("A template identifier is required.")]
+    TemplateIdRequired,
 
     #[diagnostic(code(app::invalid_version))]
     #[error(
@@ -79,4 +77,56 @@ pub enum AppError {
         .expected.style(Style::Hash)
     )]
     InvalidMoonVersion { actual: String, expected: String },
+
+    #[diagnostic(code(app::tty::required_id))]
+    #[error(
+        "An identifier is required and must be explicitly provided as a positional argument in non-TTY environments."
+    )]
+    RequiredIdNonTTY,
+
+    #[diagnostic(code(app::exec::no_tasks))]
+    #[error(
+        "No tasks found for provided targets {}, unable to execute action pipeline.{}",
+        .targets
+            .iter()
+            .map(|target| target.as_str().to_string().style(Style::Id))
+            .collect::<Vec<_>>()
+            .join(", "),
+        .query
+            .as_ref()
+            .map(|q| format!("\nUsing query {}.", q.style(Style::Shell)))
+            .unwrap_or_default()
+    )]
+    NoExecTasks {
+        targets: Vec<TargetLocator>,
+        query: Option<String>,
+    },
+
+    #[diagnostic(code(app::exec::no_affected_tasks))]
+    #[error(
+        "Tasks {} not affected by changed files with status {}, unable to execute action pipeline.{}",
+        .targets
+            .iter()
+            .map(|target| target.as_str().to_string().style(Style::Id))
+            .collect::<Vec<_>>()
+            .join(", "),
+        if .status.is_empty() {
+            "all".style(Style::Symbol)
+        } else {
+            .status
+                .iter()
+                .map(|status| status.to_string().style(Style::Symbol))
+                .collect::<Vec<_>>()
+                .join(", ")
+        },
+        .query
+            .as_ref()
+            .map(|q| format!("\nUsing query {}.", q.style(Style::Shell)))
+            .unwrap_or_default()
+    )]
+    NoExecAffectedTasks {
+        targets: Vec<TargetLocator>,
+        status: Vec<ChangedStatus>,
+        query: Option<String>,
+    },
 }

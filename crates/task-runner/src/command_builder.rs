@@ -4,13 +4,11 @@ use moon_app_context::AppContext;
 use moon_common::path::PathExt;
 use moon_config::TaskOptionAffectedFiles;
 use moon_env_var::GlobalEnvBag;
-use moon_pdk_api::{Extend, ExtendTaskCommandInput, ExtendTaskScriptInput};
-use moon_platform::PlatformManager;
 use moon_process::{Command, Shell, ShellType};
+use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
 use moon_task::Task;
-use rustc_hash::FxHashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
@@ -20,11 +18,9 @@ pub struct CommandBuilder<'task> {
     task: &'task Task,
     working_dir: &'task Path,
     env_bag: &'task GlobalEnvBag,
-    platform_manager: &'task PlatformManager,
 
     // To be built
-    command: Command,
-    using_platform: bool,
+    command: AugmentedCommand<'task>,
 }
 
 impl<'task> CommandBuilder<'task> {
@@ -47,18 +43,12 @@ impl<'task> CommandBuilder<'task> {
             task,
             working_dir,
             env_bag: GlobalEnvBag::instance(),
-            platform_manager: PlatformManager::read(),
-            command: Command::new("noop"),
-            using_platform: false,
+            command: AugmentedCommand::new(app, GlobalEnvBag::instance(), "noop"),
         }
     }
 
     pub fn set_env_bag(&mut self, bag: &'task GlobalEnvBag) {
         self.env_bag = bag;
-    }
-
-    pub fn set_platform_manager(&mut self, manager: &'task PlatformManager) {
-        self.platform_manager = manager;
     }
 
     #[instrument(name = "build_command", skip_all)]
@@ -69,12 +59,17 @@ impl<'task> CommandBuilder<'task> {
             "Creating task child process to execute",
         );
 
-        self.command = self.build_command(context).await?;
+        self.command = AugmentedCommand::from_task(self.app, self.env_bag, self.task);
+        self.command
+            .inherit_from_plugins(Some(self.project), Some(self.task))
+            .await?;
+
+        // Scripts should be used as-is
+        self.command.escape_args = self.task.script.is_none();
 
         // We need to handle non-zero exit code's manually
-        self.command
-            .cwd(self.working_dir)
-            .set_error_on_nonzero(false);
+        self.command.cwd(self.working_dir);
+        self.command.set_error_on_nonzero(false);
 
         // Order is important!
         self.inject_args(context);
@@ -82,115 +77,11 @@ impl<'task> CommandBuilder<'task> {
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
-        self.inherit_proto().await?;
 
         // Must be last!
-        self.command.inherit_path()?;
+        self.command.inherit_proto();
 
-        Ok(self.command)
-    }
-
-    async fn build_command(&mut self, context: &ActionContext) -> miette::Result<Command> {
-        let project = self.project;
-        let task = self.task;
-        let toolchain_ids = project.get_enabled_toolchains_for_task(task);
-
-        let mut command = match self.platform_manager.get_by_toolchains(&task.toolchains) {
-            Ok(platform) => {
-                self.using_platform = true;
-
-                platform
-                    .create_run_target_command(
-                        context,
-                        project,
-                        task,
-                        self.node.get_runtime(),
-                        self.working_dir,
-                    )
-                    .await?
-            }
-            Err(_) => {
-                // No platform so create a custom command
-                let mut cmd = Command::new(&task.command);
-                cmd.args(&task.args);
-                cmd.envs_if_not_global(&task.env);
-                cmd
-            }
-        };
-
-        match &task.script {
-            // If a script, overwrite the binary (command) with the script and reset args,
-            // but also inherit all environment variables and paths from the platform
-            Some(script) => {
-                command.bin = script.into();
-                command.args.clear();
-
-                // Scripts should be used as-is
-                command.escape_args = false;
-
-                for params in self
-                    .app
-                    .toolchain_registry
-                    .extend_task_script_many(toolchain_ids, |registry, toolchain| {
-                        ExtendTaskScriptInput {
-                            context: registry.create_context(),
-                            script: script.clone(),
-                            project: project.to_fragment(),
-                            task: task.to_fragment(),
-                            toolchain_config: registry.create_merged_config(
-                                &toolchain.id,
-                                &self.app.toolchain_config,
-                                &project.config,
-                            ),
-                            ..Default::default()
-                        }
-                    })
-                    .await?
-                {
-                    if let Some(new_script) = params.script {
-                        command.bin = new_script.into();
-                    }
-
-                    self.extend_with_env(&mut command, params.env, params.env_remove);
-                    self.extend_with_paths(&mut command, params.paths);
-                }
-            }
-            None => {
-                for params in self
-                    .app
-                    .toolchain_registry
-                    .extend_task_command_many(toolchain_ids, |registry, toolchain| {
-                        ExtendTaskCommandInput {
-                            context: registry.create_context(),
-                            command: task.command.clone(),
-                            args: task.args.clone(),
-                            project: project.to_fragment(),
-                            task: task.to_fragment(),
-                            toolchain_config: registry.create_merged_config(
-                                &toolchain.id,
-                                &self.app.toolchain_config,
-                                &project.config,
-                            ),
-                            ..Default::default()
-                        }
-                    })
-                    .await?
-                {
-                    if let Some(new_bin) = params.command {
-                        command.bin = new_bin.into();
-                    }
-
-                    if let Some(new_args) = params.args {
-                        self.extend_with_args(&mut command, new_args);
-                    }
-
-                    self.extend_with_env(&mut command, params.env, params.env_remove);
-                    self.extend_with_paths(&mut command, params.paths);
-                }
-            }
-        };
-
-        Ok(command)
+        Ok(self.command.augment())
     }
 
     #[instrument(skip_all)]
@@ -260,24 +151,16 @@ impl<'task> CommandBuilder<'task> {
                 .state
                 .get_project_snapshot_path(&self.project.id),
         );
-
-        // proto
-        for (key, value) in self.app.toolchain_config.get_version_env_vars() {
-            // Don't overwrite proto version variables inherited from toolchains
-            self.command.env_if_missing(key, value);
-        }
     }
 
     #[instrument(skip_all)]
     fn inject_shell(&mut self) {
         if self.task.options.shell == Some(true) {
-            // Process command set's a shell by default!
-
             #[cfg(unix)]
-            if let Some(shell) = &self.task.options.unix_shell {
+            {
                 use moon_config::TaskUnixShell;
 
-                self.command.with_shell(match shell {
+                self.command.set_shell(match self.task.options.unix_shell {
                     TaskUnixShell::Bash => Shell::new(ShellType::Bash),
                     TaskUnixShell::Elvish => Shell::new(ShellType::Elvish),
                     TaskUnixShell::Fish => Shell::new(ShellType::Fish),
@@ -291,21 +174,22 @@ impl<'task> CommandBuilder<'task> {
             }
 
             #[cfg(windows)]
-            if let Some(shell) = &self.task.options.windows_shell {
+            {
                 use moon_config::TaskWindowsShell;
 
-                self.command.with_shell(match shell {
-                    TaskWindowsShell::Bash => Shell::new(ShellType::Bash),
-                    TaskWindowsShell::Elvish => Shell::new(ShellType::Elvish),
-                    TaskWindowsShell::Fish => Shell::new(ShellType::Fish),
-                    TaskWindowsShell::Murex => Shell::new(ShellType::Murex),
-                    TaskWindowsShell::Nu => Shell::new(ShellType::Nu),
-                    TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
-                    TaskWindowsShell::Xonsh => Shell::new(ShellType::Xonsh),
-                });
+                self.command
+                    .set_shell(match self.task.options.windows_shell {
+                        TaskWindowsShell::Bash => Shell::new(ShellType::Bash),
+                        TaskWindowsShell::Elvish => Shell::new(ShellType::Elvish),
+                        TaskWindowsShell::Fish => Shell::new(ShellType::Fish),
+                        TaskWindowsShell::Murex => Shell::new(ShellType::Murex),
+                        TaskWindowsShell::Nu => Shell::new(ShellType::Nu),
+                        TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
+                        TaskWindowsShell::Xonsh => Shell::new(ShellType::Xonsh),
+                    });
             }
         } else {
-            self.command.without_shell();
+            self.command.no_shell();
         }
     }
 
@@ -319,7 +203,7 @@ impl<'task> CommandBuilder<'task> {
         let mut abs_files = if context.affected.is_some() {
             self.task.get_affected_files(
                 &self.app.workspace_root,
-                &context.touched_files,
+                &context.changed_files,
                 &self.project.source,
             )?
         } else {
@@ -408,88 +292,6 @@ impl<'task> CommandBuilder<'task> {
             .inherit_colors_for_piped_tasks
         {
             self.command.inherit_colors();
-        }
-    }
-
-    async fn inherit_proto(&mut self) -> miette::Result<()> {
-        let toolchain_registry = &self.app.toolchain_registry;
-
-        if self.using_platform {
-            // Temporary until platforms are removed, we simply just need
-            // to inherit the shared env vars!
-            toolchain_registry
-                .augment_command(&mut self.command, self.env_bag, Default::default())
-                .await?;
-        } else {
-            let toolchain_ids = self.project.get_enabled_toolchains_for_task(self.task);
-            let mut augments =
-                toolchain_registry.create_command_augments(Some(&self.project.config));
-
-            // Only include paths for toolchains that this task explicitly needs,
-            // but keep environment variables and other parameters
-            augments.iter_mut().for_each(|(id, augment)| {
-                augment.add_path = toolchain_ids.contains(&id);
-            });
-
-            toolchain_registry
-                .augment_command(&mut self.command, self.env_bag, augments)
-                .await?;
-        }
-
-        Ok(())
-    }
-
-    fn extend_with_args(&self, command: &mut Command, args: Extend<Vec<String>>) {
-        match args {
-            Extend::Empty => {
-                command.args.clear();
-            }
-            Extend::Append(next) => {
-                command.args(next);
-            }
-            Extend::Prepend(next) => {
-                let prev = std::mem::take(&mut command.args);
-                command.args(next);
-                command.args(prev);
-            }
-            Extend::Replace(next) => {
-                command.args.clear();
-                command.args(next);
-            }
-        }
-    }
-
-    fn extend_with_env(
-        &self,
-        command: &mut Command,
-        env: FxHashMap<String, String>,
-        env_remove: Vec<String>,
-    ) {
-        command.envs_if_not_global(env);
-
-        for key in env_remove {
-            command.env_remove(key);
-        }
-    }
-
-    fn extend_with_paths(&self, command: &mut Command, next_paths: Vec<PathBuf>) {
-        if next_paths.is_empty() {
-            return;
-        }
-
-        // Normalize separators since WASM always uses forward slashes
-        #[cfg(windows)]
-        {
-            command.prepend_paths(next_paths.into_iter().map(|path| {
-                PathBuf::from(moon_common::path::normalize_separators(
-                    path.to_string_lossy(),
-                ))
-            }));
-        }
-
-        #[cfg(unix)]
-        {
-            command.prepend_paths(next_paths);
         }
     }
 }

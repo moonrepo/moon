@@ -16,7 +16,7 @@ use tera::{Context, Tera};
 use tiny_http::{Header, Request, Response, Server};
 use tokio::task::{JoinHandle, spawn};
 
-const INDEX_HTML: &str = include_str!("graph.html.tera");
+const INDEX_HTML: &str = include_str!("html.tera");
 
 #[derive(Debug, Serialize)]
 pub struct RenderContext {
@@ -69,25 +69,23 @@ pub fn extract_nodes_and_edges_from_graph<T: Display>(
     }
 
     let nodes = nodes.into_values().collect();
+
     GraphInfoDto { edges, nodes }
 }
 
-/// Get a serialized representation of the project graph.
+pub async fn action_graph_repr(action_graph: &ActionGraph) -> GraphInfoDto {
+    let labeled_graph = action_graph.labeled_graph();
+    extract_nodes_and_edges_from_graph(&labeled_graph, false)
+}
+
 pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
     let labeled_graph = project_graph.to_labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph, true)
 }
 
-/// Get a serialized representation of the task graph.
 pub async fn task_graph_repr(task_graph: &TaskGraph) -> GraphInfoDto {
     let labeled_graph = task_graph.to_labeled_graph();
     extract_nodes_and_edges_from_graph(&labeled_graph, true)
-}
-
-/// Get a serialized representation of the dependency graph.
-pub async fn action_graph_repr(action_graph: &ActionGraph) -> GraphInfoDto {
-    let labeled_graph = action_graph.labeled_graph();
-    extract_nodes_and_edges_from_graph(&labeled_graph, false)
 }
 
 pub fn respond_to_request(
@@ -106,18 +104,19 @@ pub fn respond_to_request(
         }
         _ => {
             let graph_data = json::format(graph, false)?;
-            let js_url = get_js_url();
             let context = RenderContext {
                 page_title,
                 graph_data,
-                js_url,
+                js_url: get_js_url(),
             };
+
             let info = tera
                 .render_str(
                     INDEX_HTML,
                     &Context::from_serialize(context).into_diagnostic()?,
                 )
-                .unwrap();
+                .into_diagnostic()?;
+
             let mut response = Response::from_data(info);
             response
                 .add_header(Header::from_bytes(&b"Content-Type"[..], &b"text/html"[..]).unwrap());

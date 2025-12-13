@@ -3,7 +3,10 @@ tags: [extends]
 tasks:
   base:
     command: lint ./src
-    local: true
+    options:
+      cache: false
+      persistent: true
+      runInCI: false
     inputs:
       - '**/*'
 
@@ -32,10 +35,6 @@ tasks:
       retryCount: 3
       runInCI: true
 
-  extend-local:
-    extends: base
-    local: false
-
   local-base:
     inputs:
       - 'local-base'
@@ -55,4 +54,3 @@ tasks:
     extends: 'global-base'
     inputs:
       - 'local-extender'
-

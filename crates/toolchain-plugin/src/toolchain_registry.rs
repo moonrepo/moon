@@ -2,22 +2,23 @@ use crate::toolchain_plugin::ToolchainPlugin;
 use futures::{StreamExt, stream::FuturesOrdered};
 use miette::IntoDiagnostic;
 use moon_common::Id;
-use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainConfig, ToolchainPluginConfig};
+use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainsConfig};
 use moon_pdk_api::Operation;
-use moon_plugin::{MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config};
+use moon_plugin::{
+    CallResult, MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config,
+};
 use proto_core::{ToolContext, inject_proto_manifest_config};
-use rustc_hash::FxHashMap;
 use starbase_utils::json::{self, JsonValue};
+use std::fmt::Debug;
 use std::future::Future;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::{debug, trace};
+use tracing::trace;
 
 #[derive(Debug)]
 pub struct ToolchainRegistry {
-    pub config: Arc<ToolchainConfig>,
-    pub plugins: FxHashMap<Id, ToolchainPluginConfig>,
+    pub config: Arc<ToolchainsConfig>,
     registry: Arc<PluginRegistry<ToolchainPlugin>>,
 }
 
@@ -25,7 +26,6 @@ impl Default for ToolchainRegistry {
     fn default() -> Self {
         Self {
             config: Default::default(),
-            plugins: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(
                 PluginType::Toolchain,
                 MoonHostData::default(),
@@ -35,38 +35,26 @@ impl Default for ToolchainRegistry {
 }
 
 impl ToolchainRegistry {
-    pub fn new(host_data: MoonHostData, config: Arc<ToolchainConfig>) -> Self {
+    pub fn new(host_data: MoonHostData, config: Arc<ToolchainsConfig>) -> Self {
         Self {
             config,
-            plugins: FxHashMap::default(),
             registry: Arc::new(PluginRegistry::new(PluginType::Toolchain, host_data)),
         }
     }
 
-    pub fn inherit_configs(&mut self, configs: &FxHashMap<Id, ToolchainPluginConfig>) {
-        for (id, config) in configs {
-            self.plugins.insert(id.to_owned(), config.to_owned());
-        }
-    }
-
-    pub fn create_config(&self, id: &str, toolchain_config: &ToolchainConfig) -> JsonValue {
-        if let Some(config) = toolchain_config.get_plugin_config(id) {
+    pub fn create_config(&self, id: &str) -> JsonValue {
+        if let Some(config) = self.config.get_plugin_config(id) {
             return config.to_json();
         }
 
         JsonValue::default()
     }
 
-    pub fn create_merged_config(
-        &self,
-        id: &str,
-        toolchain_config: &ToolchainConfig,
-        project_config: &ProjectConfig,
-    ) -> JsonValue {
-        let mut data = self.create_config(id, toolchain_config);
+    pub fn create_merged_config(&self, id: &str, project_config: &ProjectConfig) -> JsonValue {
+        let mut data = self.create_config(id);
 
         if let Some(ProjectToolchainEntry::Config(leaf_config)) =
-            project_config.toolchain.get_plugin_config(id)
+            project_config.toolchains.get_plugin_config(id)
         {
             let next = leaf_config.to_json();
 
@@ -77,11 +65,11 @@ impl ToolchainRegistry {
     }
 
     pub fn get_plugin_ids(&self) -> Vec<&Id> {
-        self.plugins.keys().collect()
+        self.config.plugins.keys().collect()
     }
 
-    pub fn has_plugins(&self) -> bool {
-        !self.plugins.is_empty()
+    pub fn has_plugin_configs(&self) -> bool {
+        !self.config.plugins.is_empty()
     }
 
     pub async fn load<T>(&self, id: T) -> miette::Result<Arc<ToolchainPlugin>>
@@ -91,7 +79,7 @@ impl ToolchainRegistry {
         let id = Id::raw(id.as_ref());
 
         if !self.is_registered(&id) {
-            if !self.plugins.contains_key(&id) {
+            if !self.config.plugins.contains_key(&id) {
                 return Err(PluginError::UnknownId {
                     id: id.to_string(),
                     ty: PluginType::Toolchain,
@@ -106,11 +94,9 @@ impl ToolchainRegistry {
     }
 
     pub async fn load_all(&self) -> miette::Result<Vec<Arc<ToolchainPlugin>>> {
-        if !self.has_plugins() {
+        if !self.has_plugin_configs() {
             return Ok(vec![]);
         }
-
-        debug!("Loading all toolchain plugins");
 
         self.load_many(self.get_plugin_ids()).await
     }
@@ -131,7 +117,7 @@ impl ToolchainRegistry {
                 continue;
             }
 
-            let Some(config) = self.plugins.get(&id) else {
+            let Some(config) = self.config.get_plugin_config(&id) else {
                 continue;
             };
 
@@ -186,14 +172,14 @@ impl ToolchainRegistry {
         toolchain_ids: I,
         input_factory: InFn,
         output_factory: OutFn,
-    ) -> miette::Result<Vec<CallResult<Out>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, Out>>>
     where
         I: IntoIterator<Item = Id>,
         Id: AsRef<str> + Clone,
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> In,
         OutFn: Fn(Arc<ToolchainPlugin>, In) -> OutFut,
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
-        Out: Send + 'static,
+        Out: Debug + Send + 'static,
     {
         self.call_func_all_with_check(
             func_name,
@@ -212,18 +198,18 @@ impl ToolchainRegistry {
         input_factory: InFn,
         output_factory: OutFn,
         skip_func_check: bool,
-    ) -> miette::Result<Vec<CallResult<Out>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, Out>>>
     where
         I: IntoIterator<Item = Id>,
         Id: AsRef<str> + Clone,
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> In,
         OutFn: Fn(Arc<ToolchainPlugin>, In) -> OutFut,
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
-        Out: Send + 'static,
+        Out: Debug + Send + 'static,
     {
         let mut results = vec![];
 
-        if !self.has_plugins() {
+        if !self.has_plugin_configs() {
             return Ok(results);
         }
 
@@ -238,9 +224,9 @@ impl ToolchainRegistry {
         let mut futures = FuturesOrdered::new();
 
         for toolchain_id in toolchain_ids {
-            if let Ok(toolchain) = self.load(toolchain_id).await
-                && (skip_func_check || toolchain.has_func(func_name).await)
-            {
+            let toolchain = self.load(toolchain_id).await?;
+
+            if skip_func_check || toolchain.has_func(func_name).await {
                 let mut operation = Operation::new(func_name).unwrap();
                 let id = toolchain.id.clone();
                 let input = input_factory(self, &toolchain);
@@ -254,7 +240,7 @@ impl ToolchainRegistry {
                         id,
                         operation,
                         output: result?,
-                        toolchain,
+                        plugin: toolchain,
                     })
                 }));
             }
@@ -274,11 +260,4 @@ impl Deref for ToolchainRegistry {
     fn deref(&self) -> &Self::Target {
         &self.registry
     }
-}
-
-pub struct CallResult<T> {
-    pub id: Id,
-    pub operation: Operation,
-    pub output: T,
-    pub toolchain: Arc<ToolchainPlugin>,
 }

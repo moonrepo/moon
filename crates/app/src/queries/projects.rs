@@ -9,14 +9,12 @@ use tracing::debug;
 #[derive(Default, Deserialize, Serialize)]
 pub struct QueryProjectsOptions {
     pub affected: Option<Affected>,
-    pub json: bool,
     pub query: Option<String>,
 
     // Filters
     pub alias: Option<String>,
     pub id: Option<String>,
     pub language: Option<String>,
-    #[serde(alias = "type")]
     pub layer: Option<String>,
     pub stack: Option<String>,
     pub source: Option<String>,
@@ -62,10 +60,16 @@ fn load_with_regex(
         }
 
         if let Some(regex) = &alias_regex
-            && let Some(alias) = &project.alias
-            && !regex.is_match(alias)
+            && !project.aliases.is_empty()
         {
-            continue;
+            let has_alias = project
+                .aliases
+                .iter()
+                .any(|alias| regex.is_match(&alias.alias));
+
+            if !has_alias {
+                continue;
+            }
         }
 
         if let Some(regex) = &source_regex
@@ -143,6 +147,8 @@ pub async fn query_projects(
             })
             .collect::<Vec<_>>();
     }
+
+    projects.sort_by(|a, d| a.id.cmp(&d.id));
 
     Ok(projects)
 }

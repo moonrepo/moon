@@ -1,28 +1,21 @@
-#![allow(deprecated)] // For local
-
 mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, PlatformType,
-    ProjectInput, TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy,
-    TaskOptionCache, TaskOutputStyle, TaskType,
+    FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, ProjectInput,
+    TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
+    TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use rustc_hash::FxHashMap;
-use schematic::{ConfigLoader as BaseLoader, Format, RegexSetting};
-use std::path::Path;
+use schematic::{ConfigLoader as BaseLoader, RegexSetting};
 use utils::*;
 
 fn load_config_from_code(code: &str) -> miette::Result<TaskConfig> {
     Ok(BaseLoader::<TaskConfig>::new()
-        .code(code, Format::Yaml)?
+        .code(code, "config.yml")?
         .load()?
         .config)
-}
-
-fn load_config_from_file(path: &Path) -> miette::Result<TaskConfig> {
-    Ok(BaseLoader::<TaskConfig>::new().file(path)?.load()?.config)
 }
 
 mod task_config {
@@ -30,7 +23,7 @@ mod task_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `deps`, `env`, `inputs`, `local`, `outputs`, `options`, `platform`, `preset`, `script`, `toolchain`, `toolchains`, `type`"
+        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `dependsOn`, `deps`, `env`, `inputs`, `outputs`, `options`, `preset`, `script`, `toolchain`, `toolchains`, `type`"
     )]
     fn error_unknown_field() {
         test_parse_config("unknown: 123", load_config_from_code);
@@ -540,25 +533,6 @@ outputs:
         }
     }
 
-    mod platform {
-        use super::*;
-
-        #[test]
-        fn supports_variant() {
-            let config = test_parse_config("platform: rust", load_config_from_code);
-
-            assert_eq!(config.platform, PlatformType::Rust);
-        }
-
-        #[test]
-        #[should_panic(
-            expected = "Failed to parse TaskConfig. platform: unknown variant `perl`, expected one of `bun`, `deno`, `node`, `python`, `rust`, `system`, `unknown`"
-        )]
-        fn errors_on_invalid_variant() {
-            test_parse_config("platform: perl", load_config_from_code);
-        }
-    }
-
     mod type_of {
         use super::*;
 
@@ -905,67 +879,18 @@ options:
         }
     }
 
-    mod pkl {
-        use super::*;
-        use moon_config::*;
-        use starbase_sandbox::locate_fixture;
+    #[test]
+    fn supports_hcl() {
+        load_task_config_in_format("hcl");
+    }
 
-        #[test]
-        fn loads_pkl() {
-            let config = test_config(locate_fixture("pkl"), |root| {
-                load_config_from_file(&root.join("task.pkl"))
-            });
+    #[test]
+    fn supports_pkl() {
+        load_task_config_in_format("pkl");
+    }
 
-            assert_eq!(
-                config,
-                TaskConfig {
-                    description: Some("I do something".into()),
-                    command: TaskArgs::String("cmd --arg".into()),
-                    args: TaskArgs::List(vec!["-c".into(), "-b".into(), "arg".into()]),
-                    deps: Some(vec![
-                        TaskDependency::Target(Target::parse("proj:task").unwrap()),
-                        TaskDependency::Config(TaskDependencyConfig {
-                            args: TaskArgs::None,
-                            env: FxHashMap::default(),
-                            target: Target::parse("^:build").unwrap(),
-                            optional: Some(true)
-                        }),
-                        TaskDependency::Config(TaskDependencyConfig {
-                            args: TaskArgs::String("--minify".into()),
-                            env: FxHashMap::from_iter([("DEBUG".into(), "1".into())]),
-                            target: Target::parse("~:build").unwrap(),
-                            optional: None
-                        }),
-                    ]),
-                    env: Some(FxHashMap::from_iter([("ENV".into(), "development".into())])),
-                    inputs: Some(vec![
-                        Input::EnvVar("ENV".into()),
-                        Input::EnvVarGlob("ENV_*".into()),
-                        Input::File(stub_file_input("file.txt")),
-                        Input::Glob(stub_glob_input("file.*")),
-                        Input::File(stub_file_input("/file.txt")),
-                        Input::Glob(stub_glob_input("/file.*")),
-                        Input::TokenFunc("@dirs(name)".into())
-                    ]),
-                    local: Some(true),
-                    outputs: Some(vec![
-                        Output::TokenVar("$workspaceRoot".into()),
-                        Output::File(stub_file_output("file.txt")),
-                        Output::Glob(stub_glob_output("file.*")),
-                        Output::File(stub_file_output("/file.txt")),
-                        Output::Glob(stub_glob_output("/file.*")),
-                    ]),
-                    options: TaskOptionsConfig {
-                        cache: Some(TaskOptionCache::Enabled(false)),
-                        retry_count: Some(3),
-                        ..Default::default()
-                    },
-                    platform: PlatformType::Bun,
-                    preset: Some(TaskPreset::Server),
-                    type_of: Some(TaskType::Build),
-                    ..Default::default()
-                }
-            );
-        }
+    #[test]
+    fn supports_toml() {
+        load_task_config_in_format("toml");
     }
 }

@@ -48,6 +48,15 @@ impl ToolchainTestWrapper {
             .unwrap()
     }
 
+    pub async fn extend_command(&self, mut input: ExtendCommandInput) -> ExtendCommandOutput {
+        input.context = self.create_context();
+
+        self.plugin
+            .call_func_with("extend_command", input)
+            .await
+            .unwrap()
+    }
+
     pub async fn extend_project_graph(
         &self,
         mut input: ExtendProjectGraphInput,
@@ -63,7 +72,7 @@ impl ToolchainTestWrapper {
     pub async fn extend_task_command(
         &self,
         mut input: ExtendTaskCommandInput,
-    ) -> ExtendTaskCommandOutput {
+    ) -> ExtendCommandOutput {
         input.context = self.create_context();
 
         input.globals_dir = input
@@ -221,8 +230,8 @@ impl ToolchainTestWrapper {
         input.input_dir = self.plugin.to_virtual_path(input.input_dir);
         input.output_dir = self.plugin.to_virtual_path(input.output_dir);
 
-        if input.project.id.is_empty() {
-            input.project = self.create_project_fragment();
+        if input.project.as_ref().is_some_and(|p| p.id.is_empty()) {
+            input.project = Some(self.create_project_fragment());
         }
 
         self.plugin

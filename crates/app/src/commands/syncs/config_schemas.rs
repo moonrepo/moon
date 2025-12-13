@@ -12,7 +12,7 @@ pub struct SyncConfigSchemasArgs {
     force: bool,
 }
 
-#[instrument(skip_all)]
+#[instrument(skip(session))]
 pub async fn sync(session: MoonSession, args: SyncConfigSchemasArgs) -> AppResult {
     let context = session.get_app_context().await?;
 

@@ -1,6 +1,7 @@
-platform: node
+toolchains:
+  default: node
 
 tasks:
   node:
     command: node
-    platform: node
+    toolchain: node

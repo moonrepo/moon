@@ -15,6 +15,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_common::{color, is_ci, is_test_env};
+use moon_console::Level;
 use moon_process::{ProcessRegistry, SignalType};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -31,7 +32,7 @@ pub struct ActionPipeline {
     pub concurrency: usize,
     pub quiet: bool,
     pub report_name: String,
-    pub summarize: bool,
+    pub summary: Option<Level>,
 
     // State
     actions: Vec<Action>,
@@ -60,7 +61,7 @@ impl ActionPipeline {
             quiet: false,
             report_name: "runReport.json".into(),
             status: ActionPipelineStatus::Pending,
-            summarize: false,
+            summary: None,
             workspace_graph,
         }
     }
@@ -128,6 +129,12 @@ impl ActionPipeline {
         let total_actions = action_graph.get_node_count();
         let start = Instant::now();
 
+        if total_actions == 0 {
+            debug!(total_actions, "No actions available, not running pipeline");
+
+            return Ok(());
+        }
+
         debug!(
             total_actions,
             concurrency = self.concurrency,
@@ -149,7 +156,6 @@ impl ActionPipeline {
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
-            toolchain_registry: Arc::clone(&self.app_context.toolchain_registry),
             workspace_graph: self.workspace_graph.clone(),
         };
 
@@ -385,7 +391,7 @@ impl ActionPipeline {
             self.emitter
                 .subscribe(ConsoleSubscriber::new(
                     Arc::clone(&self.app_context.console),
-                    self.summarize,
+                    self.summary.clone(),
                 ))
                 .await;
         }
@@ -463,7 +469,7 @@ impl ActionPipeline {
 
             self.emitter
                 .subscribe(TelemetrySubscriber::new(Arc::clone(
-                    &self.app_context.toolchain_config,
+                    &self.app_context.toolchains_config,
                 )))
                 .await;
         }

@@ -1,13 +1,11 @@
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
-use moon_common::{
-    color,
-    path::{self, WorkspaceRelativePathBuf},
-};
+use moon_common::path::{self, RelativeFrom, WorkspaceRelativePathBuf};
 use moon_config::{Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
+use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use moon_time::{now_millis, now_timestamp};
 use pathdiff::diff_paths;
@@ -17,7 +15,7 @@ use std::borrow::Cow;
 use std::env;
 use std::mem;
 use std::path::Path;
-use tracing::{debug, instrument, warn};
+use tracing::{instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct ExpandedResult {
@@ -58,18 +56,22 @@ impl TokenScope {
 
 pub struct TokenExpander<'graph> {
     pub scope: TokenScope,
-
     pub context: &'graph GraphExpanderContext,
-
     pub project: &'graph Project,
+    pub project_graph: &'graph ProjectGraph,
 }
 
 impl<'graph> TokenExpander<'graph> {
-    pub fn new(project: &'graph Project, context: &'graph GraphExpanderContext) -> Self {
+    pub fn new(
+        project_graph: &'graph ProjectGraph,
+        project: &'graph Project,
+        context: &'graph GraphExpanderContext,
+    ) -> Self {
         Self {
             scope: TokenScope::Args,
             context,
             project,
+            project_graph,
         }
     }
 
@@ -279,13 +281,11 @@ impl<'graph> TokenExpander<'graph> {
                     );
                 }
                 Input::File(inner) => {
-                    let file = self.create_path_for_task(
-                        task,
-                        inner.to_workspace_relative(&self.project.source),
-                    )?;
-
                     result.files_for_input.insert(
-                        file,
+                        self.create_path_for_task(
+                            task,
+                            inner.to_workspace_relative(&self.project.source),
+                        )?,
                         TaskFileInput {
                             content: inner.content.clone(),
                             optional: inner.optional,
@@ -300,17 +300,42 @@ impl<'graph> TokenExpander<'graph> {
                     )?;
                 }
                 Input::Glob(inner) => {
-                    let glob = self.create_path_for_task(
-                        task,
-                        inner.to_workspace_relative(&self.project.source),
-                    )?;
-
-                    result
-                        .globs_for_input
-                        .insert(glob, TaskGlobInput { cache: inner.cache });
+                    result.globs_for_input.insert(
+                        self.create_path_for_task(
+                            task,
+                            inner.to_workspace_relative(&self.project.source),
+                        )?,
+                        TaskGlobInput { cache: inner.cache },
+                    );
                 }
-                Input::Project(_) => {
-                    // Skip
+                Input::Project(inner) => {
+                    let project = self.project_graph.get_unexpanded(&inner.project)?;
+
+                    if let Some(group_id) = &inner.group {
+                        self.update_result_for_file_group(
+                            project.get_file_group(group_id)?,
+                            "static",
+                            &mut result,
+                        )?;
+                    } else if !inner.filter.is_empty() {
+                        for glob in &inner.filter {
+                            result.globs_for_input.insert(
+                                self.create_path_for_task(
+                                    task,
+                                    path::expand_to_workspace_relative(
+                                        RelativeFrom::Project(project.source.as_str()),
+                                        glob,
+                                    ),
+                                )?,
+                                TaskGlobInput::default(),
+                            );
+                        }
+                    } else {
+                        result.globs_for_input.insert(
+                            self.create_path_for_task(task, project.source.join("**/*"))?,
+                            TaskGlobInput::default(),
+                        );
+                    }
                 }
             };
         }
@@ -341,25 +366,24 @@ impl<'graph> TokenExpander<'graph> {
                     );
                 }
                 Output::File(inner) => {
-                    let file = self.create_path_for_task(
-                        task,
-                        inner.to_workspace_relative(&self.project.source),
-                    )?;
-
                     result.files_for_output.insert(
-                        file,
+                        self.create_path_for_task(
+                            task,
+                            inner.to_workspace_relative(&self.project.source),
+                        )?,
                         TaskFileOutput {
                             optional: inner.optional.unwrap_or_default(),
                         },
                     );
                 }
                 Output::Glob(inner) => {
-                    let glob = self.create_path_for_task(
-                        task,
-                        inner.to_workspace_relative(&self.project.source),
-                    )?;
-
-                    result.globs_for_output.insert(glob, TaskGlobOutput {});
+                    result.globs_for_output.insert(
+                        self.create_path_for_task(
+                            task,
+                            inner.to_workspace_relative(&self.project.source),
+                        )?,
+                        TaskGlobOutput {},
+                    );
                 }
             };
         }
@@ -515,13 +539,7 @@ impl<'graph> TokenExpander<'graph> {
 
                 result.value = match arg {
                     "channel" => metadata.and_then(|md| md.channel.clone()),
-                    "description" => metadata.and_then(|md| {
-                        if md.description.is_empty() {
-                            None
-                        } else {
-                            Some(md.description.clone())
-                        }
-                    }),
+                    "description" => metadata.and_then(|md| md.description.clone()),
                     "maintainers" => metadata.and_then(|md| {
                         if md.maintainers.is_empty() {
                             None
@@ -529,7 +547,7 @@ impl<'graph> TokenExpander<'graph> {
                             Some(md.maintainers.join(","))
                         }
                     }),
-                    "name" => metadata.and_then(|md| md.name.clone()),
+                    "name" | "title" => metadata.and_then(|md| md.title.clone()),
                     "owner" => metadata.and_then(|md| md.owner.clone()),
                     custom_field => metadata.and_then(|md| {
                         md.metadata.get(custom_field).map(|value| value.to_string())
@@ -577,15 +595,6 @@ impl<'graph> TokenExpander<'graph> {
                 None => Cow::Owned(String::new()),
             };
 
-        if variable == "taskPlatform" {
-            debug!(
-                task_target = task.target.as_str(),
-                "The {} token variable is deprecated, use {} instead",
-                color::property("taskPlatform"),
-                color::property("taskToolchain"),
-            );
-        }
-
         let replaced_value = match variable {
             // Env
             "arch" => Cow::Borrowed(env::consts::ARCH),
@@ -595,22 +604,30 @@ impl<'graph> TokenExpander<'graph> {
             "workspaceRoot" => Cow::Owned(self.stringify_path(&self.context.workspace_root)?),
             // Project
             "language" => Cow::Owned(project.language.to_string()),
-            "project" => Cow::Borrowed(project.id.as_str()),
-            "projectAlias" => match project.alias.as_ref() {
-                Some(alias) => Cow::Borrowed(alias.as_str()),
+            "project" | "projectId" => Cow::Borrowed(project.id.as_str()),
+            "projectAlias" => match project.aliases.first() {
+                Some(alias) => Cow::Borrowed(alias.alias.as_str()),
                 None => Cow::Owned(String::new()),
             },
+            "projectAliases" => Cow::Owned(
+                project
+                    .aliases
+                    .iter()
+                    .map(|alias| alias.alias.clone())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
             "projectChannel" => get_metadata(|md| md.channel.as_deref()),
-            "projectLayer" | "projectType" => Cow::Owned(project.layer.to_string()),
-            "projectName" => get_metadata(|md| md.name.as_deref()),
+            "projectLayer" => Cow::Owned(project.layer.to_string()),
+            "projectName" | "projectTitle" => get_metadata(|md| md.title.as_deref()),
             "projectOwner" => get_metadata(|md| md.owner.as_deref()),
             "projectRoot" => Cow::Owned(self.stringify_path(&project.root)?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),
             "projectStack" => Cow::Owned(project.stack.to_string()),
             // Task
             "target" => Cow::Borrowed(task.target.as_str()),
-            "task" => Cow::Borrowed(task.id.as_str()),
-            "taskPlatform" | "taskToolchain" => match task.toolchains.first() {
+            "task" | "taskId" => Cow::Borrowed(task.id.as_str()),
+            "taskToolchain" => match task.toolchains.first() {
                 Some(tc) => Cow::Borrowed(tc.as_str()),
                 None => Cow::Owned("unknown".into()),
             },

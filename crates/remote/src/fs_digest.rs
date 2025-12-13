@@ -8,10 +8,9 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use bazel_remote_apis::google::protobuf::Timestamp;
 use chrono::NaiveDateTime;
 use moon_common::path::PathExt;
-use moon_feature_flags::glob_walk_with_options;
 use sha2::{Digest as Sha256Digest, Sha256};
 use starbase_utils::fs::FsError;
-use starbase_utils::glob::GlobWalkOptions;
+use starbase_utils::glob::{self, GlobWalkOptions};
 use std::{
     fs::{self, Metadata},
     path::{Path, PathBuf},
@@ -139,10 +138,11 @@ impl OutputDigests {
 
             self.blobs.push(blob);
         } else if abs_path.is_dir() {
-            // TODO use the REAPI directory types
-            for abs_file in
-                glob_walk_with_options(abs_path, ["**/*"], GlobWalkOptions::default().files())?
-            {
+            for abs_file in glob::walk_fast_with_options(
+                abs_path,
+                ["**/*"],
+                GlobWalkOptions::default().files(),
+            )? {
                 self.insert_path(abs_file, workspace_root)?;
             }
         }

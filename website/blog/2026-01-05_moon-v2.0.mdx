@@ -1,0 +1,440 @@
+---
+slug: moon-v2.0
+title: moon v2.0 - Official "Phobos" release!
+authors: [milesj]
+tags: []
+# image: ./img/moon/v2.0.png
+---
+
+TODO
+
+<!--truncate-->
+
+## v2
+
+## Breaking changes
+
+TODO
+
+## CLI
+
+### New and improved commands
+
+As part of this release, we went through every CLI command and made improvements to their usability,
+functionality, and rendered output. On top of this, we're also introducing a handful of new commands
+to fill some missing gaps. Here are some highlights:
+
+- `moon exec` - Low-level command for running tasks. Read more below!
+- `moon extension` - Top-level command to [manage extensions](#management-commands) in the
+  workspace.
+- `moon hash` - Inspect a hash, or diff two hashes.
+- `moon projects` - Display a table of all projects.
+- `moon query affected` - Query affected status for projects and tasks.
+- `moon tasks` - Display a table of all tasks or for a specific project.
+- `moon template` - Display information about a template.
+
+### New `exec` command
+
+To simplify running tasks and improve consistency across commands, we've introduced a new low-level
+`moon exec` command. This command is now used under the hood by `moon check`, `moon ci`, and
+`moon run`, with some arguments/options pre-filled. This allows us to have a single command that is
+responsible for executing tasks, while still providing higher-level commands for specific use cases.
+
+This paves the way for future commands that can leverage `moon exec`, such as a potential
+`moon deploy` or `moon watch` command.
+
+```shell
+$ moon exec app:build --dependents direct
+```
+
+### Updated `ci`, `check`, and `run` commands
+
+As mentioned previously, all of these commands have been reworked to use `moon exec` under the hood.
+This means that they now share the same core functionality and behavior, while still providing their
+own unique features and options.
+
+```shell
+$ moon ci
+$ moon check app
+$ moon run app:dev --affected
+```
+
+### Dynamic identifier & target selection
+
+For some commands that require a project, task, or template identifier/target, we've added an
+interactive selection prompt if no value is provided. This makes it easier to explore and use the
+CLI without needing to know specific identifiers ahead of time. The following commands now support
+this:
+
+- `moon check`
+- `moon ci`
+- `moon exec`
+- `moon generate`
+- `moon project`
+- `moon run`
+- `moon task`
+- `moon template`
+
+To demonstrate this, here we are running `moon project` without an identifier:
+
+```shell
+$ moon project
+
+│ Which project to view?
+│
+│ ❯ report
+│   runtime
+│   types
+│   visualizer
+│   website - A static website.
+│
+│ ⎵ select ⁃ ↕ cycle ⁃ ↵ submit
+```
+
+### Stabilized `moonx`
+
+The `moonx` executable, sibling to `moon`, has been stabilized, and is no longer a shim, but a
+proper standalone binary. This executable is simply a shorthand for `moon exec`, and _replaces_ the
+shorthand syntax that previously existed with `moon <target>`.
+
+```shell
+# Before
+$ moon exec app:build
+$ moon app:build
+
+# After
+$ moonx app:build
+```
+
+> The `moonx` binary is only available when moon is installed via the official installers, and is
+> not available through the `@moonrepo/cli` npm package.
+
+### Support for `.config`
+
+The `.moon` directory denotes the root of the workspace, but if you don't like clutter, this may
+feel overwhelming. To help with this, we've introduced support for the
+[`.config` directory pattern](https://dot-config.github.io/), allowing you to define your workspace
+configuration in a more organized manner.
+
+Simply use `.config/moon` instead of `.moon`! The workspace root will now be the directory that
+contains the `.config` directory.
+
+## Configuration
+
+### New file formats
+
+We've been pretty strict about only supporting YAML based configuration for quite some time, but we
+understand that people have different preferences (many of you hate YAML, which is fair). We've
+experimented in the past a bit by adding support for [Pkl](https://pkl-lang.org/), which is a
+programmable configuration, but it required a learning curve.
+
+Over time, we've come to loosen our stance on YAML, and are now introducing support for not just
+one, but many additional formats! The following file formats are now supported for all moon
+configuration files:
+
+- JSON (`.json`)
+- JSON with comments (`.jsonc`)
+- [HCL](https://github.com/hashicorp/hcl) (`.hcl`)
+- [Pkl](https://pkl-lang.org/) (`.pkl`)
+- [TOML](https://toml.io/en/) (`.toml`)
+- YAML (`.yml`, `.yaml`)
+
+## Toolchains
+
+### Plugin based system
+
+The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.
+Toolchains are now powered by WASM plugins, instead of hard-coded in core, allowing for more
+flexibility, extensibility, and the ability for the community to create their own toolchains!
+
+Moving to a plugin based system enables us to support more languages, more features, deeper
+integration, as well as more complex workflows. For example, in the future we can now easily support
+release workflows (changelogs, versioning, publishing) as part of a toolchain.
+
+Just to demonstrate how powerful the plugin system is, it currently supports all the following
+features:
+
+- Extending the project graph with project dependencies and aliases
+- Extending task commands and scripts before they're executed
+- Integrates with our Docker flow for pruning and scaffolding
+- Runs operations during the project/workspace sync processes
+- Locates a root dependencies directory for package manager workspaces
+- Parses manifest and lock files to extract dependencies and metadata
+- Sets up the environment and auto-installs dependencies
+- Hook into the task hashing process
+- Manages downloading and installing tools (via proto)
+
+### Improved `PATH` handling
+
+Toolchain (and extension) plugins have the ability to modify the `PATH` environment variable for
+most child processes that occur during task execution, but the way we handled this has been improved
+significantly. Previously, there were some inconsistencies around when and how the `PATH` was
+modified, leading to unexpected behavior in certain scenarios. Going forward, we inherit paths using
+a strict order of operations:
+
+- Inherit for all commands using `extend_command` extension and toolchain calls
+- Inherit for task commands using `extend_task_command` or `extend_task_script` toolchain calls
+- Inherit toolchain executable directories
+- Inherit proto shims and bins directories
+- Inherit proto and moon store directories
+
+## Extensions
+
+### Stand-alone configuration
+
+Extensions are a WASM plugin based system that has existed for some time now, but they only
+supported a single functionality: custom execution through the [`moon ext`](/docs/commands/ext)
+command. With the introduction of toolchain plugins, we wanted to expand the extension system to
+allow for more flexibility and use cases.
+
+To start, we're intoducing a new `.moon/extensions.*` configuration file, that will contain all
+extensions, similar to how toolchains are configured in `.moon/toolchains.*`. Because of this
+change, the `extensions` setting has been removed from the workspace configuration.
+
+### New plugin APIs
+
+With extensions now being first-class citizens in moon, we've expanded the PDK API to allow for more
+functionality. Extensions can now utilize the following API functions, similar to toolchains:
+
+- `define_extension_config` - Define the configuration schema for the extension.
+- `initialize_extension` - Initialize the extension with user prompts.
+- `extend_project_graph` - Extend projects with aliases, dependencies, and tasks.
+- `extend_task_command` - Extend the task command before it's executed.
+- `extend_task_script` - Extend the task script before it's executed.
+- `sync_project` - Run operations during the project sync process.
+- `sync_workspace` - Run operations during the workspace sync process.
+
+### Management commands
+
+To easily manage extensions, we've added new commands under the `moon extension` namespace:
+
+- `moon extension add` - Add a new extension to the workspace.
+- `moon extension info` - Display information about an extension.
+
+```shell
+$ moon extension info migrate-nx
+
+Extension ─────────────────────────────────────────────────────────────────
+
+  Migrate an Nx repository to moon by converting all nx.json and
+  project.json files into moon configuration files.
+
+  ID: migrate-nx
+  Title: Migrate Nx
+  Version: 0.0.11
+
+APIs ──────────────────────────────────────────────────────────────────────
+
+  🟢 register_extension (required)
+  ⚫️ define_extension_config
+  ⚫️ initialize_extension
+  🟢 execute_extension
+  ⚫️ sync_project
+  ⚫️ sync_workspace
+  ⚫️ extend_project_graph
+  ⚫️ extend_task_command
+  ⚫️ extend_task_script
+```
+
+## Projects
+
+### Default project
+
+By request from the community, we've added a new `defaultProject` setting to the workspace
+configuration. This setting allows you to specify a default project that will be used when running
+tasks that require a project identifier, but none was provided. This is especially useful for
+workspaces with a single project, or when you have a primary project that you work on most of the
+time.
+
+```yaml title=".moon/workspace.yml"
+defaultProject: 'app'
+```
+
+```shell
+# Before
+$ moon run app:build
+
+# After
+$ moon run build
+$ moonx build
+```
+
+### Path based IDs
+
+When locating projects with globs via the `projects` workspace configuration, we would historically
+use the directory name as the project ID. While this works in most cases, it can lead to issues when
+the directory name collides with another project, or is not descriptive enough. For example,
+`packages/server/utils` would become `utils`. What if you also had `packages/client/utils`?
+
+To solve this, we've introduced a new `projects.globFormat` setting, which can be configured as
+`source-path` and will use the full relative source path as the project ID.
+
+```yaml title=".moon/workspace.yml"
+projects:
+  globFormat: 'source-path'
+  globs:
+    - 'packages/**/moon.yml'
+```
+
+Using the examples above, the resulting project IDs would now be `packages/server/utils` and
+`packages/client/utils`, respectively.
+
+### Multiple aliases
+
+In addition to identifiers, projects also support aliases, which are toolchain specific names
+derived from manifest files, for example, the `name` field in `package.json` or `Cargo.toml`. This
+allows you to refer to projects by their native names on the command line, in configuration, and
+more.
+
+Previously, projects only supported a single alias, but now they support multiple aliases, one from
+each applicable toolchain. In addition, we have added a new `$projectAliases` token, which is a
+comma-separated list of all aliases. The existing `$projectAlias` token now returns the first alias,
+if it exists.
+
+### New `data` stack
+
+Our stack system represents all aspects of a development stack, except one, the database/data layer!
+To give you more control around categorization, we've added a new `data` stack type, which can be
+used to represent projects that are primarily focused on data storage. This includes databases, ETL
+pipelines, and other data-centric use cases.
+
+```yaml title="moon.yml"
+stack: 'data'
+```
+
+## Tasks
+
+### Inheritance via configuration
+
+Our task inheritance system is quite powerful, and one of moon's most compelling features. However,
+it can be rather restrictive as inheritance is based entirely on file naming conventions. To provide
+more flexibility, we've reworked task inheritance to be configuration based, by introducing a new
+`inheritedBy` setting for all `.moon/tasks/**/*` files.
+
+For example, if you had a tasks file named `.moon/tasks/node-frontend-library.yml`, it would now be
+configured like so:
+
+```yaml title=".moon/tasks/node-frontend-library.yml"
+inheritedBy:
+  toolchain: 'node'
+  stack: 'frontend'
+  layer: 'library'
+```
+
+This new system is very powerful, as you can now mix-and-match different criteria to control how
+tasks are inherited. The following conditions are supported out of the box, providing granular
+control:
+
+- `files` (NEW) - Inherit for projects that contain specific files.
+- `languages` (NEW) - Inherit for projects that belong to specific `language`s.
+- `layers` - Inherit for projects that belong to specific `layer`s.
+- `stacks` - Inherit for projects that belong to specific `stack`s.
+- `tags` - Inherit for projects that have specific `tags`.
+- `toolchains` - Inherit for projects that belong to specific toolchains.
+
+```yaml
+inheritedBy:
+  # Project belongs to either javascript or typescript toolchain, but not the ruby toolchain
+  toolchains:
+    or: ['javascript', 'typescript']
+    not: ['ruby']
+  # And project is either a frontend or backend stack
+  stacks: ['frontend', 'backend']
+  # And project is either a library or tool layer
+  layers: ['library', 'tool']
+```
+
+### Toolchain merging
+
+A task can now be associated with multiple toolchains (javascript, node, npm), unlike the previous
+platform system which only allowed for 1 platform (node). This change allows for more flexibility
+but also requires more granular control over how toolchains are inherited. To accommodate this,
+we've added a `mergeToolchains` task option:
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    # ...
+    toolchains: ['javascript']
+    options:
+      mergeToolchains: 'replace'
+```
+
+### New `utility` preset
+
+Task presets are helpful as the provide a set of default options and behaviors for common task
+types. However, we haven't fully utilized (pun intended) this feature yet, so are adding a new
+preset called `utility`. This preset is designed for simple one-off tasks that primarily run
+locally, like running a migration, or validating data.
+
+This preset configures the following options:
+
+- `cache` disabled
+- `interactive` enabled
+- `persistent` disabled
+- `outputStyle` as `stream`
+- `runInCI` as `skip`
+
+```yaml title="moon.yml"
+tasks:
+  validate-schema:
+    # ...
+    preset: 'utility'
+```
+
+## Docker
+
+### Defaults with overrides
+
+To improve customizability of `Dockerfile` generation, and to allow for more flexibility during the
+scaffolding process, we've updated the `docker` settings in `.moon/workspace.*` to act as defaults,
+and the `docker` settings in `moon.*` to act as overrides on a per-project basis. Because of this,
+we've also updated `docker.file` and `docker.scaffold` settings to be the same across both files.
+
+```yaml title=".moon/workspace.yml"
+# Inherited by all projects
+docker:
+  file:
+    buildTask: 'build'
+```
+
+```yaml title="moon.yml"
+# Overridden per project
+docker:
+  file:
+    buildTask: 'compile'
+```
+
+### Dockerfile templates
+
+To further expand the customizability of `Dockerfile` generation, we've added support for custom
+templates to be used during the rendering process. The template can be provided with the
+`--template` option when running `moon docker file`, or configured with the new
+`docker.file.template` setting. Template rendering is powered by
+[Tera](https://keats.github.io/tera/).
+
+```shell
+$ moon docker file app --template ./Dockerfile.tera
+```
+
+## VCS
+
+### New implementation
+
+In moon v1 we were running an experiment that utilizes a new Git implementation, which we dubbed Git
+v2. We've made this the default implementation and removed the legacy implementation. This new
+implementation is faster, more reliable, and has better support for complex repositories (worktrees,
+submodules, etc). The `experiments.gitV2` setting should now be removed.
+
+### Worktree compatible hooks
+
+We've rewritten our Git hooks system to be compatible with Git worktrees, and to better handle the
+`core.hooksPath` Git configuration. Previously hooks were written to `.git/hooks` at the repository
+root, but we now don't write to `.git` at all, and entirely rely on `.moon/hooks` in each tree.
+
+> You may need to enable the `extensions.worktreeConfig` Git setting for this to work properly:
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.0.0) for a full list of
+changes.

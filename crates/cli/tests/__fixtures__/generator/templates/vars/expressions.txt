@@ -1,0 +1,34 @@
+noPrompt = {{ noPrompt }}
+internal = {{ internal }}
+
+boolTrue = {{ boolTrue }}
+boolFalse = {{ boolFalse }}
+
+string = {{ string }}
+stringNotEmpty = {{ stringNotEmpty }}
+stringReq = {{ stringReq }}
+stringReqNotEmpty = {{ stringReqNotEmpty }}
+
+number = {{ number }}
+numberNotEmpty = {{ numberNotEmpty }}
+numberReq = {{ numberReq }}
+numberReqNotEmpty = {{ numberReqNotEmpty }}
+
+enum = {{ enum }}
+enumNotEmpty = {{ enumNotEmpty }}
+multenum = {{ multenum }}
+multenumNotEmpty = {{ multenumNotEmpty }}
+
+object = {{ object }}
+objectNotEmpty = {{ objectNotEmpty }}
+objectNotEmpty.key = {{ objectNotEmpty.key }}
+objectReq = {{ objectReq }}
+objectReqNotEmpty = {{ objectReqNotEmpty }}
+objectReqNotEmpty['key'] = {{ objectReqNotEmpty['key'] }}
+
+array = {{ array }}
+arrayNotEmpty = {{ arrayNotEmpty }}
+arrayNotEmpty.0 = {{ arrayNotEmpty.0 }}
+arrayReq = {{ arrayReq }}
+arrayReqNotEmpty = {{ arrayReqNotEmpty }}
+arrayReqNotEmpty[0] = {{ arrayReqNotEmpty[0] }}

@@ -2,60 +2,63 @@ use moon_test_utils2::create_moon_sandbox;
 use starbase_sandbox::predicates::prelude::*;
 use std::fs;
 
-mod dockerfile {
+mod docker_file {
     use super::*;
 
     #[test]
     fn errors_for_unknown_project() {
         let sandbox = create_moon_sandbox("dockerfile");
 
-        let assert = sandbox.run_bin(|cmd| {
-            cmd.args(["docker", "file", "missing", "--defaults"]);
-        });
-
-        assert.inner.stderr(predicate::str::contains(
-            "No project has been configured with the identifier or alias missing.",
-        ));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args(["docker", "file", "missing", "--defaults"]);
+            })
+            .failure()
+            .stderr(predicate::str::contains(
+                "No project has been configured with the identifier or alias missing.",
+            ));
     }
 
     #[test]
     fn errors_for_unknown_build_task() {
         let sandbox = create_moon_sandbox("dockerfile");
 
-        let assert = sandbox.run_bin(|cmd| {
-            cmd.args([
-                "docker",
-                "file",
-                "no-tasks",
-                "--defaults",
-                "--buildTask",
-                "missing",
-            ]);
-        });
-
-        assert.inner.stderr(predicate::str::contains(
-            "Unknown task missing for project no-tasks.",
-        ));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args([
+                    "docker",
+                    "file",
+                    "no-tasks",
+                    "--defaults",
+                    "--build-task",
+                    "missing",
+                ]);
+            })
+            .failure()
+            .stderr(predicate::str::contains(
+                "Unknown task missing for project no-tasks.",
+            ));
     }
 
     #[test]
     fn errors_for_unknown_start_task() {
         let sandbox = create_moon_sandbox("dockerfile");
 
-        let assert = sandbox.run_bin(|cmd| {
-            cmd.args([
-                "docker",
-                "file",
-                "no-tasks",
-                "--defaults",
-                "--startTask",
-                "missing",
-            ]);
-        });
-
-        assert.inner.stderr(predicate::str::contains(
-            "Unknown task missing for project no-tasks.",
-        ));
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args([
+                    "docker",
+                    "file",
+                    "no-tasks",
+                    "--defaults",
+                    "--start-task",
+                    "missing",
+                ]);
+            })
+            .failure()
+            .stderr(predicate::str::contains(
+                "Unknown task missing for project no-tasks.",
+            ));
     }
 
     #[test]
@@ -107,9 +110,9 @@ mod dockerfile {
                     "has-tasks",
                     "--image",
                     "node:latest",
-                    "--buildTask",
+                    "--build-task",
                     "build",
-                    "--startTask",
+                    "--start-task",
                     "start",
                     "--no-prune",
                     "--no-toolchain",
@@ -142,5 +145,43 @@ mod dockerfile {
         assert!(file.contains("moon run with-config:compile"));
         assert!(file.contains("moon run with-config:serve"));
         assert!(file.contains("moon docker prune"));
+    }
+
+    #[test]
+    fn can_use_a_custom_template() {
+        let sandbox = create_moon_sandbox("dockerfile");
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args(["docker", "file", "has-tasks", "--template"]);
+                cmd.arg(
+                    std::env::current_dir()
+                        .unwrap()
+                        .join("../docker/templates/CustomTemplate.tera"),
+                );
+            })
+            .success();
+
+        let file = fs::read_to_string(sandbox.path().join("has-tasks/Dockerfile")).unwrap();
+
+        assert!(file.contains("Custom template"));
+    }
+
+    #[test]
+    fn errors_if_template_path_doesnt_exist() {
+        let sandbox = create_moon_sandbox("dockerfile");
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.args([
+                    "docker",
+                    "file",
+                    "has-tasks",
+                    "--template",
+                    "unknown-template-file.tera",
+                ]);
+            })
+            .failure()
+            .stderr(predicate::str::contains("unable to generate a Dockerfile"));
     }
 }

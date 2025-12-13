@@ -1,8 +1,10 @@
 tasks:
   prompt:
     command: node ./prompt.js
-    platform: node
+    toolchain: node
   promptWithLocal:
     command: node ./prompt.js
-    platform: node
-    local: true
+    toolchain: node
+    options:
+      runInCI: false
+      persistent: true

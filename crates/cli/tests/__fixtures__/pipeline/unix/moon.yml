@@ -1,0 +1,164 @@
+language: bash
+
+tasks:
+  ls:
+    command: ls -1 .
+    inputs:
+      - '*.sh'
+
+  echo:
+    command: echo
+    args: 'hello'
+    inputs:
+      - '*.sh'
+
+  standard:
+    command: bash
+    args: ./standard.sh
+    inputs:
+      - '*.sh'
+
+  exitNonZero:
+    command: bash
+    args: ./exitNonZero.sh
+    inputs:
+      - '*.sh'
+
+  exitNonZeroInline:
+    command: bash -c 'exit 2'
+    options:
+      shell: false
+    inputs:
+      - '*.sh'
+
+  exitZero:
+    command: bash
+    args: ./exitZero.sh
+    inputs:
+      - '*.sh'
+
+  passthroughArgs:
+    command: bash
+    args: ./args.sh
+    inputs:
+      - '*.sh'
+
+  envVars:
+    command: bash
+    args: ./envVars.sh
+    env:
+      TEST_FOO: abc
+      TEST_BAR: '123'
+      TEST_BAZ: 'true'
+    inputs:
+      - '*.sh'
+
+  envVarsMoon:
+    command: bash
+    args: ./envVarsMoon.sh
+    inputs:
+      - '*.sh'
+
+  runFromProject:
+    command: bash
+    args: ./cwd.sh
+    inputs:
+      - '*.sh'
+
+  runFromWorkspace:
+    command: bash
+    args: ./unix/cwd.sh
+    options:
+      runFromWorkspaceRoot: true
+    inputs:
+      - '*.sh'
+
+  retryCount:
+    command: bash
+    args: ./exitNonZero.sh
+    options:
+      retryCount: 3
+    inputs:
+      - '*.sh'
+
+  outputs:
+    command: bash ./outputs.sh
+    outputs:
+      - 'file.txt'
+      - 'folder'
+    inputs:
+      - '*.sh'
+
+  affectedFiles:
+    command: bash ./affectedFiles.sh
+    options:
+      affectedFiles: true
+      affectedPassInputs: true
+
+  affectedFilesArgs:
+    command: bash ./affectedFiles.sh
+    options:
+      affectedFiles: 'args'
+
+  affectedFilesEnvVar:
+    command: bash ./affectedFiles.sh
+    options:
+      affectedFiles: 'env'
+
+  multiAmpersand:
+    command: 'mkdir foo && mkdir bar'
+    inputs:
+      - '*.sh'
+
+  multiSemicolon:
+    command: 'mkdir foo; mkdir bar'
+    inputs:
+      - '*.sh'
+
+  syntaxVar:
+    command: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
+    env:
+      VAR_NAME: substituted-value
+    options:
+      shell: true
+    inputs:
+      - '*.sh'
+
+  syntaxExpansion:
+    script: 'echo ${VAR_NAME:2:2}'
+    env:
+      VAR_NAME: abcdef
+    options:
+      shell: true
+    inputs:
+      - '*.sh'
+
+  syntaxSubstitution:
+    script: 'echo $(echo subparens)'
+    options:
+      shell: true
+    inputs:
+      - '*.sh'
+
+  syntaxSubstitutionTick:
+    script: 'echo `echo subtick`'
+    options:
+      shell: true
+    inputs:
+      - '*.sh'
+
+  noShell:
+    command: bash -c "echo 'hello'"
+    options:
+      shell: false
+    inputs:
+      - '*.sh'
+
+  outFoo:
+    command: echo 'foo'
+
+  outBar:
+    command: echo 'bar'
+
+  outBaz:
+    command: echo 'baz'

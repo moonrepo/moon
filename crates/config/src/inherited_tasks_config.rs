@@ -1,36 +1,271 @@
 use crate::config_struct;
-use crate::project::{
-    PartialTaskOptionsConfig, TaskConfig, TaskDependency, TaskOptionsConfig, validate_deps,
-};
+use crate::patterns::{merge_iter, merge_tasks_partials};
+use crate::project::LanguageType;
 use crate::project_config::{LayerType, StackType};
-use crate::shapes::Input;
+use crate::shapes::{FilePath, Input, OneOrMany};
+use crate::task_config::{TaskConfig, TaskDependency, validate_deps};
+use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use moon_common::{Id, cacheable};
-use rustc_hash::{FxHashMap, FxHasher};
-use schematic::schema::indexmap::{IndexMap, IndexSet};
-use schematic::{Config, MergeResult, merge, validate};
+use rustc_hash::FxHashMap;
+use schematic::schema::indexmap::IndexMap;
+use schematic::{Config, merge, validate};
 use std::collections::BTreeMap;
-use std::hash::{BuildHasherDefault, Hash};
-use std::path::PathBuf;
+use std::path::Path;
 
-#[cfg(feature = "loader")]
-use std::{
-    path::Path,
-    sync::{Arc, RwLock},
-};
+#[derive(Default)]
+pub struct InheritFor<'a> {
+    pub language: Option<&'a LanguageType>,
+    pub layer: Option<&'a LayerType>,
+    pub root: Option<&'a Path>,
+    pub stack: Option<&'a StackType>,
+    pub tags: Option<&'a [Id]>,
+    pub toolchains: Option<&'a [Id]>,
+}
 
-fn merge_fxhashmap<K, V, C>(
-    mut prev: FxHashMap<K, V>,
-    next: FxHashMap<K, V>,
-    _context: &C,
-) -> MergeResult<FxHashMap<K, V>>
-where
-    K: Eq + Hash,
-{
-    for (key, value) in next {
-        prev.insert(key, value);
+impl<'a> InheritFor<'a> {
+    pub fn language(mut self, language: &'a LanguageType) -> Self {
+        self.language = Some(language);
+        self
     }
 
-    Ok(Some(prev))
+    pub fn layer(mut self, layer: &'a LayerType) -> Self {
+        self.layer = Some(layer);
+        self
+    }
+
+    pub fn root(mut self, root: &'a Path) -> Self {
+        self.root = Some(root);
+        self
+    }
+
+    pub fn stack(mut self, stack: &'a StackType) -> Self {
+        self.stack = Some(stack);
+        self
+    }
+
+    pub fn tags(mut self, tags: &'a [Id]) -> Self {
+        self.tags = Some(tags);
+        self
+    }
+
+    pub fn toolchains(mut self, toolchains: &'a [Id]) -> Self {
+        self.toolchains = Some(toolchains);
+        self
+    }
+}
+
+config_struct!(
+    /// A condition that utilizes a combination of logical operators
+    /// to match against. When matching, all clauses must be satisfied.
+    #[derive(Config)]
+    pub struct InheritedClauseConfig {
+        /// Require all values to match, using an AND operator.
+        pub and: Option<OneOrMany<Id>>,
+
+        /// Require any values to match, using an OR operator.
+        pub or: Option<OneOrMany<Id>>,
+
+        /// Require no values to match, using a NOT operator.
+        pub not: Option<OneOrMany<Id>>,
+    }
+);
+
+impl InheritedClauseConfig {
+    pub fn matches(&self, values: &[Id]) -> bool {
+        if values.is_empty() || self.not.is_none() && self.and.is_none() && self.or.is_none() {
+            return false;
+        }
+
+        if let Some(not) = &self.not
+            && not.to_list().iter().any(|value| values.contains(value))
+        {
+            return false;
+        }
+
+        if let Some(and) = &self.and
+            && !and.to_list().iter().all(|value| values.contains(value))
+        {
+            return false;
+        }
+
+        if let Some(or) = &self.or
+            && !or.to_list().iter().any(|value| values.contains(value))
+        {
+            return false;
+        }
+
+        true
+    }
+}
+
+config_struct!(
+    /// Patterns in which a condition can be configured as.
+    #[derive(Config)]
+    #[serde(untagged)]
+    pub enum InheritedConditionConfig {
+        /// Condition applies to a single value.
+        One(Id),
+
+        /// Condition applies to multiple values,
+        /// and matches using an OR operator.
+        Many(Vec<Id>),
+
+        /// Condition applies using logical operator clauses.
+        #[setting(nested)]
+        Clause(InheritedClauseConfig),
+    }
+);
+
+impl InheritedConditionConfig {
+    pub fn matches(&self, values: &[Id]) -> bool {
+        match self {
+            Self::Clause(inner) => inner.matches(values),
+            Self::Many(inner) => values.iter().any(|value| inner.contains(value)),
+            Self::One(inner) => values.contains(inner),
+        }
+    }
+}
+
+config_struct!(
+    /// Configures conditions that must match against a project for tasks
+    /// to be inherited. If multiple conditions are defined, then all must match
+    /// for inheritance to occur. If no conditions are defined, then tasks will
+    /// be inherited by all projects.
+    #[derive(Config)]
+    pub struct InheritedByConfig {
+        /// The order in which this configuration is inherited by a project.
+        /// Lower is inherited first, while higher is last.
+        pub order: Option<u16>,
+
+        /// Condition that matches against literal files within a project.
+        /// If multiple values are provided, at least 1 file needs to exist.
+        #[setting(alias = "file")]
+        pub files: Option<OneOrMany<FilePath>>,
+
+        /// Condition that matches against a project's `language`.
+        /// If multiple values are provided, it matches using an OR operator.
+        #[setting(alias = "language")]
+        pub languages: Option<OneOrMany<LanguageType>>,
+
+        /// Condition that matches against a project's `layer`.
+        /// If multiple values are provided, it matches using an OR operator.
+        #[setting(alias = "layer")]
+        pub layers: Option<OneOrMany<LayerType>>,
+
+        /// Condition that matches against a project's `stack`.
+        /// If multiple values are provided, it matches using an OR operator.
+        #[setting(alias = "stack")]
+        pub stacks: Option<OneOrMany<StackType>>,
+
+        /// Condition that matches against a tag within the project.
+        #[setting(alias = "tag", nested)]
+        pub tags: Option<InheritedConditionConfig>,
+
+        /// Condition that matches against a toolchain detected for a project.
+        #[setting(alias = "toolchain", nested)]
+        pub toolchains: Option<InheritedConditionConfig>,
+    }
+);
+
+impl InheritedByConfig {
+    pub fn default_toolchain(&self) -> Option<Id> {
+        self.toolchains.as_ref().and_then(|entry| match entry {
+            InheritedConditionConfig::One(id) => Some(id.to_owned()),
+            InheritedConditionConfig::Many(ids) => {
+                if ids.len() == 1 {
+                    Some(ids[0].to_owned())
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        })
+    }
+
+    // 0 - (files)
+    // 50 - node
+    // 100 - frontend
+    // 150 - library
+    // 150 - node-frontend
+    // 200 - node-library
+    // 250 - frontend-library
+    // 300 - node-frontend-library
+    // 500 - (tags)
+    pub fn order(&self) -> u16 {
+        if let Some(order) = self.order {
+            return order;
+        }
+
+        let mut amount = 0;
+
+        // Toolchains/languages are the lowest level
+        if self.toolchains.is_some() || self.languages.is_some() {
+            amount += 50;
+        }
+
+        // Stacks are the middle level
+        if self.stacks.is_some() {
+            amount += 100;
+        }
+
+        // Layers are the highest level
+        if self.layers.is_some() {
+            amount += 150;
+        }
+
+        // Tags are their own level (typically)
+        if self.tags.is_some() {
+            amount += 500;
+        }
+
+        amount
+    }
+
+    pub fn matches(&self, input: &InheritFor) -> bool {
+        if let Some(condition) = &self.stacks
+            && let Some(value) = &input.stack
+            && !condition.matches(value)
+        {
+            return false;
+        }
+
+        if let Some(condition) = &self.languages
+            && let Some(value) = &input.language
+            && !condition.matches(value)
+        {
+            return false;
+        }
+
+        if let Some(condition) = &self.layers
+            && let Some(value) = &input.layer
+            && !condition.matches(value)
+        {
+            return false;
+        }
+
+        if let Some(condition) = &self.tags
+            && let Some(value) = &input.tags
+            && !condition.matches(value)
+        {
+            return false;
+        }
+
+        if let Some(condition) = &self.toolchains
+            && let Some(value) = &input.toolchains
+            && !condition.matches(value)
+        {
+            return false;
+        }
+
+        if let Some(files) = &self.files
+            && let Some(value) = &input.root
+            && !files.to_list().iter().any(|file| value.join(file).exists())
+        {
+            return false;
+        }
+
+        true
+    }
 }
 
 config_struct!(
@@ -39,37 +274,43 @@ config_struct!(
     /// Docs: https://moonrepo.dev/docs/config/tasks
     #[derive(Config)]
     pub struct InheritedTasksConfig {
-        #[setting(
-            default = "https://moonrepo.dev/schemas/tasks.json",
-            rename = "$schema"
-        )]
+        #[setting(default = "./cache/schemas/tasks.json", rename = "$schema")]
         pub schema: String,
 
-        /// Extends one or many task configuration files. Supports a relative
-        /// file path or a secure URL.
+        /// Extends one or many tasks configuration files.
+        /// Supports a relative file path or a secure URL.
+        /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
         pub extends: Option<schematic::ExtendsFrom>,
 
-        /// A mapping of group IDs to a list of file paths, globs, and
+        /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.
-        #[setting(merge = merge_fxhashmap)]
+        #[setting(merge = merge_iter)]
         pub file_groups: FxHashMap<Id, Vec<Input>>,
 
-        /// Task dependencies that'll automatically be injected into every
+        /// Task dependencies (`deps`) that will be automatically injected into every
         /// task that inherits this configuration.
         #[setting(nested, merge = merge::append_vec, validate = validate_deps)]
         pub implicit_deps: Vec<TaskDependency>,
 
-        /// Task inputs that'll automatically be injected into every
+        /// Task inputs (`inputs`) that will be automatically injected into every
         /// task that inherits this configuration.
         #[setting(merge = merge::append_vec)]
         pub implicit_inputs: Vec<Input>,
 
-        /// A mapping of tasks by ID to parameters required for running the task.
-        #[setting(nested, merge = merge::merge_btreemap)]
+        /// A map of conditions that define which projects will inherit these
+        /// tasks and configuration. If not defined, will be inherited by all projects.
+        /// @since 2.0.0
+        #[setting(nested)]
+        pub inherited_by: Option<InheritedByConfig>,
+
+        /// A map of identifiers to task objects. Tasks represent the work-unit
+        /// of a project, and can be ran in the action pipeline.
+        #[setting(nested, merge = merge_tasks_partials)]
         pub tasks: BTreeMap<Id, TaskConfig>,
 
         /// Default task options for all inherited tasks.
+        /// @since 1.20.0
         #[setting(nested)]
         pub task_options: Option<TaskOptionsConfig>,
     }
@@ -77,220 +318,11 @@ config_struct!(
 
 cacheable!(
     #[derive(Clone, Debug, Default)]
-    pub struct InheritedTasksResult {
-        pub order: Vec<String>,
-        pub config: InheritedTasksConfig,
-        pub layers: IndexMap<String, PartialInheritedTasksConfig>,
-        pub task_layers: FxHashMap<String, Vec<String>>,
+    pub struct InheritedTasks {
+        // Inherited configs in order
+        pub configs: IndexMap<String, InheritedTasksConfig>,
+
+        // What was inherited for eash task
+        pub layers: FxHashMap<String, Vec<String>>,
     }
 );
-
-#[derive(Debug, Default)]
-pub struct InheritedTasksEntry {
-    pub input: PathBuf,
-    pub config: PartialInheritedTasksConfig,
-}
-
-#[derive(Debug, Default)]
-pub struct InheritedTasksManager {
-    #[cfg(feature = "loader")]
-    cache: Arc<RwLock<FxHashMap<String, InheritedTasksResult>>>,
-    #[cfg(feature = "loader")]
-    config_finder: crate::config_finder::ConfigFinder,
-
-    pub configs: FxHashMap<String, InheritedTasksEntry>,
-}
-
-impl InheritedTasksManager {
-    pub fn get_lookup_order(
-        &self,
-        toolchains: &[Id],
-        stack: &StackType,
-        layer: &LayerType,
-        tags: &[Id],
-    ) -> Vec<String> {
-        let mut lookup: IndexSet<String, BuildHasherDefault<FxHasher>> =
-            IndexSet::from_iter(["*".to_string()]);
-
-        // Reverse the order of the toolchains, as the order in the project/task
-        // is from most important to least important. But for the configuration,
-        // we need the opposite of that, so that the most important is the last
-        // layer to be merged in.
-        let toolchains = toolchains.iter().rev().collect::<Vec<_>>();
-
-        // Order from least to most specific!
-
-        // frontend
-        lookup.insert(format!("{stack}"));
-
-        // frontend-library
-        lookup.insert(format!("{stack}-{layer}"));
-
-        for toolchain in &toolchains {
-            // node
-            lookup.insert(format!("{toolchain}"));
-        }
-
-        for toolchain in &toolchains {
-            // node-frontend
-            lookup.insert(format!("{toolchain}-{stack}"));
-        }
-
-        for toolchain in &toolchains {
-            // node-library
-            lookup.insert(format!("{toolchain}-{layer}"));
-        }
-
-        for toolchain in &toolchains {
-            // node-frontend-library
-            lookup.insert(format!("{toolchain}-{stack}-{layer}"));
-        }
-
-        // tag-foo
-        for tag in tags {
-            lookup.insert(format!("tag-{tag}"));
-        }
-
-        lookup
-            .into_iter()
-            .filter(|item| !item.contains("unknown"))
-            .collect()
-    }
-}
-
-#[cfg(feature = "loader")]
-impl InheritedTasksManager {
-    pub fn add_config(
-        &mut self,
-        workspace_root: &Path,
-        path: &Path,
-        config: PartialInheritedTasksConfig,
-    ) {
-        let valid_names = self.config_finder.get_tasks_file_names();
-        let name = path
-            .file_name()
-            .unwrap_or_default()
-            .to_str()
-            .unwrap_or_default();
-
-        let name = if valid_names.iter().any(|n| n == name) {
-            "*"
-        } else if let Some(stripped_name) = name.strip_suffix(".yaml") {
-            stripped_name
-        } else if let Some(stripped_name) = name.strip_suffix(".yml") {
-            stripped_name
-        } else if let Some(stripped_name) = name.strip_suffix(".pkl") {
-            stripped_name
-        } else {
-            return;
-        };
-
-        self.configs.insert(
-            name.to_owned(),
-            InheritedTasksEntry {
-                input: path.strip_prefix(workspace_root).unwrap().to_path_buf(),
-                config,
-            },
-        );
-    }
-
-    pub fn get_inherited_config(
-        &self,
-        toolchains: &[Id],
-        stack: &StackType,
-        layer: &LayerType,
-        tags: &[Id],
-    ) -> miette::Result<InheritedTasksResult> {
-        use crate::shapes::OneOrMany;
-        use moon_common::color;
-        use moon_common::path::standardize_separators;
-        use schematic::{ConfigError, PartialConfig};
-
-        let lookup_order = self.get_lookup_order(toolchains, stack, layer, tags);
-        let lookup_key = lookup_order.join(":");
-
-        // Check the cache first in read only mode!
-        {
-            if let Some(cache) = self.cache.read().unwrap().get(&lookup_key) {
-                return Ok(cache.to_owned());
-            }
-        }
-
-        // Cache the result as this lookup may be the same for a large number of projects,
-        // and since this clones constantly, we can avoid a lot of allocations and overhead.
-        let mut partial_config = PartialInheritedTasksConfig::default();
-        let mut layers = IndexMap::default();
-        let mut task_layers = FxHashMap::<String, Vec<String>>::default();
-
-        #[allow(clippy::let_unit_value)]
-        let context = ();
-
-        for lookup in &lookup_order {
-            if let Some(config_entry) = self.configs.get(lookup) {
-                let source_path =
-                    standardize_separators(format!("{}", config_entry.input.display()));
-                let mut managed_config = config_entry.config.clone();
-
-                // Only modify tasks for `tasks/**/.*` files instead of `tasks.*`,
-                // as the latter will be globbed alongside toolchain/workspace configs.
-                // We also don't know what toolchain each of the tasks should be yet.
-                if let Some(tasks) = &mut managed_config.tasks {
-                    for (task_id, task) in tasks.iter_mut() {
-                        if lookup != "*" {
-                            // Automatically set this source as an input
-                            task.global_inputs
-                                .get_or_insert(vec![])
-                                .push(Input::parse(format!("/{source_path}"))?);
-
-                            // Automatically set the toolchain
-                            if task.toolchain.is_none() {
-                                task.toolchain = Some(OneOrMany::Many(toolchains.to_owned()));
-                            }
-                        }
-
-                        // Keep track of what layers a task inherited
-                        task_layers
-                            .entry(task_id.to_string())
-                            .or_default()
-                            .push(source_path.clone());
-                    }
-                }
-
-                layers.insert(source_path, managed_config.clone());
-                partial_config.merge(&context, managed_config)?;
-            }
-        }
-
-        let config = partial_config.finalize(&context)?;
-
-        config
-            .validate(&context, true)
-            .map_err(|error| match error {
-                ConfigError::Validator { error, .. } => ConfigError::Validator {
-                    location: format!(
-                        "inherited tasks ({}, {}, {})",
-                        toolchains.join(", "),
-                        stack,
-                        layer
-                    ),
-                    error,
-                    help: Some(color::muted_light("https://moonrepo.dev/docs/config/tasks")),
-                },
-                _ => error,
-            })?;
-
-        let result = InheritedTasksResult {
-            config: InheritedTasksConfig::from_partial(config),
-            layers,
-            order: lookup_order,
-            task_layers,
-        };
-
-        self.cache
-            .write()
-            .unwrap()
-            .insert(lookup_key, result.clone());
-
-        Ok(result)
-    }
-}

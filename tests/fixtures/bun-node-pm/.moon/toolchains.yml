@@ -1,0 +1,8 @@
+bun:
+  version: latest
+
+node:
+  version: latest
+
+javascript:
+  packageManager: bun

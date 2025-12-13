@@ -1,0 +1,5 @@
+---
+source: crates/cli/tests/generate_test.rs
+expression: "fs::read_to_string(sandbox.path().join(\"./test/forced.txt\")).unwrap()"
+---
+Always write!

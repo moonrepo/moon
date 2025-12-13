@@ -3,6 +3,7 @@ use crate::operation_list::OperationList;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -122,6 +123,18 @@ impl Action {
         )
     }
 
+    pub fn get_changed_files(&self) -> Vec<&PathBuf> {
+        let mut files = vec![];
+
+        for op in &self.operations.0 {
+            if let Some(changed) = op.get_file_state() {
+                files.extend(&changed.changed_files);
+            }
+        }
+
+        files
+    }
+
     pub fn get_duration(&self) -> &Duration {
         self.duration
             .as_ref()
@@ -143,15 +156,11 @@ impl Action {
     pub fn get_prefix(&self) -> &str {
         match &*self.node {
             ActionNode::None => "unknown",
-            ActionNode::InstallDependencies(_)
-            | ActionNode::InstallProjectDeps(_)
-            | ActionNode::InstallWorkspaceDeps(_) => "install-dependencies",
+            ActionNode::InstallDependencies(_) => "install-dependencies",
             ActionNode::RunTask(_) => "run-task",
             ActionNode::SetupEnvironment(_) => "setup-environment",
             ActionNode::SetupProto(_) => "setup-proto",
-            ActionNode::SetupToolchainLegacy(_) | ActionNode::SetupToolchain(_) => {
-                "setup-toolchain"
-            }
+            ActionNode::SetupToolchain(_) => "setup-toolchain",
             ActionNode::SyncProject(_) => "sync-project",
             ActionNode::SyncWorkspace => "sync-workspace",
         }

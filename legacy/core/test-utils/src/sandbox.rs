@@ -3,8 +3,8 @@ use crate::get_fixtures_path;
 use assert_cmd::Command;
 pub use assert_fs::TempDir;
 use assert_fs::prelude::*;
-use moon_config::{PartialInheritedTasksConfig, PartialToolchainConfig, PartialWorkspaceConfig};
-use starbase_utils::glob;
+use moon_config::{PartialInheritedTasksConfig, PartialToolchainsConfig, PartialWorkspaceConfig};
+use starbase_utils::{glob, yaml::serde_yaml};
 use std::fs;
 use std::path::Path;
 use std::process::Command as StdCommand;
@@ -131,23 +131,26 @@ pub fn create_sandbox<T: AsRef<str>>(fixture: T) -> Sandbox {
 pub fn create_sandbox_with_config<T: AsRef<str>>(
     fixture: T,
     workspace_config: Option<PartialWorkspaceConfig>,
-    toolchain_config: Option<PartialToolchainConfig>,
+    toolchain_config: Option<PartialToolchainsConfig>,
     tasks_config: Option<PartialInheritedTasksConfig>,
 ) -> Sandbox {
     let sandbox = create_sandbox(fixture);
 
     sandbox.create_file(
         ".moon/workspace.yml",
-        serde_yml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
+        serde_yaml::to_string(&workspace_config.unwrap_or_default()).unwrap(),
     );
 
     sandbox.create_file(
-        ".moon/toolchain.yml",
-        serde_yml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
+        ".moon/toolchains.yml",
+        serde_yaml::to_string(&toolchain_config.unwrap_or_default()).unwrap(),
     );
 
     if let Some(config) = tasks_config {
-        sandbox.create_file(".moon/tasks.yml", serde_yml::to_string(&config).unwrap());
+        sandbox.create_file(
+            ".moon/tasks/all.yml",
+            serde_yaml::to_string(&config).unwrap(),
+        );
     }
 
     sandbox
@@ -157,7 +160,7 @@ pub fn create_sandbox_with_factory<
     T: AsRef<str>,
     F: FnOnce(
         &mut PartialWorkspaceConfig,
-        &mut PartialToolchainConfig,
+        &mut PartialToolchainsConfig,
         &mut PartialInheritedTasksConfig,
     ),
 >(
@@ -165,7 +168,7 @@ pub fn create_sandbox_with_factory<
     factory: F,
 ) -> Sandbox {
     let mut workspace_config = PartialWorkspaceConfig::default();
-    let mut toolchain_config = PartialToolchainConfig::default();
+    let mut toolchain_config = PartialToolchainsConfig::default();
     let mut tasks_config = PartialInheritedTasksConfig::default();
 
     factory(

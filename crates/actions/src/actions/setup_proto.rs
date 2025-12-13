@@ -5,7 +5,7 @@ use moon_common::is_test_env;
 use moon_common::path::exe_name;
 use moon_console::Checkpoint;
 use moon_env_var::GlobalEnvBag;
-use moon_platform::is_using_global_toolchains;
+use moon_toolchain::is_using_global_toolchains;
 use proto_core::flow::install::{InstallOptions, ProtoInstallError};
 use proto_core::{Id, ToolContext, ToolSpec, is_offline, load_tool_from_locator};
 use std::sync::Arc;
@@ -18,7 +18,7 @@ pub async fn setup_proto(
     app_context: Arc<AppContext>,
 ) -> miette::Result<ActionStatus> {
     let bin_name = exe_name("proto");
-    let proto_version = app_context.toolchain_config.proto.version.to_string();
+    let proto_version = app_context.toolchains_config.proto.version.to_string();
     let install_dir = app_context
         .proto_env
         .store
@@ -43,7 +43,7 @@ pub async fn setup_proto(
         return Ok(ActionStatus::Skipped);
     }
 
-    if is_using_global_toolchains(bag) || !app_context.toolchain_config.requires_proto() {
+    if is_using_global_toolchains(bag) || !app_context.toolchains_config.requires_proto() {
         debug!("Skipping proto install as the toolchain has been disabled or is not necessary");
 
         return Ok(ActionStatus::Skipped);
@@ -86,7 +86,7 @@ pub async fn setup_proto(
     // Install using proto itself
     let spec = ToolSpec::new(
         app_context
-            .toolchain_config
+            .toolchains_config
             .proto
             .version
             .to_unresolved_spec(),

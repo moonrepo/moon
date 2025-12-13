@@ -1,0 +1,17 @@
+[package]
+name = "moon_app_macros"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[lib]
+proc-macro = true
+
+[dependencies]
+darling = "0.23.0"
+proc-macro2 = "1.0.103"
+quote = "1.0.42"
+syn = { version = "2.0.110", features = ["full"] }
+
+[lints]
+workspace = true

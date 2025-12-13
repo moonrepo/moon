@@ -1,0 +1,9 @@
+---
+source: crates/docker/tests/dockerfile_test.rs
+expression: generate_dockerfile(options).unwrap()
+---
+# Custom template
+FROM scratch
+WORKDIR /app
+RUN moon run app:compile
+CMD moon run app:serve

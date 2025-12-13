@@ -3,17 +3,17 @@ tasks:
     command: noop
   dep:
     command: node ./affected.js
-    platform: node
+    toolchain: node
     inputs:
       - 'dep.*'
   primary:
     command: node ./affected.js
-    platform: node
+    toolchain: node
     inputs:
       - 'primary.*'
   primaryWithDeps:
     command: node ./affected.js
-    platform: node
+    toolchain: node
     inputs:
       - 'primary.*'
     deps:

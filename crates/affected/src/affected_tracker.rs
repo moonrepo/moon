@@ -1,7 +1,6 @@
 use crate::affected::*;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
-use moon_config::Input;
 use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
 use moon_task::{Target, Task, TaskOptionRunInCI};
@@ -17,7 +16,7 @@ pub struct AffectedTracker {
     ci: bool,
 
     workspace_graph: Arc<WorkspaceGraph>,
-    touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+    changed_files: FxHashSet<WorkspaceRelativePathBuf>,
 
     projects: FxHashMap<Id, FxHashSet<AffectedBy>>,
     project_downstream: DownstreamScope,
@@ -31,13 +30,13 @@ pub struct AffectedTracker {
 impl AffectedTracker {
     pub fn new(
         workspace_graph: Arc<WorkspaceGraph>,
-        touched_files: FxHashSet<WorkspaceRelativePathBuf>,
+        changed_files: FxHashSet<WorkspaceRelativePathBuf>,
     ) -> Self {
         debug!("Creating affected tracker");
 
         Self {
             workspace_graph,
-            touched_files,
+            changed_files,
             projects: FxHashMap::default(),
             project_downstream: DownstreamScope::None,
             project_upstream: UpstreamScope::Deep,
@@ -86,7 +85,7 @@ impl AffectedTracker {
             affected.tasks.insert(target, state);
         }
 
-        affected.should_check = !self.touched_files.is_empty();
+        affected.should_check = !self.changed_files.is_empty();
         affected
     }
 
@@ -152,15 +151,15 @@ impl AffectedTracker {
     pub fn is_project_affected(&self, project: &Project) -> Option<AffectedBy> {
         if project.is_root_level() {
             // If at the root, any file affects it
-            self.touched_files
+            self.changed_files
                 .iter()
-                .next()
-                .map(|file| AffectedBy::TouchedFile(file.to_owned()))
+                .find(|file| !file.as_str().starts_with('.'))
+                .map(|file| AffectedBy::ChangedFile(file.to_owned()))
         } else {
-            self.touched_files
+            self.changed_files
                 .iter()
                 .find(|file| file.starts_with(&project.source))
-                .map(|file| AffectedBy::TouchedFile(file.to_owned()))
+                .map(|file| AffectedBy::ChangedFile(file.to_owned()))
         }
     }
 
@@ -173,8 +172,8 @@ impl AffectedTracker {
 
         if !group.files.is_empty() {
             for file in &group.files {
-                if self.touched_files.contains(file) {
-                    return Ok(Some(AffectedBy::TouchedFile(file.to_owned())));
+                if self.changed_files.contains(file) {
+                    return Ok(Some(AffectedBy::ChangedFile(file.to_owned())));
                 }
             }
         }
@@ -207,9 +206,9 @@ impl AffectedTracker {
         if !globs.is_empty() {
             let globset = GlobSet::new(&globs)?;
 
-            for file in &self.touched_files {
+            for file in &self.changed_files {
                 if globset.matches(file.as_str()) {
-                    return Ok(Some(AffectedBy::TouchedFile(file.to_owned())));
+                    return Ok(Some(AffectedBy::ChangedFile(file.to_owned())));
                 }
             }
         }
@@ -427,7 +426,7 @@ impl AffectedTracker {
         // By files
         let globset = task.create_globset()?;
 
-        for file in self.touched_files.iter() {
+        for file in self.changed_files.iter() {
             let affected = if let Some(params) = task.input_files.get(file) {
                 match &params.content {
                     Some(matcher) => {
@@ -446,53 +445,8 @@ impl AffectedTracker {
             };
 
             if affected {
-                return Ok(Some(AffectedBy::TouchedFile(file.to_owned())));
+                return Ok(Some(AffectedBy::ChangedFile(file.to_owned())));
             }
-        }
-
-        // By other inputs
-        let mut has_all_project_sources = false;
-
-        for input in &task.inputs {
-            match input {
-                Input::Project(inner) => {
-                    if has_all_project_sources {
-                        continue;
-                    }
-
-                    let projects = if inner.is_all_deps() {
-                        has_all_project_sources = true;
-
-                        let parent = self
-                            .workspace_graph
-                            .get_project(task.target.get_project_id()?)?;
-
-                        self.workspace_graph
-                            .get_projects_by_id(parent.dependencies.iter().map(|dep| &dep.id))?
-                    } else {
-                        vec![self.workspace_graph.get_project(&inner.project)?]
-                    };
-
-                    for project in projects {
-                        let affected = if let Some(group_id) = &inner.group {
-                            self.is_project_affected_using_file_group(&project, group_id)?
-                                .is_some()
-                        } else if !inner.filter.is_empty() {
-                            self.is_project_affected_using_globs(&project, &inner.filter)?
-                                .is_some()
-                        } else {
-                            self.is_project_affected(&project).is_some()
-                        };
-
-                        if affected {
-                            return Ok(Some(AffectedBy::UpstreamProject(project.id.clone())));
-                        }
-                    }
-                }
-                _ => {
-                    // Skip
-                }
-            };
         }
 
         Ok(None)
@@ -645,7 +599,7 @@ impl AffectedTracker {
 impl fmt::Debug for AffectedTracker {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AffectedTracker")
-            .field("touched_files", &self.touched_files)
+            .field("changed_files", &self.changed_files)
             .field("projects", &self.projects)
             .field("project_downstream", &self.project_downstream)
             .field("project_upstream", &self.project_upstream)

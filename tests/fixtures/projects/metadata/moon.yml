@@ -1,5 +1,5 @@
 project:
-  name: 'Advanced'
+  title: 'Advanced'
   description: 'Advanced example.'
   channel: '#infra'
   owner: '@infra'

@@ -3,7 +3,6 @@ mod utils;
 use moon_common::Id;
 use moon_config::{test_utils::*, *};
 use moon_target::Target;
-use moon_task::Task;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use utils::TasksBuilderContainer;
@@ -24,11 +23,12 @@ mod tasks_builder {
             build.inputs,
             vec![
                 Input::File(stub_file_input("abc")),
-                Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                Input::Glob(stub_glob_input(
+                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                )),
             ]
         );
         assert_eq!(build.outputs, vec![Output::File(stub_file_output("out"))]);
-        assert!(!build.state.local_only);
 
         let run = tasks.get("local-run").unwrap();
 
@@ -37,11 +37,12 @@ mod tasks_builder {
             run.inputs,
             vec![
                 Input::File(stub_file_input("xyz")),
-                Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                Input::Glob(stub_glob_input(
+                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                )),
             ]
         );
         assert_eq!(run.outputs, vec![]);
-        assert!(run.state.local_only);
 
         let test = tasks.get("local-test").unwrap();
 
@@ -50,10 +51,11 @@ mod tasks_builder {
             test.inputs,
             vec![
                 Input::Glob(stub_glob_input("**/*")),
-                Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                Input::Glob(stub_glob_input(
+                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                )),
             ]
         );
-        assert!(!test.state.local_only);
     }
 
     mod inheritance {
@@ -72,11 +74,12 @@ mod tasks_builder {
                 build.inputs,
                 vec![
                     Input::File(stub_file_input("abc")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
             assert_eq!(build.outputs, vec![Output::File(stub_file_output("out"))]);
-            assert!(!build.state.local_only);
 
             let run = tasks.get("local-run").unwrap();
 
@@ -85,11 +88,12 @@ mod tasks_builder {
                 run.inputs,
                 vec![
                     Input::File(stub_file_input("xyz")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
             assert_eq!(run.outputs, vec![]);
-            assert!(run.state.local_only);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -111,6 +115,24 @@ mod tasks_builder {
                     "tag"
                 ]
             );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn deep_merges_global_tasks() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let mut tasks = container.build_tasks("inheritance").await;
+            let task = tasks.remove("build").unwrap();
+
+            assert_eq!(task.command, "build");
+            assert_eq!(task.args, ["--one", "--two", "--three", "value"]);
+            assert_eq!(task.preset.unwrap(), TaskPreset::Server);
+            assert_eq!(task.options.cache_lifetime.unwrap(), "7 days");
+            assert_eq!(task.options.mutex.unwrap(), "lock-overwrite");
+            assert!(task.options.interactive);
+            // Off because of interactive
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(false));
         }
     }
 
@@ -324,10 +346,7 @@ mod tasks_builder {
 
             assert_eq!(task.command, "test");
             assert_eq!(task.args, vec!["./tests"]);
-            assert_eq!(
-                task.options.shell,
-                if cfg!(windows) { Some(true) } else { None }
-            );
+            assert_eq!(task.options.shell, Some(true));
 
             let task = tasks.get("with-glob-string").unwrap();
 
@@ -339,10 +358,7 @@ mod tasks_builder {
 
             assert_eq!(task.command, "test");
             assert_eq!(task.args, vec!["./tests"]);
-            assert_eq!(
-                task.options.shell,
-                if cfg!(windows) { Some(true) } else { None }
-            );
+            assert_eq!(task.options.shell, Some(true));
 
             let task = tasks.get("with-glob-list").unwrap();
 
@@ -408,7 +424,9 @@ mod tasks_builder {
                         filter: vec![],
                         group: Some(Id::raw("sources")),
                     }),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
         }
@@ -429,7 +447,9 @@ mod tasks_builder {
                         filter: vec!["src/**/*".into()],
                         group: None,
                     }),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
         }
@@ -463,122 +483,11 @@ tasks:
                         filter: vec!["src/**/*".into()],
                         group: None,
                     }),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
-        }
-    }
-
-    mod detect_platform_legacy {
-        use super::*;
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn uses_explicitly_configured() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("system").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-
-            let task = tasks.get("bun").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_bun")]);
-
-            let task = tasks.get("node").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_node")]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn detects_from_command_name() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("bun-via-cmd").unwrap();
-
-            assert_eq!(
-                task.toolchains,
-                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
-            );
-
-            let task = tasks.get("deno-via-cmd").unwrap();
-
-            assert_eq!(
-                task.toolchains,
-                vec![Id::raw("unstable_deno"), Id::raw("unstable_javascript")]
-            );
-
-            let task = tasks.get("node-via-cmd").unwrap();
-
-            assert_eq!(
-                task.toolchains,
-                vec![
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm")
-                ]
-            );
-
-            let task = tasks.get("rust-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_detect_from_command_if_not_toolchain_enabled() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("bun-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-
-            let task = tasks.get("deno-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-
-            let task = tasks.get("node-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-
-            let task = tasks.get("rust-via-cmd").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn unknown_fallsback_to_project_platform() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("unknown").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
-
-            let task = tasks.get("unknown-implicit").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn applies_to_global_inherited() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
-
-            let tasks = container.build_tasks("platforms").await;
-
-            let task = tasks.get("global-build").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
         }
     }
 
@@ -598,11 +507,11 @@ tasks:
 
             let task = tasks.get("bun").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_bun")]);
+            assert_eq!(task.toolchains, vec![Id::raw("bun")]);
 
             let task = tasks.get("node").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_node")]);
+            assert_eq!(task.toolchains, vec![Id::raw("npm"), Id::raw("node")]);
 
             let task = tasks.get("typescript").unwrap();
 
@@ -618,32 +527,25 @@ tasks:
 
             let task = tasks.get("bun-via-cmd").unwrap();
 
-            assert_eq!(
-                task.toolchains,
-                vec![Id::raw("unstable_bun"), Id::raw("unstable_javascript")]
-            );
+            assert_eq!(task.toolchains, vec![Id::raw("bun"), Id::raw("javascript")]);
 
             let task = tasks.get("deno-via-cmd").unwrap();
 
             assert_eq!(
                 task.toolchains,
-                vec![Id::raw("unstable_deno"), Id::raw("unstable_javascript")]
+                vec![Id::raw("deno"), Id::raw("javascript")]
             );
 
             let task = tasks.get("node-via-cmd").unwrap();
 
             assert_eq!(
                 task.toolchains,
-                vec![
-                    Id::raw("unstable_javascript"),
-                    Id::raw("unstable_node"),
-                    Id::raw("unstable_npm")
-                ]
+                vec![Id::raw("javascript"), Id::raw("npm"), Id::raw("node")]
             );
 
             let task = tasks.get("rust-via-cmd").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
 
             // TODO: temp disabled in the typescript plugin
             // let task = tasks.get("typescript-via-cmd").unwrap();
@@ -692,7 +594,7 @@ tasks:
 
             let task = tasks.get("unknown-implicit").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -704,7 +606,7 @@ tasks:
 
             let task = tasks.get("global-build").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("unstable_rust")]);
+            assert_eq!(task.toolchains, vec![Id::raw("rust")]);
         }
     }
 
@@ -834,13 +736,6 @@ tasks:
             assert!(!task.options.run_in_ci.is_enabled());
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
-            let task = tasks.get("interactive-local").unwrap();
-
-            // assert!(!task.options.cache);
-            // assert!(!task.options.persistent);
-            assert!(!task.options.run_in_ci.is_enabled());
-            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
-
             let task = tasks.get("interactive-override").unwrap();
 
             // assert!(!task.options.cache);
@@ -856,17 +751,9 @@ tasks:
 
             let tasks = container.build_tasks("toolchains").await;
 
-            // True for system
             assert_eq!(tasks.get("system").unwrap().options.shell, Some(true));
-
-            // None for others (except windows)
-            if cfg!(windows) {
-                assert_eq!(tasks.get("bun").unwrap().options.shell, Some(true));
-                assert_eq!(tasks.get("node").unwrap().options.shell, Some(true));
-            } else {
-                assert_eq!(tasks.get("bun").unwrap().options.shell, None);
-                assert_eq!(tasks.get("node").unwrap().options.shell, None);
-            }
+            assert_eq!(tasks.get("bun").unwrap().options.shell, Some(true));
+            assert_eq!(tasks.get("node").unwrap().options.shell, Some(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -921,74 +808,6 @@ tasks:
         }
     }
 
-    mod local_mode {
-        use super::*;
-
-        fn is_local(task: &Task) {
-            assert!(task.state.local_only);
-            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
-            assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
-            assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci.is_enabled());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn infers_from_task_name() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("local-mode").await;
-
-            is_local(tasks.get("dev").unwrap());
-            is_local(tasks.get("start").unwrap());
-            is_local(tasks.get("serve").unwrap());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_override_options() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("local-mode").await;
-
-            let cache = tasks.get("override-cache").unwrap();
-
-            assert!(cache.state.local_only);
-            assert_eq!(cache.options.cache, TaskOptionCache::Enabled(true));
-
-            let style = tasks.get("override-style").unwrap();
-
-            assert!(style.state.local_only);
-            assert_eq!(style.options.output_style, Some(TaskOutputStyle::Hash));
-
-            let persistent = tasks.get("override-persistent").unwrap();
-
-            assert!(persistent.state.local_only);
-            assert!(!persistent.options.persistent);
-
-            let ci = tasks.get("override-ci").unwrap();
-
-            assert!(ci.state.local_only);
-            assert!(ci.options.run_in_ci.is_enabled());
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn can_override_global_task() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("local-mode").await;
-
-            let build = tasks.get("global-build").unwrap();
-
-            assert!(build.state.local_only);
-
-            let run = tasks.get("global-run").unwrap();
-
-            assert!(!run.state.local_only);
-        }
-    }
-
     mod presets {
         use super::*;
 
@@ -1030,29 +849,29 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn watcher() {
+        async fn utility() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path());
 
             let tasks = container.build_tasks("presets").await;
 
-            let task = tasks.get("watcher").unwrap();
+            let task = tasks.get("utility").unwrap();
 
-            assert_eq!(task.preset, Some(TaskPreset::Watcher));
+            assert_eq!(task.preset, Some(TaskPreset::Utility));
             assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert!(task.options.interactive);
-            assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci.is_enabled());
+            assert!(!task.options.persistent);
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Skip);
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
 
             // Custom overrides
-            let task = tasks.get("watcher-custom").unwrap();
+            let task = tasks.get("utility-custom").unwrap();
 
-            assert_eq!(task.preset, Some(TaskPreset::Watcher));
+            assert_eq!(task.preset, Some(TaskPreset::Utility));
             assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
             assert!(!task.options.interactive);
-            assert!(task.options.persistent);
-            assert!(!task.options.run_in_ci.is_enabled());
+            assert!(!task.options.persistent);
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Skip);
             assert_eq!(task.options.output_style, Some(TaskOutputStyle::Stream));
         }
     }
@@ -1073,7 +892,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::Glob(stub_glob_input("**/*")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1082,7 +903,9 @@ tasks:
 
             assert_eq!(
                 task.inputs,
-                vec![Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))]
+                vec![Input::Glob(stub_glob_input(
+                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                ))]
             );
             assert!(task.state.empty_inputs);
 
@@ -1092,7 +915,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::Glob(stub_glob_input("local/*")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1109,7 +934,9 @@ tasks:
 
             assert_eq!(
                 task.inputs,
-                vec![Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))]
+                vec![Input::Glob(stub_glob_input(
+                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                ))]
             );
             assert!(task.state.empty_inputs);
             assert!(task.state.root_level);
@@ -1118,7 +945,9 @@ tasks:
 
             assert_eq!(
                 task.inputs,
-                vec![Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))]
+                vec![Input::Glob(stub_glob_input(
+                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                ))]
             );
             assert!(task.state.empty_inputs);
             assert!(task.state.root_level);
@@ -1129,7 +958,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::Glob(stub_glob_input("local/*")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    ))
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1149,7 +980,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::Glob(stub_glob_input("**/*")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    ))
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1159,7 +992,9 @@ tasks:
 
             assert_eq!(
                 task.inputs,
-                vec![Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))]
+                vec![Input::Glob(stub_glob_input(
+                    "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                ))]
             );
             assert!(task.state.empty_inputs);
             assert!(task.state.root_level);
@@ -1170,7 +1005,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::Glob(stub_glob_input("local/*")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    ))
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1191,7 +1028,10 @@ tasks:
                 vec![
                     Input::Glob(stub_glob_input("src/**/*")),
                     Input::File(stub_file_input("/workspace-local")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
+                    Input::File(stub_file_input("/global/tasks/all.yml")),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1202,7 +1042,10 @@ tasks:
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("local.json")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
+                    Input::File(stub_file_input("/global/tasks/all.yml")),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1211,7 +1054,12 @@ tasks:
 
             assert_eq!(
                 task.inputs,
-                vec![Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}"))]
+                vec![
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
+                    Input::File(stub_file_input("/global/tasks/all.yml")),
+                ]
             );
             assert!(task.state.empty_inputs);
         }
@@ -1259,7 +1107,9 @@ tasks:
                 vec![
                     Input::File(stub_file_input("global")),
                     Input::File(stub_file_input("local")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
@@ -1273,6 +1123,10 @@ tasks:
                     Output::File(stub_file_output("local")),
                 ]
             );
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1286,8 +1140,6 @@ tasks:
 
             assert_eq!(task.args, vec!["a", "b", "c", "x", "y", "z"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![
@@ -1295,8 +1147,6 @@ tasks:
                     TaskDependencyConfig::new(Target::parse("local:build").unwrap()),
                 ]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1307,19 +1157,17 @@ tasks:
                 ])
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("global")),
                     Input::File(stub_file_input("local")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.outputs,
@@ -1328,6 +1176,8 @@ tasks:
                     Output::File(stub_file_output("local")),
                 ]
             );
+
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1369,7 +1219,9 @@ tasks:
                 vec![
                     Input::File(stub_file_input("local")),
                     Input::File(stub_file_input("global")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
@@ -1383,6 +1235,10 @@ tasks:
                     Output::File(stub_file_output("global")),
                 ]
             );
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1396,8 +1252,6 @@ tasks:
 
             assert_eq!(task.args, vec!["x", "y", "z", "a", "b", "c"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![
@@ -1405,8 +1259,6 @@ tasks:
                     TaskDependencyConfig::new(Target::parse("global:build").unwrap()),
                 ]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1417,19 +1269,17 @@ tasks:
                 ])
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("local")),
                     Input::File(stub_file_input("global")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.outputs,
@@ -1438,6 +1288,8 @@ tasks:
                     Output::File(stub_file_output("global")),
                 ]
             );
+
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1476,7 +1328,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("local")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
@@ -1484,6 +1338,10 @@ tasks:
             let task = tasks.get("outputs").unwrap();
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("local"))]);
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["local"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1497,16 +1355,12 @@ tasks:
 
             assert_eq!(task.args, vec!["x", "y", "z"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig::new(
                     Target::parse("local:build").unwrap()
                 )]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1516,20 +1370,20 @@ tasks:
                 ])
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("local")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("local"))]);
+
+            assert_eq!(task.toolchains, vec!["local"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1560,6 +1414,11 @@ tasks:
             let task = tasks.get("outputs").unwrap();
 
             assert!(task.outputs.is_empty());
+
+            let task = tasks.get("toolchains").unwrap();
+
+            // fallback
+            assert_eq!(task.toolchains, ["system"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1572,24 +1431,17 @@ tasks:
             let task = tasks.get("all").unwrap();
 
             assert!(task.args.is_empty());
-
-            let task = tasks.get("all").unwrap();
-
             assert!(task.deps.is_empty());
-
-            let task = tasks.get("all").unwrap();
-
             assert!(task.env.is_empty());
-
-            let task = tasks.get("all").unwrap();
 
             // inherited
             assert_eq!(task.inputs.len(), 2);
             assert!(task.state.empty_inputs);
 
-            let task = tasks.get("all").unwrap();
-
             assert!(task.outputs.is_empty());
+
+            // fallback
+            assert_eq!(task.toolchains, ["system"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1629,7 +1481,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("global")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
@@ -1638,6 +1492,10 @@ tasks:
             let task = tasks.get("outputs").unwrap();
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1652,16 +1510,12 @@ tasks:
             assert_eq!(task.command, "noop");
             assert_eq!(task.args, vec!["a", "b", "c"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig::new(
                     Target::parse("global:build").unwrap()
                 )]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1671,21 +1525,21 @@ tasks:
                 ])
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("global")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
             assert!(!task.state.empty_inputs);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            assert_eq!(task.args, vec!["a", "b", "c"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1724,7 +1578,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("global")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
@@ -1732,6 +1588,10 @@ tasks:
             let task = tasks.get("outputs").unwrap();
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            let task = tasks.get("toolchains").unwrap();
+
+            assert_eq!(task.toolchains, vec!["global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1745,16 +1605,12 @@ tasks:
 
             assert_eq!(task.args, vec!["a", "b", "c"]);
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig::new(
                     Target::parse("global:build").unwrap()
                 )]
             );
-
-            let task = tasks.get("all").unwrap();
 
             assert_eq!(
                 task.env,
@@ -1764,20 +1620,20 @@ tasks:
                 ])
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(
                 task.inputs,
                 vec![
                     Input::File(stub_file_input("global")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-merge.yml")),
                 ]
             );
 
-            let task = tasks.get("all").unwrap();
-
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            assert_eq!(task.toolchains, vec!["global"]);
         }
     }
 
@@ -1945,7 +1801,9 @@ tasks:
                     Input::Glob(stub_glob_input("**/*")),
                     Input::Glob(stub_glob_input("project/**/*")),
                     Input::File(stub_file_input("/workspace.json")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -1964,7 +1822,9 @@ tasks:
                 vec![
                     Input::Glob(stub_glob_input("project/**/*")),
                     Input::File(stub_file_input("/workspace.json")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
             assert!(task.state.empty_inputs);
@@ -1984,7 +1844,9 @@ tasks:
                     Input::Glob(stub_glob_input("local/*")),
                     Input::Glob(stub_glob_input("project/**/*")),
                     Input::File(stub_file_input("/workspace.json")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
             assert!(!task.state.empty_inputs);
@@ -2119,7 +1981,9 @@ tasks:
                 task.inputs,
                 vec![
                     Input::Glob(stub_glob_input("src/**/*")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                 ]
             );
         }
@@ -2139,19 +2003,6 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn handles_local() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("extends").await;
-            let task = tasks.get("extend-local").unwrap();
-
-            assert_eq!(task.options.cache, TaskOptionCache::Enabled(true));
-            assert!(task.options.run_in_ci.is_enabled());
-            assert!(!task.options.persistent);
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_and_merges_globals_extend_chain() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path());
@@ -2168,7 +2019,9 @@ tasks:
                     Input::File(stub_file_input("global-extender")),
                     Input::File(stub_file_input("local-base")),
                     Input::File(stub_file_input("local-extender")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-extends.yml")),
                 ]
             );
@@ -2193,7 +2046,9 @@ tasks:
                 vec![
                     Input::File(stub_file_input("global-base")),
                     Input::File(stub_file_input("local-extender")),
-                    Input::Glob(stub_glob_input("/.moon/*.{pkl,yml}")),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
                     Input::File(stub_file_input("/global/tasks/tag-extends.yml")),
                 ]
             );
@@ -2320,17 +2175,6 @@ tasks:
             let task = tasks.get("no-shell").unwrap();
 
             assert_ne!(task.options.shell, Some(true));
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn cannot_change_platform_legacy() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let tasks = container.build_tasks("scripts").await;
-            let task = tasks.get("custom-platform").unwrap();
-
-            assert_eq!(task.toolchains, vec![Id::raw("system")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]

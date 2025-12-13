@@ -1,0 +1,20 @@
+---
+source: crates/cli/tests/template_test.rs
+expression: assert.output_standardized()
+---
+Template title ─────────────────────────────────────────────
+
+  Some description of the template and its files.
+
+About ──────────────────────────────────────────────────────
+
+  Template: dest
+  Destination: apps/[name | kebab_case]
+  Extends: —
+  Assets: —
+  Files:
+    - file.txt
+
+Variables ──────────────────────────────────────────────────
+
+  name: string

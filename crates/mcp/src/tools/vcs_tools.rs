@@ -11,18 +11,18 @@ use rust_mcp_sdk::{
 use serde::{Deserialize, Serialize};
 
 #[mcp_tool(
-    name = "get_touched_files",
-    description = "Get touched files between the current head and base."
+    name = "get_changed_files",
+    description = "Get changed files between the current head and base."
 )]
 #[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
 #[serde(default)]
-pub struct GetTouchedFiles {
+pub struct GetChangedFiles {
     pub base: Option<String>,
     pub head: Option<String>,
     pub remote: Option<bool>,
 }
 
-impl GetTouchedFiles {
+impl GetChangedFiles {
     pub async fn call_tool(
         &self,
         app_context: &AppContext,
@@ -38,21 +38,21 @@ impl GetTouchedFiles {
         let check_against_previous =
             self.base.is_none() && self.head.is_none() && vcs.is_default_branch(&current_branch);
 
-        let touched_files = if !remote {
-            vcs.get_touched_files().await.map_err(map_miette_error)?
+        let changed_files = if !remote {
+            vcs.get_changed_files().await.map_err(map_miette_error)?
         } else if check_against_previous {
-            vcs.get_touched_files_against_previous_revision(&default_branch)
+            vcs.get_changed_files_against_previous_revision(&default_branch)
                 .await
                 .map_err(map_miette_error)?
         } else {
-            vcs.get_touched_files_between_revisions(base, head)
+            vcs.get_changed_files_between_revisions(base, head)
                 .await
                 .map_err(map_miette_error)?
         };
 
         Ok(CallToolResult::text_content(vec![TextContent::new(
-            serde_json::to_string_pretty(&GetTouchedFilesResponse {
-                files: touched_files.all().into_iter().cloned().collect(),
+            serde_json::to_string_pretty(&GetChangedFilesResponse {
+                files: changed_files.all().into_iter().cloned().collect(),
             })
             .map_err(CallToolError::new)?,
             None,
@@ -62,6 +62,6 @@ impl GetTouchedFiles {
 }
 
 #[derive(Serialize)]
-pub struct GetTouchedFilesResponse {
+pub struct GetChangedFilesResponse {
     pub files: Vec<WorkspaceRelativePathBuf>,
 }

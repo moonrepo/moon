@@ -1,128 +1,17 @@
-use moon_test_utils::{
-    assert_snapshot, create_sandbox_with_config, get_project_graph_aliases_fixture_configs,
-    get_projects_fixture_configs,
-};
+mod utils;
 
-#[test]
-fn no_projects() {
-    let sandbox = create_sandbox_with_config("base", None, None, None);
+use moon_test_utils2::{create_empty_moon_sandbox, predicates::prelude::*};
+use starbase_sandbox::assert_snapshot;
+use utils::create_projects_sandbox;
 
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph").arg("--dot");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
-fn many_projects() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
-
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph").arg("--dot");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
-fn single_project_with_dependencies() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
-
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph").arg("foo").arg("--dot");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
-fn single_project_with_dependents() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
-
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph")
-            .arg("bar")
-            .arg("--dot")
-            .arg("--dependents");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
-fn single_project_no_dependencies() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
-
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph").arg("baz").arg("--dot");
-    });
-
-    assert_snapshot!(assert.output());
-}
-
-#[test]
-fn outputs_json() {
-    let (workspace_config, toolchain_config, tasks_config) = get_projects_fixture_configs();
-
-    let sandbox = create_sandbox_with_config(
-        "projects",
-        Some(workspace_config),
-        Some(toolchain_config),
-        Some(tasks_config),
-    );
-
-    let assert = sandbox.run_moon(|cmd| {
-        cmd.arg("project-graph").arg("foo").arg("--json");
-    });
-
-    assert_ne!(assert.output(), "{}");
-}
-
-mod aliases {
+mod project_graph {
     use super::*;
 
     #[test]
-    fn uses_ids_in_graph() {
-        let (workspace_config, toolchain_config, tasks_config) =
-            get_project_graph_aliases_fixture_configs();
+    fn no_projects() {
+        let sandbox = create_empty_moon_sandbox();
 
-        let sandbox = create_sandbox_with_config(
-            "project-graph/aliases",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        let assert = sandbox.run_moon(|cmd| {
+        let assert = sandbox.run_bin(|cmd| {
             cmd.arg("project-graph").arg("--dot");
         });
 
@@ -130,40 +19,61 @@ mod aliases {
     }
 
     #[test]
-    fn can_focus_using_an_alias() {
-        let (workspace_config, toolchain_config, tasks_config) =
-            get_project_graph_aliases_fixture_configs();
+    fn many_projects() {
+        let sandbox = create_projects_sandbox();
 
-        let sandbox = create_sandbox_with_config(
-            "project-graph/aliases",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("project-graph").arg("@scope/pkg-foo").arg("--dot");
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("project-graph").arg("--dot");
         });
 
         assert_snapshot!(assert.output());
     }
 
     #[test]
-    fn resolves_aliases_in_depends_on() {
-        let (workspace_config, toolchain_config, tasks_config) =
-            get_project_graph_aliases_fixture_configs();
+    fn single_project_with_dependencies() {
+        let sandbox = create_projects_sandbox();
 
-        let sandbox = create_sandbox_with_config(
-            "project-graph/aliases",
-            Some(workspace_config),
-            Some(toolchain_config),
-            Some(tasks_config),
-        );
-
-        let assert = sandbox.run_moon(|cmd| {
-            cmd.arg("project-graph").arg("noLang").arg("--dot");
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("project-graph").arg("dep-foo").arg("--dot");
         });
 
         assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn single_project_with_dependents() {
+        let sandbox = create_projects_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("project-graph")
+                .arg("dep-bar")
+                .arg("--dot")
+                .arg("--dependents");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn single_project_no_dependencies() {
+        let sandbox = create_projects_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("project-graph").arg("dep-baz").arg("--dot");
+        });
+
+        assert_snapshot!(assert.output());
+    }
+
+    #[test]
+    fn can_output_json() {
+        let sandbox = create_projects_sandbox();
+
+        sandbox
+            .run_bin(|cmd| {
+                cmd.arg("project-graph").arg("--json");
+            })
+            .success()
+            .stdout(predicate::str::starts_with("{"));
     }
 }

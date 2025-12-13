@@ -42,6 +42,8 @@ cacheable!(
 
         pub merge_outputs: TaskMergeStrategy,
 
+        pub merge_toolchains: TaskMergeStrategy,
+
         #[serde(skip_serializing_if = "Option::is_none")]
         pub mutex: Option<String>,
 
@@ -70,11 +72,9 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub timeout: Option<u64>,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub unix_shell: Option<TaskUnixShell>,
+        pub unix_shell: TaskUnixShell,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub windows_shell: Option<TaskWindowsShell>,
+        pub windows_shell: TaskWindowsShell,
     }
 );
 
@@ -88,7 +88,7 @@ impl Default for TaskOptions {
             cache_key: None,
             cache_lifetime: None,
             env_files: None,
-            infer_inputs: true,
+            infer_inputs: false,
             internal: false,
             interactive: false,
             merge_args: TaskMergeStrategy::Append,
@@ -96,6 +96,7 @@ impl Default for TaskOptions {
             merge_env: TaskMergeStrategy::Append,
             merge_inputs: TaskMergeStrategy::Append,
             merge_outputs: TaskMergeStrategy::Append,
+            merge_toolchains: TaskMergeStrategy::Append,
             mutex: None,
             os: None,
             output_style: None,
@@ -103,12 +104,12 @@ impl Default for TaskOptions {
             priority: TaskPriority::Normal,
             retry_count: 0,
             run_deps_in_parallel: true,
-            run_in_ci: TaskOptionRunInCI::Affected,
             run_from_workspace_root: false,
-            shell: None,
+            run_in_ci: TaskOptionRunInCI::Affected,
+            shell: Some(true),
             timeout: None,
-            unix_shell: None,
-            windows_shell: None,
+            unix_shell: TaskUnixShell::Bash,
+            windows_shell: TaskWindowsShell::Pwsh,
         }
     }
 }

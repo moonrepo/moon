@@ -1,3 +1,6 @@
+inheritedBy:
+  tags: ['merge']
+
 tasks:
   all:
     command: noop
@@ -8,6 +11,7 @@ tasks:
       KEY2: 'value2'
     inputs: ['global']
     outputs: ['global']
+    toolchains: ['global']
 
   args:
     command: noop
@@ -26,3 +30,6 @@ tasks:
 
   outputs:
     outputs: ['global']
+
+  toolchains:
+    toolchains: ['global']

@@ -24,6 +24,10 @@ pub fn is_ci() -> bool {
     *CI_CACHE.get_or_init(|| has_env_var("CI"))
 }
 
+pub fn is_ci_env() -> bool {
+    is_ci() && !is_test_env()
+}
+
 pub fn is_docker() -> bool {
     static DOCKER_CACHE: OnceLock<bool> = OnceLock::new();
 

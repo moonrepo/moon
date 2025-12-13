@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use moon_common::Id;
-use moon_config::{ToolchainConfig, WorkspaceConfig};
+use moon_config::{ExtensionsConfig, ToolchainsConfig, WorkspaceConfig};
 use moon_env::MoonEnvironment;
 use moon_plugin::{
     MoonHostData, Plugin, PluginLocator, PluginRegistration, PluginRegistry, PluginType,
@@ -12,12 +12,18 @@ use std::path::Path;
 use std::sync::{Arc, OnceLock};
 
 #[derive(Debug)]
-struct TestPlugin;
+struct TestPlugin {
+    id: Id,
+}
 
 #[async_trait]
 impl Plugin for TestPlugin {
-    async fn new(_reg: PluginRegistration) -> miette::Result<Self> {
-        Ok(TestPlugin)
+    async fn new(reg: PluginRegistration) -> miette::Result<Self> {
+        Ok(TestPlugin { id: reg.id })
+    }
+
+    fn get_id(&self) -> &Id {
+        &self.id
     }
 
     fn get_type(&self) -> PluginType {
@@ -31,7 +37,8 @@ fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
         MoonHostData {
             moon_env: Arc::new(MoonEnvironment::new_testing(sandbox)),
             proto_env: Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
-            toolchain_config: Arc::new(ToolchainConfig::default()),
+            extensions_config: Arc::new(ExtensionsConfig::default()),
+            toolchains_config: Arc::new(ToolchainsConfig::default()),
             workspace_config: Arc::new(WorkspaceConfig::default()),
             workspace_graph: Arc::new(OnceLock::new()),
         },

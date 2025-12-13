@@ -9,20 +9,22 @@ use moon_app_context::AppContext;
 use moon_common::path::PathExt;
 use moon_common::{color, is_ci, path::WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
-use moon_feature_flags::glob_walk_with_options;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use moon_pdk_api::{InstallDependenciesInput, ManifestDependency, ParseManifestInput};
 use moon_project::ProjectFragment;
 use moon_toolchain_plugin::ToolchainPlugin;
 use moon_workspace_graph::WorkspaceGraph;
-use starbase_utils::{glob::GlobWalkOptions, json::JsonValue};
+use starbase_utils::{
+    glob::{self, GlobWalkOptions},
+    json::JsonValue,
+};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
-hash_content!(
-    struct InstallDependenciesHash<'action> {
+hash_fingerprint!(
+    struct InstallDependenciesFingerprint<'action> {
         action_node: &'action InstallDependenciesNode,
         lockfile_hash: Option<String>,
         manifest_dependencies: BTreeMap<String, BTreeSet<String>>,
@@ -123,9 +125,7 @@ pub async fn install_dependencies(
         context: app_context.toolchain_registry.create_context(),
         project: None,
         root: toolchain.to_virtual_path(&deps_root),
-        toolchain_config: app_context
-            .toolchain_registry
-            .create_config(&toolchain.id, &app_context.toolchain_config),
+        toolchain_config: app_context.toolchain_registry.create_config(&toolchain.id),
         ..Default::default()
     };
 
@@ -134,11 +134,9 @@ pub async fn install_dependencies(
             let project = workspace_graph.get_project(project_id)?;
 
             input.project = Some(project.to_fragment());
-            input.toolchain_config = app_context.toolchain_registry.create_merged_config(
-                &toolchain.id,
-                &app_context.toolchain_config,
-                &project.config,
-            );
+            input.toolchain_config = app_context
+                .toolchain_registry
+                .create_merged_config(&toolchain.id, &project.config);
 
             Some(project)
         }
@@ -240,8 +238,8 @@ async fn create_hash_content<'action>(
     deps_root: &Path,
     node: &'action InstallDependenciesNode,
     input: &'action InstallDependenciesInput,
-) -> miette::Result<InstallDependenciesHash<'action>> {
-    let mut content = InstallDependenciesHash {
+) -> miette::Result<InstallDependenciesFingerprint<'action>> {
+    let mut fingerprint = InstallDependenciesFingerprint {
         action_node: node,
         lockfile_hash: None,
         manifest_dependencies: BTreeMap::default(),
@@ -253,7 +251,7 @@ async fn create_hash_content<'action>(
 
     // Check if vendored already
     if let Some(vendor_dir_name) = &toolchain.metadata.vendor_dir_name {
-        content.vendor_dir_exists = deps_root.join(vendor_dir_name).exists();
+        fingerprint.vendor_dir_exists = deps_root.join(vendor_dir_name).exists();
     }
 
     // Extract lockfile last modification
@@ -269,7 +267,7 @@ async fn create_hash_content<'action>(
                 .await?;
 
             if let Some(hash) = lock_hashes.remove(&rel_lock_path) {
-                content.lockfile_hash = Some(hash);
+                fingerprint.lockfile_hash = Some(hash);
                 break;
             }
         }
@@ -277,27 +275,27 @@ async fn create_hash_content<'action>(
 
     // Extract dependencies from all applicable manifests
     for manifest_file_name in &toolchain.metadata.manifest_file_names {
-        let has_touched_manifests = action_context
-            .touched_files
+        let has_changed_manifests = action_context
+            .changed_files
             .iter()
             .any(|file| file.as_str().ends_with(manifest_file_name));
 
-        // If no manifests touched, then do nothing and avoid all
+        // If no manifests changed, then do nothing and avoid all
         // this overhead! We can assume no dependencies have changed
-        if has_touched_manifests {
+        if has_changed_manifests {
             hash_manifest_contents(
                 app_context,
                 toolchain,
                 deps_root,
                 node,
                 manifest_file_name,
-                &mut content,
+                &mut fingerprint,
             )
             .await?;
         }
     }
 
-    Ok(content)
+    Ok(fingerprint)
 }
 
 async fn hash_manifest_contents<'action>(
@@ -306,13 +304,13 @@ async fn hash_manifest_contents<'action>(
     deps_root: &Path,
     node: &'action InstallDependenciesNode,
     manifest_file_name: &str,
-    hash_content: &mut InstallDependenciesHash<'action>,
+    fingerprint: &mut InstallDependenciesFingerprint<'action>,
 ) -> miette::Result<()> {
     // Find all manifests in the workspace
     let deps_members = node.members.clone().unwrap_or_default();
 
     let mut manifest_paths =
-        glob_walk_with_options(deps_root, &deps_members, GlobWalkOptions::default().cache())?
+        glob::walk_fast_with_options(deps_root, &deps_members, GlobWalkOptions::default().cache())?
             .into_iter()
             .filter_map(|path| {
                 if path.ends_with(manifest_file_name) {
@@ -345,7 +343,7 @@ async fn hash_manifest_contents<'action>(
         let deps_root = deps_root.to_owned();
 
         if let Ok(rel_path) = manifest_path.relative_to(&app_context.workspace_root) {
-            hash_content.manifest_paths.insert(rel_path);
+            fingerprint.manifest_paths.insert(rel_path);
         }
 
         futures.push_back(tokio::spawn(async move {
@@ -363,7 +361,7 @@ async fn hash_manifest_contents<'action>(
     let mut inject_deps = |deps: BTreeMap<String, ManifestDependency>| {
         for (name, dep) in deps {
             if let Some(version) = dep.get_version() {
-                hash_content
+                fingerprint
                     .manifest_dependencies
                     .entry(name)
                     .or_default()

@@ -10,7 +10,6 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
-use moon_platform::PlatformManager;
 use moon_process::ProcessError;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
@@ -19,7 +18,6 @@ use moon_task::Task;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
 use std::sync::Arc;
-use std::time::SystemTime;
 use tracing::{debug, instrument, trace};
 
 #[derive(Debug)]
@@ -34,7 +32,6 @@ pub struct TaskRunner<'task> {
     project_graph: &'task ProjectGraph,
     project: &'task Project,
     pub task: &'task Task,
-    platform_manager: &'task PlatformManager,
 
     archiver: OutputArchiver<'task>,
     hydrater: OutputHydrater<'task>,
@@ -76,7 +73,6 @@ impl<'task> TaskRunner<'task> {
                 task,
             },
             hydrater: OutputHydrater { app_context, task },
-            platform_manager: PlatformManager::read(),
             project_graph,
             project,
             remote_state: None,
@@ -89,10 +85,6 @@ impl<'task> TaskRunner<'task> {
             app_context,
             operations: OperationList::default(),
         })
-    }
-
-    pub fn set_platform_manager(&mut self, manager: &'task PlatformManager) {
-        self.platform_manager = manager;
     }
 
     async fn internal_run(
@@ -299,7 +291,7 @@ impl<'task> TaskRunner<'task> {
         if archive_file.exists() && self.task.options.cache.is_local_enabled() {
             // Also check if the archive itself is stale
             if let Some(duration) = cache_lifetime
-                && fs::is_stale(&archive_file, false, duration, SystemTime::now())?.is_some()
+                && fs::is_stale(&archive_file, false, duration)?
             {
                 debug!(
                     task_target = self.task.target.as_str(),
@@ -408,21 +400,6 @@ impl<'task> TaskRunner<'task> {
         )
         .await?;
 
-        // Hash platform fields
-        if let Ok(platform) = self
-            .platform_manager
-            .get_by_toolchains(&self.task.toolchains)
-        {
-            platform
-                .hash_run_target(
-                    self.project,
-                    node.get_runtime(),
-                    &mut hasher,
-                    &self.app_context.workspace_config.hasher,
-                )
-                .await?;
-        }
-
         // Hash toolchain fields
         hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
             .await?;
@@ -479,10 +456,7 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Build the command from the current task
-        let mut builder = CommandBuilder::new(self.app_context, self.project, self.task, node);
-        builder.set_platform_manager(self.platform_manager);
-
-        let command = builder
+        let command = CommandBuilder::new(self.app_context, self.project, self.task, node)
             .build(
                 context,
                 self.report_item.hash.as_deref().unwrap_or_default(),

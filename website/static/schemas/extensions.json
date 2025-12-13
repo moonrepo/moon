@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Configures all extensions.",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "title": "$schema",
+      "default": "./cache/schemas/extensions.json",
+      "type": "string"
+    },
+    "extends": {
+      "title": "extends",
+      "description": "Extends one or many extensions configuration files. Supports a relative file path or a secure URL. @since 2.0.0",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ExtendsFrom"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "plugins": {
+      "title": "plugins",
+      "description": "Configures and integrates extensions into the system using a unique identifier.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ExtensionPluginConfig"
+      },
+      "propertyNames": {
+        "$ref": "#/definitions/Id"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "ExtendsFrom": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "ExtensionPluginConfig": {
+      "description": "Configures an individual extension.",
+      "type": "object",
+      "properties": {
+        "config": {
+          "title": "config",
+          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "Id": {
+      "type": "string"
+    },
+    "PluginLocator": {
+      "description": "Strategies and protocols for locating plugins.",
+      "type": "string"
+    }
+  }
+}

@@ -2,11 +2,11 @@ use moon_app_context::AppContext;
 use moon_common::color;
 use moon_config::Version;
 use moon_config_schema::json_schemas::generate_json_schemas;
-use moon_hash::hash_content;
+use moon_hash::hash_fingerprint;
 use tracing::{instrument, warn};
 
-hash_content!(
-    pub struct ConfigSchemaHash<'cfg> {
+hash_fingerprint!(
+    pub struct ConfigSchemaFingerprint<'cfg> {
         pub files_exist: bool,
         pub moon_version: &'cfg Version,
     }
@@ -27,11 +27,12 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
         .map(|_| true)
     } else {
         let files = vec![
+            out_dir.join("extensions.json"),
             out_dir.join("project.json"),
             out_dir.join("tasks.json"),
             out_dir.join("template-frontmatter.json"),
             out_dir.join("template.json"),
-            out_dir.join("toolchain.json"),
+            out_dir.join("toolchains.json"),
             out_dir.join("workspace.json"),
         ];
 
@@ -39,7 +40,7 @@ pub async fn sync_config_schemas(app_context: &AppContext, force: bool) -> miett
             .cache_engine
             .execute_if_changed(
                 "config-schemas",
-                ConfigSchemaHash {
+                ConfigSchemaFingerprint {
                     files_exist: files.into_iter().all(|file| file.exists()),
                     moon_version: &app_context.cli_version,
                 },

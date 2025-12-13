@@ -4,21 +4,31 @@
 
 import type { Id } from './common';
 
-/** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
+/**
+ * Configures the leading frontmatter within a template file.
+ * Docs: https://moonrepo.dev/docs/config/template#frontmatter
+ */
 export interface TemplateFrontmatterConfig {
-	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
-	$schema?: string;
+	$schema: string;
+	/** Force overwrite a file at the destination if there is a conflict. */
 	force: boolean;
+	/** Skip writing this file to the destination. */
 	skip: boolean;
+	/** Override the destination using a relative file path. */
 	to: string | null;
 }
 
-/** Docs: https://moonrepo.dev/docs/config/template#frontmatter */
+/**
+ * Configures the leading frontmatter within a template file.
+ * Docs: https://moonrepo.dev/docs/config/template#frontmatter
+ */
 export interface PartialTemplateFrontmatterConfig {
-	/** @default 'https://moonrepo.dev/schemas/template-frontmatter.json' */
 	$schema?: string | null;
+	/** Force overwrite a file at the destination if there is a conflict. */
 	force?: boolean | null;
+	/** Skip writing this file to the destination. */
 	skip?: boolean | null;
+	/** Override the destination using a relative file path. */
 	to?: string | null;
 }
 
@@ -68,6 +78,8 @@ export interface TemplateVariableEnumValueConfig {
 export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig;
 
 export interface TemplateVariableEnumSetting {
+	/** The default value of the variable if none was provided. */
+	defaultValue?: TemplateVariableEnumDefault;
 	/** The default value of the variable if none was provided. */
 	default: TemplateVariableEnumDefault;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
@@ -147,8 +159,7 @@ export type TemplateVariable =
  * Docs: https://moonrepo.dev/docs/config/template
  */
 export interface TemplateConfig {
-	/** @default 'https://moonrepo.dev/schemas/template.json' */
-	$schema?: string;
+	$schema: string;
 	/** A description on what the template scaffolds. */
 	description: string;
 	/**
@@ -158,12 +169,12 @@ export interface TemplateConfig {
 	destination: string | null;
 	/** Extends one or many other templates. */
 	extends: Id | Id[];
-	/** Overrides the ID of the template, instead of using the folder name. */
+	/** Overrides the identifier of the template, instead of using the folder name. */
 	id: Id | null;
 	/** A human-readable title for the template. */
 	title: string;
 	/**
-	 * A mapping of variables that'll be interpolated within each template file.
+	 * A map of variables that'll be interpolated within each template file.
 	 * Variables can also be populated by passing command line arguments.
 	 */
 	variables: Record<string, TemplateVariable>;
@@ -215,6 +226,8 @@ export interface PartialTemplateVariableEnumValueConfig {
 export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableEnumValueConfig;
 
 export interface PartialTemplateVariableEnumSetting {
+	/** The default value of the variable if none was provided. */
+	defaultValue?: PartialTemplateVariableEnumDefault | null;
 	/** The default value of the variable if none was provided. */
 	default?: PartialTemplateVariableEnumDefault | null;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
@@ -294,7 +307,6 @@ export type PartialTemplateVariable =
  * Docs: https://moonrepo.dev/docs/config/template
  */
 export interface PartialTemplateConfig {
-	/** @default 'https://moonrepo.dev/schemas/template.json' */
 	$schema?: string | null;
 	/** A description on what the template scaffolds. */
 	description?: string | null;
@@ -305,12 +317,12 @@ export interface PartialTemplateConfig {
 	destination?: string | null;
 	/** Extends one or many other templates. */
 	extends?: Id | Id[] | null;
-	/** Overrides the ID of the template, instead of using the folder name. */
+	/** Overrides the identifier of the template, instead of using the folder name. */
 	id?: Id | null;
 	/** A human-readable title for the template. */
 	title?: string | null;
 	/**
-	 * A mapping of variables that'll be interpolated within each template file.
+	 * A map of variables that'll be interpolated within each template file.
 	 * Variables can also be populated by passing command line arguments.
 	 */
 	variables?: Record<string, PartialTemplateVariable> | null;

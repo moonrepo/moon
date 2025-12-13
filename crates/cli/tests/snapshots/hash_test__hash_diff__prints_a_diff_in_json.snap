@@ -1,0 +1,32 @@
+---
+source: crates/cli/tests/hash_test.rs
+expression: assert.output()
+---
+{
+  "left": {
+    "command": "base",
+    "args": [
+      "a",
+      "b",
+      "c"
+    ]
+  },
+  "left_hash": "a",
+  "left_diffs": {
+    "1": "\"command\": \"base\",",
+    "5": "\"b\","
+  },
+  "right": {
+    "command": "other",
+    "args": [
+      "a",
+      "123",
+      "c"
+    ]
+  },
+  "right_hash": "b",
+  "right_diffs": {
+    "2": "\"command\": \"other\",",
+    "6": "\"123\","
+  }
+}

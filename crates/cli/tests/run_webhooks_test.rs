@@ -7,7 +7,6 @@ use utils::create_tasks_sandbox;
 
 fn create_webhooks_sandbox(url: String) -> MoonSandbox {
     let sandbox = create_tasks_sandbox();
-    sandbox.enable_git();
     sandbox.update_workspace_config(|config| {
         config.notifier = Some(PartialNotifierConfig {
             terminal_notifications: None,
@@ -15,6 +14,7 @@ fn create_webhooks_sandbox(url: String) -> MoonSandbox {
             webhook_acknowledge: Some(false),
         });
     });
+    sandbox.enable_git();
     sandbox
 }
 

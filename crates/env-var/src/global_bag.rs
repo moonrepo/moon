@@ -26,7 +26,7 @@ impl GlobalEnvBag {
     {
         let key = key.as_ref();
 
-        self.inherited.contains(key) || self.added.contains(key)
+        self.inherited.contains_sync(key) || self.added.contains_sync(key)
     }
 
     pub fn get<K>(&self, key: K) -> Option<String>
@@ -44,8 +44,8 @@ impl GlobalEnvBag {
 
         if let Some(value) = self
             .added
-            .read(key, |_, value| op(value))
-            .or_else(|| self.inherited.read(key, |_, value| op(value)))
+            .read_sync(key, |_, value| op(value))
+            .or_else(|| self.inherited.read_sync(key, |_, value| op(value)))
         {
             return Some(value);
         }
@@ -55,7 +55,7 @@ impl GlobalEnvBag {
         if let Some(value) = env::var_os(key) {
             let as_value = op(&value);
 
-            let _ = self.inherited.insert(key.into(), value);
+            let _ = self.inherited.insert_sync(key.into(), value);
 
             return Some(as_value);
         }
@@ -71,7 +71,7 @@ impl GlobalEnvBag {
         let key = key.as_ref();
         let value = value.as_ref();
 
-        self.added.upsert(key.into(), value.into());
+        self.added.upsert_sync(key.into(), value.into());
 
         // These need to always be propagated to the parent process
         if key.to_str().is_some_and(|k| {
@@ -94,27 +94,29 @@ impl GlobalEnvBag {
     {
         let key = key.as_ref();
 
-        self.inherited.remove(key);
-        self.added.remove(key);
+        self.inherited.remove_sync(key);
+        self.added.remove_sync(key);
 
-        let _ = self.removed.insert(key.into());
+        let _ = self.removed.insert_sync(key.into());
     }
 
     pub fn list(&self, mut op: impl FnMut(&OsString, &OsString)) {
-        self.inherited.scan(|k, v| {
+        self.inherited.iter_sync(|k, v| {
             op(k, v);
+            true
         });
-        self.added.scan(|k, v| {
+        self.added.iter_sync(|k, v| {
             op(k, v);
+            true
         });
     }
 
-    pub fn list_added(&self, op: impl FnMut(&OsString, &OsString)) {
-        self.added.scan(op);
+    pub fn list_added(&self, op: impl FnMut(&OsString, &OsString) -> bool) {
+        self.added.iter_sync(op);
     }
 
-    pub fn list_removed(&self, op: impl FnMut(&OsString)) {
-        self.removed.scan(op);
+    pub fn list_removed(&self, op: impl FnMut(&OsString) -> bool) {
+        self.removed.iter_sync(op);
     }
 
     pub fn should_debug_mcp(&self) -> bool {

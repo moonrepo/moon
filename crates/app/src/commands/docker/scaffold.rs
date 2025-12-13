@@ -271,14 +271,14 @@ async fn scaffold_sources_project(
                 "Including dependency project"
             );
 
-            scaffold_sources_project(
+            Box::pin(scaffold_sources_project(
                 session,
                 project_graph,
                 docker_sources_root,
                 &dep_config.id,
                 manifest,
                 visited,
-            )
+            ))
             .await?;
         }
     }

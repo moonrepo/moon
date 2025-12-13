@@ -32,7 +32,10 @@ impl WorkspaceGraph {
             .expect("Querying the task graph requires a query input string.");
         let cache_key = query_input.to_string();
 
-        if let Some(cache) = self.task_query_cache.read(&cache_key, |_, v| v.clone()) {
+        if let Some(cache) = self
+            .task_query_cache
+            .read_sync(&cache_key, |_, v| v.clone())
+        {
             return Ok(cache);
         }
 
@@ -63,7 +66,7 @@ impl WorkspaceGraph {
         let targets = Arc::new(targets);
         let _ = self
             .task_query_cache
-            .insert(cache_key, Arc::clone(&targets));
+            .insert_sync(cache_key, Arc::clone(&targets));
 
         Ok(targets)
     }

@@ -78,7 +78,7 @@ impl ToolchainRegistry {
     {
         let id = Id::raw(id.as_ref());
 
-        if !self.is_registered(&id) {
+        if !self.is_registered(&id).await {
             if !self.config.plugins.contains_key(&id) {
                 return Err(PluginError::UnknownId {
                     id: id.to_string(),
@@ -112,7 +112,7 @@ impl ToolchainRegistry {
         for id in ids {
             let id = Id::raw(id.as_ref());
 
-            if self.registry.is_registered(&id) {
+            if self.registry.is_registered(&id).await {
                 list.push(self.get_instance(&id).await?);
                 continue;
             }
@@ -124,7 +124,7 @@ impl ToolchainRegistry {
             let registry = Arc::clone(&self.registry);
             let config = config.to_owned();
 
-            set.spawn(async move {
+            set.spawn(Box::pin(async move {
                 let instance = registry
                     .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
                         let value = serialize_config(config.config.iter())?;
@@ -150,7 +150,7 @@ impl ToolchainRegistry {
                     .await?;
 
                 Ok(instance)
-            });
+            }));
         }
 
         if !set.is_empty() {
@@ -232,7 +232,7 @@ impl ToolchainRegistry {
                 let input = input_factory(self, &toolchain);
                 let future = output_factory(toolchain.clone(), input);
 
-                futures.push_back(tokio::spawn(async move {
+                futures.push_back(tokio::spawn(Box::pin(async move {
                     let result = future.await;
                     operation.finish_with_result(&result);
 
@@ -242,7 +242,7 @@ impl ToolchainRegistry {
                         output: result?,
                         plugin: toolchain,
                     })
-                }));
+                })));
             }
         }
 

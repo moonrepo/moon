@@ -1,4 +1,3 @@
-use clap::ValueEnum;
 use moon_affected::Affected;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_target::{Target, TargetLocator};
@@ -7,13 +6,6 @@ use scc::hash_map::Entry;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-
-#[derive(Clone, Debug, Deserialize, Serialize, ValueEnum)]
-#[serde(rename_all = "lowercase")]
-pub enum ProfileType {
-    Cpu,
-    Heap,
-}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "state", content = "hash", rename_all = "lowercase")]
@@ -56,9 +48,6 @@ pub struct ActionContext {
 
     /// Targets to run after the initial locators have been resolved.
     pub primary_targets: FxHashSet<Target>,
-
-    /// The type of profiler to run tasks with.
-    pub profile: Option<ProfileType>,
 
     /// The current state of running tasks (via their target).
     /// @mutable

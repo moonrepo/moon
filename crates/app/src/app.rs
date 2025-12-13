@@ -7,6 +7,7 @@ use crate::commands::clean::CleanArgs;
 use crate::commands::completions::CompletionsArgs;
 use crate::commands::debug::DebugCommands;
 use crate::commands::docker::DockerCommands;
+use crate::commands::exec::ExecArgs;
 use crate::commands::ext::ExtArgs;
 use crate::commands::extension::ExtensionCommands;
 use crate::commands::generate::GenerateArgs;
@@ -59,14 +60,11 @@ pub enum Commands {
     #[command(
         alias = "c",
         name = "check",
-        about = "Run all build and test related tasks for a project."
+        about = "Run build and test related tasks for one or many projects."
     )]
     Check(CheckArgs),
 
-    #[command(
-        name = "ci",
-        about = "Run all affected projects and tasks in a CI environment."
-    )]
+    #[command(name = "ci", about = "Run all affected tasks in a CI environment.")]
     Ci(CiArgs),
 
     #[command(
@@ -95,6 +93,12 @@ pub enum Commands {
         #[command(subcommand)]
         command: DockerCommands,
     },
+
+    #[command(
+        name = "exec",
+        about = "Low-level command for executing tasks in the action pipeline."
+    )]
+    Exec(ExecArgs),
 
     #[command(name = "ext", about = "Execute an extension plugin.")]
     Ext(ExtArgs),
@@ -167,7 +171,7 @@ pub enum Commands {
     #[command(
         alias = "r",
         name = "run",
-        about = "Run one or many project tasks and their dependent tasks."
+        about = "Run one or many tasks in the action pipeline."
     )]
     Run(RunArgs),
 

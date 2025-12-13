@@ -1,8 +1,0 @@
----
-source: crates/cli/tests/run_test.rs
-expression: "[extract_hash_from_run(sandbox.path(), \"outputs:asDep\"),\nextract_hash_from_run(sandbox.path(), \"outputs:withDeps\")]"
----
-[
-    "f01ce72d4842ab79e382ec0c1a6b2a393fba81eed1eb0612ac77e8dc6ae219cb",
-    "36726471fd7abbfb84baaae4853fae25128eac65c03c7422f524cc43c3c01a56",
-]

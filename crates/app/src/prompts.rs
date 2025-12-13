@@ -58,7 +58,7 @@ async fn select_identifiers_internal<'a, T: Clone>(
 
     if props.multiple {
         for index in indexes {
-            ids.push(output(props.options.remove(index).value)?);
+            ids.push(output(props.options.get(index).cloned().unwrap().value)?);
         }
     } else {
         ids.push(output(props.options.remove(index).value)?);
@@ -82,6 +82,17 @@ pub async fn select_identifier<'a>(
     .map(|mut ids| ids.remove(0))
 }
 
+pub async fn select_identifiers<'a>(
+    console: &Console,
+    ids: &'a [Id],
+    input: impl FnOnce() -> miette::Result<SelectProps<'a>>,
+) -> miette::Result<Vec<Id>> {
+    select_identifiers_internal(console, Vec::from_iter(ids), input, |value| {
+        Id::new(value).into_diagnostic()
+    })
+    .await
+}
+
 pub async fn select_target<'a>(
     console: &Console,
     target: &'a Option<Target>,
@@ -95,6 +106,17 @@ pub async fn select_target<'a>(
     )
     .await
     .map(|mut targets| targets.remove(0))
+}
+
+pub async fn select_targets<'a>(
+    console: &Console,
+    targets: &'a [Target],
+    input: impl FnOnce() -> miette::Result<SelectProps<'a>>,
+) -> miette::Result<Vec<Target>> {
+    select_identifiers_internal(console, Vec::from_iter(targets), input, |value| {
+        Target::parse(&value)
+    })
+    .await
 }
 
 pub async fn render_prompt(

@@ -366,7 +366,7 @@ impl<'query> ActionGraphBuilder<'query> {
         task: &Task,
         reqs: &RunRequirements,
     ) -> miette::Result<Option<NodeIndex>> {
-        if let Some(index) = self.internal_run_task(task, reqs, None).await? {
+        if let Some(index) = Box::pin(self.internal_run_task(task, reqs, None)).await? {
             // Only track primary targets at the top-level run methods,
             // as these are explicitly called by pipeline consumers!
             self.primary_targets.insert(task.target.clone());
@@ -384,7 +384,7 @@ impl<'query> ActionGraphBuilder<'query> {
         reqs: &RunRequirements,
         config: &TaskDependencyConfig,
     ) -> miette::Result<Option<NodeIndex>> {
-        self.internal_run_task(task, reqs, Some(config)).await
+        Box::pin(self.internal_run_task(task, reqs, Some(config))).await
     }
 
     #[instrument(skip(self))]
@@ -444,7 +444,9 @@ impl<'query> ActionGraphBuilder<'query> {
                 .internal_resolve_tasks_from_target(&dep.target, true)
                 .await?
             {
-                if let Some(dep_index) = self.internal_run_task(&dep_task, reqs, Some(dep)).await? {
+                if let Some(dep_index) =
+                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep))).await?
+                {
                     // When parallel, parent depends on child
                     if parallel {
                         indexes.push(Some(dep_index));
@@ -479,7 +481,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 .internal_resolve_tasks_from_target(&dep_target, true)
                 .await?
             {
-                indexes.push(self.internal_run_task(&dep_task, reqs, None).await?);
+                indexes.push(Box::pin(self.internal_run_task(&dep_task, reqs, None)).await?);
             }
         }
 
@@ -836,14 +838,28 @@ impl<'query> ActionGraphBuilder<'query> {
         spec: &ToolchainSpec,
         project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
+        Box::pin(self.internal_setup_toolchain(spec, project, &mut FxHashSet::default())).await
+    }
+
+    async fn internal_setup_toolchain(
+        &mut self,
+        spec: &ToolchainSpec,
+        project: Option<&Project>,
+        cycle: &mut FxHashSet<Id>,
+    ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
-        if !self.options.setup_toolchains.is_enabled(&spec.id) || spec.is_system() {
+        if !self.options.setup_toolchains.is_enabled(&spec.id)
+            || spec.is_system()
+            || cycle.contains(&spec.id)
+        {
             return Ok(None);
         }
 
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
         let mut edges = vec![];
+
+        cycle.insert(spec.id.clone());
 
         // Toolchain may depend on others
         if toolchain.has_func("define_requirements").await {
@@ -858,16 +874,28 @@ impl<'query> ActionGraphBuilder<'query> {
                 for require_id in output.requires {
                     let require_id = Id::new(require_id)?;
 
-                    if require_id != spec.id
-                        && let Some(require_spec) = self.get_spec(&require_id, project)
-                    {
-                        edges.push(Box::pin(self.setup_toolchain(&require_spec, project)).await?);
-                    } else {
-                        return Err(ActionGraphError::MissingToolchainRequirement {
-                            id: spec.id.to_string(),
-                            dep_id: require_id.to_string(),
+                    if require_id != spec.id {
+                        // Skip if already in cycle
+                        if cycle.contains(&require_id) {
+                            continue;
                         }
-                        .into());
+
+                        if let Some(require_spec) = self.get_spec(&require_id, project) {
+                            edges.push(
+                                Box::pin(self.internal_setup_toolchain(
+                                    &require_spec,
+                                    project,
+                                    cycle,
+                                ))
+                                .await?,
+                            );
+                        } else {
+                            return Err(ActionGraphError::MissingToolchainRequirement {
+                                id: spec.id.to_string(),
+                                dep_id: require_id.to_string(),
+                            }
+                            .into());
+                        }
                     }
                 }
             }
@@ -898,8 +926,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
     #[instrument(skip(self))]
     pub async fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
-        self.internal_sync_project(project, &mut FxHashSet::default())
-            .await
+        Box::pin(self.internal_sync_project(project, &mut FxHashSet::default())).await
     }
 
     async fn internal_sync_project(

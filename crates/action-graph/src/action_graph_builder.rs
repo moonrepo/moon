@@ -859,9 +859,10 @@ impl<'query> ActionGraphBuilder<'query> {
         let toolchain = toolchain_registry.load(&spec.id).await?;
         let mut edges = vec![];
 
+        cycle.insert(spec.id.clone());
+
         // Toolchain may depend on others
         if toolchain.has_func("define_requirements").await {
-            let toolchain_registry = &self.app_context.toolchain_registry;
             let output = toolchain
                 .define_requirements(DefineRequirementsInput {
                     context: toolchain_registry.create_context(),
@@ -899,8 +900,6 @@ impl<'query> ActionGraphBuilder<'query> {
                 }
             }
         }
-
-        cycle.insert(spec.id.clone());
 
         // Toolchain does not support tier 3 and does not require other toolchains
         if !toolchain.supports_tier_3().await && edges.is_empty() {

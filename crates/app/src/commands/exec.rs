@@ -5,6 +5,7 @@ use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_file
 use crate::session::MoonSession;
 use ci_env::CiOutput;
 use clap::{Args, ValueEnum};
+use iocraft::prelude::element;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
@@ -12,7 +13,7 @@ use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
 use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
-use moon_console::ui::{SelectOption, SelectProps};
+use moon_console::ui::{Container, Notice, SelectOption, SelectProps, StyledText, Variant};
 use moon_console::{Console, Level};
 use moon_task::TargetLocator;
 use petgraph::graph::NodeIndex;
@@ -183,19 +184,49 @@ impl ExecWorkflow {
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
 
         if self.node_indexes.is_empty() {
-            return Err(if self.affected {
-                AppError::NoExecAffectedTasks {
-                    targets: self.args.targets.clone(),
-                    status: self.args.status.clone(),
-                    query: self.args.query.clone(),
-                }
+            let targets_list = self
+                .args
+                .targets
+                .iter()
+                .map(|target| format!("<id>{}</id>", target.as_str()))
+                .collect::<Vec<_>>()
+                .join(", ");
+
+            let message = if self.affected {
+                format!(
+                    "Tasks {targets_list} not affected by changed files with status {}, unable to execute action pipeline.",
+                    if self.args.status.is_empty() {
+                        "<symbol>all</symbol>".to_owned()
+                    } else {
+                        self.args
+                            .status
+                            .iter()
+                            .map(|status| format!("<symbol>{status}</symbol>"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    }
+                )
             } else {
-                AppError::NoExecTasks {
-                    targets: self.args.targets.clone(),
-                    query: self.args.query.clone(),
+                format!(
+                    "No tasks found for provided targets {targets_list}, unable to execute action pipeline."
+                )
+            };
+
+            self.console.render(element! {
+                Container {
+                    Notice(variant: Variant::Caution) {
+                        StyledText(content: message)
+
+                        #(self.args.query.as_ref().map(|query| {
+                            element! {
+                                StyledText(content: format!("Using query <shell>{query}</shell>."))
+                            }
+                        }))
+                    }
                 }
-            }
-            .into());
+            })?;
+
+            return Ok(None);
         }
 
         // Step 3

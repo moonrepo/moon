@@ -212,7 +212,7 @@ impl ExecWorkflow {
                 )
             };
 
-            self.console.render(element! {
+            self.console.render_err(element! {
                 Container {
                     Notice(variant: Variant::Caution) {
                         StyledText(content: message)
@@ -226,7 +226,7 @@ impl ExecWorkflow {
                 }
             })?;
 
-            return Ok(None);
+            return Ok(if self.affected { None } else { Some(1) });
         }
 
         // Step 3

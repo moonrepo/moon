@@ -18,12 +18,12 @@ pub enum ActionGraphError {
 
     #[diagnostic(code(action_graph::would_cycle))]
     #[error(
-        "Unable to create action graph, adding a relationship from index {} to {} would introduce a cycle.",
-        .source_index.style(Style::Symbol),
-        .target_index.style(Style::Symbol),
+        "Unable to create action graph, adding a relationship from action {} to {} would introduce a cycle.",
+        .source_action.style(Style::Label),
+        .target_action.style(Style::Label),
     )]
     WouldCycle {
-        source_index: usize,
-        target_index: usize,
+        source_action: String,
+        target_action: String,
     },
 }

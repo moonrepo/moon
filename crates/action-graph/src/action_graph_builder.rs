@@ -1042,8 +1042,8 @@ impl<'query> ActionGraphBuilder<'query> {
                 self.graph
                     .add_edge(index, edge, TaskDependencyType::Required)
                     .map_err(|_| ActionGraphError::WouldCycle {
-                        source_index: index.index(),
-                        target_index: edge.index(),
+                        source_action: self.graph.node_weight(index).unwrap().label(),
+                        target_action: self.graph.node_weight(edge).unwrap().label(),
                     })?;
 
                 added_edges.push(edge);

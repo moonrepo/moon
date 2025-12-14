@@ -1,11 +1,25 @@
 mod utils;
 
-use moon_test_utils2::predicates::prelude::*;
+use moon_test_utils2::{create_moon_sandbox, predicates::prelude::*};
 use starbase_sandbox::assert_snapshot;
 use utils::create_tasks_sandbox;
 
 mod action_graph {
     use super::*;
+
+    #[test]
+    fn errors_for_cycle() {
+        let sandbox = create_moon_sandbox("tasks-cycle");
+        sandbox.with_default_projects();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("action-graph").arg("--dot");
+        });
+
+        assert
+            .failure()
+            .stderr(predicate::str::contains("would introduce a cycle"));
+    }
 
     #[test]
     fn all_by_default() {

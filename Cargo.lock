@@ -3415,6 +3415,7 @@ dependencies = [
 name = "moon_action_graph"
 version = "0.0.1"
 dependencies = [
+ "daggy",
  "graph-cycles",
  "miette 7.6.0",
  "moon_action",

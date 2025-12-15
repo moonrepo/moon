@@ -1,6 +1,6 @@
 import type { Action } from './pipeline';
-import type { Project } from './project';
-import type { Task } from './task';
+import type { Project, ProjectFragment } from './project';
+import type { Task, TaskFragment } from './task';
 
 export interface GetProjectTool {
 	id: string;
@@ -12,12 +12,11 @@ export interface GetProjectToolResponse {
 	projectDependencies?: Project[];
 }
 
-export interface GetProjectsTool {
-	includeTasks?: boolean;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface GetProjectsTool {}
 
 export interface GetProjectsToolResponse {
-	projects: Project[];
+	projects: ProjectFragment[];
 }
 
 export interface GetTaskTool {
@@ -35,7 +34,7 @@ export interface GetTasksTool {
 }
 
 export interface GetTasksToolResponse {
-	tasks: Task[];
+	tasks: TaskFragment[];
 }
 
 export interface GetChangedFilesTool {

@@ -28,5 +28,5 @@
 
 - Updated proto to [v0.54.0](https://github.com/moonrepo/proto/releases/tag/v0.54.0) (from 0.53.2).
 - Updated wasmtime to v37.
-- Updated Rust to v1.91.0.
+- Updated Rust to v1.92.0.
 - Updated dependencies.

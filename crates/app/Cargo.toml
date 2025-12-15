@@ -43,7 +43,7 @@ moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.10.1"
+bytes = "1.11.0"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",
@@ -85,7 +85,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 # Visualizer
-open = "5.3.2"
+open = "5.3.3"
 petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"

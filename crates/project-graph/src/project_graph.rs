@@ -217,7 +217,7 @@ impl ProjectGraph {
     fn internal_search(&self, search: &Path) -> miette::Result<Arc<String>> {
         let cache_key = search.to_path_buf();
 
-        if let Some(cache) = self.fs_cache.read(&cache_key, |_, v| v.clone()) {
+        if let Some(cache) = self.fs_cache.read_sync(&cache_key, |_, v| v.clone()) {
             return Ok(cache);
         }
 
@@ -254,7 +254,7 @@ impl ProjectGraph {
         }
 
         let id = Arc::new(possible_id);
-        let _ = self.fs_cache.insert(cache_key, Arc::clone(&id));
+        let _ = self.fs_cache.insert_sync(cache_key, Arc::clone(&id));
 
         Ok(id)
     }

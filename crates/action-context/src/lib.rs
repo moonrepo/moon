@@ -80,8 +80,9 @@ impl ActionContext {
 
     pub fn get_target_states(&self) -> FxHashMap<Target, TargetState> {
         let mut map = FxHashMap::default();
-        self.target_states.scan(|k, v| {
+        self.target_states.iter_sync(|k, v| {
             map.insert(k.to_owned(), v.to_owned());
+            true
         });
         map
     }
@@ -91,7 +92,9 @@ impl ActionContext {
     }
 
     pub fn set_target_state<T: AsRef<Target>>(&self, target: T, state: TargetState) {
-        let _ = self.target_states.insert(target.as_ref().to_owned(), state);
+        let _ = self
+            .target_states
+            .insert_sync(target.as_ref().to_owned(), state);
     }
 
     pub fn should_inherit_args<T: AsRef<Target>>(&self, target: T) -> bool {

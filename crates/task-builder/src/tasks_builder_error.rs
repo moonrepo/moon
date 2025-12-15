@@ -1,3 +1,5 @@
+#![allow(unused_assignments)]
+
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
 use moon_task::Target;

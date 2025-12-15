@@ -1,7 +1,7 @@
 #![allow(clippy::disallowed_types)]
 
 use super::map_miette_error;
-use moon_task::{Target, Task};
+use moon_task::{Target, Task, TaskFragment};
 use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
@@ -84,8 +84,10 @@ impl GetTasksTool {
         tasks.sort_by(|a, d| a.target.cmp(&d.target));
 
         Ok(CallToolResult::text_content(vec![TextContent::new(
-            serde_json::to_string_pretty(&GetTasksResponse { tasks })
-                .map_err(CallToolError::new)?,
+            serde_json::to_string_pretty(&GetTasksResponse {
+                tasks: tasks.into_iter().map(|task| task.to_fragment()).collect(),
+            })
+            .map_err(CallToolError::new)?,
             None,
             None,
         )]))
@@ -94,5 +96,5 @@ impl GetTasksTool {
 
 #[derive(Serialize)]
 pub struct GetTasksResponse {
-    pub tasks: Vec<Arc<Task>>,
+    pub tasks: Vec<TaskFragment>,
 }

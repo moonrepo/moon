@@ -471,9 +471,9 @@ checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
 name = "bazel-remote-apis"
-version = "0.20.0"
+version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e57930c9446b6c677933ca5fbad18cd1e874d31acd01d07898b0e6d6edc75725"
+checksum = "b58b60ac1a98050018790df217cd82bbb876f4ad6afc293f3824d5b6a51d71a0"
 dependencies = [
  "pbjson",
  "pbjson-types",

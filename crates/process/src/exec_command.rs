@@ -464,10 +464,12 @@ impl Command {
 
         bag.list_added(|key, value| {
             command.env(key, value);
+            true
         });
 
         bag.list_removed(|key| {
             command.env_remove(key);
+            true
         });
 
         // Then inherit local so we can override global

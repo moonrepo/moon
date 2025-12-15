@@ -1,14 +1,13 @@
 #![allow(clippy::disallowed_types)]
 
 use super::map_miette_error;
-use moon_project::Project;
+use moon_project::{Project, ProjectFragment};
 use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
     schema::{CallToolResult, TextContent, schema_utils::CallToolError},
 };
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
 
 #[mcp_tool(
     name = "get_project",
@@ -65,10 +64,7 @@ pub struct GetProjectResponse {
 
 #[mcp_tool(name = "get_projects", description = "Get all moon projects.")]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
-pub struct GetProjectsTool {
-    #[serde(default)]
-    pub include_tasks: bool,
-}
+pub struct GetProjectsTool {}
 
 impl GetProjectsTool {
     pub fn call_tool(
@@ -79,23 +75,14 @@ impl GetProjectsTool {
 
         projects.sort_by(|a, d| a.id.cmp(&d.id));
 
-        if self.include_tasks {
-            let mut new_projects = vec![];
-
-            for project in projects {
-                new_projects.push(Arc::new(
-                    workspace_graph
-                        .get_project_with_tasks(&project.id)
-                        .map_err(map_miette_error)?,
-                ));
-            }
-
-            projects = new_projects;
-        }
-
         Ok(CallToolResult::text_content(vec![TextContent::new(
-            serde_json::to_string_pretty(&GetProjectsResponse { projects })
-                .map_err(CallToolError::new)?,
+            serde_json::to_string_pretty(&GetProjectsResponse {
+                projects: projects
+                    .into_iter()
+                    .map(|proj| proj.to_fragment())
+                    .collect(),
+            })
+            .map_err(CallToolError::new)?,
             None,
             None,
         )]))
@@ -104,5 +91,5 @@ impl GetProjectsTool {
 
 #[derive(Serialize)]
 pub struct GetProjectsResponse {
-    pub projects: Vec<Arc<Project>>,
+    pub projects: Vec<ProjectFragment>,
 }

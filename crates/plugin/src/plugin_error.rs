@@ -1,3 +1,5 @@
+#![allow(unused_assignments)]
+
 use crate::plugin::PluginType;
 use miette::Diagnostic;
 use starbase_styles::{Style, Stylize};

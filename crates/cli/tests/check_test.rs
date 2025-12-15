@@ -11,11 +11,11 @@ mod check {
         let sandbox = create_pipeline_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("check").arg("check");
+            cmd.arg("check").arg("check-a");
         });
 
         assert.success().stdout(
-            predicate::str::contains("check:build").and(predicate::str::contains("check:test")),
+            predicate::str::contains("check-a:build").and(predicate::str::contains("check-a:test")),
         );
     }
 
@@ -24,13 +24,13 @@ mod check {
         let sandbox = create_pipeline_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.current_dir(sandbox.path().join("check"))
+            cmd.current_dir(sandbox.path().join("check-a"))
                 .arg("check")
                 .arg("--closest");
         });
 
         assert.success().stdout(
-            predicate::str::contains("check:build").and(predicate::str::contains("check:test")),
+            predicate::str::contains("check-a:build").and(predicate::str::contains("check-a:test")),
         );
     }
 
@@ -39,15 +39,13 @@ mod check {
         let sandbox = create_pipeline_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("check").arg("check").arg("shared");
+            cmd.arg("check").arg("check-a").arg("check-b");
         });
 
-        // Fails because of `shared:willFail`
-        assert.failure().stdout(
-            predicate::str::contains("check:build")
-                .and(predicate::str::contains("check:test"))
-                .and(predicate::str::contains("shared:base"))
-                .and(predicate::str::contains("shared:willFail")),
+        assert.success().stdout(
+            predicate::str::contains("check-a:build")
+                .and(predicate::str::contains("check-a:test"))
+                .and(predicate::str::contains("check-b:test")),
         );
     }
 
@@ -56,11 +54,11 @@ mod check {
         let sandbox = create_pipeline_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
-            cmd.arg("check").arg("check");
+            cmd.arg("check").arg("check-a");
         });
 
         assert
             .success()
-            .stdout(predicate::str::contains("check:internal").not());
+            .stdout(predicate::str::contains("check-a:internal").not());
     }
 }

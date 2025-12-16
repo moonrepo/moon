@@ -15,4 +15,15 @@ pub enum ActionGraphError {
         .dep_id.style(Style::Id),
     )]
     MissingToolchainRequirement { id: String, dep_id: String },
+
+    #[diagnostic(code(action_graph::would_cycle))]
+    #[error(
+        "Unable to create action graph, adding a relationship from action {} to {} would introduce a cycle.",
+        .source_action.style(Style::Label),
+        .target_action.style(Style::Label),
+    )]
+    WouldCycle {
+        source_action: String,
+        target_action: String,
+    },
 }

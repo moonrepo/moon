@@ -1320,6 +1320,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "daggy"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "804169db156b21258a2545757336922d93dfa229892c75911a0ad141aa0ff241"
+dependencies = [
+ "petgraph 0.8.3",
+ "serde",
+]
+
+[[package]]
 name = "darling"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3405,6 +3415,7 @@ dependencies = [
 name = "moon_action_graph"
 version = "0.0.1"
 dependencies = [
+ "daggy",
  "graph-cycles",
  "miette 7.6.0",
  "moon_action",
@@ -4143,6 +4154,7 @@ dependencies = [
 name = "moon_project_graph"
 version = "0.0.1"
 dependencies = [
+ "daggy",
  "miette 7.6.0",
  "moon_cache",
  "moon_common",
@@ -4303,6 +4315,7 @@ dependencies = [
 name = "moon_task_graph"
 version = "0.0.1"
 dependencies = [
+ "daggy",
  "miette 7.6.0",
  "moon_common",
  "moon_config",
@@ -4518,6 +4531,7 @@ dependencies = [
 name = "moon_workspace"
 version = "0.0.1"
 dependencies = [
+ "daggy",
  "miette 7.6.0",
  "moon_cache",
  "moon_common",
@@ -5742,9 +5756,9 @@ dependencies = [
 
 [[package]]
 name = "reqwest"
-version = "0.12.25"
+version = "0.12.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6eff9328d40131d43bd911d42d79eb6a47312002a4daefc9e37f17e74a7701a"
+checksum = "3b4c14b2d9afca6a60277086b0cc6a6ae0b568f6f7916c943a8cdc79f8be240f"
 dependencies = [
  "base64 0.22.1",
  "bytes",

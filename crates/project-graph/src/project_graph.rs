@@ -1,4 +1,5 @@
 use crate::project_graph_error::ProjectGraphError;
+use daggy::Dag;
 use moon_common::Id;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_config::DependencyScope;
@@ -13,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, instrument};
 
-pub type ProjectGraphType = DiGraph<Project, DependencyScope>;
+pub type ProjectGraphType = Dag<Project, DependencyScope>;
 pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
 
 #[derive(Clone, Debug, Default)]
@@ -183,11 +184,23 @@ impl ProjectGraph {
             }
         }
 
+        let mut dag = Dag::new();
+        let (nodes, edges) = graph.into_nodes_edges();
+
+        for node in nodes {
+            dag.add_node(node.weight);
+        }
+
+        for edge in edges {
+            dag.update_edge(edge.source(), edge.target(), edge.weight)
+                .unwrap();
+        }
+
         Ok(Self {
             context: self.context.clone(),
             default_id: self.default_id.clone(),
             fs_cache: HashMap::new(),
-            graph,
+            graph: dag,
             metadata,
             projects: self.projects.clone(),
         })
@@ -291,7 +304,7 @@ impl ProjectGraph {
 
 impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
     fn get_graph(&self) -> &DiGraph<Project, DependencyScope> {
-        &self.graph
+        self.graph.graph()
     }
 
     fn get_node_key(&self, node: &Project) -> Id {

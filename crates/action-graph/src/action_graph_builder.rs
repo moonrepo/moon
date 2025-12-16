@@ -1,5 +1,6 @@
 use crate::action_graph::{ActionGraph, ActionGraphType};
 use crate::action_graph_error::ActionGraphError;
+use daggy::Dag;
 use miette::IntoDiagnostic;
 use moon_action::{
     ActionNode, InstallDependenciesNode, RunTaskNode, SetupEnvironmentNode, SetupToolchainNode,
@@ -52,11 +53,19 @@ macro_rules! insert_node_or_exit {
 
 #[derive(Debug, Default)]
 pub struct RunRequirements {
-    pub ci: bool,            // Are we in a CI environment
-    pub ci_check: bool,      // Check the `runInCI` option
-    pub dependents: bool,    // Run dependent tasks as well
-    pub interactive: bool,   // Entire pipeline is interactive
-    pub skip_affected: bool, // Skip all affected checks
+    pub ci: bool,                 // Are we in a CI environment
+    pub ci_check: bool,           // Check the `runInCI` option
+    pub dependents: bool,         // Run dependent tasks as well
+    pub interactive: bool,        // Entire pipeline is interactive
+    pub job: Option<usize>,       // Current job index
+    pub job_total: Option<usize>, // Total amount of jobs
+    pub skip_affected: bool,      // Skip all affected checks
+}
+
+#[derive(Debug, Default)]
+pub struct RunPartition {
+    pub targets: FxHashMap<NodeIndex, Target>,
+    pub size: Option<usize>,
 }
 
 pub struct ActionGraphBuilderOptions {
@@ -117,7 +126,7 @@ impl<'query> ActionGraphBuilder<'query> {
             affected: None,
             all_query: None,
             app_context,
-            graph: DiGraph::new(),
+            graph: Dag::new(),
             nodes: FxHashMap::default(),
             options,
             passthrough_targets: FxHashSet::default(),
@@ -145,6 +154,11 @@ impl<'query> ActionGraphBuilder<'query> {
 
         if let Some(files) = self.changed_files.take() {
             context.changed_files = files.to_owned();
+        }
+
+        // Reduce unncessary edges
+        if let Some(index) = self.get_index_from_node(&ActionNode::SyncWorkspace) {
+            self.graph.transitive_reduce(vec![index]);
         }
 
         (context, ActionGraph::new(self.graph))
@@ -314,7 +328,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 self.link_first_requirement(
                     index,
                     vec![setup_env_index, setup_toolchain_index, sync_workspace_index],
-                );
+                )?;
 
                 return Ok(Some(index));
             }
@@ -324,7 +338,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 self.link_first_requirement(
                     setup_env_index,
                     vec![setup_toolchain_index, sync_workspace_index],
-                );
+                )?;
 
                 return Ok(Some(setup_env_index));
             }
@@ -430,6 +444,61 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     #[instrument(skip(self))]
+    pub async fn run_tasks<I: IntoIterator<Item = T> + Debug, T: AsRef<TargetLocator> + Debug>(
+        &mut self,
+        locators: I,
+        reqs: RunRequirements,
+    ) -> miette::Result<RunPartition> {
+        let mut tasks = vec![];
+        let mut partition = RunPartition::default();
+
+        for locator in locators {
+            tasks.extend(
+                self.internal_resolve_tasks_from_target_locator(locator.as_ref(), false)
+                    .await?,
+            );
+        }
+
+        if let Some(job_index) = reqs.job
+            && let Some(job_total) = reqs.job_total
+            && job_total > 0
+        {
+            let size = tasks.len().div_ceil(job_total);
+            let (start, stop) =
+                // beginning
+                if job_index == 0 {
+                    (0, size)
+                }
+                // end
+                else if job_index == job_total - 1 {
+                    ((size * job_index), tasks.len())
+                }
+                // middle
+                else {
+                    ((size * job_index), (size * (job_index + 1)))
+                };
+
+            if tasks.get(start).is_some() {
+                if tasks.get(stop).is_some() {
+                    tasks = tasks[start..stop].to_vec();
+                } else {
+                    tasks = tasks[start..].to_vec();
+                }
+            }
+
+            partition.size = Some(size);
+        }
+
+        for task in tasks {
+            if let Some(index) = self.run_task(&task, &reqs).await? {
+                partition.targets.insert(index, task.target.clone());
+            }
+        }
+
+        Ok(partition)
+    }
+
+    #[instrument(skip(self))]
     pub async fn run_task_dependencies(
         &mut self,
         task: &Task,
@@ -453,7 +522,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     }
                     // When serial, next child depends on previous child
                     else if let Some(prev) = previous_target_index {
-                        self.link_requirements(dep_index, vec![prev]);
+                        self.link_requirements(dep_index, vec![prev])?;
                     }
 
                     previous_target_index = Some(dep_index);
@@ -687,6 +756,8 @@ impl<'query> ActionGraphBuilder<'query> {
             ci_check: reqs.ci_check,
             dependents: false,
             interactive: reqs.interactive,
+            job: None,
+            job_total: None,
             skip_affected: false,
         };
 
@@ -775,7 +846,7 @@ impl<'query> ActionGraphBuilder<'query> {
             edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs)).await?);
         }
 
-        self.link_optional_requirements(index, edges);
+        self.link_optional_requirements(index, edges)?;
 
         // And possibly dependents
         if reqs.dependents {
@@ -817,7 +888,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_first_requirement(index, vec![setup_toolchain_index, sync_workspace_index]);
+        self.link_first_requirement(index, vec![setup_toolchain_index, sync_workspace_index])?;
 
         Ok(Some(index))
     }
@@ -919,7 +990,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_optional_requirements(index, edges);
+        self.link_optional_requirements(index, edges)?;
 
         Ok(Some(index))
     }
@@ -981,7 +1052,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         if !edges.is_empty() {
-            self.link_requirements(index, edges);
+            self.link_requirements(index, edges)?;
         }
 
         Ok(Some(index))
@@ -1004,19 +1075,29 @@ impl<'query> ActionGraphBuilder<'query> {
         self.nodes.get(node).cloned()
     }
 
-    fn link_first_requirement(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
+    fn link_first_requirement(
+        &mut self,
+        index: NodeIndex,
+        edges: Vec<Option<NodeIndex>>,
+    ) -> miette::Result<()> {
         if let Some(edge) = edges.into_iter().flatten().next() {
-            self.link_requirements(index, vec![edge]);
+            self.link_requirements(index, vec![edge])?;
         }
+
+        Ok(())
     }
 
-    fn link_optional_requirements(&mut self, index: NodeIndex, edges: Vec<Option<NodeIndex>>) {
-        self.link_requirements(index, edges.into_iter().flatten().collect());
+    fn link_optional_requirements(
+        &mut self,
+        index: NodeIndex,
+        edges: Vec<Option<NodeIndex>>,
+    ) -> miette::Result<()> {
+        self.link_requirements(index, edges.into_iter().flatten().collect())
     }
 
-    fn link_requirements(&mut self, index: NodeIndex, edges: Vec<NodeIndex>) {
+    fn link_requirements(&mut self, index: NodeIndex, edges: Vec<NodeIndex>) -> miette::Result<()> {
         if edges.is_empty() {
-            return;
+            return Ok(());
         }
 
         let mut added_edges = vec![];
@@ -1024,7 +1105,12 @@ impl<'query> ActionGraphBuilder<'query> {
         for edge in edges {
             if self.graph.find_edge(index, edge).is_none() {
                 self.graph
-                    .add_edge(index, edge, TaskDependencyType::Required);
+                    .add_edge(index, edge, TaskDependencyType::Required)
+                    .map_err(|_| ActionGraphError::WouldCycle {
+                        source_action: self.graph.node_weight(index).unwrap().label(),
+                        target_action: self.graph.node_weight(edge).unwrap().label(),
+                    })?;
+
                 added_edges.push(edge);
             }
         }
@@ -1036,6 +1122,8 @@ impl<'query> ActionGraphBuilder<'query> {
                 "Linking requirements for index"
             );
         }
+
+        Ok(())
     }
 
     fn insert_node(&mut self, node: ActionNode) -> NodeIndex {

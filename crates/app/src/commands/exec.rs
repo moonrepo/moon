@@ -5,6 +5,7 @@ use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_file
 use crate::session::MoonSession;
 use ci_env::CiOutput;
 use clap::{Args, ValueEnum};
+use iocraft::prelude::element;
 use moon_action::Action;
 use moon_action_context::ActionContext;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
@@ -12,11 +13,11 @@ use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_cache::CacheMode;
 use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
-use moon_console::ui::{SelectOption, SelectProps};
+use moon_console::ui::{Container, Notice, SelectOption, SelectProps, StyledText, Variant};
 use moon_console::{Console, Level};
-use moon_task::TargetLocator;
+use moon_task::{Target, TargetLocator};
 use petgraph::graph::NodeIndex;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::AppResult;
 use std::fmt;
 use std::sync::Arc;
@@ -123,11 +124,11 @@ pub struct ExecWorkflow {
     /// Are we in a CI environment?
     ci_env: bool,
 
-    /// Node indexes for targets inserted into the graph
-    node_indexes: FxHashSet<NodeIndex>,
-
     /// The current step in the process
     step: u8,
+
+    /// Task targets inserted into the graph
+    targets: FxHashMap<NodeIndex, Target>,
 
     /// Are we in a test environment?
     test_env: bool,
@@ -154,9 +155,9 @@ impl ExecWorkflow {
             ci_check: args.only_ci_tasks,
             ci_env,
             console: session.get_console()?,
-            node_indexes: FxHashSet::default(),
             session,
             step: 0,
+            targets: FxHashMap::default(),
             test_env: is_test_env(),
             args,
             ui: ci_env::get_output().unwrap_or(CiOutput {
@@ -182,29 +183,63 @@ impl ExecWorkflow {
         // Step 2
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
 
-        if self.node_indexes.is_empty() {
-            return Err(if self.affected {
-                AppError::NoExecAffectedTasks {
-                    targets: self.args.targets.clone(),
-                    status: self.args.status.clone(),
-                    query: self.args.query.clone(),
+        if self.targets.is_empty() {
+            let message = if self.affected {
+                if self.args.status.is_empty() {
+                    "No tasks affected by changed files.".to_string()
+                } else {
+                    format!(
+                        "No tasks affected by changed files with status {}.",
+                        self.args
+                            .status
+                            .iter()
+                            .map(|status| format!("<symbol>{status}</symbol>"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
                 }
             } else {
-                AppError::NoExecTasks {
-                    targets: self.args.targets.clone(),
-                    query: self.args.query.clone(),
+                "No tasks found.".to_string()
+            };
+
+            self.console.render_err(element! {
+                Container {
+                    Notice(variant: Variant::Caution) {
+                        StyledText(content: format!("{message} Unable to execute action pipeline."))
+
+                        #(self.args.query.as_ref().map(|query| {
+                            element! {
+                                StyledText(content: format!("Using query <shell>{query}</shell>."))
+                            }
+                        }))
+
+                        #((self.args.targets.len() < 15).then(|| {
+                            element! {
+                                StyledText(
+                                    content: format!(
+                                        "For targets {}.",
+                                        self
+                                            .args
+                                            .targets
+                                            .iter()
+                                            .map(|target| format!("<id>{}</id>", target.as_str()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ")
+                                    )
+                                )
+                            }
+                        }))
+                    }
                 }
-            }
-            .into());
+            })?;
+
+            return Ok(if self.affected { None } else { Some(1) });
         }
 
         // Step 3
         self.display_affected(&action_context)?;
 
         // Step 4
-        let action_graph = self.partition_action_graph(action_graph).await?;
-
-        // Step 5
         let results = self
             .execute_action_pipeline(action_context, action_graph)
             .await?;
@@ -309,11 +344,11 @@ impl ExecWorkflow {
             let mut files = result
                 .files
                 .iter()
-                .map(|file| file.as_str())
+                .map(|file| format!("\t<file>{}</file>", file.as_str()))
                 .collect::<Vec<_>>();
             files.sort();
 
-            self.print("")?;
+            self.print("Changed files:")?;
             self.print(files.join("\n"))?;
         }
 
@@ -366,37 +401,62 @@ impl ExecWorkflow {
         }
 
         // Insert targets into the graph
-        let reqs = RunRequirements {
-            ci: self.ci_env,
-            ci_check: self.ci_check,
-            dependents: self
-                .args
-                .downstream
-                .is_some_and(|down| down != DownstreamScope::None),
-            interactive: self.args.interactive,
-            skip_affected: !self.affected,
-        };
-
-        for target_locator in &self.args.targets {
-            self.node_indexes.extend(
-                action_graph_builder
-                    .run_task_by_target_locator(target_locator, &reqs)
-                    .await?,
-            );
-        }
+        let partition = action_graph_builder
+            .run_tasks(
+                &self.args.targets,
+                RunRequirements {
+                    ci: self.ci_env,
+                    ci_check: self.ci_check,
+                    dependents: self
+                        .args
+                        .downstream
+                        .is_some_and(|down| down != DownstreamScope::None),
+                    interactive: self.args.interactive,
+                    job: self.args.job,
+                    job_total: self.args.job_total,
+                    skip_affected: !self.affected,
+                },
+            )
+            .await?;
 
         // Build the graph
         let (action_context, action_graph) = action_graph_builder.build();
 
+        if let Some(job_index) = &self.args.job
+            && let Some(job_total) = &self.args.job_total
+        {
+            self.print(format!("Job index: <property>{job_index}</property>"))?;
+            self.print(format!("Job total: <property>{job_total}</property>"))?;
+            self.print(format!(
+                "Partition size: <property>{}</property>",
+                partition.size.unwrap_or_default()
+            ))?;
+        }
+
         self.print(format!(
-            "Target count: <mutedlight>{}</mutedlight>",
-            self.args.targets.len()
+            "Action count: <property>{}</property>",
+            action_graph.get_node_count()
         ))?;
 
         self.print(format!(
-            "Action count: <mutedlight>{}</mutedlight>",
-            action_graph.get_node_count()
+            "Requested targets: <mutedlight>{}</mutedlight>",
+            self.args.targets.len()
         ))?;
+
+        for target in &self.args.targets {
+            self.print(format!("\t<label>{}</label>", target.as_str()))?;
+        }
+
+        self.print(format!(
+            "Resolved targets: <mutedlight>{}</mutedlight>",
+            partition.targets.len()
+        ))?;
+
+        for target in partition.targets.values() {
+            self.print(format!("\t<id>{}</id>", target.as_str()))?;
+        }
+
+        self.targets.extend(partition.targets);
 
         Ok((action_context, action_graph))
     }
@@ -444,28 +504,6 @@ impl ExecWorkflow {
     }
 
     // Step 4
-    async fn partition_action_graph(
-        &mut self,
-        action_graph: ActionGraph,
-    ) -> miette::Result<ActionGraph> {
-        if self.args.job.is_none() && self.args.job_total.is_none() {
-            return Ok(action_graph);
-        }
-
-        let job_index = self.args.job.unwrap_or_default();
-        let job_total = self.args.job_total.unwrap_or_default();
-        let batch_size = self.args.targets.len().div_ceil(job_total);
-
-        self.print_step("Distibuting actions across jobs")?;
-
-        self.print(format!("Job index: <mutedlight>{job_index}</mutedlight>"))?;
-        self.print(format!("Job total: <mutedlight>{job_total}</mutedlight>"))?;
-        self.print(format!("Batch size: <mutedlight>{batch_size}</mutedlight>"))?;
-
-        Ok(action_graph)
-    }
-
-    // Step 5
     async fn execute_action_pipeline(
         &mut self,
         mut action_context: ActionContext,

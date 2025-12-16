@@ -186,7 +186,7 @@ impl ExecWorkflow {
         if self.targets.is_empty() {
             let message = if self.affected {
                 if self.args.status.is_empty() {
-                    format!("No tasks affected by changed files.")
+                    "No tasks affected by changed files.".to_string()
                 } else {
                     format!(
                         "No tasks affected by changed files with status {}.",
@@ -199,7 +199,7 @@ impl ExecWorkflow {
                     )
                 }
             } else {
-                format!("No tasks found.")
+                "No tasks found.".to_string()
             };
 
             self.console.render_err(element! {

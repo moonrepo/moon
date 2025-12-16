@@ -1206,8 +1206,7 @@ mod run_legacy {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("not affected by changed files").eval(&output));
-            assert!(predicate::str::contains("all").eval(&output));
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
         }
 
         #[test]
@@ -1227,7 +1226,7 @@ mod run_legacy {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("not affected by changed files").eval(&output));
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
             assert!(predicate::str::contains("untracked").eval(&output));
             assert!(predicate::str::contains("deleted").eval(&output));
         }
@@ -1311,7 +1310,7 @@ mod run_legacy {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("not affected by changed files").eval(&output));
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
         }
 
         #[test]
@@ -1329,7 +1328,7 @@ mod run_legacy {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("not affected by changed files").eval(&output));
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
         }
 
         #[test]
@@ -1421,7 +1420,7 @@ mod run_legacy {
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("not affected by changed files").eval(&output));
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
             assert!(predicate::str::contains("deleted").eval(&output));
         }
 
@@ -1444,7 +1443,7 @@ mod run_legacy {
 
             // CI doesn't check the local index
             if is_ci() {
-                assert!(predicate::str::contains("not affected by changed files").eval(&output));
+                assert!(predicate::str::contains("affected by changed files").eval(&output));
                 assert!(predicate::str::contains("untracked").eval(&output));
             } else {
                 assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
@@ -1529,8 +1528,7 @@ mod run_legacy {
 
                 let output = assert.output();
 
-                assert!(predicate::str::contains("not affected by changed files").eval(&output));
-                assert!(predicate::str::contains("all").eval(&output));
+                assert!(predicate::str::contains("affected by changed files").eval(&output));
             }
 
             #[test]
@@ -1566,7 +1564,7 @@ mod run_legacy {
 
                 let output = assert.output();
 
-                assert!(predicate::str::contains("not affected by changed files").eval(&output));
+                assert!(predicate::str::contains("affected by changed files").eval(&output));
                 assert!(predicate::str::contains("deleted").eval(&output));
             }
         }

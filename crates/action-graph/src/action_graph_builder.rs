@@ -444,10 +444,7 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     #[instrument(skip(self))]
-    pub async fn run_tasks_with_partitioning<
-        I: IntoIterator<Item = T> + Debug,
-        T: AsRef<TargetLocator> + Debug,
-    >(
+    pub async fn run_tasks<I: IntoIterator<Item = T> + Debug, T: AsRef<TargetLocator> + Debug>(
         &mut self,
         locators: I,
         reqs: RunRequirements,
@@ -464,6 +461,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         if let Some(job_index) = reqs.job
             && let Some(job_total) = reqs.job_total
+            && job_total > 0
         {
             let size = tasks.len().div_ceil(job_total);
             let (start, stop) =

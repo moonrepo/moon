@@ -184,42 +184,49 @@ impl ExecWorkflow {
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
 
         if self.targets.is_empty() {
-            let targets_list = self
-                .args
-                .targets
-                .iter()
-                .map(|target| format!("<id>{}</id>", target.as_str()))
-                .collect::<Vec<_>>()
-                .join(", ");
-
             let message = if self.affected {
-                format!(
-                    "Tasks {targets_list} not affected by changed files with status {}, unable to execute action pipeline.",
-                    if self.args.status.is_empty() {
-                        "<symbol>all</symbol>".to_owned()
-                    } else {
+                if self.args.status.is_empty() {
+                    format!("No tasks affected by changed files.")
+                } else {
+                    format!(
+                        "No tasks affected by changed files with status {}.",
                         self.args
                             .status
                             .iter()
                             .map(|status| format!("<symbol>{status}</symbol>"))
                             .collect::<Vec<_>>()
                             .join(", ")
-                    }
-                )
+                    )
+                }
             } else {
-                format!(
-                    "No tasks found for provided targets {targets_list}, unable to execute action pipeline."
-                )
+                format!("No tasks found.")
             };
 
             self.console.render_err(element! {
                 Container {
                     Notice(variant: Variant::Caution) {
-                        StyledText(content: message)
+                        StyledText(content: format!("{message} Unable to execute action pipeline."))
 
                         #(self.args.query.as_ref().map(|query| {
                             element! {
                                 StyledText(content: format!("Using query <shell>{query}</shell>."))
+                            }
+                        }))
+
+                        #((self.args.targets.len() < 15).then(|| {
+                            element! {
+                                StyledText(
+                                    content: format!(
+                                        "For targets {}.",
+                                        self
+                                            .args
+                                            .targets
+                                            .iter()
+                                            .map(|target| format!("<id>{}</id>", target.as_str()))
+                                            .collect::<Vec<_>>()
+                                            .join(", ")
+                                    )
+                                )
                             }
                         }))
                     }
@@ -395,7 +402,7 @@ impl ExecWorkflow {
 
         // Insert targets into the graph
         let partition = action_graph_builder
-            .run_tasks_with_partitioning(
+            .run_tasks(
                 &self.args.targets,
                 RunRequirements {
                     ci: self.ci_env,

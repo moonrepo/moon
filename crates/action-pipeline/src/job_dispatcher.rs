@@ -44,6 +44,7 @@ impl<'graph> JobDispatcher<'graph> {
         // completed before dispatching
         if self
             .graph
+            .graph()
             .neighbors_directed(index, Direction::Outgoing)
             .all(|dep_index| completed.contains(&dep_index))
         {
@@ -53,7 +54,11 @@ impl<'graph> JobDispatcher<'graph> {
         // If not all dependencies have completed yet,
         // attempt to find a dependency to run
         if group < 2 {
-            for dep_index in self.graph.neighbors_directed(index, Direction::Outgoing) {
+            for dep_index in self
+                .graph
+                .graph()
+                .neighbors_directed(index, Direction::Outgoing)
+            {
                 if let Some(index) = self.find_applicable_index(group, dep_index, completed) {
                     return Some(index);
                 }

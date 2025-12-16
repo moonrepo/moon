@@ -1,0 +1,13 @@
+---
+source: crates/action-graph/tests/action_graph_builder_test.rs
+expression: graph.to_dot()
+---
+digraph {
+    0 [ label="SyncWorkspace"]
+    1 [ label="SyncProject(partition)"]
+    2 [ label="RunTask(partition:task-8)"]
+    3 [ label="RunTask(partition:task-9)"]
+    1 -> 0 [ label="required"]
+    2 -> 1 [ label="required"]
+    3 -> 1 [ label="required"]
+}

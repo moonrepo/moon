@@ -1,9 +1,5 @@
-#![allow(dead_code)]
-
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
-use moon_task::TargetLocator;
-use moon_vcs::ChangedStatus;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -83,50 +79,4 @@ pub enum AppError {
         "An identifier is required and must be explicitly provided as a positional argument in non-TTY environments."
     )]
     RequiredIdNonTTY,
-
-    #[diagnostic(code(app::exec::no_tasks))]
-    #[error(
-        "No tasks found for provided targets {}, unable to execute action pipeline.{}",
-        .targets
-            .iter()
-            .map(|target| target.as_str().to_string().style(Style::Id))
-            .collect::<Vec<_>>()
-            .join(", "),
-        .query
-            .as_ref()
-            .map(|q| format!("\nUsing query {}.", q.style(Style::Shell)))
-            .unwrap_or_default()
-    )]
-    NoExecTasks {
-        targets: Vec<TargetLocator>,
-        query: Option<String>,
-    },
-
-    #[diagnostic(code(app::exec::no_affected_tasks))]
-    #[error(
-        "Tasks {} not affected by changed files with status {}, unable to execute action pipeline.{}",
-        .targets
-            .iter()
-            .map(|target| target.as_str().to_string().style(Style::Id))
-            .collect::<Vec<_>>()
-            .join(", "),
-        if .status.is_empty() {
-            "all".style(Style::Symbol)
-        } else {
-            .status
-                .iter()
-                .map(|status| status.to_string().style(Style::Symbol))
-                .collect::<Vec<_>>()
-                .join(", ")
-        },
-        .query
-            .as_ref()
-            .map(|q| format!("\nUsing query {}.", q.style(Style::Shell)))
-            .unwrap_or_default()
-    )]
-    NoExecAffectedTasks {
-        targets: Vec<TargetLocator>,
-        status: Vec<ChangedStatus>,
-        query: Option<String>,
-    },
 }

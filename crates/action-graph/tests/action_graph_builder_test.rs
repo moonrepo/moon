@@ -2252,6 +2252,105 @@ mod action_graph_builder {
         }
     }
 
+    mod run_tasks {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_partition_if_no_job() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            // 0
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_tasks(
+                    vec![TargetLocator::parse("partition:task-*").unwrap()],
+                    RunRequirements::default(),
+                )
+                .await
+                .unwrap();
+
+            let (context, _) = builder.build();
+
+            assert_eq!(context.primary_targets.len(), 10);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn partitions_by_job() {
+            let sandbox = create_sandbox("tasks");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            // 0
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_tasks(
+                    vec![TargetLocator::parse("partition:task-*").unwrap()],
+                    RunRequirements {
+                        job: Some(0),
+                        job_total: Some(3),
+                        ..Default::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_eq!(context.primary_targets.len(), 4);
+            assert_snapshot!(graph.to_dot());
+
+            // 1
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_tasks(
+                    vec![TargetLocator::parse("partition:task-*").unwrap()],
+                    RunRequirements {
+                        job: Some(1),
+                        job_total: Some(3),
+                        ..Default::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_eq!(context.primary_targets.len(), 4);
+            assert_snapshot!(graph.to_dot());
+
+            // 2
+            let mut builder = container
+                .create_builder(container.create_workspace_graph().await)
+                .await;
+
+            builder
+                .run_tasks(
+                    vec![TargetLocator::parse("partition:task-*").unwrap()],
+                    RunRequirements {
+                        job: Some(2),
+                        job_total: Some(3),
+                        ..Default::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_eq!(context.primary_targets.len(), 2);
+            assert_snapshot!(graph.to_dot());
+        }
+    }
+
     mod setup_toolchain {
         use super::*;
 

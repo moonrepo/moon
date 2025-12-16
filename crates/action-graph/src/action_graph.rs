@@ -1,4 +1,5 @@
 use crate::action_graph_error::ActionGraphError;
+use daggy::Dag;
 use graph_cycles::Cycles;
 use moon_action::ActionNode;
 use moon_config::TaskDependencyType;
@@ -7,7 +8,7 @@ use petgraph::prelude::*;
 use std::collections::BTreeMap;
 use tracing::debug;
 
-pub type ActionGraphType = DiGraph<ActionNode, TaskDependencyType>;
+pub type ActionGraphType = Dag<ActionNode, TaskDependencyType>;
 
 pub struct ActionGraph {
     graph: ActionGraphType,
@@ -29,7 +30,7 @@ impl ActionGraph {
     }
 
     pub fn get_nodes(&self) -> Vec<&ActionNode> {
-        self.graph.node_weights().collect()
+        self.graph.graph().node_weights().collect()
     }
 
     pub fn get_node_count(&self) -> usize {
@@ -41,7 +42,9 @@ impl ActionGraph {
     }
 
     pub fn labeled_graph(&self) -> DiGraph<String, String> {
-        self.graph.map(|_, n| n.label(), |_, _| String::new())
+        self.graph
+            .map(|_, n| n.label(), |_, _| String::new())
+            .into_graph()
     }
 
     pub fn group_priorities(&self, topo_indices: Vec<NodeIndex>) -> BTreeMap<u8, Vec<NodeIndex>> {
@@ -132,7 +135,7 @@ impl ActionGraph {
 
 impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
     fn get_graph(&self) -> &DiGraph<ActionNode, TaskDependencyType> {
-        &self.graph
+        self.graph.graph()
     }
 
     fn get_node_key(&self, node: &ActionNode) -> String {

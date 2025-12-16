@@ -47,6 +47,9 @@ This paves the way for future commands that can leverage `moon exec`, such as a 
 $ moon exec app:build --dependents direct
 ```
 
+Additionally, it allows these other commands to inherit functionality they didn't support
+previously, like job parallelization, affected filtering, and more.
+
 ### Updated `ci`, `check`, and `run` commands
 
 As mentioned previously, all of these commands have been reworked to use `moon exec` under the hood.

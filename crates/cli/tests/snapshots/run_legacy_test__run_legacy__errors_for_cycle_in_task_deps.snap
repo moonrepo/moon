@@ -2,7 +2,8 @@
 source: crates/cli/tests/run_legacy_test.rs
 expression: assert.output()
 ---
-Error: action_graph::cycle_detected
+Error: action_graph::would_cycle
 
-  × A dependency cycle has been detected for RunTask(depsC:taskCycle) →
-  │ RunTask(depsA:taskCycle) → RunTask(depsB:taskCycle).
+  × Unable to create action graph, adding a relationship from action
+  │ RunTask(depsA:taskCycle) to RunTask(depsB:taskCycle) would introduce a
+  │ cycle.

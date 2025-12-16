@@ -23,6 +23,7 @@ moon_task_args = { path = "../task-args" }
 moon_toolchain = { path = "../toolchain" }
 moon_query = { path = "../query" }
 moon_workspace_graph = { path = "../workspace-graph" }
+daggy = { workspace = true }
 graph-cycles = "0.3.0"
 miette = { workspace = true }
 petgraph = { workspace = true }

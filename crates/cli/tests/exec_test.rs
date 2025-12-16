@@ -381,9 +381,9 @@ mod exec {
                 cmd.arg("exec").arg(":unknown");
             });
 
-            assert.failure().stderr(predicate::str::contains(
-                "No tasks found for provided targets :unknown",
-            ));
+            assert
+                .failure()
+                .stderr(predicate::str::contains("No tasks found"));
         }
 
         #[test]

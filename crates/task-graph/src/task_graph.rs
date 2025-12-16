@@ -1,3 +1,4 @@
+use daggy::Dag;
 use moon_common::Id;
 use moon_config::TaskDependencyType;
 use moon_graph_utils::*;
@@ -11,7 +12,7 @@ use rustc_hash::FxHashMap;
 use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use tracing::{debug, instrument};
 
-pub type TaskGraphType = DiGraph<Task, TaskDependencyType>;
+pub type TaskGraphType = Dag<Task, TaskDependencyType>;
 pub type TasksCache = FxHashMap<Target, Arc<Task>>;
 
 #[derive(Clone, Debug, Default)]
@@ -138,9 +139,21 @@ impl TaskGraph {
             }
         }
 
+        let mut dag = Dag::new();
+        let (nodes, edges) = graph.into_nodes_edges();
+
+        for node in nodes {
+            dag.add_node(node.weight);
+        }
+
+        for edge in edges {
+            dag.update_edge(edge.source(), edge.target(), edge.weight)
+                .unwrap();
+        }
+
         Ok(Self {
             context: self.context.clone(),
-            graph,
+            graph: dag,
             metadata,
             project_graph: self.project_graph.clone(),
             tasks: self.tasks.clone(),
@@ -183,7 +196,7 @@ impl TaskGraph {
 
 impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
     fn get_graph(&self) -> &DiGraph<Task, TaskDependencyType> {
-        &self.graph
+        self.graph.graph()
     }
 
     fn get_node_key(&self, node: &Task) -> Target {

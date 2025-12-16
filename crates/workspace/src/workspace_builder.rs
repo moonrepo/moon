@@ -4,6 +4,7 @@ use crate::repo_type::RepoType;
 use crate::tasks_querent::*;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use crate::workspace_cache::*;
+use daggy::Dag;
 use miette::IntoDiagnostic;
 use moon_cache::CacheEngine;
 use moon_common::{
@@ -23,7 +24,7 @@ use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relation
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
 use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskMetadata};
+use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
@@ -74,7 +75,7 @@ pub struct WorkspaceBuilder<'app> {
     project_data: FxHashMap<Id, ProjectBuildData>,
 
     /// The project DAG.
-    project_graph: DiGraph<NodeState<Project>, DependencyScope>,
+    project_graph: Dag<NodeState<Project>, DependencyScope>,
 
     /// Projects that have explicitly renamed themselves with the `id` setting.
     /// Maps original ID to renamed ID.
@@ -92,7 +93,7 @@ pub struct WorkspaceBuilder<'app> {
     task_data: FxHashMap<Target, TaskBuildData>,
 
     /// The task DAG.
-    task_graph: DiGraph<NodeState<Task>, TaskDependencyType>,
+    task_graph: Dag<NodeState<Task>, TaskDependencyType>,
 }
 
 impl<'app> WorkspaceBuilder<'app> {
@@ -108,12 +109,12 @@ impl<'app> WorkspaceBuilder<'app> {
             aliases: FxHashMap::default(),
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
-            project_graph: DiGraph::default(),
+            project_graph: Dag::new(),
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
             task_data: FxHashMap::default(),
-            task_graph: DiGraph::default(),
+            task_graph: Dag::new(),
         };
 
         graph.preload_build_data().await?;
@@ -372,7 +373,12 @@ impl<'app> WorkspaceBuilder<'app> {
             if let Some(dep) = Box::pin(self.internal_load_project(&dep_config.id, cycle)).await? {
                 // Don't link the root project to any project, but still load it
                 if !dep_config.is_root_scope() {
-                    self.project_graph.add_edge(index, dep.1, dep_config.scope);
+                    self.project_graph
+                        .add_edge(index, dep.1, dep_config.scope)
+                        .map_err(|_| ProjectGraphError::WouldCycle {
+                            source_id: id.to_string(),
+                            target_id: dep.0.to_string(),
+                        })?;
                 }
             }
         }
@@ -470,8 +476,8 @@ impl<'app> WorkspaceBuilder<'app> {
     pub async fn load_tasks(&mut self) -> miette::Result<()> {
         let mut targets = vec![];
 
-        for weight in self.project_graph.node_weights() {
-            if let NodeState::Loaded(project) = weight {
+        for node in self.project_graph.raw_nodes() {
+            if let NodeState::Loaded(project) = &node.weight {
                 for task in project.tasks.values() {
                     targets.push(task.target.clone());
                 }
@@ -564,15 +570,20 @@ impl<'app> WorkspaceBuilder<'app> {
             if let Some(dep_index) =
                 Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?
             {
-                self.task_graph.add_edge(
-                    index,
-                    dep_index,
-                    if dep_config.optional.is_some_and(|v| v) {
-                        TaskDependencyType::Optional
-                    } else {
-                        TaskDependencyType::Required
-                    },
-                );
+                self.task_graph
+                    .add_edge(
+                        index,
+                        dep_index,
+                        if dep_config.optional.is_some_and(|v| v) {
+                            TaskDependencyType::Optional
+                        } else {
+                            TaskDependencyType::Required
+                        },
+                    )
+                    .map_err(|_| TaskGraphError::WouldCycle {
+                        source_target: task.target.to_string(),
+                        target_target: dep_config.target.to_string(),
+                    })?;
             }
         }
 
@@ -637,6 +648,7 @@ impl<'app> WorkspaceBuilder<'app> {
 
             let deps: Vec<_> = self
                 .project_graph
+                .graph()
                 .neighbors_directed(project_index, Direction::Outgoing)
                 .flat_map(|dep_index| {
                     self.project_graph.node_weight(dep_index).and_then(|dep| {

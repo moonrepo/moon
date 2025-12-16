@@ -53,11 +53,19 @@ macro_rules! insert_node_or_exit {
 
 #[derive(Debug, Default)]
 pub struct RunRequirements {
-    pub ci: bool,            // Are we in a CI environment
-    pub ci_check: bool,      // Check the `runInCI` option
-    pub dependents: bool,    // Run dependent tasks as well
-    pub interactive: bool,   // Entire pipeline is interactive
-    pub skip_affected: bool, // Skip all affected checks
+    pub ci: bool,                 // Are we in a CI environment
+    pub ci_check: bool,           // Check the `runInCI` option
+    pub dependents: bool,         // Run dependent tasks as well
+    pub interactive: bool,        // Entire pipeline is interactive
+    pub job: Option<usize>,       // Current job index
+    pub job_total: Option<usize>, // Total amount of jobs
+    pub skip_affected: bool,      // Skip all affected checks
+}
+
+#[derive(Debug, Default)]
+pub struct RunPartition {
+    pub targets: FxHashMap<NodeIndex, Target>,
+    pub size: Option<usize>,
 }
 
 pub struct ActionGraphBuilderOptions {
@@ -436,6 +444,63 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     #[instrument(skip(self))]
+    pub async fn run_tasks_with_partitioning<
+        I: IntoIterator<Item = T> + Debug,
+        T: AsRef<TargetLocator> + Debug,
+    >(
+        &mut self,
+        locators: I,
+        reqs: RunRequirements,
+    ) -> miette::Result<RunPartition> {
+        let mut tasks = vec![];
+        let mut partition = RunPartition::default();
+
+        for locator in locators {
+            tasks.extend(
+                self.internal_resolve_tasks_from_target_locator(locator.as_ref(), false)
+                    .await?,
+            );
+        }
+
+        if let Some(job_index) = reqs.job
+            && let Some(job_total) = reqs.job_total
+        {
+            let size = tasks.len().div_ceil(job_total);
+            let (start, stop) =
+                // beginning
+                if job_index == 0 {
+                    (0, size)
+                }
+                // end
+                else if job_index == job_total - 1 {
+                    ((size * job_index), tasks.len())
+                }
+                // middle
+                else {
+                    ((size * job_index), (size * (job_index + 1)))
+                };
+
+            if tasks.get(start).is_some() {
+                if tasks.get(stop).is_some() {
+                    tasks = tasks[start..stop].to_vec();
+                } else {
+                    tasks = tasks[start..].to_vec();
+                }
+            }
+
+            partition.size = Some(size);
+        }
+
+        for task in tasks {
+            if let Some(index) = self.run_task(&task, &reqs).await? {
+                partition.targets.insert(index, task.target.clone());
+            }
+        }
+
+        Ok(partition)
+    }
+
+    #[instrument(skip(self))]
     pub async fn run_task_dependencies(
         &mut self,
         task: &Task,
@@ -693,6 +758,8 @@ impl<'query> ActionGraphBuilder<'query> {
             ci_check: reqs.ci_check,
             dependents: false,
             interactive: reqs.interactive,
+            job: None,
+            job_total: None,
             skip_affected: false,
         };
 

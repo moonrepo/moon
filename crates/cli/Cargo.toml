@@ -2,8 +2,18 @@
 name = "moon_cli"
 version = "1.41.8"
 edition = "2024"
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
 publish = false
 default-run = "moon"
+
+[package.metadata.dist]
+dist = true
+
+[package.metadata.release]
+pre-release-replacements = [
+	{ file = "../../CHANGELOG.md", search = "Unreleased", replace = "{{version}}" },
+]
 
 [[bin]]
 name = "moon"

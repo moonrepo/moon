@@ -4,8 +4,8 @@ Contributions are always welcome, no matter how large or small!
 
 ## Prerequisites
 
-- Node.js >= v14.15
-- Rust >= 1.61
+- Node.js >= v22.14
+- Rust >= 1.92
 - Git >= 2.28 (for `test-coverage`)
 - Just
 
@@ -13,7 +13,8 @@ Contributions are always welcome, no matter how large or small!
 
 On your first checkout of the repository, you'll need to install dependencies and build the project.
 
-Before following the rest of this guide you will need to install [Just](https://github.com/casey/just)
+Before following the rest of this guide you will need to install
+[Just](https://github.com/casey/just)
 
 ### Rust
 
@@ -41,7 +42,7 @@ Contributing to our `@moonrepo` npm packages requires Node.js and Yarn. We sugge
 proto install node
 proto install yarn
 # or
-proto use
+proto install
 ```
 
 Once setup, install dependencies build initial packages.

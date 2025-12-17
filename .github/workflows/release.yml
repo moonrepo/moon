@@ -40,6 +40,8 @@ permissions:
 # will be marked as a prerelease.
 on:
   pull_request:
+    branches:
+      - develop-*
   push:
     tags:
       - "moon_cli-v[0-9]+.[0-9]+.[0-9]+*"

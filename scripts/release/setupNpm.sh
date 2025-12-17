@@ -12,7 +12,7 @@ if [ -d ".yarn/versions" ]; then
 	yarn version apply --all
 fi
 
-if [[ "$NPM_CHANNEL" == "canary" || "$NPM_CHANNEL" == "nightly" ]]; then
+if [[ "$NPM_CHANNEL" == "canary" ]]; then
 	buildMetadata="-$NPM_CHANNEL.$(date +%Y%m%d%H%M)"
 
 	echo "Detected \"$NPM_CHANNEL\" build, appending build metadata to versions"

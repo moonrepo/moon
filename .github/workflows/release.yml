@@ -41,9 +41,11 @@ permissions:
 on:
   pull_request:
     branches:
-      - develop-*
+      # Only run when targeting the default branch
+      - master
   push:
     tags:
+      # Only release for the CLI crate
       - "moon_cli-v[0-9]+.[0-9]+.[0-9]+*"
 
 jobs:

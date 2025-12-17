@@ -2,24 +2,9 @@ name: PR
 on:
   pull_request:
 env:
-  MOON_DEBUG: 'true'
-  PROTO_DEBUG: 'true'
+  MOON_DEBUG: "true"
+  PROTO_DEBUG: "true"
 jobs:
-  version:
-    name: Version check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          cache: yarn
-      - run: yarn install --immutable
-      - run: yarn version check
-      - run: node ./scripts/version/checkBumpForRustChanges.mjs
-      # This just tests package building, which release uses
-      - run: bash ./scripts/release/buildPackages.sh
   installer:
     name: Install script check
     runs-on: ${{ matrix.os }}

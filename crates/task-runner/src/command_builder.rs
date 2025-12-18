@@ -1,3 +1,4 @@
+use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
@@ -8,6 +9,7 @@ use moon_process::{Command, Shell, ShellType};
 use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
 use moon_task::Task;
+use std::env;
 use std::path::Path;
 use tracing::{debug, instrument, trace};
 
@@ -241,11 +243,13 @@ impl<'task> CommandBuilder<'task> {
                 if rel_files.is_empty() {
                     ".".into()
                 } else {
-                    rel_files
-                        .iter()
-                        .map(|file| file.as_str())
-                        .collect::<Vec<_>>()
-                        .join(",")
+                    env::join_paths(
+                        rel_files
+                            .iter()
+                            .map(|file| file.as_str())
+                            .collect::<Vec<_>>(),
+                    )
+                    .into_diagnostic()?
                 },
             );
         }

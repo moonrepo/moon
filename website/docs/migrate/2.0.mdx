@@ -321,6 +321,12 @@ tasks:
       shell: false
 ```
 
+### Other changes
+
+- When `options.affectedFiles` is enabled, the list of files will be joined with the OS path
+  separator (`:` on Unix, `;` on Windows) instead of a comma (`,`) when passed as the
+  `MOON_AFFECTED_FILES` environment variable.
+
 ## Task inheritance
 
 ### Deep merged instead of shallow merged

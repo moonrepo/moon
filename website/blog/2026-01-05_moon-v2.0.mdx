@@ -363,6 +363,24 @@ tasks:
       mergeToolchains: 'replace'
 ```
 
+### Robust env files
+
+Tasks have supported `.env` files for a while now, but the implementation has been somewhat limited.
+We only supported the `.env` file with the ability for you to customize with an explicit list of
+files. This was cumbersome and didn't allow for much flexibility.
+
+Going forward, when using `envFile: true`, moon will now automatically look for the following files
+in order, and load them if they exist:
+
+- `/.env`
+- `/.env.local`
+- `.env`
+- `.env.local`
+- `.env.<task_id>`
+- `.env.<task_id>.local`
+
+Additionally, `*.local` files will only be loaded locally, and not in CI environments.
+
 ### New `utility` preset
 
 Task presets are helpful as the provide a set of default options and behaviors for common task

@@ -660,7 +660,14 @@ tasks:
 
             assert_eq!(
                 task.options.env_files,
-                Some(vec![Input::File(stub_file_input(".env"))])
+                Some(vec![
+                    Input::File(stub_file_input("/.env")),
+                    Input::File(stub_file_input("/.env.local")),
+                    Input::File(stub_file_input(".env")),
+                    Input::File(stub_file_input(".env.local")),
+                    Input::File(stub_file_input(".env.env-file")),
+                    Input::File(stub_file_input(".env.env-file.local")),
+                ])
             );
 
             let task = tasks.get("no-env-file").unwrap();

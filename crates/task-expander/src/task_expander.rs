@@ -1,6 +1,6 @@
 use crate::task_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
-use moon_common::color;
+use moon_common::{color, is_ci};
 use moon_config::{Input, TaskArgs};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
@@ -175,10 +175,27 @@ impl<'graph> TaskExpander<'graph> {
             );
 
             let mut merged_env_vars = FxHashMap::default();
+            let ci = is_ci();
 
             // The file may not have been committed, so avoid crashing
             for env_path in env_paths {
                 if env_path.exists() {
+                    // Skip local only env files
+                    if ci
+                        && env_path
+                            .file_name()
+                            .and_then(|name| name.to_str())
+                            .is_some_and(|name| name.ends_with(".local"))
+                    {
+                        trace!(
+                            task_target = task.target.as_str(),
+                            env_file = ?env_path,
+                            "Skipping .env file because we're in CI and it's local only",
+                        );
+
+                        continue;
+                    }
+
                     trace!(
                         task_target = task.target.as_str(),
                         env_file = ?env_path,

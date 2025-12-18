@@ -4,7 +4,7 @@ use crate::tasks_builder_error::TasksBuilderError;
 use indexmap::{IndexMap, IndexSet};
 use moon_common::{
     Id, color,
-    path::{WorkspaceRelativePath, is_root_level_source},
+    path::{WorkspaceRelativePath, encode_component, is_root_level_source},
 };
 use moon_config::{
     ConfigLoader, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
@@ -14,7 +14,7 @@ use moon_config::{
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
-use moon_task::{Task, TaskOptions};
+use moon_task::{Task, TaskOptionEnvFile, TaskOptions};
 use moon_task_args::parse_task_args;
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
@@ -600,7 +600,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env_file) = &config.env_file {
-                options.env_files = env_file.to_inputs();
+                options.env_files = self.resolve_env_files(id, env_file)?;
             }
 
             if let Some(infer_inputs) = &config.infer_inputs {
@@ -711,6 +711,42 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         Ok(options)
+    }
+
+    fn resolve_env_files(
+        &self,
+        task_id: &Id,
+        option: &TaskOptionEnvFile,
+    ) -> miette::Result<Option<Vec<Input>>> {
+        let mut list = vec![];
+
+        match option {
+            TaskOptionEnvFile::Enabled(true) => {
+                let encoded_task_id = encode_component(task_id);
+
+                for path in [
+                    "/.env".to_owned(),
+                    "/.env.local".to_owned(),
+                    ".env".to_owned(),
+                    ".env.local".to_owned(),
+                    format!(".env.{encoded_task_id}"),
+                    format!(".env.{encoded_task_id}.local"),
+                ] {
+                    list.push(Input::parse(&path)?);
+                }
+            }
+            TaskOptionEnvFile::Enabled(false) => {}
+            TaskOptionEnvFile::File(path) => {
+                list.push(Input::parse(path.as_str())?);
+            }
+            TaskOptionEnvFile::Files(paths) => {
+                for path in paths {
+                    list.push(Input::parse(path.as_str())?);
+                }
+            }
+        };
+
+        Ok(if list.is_empty() { None } else { Some(list) })
     }
 
     fn resolve_task_inputs(&self, task: &mut Task) -> miette::Result<()> {

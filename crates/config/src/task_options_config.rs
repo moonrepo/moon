@@ -1,4 +1,4 @@
-use crate::shapes::{FilePath, Input, OneOrMany};
+use crate::shapes::{FilePath, OneOrMany};
 use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
 use schematic::schema::{StringType, UnionType};
 use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
@@ -76,22 +76,6 @@ config_enum!(
         Files(Vec<FilePath>),
     }
 );
-
-impl TaskOptionEnvFile {
-    pub fn to_inputs(&self) -> Option<Vec<Input>> {
-        match self {
-            TaskOptionEnvFile::Enabled(true) => Some(vec![Input::parse(".env").unwrap()]),
-            TaskOptionEnvFile::Enabled(false) => None,
-            TaskOptionEnvFile::File(path) => Input::parse(path.as_str()).ok().map(|p| vec![p]),
-            TaskOptionEnvFile::Files(paths) => Some(
-                paths
-                    .iter()
-                    .flat_map(|path| Input::parse(path.as_str()).ok())
-                    .collect(),
-            ),
-        }
-    }
-}
 
 impl Schematic for TaskOptionEnvFile {
     fn schema_name() -> Option<String> {

@@ -4,7 +4,7 @@ use moon_pdk_api::{
     ExecCommandInput, Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput,
     ExtendTaskScriptInput, ExtendTaskScriptOutput,
 };
-use moon_process::{Command, CommandEnvMode};
+use moon_process::{Command, CommandEnvVar};
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{
@@ -60,15 +60,6 @@ impl<'app> AugmentedCommand<'app> {
     pub fn from_task(context: &'app AppContext, bag: &'app GlobalEnvBag, task: &Task) -> Self {
         let mut builder = Self::new(context, bag, &task.command);
 
-        builder.env_order(vec![
-            // Don't auto inherit parent env vars
-            CommandEnvMode::NoParent,
-            // Then set task env vars
-            CommandEnvMode::Child,
-            // Then inherit parent env vars as they take precedence
-            CommandEnvMode::Parent,
-        ]);
-
         if let Some(script) = &task.script {
             builder.set_script(script);
         } else {
@@ -76,7 +67,15 @@ impl<'app> AugmentedCommand<'app> {
         }
 
         for (key, value) in &task.env {
-            builder.env_opt(key, value.as_deref());
+            builder.env_as(
+                key,
+                match value {
+                    // Only set if global var not set
+                    Some(val) => CommandEnvVar::SetIfMissing(OsString::from(val)),
+                    // Don't inherit global var
+                    None => CommandEnvVar::Unset,
+                },
+            );
         }
 
         builder

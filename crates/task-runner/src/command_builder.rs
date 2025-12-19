@@ -210,7 +210,7 @@ impl<'task> CommandBuilder<'task> {
                     // Overwrite previous values
                     env_vars.extend(
                         DotEnv::default()
-                            .with_command_vars(&self.command.env)
+                            // .with_command_vars(&self.command.env)
                             .load_file(&env_path)?,
                     );
                 } else {

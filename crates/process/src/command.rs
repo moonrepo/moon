@@ -7,17 +7,33 @@ use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
 use std::sync::Arc;
 
-#[derive(Debug)]
-pub enum CommandEnvMode {
-    NoParent,
-    Parent,
-    Child,
+#[derive(Debug, PartialEq)]
+pub enum CommandEnvVar {
+    /// Always set and overwrite global var
+    Set(OsString),
+
+    /// Only set if global var is not set
+    SetIfMissing(OsString),
+
+    /// Unset global var and don't inherit
+    Unset,
+}
+
+impl CommandEnvVar {
+    pub fn get_value(&self) -> Option<&OsString> {
+        match self {
+            CommandEnvVar::Set(value) => Some(value),
+            CommandEnvVar::SetIfMissing(value) => Some(value),
+            CommandEnvVar::Unset => None,
+        }
+    }
 }
 
 #[derive(Debug)]
 pub enum CommandExecutable {
     /// Single file name: git
     Binary(OsString),
+
     /// Full script: git commit --allow-empty
     Script(OsString),
 }
@@ -44,10 +60,7 @@ pub struct Command {
 
     pub cwd: Option<OsString>,
 
-    pub env: FxHashMap<OsString, Option<OsString>>,
-
-    /// Order in which to inherit/apply environment variables
-    pub env_order: Vec<CommandEnvMode>,
+    pub env: FxHashMap<OsString, CommandEnvVar>,
 
     pub exe: CommandExecutable,
 
@@ -83,7 +96,6 @@ impl Command {
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
-            env_order: vec![CommandEnvMode::Child],
             exe: CommandExecutable::Binary(bin.as_ref().to_os_string()),
             error_on_nonzero: true,
             escape_args: true,
@@ -152,6 +164,14 @@ impl Command {
         self
     }
 
+    pub fn env_as<K>(&mut self, key: K, value: CommandEnvVar) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+    {
+        self.env.insert(key.as_ref().to_os_string(), value);
+        self
+    }
+
     pub fn env<K, V>(&mut self, key: K, value: V) -> &mut Self
     where
         K: AsRef<OsStr>,
@@ -165,24 +185,20 @@ impl Command {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
-        self.env.insert(
-            key.as_ref().to_os_string(),
-            value.map(|v| v.as_ref().to_os_string()),
-        );
-        self
+        self.env_as(
+            key,
+            match value {
+                Some(v) => CommandEnvVar::Set(v.as_ref().to_os_string()),
+                None => CommandEnvVar::Unset,
+            },
+        )
     }
 
     pub fn env_remove<K>(&mut self, key: K) -> &mut Self
     where
         K: AsRef<OsStr>,
     {
-        self.env.insert(key.as_ref().to_os_string(), None);
-        self
-    }
-
-    pub fn env_order(&mut self, order: Vec<CommandEnvMode>) -> &mut Self {
-        self.env_order = order;
-        self
+        self.env_as(key, CommandEnvVar::Unset)
     }
 
     pub fn envs<I, K, V>(&mut self, vars: I) -> &mut Self
@@ -336,9 +352,12 @@ impl Command {
 
         for (key, value) in &self.env {
             write(key);
-            if let Some(value) = value {
-                write(value);
-            }
+
+            match value {
+                CommandEnvVar::Set(value) => write(value),
+                CommandEnvVar::SetIfMissing(value) => write(value),
+                CommandEnvVar::Unset => {}
+            };
         }
 
         match &self.exe {

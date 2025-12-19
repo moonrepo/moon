@@ -18,6 +18,7 @@ pub enum QuoteStyle {
 #[derive(Default)]
 pub struct DotEnv<'a> {
     command_vars: FxHashMap<&'a OsString, &'a Option<OsString>>,
+    global_vars: Option<&'a GlobalEnvBag>,
 }
 
 impl<'a> DotEnv<'a> {
@@ -26,6 +27,11 @@ impl<'a> DotEnv<'a> {
         I: IntoIterator<Item = (&'a OsString, &'a Option<OsString>)>,
     {
         self.command_vars.extend(vars.into_iter());
+        self
+    }
+
+    pub fn with_global_vars(mut self, vars: &'a GlobalEnvBag) -> Self {
+        self.global_vars = Some(vars);
         self
     }
 
@@ -55,7 +61,7 @@ impl<'a> DotEnv<'a> {
                 if quote == QuoteStyle::Single {
                     value
                 } else {
-                    self.expand_value(value, &vars)
+                    self.substitute_value(value, &vars)
                 },
             );
         }
@@ -130,9 +136,7 @@ impl<'a> DotEnv<'a> {
     }
 
     // https://dotenvx.com/docs/env-file#interpolation
-    pub fn expand_value(&self, value: String, env: &FxHashMap<String, String>) -> String {
-        let bag = GlobalEnvBag::instance();
-
+    pub fn substitute_value(&self, value: String, env: &FxHashMap<String, String>) -> String {
         let get_expanded_value = |key: &str| {
             // Command/task first as they take predence over .env files
             if let Some(Some(val)) = self.command_vars.get(&OsString::from(key)) {
@@ -145,14 +149,24 @@ impl<'a> DotEnv<'a> {
             }
 
             // Otherwise the global process last
-            if let Some(val) = bag.get(key) {
+            if let Some(bag) = &self.global_vars
+                && let Some(val) = bag.get(key)
+            {
                 return Cow::Owned(val);
             }
 
             Cow::Owned(String::new())
         };
 
-        // Expand brackets first
+        // Expand non-brackets first
+        let value = ENV_VAR.replace_all(&value, |caps: &Captures| {
+            match caps.name("name").map(|cap| cap.as_str()) {
+                Some(name) => get_expanded_value(name).to_string(),
+                None => String::new(),
+            }
+        });
+
+        // Expand brackets last
         let value = ENV_VAR_BRACKETS.replace_all(&value, |caps: &Captures| {
             let Some(name) = caps.name("name").map(|cap| cap.as_str()) else {
                 return String::new();
@@ -165,13 +179,13 @@ impl<'a> DotEnv<'a> {
 
             match caps.name("flag").map(|cap| cap.as_str()) {
                 // Don't expand
-                Some("!") => caps.get(0).unwrap().as_str().to_owned(),
+                Some("!") => format!("${name}"),
                 // Only expand if not empty
                 Some("?") => {
                     let value = get_expanded_value(name);
 
                     if value.is_empty() {
-                        caps.get(0).unwrap().as_str().to_owned()
+                        format!("${name}")
                     } else {
                         value.to_string()
                     }
@@ -198,14 +212,6 @@ impl<'a> DotEnv<'a> {
                 }
                 // Expand
                 _ => get_expanded_value(name).to_string(),
-            }
-        });
-
-        // Expand non-brackets last
-        let value = ENV_VAR.replace_all(&value, |caps: &Captures| {
-            match caps.name("name").map(|cap| cap.as_str()) {
-                Some(name) => get_expanded_value(name).to_string(),
-                None => String::new(),
             }
         });
 

@@ -1,5 +1,7 @@
-use moon_env_var::DotEnv;
-use moon_env_var::QuoteStyle;
+use moon_env_var::{DotEnv, GlobalEnvBag, QuoteStyle};
+use rustc_hash::FxHashMap;
+use std::ffi::OsString;
+use std::path::Path;
 
 mod dotenv {
     use super::*;
@@ -198,5 +200,184 @@ mod dotenv {
             dot.parse_value("\"let\"s go\"").unwrap(),
             ("let\"s go".to_owned(), QuoteStyle::Double)
         );
+    }
+
+    #[test]
+    fn expand_uses_precedence_command_over_local_over_global() {
+        let key = OsString::from("SOURCE");
+        let cmd_val = Some(OsString::from("cmd"));
+
+        let mut env = FxHashMap::default();
+        env.insert("SOURCE".to_owned(), "local".to_owned());
+
+        let global = GlobalEnvBag::default();
+        global.set("SOURCE", "global");
+
+        assert_eq!(
+            DotEnv::default()
+                .with_command_vars(vec![(&key, &cmd_val)])
+                .with_global_vars(&global)
+                .substitute_value("$SOURCE".to_string(), &env),
+            "cmd"
+        );
+    }
+
+    #[test]
+    fn expand_ignores_none_command_var() {
+        let key = OsString::from("A");
+        let none_val: Option<OsString> = None;
+
+        let mut env = FxHashMap::default();
+        env.insert("A".to_owned(), "local".to_owned());
+
+        assert_eq!(
+            DotEnv::default()
+                .with_command_vars(vec![(&key, &none_val)])
+                .substitute_value("$A".to_string(), &env),
+            "local"
+        );
+    }
+
+    #[test]
+    fn expand_bracket_flags_and_fallbacks() {
+        let dot = DotEnv::default();
+
+        let mut env = FxHashMap::default();
+        env.insert("PRESENT".to_owned(), "value".to_owned());
+        env.insert("EMPTY".to_owned(), "".to_owned());
+
+        // ! flag: do not expand
+        assert_eq!(
+            dot.substitute_value("${PRESENT!}".to_string(), &env),
+            "$PRESENT"
+        );
+
+        // ? flag: expand only if not empty
+        assert_eq!(
+            dot.substitute_value("${PRESENT?}".to_string(), &env),
+            "value"
+        );
+        assert_eq!(
+            dot.substitute_value("${EMPTY?}".to_string(), &env),
+            "$EMPTY"
+        );
+        assert_eq!(
+            dot.substitute_value("${MISSING?}".to_string(), &env),
+            "$MISSING"
+        );
+
+        // : with default -fallback (use when empty/missing)
+        assert_eq!(
+            dot.substitute_value("${EMPTY:-fallback}".to_string(), &env),
+            "fallback"
+        );
+        assert_eq!(
+            dot.substitute_value("${PRESENT:-fallback}".to_string(), &env),
+            "value"
+        );
+        assert_eq!(
+            dot.substitute_value("${MISSING:-fallback}".to_string(), &env),
+            "fallback"
+        );
+
+        // : with alternate +alt (use alt when non-empty)
+        assert_eq!(
+            dot.substitute_value("${PRESENT:+alt}".to_string(), &env),
+            "alt"
+        );
+        assert_eq!(dot.substitute_value("${EMPTY:+alt}".to_string(), &env), "");
+        assert_eq!(
+            dot.substitute_value("${MISSING:+alt}".to_string(), &env),
+            ""
+        );
+    }
+
+    #[test]
+    fn expand_non_bracket_after_bracket() {
+        let dot = DotEnv::default();
+        let env = FxHashMap::default();
+
+        // MISSING resolves to empty for non-bracket; default applies inside brackets
+        assert_eq!(
+            dot.substitute_value("x ${MISSING:-def} y $MISSING".to_string(), &env),
+            "x def y "
+        );
+    }
+
+    #[test]
+    fn expand_with_namespaces() {
+        let dot = DotEnv::default();
+        let mut env = FxHashMap::default();
+        env.insert("NS".to_owned(), "ok".to_owned());
+
+        // Bracketed and non-bracketed namespaces expand using the name portion
+        assert_eq!(dot.substitute_value("${env:NS}".to_string(), &env), "ok");
+        assert_eq!(dot.substitute_value("$env:NS".to_string(), &env), "ok");
+
+        // Some shells like Ion require brackets; ensure bracket form expands
+        assert_eq!(dot.substitute_value("${env::NS}".to_string(), &env), "ok");
+    }
+
+    #[test]
+    fn load_applies_expansion_and_quote_rules() {
+        let dot = DotEnv::default();
+        let content =
+            "FOO=bar\nBAR=$FOO\nBAZ=${FOO}\nQUX=${FOO:-def}\nQUUX='${FOO}'\nQUUUX=\"$FOO\"";
+
+        let vars = dot.load(content, Path::new("/dev/null")).unwrap();
+
+        assert_eq!(vars.get("FOO").unwrap(), "bar");
+        assert_eq!(vars.get("BAR").unwrap(), "bar");
+        assert_eq!(vars.get("BAZ").unwrap(), "bar");
+        assert_eq!(vars.get("QUX").unwrap(), "bar");
+        assert_eq!(vars.get("QUUX").unwrap(), "${FOO}");
+        assert_eq!(vars.get("QUUUX").unwrap(), "bar");
+    }
+
+    #[test]
+    fn load_only_sees_prior_assignments() {
+        let dot = DotEnv::default();
+        let content = "BAR=$FOO\nFOO=bar";
+
+        let vars = dot.load(content, Path::new("/dev/null")).unwrap();
+
+        assert_eq!(vars.get("FOO").unwrap(), "bar");
+        assert_eq!(vars.get("BAR").unwrap(), "");
+    }
+
+    #[test]
+    fn doesnt_expand_in_single_quotes() {
+        let vars = DotEnv::default()
+            .load("A=a\nB='$A'\nC='${A}'".to_string(), Path::new("/dev/null"))
+            .unwrap();
+
+        assert_eq!(vars.get("A").unwrap(), "a");
+        assert_eq!(vars.get("B").unwrap(), "$A");
+        assert_eq!(vars.get("C").unwrap(), "${A}");
+    }
+
+    #[test]
+    fn expands_in_double_quotes() {
+        let vars = DotEnv::default()
+            .load(
+                "A=a\nB=\"$A\"\nC=\"${A}\"".to_string(),
+                Path::new("/dev/null"),
+            )
+            .unwrap();
+
+        assert_eq!(vars.get("A").unwrap(), "a");
+        assert_eq!(vars.get("B").unwrap(), "a");
+        assert_eq!(vars.get("C").unwrap(), "a");
+    }
+
+    #[test]
+    fn expands_in_unquoted() {
+        let vars = DotEnv::default()
+            .load("A=a\nB=$A\nC=${A}".to_string(), Path::new("/dev/null"))
+            .unwrap();
+
+        assert_eq!(vars.get("A").unwrap(), "a");
+        assert_eq!(vars.get("B").unwrap(), "a");
+        assert_eq!(vars.get("C").unwrap(), "a");
     }
 }

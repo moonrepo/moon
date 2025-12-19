@@ -17,13 +17,13 @@ pub enum QuoteStyle {
 
 #[derive(Default)]
 pub struct DotEnv<'a> {
-    command_vars: FxHashMap<&'a OsString, Option<&'a OsString>>,
+    command_vars: FxHashMap<&'a OsString, &'a Option<OsString>>,
 }
 
 impl<'a> DotEnv<'a> {
     pub fn with_command_vars<I>(mut self, vars: I) -> Self
     where
-        I: IntoIterator<Item = (&'a OsString, Option<&'a OsString>)>,
+        I: IntoIterator<Item = (&'a OsString, &'a Option<OsString>)>,
     {
         self.command_vars.extend(vars.into_iter());
         self

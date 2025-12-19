@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
 use moon_process::ProcessError;
@@ -8,14 +6,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum TaskRunnerError {
-    #[diagnostic(code(task_runner::invalid_env_file))]
-    #[error("Failed to parse env file {}.", .path.style(Style::Path))]
-    InvalidEnvFile {
-        path: PathBuf,
-        #[source]
-        error: Box<dotenvy::Error>,
-    },
-
     #[diagnostic(code(task_runner::run_failed))]
     #[error(
         "Task {} failed to run.",

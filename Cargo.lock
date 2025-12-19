@@ -4363,7 +4363,6 @@ dependencies = [
 name = "moon_task_runner"
 version = "0.0.1"
 dependencies = [
- "dotenvy",
  "miette 7.6.0",
  "moon_action",
  "moon_action_context",

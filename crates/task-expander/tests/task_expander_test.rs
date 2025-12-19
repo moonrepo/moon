@@ -619,7 +619,6 @@ mod task_expander {
             let mut task = create_task();
             task.options.env_files = Some(vec![Input::parse("/.env-shared").unwrap()]);
 
-            // dotenvy operates on actual env
             unsafe { env::set_var("EXTERNAL", "external-value") };
 
             let context = create_context(sandbox.path());

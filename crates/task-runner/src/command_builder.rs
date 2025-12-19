@@ -5,7 +5,7 @@ use moon_app_context::AppContext;
 use moon_common::is_ci;
 use moon_common::path::PathExt;
 use moon_config::{Input, TaskOptionAffectedFiles};
-use moon_env_var::GlobalEnvBag;
+use moon_env_var::{DotEnv, GlobalEnvBag};
 use moon_process::{Command, Shell, ShellType};
 use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
@@ -14,8 +14,6 @@ use rustc_hash::FxHashMap;
 use std::env;
 use std::path::Path;
 use tracing::{debug, instrument, trace};
-
-use crate::TaskRunnerError;
 
 pub struct CommandBuilder<'task> {
     app: &'task AppContext,
@@ -207,17 +205,12 @@ impl<'task> CommandBuilder<'task> {
                         "Loading .env file",
                     );
 
-                    let handle_error = |error: dotenvy::Error| TaskRunnerError::InvalidEnvFile {
-                        path: env_path.to_path_buf(),
-                        error: Box::new(error),
-                    };
-
-                    for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {
-                        let (key, val) = line.map_err(handle_error)?;
-
-                        // Overwrite previous values
-                        env_vars.insert(key, val);
-                    }
+                    // Overwrite previous values
+                    env_vars.extend(
+                        DotEnv::default()
+                            .with_command_vars(&self.command.env)
+                            .load_file(&env_path)?,
+                    );
                 } else {
                     trace!(
                         task_target = task.target.as_str(),

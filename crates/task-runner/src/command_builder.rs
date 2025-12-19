@@ -224,8 +224,10 @@ impl<'task> CommandBuilder<'task> {
 
             // Don't override task-level variables
             for (key, value) in env_vars {
-                if let Some(value) = value {
-                    self.command.env_if_missing(key, value);
+                if let Some(value) = value
+                    && !self.command.contains_env(&key)
+                {
+                    self.command.env(key, value);
                 }
             }
         }

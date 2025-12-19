@@ -1,4 +1,4 @@
-use crate::command::Command;
+use crate::command::{Command, CommandEnvMode};
 use crate::command_line::CommandLine;
 // use crate::output_stream::capture_stream;
 use crate::output::Output;
@@ -459,26 +459,32 @@ impl Command {
         let mut command = TokioCommand::new(&command_line.command[0]);
         command.args(&command_line.command[1..]);
 
-        // Inherit global env first
-        let bag = GlobalEnvBag::instance();
+        for env_mode in &self.env_order {
+            match env_mode {
+                CommandEnvMode::NoParent => {
+                    command.env_clear();
+                }
+                CommandEnvMode::Parent => {
+                    let bag = GlobalEnvBag::instance();
 
-        bag.list_added(|key, value| {
-            command.env(key, value);
-            true
-        });
+                    bag.list(|key, value| {
+                        command.env(key, value);
+                    });
 
-        bag.list_removed(|key| {
-            command.env_remove(key);
-            true
-        });
-
-        // Then inherit local so we can override global
-        for (key, value) in &self.env {
-            if let Some(value) = value {
-                command.env(key, value);
-            } else {
-                command.env_remove(key);
-            }
+                    bag.list_removed(|key| {
+                        command.env_remove(key);
+                    });
+                }
+                CommandEnvMode::Child => {
+                    for (key, value) in &self.env {
+                        if let Some(value) = value {
+                            command.env(key, value);
+                        } else {
+                            command.env_remove(key);
+                        }
+                    }
+                }
+            };
         }
 
         if let Some(cwd) = &self.cwd {

@@ -1,10 +1,6 @@
-// This implementation is loosely based on Cargo's:
-// https://github.com/rust-lang/cargo/blob/master/crates/cargo-util/src/process_builder.rs
-
 use crate::shell::Shell;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
-use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::collections::VecDeque;
 use std::ffi::{OsStr, OsString};
@@ -12,26 +8,30 @@ use std::hash::Hasher;
 use std::sync::Arc;
 
 #[derive(Debug)]
+pub enum CommandEnvMode {
+    NoParent,
+    Parent,
+    Child,
+}
+
+#[derive(Debug)]
 pub enum CommandExecutable {
     /// Single file name: git
     Binary(OsString),
-    /// Full script: git commit -m ""
+    /// Full script: git commit --allow-empty
     Script(OsString),
 }
 
 impl CommandExecutable {
     pub fn as_os_str(&self) -> &OsStr {
-        match &self {
+        match self {
             Self::Binary(inner) => inner,
             Self::Script(inner) => inner,
         }
     }
 
     pub fn into_os_string(self) -> OsString {
-        match self {
-            Self::Binary(inner) => inner,
-            Self::Script(inner) => inner,
-        }
+        self.as_os_str().into()
     }
 }
 
@@ -45,6 +45,9 @@ pub struct Command {
     pub cwd: Option<OsString>,
 
     pub env: FxHashMap<OsString, Option<OsString>>,
+
+    /// Order in which to inherit/apply environment variables
+    pub env_order: Vec<CommandEnvMode>,
 
     pub exe: CommandExecutable,
 
@@ -80,6 +83,7 @@ impl Command {
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
+            env_order: vec![CommandEnvMode::Child],
             exe: CommandExecutable::Binary(bin.as_ref().to_os_string()),
             error_on_nonzero: true,
             escape_args: true,
@@ -105,25 +109,39 @@ impl Command {
 
     pub fn arg_if_missing<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
         let arg = arg.as_ref();
-        let present = self.args.iter().any(|a| a == arg);
 
-        if !present {
+        if !self.contains_arg(arg) {
             self.arg(arg);
         }
 
         self
     }
 
-    pub fn args<I, S>(&mut self, args: I) -> &mut Self
+    pub fn args<I, A>(&mut self, args: I) -> &mut Self
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        I: IntoIterator<Item = A>,
+        A: AsRef<OsStr>,
     {
         for arg in args {
             self.arg(arg);
         }
 
         self
+    }
+
+    pub fn contains_arg<A>(&mut self, arg: A) -> bool
+    where
+        A: AsRef<OsStr>,
+    {
+        let arg = arg.as_ref();
+        self.args.iter().any(|a| a == arg)
+    }
+
+    pub fn contains_env<K>(&mut self, key: K) -> bool
+    where
+        K: AsRef<OsStr>,
+    {
+        self.env.contains_key(key.as_ref())
     }
 
     pub fn cwd<P: AsRef<OsStr>>(&mut self, dir: P) -> &mut Self {
@@ -134,41 +152,23 @@ impl Command {
         self
     }
 
-    pub fn env<K, V>(&mut self, key: K, val: V) -> &mut Self
+    pub fn env<K, V>(&mut self, key: K, value: V) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        self.env_opt(key, Some(value))
+    }
+
+    pub fn env_opt<K, V>(&mut self, key: K, value: Option<V>) -> &mut Self
     where
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
         self.env.insert(
             key.as_ref().to_os_string(),
-            Some(val.as_ref().to_os_string()),
+            value.map(|v| v.as_ref().to_os_string()),
         );
-        self
-    }
-
-    pub fn env_opt<K, V>(&mut self, key: K, val: Option<V>) -> &mut Self
-    where
-        K: AsRef<OsStr>,
-        V: AsRef<OsStr>,
-    {
-        self.env.insert(
-            key.as_ref().to_os_string(),
-            val.map(|v| v.as_ref().to_os_string()),
-        );
-        self
-    }
-
-    pub fn env_if_missing<K, V>(&mut self, key: K, val: V) -> &mut Self
-    where
-        K: AsRef<OsStr>,
-        V: AsRef<OsStr>,
-    {
-        let key = key.as_ref();
-
-        if !self.env.contains_key(key) {
-            self.env(key, val);
-        }
-
         self
     }
 
@@ -177,6 +177,11 @@ impl Command {
         K: AsRef<OsStr>,
     {
         self.env.insert(key.as_ref().to_os_string(), None);
+        self
+    }
+
+    pub fn env_order(&mut self, order: Vec<CommandEnvMode>) -> &mut Self {
+        self.env_order = order;
         self
     }
 
@@ -193,6 +198,19 @@ impl Command {
         self
     }
 
+    pub fn envs_opt<I, K, V>(&mut self, vars: I) -> &mut Self
+    where
+        I: IntoIterator<Item = (K, Option<V>)>,
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        for (k, v) in vars {
+            self.env_opt(k, v);
+        }
+
+        self
+    }
+
     pub fn envs_remove<I, V>(&mut self, vars: I) -> &mut Self
     where
         I: IntoIterator<Item = V>,
@@ -200,38 +218,6 @@ impl Command {
     {
         for v in vars {
             self.env_remove(v);
-        }
-
-        self
-    }
-
-    pub fn envs_if_missing<I, K, V>(&mut self, vars: I) -> &mut Self
-    where
-        I: IntoIterator<Item = (K, V)>,
-        K: AsRef<OsStr>,
-        V: AsRef<OsStr>,
-    {
-        for (k, v) in vars {
-            self.env_if_missing(k, v);
-        }
-
-        self
-    }
-
-    pub fn envs_if_not_global<I, K, V>(&mut self, vars: I) -> &mut Self
-    where
-        I: IntoIterator<Item = (K, V)>,
-        K: AsRef<OsStr>,
-        V: AsRef<OsStr>,
-    {
-        let bag = GlobalEnvBag::instance();
-
-        for (k, v) in vars {
-            let k = k.as_ref();
-
-            if !bag.has(k) {
-                self.env(k, v);
-            }
         }
 
         self
@@ -349,8 +335,8 @@ impl Command {
         };
 
         for (key, value) in &self.env {
+            write(key);
             if let Some(value) = value {
-                write(key);
                 write(value);
             }
         }

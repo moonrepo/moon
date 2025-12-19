@@ -35,3 +35,15 @@ pub static ENV_VAR_BRACKETS: LazyLock<Regex> = LazyLock::new(|| {
 pub fn contains_env_var(value: impl AsRef<str>) -> bool {
     ENV_VAR.is_match(value.as_ref()) || ENV_VAR_BRACKETS.is_match(value.as_ref())
 }
+
+// Env inheritance in order of priority:
+//
+//  1) Global/shell vars
+//      - So that `KEY=value moon ...` works
+//      - Cannot access task/dotenv vars
+//  2) Task vars
+//      - Can substitute with globals
+//      - Cannot access dotenv vars
+//  3) Dotenv vars
+//      - Can substitute with globals/task
+//      - Can access previous dotenv vars

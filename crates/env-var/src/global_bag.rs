@@ -111,12 +111,18 @@ impl GlobalEnvBag {
         });
     }
 
-    pub fn list_added(&self, op: impl FnMut(&OsString, &OsString) -> bool) {
-        self.added.iter_sync(op);
+    pub fn list_added(&self, mut op: impl FnMut(&OsString, &OsString)) {
+        self.added.iter_sync(|k, v| {
+            op(k, v);
+            true
+        });
     }
 
-    pub fn list_removed(&self, op: impl FnMut(&OsString) -> bool) {
-        self.removed.iter_sync(op);
+    pub fn list_removed(&self, mut op: impl FnMut(&OsString)) {
+        self.removed.iter_sync(|k| {
+            op(k);
+            true
+        });
     }
 
     pub fn should_debug_mcp(&self) -> bool {

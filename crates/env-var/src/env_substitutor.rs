@@ -2,26 +2,14 @@ use crate::global_bag::GlobalEnvBag;
 use crate::{ENV_VAR, ENV_VAR_BRACKETS};
 use regex::Captures;
 use rustc_hash::{FxHashMap, FxHashSet};
-
-pub fn rebuild_env_var(caps: &Captures) -> String {
-    let namespace = caps
-        .name("namespace")
-        .map(|cap| cap.as_str())
-        .unwrap_or_default();
-    let name = caps.name("name").map(|cap| cap.as_str()).unwrap();
-
-    // Ion must always be wrapped in brackets!
-    if namespace == "env::" {
-        format!("${{{namespace}{name}}}")
-    } else {
-        format!("${namespace}{name}")
-    }
-}
+use std::borrow::Cow;
+use std::ffi::OsString;
 
 #[derive(Default)]
 pub struct EnvSubstitutor<'bag> {
     pub replaced: FxHashSet<String>,
 
+    command_vars: FxHashMap<&'bag OsString, &'bag Option<OsString>>,
     global_vars: Option<&'bag GlobalEnvBag>,
     local_vars: Option<&'bag FxHashMap<String, String>>,
 }
@@ -33,6 +21,14 @@ impl<'bag> EnvSubstitutor<'bag> {
 
     pub fn without_global_vars(mut self) -> Self {
         self.global_vars = None;
+        self
+    }
+
+    pub fn with_command_vars<I>(mut self, vars: I) -> Self
+    where
+        I: IntoIterator<Item = (&'bag OsString, &'bag Option<OsString>)>,
+    {
+        self.command_vars.extend(vars.into_iter());
         self
     }
 
@@ -67,7 +63,8 @@ impl<'bag> EnvSubstitutor<'bag> {
         map
     }
 
-    fn do_substitute(&mut self, value: impl AsRef<str>, base_key: Option<&str>) -> String {
+    // https://dotenvx.com/docs/env-file#interpolation
+    fn do_substitute(&mut self, value: impl AsRef<str>, parent_key: Option<&str>) -> String {
         let value = value.as_ref();
 
         if !value.contains('$') {
@@ -78,63 +75,116 @@ impl<'bag> EnvSubstitutor<'bag> {
 
         let mut substituted = FxHashSet::default();
 
-        let result = ENV_VAR.replace_all(value, |caps: &Captures| {
-            self.do_replace(caps, base_key, &mut substituted)
+        // Expand non-brackets first
+        let value = ENV_VAR.replace_all(&value, |caps: &Captures| {
+            match caps.name("name").map(|cap| cap.as_str()) {
+                Some(key) => {
+                    substituted.insert(key.to_owned());
+                    self.get_replacement_value(key, parent_key).to_string()
+                }
+                None => String::new(),
+            }
         });
 
-        let result = ENV_VAR_BRACKETS.replace_all(&result, |caps: &Captures| {
-            self.do_replace(caps, base_key, &mut substituted)
+        // Expand brackets last
+        let value = ENV_VAR_BRACKETS.replace_all(&value, |caps: &Captures| {
+            let Some(key) = caps.name("name").map(|cap| cap.as_str()) else {
+                return String::new();
+            };
+
+            substituted.insert(key.to_owned());
+
+            let namespace = caps
+                .name("namespace")
+                .map(|cap| cap.as_str())
+                .unwrap_or_default();
+
+            let fallback = caps
+                .name("fallback")
+                .map(|cap| cap.as_str())
+                .unwrap_or_default();
+
+            match caps.name("flag").map(|cap| cap.as_str()) {
+                // Don't expand
+                Some("!") => {
+                    substituted.remove(key);
+                    self.get_token_value(namespace, key)
+                }
+                // Only expand if not empty
+                Some("?") => {
+                    let value = self.get_replacement_value(key, parent_key);
+
+                    if value.is_empty() {
+                        self.get_token_value(namespace, key)
+                    } else {
+                        value.to_string()
+                    }
+                }
+                // Expand with default/alternate
+                Some(":") => {
+                    let value = self.get_replacement_value(key, parent_key);
+
+                    if let Some(def) = fallback.strip_prefix('-') {
+                        if value.is_empty() {
+                            def.to_owned()
+                        } else {
+                            value.to_string()
+                        }
+                    } else if let Some(alt) = fallback.strip_prefix('+') {
+                        if value.is_empty() {
+                            value.to_string()
+                        } else {
+                            alt.to_owned()
+                        }
+                    } else {
+                        value.to_string()
+                    }
+                }
+                // Expand
+                _ => self.get_replacement_value(key, parent_key).to_string(),
+            }
         });
 
         self.replaced = substituted;
 
-        result.to_string()
+        value.to_string()
     }
 
-    fn do_replace(
-        &self,
-        caps: &Captures,
-        base_key: Option<&str>,
-        substituted: &mut FxHashSet<String>,
-    ) -> String {
-        let haystack = caps.get(0).unwrap().as_str();
-
-        let Some(name) = caps.name("name").map(|cap| cap.as_str()) else {
-            return String::new();
-        };
-
-        let global_vars = self.global_vars;
-        let local_vars = self.local_vars;
-        let flag = caps.name("flag").map(|cap| cap.as_str());
-
-        // If the variable is referencing itself, don't pull
-        // from the local map, and instead only pull from the
-        // system environment. Otherwise we hit recursion!
-        let mut get_replacement_value = || {
-            substituted.insert(name.to_owned());
-
-            if (base_key.is_none() || base_key.is_some_and(|base_name| base_name != name))
-                && let Some(value) = local_vars.and_then(|bag| bag.get(name))
-            {
-                return Some(value.to_owned());
-            }
-
-            global_vars.and_then(|bag| bag.get(name))
-        };
-
-        match flag {
-            // Don't substitute
-            Some("!") => rebuild_env_var(caps),
-            // Substitute with provided fallback
-            Some(":") => caps
-                .name("fallback")
-                .map(|cap| cap.as_str())
-                .unwrap_or_default()
-                .to_string(),
-            // Substitute with empty string when missing
-            Some("?") => get_replacement_value().unwrap_or_default(),
-            // Substitute with self when missing
-            _ => get_replacement_value().unwrap_or_else(|| haystack.to_owned()),
+    pub fn get_token_value(&self, namespace: &str, key: &str) -> String {
+        // Ion must always be wrapped in brackets!
+        if namespace == "env::" {
+            format!("${{{namespace}{key}}}")
+        } else {
+            format!("${namespace}{key}")
         }
+    }
+
+    // If the variable is referencing itself, don't pull
+    // from the local map, and instead only pull from the
+    // globals. Otherwise we hit recursion!
+    pub fn get_replacement_value(&self, key: &str, parent_key: Option<&str>) -> Cow<'_, str> {
+        let is_self = parent_key.is_some_and(|k| k == key);
+
+        // Command first as they take predence
+        if let Some(Some(val)) = self.command_vars.get(&OsString::from(key)) {
+            return val.to_string_lossy();
+        }
+
+        // Then check the locals
+        if !is_self
+            && let Some(bag) = &self.local_vars
+            && let Some(val) = bag.get(key)
+        {
+            return Cow::Borrowed(val);
+        }
+
+        // Otherwise the globals
+        if let Some(bag) = &self.global_vars
+            && let Some(val) = bag.get(key)
+        {
+            return Cow::Owned(val);
+        }
+
+        Cow::Owned(String::new())
     }
 }

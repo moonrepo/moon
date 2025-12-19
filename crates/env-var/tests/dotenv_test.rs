@@ -217,7 +217,7 @@ mod dotenv {
             DotEnv::default()
                 .with_command_vars(vec![(&key, &cmd_val)])
                 .with_global_vars(&global)
-                .substitute_value("$SOURCE".to_string(), &env),
+                .substitute_value("KEY", "$SOURCE", &env),
             "cmd"
         );
     }
@@ -233,7 +233,7 @@ mod dotenv {
         assert_eq!(
             DotEnv::default()
                 .with_command_vars(vec![(&key, &none_val)])
-                .substitute_value("$A".to_string(), &env),
+                .substitute_value("KEY", "$A", &env),
             "local"
         );
     }
@@ -247,49 +247,31 @@ mod dotenv {
         env.insert("EMPTY".to_owned(), "".to_owned());
 
         // ! flag: do not expand
-        assert_eq!(
-            dot.substitute_value("${PRESENT!}".to_string(), &env),
-            "$PRESENT"
-        );
+        assert_eq!(dot.substitute_value("KEY", "${PRESENT!}", &env), "$PRESENT");
 
         // ? flag: expand only if not empty
-        assert_eq!(
-            dot.substitute_value("${PRESENT?}".to_string(), &env),
-            "value"
-        );
-        assert_eq!(
-            dot.substitute_value("${EMPTY?}".to_string(), &env),
-            "$EMPTY"
-        );
-        assert_eq!(
-            dot.substitute_value("${MISSING?}".to_string(), &env),
-            "$MISSING"
-        );
+        assert_eq!(dot.substitute_value("KEY", "${PRESENT?}", &env), "value");
+        assert_eq!(dot.substitute_value("KEY", "${EMPTY?}", &env), "$EMPTY");
+        assert_eq!(dot.substitute_value("KEY", "${MISSING?}", &env), "$MISSING");
 
         // : with default -fallback (use when empty/missing)
         assert_eq!(
-            dot.substitute_value("${EMPTY:-fallback}".to_string(), &env),
+            dot.substitute_value("KEY", "${EMPTY:-fallback}", &env),
             "fallback"
         );
         assert_eq!(
-            dot.substitute_value("${PRESENT:-fallback}".to_string(), &env),
+            dot.substitute_value("KEY", "${PRESENT:-fallback}", &env),
             "value"
         );
         assert_eq!(
-            dot.substitute_value("${MISSING:-fallback}".to_string(), &env),
+            dot.substitute_value("KEY", "${MISSING:-fallback}", &env),
             "fallback"
         );
 
         // : with alternate +alt (use alt when non-empty)
-        assert_eq!(
-            dot.substitute_value("${PRESENT:+alt}".to_string(), &env),
-            "alt"
-        );
-        assert_eq!(dot.substitute_value("${EMPTY:+alt}".to_string(), &env), "");
-        assert_eq!(
-            dot.substitute_value("${MISSING:+alt}".to_string(), &env),
-            ""
-        );
+        assert_eq!(dot.substitute_value("KEY", "${PRESENT:+alt}", &env), "alt");
+        assert_eq!(dot.substitute_value("KEY", "${EMPTY:+alt}", &env), "");
+        assert_eq!(dot.substitute_value("KEY", "${MISSING:+alt}", &env), "");
     }
 
     #[test]
@@ -299,7 +281,7 @@ mod dotenv {
 
         // MISSING resolves to empty for non-bracket; default applies inside brackets
         assert_eq!(
-            dot.substitute_value("x ${MISSING:-def} y $MISSING".to_string(), &env),
+            dot.substitute_value("KEY", "x ${MISSING:-def} y $MISSING", &env),
             "x def y "
         );
     }
@@ -311,11 +293,11 @@ mod dotenv {
         env.insert("NS".to_owned(), "ok".to_owned());
 
         // Bracketed and non-bracketed namespaces expand using the name portion
-        assert_eq!(dot.substitute_value("${env:NS}".to_string(), &env), "ok");
-        assert_eq!(dot.substitute_value("$env:NS".to_string(), &env), "ok");
+        assert_eq!(dot.substitute_value("KEY", "${env:NS}", &env), "ok");
+        assert_eq!(dot.substitute_value("KEY", "$env:NS", &env), "ok");
 
         // Some shells like Ion require brackets; ensure bracket form expands
-        assert_eq!(dot.substitute_value("${env::NS}".to_string(), &env), "ok");
+        assert_eq!(dot.substitute_value("KEY", "${env::NS}", &env), "ok");
     }
 
     #[test]

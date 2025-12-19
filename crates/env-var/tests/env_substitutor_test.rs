@@ -21,6 +21,8 @@ mod env_substitutor {
             ("$env:VAR", "${env:VAR}", "env:", "VAR"),
         ];
 
+        let sub = EnvSubstitutor::default();
+
         for (without_brackets, with_brackets, namespace, name) in items {
             // No brackets
             let without_match = ENV_VAR.captures(without_brackets).unwrap();
@@ -35,7 +37,13 @@ mod env_substitutor {
             assert_eq!(without_match.name("name").unwrap().as_str(), name);
 
             assert_eq!(
-                rebuild_env_var(&without_match),
+                sub.get_token_value(
+                    without_match
+                        .name("namespace")
+                        .map(|cap| cap.as_str())
+                        .unwrap_or_default(),
+                    without_match.name("name").unwrap().as_str()
+                ),
                 if namespace == "env::" {
                     with_brackets
                 } else {
@@ -56,7 +64,13 @@ mod env_substitutor {
             assert_eq!(with_match.name("name").unwrap().as_str(), name);
 
             assert_eq!(
-                rebuild_env_var(&with_match),
+                sub.get_token_value(
+                    with_match
+                        .name("namespace")
+                        .map(|cap| cap.as_str())
+                        .unwrap_or_default(),
+                    with_match.name("name").unwrap().as_str()
+                ),
                 if namespace == "env::" {
                     with_brackets
                 } else {
@@ -94,14 +108,11 @@ mod env_substitutor {
     fn handles_flags_when_missing() {
         let mut sub = EnvSubstitutor::default();
 
-        assert_eq!(sub.substitute("$KEY"), "$KEY");
-        assert_eq!(sub.substitute("${KEY}"), "${KEY}");
+        assert_eq!(sub.substitute("$KEY"), "");
+        assert_eq!(sub.substitute("${KEY}"), "");
 
-        assert_eq!(sub.substitute("$KEY!"), "$KEY");
         assert_eq!(sub.substitute("${KEY!}"), "$KEY");
-
-        assert_eq!(sub.substitute("$KEY?"), "");
-        assert_eq!(sub.substitute("${KEY?}"), "");
+        assert_eq!(sub.substitute("${KEY?}"), "$KEY");
     }
 
     #[test]
@@ -113,10 +124,7 @@ mod env_substitutor {
         assert_eq!(sub.substitute("$KEY"), "value");
         assert_eq!(sub.substitute("${KEY}"), "value");
 
-        assert_eq!(sub.substitute("$KEY!"), "$KEY");
         assert_eq!(sub.substitute("${KEY!}"), "$KEY");
-
-        assert_eq!(sub.substitute("$KEY?"), "value");
         assert_eq!(sub.substitute("${KEY?}"), "value");
     }
 
@@ -152,6 +160,6 @@ mod env_substitutor {
         // Then remove from global
         global.remove("SOURCE");
 
-        assert_eq!(sub.substitute("$SOURCE"), "$SOURCE");
+        assert_eq!(sub.substitute("$SOURCE"), "");
     }
 }

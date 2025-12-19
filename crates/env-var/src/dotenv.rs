@@ -1,10 +1,8 @@
 use crate::dotenv_error::DotEnvError;
+use crate::env_substitutor::EnvSubstitutor;
 use crate::global_bag::GlobalEnvBag;
-use crate::{ENV_VAR, ENV_VAR_BRACKETS};
-use regex::Captures;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
-use std::borrow::Cow;
 use std::ffi::OsString;
 use std::path::Path;
 
@@ -56,14 +54,13 @@ impl<'a> DotEnv<'a> {
                 continue;
             };
 
-            vars.insert(
-                key,
-                if quote == QuoteStyle::Single {
-                    value
-                } else {
-                    self.substitute_value(value, &vars)
-                },
-            );
+            let value = if quote == QuoteStyle::Single {
+                value
+            } else {
+                self.substitute_value(&key, &value, &vars)
+            };
+
+            vars.insert(key, value);
         }
 
         Ok(vars)
@@ -135,87 +132,21 @@ impl<'a> DotEnv<'a> {
         Ok((value.to_string(), QuoteStyle::Unquoted))
     }
 
-    // https://dotenvx.com/docs/env-file#interpolation
-    pub fn substitute_value(&self, value: String, env: &FxHashMap<String, String>) -> String {
-        let get_expanded_value = |key: &str| {
-            // Command/task first as they take predence over .env files
-            if let Some(Some(val)) = self.command_vars.get(&OsString::from(key)) {
-                return val.to_string_lossy();
-            }
+    pub fn substitute_value(
+        &self,
+        key: &str,
+        value: &str,
+        env: &FxHashMap<String, String>,
+    ) -> String {
+        let mut substitutor = EnvSubstitutor::default()
+            .with_command_vars(self.command_vars.clone())
+            .with_local_vars(env);
 
-            // Then check the current .env file
-            if let Some(val) = env.get(key) {
-                return Cow::Borrowed(val);
-            }
+        if let Some(vars) = &self.global_vars {
+            substitutor = substitutor.with_global_vars(vars);
+        }
 
-            // Otherwise the global process last
-            if let Some(bag) = &self.global_vars
-                && let Some(val) = bag.get(key)
-            {
-                return Cow::Owned(val);
-            }
-
-            Cow::Owned(String::new())
-        };
-
-        // Expand non-brackets first
-        let value = ENV_VAR.replace_all(&value, |caps: &Captures| {
-            match caps.name("name").map(|cap| cap.as_str()) {
-                Some(name) => get_expanded_value(name).to_string(),
-                None => String::new(),
-            }
-        });
-
-        // Expand brackets last
-        let value = ENV_VAR_BRACKETS.replace_all(&value, |caps: &Captures| {
-            let Some(name) = caps.name("name").map(|cap| cap.as_str()) else {
-                return String::new();
-            };
-
-            let fallback = caps
-                .name("fallback")
-                .map(|cap| cap.as_str())
-                .unwrap_or_default();
-
-            match caps.name("flag").map(|cap| cap.as_str()) {
-                // Don't expand
-                Some("!") => format!("${name}"),
-                // Only expand if not empty
-                Some("?") => {
-                    let value = get_expanded_value(name);
-
-                    if value.is_empty() {
-                        format!("${name}")
-                    } else {
-                        value.to_string()
-                    }
-                }
-                // Expand with default/alternate
-                Some(":") => {
-                    let value = get_expanded_value(name);
-
-                    if let Some(def) = fallback.strip_prefix('-') {
-                        if value.is_empty() {
-                            def.to_owned()
-                        } else {
-                            value.to_string()
-                        }
-                    } else if let Some(alt) = fallback.strip_prefix('+') {
-                        if value.is_empty() {
-                            value.to_string()
-                        } else {
-                            alt.to_owned()
-                        }
-                    } else {
-                        value.to_string()
-                    }
-                }
-                // Expand
-                _ => get_expanded_value(name).to_string(),
-            }
-        });
-
-        value.to_string()
+        substitutor.substitute_with_key(key, value)
     }
 
     fn unescape(&self, value: &str) -> String {

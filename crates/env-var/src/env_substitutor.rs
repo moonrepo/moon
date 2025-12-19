@@ -1,34 +1,7 @@
 use crate::global_bag::GlobalEnvBag;
-use regex::{Captures, Regex};
+use crate::{ENV_VAR, ENV_VAR_BRACKETS};
+use regex::Captures;
 use rustc_hash::{FxHashMap, FxHashSet};
-use std::sync::LazyLock;
-
-// $E: = Elvish
-// $env: = PowerShell
-// $env:: = Ion
-// $env. = Nu
-// $ENV. = Murex
-
-// $ENV_VAR
-pub static ENV_VAR_SUBSTITUTE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-        "(?:\\$(?P<namespace>E:|env::|env:|env.|ENV.)?(?P<name>[A-Z0-9_]+)(?P<flag>[!?]{1})?)",
-    )
-    .unwrap()
-});
-
-// ${ENV_VAR}
-pub static ENV_VAR_SUBSTITUTE_BRACKETS: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-        "(?:\\$\\{(?P<namespace>E:|env::|env:|env.|ENV.)?(?P<name>[A-Z0-9_]+)(?P<flag>[!?:]{1})?(?P<fallback>[^}]*)?\\})",
-    )
-    .unwrap()
-});
-
-pub fn contains_env_var(value: impl AsRef<str>) -> bool {
-    ENV_VAR_SUBSTITUTE.is_match(value.as_ref())
-        || ENV_VAR_SUBSTITUTE_BRACKETS.is_match(value.as_ref())
-}
 
 pub fn rebuild_env_var(caps: &Captures) -> String {
     let namespace = caps
@@ -105,11 +78,11 @@ impl<'bag> EnvSubstitutor<'bag> {
 
         let mut substituted = FxHashSet::default();
 
-        let result = ENV_VAR_SUBSTITUTE.replace_all(value, |caps: &Captures| {
+        let result = ENV_VAR.replace_all(value, |caps: &Captures| {
             self.do_replace(caps, base_key, &mut substituted)
         });
 
-        let result = ENV_VAR_SUBSTITUTE_BRACKETS.replace_all(&result, |caps: &Captures| {
+        let result = ENV_VAR_BRACKETS.replace_all(&result, |caps: &Captures| {
             self.do_replace(caps, base_key, &mut substituted)
         });
 

@@ -9,9 +9,13 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_common = { version = "0.2.0", path = "../common" }
+miette = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
+starbase_utils = { workspace = true }
+thiserror = { workspace = true }
 
 [lints]
 workspace = true

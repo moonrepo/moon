@@ -2,16 +2,20 @@ use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
+use moon_common::is_ci;
 use moon_common::path::PathExt;
-use moon_config::TaskOptionAffectedFiles;
+use moon_config::{Input, TaskOptionAffectedFiles};
 use moon_env_var::GlobalEnvBag;
 use moon_process::{Command, Shell, ShellType};
 use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
 use moon_task::Task;
+use rustc_hash::FxHashMap;
 use std::env;
 use std::path::Path;
 use tracing::{debug, instrument, trace};
+
+use crate::TaskRunnerError;
 
 pub struct CommandBuilder<'task> {
     app: &'task AppContext,
@@ -75,7 +79,7 @@ impl<'task> CommandBuilder<'task> {
 
         // Order is important!
         self.inject_args(context);
-        self.inject_env(hash);
+        self.inject_env(hash)?;
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
@@ -116,7 +120,9 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(skip_all)]
-    fn inject_env(&mut self, hash: &str) {
+    fn inject_env(&mut self, hash: &str) -> miette::Result<()> {
+        let task = self.task;
+
         // Must be first!
         if let ActionNode::RunTask(inner) = &self.node
             && !inner.env.is_empty()
@@ -132,7 +138,7 @@ impl<'task> CommandBuilder<'task> {
 
         self.command.env("PWD", self.working_dir);
 
-        // moon
+        // Inherit moon variables
         self.command
             .env("MOON_CACHE_DIR", &self.app.cache_engine.cache_dir);
         self.command
@@ -140,9 +146,9 @@ impl<'task> CommandBuilder<'task> {
         self.command.env("MOON_PROJECT_ROOT", &self.project.root);
         self.command
             .env("MOON_PROJECT_SOURCE", self.project.source.as_str());
-        self.command.env("MOON_TASK_ID", self.task.id.as_str());
+        self.command.env("MOON_TASK_ID", task.id.as_str());
         self.command.env("MOON_TASK_HASH", hash);
-        self.command.env("MOON_TARGET", self.task.target.as_str());
+        self.command.env("MOON_TARGET", task.target.as_str());
         self.command
             .env("MOON_WORKSPACE_ROOT", &self.app.workspace_root);
         self.command.env("MOON_WORKING_DIR", &self.app.working_dir);
@@ -153,6 +159,81 @@ impl<'task> CommandBuilder<'task> {
                 .state
                 .get_project_snapshot_path(&self.project.id),
         );
+
+        // Load variables from .env files
+        if let Some(env_files) = &self.task.options.env_files {
+            let env_paths = env_files
+                .iter()
+                .filter_map(|input| match input {
+                    Input::File(file) => Some(
+                        file.to_workspace_relative(self.project.source.as_str())
+                            .to_path(&self.app.workspace_root),
+                    ),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+
+            trace!(
+                task_target = task.target.as_str(),
+                env_files = ?env_paths,
+                "Loading environment variables from .env files",
+            );
+
+            let mut env_vars = FxHashMap::default();
+            let ci = is_ci();
+
+            for env_path in env_paths {
+                // The file may not have been committed, so avoid crashing
+                if env_path.exists() {
+                    // Skip local only env files
+                    if ci
+                        && env_path
+                            .file_name()
+                            .and_then(|name| name.to_str())
+                            .is_some_and(|name| name.ends_with(".local"))
+                    {
+                        trace!(
+                            task_target = task.target.as_str(),
+                            env_file = ?env_path,
+                            "Skipping .env file because we're in CI and it's local only",
+                        );
+
+                        continue;
+                    }
+
+                    trace!(
+                        task_target = task.target.as_str(),
+                        env_file = ?env_path,
+                        "Loading .env file",
+                    );
+
+                    let handle_error = |error: dotenvy::Error| TaskRunnerError::InvalidEnvFile {
+                        path: env_path.to_path_buf(),
+                        error: Box::new(error),
+                    };
+
+                    for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {
+                        let (key, val) = line.map_err(handle_error)?;
+
+                        // Overwrite previous values
+                        env_vars.insert(key, val);
+                    }
+                } else {
+                    trace!(
+                        task_target = task.target.as_str(),
+                        env_file = ?env_path,
+                        "Skipping .env file because it doesn't exist",
+                    );
+                }
+            }
+
+            // Don't override task-level variables
+            for (key, val) in env_vars {
+                self.command.env_if_missing(key, val);
+            }
+        }
+
+        Ok(())
     }
 
     #[instrument(skip_all)]

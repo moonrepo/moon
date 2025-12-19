@@ -31,6 +31,7 @@ moon_task_hasher = { path = "../task-hasher" }
 moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_time = { path = "../time" }
+dotenvy = "0.15.7"
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }

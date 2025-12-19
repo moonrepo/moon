@@ -1,4 +1,4 @@
-use crate::env_substitutor::{ENV_VAR_SUBSTITUTE, ENV_VAR_SUBSTITUTE_BRACKETS};
+use crate::{ENV_VAR, ENV_VAR_BRACKETS};
 use rustc_hash::FxHashSet;
 
 #[derive(Default)]
@@ -22,11 +22,11 @@ impl EnvScanner {
 
         let mut found = FxHashSet::default();
 
-        ENV_VAR_SUBSTITUTE.replace_all(value, |caps: &regex::Captures| {
+        ENV_VAR.replace_all(value, |caps: &regex::Captures| {
             self.do_replace(caps, &mut found)
         });
 
-        ENV_VAR_SUBSTITUTE_BRACKETS.replace_all(value, |caps: &regex::Captures| {
+        ENV_VAR_BRACKETS.replace_all(value, |caps: &regex::Captures| {
             self.do_replace(caps, &mut found)
         });
 

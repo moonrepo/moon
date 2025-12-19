@@ -23,7 +23,7 @@ mod env_substitutor {
 
         for (without_brackets, with_brackets, namespace, name) in items {
             // No brackets
-            let without_match = ENV_VAR_SUBSTITUTE.captures(without_brackets).unwrap();
+            let without_match = ENV_VAR.captures(without_brackets).unwrap();
 
             assert_eq!(
                 without_match
@@ -44,7 +44,7 @@ mod env_substitutor {
             );
 
             // With brackets
-            let with_match = ENV_VAR_SUBSTITUTE_BRACKETS.captures(with_brackets).unwrap();
+            let with_match = ENV_VAR_BRACKETS.captures(with_brackets).unwrap();
 
             assert_eq!(
                 with_match
@@ -67,12 +67,12 @@ mod env_substitutor {
             // With flags
             for flag in ["!", "?"] {
                 assert!(
-                    ENV_VAR_SUBSTITUTE
+                    ENV_VAR
                         .captures(&format!("${namespace}{name}{flag}"))
                         .is_some()
                 );
                 assert!(
-                    ENV_VAR_SUBSTITUTE_BRACKETS
+                    ENV_VAR_BRACKETS
                         .captures(&format!("${{{namespace}{name}{flag}}}"))
                         .is_some()
                 );
@@ -84,7 +84,7 @@ mod env_substitutor {
     fn supports_bracket_fallback() {
         for fallback in ["string", "123", "--arg", "$VAR"] {
             let var = format!("${{ENV_VAR:{fallback}}}");
-            let caps = ENV_VAR_SUBSTITUTE_BRACKETS.captures(&var).unwrap();
+            let caps = ENV_VAR_BRACKETS.captures(&var).unwrap();
 
             assert_eq!(caps.name("fallback").unwrap().as_str(), fallback);
         }

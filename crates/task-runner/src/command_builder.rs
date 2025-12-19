@@ -131,7 +131,9 @@ impl<'task> CommandBuilder<'task> {
                 "Inheriting env from dependent task"
             );
 
-            self.command.envs(&inner.env);
+            for (key, value) in &inner.env {
+                self.command.env_opt(key, value.as_deref());
+            }
         }
 
         self.command.env("PWD", self.working_dir);
@@ -221,8 +223,10 @@ impl<'task> CommandBuilder<'task> {
             }
 
             // Don't override task-level variables
-            for (key, val) in env_vars {
-                self.command.env_if_missing(key, val);
+            for (key, value) in env_vars {
+                if let Some(value) = value {
+                    self.command.env_if_missing(key, value);
+                }
             }
         }
 

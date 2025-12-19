@@ -208,7 +208,7 @@ mod dotenv {
         let cmd_val = Some(OsString::from("cmd"));
 
         let mut env = FxHashMap::default();
-        env.insert("SOURCE".to_owned(), "local".to_owned());
+        env.insert("SOURCE".to_owned(), Some("local".to_owned()));
 
         let global = GlobalEnvBag::default();
         global.set("SOURCE", "global");
@@ -228,7 +228,7 @@ mod dotenv {
         let none_val: Option<OsString> = None;
 
         let mut env = FxHashMap::default();
-        env.insert("A".to_owned(), "local".to_owned());
+        env.insert("A".to_owned(), Some("local".to_owned()));
 
         assert_eq!(
             DotEnv::default()
@@ -243,8 +243,8 @@ mod dotenv {
         let dot = DotEnv::default();
 
         let mut env = FxHashMap::default();
-        env.insert("PRESENT".to_owned(), "value".to_owned());
-        env.insert("EMPTY".to_owned(), "".to_owned());
+        env.insert("PRESENT".to_owned(), Some("value".to_owned()));
+        env.insert("EMPTY".to_owned(), Some("".to_owned()));
 
         // ! flag: do not expand
         assert_eq!(dot.substitute_value("KEY", "${PRESENT!}", &env), "$PRESENT");
@@ -290,7 +290,7 @@ mod dotenv {
     fn expand_with_namespaces() {
         let dot = DotEnv::default();
         let mut env = FxHashMap::default();
-        env.insert("NS".to_owned(), "ok".to_owned());
+        env.insert("NS".to_owned(), Some("ok".to_owned()));
 
         // Bracketed and non-bracketed namespaces expand using the name portion
         assert_eq!(dot.substitute_value("KEY", "${env:NS}", &env), "ok");
@@ -308,12 +308,12 @@ mod dotenv {
 
         let vars = dot.load(content, Path::new("/dev/null")).unwrap();
 
-        assert_eq!(vars.get("FOO").unwrap(), "bar");
-        assert_eq!(vars.get("BAR").unwrap(), "bar");
-        assert_eq!(vars.get("BAZ").unwrap(), "bar");
-        assert_eq!(vars.get("QUX").unwrap(), "bar");
-        assert_eq!(vars.get("QUUX").unwrap(), "${FOO}");
-        assert_eq!(vars.get("QUUUX").unwrap(), "bar");
+        assert_eq!(vars.get("FOO").unwrap().as_ref().unwrap(), "bar");
+        assert_eq!(vars.get("BAR").unwrap().as_ref().unwrap(), "bar");
+        assert_eq!(vars.get("BAZ").unwrap().as_ref().unwrap(), "bar");
+        assert_eq!(vars.get("QUX").unwrap().as_ref().unwrap(), "bar");
+        assert_eq!(vars.get("QUUX").unwrap().as_ref().unwrap(), "${FOO}");
+        assert_eq!(vars.get("QUUUX").unwrap().as_ref().unwrap(), "bar");
     }
 
     #[test]
@@ -323,43 +323,40 @@ mod dotenv {
 
         let vars = dot.load(content, Path::new("/dev/null")).unwrap();
 
-        assert_eq!(vars.get("FOO").unwrap(), "bar");
-        assert_eq!(vars.get("BAR").unwrap(), "");
+        assert_eq!(vars.get("FOO").unwrap().as_ref().unwrap(), "bar");
+        assert_eq!(vars.get("BAR").unwrap().as_ref().unwrap(), "");
     }
 
     #[test]
     fn doesnt_expand_in_single_quotes() {
         let vars = DotEnv::default()
-            .load("A=a\nB='$A'\nC='${A}'".to_string(), Path::new("/dev/null"))
+            .load("A=a\nB='$A'\nC='${A}'", Path::new("/dev/null"))
             .unwrap();
 
-        assert_eq!(vars.get("A").unwrap(), "a");
-        assert_eq!(vars.get("B").unwrap(), "$A");
-        assert_eq!(vars.get("C").unwrap(), "${A}");
+        assert_eq!(vars.get("A").unwrap().as_ref().unwrap(), "a");
+        assert_eq!(vars.get("B").unwrap().as_ref().unwrap(), "$A");
+        assert_eq!(vars.get("C").unwrap().as_ref().unwrap(), "${A}");
     }
 
     #[test]
     fn expands_in_double_quotes() {
         let vars = DotEnv::default()
-            .load(
-                "A=a\nB=\"$A\"\nC=\"${A}\"".to_string(),
-                Path::new("/dev/null"),
-            )
+            .load("A=a\nB=\"$A\"\nC=\"${A}\"", Path::new("/dev/null"))
             .unwrap();
 
-        assert_eq!(vars.get("A").unwrap(), "a");
-        assert_eq!(vars.get("B").unwrap(), "a");
-        assert_eq!(vars.get("C").unwrap(), "a");
+        assert_eq!(vars.get("A").unwrap().as_ref().unwrap(), "a");
+        assert_eq!(vars.get("B").unwrap().as_ref().unwrap(), "a");
+        assert_eq!(vars.get("C").unwrap().as_ref().unwrap(), "a");
     }
 
     #[test]
     fn expands_in_unquoted() {
         let vars = DotEnv::default()
-            .load("A=a\nB=$A\nC=${A}".to_string(), Path::new("/dev/null"))
+            .load("A=a\nB=$A\nC=${A}", Path::new("/dev/null"))
             .unwrap();
 
-        assert_eq!(vars.get("A").unwrap(), "a");
-        assert_eq!(vars.get("B").unwrap(), "a");
-        assert_eq!(vars.get("C").unwrap(), "a");
+        assert_eq!(vars.get("A").unwrap().as_ref().unwrap(), "a");
+        assert_eq!(vars.get("B").unwrap().as_ref().unwrap(), "a");
+        assert_eq!(vars.get("C").unwrap().as_ref().unwrap(), "a");
     }
 }

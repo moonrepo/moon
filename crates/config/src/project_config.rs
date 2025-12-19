@@ -114,7 +114,7 @@ config_struct!(
 
         /// A map of environment variables that will be inherited by
         /// all tasks within the project.
-        pub env: FxHashMap<String, String>,
+        pub env: FxHashMap<String, Option<String>>,
 
         /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.

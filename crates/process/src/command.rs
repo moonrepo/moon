@@ -146,6 +146,18 @@ impl Command {
         self
     }
 
+    pub fn env_opt<K, V>(&mut self, key: K, val: Option<V>) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+        V: AsRef<OsStr>,
+    {
+        self.env.insert(
+            key.as_ref().to_os_string(),
+            val.map(|v| v.as_ref().to_os_string()),
+        );
+        self
+    }
+
     pub fn env_if_missing<K, V>(&mut self, key: K, val: V) -> &mut Self
     where
         K: AsRef<OsStr>,

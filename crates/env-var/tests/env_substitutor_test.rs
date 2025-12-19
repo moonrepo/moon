@@ -118,7 +118,7 @@ mod env_substitutor {
     #[test]
     fn handles_flags_when_not_missing() {
         let mut envs = FxHashMap::default();
-        envs.insert("KEY".to_owned(), "value".to_owned());
+        envs.insert("KEY".to_owned(), Some("value".to_owned()));
         let mut sub = EnvSubstitutor::default().with_local_vars(&envs);
 
         assert_eq!(sub.substitute("$KEY"), "value");
@@ -135,8 +135,8 @@ mod env_substitutor {
         global.set("GLOBAL", "global");
 
         let mut local = FxHashMap::default();
-        local.insert("SOURCE".to_owned(), "local".to_owned());
-        local.insert("LOCAL".to_owned(), "local".to_owned());
+        local.insert("SOURCE".to_owned(), Some("local".to_owned()));
+        local.insert("LOCAL".to_owned(), Some("local".to_owned()));
 
         let mut sub = EnvSubstitutor::default()
             .with_local_vars(&local)

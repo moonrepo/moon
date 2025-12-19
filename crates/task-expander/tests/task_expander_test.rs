@@ -151,7 +151,7 @@ mod task_expander {
 
             let mut task = create_task();
             task.command = "./$FOO".into();
-            task.env.insert("FOO".into(), "foo-self".into());
+            task.env.insert("FOO".into(), Some("foo-self".into()));
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
@@ -307,7 +307,8 @@ mod task_expander {
 
             let mut task = create_task();
             task.args = vec!["a".into(), "${FOO_BAR}".into(), "b".into()];
-            task.env.insert("FOO_BAR".into(), "foo-bar-self".into());
+            task.env
+                .insert("FOO_BAR".into(), Some("foo-bar-self".into()));
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
@@ -387,7 +388,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                env: FxHashMap::from_iter([("FOO".into(), Some("bar".into()))]),
                 target: Target::parse("test").unwrap(),
                 ..TaskDependencyConfig::default()
             });
@@ -401,7 +402,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::None,
-                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    env: FxHashMap::from_iter([("FOO".into(), Some("bar".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -416,7 +417,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                env: FxHashMap::from_iter([("FOO".into(), "$project-$language".into())]),
+                env: FxHashMap::from_iter([("FOO".into(), Some("$project-$language".into()))]),
                 target: Target::parse("test").unwrap(),
                 ..TaskDependencyConfig::default()
             });
@@ -430,7 +431,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::None,
-                    env: FxHashMap::from_iter([("FOO".into(), "project-unknown".into())]),
+                    env: FxHashMap::from_iter([("FOO".into(), Some("project-unknown".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -446,7 +447,7 @@ mod task_expander {
 
             task.deps.push(TaskDependencyConfig {
                 args: TaskArgs::String("a b c".into()),
-                env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                env: FxHashMap::from_iter([("FOO".into(), Some("bar".into()))]),
                 target: Target::parse("test").unwrap(),
                 optional: None,
             });
@@ -460,7 +461,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    env: FxHashMap::from_iter([("FOO".into(), Some("bar".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -478,9 +479,9 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "inner-${FOO}".into());
-            task.env.insert("KEY3".into(), "$KEY1-self".into());
+            task.env.insert("KEY1".into(), Some("value1".into()));
+            task.env.insert("KEY2".into(), Some("inner-${FOO}".into()));
+            task.env.insert("KEY3".into(), Some("$KEY1-self".into()));
             task.options.infer_inputs = true;
 
             let bag = GlobalEnvBag::instance();
@@ -496,9 +497,9 @@ mod task_expander {
             assert_eq!(
                 task.env,
                 FxHashMap::from_iter([
-                    ("KEY1".into(), "value1".into()),
-                    ("KEY2".into(), "inner-foo".into()),
-                    ("KEY3".into(), "value1-self".into()),
+                    ("KEY1".into(), Some("value1".into())),
+                    ("KEY2".into(), Some("inner-foo".into())),
+                    ("KEY3".into(), Some("value1-self".into())),
                 ])
             );
         }
@@ -510,8 +511,9 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.env.insert("KEY1".into(), "@globs(all)".into());
-            task.env.insert("KEY2".into(), "$project-$task".into());
+            task.env.insert("KEY1".into(), Some("@globs(all)".into()));
+            task.env
+                .insert("KEY2".into(), Some("$project-$task".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project_graph, &project, &context)
@@ -521,8 +523,8 @@ mod task_expander {
             assert_eq!(
                 task.env,
                 FxHashMap::from_iter([
-                    ("KEY1".into(), "./*.md,./**/*.json".into()),
-                    ("KEY2".into(), "project-task".into()),
+                    ("KEY1".into(), Some("./*.md,./**/*.json".into())),
+                    ("KEY2".into(), Some("project-task".into())),
                 ])
             );
         }
@@ -536,8 +538,9 @@ mod task_expander {
             let mut task = create_task();
             task.options.run_from_workspace_root = true;
 
-            task.env.insert("KEY1".into(), "@globs(all)".into());
-            task.env.insert("KEY2".into(), "$project-$task".into());
+            task.env.insert("KEY1".into(), Some("@globs(all)".into()));
+            task.env
+                .insert("KEY2".into(), Some("$project-$task".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project_graph, &project, &context)
@@ -549,9 +552,9 @@ mod task_expander {
                 FxHashMap::from_iter([
                     (
                         "KEY1".into(),
-                        "./project/source/*.md,./project/source/**/*.json".into()
+                        Some("./project/source/*.md,./project/source/**/*.json".into())
                     ),
-                    ("KEY2".into(), "project-task".into()),
+                    ("KEY2".into(), Some("project-task".into())),
                 ])
             );
         }
@@ -564,7 +567,7 @@ mod task_expander {
 
             let mut task = create_task();
             task.env
-                .insert("KEY".into(), "$project-$FOO-$unknown".into());
+                .insert("KEY".into(), Some("$project-$FOO-$unknown".into()));
 
             let bag = GlobalEnvBag::instance();
             bag.set("FOO", "foo");
@@ -578,7 +581,7 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([("KEY".into(), "project-foo-$unknown".into()),])
+                FxHashMap::from_iter([("KEY".into(), Some("project-foo-$unknown".into()))])
             );
         }
 
@@ -589,8 +592,8 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "value2".into());
+            task.env.insert("KEY1".into(), Some("value1".into()));
+            task.env.insert("KEY2".into(), Some("value2".into()));
             task.options.env_files = Some(vec![Input::parse(".env").unwrap()]);
 
             let context = create_context(sandbox.path());
@@ -601,9 +604,9 @@ mod task_expander {
             assert_eq!(
                 task.env,
                 FxHashMap::from_iter([
-                    ("KEY1".into(), "value1".into()),
-                    ("KEY2".into(), "value2".into()), // Not overridden by env file
-                    ("KEY3".into(), "value3".into()),
+                    ("KEY1".into(), Some("value1".into())),
+                    ("KEY2".into(), Some("value2".into())), // Not overridden by env file
+                    ("KEY3".into(), Some("value3".into())),
                 ])
             );
         }
@@ -631,11 +634,11 @@ mod task_expander {
             assert_eq!(
                 task.env,
                 FxHashMap::from_iter([
-                    ("ROOT".into(), "true".into()),
-                    ("BASE".into(), "value".into()),
-                    ("FROM_SELF1".into(), "value".into()),
-                    ("FROM_SELF2".into(), "value".into()),
-                    ("FROM_SYSTEM".into(), "external-value".into()),
+                    ("ROOT".into(), Some("true".into())),
+                    ("BASE".into(), Some("value".into())),
+                    ("FROM_SELF1".into(), Some("value".into())),
+                    ("FROM_SELF2".into(), Some("value".into())),
+                    ("FROM_SYSTEM".into(), Some("external-value".into())),
                 ])
             );
         }
@@ -648,14 +651,14 @@ mod task_expander {
 
             let mut task = create_task();
             task.options.env_files = Some(vec![Input::parse("/.env-shared").unwrap()]);
-            task.env.insert("TOP_LEVEL".into(), "$BASE".into());
+            task.env.insert("TOP_LEVEL".into(), Some("$BASE".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
-            assert_eq!(task.env.get("TOP_LEVEL").unwrap(), "value");
+            assert_eq!(task.env.get("TOP_LEVEL").unwrap().as_deref(), Some("value"));
         }
 
         #[test]
@@ -668,14 +671,18 @@ mod task_expander {
             bag.set("MYPATH", "/another/path");
 
             let mut task = create_task();
-            task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
+            task.env
+                .insert("MYPATH".into(), Some("/path:$MYPATH".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
-            assert_eq!(task.env.get("MYPATH").unwrap(), "/path:/another/path");
+            assert_eq!(
+                task.env.get("MYPATH").unwrap().as_deref(),
+                Some("/path:/another/path")
+            );
 
             bag.remove("MYPATH");
         }
@@ -687,14 +694,18 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
+            task.env
+                .insert("MYPATH".into(), Some("/path:$MYPATH".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project_graph, &project, &context)
                 .expand_env(&mut task)
                 .unwrap();
 
-            assert_eq!(task.env.get("MYPATH").unwrap(), "/path:$MYPATH");
+            assert_eq!(
+                task.env.get("MYPATH").unwrap().as_deref(),
+                Some("/path:$MYPATH")
+            );
         }
 
         #[test]
@@ -704,8 +715,8 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "value2".into());
+            task.env.insert("KEY1".into(), Some("value1".into()));
+            task.env.insert("KEY2".into(), Some("value2".into()));
             task.options.env_files = Some(vec![
                 Input::parse(".env").unwrap(),
                 Input::parse("/.env-shared").unwrap(),
@@ -719,15 +730,15 @@ mod task_expander {
             assert_eq!(
                 task.env,
                 FxHashMap::from_iter([
-                    ("KEY1".into(), "value1".into()),
-                    ("KEY2".into(), "value2".into()), // Not overridden by env file
-                    ("KEY3".into(), "value3".into()),
+                    ("KEY1".into(), Some("value1".into())),
+                    ("KEY2".into(), Some("value2".into())), // Not overridden by env file
+                    ("KEY3".into(), Some("value3".into())),
                     // shared
-                    ("ROOT".into(), "true".into()),
-                    ("BASE".into(), "value".into()),
-                    ("FROM_SELF1".into(), "value".into()),
-                    ("FROM_SELF2".into(), "value".into()),
-                    ("FROM_SYSTEM".into(), "".into()),
+                    ("ROOT".into(), Some("true".into())),
+                    ("BASE".into(), Some("value".into())),
+                    ("FROM_SELF1".into(), Some("value".into())),
+                    ("FROM_SELF2".into(), Some("value".into())),
+                    ("FROM_SYSTEM".into(), Some("".into())),
                 ])
             );
         }
@@ -739,8 +750,8 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "value2".into());
+            task.env.insert("KEY1".into(), Some("value1".into()));
+            task.env.insert("KEY2".into(), Some("value2".into()));
             task.options.env_files = Some(vec![Input::parse(".env-missing").unwrap()]);
 
             let context = create_context(sandbox.path());
@@ -751,8 +762,8 @@ mod task_expander {
             assert_eq!(
                 task.env,
                 FxHashMap::from_iter([
-                    ("KEY1".into(), "value1".into()),
-                    ("KEY2".into(), "value2".into()),
+                    ("KEY1".into(), Some("value1".into())),
+                    ("KEY2".into(), Some("value2".into())),
                 ])
             );
         }

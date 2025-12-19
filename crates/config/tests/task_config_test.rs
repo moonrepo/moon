@@ -176,7 +176,8 @@ deps:
       - b
       - c
     env:
-      FOO: abc
+      FOO: 'abc'
+      BAR: null
     target: ~:task
 ",
                 load_config_from_code,
@@ -194,13 +195,16 @@ deps:
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
-                        env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
+                        env: FxHashMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("^:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
                         args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                        env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
+                        env: FxHashMap::from_iter([
+                            ("FOO".into(), Some("abc".to_owned())),
+                            ("BAR".into(), None)
+                        ]),
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
                     }),
@@ -229,6 +233,30 @@ deps:
   - args: a b c
 ",
                 load_config_from_code,
+            );
+        }
+    }
+
+    mod env {
+        use super::*;
+
+        #[test]
+        fn supports_null() {
+            let config = test_parse_config(
+                r"
+env:
+  FOO: 'abc'
+  BAR: null
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.env,
+                Some(FxHashMap::from_iter([
+                    ("FOO".into(), Some("abc".to_owned())),
+                    ("BAR".into(), None)
+                ]))
             );
         }
     }

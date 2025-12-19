@@ -192,21 +192,29 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     #[instrument(skip_all)]
-    pub fn expand_env(&mut self, task: &mut Task) -> miette::Result<FxHashMap<String, String>> {
+    pub fn expand_env(
+        &mut self,
+        task: &mut Task,
+    ) -> miette::Result<FxHashMap<String, Option<String>>> {
         self.expand_env_with_task(task, None)
     }
 
     pub fn expand_env_with_task(
         &mut self,
         task: &mut Task,
-        base_env: Option<FxHashMap<String, String>>,
-    ) -> miette::Result<FxHashMap<String, String>> {
+        base_env: Option<FxHashMap<String, Option<String>>>,
+    ) -> miette::Result<FxHashMap<String, Option<String>>> {
         self.scope = TokenScope::Env;
 
         let mut env = FxHashMap::default();
         let base_env = base_env.unwrap_or_else(|| mem::take(&mut task.env));
 
         for (key, value) in base_env {
+            let Some(value) = value else {
+                env.insert(key, None);
+                continue;
+            };
+
             if self.has_token_function(&value) {
                 let result = self.replace_function(task, &value)?;
                 let mut items = vec![];
@@ -227,12 +235,12 @@ impl<'graph> TokenExpander<'graph> {
 
                 env.insert(
                     key.to_owned(),
-                    items.into_iter().collect::<Vec<_>>().join(","),
+                    Some(items.into_iter().collect::<Vec<_>>().join(",")),
                 );
             } else {
                 env.insert(
                     key.to_owned(),
-                    self.replace_variables_and_substitute(task, value)?,
+                    Some(self.replace_variables_and_substitute(task, value)?),
                 );
             }
         }

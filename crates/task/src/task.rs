@@ -89,7 +89,7 @@ cacheable!(
         pub description: Option<String>,
 
         #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub env: FxHashMap<String, String>,
+        pub env: FxHashMap<String, Option<String>>,
 
         pub id: Id,
 

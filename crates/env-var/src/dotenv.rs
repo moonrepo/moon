@@ -24,7 +24,7 @@ impl<'a> DotEnv<'a> {
     where
         I: IntoIterator<Item = (&'a OsString, &'a Option<OsString>)>,
     {
-        self.command_vars.extend(vars.into_iter());
+        self.command_vars.extend(vars);
         self
     }
 
@@ -37,7 +37,7 @@ impl<'a> DotEnv<'a> {
         &self,
         content: impl AsRef<str>,
         path: impl AsRef<Path>,
-    ) -> miette::Result<FxHashMap<String, String>> {
+    ) -> miette::Result<FxHashMap<String, Option<String>>> {
         let mut vars = FxHashMap::default();
 
         for (i, line) in content.as_ref().lines().enumerate() {
@@ -60,13 +60,16 @@ impl<'a> DotEnv<'a> {
                 self.substitute_value(&key, &value, &vars)
             };
 
-            vars.insert(key, value);
+            vars.insert(key, Some(value));
         }
 
         Ok(vars)
     }
 
-    pub fn load_file(&self, path: impl AsRef<Path>) -> miette::Result<FxHashMap<String, String>> {
+    pub fn load_file(
+        &self,
+        path: impl AsRef<Path>,
+    ) -> miette::Result<FxHashMap<String, Option<String>>> {
         self.load(fs::read_file(path.as_ref())?, path.as_ref())
     }
 
@@ -136,7 +139,7 @@ impl<'a> DotEnv<'a> {
         &self,
         key: &str,
         value: &str,
-        env: &FxHashMap<String, String>,
+        env: &FxHashMap<String, Option<String>>,
     ) -> String {
         let mut substitutor = EnvSubstitutor::default()
             .with_command_vars(self.command_vars.clone())

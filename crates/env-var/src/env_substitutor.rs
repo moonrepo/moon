@@ -11,7 +11,7 @@ pub struct EnvSubstitutor<'bag> {
 
     command_vars: FxHashMap<&'bag OsString, &'bag Option<OsString>>,
     global_vars: Option<&'bag GlobalEnvBag>,
-    local_vars: Option<&'bag FxHashMap<String, String>>,
+    local_vars: Option<&'bag FxHashMap<String, Option<String>>>,
 }
 
 impl<'bag> EnvSubstitutor<'bag> {
@@ -28,7 +28,7 @@ impl<'bag> EnvSubstitutor<'bag> {
     where
         I: IntoIterator<Item = (&'bag OsString, &'bag Option<OsString>)>,
     {
-        self.command_vars.extend(vars.into_iter());
+        self.command_vars.extend(vars);
         self
     }
 
@@ -37,7 +37,7 @@ impl<'bag> EnvSubstitutor<'bag> {
         self
     }
 
-    pub fn with_local_vars(mut self, vars: &'bag FxHashMap<String, String>) -> Self {
+    pub fn with_local_vars(mut self, vars: &'bag FxHashMap<String, Option<String>>) -> Self {
         self.local_vars = Some(vars);
         self
     }
@@ -52,12 +52,15 @@ impl<'bag> EnvSubstitutor<'bag> {
 
     pub fn substitute_all(
         &mut self,
-        vars: &FxHashMap<String, String>,
-    ) -> FxHashMap<String, String> {
+        vars: &FxHashMap<String, Option<String>>,
+    ) -> FxHashMap<String, Option<String>> {
         let mut map = FxHashMap::default();
 
         for (key, value) in vars {
-            map.insert(key.into(), self.substitute_with_key(key, value));
+            map.insert(
+                key.into(),
+                value.as_ref().map(|val| self.substitute_with_key(key, val)),
+            );
         }
 
         map
@@ -76,7 +79,7 @@ impl<'bag> EnvSubstitutor<'bag> {
         let mut substituted = FxHashSet::default();
 
         // Expand non-brackets first
-        let value = ENV_VAR.replace_all(&value, |caps: &Captures| {
+        let value = ENV_VAR.replace_all(value, |caps: &Captures| {
             match caps.name("name").map(|cap| cap.as_str()) {
                 Some(key) => {
                     substituted.insert(key.to_owned());
@@ -173,7 +176,7 @@ impl<'bag> EnvSubstitutor<'bag> {
         // Then check the locals
         if !is_self
             && let Some(bag) = &self.local_vars
-            && let Some(val) = bag.get(key)
+            && let Some(Some(val)) = bag.get(key)
         {
             return Cow::Borrowed(val);
         }

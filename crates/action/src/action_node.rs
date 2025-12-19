@@ -51,7 +51,7 @@ pub struct SyncProjectNode {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct RunTaskNode {
     pub args: Vec<String>,
-    pub env: FxHashMap<String, String>,
+    pub env: FxHashMap<String, Option<String>>,
     pub interactive: bool, // Interactive with stdin
     pub persistent: bool,  // Never terminates
     pub priority: u8,
@@ -268,7 +268,9 @@ impl Hash for ActionNode {
 
                 for (key, value) in &inner.env {
                     state.write(key.as_bytes());
-                    state.write(value.as_bytes());
+                    if let Some(value) = &value {
+                        state.write(value.as_bytes());
+                    }
                 }
             }
             _ => {}

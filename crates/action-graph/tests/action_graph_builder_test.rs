@@ -907,7 +907,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        env: FxHashMap::from_iter([("FOO".into(), Some("1".into()))]),
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -918,7 +918,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        env: FxHashMap::from_iter([("BAR".into(), Some("2".into()))]),
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -941,12 +941,12 @@ mod action_graph_builder {
                     ActionNode::run_task(RunTaskNode::new(task.target.clone())),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target.clone());
-                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node.env = FxHashMap::from_iter([("FOO".into(), Some("1".into()))]);
                         node
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target);
-                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node.env = FxHashMap::from_iter([("BAR".into(), Some("2".into()))]);
                         node
                     })
                 ]
@@ -968,7 +968,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        env: FxHashMap::from_iter([("FOO".into(), Some("1".into()))]),
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -979,7 +979,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        env: FxHashMap::from_iter([("FOO".into(), Some("1".into()))]),
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -1001,7 +1001,7 @@ mod action_graph_builder {
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target);
-                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node.env = FxHashMap::from_iter([("FOO".into(), Some("1".into()))]);
                         node
                     }),
                 ]
@@ -1035,7 +1035,7 @@ mod action_graph_builder {
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
                         args: TaskArgs::String("a b c".into()),
-                        env: FxHashMap::from_iter([("FOO".into(), "1".into())]),
+                        env: FxHashMap::from_iter([("FOO".into(), Some("1".into()))]),
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -1047,7 +1047,7 @@ mod action_graph_builder {
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
                         args: TaskArgs::String("a b c".into()),
-                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        env: FxHashMap::from_iter([("BAR".into(), Some("2".into()))]),
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -1059,7 +1059,7 @@ mod action_graph_builder {
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
                         args: TaskArgs::String("x y z".into()),
-                        env: FxHashMap::from_iter([("BAR".into(), "2".into())]),
+                        env: FxHashMap::from_iter([("BAR".into(), Some("2".into()))]),
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -1083,19 +1083,19 @@ mod action_graph_builder {
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target.clone());
                         node.args = vec!["a".into(), "b".into(), "c".into()];
-                        node.env = FxHashMap::from_iter([("FOO".into(), "1".into())]);
+                        node.env = FxHashMap::from_iter([("FOO".into(), Some("1".into()))]);
                         node
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target.clone());
                         node.args = vec!["a".into(), "b".into(), "c".into()];
-                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node.env = FxHashMap::from_iter([("BAR".into(), Some("2".into()))]);
                         node
                     }),
                     ActionNode::run_task({
                         let mut node = RunTaskNode::new(task.target);
                         node.args = vec!["x".into(), "y".into(), "z".into()];
-                        node.env = FxHashMap::from_iter([("BAR".into(), "2".into())]);
+                        node.env = FxHashMap::from_iter([("BAR".into(), Some("2".into()))]);
                         node
                     }),
                 ]

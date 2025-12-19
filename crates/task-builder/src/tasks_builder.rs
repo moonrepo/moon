@@ -87,7 +87,7 @@ pub struct TasksBuilder<'proj> {
 
     project_id: &'proj Id,
     project_dependencies: &'proj [ProjectDependencyConfig],
-    project_env: FxHashMap<&'proj str, &'proj str>,
+    project_env: FxHashMap<&'proj str, Option<&'proj str>>,
     project_source: &'proj WorkspaceRelativePath,
     project_toolchains: &'proj [Id],
 
@@ -235,7 +235,7 @@ impl<'proj> TasksBuilder<'proj> {
     #[instrument(skip_all)]
     pub fn load_local_tasks(&mut self, local_config: &'proj ProjectConfig) -> &mut Self {
         for (key, value) in &local_config.env {
-            self.project_env.insert(key, value);
+            self.project_env.insert(key, value.as_deref());
         }
 
         trace!(
@@ -882,11 +882,14 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_inputs)
     }
 
-    fn inherit_project_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
+    fn inherit_project_env(
+        &self,
+        target: &Target,
+    ) -> miette::Result<FxHashMap<String, Option<String>>> {
         let env = self
             .project_env
             .iter()
-            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
+            .map(|(k, v)| ((*k).to_owned(), (*v).map(|v| v.to_string())))
             .collect::<FxHashMap<_, _>>();
 
         if !env.is_empty() {

@@ -772,7 +772,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("FOO".into(), "bar".into());
+            task.env.insert("FOO".into(), Some("bar".into()));
             task.args.push("$FOO/$project".into());
 
             let context = create_context(sandbox.path());
@@ -795,14 +795,14 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("KEY".into(), "value".into());
+            task.env.insert("KEY".into(), Some("value".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("KEY".into(), "value".into())])
+                FxHashMap::from_iter([("KEY".into(), Some("value".into()))])
             );
         }
 
@@ -813,14 +813,14 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("VAR".into(), "$project-prod".into());
+            task.env.insert("VAR".into(), Some("$project-prod".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("VAR".into(), "project-prod".into())])
+                FxHashMap::from_iter([("VAR".into(), Some("project-prod".into()))])
             );
         }
 
@@ -832,14 +832,14 @@ mod token_expander {
             let mut task = create_task();
 
             task.env
-                .insert("VARS".into(), "$project-debug-$task".into());
+                .insert("VARS".into(), Some("$project-debug-$task".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("VARS".into(), "project-debug-task".into())])
+                FxHashMap::from_iter([("VARS".into(), Some("project-debug-task".into()))])
             );
         }
 
@@ -850,7 +850,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("GROUP".into(), "@group(all)".into());
+            task.env.insert("GROUP".into(), Some("@group(all)".into()));
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
@@ -860,7 +860,7 @@ mod token_expander {
                 expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([(
                     "GROUP".into(),
-                    "./config.yml,./dir/subdir,./*.md,./**/*.json".into()
+                    Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
                 )])
             );
             assert_eq!(
@@ -886,7 +886,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("GROUP".into(), "@group(all)".into());
+            task.env.insert("GROUP".into(), Some("@group(all)".into()));
             task.options.infer_inputs = false;
 
             let context = create_context(sandbox.path());
@@ -896,7 +896,7 @@ mod token_expander {
                 expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([(
                     "GROUP".into(),
-                    "./config.yml,./dir/subdir,./*.md,./**/*.json".into()
+                    Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
                 )])
             );
             assert!(task.input_files.is_empty());
@@ -910,7 +910,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("GROUP".into(), "@group(all)".into());
+            task.env.insert("GROUP".into(), Some("@group(all)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
@@ -919,7 +919,7 @@ mod token_expander {
                 expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([(
                     "GROUP".into(),
-                    "./config.yml,./dir/subdir,./*.md,./**/*.json".into()
+                    Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
                 )])
             );
         }
@@ -931,14 +931,14 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("DIRS".into(), "@dirs(dirs)".into());
+            task.env.insert("DIRS".into(), Some("@dirs(dirs)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("DIRS".into(), "./dir/subdir,./other".into())])
+                FxHashMap::from_iter([("DIRS".into(), Some("./dir/subdir,./other".into()))])
             );
         }
 
@@ -949,7 +949,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("FILES".into(), "@files(all)".into());
+            task.env.insert("FILES".into(), Some("@files(all)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
@@ -958,7 +958,9 @@ mod token_expander {
                 expander.expand_env(&mut task).unwrap(),
                 FxHashMap::from_iter([(
                     "FILES".into(),
-                    "./config.yml,./dir/subdir/nested.json,./docs.md,./other/file.json".into()
+                    Some(
+                        "./config.yml,./dir/subdir/nested.json,./docs.md,./other/file.json".into()
+                    )
                 )])
             );
         }
@@ -970,14 +972,14 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("GLOBS".into(), "@globs(all)".into());
+            task.env.insert("GLOBS".into(), Some("@globs(all)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("GLOBS".into(), "./*.md,./**/*.json".into())])
+                FxHashMap::from_iter([("GLOBS".into(), Some("./*.md,./**/*.json".into()))])
             );
         }
 
@@ -988,14 +990,14 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("ROOT".into(), "@root(all)".into());
+            task.env.insert("ROOT".into(), Some("@root(all)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("ROOT".into(), "./dir/subdir".into())])
+                FxHashMap::from_iter([("ROOT".into(), Some("./dir/subdir".into()))])
             );
         }
 
@@ -1013,14 +1015,14 @@ mod token_expander {
 
             let mut task = create_task();
 
-            task.env.insert("ROOT".into(), "@meta(name)".into());
+            task.env.insert("ROOT".into(), Some("@meta(name)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("ROOT".into(), "name".into())])
+                FxHashMap::from_iter([("ROOT".into(), Some("name".into()))])
             );
         }
 
@@ -1034,7 +1036,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("IN".into(), "@in(0)".into());
+            task.env.insert("IN".into(), Some("@in(0)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
@@ -1052,7 +1054,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("OUT".into(), "@out(0)".into());
+            task.env.insert("OUT".into(), Some("@out(0)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
@@ -1070,7 +1072,7 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("OUT".into(), "@envs(envs)".into());
+            task.env.insert("OUT".into(), Some("@envs(envs)".into()));
 
             let context = create_context(sandbox.path());
             let mut expander = TokenExpander::new(&project_graph, &project, &context);
@@ -1786,8 +1788,8 @@ mod token_expander {
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
-            task.env.insert("FOO".into(), "foo".into());
-            task.env.insert("BAR".into(), "bar".into());
+            task.env.insert("FOO".into(), Some("foo".into()));
+            task.env.insert("BAR".into(), Some("bar".into()));
 
             task.outputs = vec![
                 Output::File(stub_file_output("$FOO/file.txt")),

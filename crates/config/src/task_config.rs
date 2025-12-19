@@ -128,7 +128,7 @@ config_struct!(
         pub args: TaskArgs,
 
         /// A map of environment variables specific to this dependency.
-        pub env: FxHashMap<String, String>,
+        pub env: FxHashMap<String, Option<String>>,
 
         /// The target of the depended on task.
         pub target: Target,
@@ -214,7 +214,7 @@ config_struct!(
 
         /// A map of environment variables that will be set in the child
         /// process when the task is ran.
-        pub env: Option<FxHashMap<String, String>>,
+        pub env: Option<FxHashMap<String, Option<String>>>,
 
         /// Internal only. Inputs defined through task inheritance.
         #[setting(skip, merge = merge::append_vec)]

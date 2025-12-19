@@ -397,13 +397,13 @@ implicitDeps:
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
-                        env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
+                        env: FxHashMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("^:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
                         args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                        env: FxHashMap::from_iter([("FOO".into(), "abc".into())]),
+                        env: FxHashMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
                     }),

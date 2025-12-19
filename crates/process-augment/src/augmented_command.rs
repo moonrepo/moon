@@ -66,7 +66,10 @@ impl<'app> AugmentedCommand<'app> {
             builder.args(&task.args);
         }
 
-        builder.envs(&task.env);
+        for (key, value) in &task.env {
+            builder.env_opt(key, value.as_deref());
+        }
+
         builder
     }
 

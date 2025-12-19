@@ -302,7 +302,7 @@ mod command_builder {
             let command = container
                 .create_command_with_config(ActionContext::default(), |_, node| {
                     if let ActionNode::RunTask(inner) = node {
-                        inner.env.insert("ANOTHER".into(), "value".into());
+                        inner.env.insert("ANOTHER".into(), Some("value".into()));
                     }
                 })
                 .await;
@@ -316,7 +316,7 @@ mod command_builder {
             let command = container
                 .create_command_with_config(ActionContext::default(), |_, node| {
                     if let ActionNode::RunTask(inner) = node {
-                        inner.env.insert("KEY".into(), "overwritten".into());
+                        inner.env.insert("KEY".into(), Some("overwritten".into()));
                     }
                 })
                 .await;
@@ -330,13 +330,13 @@ mod command_builder {
             let command = container
                 .create_command_with_config(ActionContext::default(), |_, node| {
                     if let ActionNode::RunTask(inner) = node {
-                        inner.env.insert("PWD".into(), "overwritten".into());
+                        inner.env.insert("PWD".into(), Some("overwritten".into()));
                         inner
                             .env
-                            .insert("MOON_PROJECT_ID".into(), "overwritten".into());
+                            .insert("MOON_PROJECT_ID".into(), Some("overwritten".into()));
                         inner
                             .env
-                            .insert("PROTO_VERSION".into(), "overwritten".into());
+                            .insert("PROTO_VERSION".into(), Some("overwritten".into()));
                     }
                 })
                 .await;

@@ -321,6 +321,30 @@ tasks:
       shell: false
 ```
 
+### Env var substitution behavior
+
+The syntax and behavior for substituting (expanding/interpolation) environment variables has
+changed, to better align with the standard of `.env` files. The biggest change is that flagless
+tokens (`$VAR`) and `?` flag tokens (`$VAR?`) swapped functionality. Refer to the following table:
+
+| Syntax              | v1                                                         | v2                                                            |
+| ------------------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| `$VAR`              | Substitute with variable syntax (`$VAR`) if variable empty | 💥 Substitute with empty string if variable empty             |
+| `$VAR!`             | Don't substitute and keep variable syntax (`$VAR`)         | 💥 Removed syntax                                             |
+| `$VAR?`             | Substitute with empty string if variable empty             | 💥 Removed syntax                                             |
+| `${VAR}`            | Substitute with variable syntax (`$VAR`) if variable empty | 💥 Substitute with empty string if variable empty             |
+| `${VAR!}`           | Don't substitute and keep variable syntax (`$VAR`)         | ~                                                             |
+| `${VAR?}`           | Substitute with empty string if variable empty             | 💥 Substitute with variable syntax (`$VAR`) if variable empty |
+| `${VAR:default}`    | Use default value if variable empty                        | ~                                                             |
+| `${VAR:-default}`   | ⛔️ Not supported                                          | Use default value if variable empty                           |
+| `${VAR:+alternate}` | ⛔️ Not supported                                          | Use alternate value if variable non-empty                     |
+
+Legend:
+
+- `~` indicates the syntax/functionality is the same as v1
+- `💥` indicates breaking change
+- `⛔️` indicates not supported
+
 ### Env var precedence
 
 The order of precedence for environment variables has slightly changed when running tasks, as it was
@@ -335,8 +359,8 @@ latter overwriting the former:
   - via profile scripts (`.bashrc`, `.zshrc`, etc)
   - via command line: `KEY=value moon ...`
 
-In regards to variable substitution/expansion/interpolation, each tier can reference variables
-within the same tier, or the higher tier(s). Refer to the following table:
+In regards to variable substitution, each tier can reference variables within the same tier, or the
+higher tier(s). Refer to the following table:
 
 | Tier   | Can reference       |
 | ------ | ------------------- |
@@ -344,18 +368,31 @@ within the same tier, or the higher tier(s). Refer to the following table:
 | Task   | Task, Shell         |
 | Shell  | Shell               |
 
-If you don't want to inherit a shell variable, you can override it in the task env variables with a
-null, or by appending `!` to the variable name.
+If you don't want to inherit a shell variable, you can override it in the task with a null value.
 
-```shell
+```yaml
 tasks:
   dev:
     env:
-      # Don't inherit shell
       EXAMPLE: null
-      # Overwrite shell
-      EXAMPLE!: 'overwritten value'
 ```
+
+### Deferred `.env` files
+
+In v1, when `options.envFile` was enabled, the `.env` file(s) were loaded at the time of task
+creation, during the building of project/task graphs. This meant that if the `.env` file changed
+between the time of graph creation and task execution, the changes would not be reflected.
+
+In v2 and later, `.env` files are loaded _just before_ task execution, ensuring that any changes to
+the file are picked up.
+
+:::caution
+
+Because of this change, task `env` variables will continue to override `.env` file variables, BUT
+can no longer reference them for substitution. This is because the `.env` files are loaded later in
+the process.
+
+:::
 
 ### Other changes
 

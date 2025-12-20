@@ -157,10 +157,7 @@ impl Command {
     }
 
     pub fn cwd<P: AsRef<OsStr>>(&mut self, dir: P) -> &mut Self {
-        let dir = dir.as_ref().to_os_string();
-
-        self.env("PWD", &dir);
-        self.cwd = Some(dir);
+        self.cwd = Some(dir.as_ref().to_os_string());
         self
     }
 

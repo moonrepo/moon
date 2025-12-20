@@ -167,6 +167,7 @@ impl<'task> CommandBuilder<'task> {
                 make_path(&self.app.workspace_root),
             ),
             ("MOON_WORKING_DIR".into(), make_path(&self.app.working_dir)),
+            ("PWD".into(), make_path(&self.app.working_dir)),
         ]));
 
         // Load variables from .env files

@@ -488,6 +488,7 @@ impl Command {
 
         if let Some(cwd) = &self.cwd {
             command.current_dir(cwd);
+            command.env("PWD", cwd);
         }
 
         // And lastly inherit lookup paths

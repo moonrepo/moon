@@ -1,6 +1,5 @@
 use moon_env_var::{DotEnv, GlobalEnvBag, QuoteStyle};
 use rustc_hash::FxHashMap;
-use std::ffi::OsString;
 use std::path::Path;
 
 mod dotenv {
@@ -203,10 +202,7 @@ mod dotenv {
     }
 
     #[test]
-    fn expand_uses_precedence_command_over_local_over_global() {
-        let key = OsString::from("SOURCE");
-        let cmd_val = Some(OsString::from("cmd"));
-
+    fn expand_uses_precedence_local_over_global() {
         let mut env = FxHashMap::default();
         env.insert("SOURCE".to_owned(), Some("local".to_owned()));
 
@@ -215,25 +211,8 @@ mod dotenv {
 
         assert_eq!(
             DotEnv::default()
-                .with_command_vars(vec![(&key, &cmd_val)])
                 .with_global_vars(&global)
                 .substitute_value("KEY", "$SOURCE", &env),
-            "cmd"
-        );
-    }
-
-    #[test]
-    fn expand_ignores_none_command_var() {
-        let key = OsString::from("A");
-        let none_val: Option<OsString> = None;
-
-        let mut env = FxHashMap::default();
-        env.insert("A".to_owned(), Some("local".to_owned()));
-
-        assert_eq!(
-            DotEnv::default()
-                .with_command_vars(vec![(&key, &none_val)])
-                .substitute_value("KEY", "$A", &env),
             "local"
         );
     }

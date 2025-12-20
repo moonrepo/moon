@@ -13,7 +13,7 @@ use tracing::warn;
 pub trait RemoteClient: Send + Sync {
     fn extract_headers(&self, config: &RemoteConfig) -> miette::Result<Option<HeaderMap>> {
         let mut headers = HeaderMap::default();
-        let mut substitutor = EnvSubstitutor::new();
+        let mut substitutor = EnvSubstitutor::default().with_global_vars(GlobalEnvBag::instance());
 
         if let Some(auth) = &config.auth {
             for (key, value) in &auth.headers {

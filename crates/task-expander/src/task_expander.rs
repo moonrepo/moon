@@ -133,7 +133,8 @@ impl<'graph> TaskExpander<'graph> {
                 TaskArgs::List(dep_args)
             };
 
-            dep.env = EnvSubstitutor::new()
+            dep.env = EnvSubstitutor::default()
+                .with_global_vars(GlobalEnvBag::instance())
                 .with_local_vars(&dep_env)
                 .substitute_all(&dep_env);
         }
@@ -153,7 +154,8 @@ impl<'graph> TaskExpander<'graph> {
 
         let env = self.token.expand_env(task)?;
 
-        task.env = EnvSubstitutor::new()
+        task.env = EnvSubstitutor::default()
+            .with_global_vars(GlobalEnvBag::instance())
             .with_local_vars(&env)
             .substitute_all(&env);
 

@@ -3,7 +3,6 @@ use crate::env_substitutor::EnvSubstitutor;
 use crate::global_bag::GlobalEnvBag;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
-use std::ffi::OsString;
 use std::path::Path;
 
 #[derive(Debug, PartialEq)]
@@ -15,21 +14,21 @@ pub enum QuoteStyle {
 
 #[derive(Default)]
 pub struct DotEnv<'a> {
-    command_vars: FxHashMap<&'a OsString, &'a Option<OsString>>,
     global_vars: Option<&'a GlobalEnvBag>,
+    local_vars: FxHashMap<&'a String, &'a Option<String>>,
 }
 
 impl<'a> DotEnv<'a> {
-    pub fn with_command_vars<I>(mut self, vars: I) -> Self
-    where
-        I: IntoIterator<Item = (&'a OsString, &'a Option<OsString>)>,
-    {
-        self.command_vars.extend(vars);
+    pub fn with_global_vars(mut self, vars: &'a GlobalEnvBag) -> Self {
+        self.global_vars = Some(vars);
         self
     }
 
-    pub fn with_global_vars(mut self, vars: &'a GlobalEnvBag) -> Self {
-        self.global_vars = Some(vars);
+    pub fn with_local_vars<I>(mut self, vars: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a String, &'a Option<String>)>,
+    {
+        self.local_vars.extend(vars);
         self
     }
 
@@ -141,9 +140,7 @@ impl<'a> DotEnv<'a> {
         value: &str,
         env: &FxHashMap<String, Option<String>>,
     ) -> String {
-        let mut substitutor = EnvSubstitutor::default()
-            .with_command_vars(self.command_vars.clone())
-            .with_local_vars(env);
+        let mut substitutor = EnvSubstitutor::default().with_local_vars(env);
 
         if let Some(vars) = &self.global_vars {
             substitutor = substitutor.with_global_vars(vars);

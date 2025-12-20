@@ -379,7 +379,11 @@ in order, and load them if they exist:
 - `.env.<task_id>`
 - `.env.<task_id>.local`
 
-Additionally, `*.local` files will only be loaded locally, and not in CI environments.
+Additionally, the following changes and improvements have been made.
+
+- Added support for `*.local` files, which will only be loaded locally and not in CI environments.
+- Deferred loading of env files until task execution time, instead of during task creation (breaking
+  change).
 
 ### New `utility` preset
 

@@ -745,7 +745,8 @@ impl<'graph> TokenExpander<'graph> {
         task: &Task,
         value: T,
     ) -> miette::Result<String> {
-        Ok(EnvSubstitutor::new()
+        Ok(EnvSubstitutor::default()
+            .with_global_vars(GlobalEnvBag::instance())
             .with_local_vars(&task.env)
             .substitute(self.replace_variables(task, value.as_ref())?))
     }

@@ -1,4 +1,4 @@
-use crate::command::{Command, CommandEnvVar};
+use crate::command::{Command, EnvBehavior};
 use crate::command_line::CommandLine;
 // use crate::output_stream::capture_stream;
 use crate::output::Output;
@@ -472,15 +472,15 @@ impl Command {
         // Then set explicit vars
         for (key, value) in &self.env {
             match value {
-                CommandEnvVar::Set(value) => {
+                EnvBehavior::Set(value) => {
                     command.env(key, value);
                 }
-                CommandEnvVar::SetIfMissing(value) => {
+                EnvBehavior::SetIfMissing(value) => {
                     if !bag.has(key) {
                         command.env(key, value);
                     }
                 }
-                CommandEnvVar::Unset => {
+                EnvBehavior::Unset => {
                     command.env_remove(key);
                 }
             };
@@ -555,7 +555,7 @@ impl Command {
             .env
             .iter()
             .filter_map(|(key, value)| {
-                if value == &CommandEnvVar::Unset {
+                if value == &EnvBehavior::Unset {
                     None
                 } else if debug_env
                     || key

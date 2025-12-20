@@ -3,42 +3,26 @@ use crate::{ENV_VAR, ENV_VAR_BRACKETS};
 use regex::Captures;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::borrow::Cow;
-use std::ffi::OsString;
 
 #[derive(Default)]
 pub struct EnvSubstitutor<'bag> {
     pub replaced: FxHashSet<String>,
 
-    command_vars: FxHashMap<&'bag OsString, &'bag Option<OsString>>,
     global_vars: Option<&'bag GlobalEnvBag>,
-    local_vars: Option<&'bag FxHashMap<String, Option<String>>>,
+    local_vars: FxHashMap<&'bag String, &'bag Option<String>>,
 }
 
 impl<'bag> EnvSubstitutor<'bag> {
-    pub fn new() -> Self {
-        Self::default().with_global_vars(GlobalEnvBag::instance())
-    }
-
-    pub fn without_global_vars(mut self) -> Self {
-        self.global_vars = None;
-        self
-    }
-
-    pub fn with_command_vars<I>(mut self, vars: I) -> Self
-    where
-        I: IntoIterator<Item = (&'bag OsString, &'bag Option<OsString>)>,
-    {
-        self.command_vars.extend(vars);
-        self
-    }
-
     pub fn with_global_vars(mut self, vars: &'bag GlobalEnvBag) -> Self {
         self.global_vars = Some(vars);
         self
     }
 
-    pub fn with_local_vars(mut self, vars: &'bag FxHashMap<String, Option<String>>) -> Self {
-        self.local_vars = Some(vars);
+    pub fn with_local_vars<I>(mut self, vars: I) -> Self
+    where
+        I: IntoIterator<Item = (&'bag String, &'bag Option<String>)>,
+    {
+        self.local_vars.extend(vars);
         self
     }
 
@@ -168,16 +152,8 @@ impl<'bag> EnvSubstitutor<'bag> {
     pub fn get_replacement_value(&self, key: &str, parent_key: Option<&str>) -> Cow<'_, str> {
         let is_self = parent_key.is_some_and(|k| k == key);
 
-        // Command first as they take predence
-        if let Some(Some(val)) = self.command_vars.get(&OsString::from(key)) {
-            return val.to_string_lossy();
-        }
-
         // Then check the locals
-        if !is_self
-            && let Some(bag) = &self.local_vars
-            && let Some(Some(val)) = bag.get(key)
-        {
+        if !is_self && let Some(Some(val)) = self.local_vars.get(&String::from(key)) {
             return Cow::Borrowed(val);
         }
 

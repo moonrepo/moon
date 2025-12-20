@@ -120,8 +120,9 @@ impl<'task> CommandBuilder<'task> {
     #[instrument(skip_all)]
     fn inject_env(&mut self, hash: &str) -> miette::Result<()> {
         let task = self.task;
+        let mut moon_env = FxHashMap::<String, Option<String>>::default();
 
-        // Must be first!
+        // Inherit task dependent variables
         if let ActionNode::RunTask(inner) = &self.node
             && !inner.env.is_empty()
         {
@@ -131,34 +132,42 @@ impl<'task> CommandBuilder<'task> {
                 "Inheriting env from dependent task"
             );
 
-            for (key, value) in &inner.env {
-                self.command.env_opt(key, value.as_deref());
-            }
+            moon_env.extend(inner.env.clone());
         }
 
-        self.command.env("PWD", self.working_dir);
-
         // Inherit moon variables
-        self.command
-            .env("MOON_CACHE_DIR", &self.app.cache_engine.cache_dir);
-        self.command
-            .env("MOON_PROJECT_ID", self.project.id.as_str());
-        self.command.env("MOON_PROJECT_ROOT", &self.project.root);
-        self.command
-            .env("MOON_PROJECT_SOURCE", self.project.source.as_str());
-        self.command.env("MOON_TASK_ID", task.id.as_str());
-        self.command.env("MOON_TASK_HASH", hash);
-        self.command.env("MOON_TARGET", task.target.as_str());
-        self.command
-            .env("MOON_WORKSPACE_ROOT", &self.app.workspace_root);
-        self.command.env("MOON_WORKING_DIR", &self.app.working_dir);
-        self.command.env(
-            "MOON_PROJECT_SNAPSHOT",
-            self.app
-                .cache_engine
-                .state
-                .get_project_snapshot_path(&self.project.id),
-        );
+        let make_path = |path: &Path| Some(path.to_string_lossy().to_string());
+
+        moon_env.extend(FxHashMap::from_iter([
+            (
+                "MOON_CACHE_DIR".into(),
+                make_path(&self.app.cache_engine.cache_dir),
+            ),
+            ("MOON_PROJECT_ID".into(), Some(self.project.id.to_string())),
+            ("MOON_PROJECT_ROOT".into(), make_path(&self.project.root)),
+            (
+                "MOON_PROJECT_SOURCE".into(),
+                Some(self.project.source.to_string()),
+            ),
+            (
+                "MOON_PROJECT_SNAPSHOT".into(),
+                make_path(
+                    &self
+                        .app
+                        .cache_engine
+                        .state
+                        .get_project_snapshot_path(&self.project.id),
+                ),
+            ),
+            ("MOON_TASK_ID".into(), Some(task.id.to_string())),
+            ("MOON_TASK_HASH".into(), Some(hash.to_string())),
+            ("MOON_TARGET".into(), Some(task.target.to_string())),
+            (
+                "MOON_WORKSPACE_ROOT".into(),
+                make_path(&self.app.workspace_root),
+            ),
+            ("MOON_WORKING_DIR".into(), make_path(&self.app.working_dir)),
+        ]));
 
         // Load variables from .env files
         if let Some(env_files) = &self.task.options.env_files {
@@ -179,7 +188,7 @@ impl<'task> CommandBuilder<'task> {
                 "Loading environment variables from .env files",
             );
 
-            let mut env_vars = FxHashMap::default();
+            let mut dot_env = FxHashMap::default();
             let ci = is_ci();
 
             for env_path in env_paths {
@@ -208,9 +217,16 @@ impl<'task> CommandBuilder<'task> {
                     );
 
                     // Overwrite previous values
-                    env_vars.extend(
+                    dot_env.extend(
                         DotEnv::default()
-                            // .with_command_vars(&self.command.env)
+                            .with_global_vars(self.env_bag)
+                            // Can reference vars from previous dotenv files
+                            .with_local_vars(&dot_env)
+                            // Can reference task vars, but they take higher
+                            // precedence than dotenv vars
+                            .with_local_vars(&self.task.env)
+                            // Can also reference moon vars
+                            .with_local_vars(&moon_env)
                             .load_file(&env_path)?,
                     );
                 } else {
@@ -223,7 +239,7 @@ impl<'task> CommandBuilder<'task> {
             }
 
             // Don't override task-level variables
-            for (key, value) in env_vars {
+            for (key, value) in dot_env {
                 if let Some(value) = value
                     && !self.command.contains_env(&key)
                 {
@@ -231,6 +247,8 @@ impl<'task> CommandBuilder<'task> {
                 }
             }
         }
+
+        self.command.envs_opt(moon_env);
 
         Ok(())
     }

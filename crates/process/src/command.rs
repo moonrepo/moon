@@ -8,7 +8,7 @@ use std::hash::Hasher;
 use std::sync::Arc;
 
 #[derive(Debug, PartialEq)]
-pub enum CommandEnvVar {
+pub enum EnvBehavior {
     /// Always set and overwrite global var
     Set(OsString),
 
@@ -19,12 +19,12 @@ pub enum CommandEnvVar {
     Unset,
 }
 
-impl CommandEnvVar {
+impl EnvBehavior {
     pub fn get_value(&self) -> Option<&OsString> {
         match self {
-            CommandEnvVar::Set(value) => Some(value),
-            CommandEnvVar::SetIfMissing(value) => Some(value),
-            CommandEnvVar::Unset => None,
+            EnvBehavior::Set(value) => Some(value),
+            EnvBehavior::SetIfMissing(value) => Some(value),
+            EnvBehavior::Unset => None,
         }
     }
 }
@@ -60,7 +60,7 @@ pub struct Command {
 
     pub cwd: Option<OsString>,
 
-    pub env: FxHashMap<OsString, CommandEnvVar>,
+    pub env: FxHashMap<OsString, EnvBehavior>,
 
     pub exe: CommandExecutable,
 
@@ -164,14 +164,6 @@ impl Command {
         self
     }
 
-    pub fn env_as<K>(&mut self, key: K, value: CommandEnvVar) -> &mut Self
-    where
-        K: AsRef<OsStr>,
-    {
-        self.env.insert(key.as_ref().to_os_string(), value);
-        self
-    }
-
     pub fn env<K, V>(&mut self, key: K, value: V) -> &mut Self
     where
         K: AsRef<OsStr>,
@@ -185,11 +177,11 @@ impl Command {
         K: AsRef<OsStr>,
         V: AsRef<OsStr>,
     {
-        self.env_as(
+        self.env_with_behavior(
             key,
             match value {
-                Some(v) => CommandEnvVar::Set(v.as_ref().to_os_string()),
-                None => CommandEnvVar::Unset,
+                Some(v) => EnvBehavior::Set(v.as_ref().to_os_string()),
+                None => EnvBehavior::Unset,
             },
         )
     }
@@ -198,7 +190,15 @@ impl Command {
     where
         K: AsRef<OsStr>,
     {
-        self.env_as(key, CommandEnvVar::Unset)
+        self.env_with_behavior(key, EnvBehavior::Unset)
+    }
+
+    pub fn env_with_behavior<K>(&mut self, key: K, value: EnvBehavior) -> &mut Self
+    where
+        K: AsRef<OsStr>,
+    {
+        self.env.insert(key.as_ref().to_os_string(), value);
+        self
     }
 
     pub fn envs<I, K, V>(&mut self, vars: I) -> &mut Self
@@ -354,9 +354,9 @@ impl Command {
             write(key);
 
             match value {
-                CommandEnvVar::Set(value) => write(value),
-                CommandEnvVar::SetIfMissing(value) => write(value),
-                CommandEnvVar::Unset => {}
+                EnvBehavior::Set(value) => write(value),
+                EnvBehavior::SetIfMissing(value) => write(value),
+                EnvBehavior::Unset => {}
             };
         }
 

@@ -6,7 +6,7 @@ use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_affected::Affected;
 use moon_config::TaskOptionAffectedFiles;
-use moon_process::Command;
+use moon_process::{Command, EnvBehavior};
 use moon_task::{Target, TargetLocator};
 use std::ffi::OsString;
 use utils::*;
@@ -15,7 +15,7 @@ fn get_env<'a>(command: &'a Command, key: &str) -> Option<&'a str> {
     command
         .env
         .get(&OsString::from(key))
-        .map(|v| v.as_ref().unwrap().to_str().unwrap())
+        .map(|v| v.get_value().unwrap().to_str().unwrap())
 }
 
 fn get_args(command: &Command) -> Vec<&str> {
@@ -373,7 +373,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    None
+                    EnvBehavior::Unset
                 );
             }
 
@@ -385,7 +385,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    None
+                    EnvBehavior::Unset
                 );
             }
 
@@ -462,7 +462,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    None
+                    EnvBehavior::Unset
                 );
             }
 
@@ -474,7 +474,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    None
+                    EnvBehavior::Unset
                 );
             }
 

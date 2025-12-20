@@ -42,8 +42,8 @@ pub fn contains_env_var(value: impl AsRef<str>) -> bool {
 //      - So that `KEY=value moon ...` works
 //      - Cannot access task/dotenv vars
 //  2) Task vars
-//      - Can substitute with globals
+//      - Can substitute with globals/self
 //      - Cannot access dotenv vars
 //  3) Dotenv vars
-//      - Can substitute with globals/task
+//      - Can substitute with globals/task/self
 //      - Can access previous dotenv vars

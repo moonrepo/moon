@@ -9,13 +9,13 @@ use std::sync::Arc;
 
 #[derive(Debug, PartialEq)]
 pub enum EnvBehavior {
-    /// Always set and overwrite global var
+    /// Always set and overwrite system var
     Set(OsString),
 
-    /// Only set if global var is not set
+    /// Only set if system var is not set
     SetIfMissing(OsString),
 
-    /// Unset global var and don't inherit
+    /// Unset system var and don't inherit
     Unset,
 }
 

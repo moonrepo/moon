@@ -1,7 +1,7 @@
 use crate::token_expander_error::TokenExpanderError;
 use moon_args::join_args;
 use moon_common::path::{self, RelativeFrom, WorkspaceRelativePathBuf};
-use moon_config::{Input, Output, ProjectMetadataConfig, patterns};
+use moon_config::{EnvMap, Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::{FileGroup, Project};
@@ -192,21 +192,18 @@ impl<'graph> TokenExpander<'graph> {
     }
 
     #[instrument(skip_all)]
-    pub fn expand_env(
-        &mut self,
-        task: &mut Task,
-    ) -> miette::Result<FxHashMap<String, Option<String>>> {
+    pub fn expand_env(&mut self, task: &mut Task) -> miette::Result<EnvMap> {
         self.expand_env_with_task(task, None)
     }
 
     pub fn expand_env_with_task(
         &mut self,
         task: &mut Task,
-        base_env: Option<FxHashMap<String, Option<String>>>,
-    ) -> miette::Result<FxHashMap<String, Option<String>>> {
+        base_env: Option<EnvMap>,
+    ) -> miette::Result<EnvMap> {
         self.scope = TokenScope::Env;
 
-        let mut env = FxHashMap::default();
+        let mut env = EnvMap::default();
         let base_env = base_env.unwrap_or_else(|| mem::take(&mut task.env));
 
         for (key, value) in base_env {
@@ -240,7 +237,7 @@ impl<'graph> TokenExpander<'graph> {
             } else {
                 env.insert(
                     key.to_owned(),
-                    Some(self.replace_variables_and_substitute(task, value)?),
+                    Some(self.replace_variables_and_substitute(task, &env, value)?),
                 );
             }
         }
@@ -736,18 +733,20 @@ impl<'graph> TokenExpander<'graph> {
         path: WorkspaceRelativePathBuf,
     ) -> miette::Result<WorkspaceRelativePathBuf> {
         Ok(WorkspaceRelativePathBuf::from(
-            self.replace_variables_and_substitute(task, path.as_str())?,
+            self.replace_variables_and_substitute(task, &task.env, path.as_str())?,
         ))
     }
 
     fn replace_variables_and_substitute<T: AsRef<str>>(
         &self,
         task: &Task,
+        env: &EnvMap,
         value: T,
     ) -> miette::Result<String> {
         Ok(EnvSubstitutor::default()
             .with_global_vars(GlobalEnvBag::instance())
             .with_local_vars(&task.env)
+            .with_local_vars(env)
             .substitute(self.replace_variables(task, value.as_ref())?))
     }
 

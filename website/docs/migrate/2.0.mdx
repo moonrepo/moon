@@ -360,7 +360,8 @@ latter overwriting the former:
   - via command line: `KEY=value moon ...`
 
 In regards to variable substitution, each tier can reference variables within the same tier, or the
-higher tier(s), but _not_ from lower tier(s). Refer to the following table:
+higher tier(s), but _not_ from lower tier(s). This is because variables are processed in _reverse
+order_. Refer to the following table:
 
 | Tier   | Can reference        |
 | ------ | -------------------- |

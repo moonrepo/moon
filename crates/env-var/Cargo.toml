@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 moon_common = { version = "0.2.0", path = "../common" }
+indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }

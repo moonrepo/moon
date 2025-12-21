@@ -70,9 +70,9 @@ impl<'app> AugmentedCommand<'app> {
             builder.env_with_behavior(
                 key,
                 match value {
-                    // Only set if global var not set
+                    // Only set if system var not set
                     Some(val) => EnvBehavior::SetIfMissing(OsString::from(val)),
-                    // Don't inherit global var
+                    // Don't inherit system var
                     None => EnvBehavior::Unset,
                 },
             );

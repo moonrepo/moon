@@ -1,8 +1,9 @@
+use indexmap::IndexMap;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, is_test_env};
 use moon_target::Target;
 use moon_toolchain::{ToolchainSpec, VersionSpec};
-use rustc_hash::{FxHashMap, FxHasher};
+use rustc_hash::FxHasher;
 use serde::Serialize;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -51,7 +52,7 @@ pub struct SyncProjectNode {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct RunTaskNode {
     pub args: Vec<String>,
-    pub env: FxHashMap<String, Option<String>>,
+    pub env: IndexMap<String, Option<String>>,
     pub interactive: bool, // Interactive with stdin
     pub persistent: bool,  // Never terminates
     pub priority: u8,
@@ -63,7 +64,7 @@ impl RunTaskNode {
     pub fn new(target: Target) -> Self {
         Self {
             args: vec![],
-            env: FxHashMap::default(),
+            env: IndexMap::default(),
             interactive: false,
             persistent: false,
             priority: 2, // normal

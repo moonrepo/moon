@@ -1,7 +1,8 @@
 use crate::global_bag::GlobalEnvBag;
 use crate::{ENV_VAR, ENV_VAR_BRACKETS};
+use indexmap::IndexMap;
 use regex::Captures;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashSet;
 use std::borrow::Cow;
 
 #[derive(Default)]
@@ -9,7 +10,7 @@ pub struct EnvSubstitutor<'bag> {
     pub replaced: FxHashSet<String>,
 
     global_vars: Option<&'bag GlobalEnvBag>,
-    local_vars: FxHashMap<&'bag String, &'bag Option<String>>,
+    local_vars: IndexMap<&'bag String, &'bag Option<String>>,
 }
 
 impl<'bag> EnvSubstitutor<'bag> {
@@ -36,9 +37,9 @@ impl<'bag> EnvSubstitutor<'bag> {
 
     pub fn substitute_all(
         &mut self,
-        vars: &FxHashMap<String, Option<String>>,
-    ) -> FxHashMap<String, Option<String>> {
-        let mut map = FxHashMap::default();
+        vars: &IndexMap<String, Option<String>>,
+    ) -> IndexMap<String, Option<String>> {
+        let mut map = IndexMap::default();
 
         for (key, value) in vars {
             map.insert(

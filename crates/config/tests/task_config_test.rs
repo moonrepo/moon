@@ -1,5 +1,6 @@
 mod utils;
 
+use indexmap::IndexMap;
 use moon_common::Id;
 use moon_config::{
     FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, ProjectInput,
@@ -7,7 +8,6 @@ use moon_config::{
     TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
-use rustc_hash::FxHashMap;
 use schematic::{ConfigLoader as BaseLoader, RegexSetting};
 use utils::*;
 
@@ -195,13 +195,13 @@ deps:
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
-                        env: FxHashMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
+                        env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("^:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
                         args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                        env: FxHashMap::from_iter([
+                        env: IndexMap::from_iter([
                             ("FOO".into(), Some("abc".to_owned())),
                             ("BAR".into(), None)
                         ]),
@@ -253,7 +253,7 @@ env:
 
             assert_eq!(
                 config.env,
-                Some(FxHashMap::from_iter([
+                Some(IndexMap::from_iter([
                     ("FOO".into(), Some("abc".to_owned())),
                     ("BAR".into(), None)
                 ]))

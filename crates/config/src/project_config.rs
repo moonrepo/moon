@@ -1,6 +1,6 @@
 use crate::project::*;
 use crate::shapes::Input;
-use crate::task_config::TaskConfig;
+use crate::task_config::{EnvMap, TaskConfig};
 use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
@@ -114,7 +114,7 @@ config_struct!(
 
         /// A map of environment variables that will be inherited by
         /// all tasks within the project.
-        pub env: FxHashMap<String, Option<String>>,
+        pub env: EnvMap,
 
         /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.

@@ -1,5 +1,5 @@
+use indexmap::IndexMap;
 use moon_env_var::{DotEnv, GlobalEnvBag, QuoteStyle};
-use rustc_hash::FxHashMap;
 use std::path::Path;
 
 mod dotenv {
@@ -120,19 +120,19 @@ mod dotenv {
     }
 
     #[test]
-    #[should_panic(expected = "must start with an alphabetic character or underscore")]
+    #[should_panic(expected = "Invalid environment variable key")]
     fn key_prefix_errors_number() {
         DotEnv::default().parse_key("123ABC").unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "must start with an alphabetic character or underscore")]
+    #[should_panic(expected = "Invalid environment variable key")]
     fn key_prefix_errors_symbol() {
         DotEnv::default().parse_key("-ABC").unwrap();
     }
 
     #[test]
-    #[should_panic(expected = "must contain alphanumeric characters and underscores")]
+    #[should_panic(expected = "Invalid environment variable key")]
     fn key_errors_symbol() {
         DotEnv::default().parse_key("A-BC").unwrap();
     }
@@ -229,7 +229,7 @@ mod dotenv {
 
     #[test]
     fn expand_uses_precedence_local_over_global() {
-        let mut env = FxHashMap::default();
+        let mut env = IndexMap::default();
         env.insert("SOURCE".to_owned(), Some("local".to_owned()));
 
         let global = GlobalEnvBag::default();
@@ -247,7 +247,7 @@ mod dotenv {
     fn expand_bracket_flags_and_fallbacks() {
         let dot = DotEnv::default();
 
-        let mut env = FxHashMap::default();
+        let mut env = IndexMap::default();
         env.insert("PRESENT".to_owned(), Some("value".to_owned()));
         env.insert("EMPTY".to_owned(), Some("".to_owned()));
 
@@ -282,7 +282,7 @@ mod dotenv {
     #[test]
     fn expand_non_bracket_after_bracket() {
         let dot = DotEnv::default();
-        let env = FxHashMap::default();
+        let env = IndexMap::default();
 
         // MISSING resolves to empty for non-bracket; default applies inside brackets
         assert_eq!(
@@ -294,7 +294,7 @@ mod dotenv {
     #[test]
     fn expand_with_namespaces() {
         let dot = DotEnv::default();
-        let mut env = FxHashMap::default();
+        let mut env = IndexMap::default();
         env.insert("NS".to_owned(), Some("ok".to_owned()));
 
         // Bracketed and non-bracketed namespaces expand using the name portion

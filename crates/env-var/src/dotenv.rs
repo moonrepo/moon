@@ -1,6 +1,7 @@
 use crate::dotenv_error::DotEnvError;
 use crate::env_substitutor::EnvSubstitutor;
 use crate::global_bag::GlobalEnvBag;
+use indexmap::IndexMap;
 use rustc_hash::FxHashMap;
 use starbase_utils::fs;
 use std::path::Path;
@@ -36,8 +37,8 @@ impl<'a> DotEnv<'a> {
         &self,
         content: impl AsRef<str>,
         path: impl AsRef<Path>,
-    ) -> miette::Result<FxHashMap<String, Option<String>>> {
-        let mut vars = FxHashMap::default();
+    ) -> miette::Result<IndexMap<String, Option<String>>> {
+        let mut vars = IndexMap::default();
 
         for (i, line) in content.as_ref().lines().enumerate() {
             let line_no = i + 1;
@@ -68,7 +69,7 @@ impl<'a> DotEnv<'a> {
     pub fn load_file(
         &self,
         path: impl AsRef<Path>,
-    ) -> miette::Result<FxHashMap<String, Option<String>>> {
+    ) -> miette::Result<IndexMap<String, Option<String>>> {
         self.load(fs::read_file(path.as_ref())?, path.as_ref())
     }
 
@@ -159,7 +160,7 @@ impl<'a> DotEnv<'a> {
         &self,
         key: &str,
         value: &str,
-        env: &FxHashMap<String, Option<String>>,
+        env: &IndexMap<String, Option<String>>,
     ) -> String {
         let mut substitutor = EnvSubstitutor::default().with_local_vars(env);
 

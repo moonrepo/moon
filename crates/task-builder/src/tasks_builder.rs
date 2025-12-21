@@ -7,7 +7,7 @@ use moon_common::{
     path::{WorkspaceRelativePath, encode_component, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
+    ConfigLoader, EnvMap, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
     TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig, is_glob_like,
@@ -358,7 +358,8 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env) = &config.env {
-                task.env = self.merge_map(task.env, env.to_owned(), task.options.merge_env, index);
+                task.env =
+                    self.merge_index_map(task.env, env.to_owned(), task.options.merge_env, index);
             }
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
@@ -882,15 +883,12 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_inputs)
     }
 
-    fn inherit_project_env(
-        &self,
-        target: &Target,
-    ) -> miette::Result<FxHashMap<String, Option<String>>> {
+    fn inherit_project_env(&self, target: &Target) -> miette::Result<EnvMap> {
         let env = self
             .project_env
             .iter()
             .map(|(k, v)| ((*k).to_owned(), (*v).map(|v| v.to_string())))
-            .collect::<FxHashMap<_, _>>();
+            .collect::<EnvMap>();
 
         if !env.is_empty() {
             trace!(
@@ -1009,6 +1007,48 @@ impl<'proj> TasksBuilder<'proj> {
                 }
 
                 let mut map = FxHashMap::default();
+                map.extend(next);
+                map.extend(base);
+                map
+            }
+            TaskMergeStrategy::Preserve => {
+                if index == 0 {
+                    next
+                } else {
+                    base
+                }
+            }
+            TaskMergeStrategy::Replace => next,
+        }
+    }
+
+    fn merge_index_map<K, V>(
+        &self,
+        base: IndexMap<K, V>,
+        next: IndexMap<K, V>,
+        strategy: TaskMergeStrategy,
+        index: usize,
+    ) -> IndexMap<K, V>
+    where
+        K: Eq + Hash,
+    {
+        match strategy {
+            TaskMergeStrategy::Append => {
+                if next.is_empty() {
+                    return base;
+                }
+
+                let mut map = IndexMap::default();
+                map.extend(base);
+                map.extend(next);
+                map
+            }
+            TaskMergeStrategy::Prepend => {
+                if next.is_empty() {
+                    return base;
+                }
+
+                let mut map = IndexMap::default();
                 map.extend(next);
                 map.extend(base);
                 map

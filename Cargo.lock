@@ -3389,6 +3389,7 @@ dependencies = [
 name = "moon_action"
 version = "0.0.1"
 dependencies = [
+ "indexmap",
  "miette 7.6.0",
  "moon_common",
  "moon_target",
@@ -3874,6 +3875,7 @@ dependencies = [
 name = "moon_env_var"
 version = "0.0.1"
 dependencies = [
+ "indexmap",
  "miette 7.6.0",
  "moon_common",
  "regex",

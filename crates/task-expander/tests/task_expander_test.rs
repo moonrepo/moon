@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{
-    Input, Output, TaskArgs, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
+    EnvMap, Input, Output, TaskArgs, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
 };
 use moon_env_var::GlobalEnvBag;
 use moon_task::{Target, TaskFileInput, TaskGlobInput};
@@ -271,35 +271,6 @@ mod task_expander {
         }
 
         #[test]
-        fn replaces_env_vars_from_file() {
-            let sandbox = create_empty_sandbox();
-            sandbox.create_file(".env", "FOO_BAR=foo-bar\nBAR_BAZ=bar-baz");
-
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.options.env_files = Some(vec![Input::parse("/.env").unwrap()]);
-            task.options.infer_inputs = true;
-            task.args = vec![
-                "a".into(),
-                "$FOO_BAR".into(),
-                "b".into(),
-                "c/${BAR_BAZ}/d".into(),
-            ];
-
-            let context = create_context(sandbox.path());
-            let task = TaskExpander::new(&project_graph, &project, &context)
-                .expand(&task)
-                .unwrap();
-
-            assert_eq!(task.args, ["a", "$FOO_BAR", "b", "c/${BAR_BAZ}/d"]);
-
-            assert!(task.input_env.contains("FOO_BAR"));
-            assert!(task.input_env.contains("BAR_BAZ"));
-        }
-
-        #[test]
         fn replaces_env_var_from_self() {
             let sandbox = create_empty_sandbox();
             let project_graph = create_project_graph();
@@ -388,7 +359,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                env: FxHashMap::from_iter([("FOO".into(), Some("bar".into()))]),
+                env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                 target: Target::parse("test").unwrap(),
                 ..TaskDependencyConfig::default()
             });
@@ -402,7 +373,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::None,
-                    env: FxHashMap::from_iter([("FOO".into(), Some("bar".into()))]),
+                    env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -417,7 +388,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                env: FxHashMap::from_iter([("FOO".into(), Some("$project-$language".into()))]),
+                env: EnvMap::from_iter([("FOO".into(), Some("$project-$language".into()))]),
                 target: Target::parse("test").unwrap(),
                 ..TaskDependencyConfig::default()
             });
@@ -431,7 +402,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::None,
-                    env: FxHashMap::from_iter([("FOO".into(), Some("project-unknown".into()))]),
+                    env: EnvMap::from_iter([("FOO".into(), Some("project-unknown".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -447,7 +418,7 @@ mod task_expander {
 
             task.deps.push(TaskDependencyConfig {
                 args: TaskArgs::String("a b c".into()),
-                env: FxHashMap::from_iter([("FOO".into(), Some("bar".into()))]),
+                env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                 target: Target::parse("test").unwrap(),
                 optional: None,
             });
@@ -461,7 +432,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                    env: FxHashMap::from_iter([("FOO".into(), Some("bar".into()))]),
+                    env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -496,7 +467,7 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("inner-foo".into())),
                     ("KEY3".into(), Some("value1-self".into())),
@@ -522,7 +493,7 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("./*.md,./**/*.json".into())),
                     ("KEY2".into(), Some("project-task".into())),
                 ])
@@ -549,7 +520,7 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     (
                         "KEY1".into(),
                         Some("./project/source/*.md,./project/source/**/*.json".into())
@@ -581,7 +552,7 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([("KEY".into(), Some("project-foo-$unknown".into()))])
+                EnvMap::from_iter([("KEY".into(), Some("project-foo-$unknown".into()))])
             );
         }
     }

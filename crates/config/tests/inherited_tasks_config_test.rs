@@ -1,6 +1,7 @@
 mod utils;
 
 use httpmock::prelude::*;
+use indexmap::IndexMap;
 use moon_common::Id;
 use moon_config::*;
 use moon_target::Target;
@@ -397,13 +398,13 @@ implicitDeps:
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
-                        env: FxHashMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
+                        env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("^:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
                         args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                        env: FxHashMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
+                        env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
                     }),

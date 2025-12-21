@@ -3,7 +3,8 @@ mod utils;
 use moon_common::Id;
 use moon_common::path::{self, WorkspaceRelativePathBuf};
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, Output, test_utils::*,
+    EnvMap, FileGroupInput, FileGroupInputFormat, Input, LanguageType, LayerType, Output,
+    test_utils::*,
 };
 use moon_env_var::GlobalEnvBag;
 use moon_task::{TaskFileInput, TaskGlobInput};
@@ -802,7 +803,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("KEY".into(), Some("value".into()))])
+                EnvMap::from_iter([("KEY".into(), Some("value".into()))])
             );
         }
 
@@ -820,7 +821,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("VAR".into(), Some("project-prod".into()))])
+                EnvMap::from_iter([("VAR".into(), Some("project-prod".into()))])
             );
         }
 
@@ -839,7 +840,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("VARS".into(), Some("project-debug-task".into()))])
+                EnvMap::from_iter([("VARS".into(), Some("project-debug-task".into()))])
             );
         }
 
@@ -858,7 +859,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([(
+                EnvMap::from_iter([(
                     "GROUP".into(),
                     Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
                 )])
@@ -894,7 +895,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([(
+                EnvMap::from_iter([(
                     "GROUP".into(),
                     Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
                 )])
@@ -917,7 +918,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([(
+                EnvMap::from_iter([(
                     "GROUP".into(),
                     Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
                 )])
@@ -938,7 +939,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("DIRS".into(), Some("./dir/subdir,./other".into()))])
+                EnvMap::from_iter([("DIRS".into(), Some("./dir/subdir,./other".into()))])
             );
         }
 
@@ -956,7 +957,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([(
+                EnvMap::from_iter([(
                     "FILES".into(),
                     Some(
                         "./config.yml,./dir/subdir/nested.json,./docs.md,./other/file.json".into()
@@ -979,7 +980,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("GLOBS".into(), Some("./*.md,./**/*.json".into()))])
+                EnvMap::from_iter([("GLOBS".into(), Some("./*.md,./**/*.json".into()))])
             );
         }
 
@@ -997,7 +998,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("ROOT".into(), Some("./dir/subdir".into()))])
+                EnvMap::from_iter([("ROOT".into(), Some("./dir/subdir".into()))])
             );
         }
 
@@ -1022,7 +1023,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                FxHashMap::from_iter([("ROOT".into(), Some("name".into()))])
+                EnvMap::from_iter([("ROOT".into(), Some("name".into()))])
             );
         }
 

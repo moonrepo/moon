@@ -3,7 +3,6 @@ mod utils;
 use moon_common::Id;
 use moon_config::{test_utils::*, *};
 use moon_target::Target;
-use rustc_hash::FxHashMap;
 use starbase_sandbox::create_sandbox;
 use utils::TasksBuilderContainer;
 
@@ -1100,7 +1099,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("overwrite".into())),
                     ("KEY2".into(), Some("value2".into())),
                     ("LOCAL".into(), Some("true".into())),
@@ -1157,7 +1156,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("overwrite".into())),
                     ("KEY2".into(), Some("value2".into())),
                     ("LOCAL".into(), Some("true".into())),
@@ -1212,7 +1211,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("value2".into())),
                     ("LOCAL".into(), Some("true".into())),
@@ -1269,7 +1268,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("value2".into())),
                     ("LOCAL".into(), Some("true".into())),
@@ -1323,7 +1322,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("overwrite".into())),
                     ("LOCAL".into(), Some("true".into())),
                 ])
@@ -1371,7 +1370,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("overwrite".into())),
                     ("LOCAL".into(), Some("true".into())),
                 ])
@@ -1476,7 +1475,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("value2".into())),
                 ])
@@ -1526,7 +1525,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("value2".into())),
                 ])
@@ -1573,7 +1572,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("value2".into())),
                 ])
@@ -1621,7 +1620,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("value2".into())),
                 ])
@@ -1658,7 +1657,7 @@ tasks:
 
             assert_eq!(
                 build.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("SCOPE".into(), Some("project".into())),
                     ("KEY".into(), Some("value".into())),
                 ])
@@ -1668,7 +1667,7 @@ tasks:
 
             assert_eq!(
                 run.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("SCOPE".into(), Some("project".into())),
                     ("KEY".into(), Some("value".into())),
                 ])
@@ -1678,7 +1677,7 @@ tasks:
 
             assert_eq!(
                 test.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("SCOPE".into(), Some("task".into())),
                     ("KEY".into(), Some("value".into())),
                     ("KEY2".into(), Some("value2".into())),
@@ -1922,7 +1921,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("SCOPE".into(), Some("project".into())),
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("value2".into())),
@@ -1940,7 +1939,7 @@ tasks:
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("SCOPE".into(), Some("task".into())),
                     ("KEY1".into(), Some("value1".into())),
                     ("KEY2".into(), Some("env-value2".into())),
@@ -2085,7 +2084,7 @@ tasks:
             assert_eq!(task.command, "global-parent");
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     ("VAR2".into(), Some("global-child".into())),
                     ("VAR3".into(), Some("local-child".into())),
                     ("VAR1".into(), Some("local-parent".into())),

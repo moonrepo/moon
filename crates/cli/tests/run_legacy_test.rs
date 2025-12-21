@@ -1399,7 +1399,7 @@ mod run_legacy {
                     .arg("--status")
                     .arg("added");
             });
-            let envs = ["nfile.txt", "other.txt"].join(if cfg!(windows) { ":" } else { ";" });
+            let envs = ["nfile.txt", "other.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
             assert!(predicate::str::contains(format!("\n{envs}\n")).eval(&assert.output()));
         }

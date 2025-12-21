@@ -112,6 +112,32 @@ mod dotenv {
     }
 
     #[test]
+    fn key_prefix() {
+        let dot = DotEnv::default();
+
+        assert_eq!(dot.parse_key("ABC").unwrap(), "ABC");
+        assert_eq!(dot.parse_key("_ABC").unwrap(), "_ABC");
+    }
+
+    #[test]
+    #[should_panic(expected = "must start with an alphabetic character or underscore")]
+    fn key_prefix_errors_number() {
+        DotEnv::default().parse_key("123ABC").unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "must start with an alphabetic character or underscore")]
+    fn key_prefix_errors_symbol() {
+        DotEnv::default().parse_key("-ABC").unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "must contain alphanumeric characters and underscores")]
+    fn key_errors_symbol() {
+        DotEnv::default().parse_key("A-BC").unwrap();
+    }
+
+    #[test]
     fn value_unquoted() {
         let dot = DotEnv::default();
 

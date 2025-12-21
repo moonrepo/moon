@@ -107,24 +107,24 @@ impl<'bag> EnvSubstitutor<'bag> {
                         value.to_string()
                     }
                 }
-                // Expand with default/alternate
-                Some(":") => {
+                // Expand with default if empty
+                Some(":" | ":-" | "-") => {
                     let value = self.get_replacement_value(key, parent_key);
 
-                    if let Some(def) = fallback.strip_prefix('-') {
-                        if value.is_empty() {
-                            def.to_owned()
-                        } else {
-                            value.to_string()
-                        }
-                    } else if let Some(alt) = fallback.strip_prefix('+') {
-                        if value.is_empty() {
-                            value.to_string()
-                        } else {
-                            alt.to_owned()
-                        }
+                    if value.is_empty() {
+                        fallback.to_owned()
                     } else {
                         value.to_string()
+                    }
+                }
+                // Expand with alternate if not empty
+                Some(":+" | "+") => {
+                    let value = self.get_replacement_value(key, parent_key);
+
+                    if value.is_empty() {
+                        value.to_string()
+                    } else {
+                        fallback.to_owned()
                     }
                 }
                 // Expand

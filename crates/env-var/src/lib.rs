@@ -27,7 +27,7 @@ pub static ENV_VAR: LazyLock<Regex> = LazyLock::new(|| {
 // ${ENV_VAR}
 pub static ENV_VAR_BRACKETS: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(
-        "(?:\\$\\{(?P<namespace>E:|env::|env:|env.|ENV.)?(?P<name>[A-Z0-9_]+)(?P<flag>[!?:]{1})?(?P<fallback>[^}]*)?\\})",
+        "(?:\\$\\{(?P<namespace>E:|env::|env:|env.|ENV.)?(?P<name>[A-Z0-9_]+)(?P<flag>!|\\?|:-|:\\+|-|\\+|:)?(?P<fallback>[^}]*)?\\})",
     )
     .unwrap()
 });

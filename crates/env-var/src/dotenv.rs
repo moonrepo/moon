@@ -104,15 +104,36 @@ impl<'a> DotEnv<'a> {
         let key = line_content[..eq_pos].trim();
         let value_part = line_content[eq_pos + 1..].trim();
 
-        // Validate key
+        let key = self.parse_key(key)?;
+        let (value, quote) = self.parse_value(value_part)?;
+
+        Ok(Some((key, value, quote)))
+    }
+
+    pub fn parse_key(&self, key: &str) -> miette::Result<String> {
         if key.is_empty() {
             return Err(DotEnvError::EmptyKey.into());
         }
 
-        // Parse value (handle quotes)
-        let (value, quote) = self.parse_value(value_part)?;
+        let chars = key.chars();
 
-        Ok(Some((key.to_string(), value, quote)))
+        for (i, ch) in chars.enumerate() {
+            if i == 0 && !ch.is_alphabetic() && ch != '_' {
+                return Err(DotEnvError::InvalidKeyPrefix {
+                    key: key.to_owned(),
+                }
+                .into());
+            }
+
+            if !ch.is_alphanumeric() && ch != '_' {
+                return Err(DotEnvError::InvalidKey {
+                    key: key.to_owned(),
+                }
+                .into());
+            }
+        }
+
+        Ok(key.to_owned())
     }
 
     pub fn parse_value(&self, value: &str) -> miette::Result<(String, QuoteStyle)> {

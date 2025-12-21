@@ -97,7 +97,7 @@ mod env_substitutor {
     #[test]
     fn supports_bracket_fallback() {
         for fallback in ["string", "123", "--arg", "$VAR"] {
-            let var = format!("${{ENV_VAR:{fallback}}}");
+            let var = format!("${{ENV_VAR:-{fallback}}}");
             let caps = ENV_VAR_BRACKETS.captures(&var).unwrap();
 
             assert_eq!(caps.name("fallback").unwrap().as_str(), fallback);
@@ -126,6 +126,38 @@ mod env_substitutor {
 
         assert_eq!(sub.substitute("${KEY!}"), "$KEY");
         assert_eq!(sub.substitute("${KEY?}"), "value");
+    }
+
+    #[test]
+    fn default_flag() {
+        let mut sub = EnvSubstitutor::default();
+
+        assert_eq!(sub.substitute("${KEY:default}"), "default");
+        assert_eq!(sub.substitute("${KEY:-default}"), "default");
+        assert_eq!(sub.substitute("${KEY-default}"), "default");
+
+        let mut envs = FxHashMap::default();
+        envs.insert("KEY".to_owned(), Some("value".to_owned()));
+        let mut sub = EnvSubstitutor::default().with_local_vars(&envs);
+
+        assert_eq!(sub.substitute("${KEY:default}"), "value");
+        assert_eq!(sub.substitute("${KEY:-default}"), "value");
+        assert_eq!(sub.substitute("${KEY-default}"), "value");
+    }
+
+    #[test]
+    fn alternate_flag() {
+        let mut sub = EnvSubstitutor::default();
+
+        assert_eq!(sub.substitute("${KEY:+alternate}"), "");
+        assert_eq!(sub.substitute("${KEY+alternate}"), "");
+
+        let mut envs = FxHashMap::default();
+        envs.insert("KEY".to_owned(), Some("value".to_owned()));
+        let mut sub = EnvSubstitutor::default().with_local_vars(&envs);
+
+        assert_eq!(sub.substitute("${KEY:+alternate}"), "alternate");
+        assert_eq!(sub.substitute("${KEY+alternate}"), "alternate");
     }
 
     #[test]

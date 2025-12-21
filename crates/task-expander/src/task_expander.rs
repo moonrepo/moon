@@ -152,12 +152,7 @@ impl<'graph> TaskExpander<'graph> {
             "Expanding environment variables"
         );
 
-        let env = self.token.expand_env(task)?;
-
-        task.env = EnvSubstitutor::default()
-            .with_global_vars(GlobalEnvBag::instance())
-            .with_local_vars(&env)
-            .substitute_all(&env);
+        task.env = self.token.expand_env(task)?;
 
         Ok(())
     }

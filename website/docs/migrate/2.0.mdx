@@ -327,17 +327,17 @@ The syntax and behavior for substituting (expanding/interpolation) environment v
 changed, to better align with the standard of `.env` files. The biggest change is that flagless
 tokens (`$VAR`) and `?` flag tokens (`$VAR?`) swapped functionality. Refer to the following table:
 
-| Syntax              | v1                                                         | v2                                                            |
-| ------------------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
-| `$VAR`              | Substitute with variable syntax (`$VAR`) if variable empty | 💥 Substitute with empty string if variable empty             |
-| `$VAR!`             | Don't substitute and keep variable syntax (`$VAR`)         | 💥 Removed syntax                                             |
-| `$VAR?`             | Substitute with empty string if variable empty             | 💥 Removed syntax                                             |
-| `${VAR}`            | Substitute with variable syntax (`$VAR`) if variable empty | 💥 Substitute with empty string if variable empty             |
-| `${VAR!}`           | Don't substitute and keep variable syntax (`$VAR`)         | ~                                                             |
-| `${VAR?}`           | Substitute with empty string if variable empty             | 💥 Substitute with variable syntax (`$VAR`) if variable empty |
-| `${VAR:default}`    | Use default value if variable empty                        | ~                                                             |
-| `${VAR:-default}`   | ⛔️ Not supported                                          | Use default value if variable empty                           |
-| `${VAR:+alternate}` | ⛔️ Not supported                                          | Use alternate value if variable non-empty                     |
+| Syntax                                  | v1                                                         | v2                                                            |
+| --------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| `$VAR`                                  | Substitute with variable syntax (`$VAR`) if variable empty | 💥 Substitute with empty string if variable empty             |
+| `$VAR!`                                 | Don't substitute and keep variable syntax (`$VAR`)         | 💥 Removed syntax                                             |
+| `$VAR?`                                 | Substitute with empty string if variable empty             | 💥 Removed syntax                                             |
+| `${VAR}`                                | Substitute with variable syntax (`$VAR`) if variable empty | 💥 Substitute with empty string if variable empty             |
+| `${VAR!}`                               | Don't substitute and keep variable syntax (`$VAR`)         | ~                                                             |
+| `${VAR?}`                               | Substitute with empty string if variable empty             | 💥 Substitute with variable syntax (`$VAR`) if variable empty |
+| `${VAR:default}`                        | Use default value if variable empty                        | ~                                                             |
+| `${VAR:-default}`, `${VAR-default}`     | ⛔️ Not supported                                          | Use default value if variable empty                           |
+| `${VAR:+alternate}`, `${VAR+alternate}` | ⛔️ Not supported                                          | Use alternate value if variable non-empty                     |
 
 Legend:
 
@@ -355,20 +355,20 @@ latter overwriting the former:
   - via `options.envFile`
 - Task env variables
   - via `env` or `deps.*.env`
-- Shell variables
+- System variables
   - via profile scripts (`.bashrc`, `.zshrc`, etc)
   - via command line: `KEY=value moon ...`
 
 In regards to variable substitution, each tier can reference variables within the same tier, or the
-higher tier(s). Refer to the following table:
+higher tier(s), but _not_ from lower tier(s). Refer to the following table:
 
-| Tier   | Can reference       |
-| ------ | ------------------- |
-| Dotenv | Dotenv, Task, Shell |
-| Task   | Task, Shell         |
-| Shell  | Shell               |
+| Tier   | Can reference        |
+| ------ | -------------------- |
+| Dotenv | Dotenv, Task, System |
+| Task   | Task, System         |
+| System | System               |
 
-If you don't want to inherit a shell variable, you can override it in the task with a null value.
+If you don't want to inherit a system variable, you can override it in the task with a null value.
 
 ```yaml
 tasks:

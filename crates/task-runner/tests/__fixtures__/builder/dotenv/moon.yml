@@ -1,0 +1,38 @@
+tasks:
+  project:
+    env:
+      KEY1: value1
+      KEY2: value2
+    options:
+      envFile: '.env'
+
+  workspace:
+    options:
+      envFile: '/.env.shared'
+
+  workspace-and-project:
+    env:
+      KEY1: value1
+      KEY2: value2
+    options:
+      envFile: ['/.env.shared', '.env']
+
+  self-ref:
+    env:
+      MYPATH: '/path:$MYPATH'
+
+  missing:
+    env:
+      KEY: value
+    options:
+      envFile: '.env.missing'
+
+  local:
+    options:
+      envFile: '.env.local'
+
+  invalid:
+    env:
+      KEY: value
+    options:
+      envFile: '.env.invalid'

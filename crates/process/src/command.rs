@@ -141,7 +141,7 @@ impl Command {
         self
     }
 
-    pub fn contains_arg<A>(&mut self, arg: A) -> bool
+    pub fn contains_arg<A>(&self, arg: A) -> bool
     where
         A: AsRef<OsStr>,
     {
@@ -149,7 +149,7 @@ impl Command {
         self.args.iter().any(|a| a == arg)
     }
 
-    pub fn contains_env<K>(&mut self, key: K) -> bool
+    pub fn contains_env<K>(&self, key: K) -> bool
     where
         K: AsRef<OsStr>,
     {

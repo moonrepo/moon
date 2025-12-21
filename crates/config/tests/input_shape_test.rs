@@ -605,6 +605,14 @@ mod input_shape {
         }
 
         #[test]
+        fn same_filename_different_context_not_equal() {
+            let project = stub_file_input("file.txt");
+            let workspace = stub_file_input("/file.txt");
+
+            assert_ne!(project, workspace);
+        }
+
+        #[test]
         fn supports_matches_field() {
             let input = stub_file_input("file.txt?matches=abc");
 

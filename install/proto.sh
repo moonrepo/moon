@@ -113,8 +113,11 @@ if [[ "$ext" == ".zip" ]]; then
 
 	unzip -j -d "$temp_dir" "$download_file"
 else
-	req_archive "gzip"
-	req_archive "xz" "xz" "xz-utils"
+	if [[ "$ext" == ".gz" ]]; then
+		req_archive "gzip"
+	elif [[ "$ext" == ".xz" ]]; then
+		req_archive "xz" "xz" "xz-utils"
+	fi
 
 	tar xf "$download_file" --strip-components 1 -C "$temp_dir"
 fi

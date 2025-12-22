@@ -11,7 +11,7 @@ use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
-use moon_config::{PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
+use moon_config::{EnvMap, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
@@ -803,7 +803,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // Create the node
         let mut args = vec![];
-        let mut env = FxHashMap::default();
+        let mut env = EnvMap::default();
 
         if let Some(config) = config {
             args.extend(parse_task_args(&config.args)?);

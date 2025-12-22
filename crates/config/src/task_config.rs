@@ -1,10 +1,12 @@
 use crate::shapes::{Input, OneOrMany, Output};
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::{config_enum, config_struct, config_unit_enum};
+use indexmap::IndexMap;
 use moon_common::Id;
 use moon_target::{Target, TargetScope};
-use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigEnum, ValidateError, merge};
+
+pub type EnvMap = IndexMap<String, Option<String>>;
 
 fn validate_command<C>(
     command: &PartialTaskArgs,
@@ -128,7 +130,7 @@ config_struct!(
         pub args: TaskArgs,
 
         /// A map of environment variables specific to this dependency.
-        pub env: FxHashMap<String, String>,
+        pub env: EnvMap,
 
         /// The target of the depended on task.
         pub target: Target,
@@ -214,7 +216,7 @@ config_struct!(
 
         /// A map of environment variables that will be set in the child
         /// process when the task is ran.
-        pub env: Option<FxHashMap<String, String>>,
+        pub env: Option<EnvMap>,
 
         /// Internal only. Inputs defined through task inheritance.
         #[setting(skip, merge = merge::append_vec)]

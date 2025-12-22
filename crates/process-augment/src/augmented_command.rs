@@ -4,7 +4,7 @@ use moon_pdk_api::{
     ExecCommandInput, Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput,
     ExtendTaskScriptInput, ExtendTaskScriptOutput,
 };
-use moon_process::Command;
+use moon_process::{Command, EnvBehavior};
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{
@@ -66,7 +66,18 @@ impl<'app> AugmentedCommand<'app> {
             builder.args(&task.args);
         }
 
-        builder.envs(&task.env);
+        for (key, value) in &task.env {
+            builder.env_with_behavior(
+                key,
+                match value {
+                    // Only set if system var not set
+                    Some(val) => EnvBehavior::SetIfMissing(OsString::from(val)),
+                    // Don't inherit system var
+                    None => EnvBehavior::Unset,
+                },
+            );
+        }
+
         builder
     }
 

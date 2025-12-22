@@ -62,9 +62,12 @@ impl<'task> TaskHasher<'task> {
         self.fingerprint.deps.extend(deps);
     }
 
-    pub fn hash_env(&mut self, env: impl IntoIterator<Item = (&'task String, &'task String)>) {
+    pub fn hash_env(
+        &mut self,
+        env: impl IntoIterator<Item = (&'task String, &'task Option<String>)>,
+    ) {
         for (key, value) in env {
-            self.fingerprint.env.insert(key.as_ref(), value.as_ref());
+            self.fingerprint.env.insert(key.as_ref(), value.as_deref());
         }
     }
 

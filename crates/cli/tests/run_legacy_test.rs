@@ -1399,8 +1399,9 @@ mod run_legacy {
                     .arg("--status")
                     .arg("added");
             });
+            let envs = ["file.txt", "other.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
-            assert!(predicate::str::contains("\nfile.txt,other.txt\n").eval(&assert.output()));
+            assert!(predicate::str::contains(format!("\n{envs}\n")).eval(&assert.output()));
         }
 
         #[test]

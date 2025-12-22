@@ -86,7 +86,7 @@ pub fn load_project_config_in_format(format: &str) {
                     sources_phase_globs: vec![GlobPath("*.js".into())]
                 }
             },
-            env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
+            env: IndexMap::from_iter([("KEY".into(), Some("value".into()))]),
             file_groups: FxHashMap::from_iter([
                 (
                     Id::raw("sources"),
@@ -181,18 +181,21 @@ pub fn load_task_config_in_format(format: &str) {
                 TaskDependency::Target(Target::parse("proj:task").unwrap()),
                 TaskDependency::Config(TaskDependencyConfig {
                     args: TaskArgs::None,
-                    env: FxHashMap::default(),
+                    env: IndexMap::default(),
                     target: Target::parse("^:build").unwrap(),
                     optional: Some(true)
                 }),
                 TaskDependency::Config(TaskDependencyConfig {
                     args: TaskArgs::String("--minify".into()),
-                    env: FxHashMap::from_iter([("DEBUG".into(), "1".into())]),
+                    env: IndexMap::from_iter([("DEBUG".into(), Some("1".to_owned()))]),
                     target: Target::parse("~:build").unwrap(),
                     optional: None
                 }),
             ]),
-            env: Some(FxHashMap::from_iter([("ENV".into(), "development".into())])),
+            env: Some(IndexMap::from_iter([(
+                "ENV".into(),
+                Some("development".to_owned())
+            )])),
             inputs: Some(vec![
                 Input::EnvVar("ENV".into()),
                 Input::EnvVarGlob("ENV_*".into()),
@@ -255,7 +258,7 @@ pub fn load_tasks_config_in_format(format: &str) {
                 TaskDependency::Target(Target::parse("project:task-c").unwrap()),
                 TaskDependency::Config(TaskDependencyConfig {
                     args: TaskArgs::String("--foo --bar".into()),
-                    env: FxHashMap::from_iter([("KEY".into(), "value".into())]),
+                    env: IndexMap::from_iter([("KEY".into(), Some("value".to_owned()))]),
                     target: Target::parse("project:task-d").unwrap(),
                     ..Default::default()
                 }),

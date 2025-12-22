@@ -5,9 +5,12 @@ mod utils;
 use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_affected::Affected;
+use moon_common::is_ci;
 use moon_config::TaskOptionAffectedFiles;
-use moon_process::Command;
+use moon_env_var::GlobalEnvBag;
+use moon_process::{Command, EnvBehavior};
 use moon_task::{Target, TargetLocator};
+use std::env;
 use std::ffi::OsString;
 use utils::*;
 
@@ -15,7 +18,7 @@ fn get_env<'a>(command: &'a Command, key: &str) -> Option<&'a str> {
     command
         .env
         .get(&OsString::from(key))
-        .map(|v| v.as_ref().unwrap().to_str().unwrap())
+        .map(|v| v.get_value().unwrap().to_str().unwrap())
 }
 
 fn get_args(command: &Command) -> Vec<&str> {
@@ -274,7 +277,7 @@ mod command_builder {
         }
     }
 
-    mod env {
+    mod env_vars {
         use super::*;
 
         #[tokio::test(flavor = "multi_thread")]
@@ -302,7 +305,7 @@ mod command_builder {
             let command = container
                 .create_command_with_config(ActionContext::default(), |_, node| {
                     if let ActionNode::RunTask(inner) = node {
-                        inner.env.insert("ANOTHER".into(), "value".into());
+                        inner.env.insert("ANOTHER".into(), Some("value".into()));
                     }
                 })
                 .await;
@@ -316,7 +319,7 @@ mod command_builder {
             let command = container
                 .create_command_with_config(ActionContext::default(), |_, node| {
                     if let ActionNode::RunTask(inner) = node {
-                        inner.env.insert("KEY".into(), "overwritten".into());
+                        inner.env.insert("KEY".into(), Some("overwritten".into()));
                     }
                 })
                 .await;
@@ -330,13 +333,13 @@ mod command_builder {
             let command = container
                 .create_command_with_config(ActionContext::default(), |_, node| {
                     if let ActionNode::RunTask(inner) = node {
-                        inner.env.insert("PWD".into(), "overwritten".into());
+                        inner.env.insert("PWD".into(), Some("overwritten".into()));
                         inner
                             .env
-                            .insert("MOON_PROJECT_ID".into(), "overwritten".into());
+                            .insert("MOON_PROJECT_ID".into(), Some("overwritten".into()));
                         inner
                             .env
-                            .insert("PROTO_VERSION".into(), "overwritten".into());
+                            .insert("PROTO_VERSION".into(), Some("overwritten".into()));
                     }
                 })
                 .await;
@@ -344,6 +347,169 @@ mod command_builder {
             assert_ne!(get_env(&command, "PWD").unwrap(), "overwritten");
             assert_ne!(get_env(&command, "MOON_PROJECT_ID").unwrap(), "overwritten");
             assert_ne!(get_env(&command, "PROTO_VERSION").unwrap(), "overwritten");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn cannot_overwrite_system_env_from_task_env() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(
+                command.env.get(&OsString::from("KEY1")).unwrap(),
+                &EnvBehavior::SetIfMissing(OsString::from("value1"))
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_unset_system_env_from_task_env() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "unset-system").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(
+                command
+                    .env
+                    .get(&OsString::from("UNSET_SYSTEM_LOCAL"))
+                    .unwrap(),
+                &EnvBehavior::Unset
+            );
+        }
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_unset_system_env_from_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "unset-system").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(
+                command
+                    .env
+                    .get(&OsString::from("UNSET_SYSTEM_FILE"))
+                    .unwrap(),
+                &EnvBehavior::Unset
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn cannot_overwrite_task_env_from_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(get_env(&command, "KEY2").unwrap(), "value2");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn cannot_overwrite_system_env_from_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;
+            container.env_bag.set("KEY3", "system");
+
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert!(!command.contains_env("KEY3"));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_from_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(get_env(&command, "KEY1").unwrap(), "value1");
+            assert_eq!(get_env(&command, "KEY2").unwrap(), "value2"); // Not overridden by env file
+            assert_eq!(get_env(&command, "KEY3").unwrap(), "value3");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_from_root_env_file_and_substitutes() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "workspace").await;
+
+            unsafe { env::set_var("EXTERNAL", "external-value") };
+
+            let command = container.create_command(ActionContext::default()).await;
+
+            unsafe { env::remove_var("EXTERNAL") };
+
+            assert_eq!(get_env(&command, "ROOT").unwrap(), "true");
+            assert_eq!(get_env(&command, "BASE").unwrap(), "value");
+            assert_eq!(get_env(&command, "FROM_SELF1").unwrap(), "value");
+            assert_eq!(get_env(&command, "FROM_SELF2").unwrap(), "value");
+            assert_eq!(get_env(&command, "FROM_SYSTEM").unwrap(), "external-value");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_substitute_self_from_system() {
+            // Must be on the instance since its referenced during graph creation
+            let bag = GlobalEnvBag::instance();
+            bag.set("MYPATH", "/another/path");
+
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "self-ref").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            bag.remove("MYPATH");
+
+            assert_eq!(get_env(&command, "MYPATH").unwrap(), "/path:/another/path");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_substitute_self_from_local() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "self-ref").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            // No recursion!
+            assert_eq!(get_env(&command, "MYPATH").unwrap(), "/path:");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn loads_from_multiple_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "workspace-and-project")
+                    .await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(get_env(&command, "KEY1").unwrap(), "value1");
+            assert_eq!(get_env(&command, "KEY2").unwrap(), "value2"); // Not overridden by env file
+            assert_eq!(get_env(&command, "KEY3").unwrap(), "value3");
+            // shared
+            assert_eq!(get_env(&command, "ROOT").unwrap(), "true");
+            assert_eq!(get_env(&command, "BASE").unwrap(), "value");
+            assert_eq!(get_env(&command, "FROM_SELF1").unwrap(), "value");
+            assert_eq!(get_env(&command, "FROM_SELF2").unwrap(), "value");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn skips_missing_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "missing").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(get_env(&command, "KEY").unwrap(), "value");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn skips_local_env_file_in_ci() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "local").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            if is_ci() {
+                assert!(!command.contains_env("LOCAL"));
+            } else {
+                assert_eq!(get_env(&command, "LOCAL").unwrap(), "true");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Failed to parse env file")]
+        async fn errors_invalid_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "invalid").await;
+
+            container.create_command(ActionContext::default()).await;
         }
 
         mod toolchain {
@@ -373,7 +539,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    None
+                    EnvBehavior::Unset
                 );
             }
 
@@ -385,7 +551,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    None
+                    EnvBehavior::Unset
                 );
             }
 
@@ -462,7 +628,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    None
+                    EnvBehavior::Unset
                 );
             }
 
@@ -474,7 +640,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    None
+                    EnvBehavior::Unset
                 );
             }
 

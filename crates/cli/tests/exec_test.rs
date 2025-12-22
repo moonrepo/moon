@@ -603,7 +603,7 @@ mod exec {
                 .map(|f| format!("./{f}"))
                 .collect::<Vec<_>>()
                 .join(" ");
-            let envs = files.join(",");
+            let envs = files.join(if cfg!(windows) { ";" } else { ":" });
 
             assert.success().stdout(
                 predicate::str::contains(format!("Args: {args}\n"))
@@ -628,10 +628,11 @@ mod exec {
                     .arg(target("affectedFiles"))
                     .arg("--affected");
             });
+            let envs = ["input1.txt", "input2.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
             assert.success().stdout(
                 predicate::str::contains("Args: ./input1.txt ./input2.txt\n")
-                    .and(predicate::str::contains("Env: input1.txt,input2.txt\n")),
+                    .and(predicate::str::contains(format!("Env: {envs}\n"))),
             );
         }
 
@@ -676,10 +677,11 @@ mod exec {
                     .arg(target("affectedFilesEnvVar"))
                     .arg("--affected");
             });
+            let envs = ["input1.txt", "input2.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
             assert.success().stdout(
                 predicate::str::contains("Args: \n")
-                    .and(predicate::str::contains("Env: input1.txt,input2.txt\n")),
+                    .and(predicate::str::contains(format!("Env: {envs}\n"))),
             );
         }
     }

@@ -21,7 +21,6 @@ moon_task_args = { path = "../task-args" }
 moon_time = { path = "../time" }
 cd_env = { workspace = true }
 ci_env = { workspace = true }
-dotenvy = "0.15.7"
 miette = { workspace = true }
 pathdiff = { workspace = true }
 regex = { workspace = true }

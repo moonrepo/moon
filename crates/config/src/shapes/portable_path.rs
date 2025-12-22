@@ -42,9 +42,17 @@ pub trait PortablePath: Sized {
 
 macro_rules! path_type {
     ($name:ident) => {
-        #[derive(Clone, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+        #[derive(Clone, Debug, Default, Deserialize, Serialize)]
         #[serde(into = "String", try_from = "String")]
         pub struct $name(pub RelativePathBuf);
+
+        impl PartialEq for $name {
+            fn eq(&self, other: &Self) -> bool {
+                self.0.as_str() == other.0.as_str()
+            }
+        }
+
+        impl Eq for $name {}
 
         impl AsRef<str> for $name {
             fn as_ref(&self) -> &str {

@@ -9,6 +9,7 @@ moon_common = { path = "../common" }
 moon_target = { path = "../target" }
 moon_time = { path = "../time" }
 moon_toolchain = { path = "../toolchain" }
+indexmap = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true, features = ["rc"] }

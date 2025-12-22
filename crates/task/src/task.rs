@@ -1,7 +1,7 @@
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    Input, Output, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType, is_false,
+    EnvMap, Input, Output, TaskDependencyConfig, TaskOptionRunInCI, TaskPreset, TaskType, is_false,
     schematic::RegexSetting,
 };
 use moon_target::Target;
@@ -88,8 +88,8 @@ cacheable!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        pub env: FxHashMap<String, String>,
+        #[serde(skip_serializing_if = "EnvMap::is_empty")]
+        pub env: EnvMap,
 
         pub id: Id,
 
@@ -343,7 +343,7 @@ impl Default for Task {
             command: String::from("noop"),
             deps: vec![],
             description: None,
-            env: FxHashMap::default(),
+            env: EnvMap::default(),
             id: Id::default(),
             inputs: vec![],
             input_env: FxHashSet::default(),

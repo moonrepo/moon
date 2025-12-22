@@ -265,7 +265,7 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
                                     }.into_any(),
                                     value: element! {
                                         StyledText(
-                                            content: value,
+                                            content: value.as_deref().unwrap_or("(removed)"),
                                             style: Style::MutedLight
                                         )
                                     }.into_any(),

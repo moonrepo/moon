@@ -22,7 +22,7 @@ hash_fingerprint!(
         pub deps: BTreeMap<&'task Target, String>,
 
         // Environment variables
-        pub env: BTreeMap<&'task str, &'task str>,
+        pub env: BTreeMap<&'task str, Option<&'task str>>,
 
         // Input files and globs mapped to a unique hash
         pub inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
@@ -61,7 +61,7 @@ impl<'task> TaskFingerprint<'task> {
             env: task
                 .env
                 .iter()
-                .map(|(k, v)| (k.as_str(), v.as_str()))
+                .map(|(k, v)| (k.as_str(), v.as_deref()))
                 .collect(),
             inputs: BTreeMap::new(),
             input_env: BTreeMap::new(),

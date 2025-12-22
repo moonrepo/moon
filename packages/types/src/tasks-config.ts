@@ -89,7 +89,7 @@ export interface TaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
 	args: TaskArgs;
 	/** A map of environment variables specific to this dependency. */
-	env: Record<string, string>;
+	env: Record<string, string | null>;
 	/**
 	 * Marks the dependency as optional when being inherited from the top-level.
 	 * @since 1.20.0
@@ -453,7 +453,7 @@ export interface TaskConfig {
 	 * A map of environment variables that will be set in the child
 	 * process when the task is ran.
 	 */
-	env: Record<string, string> | null;
+	env: Record<string, string | null> | null;
 	/** Extends settings from a sibling task by identifier. */
 	extends: Id | null;
 	/**
@@ -556,7 +556,7 @@ export interface PartialTaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
 	args?: PartialTaskArgs | null;
 	/** A map of environment variables specific to this dependency. */
-	env?: Record<string, string> | null;
+	env?: Record<string, string | null> | null;
 	/**
 	 * Marks the dependency as optional when being inherited from the top-level.
 	 * @since 1.20.0
@@ -858,7 +858,7 @@ export interface PartialTaskConfig {
 	 * A map of environment variables that will be set in the child
 	 * process when the task is ran.
 	 */
-	env?: Record<string, string> | null;
+	env?: Record<string, string | null> | null;
 	/** Extends settings from a sibling task by identifier. */
 	extends?: Id | null;
 	/**

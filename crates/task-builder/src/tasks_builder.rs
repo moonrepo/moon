@@ -4,17 +4,17 @@ use crate::tasks_builder_error::TasksBuilderError;
 use indexmap::{IndexMap, IndexSet};
 use moon_common::{
     Id, color,
-    path::{WorkspaceRelativePath, is_root_level_source},
+    path::{WorkspaceRelativePath, encode_component, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
+    ConfigLoader, EnvMap, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
     TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig, is_glob_like,
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
-use moon_task::{Task, TaskOptions};
+use moon_task::{Task, TaskOptionEnvFile, TaskOptions};
 use moon_task_args::parse_task_args;
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
@@ -87,7 +87,7 @@ pub struct TasksBuilder<'proj> {
 
     project_id: &'proj Id,
     project_dependencies: &'proj [ProjectDependencyConfig],
-    project_env: FxHashMap<&'proj str, &'proj str>,
+    project_env: FxHashMap<&'proj str, Option<&'proj str>>,
     project_source: &'proj WorkspaceRelativePath,
     project_toolchains: &'proj [Id],
 
@@ -235,7 +235,7 @@ impl<'proj> TasksBuilder<'proj> {
     #[instrument(skip_all)]
     pub fn load_local_tasks(&mut self, local_config: &'proj ProjectConfig) -> &mut Self {
         for (key, value) in &local_config.env {
-            self.project_env.insert(key, value);
+            self.project_env.insert(key, value.as_deref());
         }
 
         trace!(
@@ -358,7 +358,8 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env) = &config.env {
-                task.env = self.merge_map(task.env, env.to_owned(), task.options.merge_env, index);
+                task.env =
+                    self.merge_index_map(task.env, env.to_owned(), task.options.merge_env, index);
             }
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
@@ -596,7 +597,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env_file) = &config.env_file {
-                options.env_files = env_file.to_inputs();
+                options.env_files = self.resolve_env_files(id, env_file)?;
             }
 
             if let Some(infer_inputs) = &config.infer_inputs {
@@ -707,6 +708,42 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         Ok(options)
+    }
+
+    fn resolve_env_files(
+        &self,
+        task_id: &Id,
+        option: &TaskOptionEnvFile,
+    ) -> miette::Result<Option<Vec<Input>>> {
+        let mut list = vec![];
+
+        match option {
+            TaskOptionEnvFile::Enabled(true) => {
+                let encoded_task_id = encode_component(task_id);
+
+                for path in [
+                    "/.env".to_owned(),
+                    "/.env.local".to_owned(),
+                    ".env".to_owned(),
+                    ".env.local".to_owned(),
+                    format!(".env.{encoded_task_id}"),
+                    format!(".env.{encoded_task_id}.local"),
+                ] {
+                    list.push(Input::parse(&path)?);
+                }
+            }
+            TaskOptionEnvFile::Enabled(false) => {}
+            TaskOptionEnvFile::File(path) => {
+                list.push(Input::parse(path.as_str())?);
+            }
+            TaskOptionEnvFile::Files(paths) => {
+                for path in paths {
+                    list.push(Input::parse(path.as_str())?);
+                }
+            }
+        };
+
+        Ok(if list.is_empty() { None } else { Some(list) })
     }
 
     fn resolve_task_inputs(&self, task: &mut Task) -> miette::Result<()> {
@@ -842,12 +879,12 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(global_inputs)
     }
 
-    fn inherit_project_env(&self, target: &Target) -> miette::Result<FxHashMap<String, String>> {
+    fn inherit_project_env(&self, target: &Target) -> miette::Result<EnvMap> {
         let env = self
             .project_env
             .iter()
-            .map(|(k, v)| ((*k).to_owned(), (*v).to_owned()))
-            .collect::<FxHashMap<_, _>>();
+            .map(|(k, v)| ((*k).to_owned(), (*v).map(|v| v.to_string())))
+            .collect::<EnvMap>();
 
         if !env.is_empty() {
             trace!(
@@ -966,6 +1003,48 @@ impl<'proj> TasksBuilder<'proj> {
                 }
 
                 let mut map = FxHashMap::default();
+                map.extend(next);
+                map.extend(base);
+                map
+            }
+            TaskMergeStrategy::Preserve => {
+                if index == 0 {
+                    next
+                } else {
+                    base
+                }
+            }
+            TaskMergeStrategy::Replace => next,
+        }
+    }
+
+    fn merge_index_map<K, V>(
+        &self,
+        base: IndexMap<K, V>,
+        next: IndexMap<K, V>,
+        strategy: TaskMergeStrategy,
+        index: usize,
+    ) -> IndexMap<K, V>
+    where
+        K: Eq + Hash,
+    {
+        match strategy {
+            TaskMergeStrategy::Append => {
+                if next.is_empty() {
+                    return base;
+                }
+
+                let mut map = IndexMap::default();
+                map.extend(base);
+                map.extend(next);
+                map
+            }
+            TaskMergeStrategy::Prepend => {
+                if next.is_empty() {
+                    return base;
+                }
+
+                let mut map = IndexMap::default();
                 map.extend(next);
                 map.extend(base);
                 map

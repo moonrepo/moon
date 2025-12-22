@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added `moonx` as a binary to the `@moonrepo/cli` npm package.
+
+#### 🐞 Fixes
+
+- Fixed an issue where project and workspace inputs of the same file path would be unexpectedly
+  deduped.
+- Fixed an issue with unstable toolchains where a project at the root of a dependency/package
+  workspace would not count as being in the workspace.
+- Fixed an issue where tasks may be marked with a system toolchain unexpectedly.
+
 ## 1.41.7
 
 #### 🚀 Updates

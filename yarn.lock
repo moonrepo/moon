@@ -3906,6 +3906,7 @@ __metadata:
       optional: true
   bin:
     moon: moon.js
+    moonx: moonx.js
   languageName: unknown
   linkType: soft
 

@@ -4,6 +4,6 @@ expression: graph.to_dot()
 ---
 digraph {
     0 [ label="SyncWorkspace" ]
-    1 [ label="InstallDependencies(tc-tier2)" ]
+    1 [ label="InstallDependencies(tc-tier2, bar)" ]
     1 -> 0 [ ]
 }

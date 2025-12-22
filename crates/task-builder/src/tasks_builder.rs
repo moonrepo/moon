@@ -456,10 +456,6 @@ impl<'proj> TasksBuilder<'proj> {
         if let Some(script) = &task.script {
             task.args.clear();
 
-            if task.toolchains.is_empty() {
-                task.toolchains.push(Id::raw("system"));
-            }
-
             if let Some(i) = script.find(' ') {
                 task.command = script[0..i].to_owned();
             } else {

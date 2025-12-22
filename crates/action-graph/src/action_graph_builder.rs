@@ -9,7 +9,7 @@ use moon_action::{
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_app_context::AppContext;
-use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, color};
 use moon_config::{PipelineActionSwitch, TaskDependencyConfig};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
@@ -376,18 +376,16 @@ impl<'query> ActionGraphBuilder<'query> {
                 .into_diagnostic()?;
 
             // Determine if we're in the dependencies workspace
-            let in_project = &project.root == abs_root;
             let in_workspace = toolchain.in_dependencies_workspace(&output, &project.root)?;
 
             // If not in the dependencies workspace (if there is one),
             // or is a stand-alone project with its own lockfile,
             // we must extract the project ID and source (root)
-            let (project_id, root) =
-                if !in_workspace || in_project && !is_root_level_source(&project.source) {
-                    (Some(project.id.clone()), project.source.clone())
-                } else {
-                    (None, rel_root)
-                };
+            let (project_id, root) = if in_workspace {
+                (None, rel_root)
+            } else {
+                (Some(project.id.clone()), project.source.clone())
+            };
 
             let setup_env_index = self
                 .setup_environment(spec, &root, project_id.as_ref().map(|_| project))

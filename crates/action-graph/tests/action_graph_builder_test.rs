@@ -451,8 +451,8 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
-                        project_id: None,
-                        root: WorkspaceRelativePathBuf::new(),
+                        project_id: Some(Id::raw("bar")),
+                        root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
                     })
                 ]
@@ -485,8 +485,8 @@ mod action_graph_builder {
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
-                        project_id: None,
-                        root: WorkspaceRelativePathBuf::new(),
+                        project_id: Some(Id::raw("bar")),
+                        root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
                     })
                 ]
@@ -514,14 +514,14 @@ mod action_graph_builder {
                 vec![
                     ActionNode::sync_workspace(),
                     ActionNode::setup_environment(SetupEnvironmentNode {
-                        project_id: None,
-                        root: WorkspaceRelativePathBuf::new(),
+                        project_id: Some(Id::raw("bar")),
+                        root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id.clone(),
                     }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
-                        project_id: None,
-                        root: WorkspaceRelativePathBuf::new(),
+                        project_id: Some(Id::raw("bar")),
+                        root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
                     })
                 ]
@@ -612,8 +612,8 @@ mod action_graph_builder {
                     ActionNode::sync_workspace(),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
-                        project_id: None,
-                        root: WorkspaceRelativePathBuf::new(),
+                        project_id: Some(Id::raw("bar")),
+                        root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec.id,
                     })
                 ]

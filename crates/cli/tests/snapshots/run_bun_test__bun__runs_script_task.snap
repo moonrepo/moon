@@ -2,6 +2,7 @@
 source: crates/cli/tests/run_bun_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ bun install
 ▪▪▪▪ bun:viaScript
 bun platform
 1.2.2

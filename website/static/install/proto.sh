@@ -113,9 +113,9 @@ if [[ "$ext" == ".zip" ]]; then
 
 	unzip -j -d "$temp_dir" "$download_file"
 else
-	if [[ "$ext" == ".gz"]]; then
+	if [[ "$ext" == ".gz" ]]; then
 		req_archive "gzip"
-	elif [[ "$ext" == ".xz"]]; then
+	elif [[ "$ext" == ".xz" ]]; then
 		req_archive "xz" "xz" "xz-utils"
 	fi
 

@@ -12,6 +12,7 @@
   deduped.
 - Fixed an issue with unstable toolchains where a project at the root of a dependency/package
   workspace would not count as being in the workspace.
+- Fixed an issue where tasks may be marked with a system toolchain unexpectedly.
 
 ## 1.41.7
 

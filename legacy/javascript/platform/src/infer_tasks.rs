@@ -6,7 +6,6 @@ use moon_config::{
 };
 use moon_node_lang::package_json::{PackageJsonCache, ScriptsMap};
 use moon_target::Target;
-use moon_toolchain::detect::is_system_command;
 use moon_utils::regex::ID_CLEAN;
 use moon_utils::{regex, string_vec};
 use rustc_hash::FxHashMap;
@@ -198,13 +197,11 @@ pub fn create_task(
             args.insert(0, "noop".to_owned());
         }
 
-        task_config.toolchain = Some(OneOrMany::One(
-            if is_system_command(&args[0]) || &args[0] == "noop" {
-                Id::raw("system")
-            } else {
-                toolchain.to_owned()
-            },
-        ));
+        task_config.toolchain = Some(OneOrMany::One(if &args[0] == "noop" {
+            Id::raw("system")
+        } else {
+            toolchain.to_owned()
+        }));
         task_config.command = Some(if args.len() == 1 {
             PartialTaskArgs::String(args.remove(0))
         } else {

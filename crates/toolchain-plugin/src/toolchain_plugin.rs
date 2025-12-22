@@ -87,7 +87,7 @@ impl ToolchainPlugin {
         output: &LocateDependenciesRootOutput,
         path: &Path,
     ) -> miette::Result<bool> {
-        let Some(root) = &output.root else {
+        let (Some(root), Some(members)) = (&output.root, &output.members) else {
             return Ok(false);
         };
 
@@ -97,12 +97,8 @@ impl ToolchainPlugin {
                 true
             }
             // Match against the provided member globs
-            else if let Some(globs) = &output.members {
-                GlobSet::new(globs)?.matches(path.strip_prefix(root).unwrap_or(path))
-            }
-            // Otherwise a stand alone project?
             else {
-                true
+                GlobSet::new(members)?.matches(path.strip_prefix(root).unwrap_or(path))
             },
         )
     }

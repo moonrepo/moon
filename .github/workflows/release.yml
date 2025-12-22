@@ -16,7 +16,7 @@ on:
       - release-*
   # Every day at midnight (nightly)
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
   # Uncomment to test in PRs (its safe)
   # pull_request:
 
@@ -76,7 +76,7 @@ jobs:
             docker-platform: linux/arm64
 
           - target: x86_64-apple-darwin
-            host: macos-13
+            host: macos-14
             binary: moon
             # setup: |
             #   export MACOSX_DEPLOYMENT_TARGET="10.13";
@@ -155,7 +155,7 @@ jobs:
             setup: yarn config set supportedArchitectures.libc "musl"
 
           - target: x86_64-apple-darwin
-            host: macos-13
+            host: macos-14
 
           - target: aarch64-apple-darwin
             host: macos-14
@@ -247,9 +247,9 @@ jobs:
           allowUpdates: true
           artifactErrorsFailBuild: true
           artifacts: artifacts/release/*
-          body: 'This canary release corresponds to the commit [${{ github.sha }}].'
-          name: 'Canary'
-          tag: 'canary'
+          body: "This canary release corresponds to the commit [${{ github.sha }}]."
+          name: "Canary"
+          tag: "canary"
           prerelease: true
           replacesArtifacts: true
           skipIfReleaseExists: false
@@ -260,9 +260,9 @@ jobs:
           allowUpdates: true
           artifactErrorsFailBuild: true
           artifacts: artifacts/release/*
-          body: 'This nightly release corresponds to the commit [${{ github.sha }}].'
-          name: 'Nightly'
-          tag: 'nightly'
+          body: "This nightly release corresponds to the commit [${{ github.sha }}]."
+          name: "Nightly"
+          tag: "nightly"
           prerelease: true
           replacesArtifacts: true
           skipIfReleaseExists: false

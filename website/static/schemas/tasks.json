@@ -873,7 +873,14 @@
             {
               "type": "object",
               "additionalProperties": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "propertyNames": {
                 "type": "string"
@@ -1049,7 +1056,14 @@
           "description": "A map of environment variables specific to this dependency.",
           "type": "object",
           "additionalProperties": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "propertyNames": {
             "type": "string"

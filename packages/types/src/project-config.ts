@@ -209,7 +209,7 @@ export interface ProjectConfig {
 	 * A map of environment variables that will be inherited by
 	 * all tasks within the project.
 	 */
-	env: Record<string, string>;
+	env: Record<string, string | null>;
 	/**
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
@@ -420,7 +420,7 @@ export interface PartialProjectConfig {
 	 * A map of environment variables that will be inherited by
 	 * all tasks within the project.
 	 */
-	env?: Record<string, string> | null;
+	env?: Record<string, string | null> | null;
 	/**
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.

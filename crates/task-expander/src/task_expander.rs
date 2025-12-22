@@ -1,14 +1,12 @@
-use crate::task_expander_error::TasksExpanderError;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::{Input, TaskArgs};
+use moon_config::TaskArgs;
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use moon_task_args::parse_task_args;
-use rustc_hash::FxHashMap;
 use std::mem;
 use tracing::{debug, instrument, trace, warn};
 
@@ -135,7 +133,8 @@ impl<'graph> TaskExpander<'graph> {
                 TaskArgs::List(dep_args)
             };
 
-            dep.env = EnvSubstitutor::new()
+            dep.env = EnvSubstitutor::default()
+                .with_global_vars(GlobalEnvBag::instance())
                 .with_local_vars(&dep_env)
                 .substitute_all(&dep_env);
         }
@@ -153,67 +152,7 @@ impl<'graph> TaskExpander<'graph> {
             "Expanding environment variables"
         );
 
-        let mut env = self.token.expand_env(task)?;
-
-        // Load variables from an .env file
-        if let Some(env_files) = &task.options.env_files {
-            let env_paths = env_files
-                .iter()
-                .filter_map(|input| match input {
-                    Input::File(file) => Some(
-                        file.to_workspace_relative(self.project.source.as_str())
-                            .to_path(&self.context.workspace_root),
-                    ),
-                    _ => None,
-                })
-                .collect::<Vec<_>>();
-
-            trace!(
-                task_target = task.target.as_str(),
-                env_files = ?env_paths,
-                "Loading environment variables from .env files",
-            );
-
-            let mut merged_env_vars = FxHashMap::default();
-
-            // The file may not have been committed, so avoid crashing
-            for env_path in env_paths {
-                if env_path.exists() {
-                    trace!(
-                        task_target = task.target.as_str(),
-                        env_file = ?env_path,
-                        "Loading .env file",
-                    );
-
-                    let handle_error = |error: dotenvy::Error| TasksExpanderError::InvalidEnvFile {
-                        path: env_path.to_path_buf(),
-                        error: Box::new(error),
-                    };
-
-                    for line in dotenvy::from_path_iter(&env_path).map_err(handle_error)? {
-                        let (key, val) = line.map_err(handle_error)?;
-
-                        // Overwrite previous values
-                        merged_env_vars.insert(key, val);
-                    }
-                } else {
-                    trace!(
-                        task_target = task.target.as_str(),
-                        env_file = ?env_path,
-                        "Skipping .env file because it doesn't exist",
-                    );
-                }
-            }
-
-            // Don't override task-level variables
-            for (key, val) in merged_env_vars {
-                env.entry(key).or_insert(val);
-            }
-        }
-
-        task.env = EnvSubstitutor::new()
-            .with_local_vars(&env)
-            .substitute_all(&env);
+        task.env = self.token.expand_env(task)?;
 
         Ok(())
     }

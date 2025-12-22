@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{
-    Input, Output, TaskArgs, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
+    EnvMap, Input, Output, TaskArgs, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
 };
 use moon_env_var::GlobalEnvBag;
 use moon_task::{Target, TaskFileInput, TaskGlobInput};
@@ -151,7 +151,7 @@ mod task_expander {
 
             let mut task = create_task();
             task.command = "./$FOO".into();
-            task.env.insert("FOO".into(), "foo-self".into());
+            task.env.insert("FOO".into(), Some("foo-self".into()));
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
@@ -271,35 +271,6 @@ mod task_expander {
         }
 
         #[test]
-        fn replaces_env_vars_from_file() {
-            let sandbox = create_empty_sandbox();
-            sandbox.create_file(".env", "FOO_BAR=foo-bar\nBAR_BAZ=bar-baz");
-
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.options.env_files = Some(vec![Input::parse("/.env").unwrap()]);
-            task.options.infer_inputs = true;
-            task.args = vec![
-                "a".into(),
-                "$FOO_BAR".into(),
-                "b".into(),
-                "c/${BAR_BAZ}/d".into(),
-            ];
-
-            let context = create_context(sandbox.path());
-            let task = TaskExpander::new(&project_graph, &project, &context)
-                .expand(&task)
-                .unwrap();
-
-            assert_eq!(task.args, ["a", "$FOO_BAR", "b", "c/${BAR_BAZ}/d"]);
-
-            assert!(task.input_env.contains("FOO_BAR"));
-            assert!(task.input_env.contains("BAR_BAZ"));
-        }
-
-        #[test]
         fn replaces_env_var_from_self() {
             let sandbox = create_empty_sandbox();
             let project_graph = create_project_graph();
@@ -307,7 +278,8 @@ mod task_expander {
 
             let mut task = create_task();
             task.args = vec!["a".into(), "${FOO_BAR}".into(), "b".into()];
-            task.env.insert("FOO_BAR".into(), "foo-bar-self".into());
+            task.env
+                .insert("FOO_BAR".into(), Some("foo-bar-self".into()));
             task.options.infer_inputs = true;
 
             let context = create_context(sandbox.path());
@@ -387,7 +359,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                 target: Target::parse("test").unwrap(),
                 ..TaskDependencyConfig::default()
             });
@@ -401,7 +373,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::None,
-                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -416,7 +388,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                env: FxHashMap::from_iter([("FOO".into(), "$project-$language".into())]),
+                env: EnvMap::from_iter([("FOO".into(), Some("$project-$language".into()))]),
                 target: Target::parse("test").unwrap(),
                 ..TaskDependencyConfig::default()
             });
@@ -430,7 +402,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::None,
-                    env: FxHashMap::from_iter([("FOO".into(), "project-unknown".into())]),
+                    env: EnvMap::from_iter([("FOO".into(), Some("project-unknown".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -446,7 +418,7 @@ mod task_expander {
 
             task.deps.push(TaskDependencyConfig {
                 args: TaskArgs::String("a b c".into()),
-                env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                 target: Target::parse("test").unwrap(),
                 optional: None,
             });
@@ -460,7 +432,7 @@ mod task_expander {
                 task.deps,
                 vec![TaskDependencyConfig {
                     args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
-                    env: FxHashMap::from_iter([("FOO".into(), "bar".into())]),
+                    env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                 }]
@@ -478,9 +450,9 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "inner-${FOO}".into());
-            task.env.insert("KEY3".into(), "$KEY1-self".into());
+            task.env.insert("KEY1".into(), Some("value1".into()));
+            task.env.insert("KEY2".into(), Some("inner-${FOO}".into()));
+            task.env.insert("KEY3".into(), Some("$KEY1-self".into()));
             task.options.infer_inputs = true;
 
             let bag = GlobalEnvBag::instance();
@@ -495,10 +467,10 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
-                    ("KEY1".into(), "value1".into()),
-                    ("KEY2".into(), "inner-foo".into()),
-                    ("KEY3".into(), "value1-self".into()),
+                EnvMap::from_iter([
+                    ("KEY1".into(), Some("value1".into())),
+                    ("KEY2".into(), Some("inner-foo".into())),
+                    ("KEY3".into(), Some("value1-self".into())),
                 ])
             );
         }
@@ -510,8 +482,9 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.env.insert("KEY1".into(), "@globs(all)".into());
-            task.env.insert("KEY2".into(), "$project-$task".into());
+            task.env.insert("KEY1".into(), Some("@globs(all)".into()));
+            task.env
+                .insert("KEY2".into(), Some("$project-$task".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project_graph, &project, &context)
@@ -520,9 +493,9 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
-                    ("KEY1".into(), "./*.md,./**/*.json".into()),
-                    ("KEY2".into(), "project-task".into()),
+                EnvMap::from_iter([
+                    ("KEY1".into(), Some("./*.md,./**/*.json".into())),
+                    ("KEY2".into(), Some("project-task".into())),
                 ])
             );
         }
@@ -536,8 +509,9 @@ mod task_expander {
             let mut task = create_task();
             task.options.run_from_workspace_root = true;
 
-            task.env.insert("KEY1".into(), "@globs(all)".into());
-            task.env.insert("KEY2".into(), "$project-$task".into());
+            task.env.insert("KEY1".into(), Some("@globs(all)".into()));
+            task.env
+                .insert("KEY2".into(), Some("$project-$task".into()));
 
             let context = create_context(sandbox.path());
             TaskExpander::new(&project_graph, &project, &context)
@@ -546,12 +520,12 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([
+                EnvMap::from_iter([
                     (
                         "KEY1".into(),
-                        "./project/source/*.md,./project/source/**/*.json".into()
+                        Some("./project/source/*.md,./project/source/**/*.json".into())
                     ),
-                    ("KEY2".into(), "project-task".into()),
+                    ("KEY2".into(), Some("project-task".into())),
                 ])
             );
         }
@@ -564,7 +538,7 @@ mod task_expander {
 
             let mut task = create_task();
             task.env
-                .insert("KEY".into(), "$project-$FOO-$unknown".into());
+                .insert("KEY".into(), Some("$project-$FOO-$unknown".into()));
 
             let bag = GlobalEnvBag::instance();
             bag.set("FOO", "foo");
@@ -578,200 +552,8 @@ mod task_expander {
 
             assert_eq!(
                 task.env,
-                FxHashMap::from_iter([("KEY".into(), "project-foo-$unknown".into()),])
+                EnvMap::from_iter([("KEY".into(), Some("project-foo-$unknown".into()))])
             );
-        }
-
-        #[test]
-        fn loads_from_env_file() {
-            let sandbox = create_sandbox("env-file");
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_files = Some(vec![Input::parse(".env").unwrap()]);
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project_graph, &project, &context)
-                .expand_env(&mut task)
-                .unwrap();
-
-            assert_eq!(
-                task.env,
-                FxHashMap::from_iter([
-                    ("KEY1".into(), "value1".into()),
-                    ("KEY2".into(), "value2".into()), // Not overridden by env file
-                    ("KEY3".into(), "value3".into()),
-                ])
-            );
-        }
-
-        #[test]
-        fn loads_from_root_env_file_and_substitutes() {
-            use std::env;
-
-            let sandbox = create_sandbox("env-file");
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.options.env_files = Some(vec![Input::parse("/.env-shared").unwrap()]);
-
-            // dotenvy operates on actual env
-            unsafe { env::set_var("EXTERNAL", "external-value") };
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project_graph, &project, &context)
-                .expand_env(&mut task)
-                .unwrap();
-
-            unsafe { env::remove_var("EXTERNAL") };
-
-            assert_eq!(
-                task.env,
-                FxHashMap::from_iter([
-                    ("ROOT".into(), "true".into()),
-                    ("BASE".into(), "value".into()),
-                    ("FROM_SELF1".into(), "value".into()),
-                    ("FROM_SELF2".into(), "value".into()),
-                    ("FROM_SYSTEM".into(), "external-value".into()),
-                ])
-            );
-        }
-
-        #[test]
-        fn can_substitute_var_from_env_file() {
-            let sandbox = create_sandbox("env-file");
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.options.env_files = Some(vec![Input::parse("/.env-shared").unwrap()]);
-            task.env.insert("TOP_LEVEL".into(), "$BASE".into());
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project_graph, &project, &context)
-                .expand_env(&mut task)
-                .unwrap();
-
-            assert_eq!(task.env.get("TOP_LEVEL").unwrap(), "value");
-        }
-
-        #[test]
-        fn can_substitute_self_from_system() {
-            let sandbox = create_sandbox("env-file");
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let bag = GlobalEnvBag::instance();
-            bag.set("MYPATH", "/another/path");
-
-            let mut task = create_task();
-            task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project_graph, &project, &context)
-                .expand_env(&mut task)
-                .unwrap();
-
-            assert_eq!(task.env.get("MYPATH").unwrap(), "/path:/another/path");
-
-            bag.remove("MYPATH");
-        }
-
-        #[test]
-        fn doesnt_substitute_self_from_local() {
-            let sandbox = create_sandbox("env-file");
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.env.insert("MYPATH".into(), "/path:$MYPATH".into());
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project_graph, &project, &context)
-                .expand_env(&mut task)
-                .unwrap();
-
-            assert_eq!(task.env.get("MYPATH").unwrap(), "/path:$MYPATH");
-        }
-
-        #[test]
-        fn loads_from_multiple_env_file() {
-            let sandbox = create_sandbox("env-file");
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_files = Some(vec![
-                Input::parse(".env").unwrap(),
-                Input::parse("/.env-shared").unwrap(),
-            ]);
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project_graph, &project, &context)
-                .expand_env(&mut task)
-                .unwrap();
-
-            assert_eq!(
-                task.env,
-                FxHashMap::from_iter([
-                    ("KEY1".into(), "value1".into()),
-                    ("KEY2".into(), "value2".into()), // Not overridden by env file
-                    ("KEY3".into(), "value3".into()),
-                    // shared
-                    ("ROOT".into(), "true".into()),
-                    ("BASE".into(), "value".into()),
-                    ("FROM_SELF1".into(), "value".into()),
-                    ("FROM_SELF2".into(), "value".into()),
-                    ("FROM_SYSTEM".into(), "".into()),
-                ])
-            );
-        }
-
-        #[test]
-        fn skips_missing_env_file() {
-            let sandbox = create_sandbox("env-file");
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.env.insert("KEY1".into(), "value1".into());
-            task.env.insert("KEY2".into(), "value2".into());
-            task.options.env_files = Some(vec![Input::parse(".env-missing").unwrap()]);
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project_graph, &project, &context)
-                .expand_env(&mut task)
-                .unwrap();
-
-            assert_eq!(
-                task.env,
-                FxHashMap::from_iter([
-                    ("KEY1".into(), "value1".into()),
-                    ("KEY2".into(), "value2".into()),
-                ])
-            );
-        }
-
-        #[test]
-        #[should_panic(expected = "Failed to parse env file")]
-        fn errors_invalid_env_file() {
-            let sandbox = create_sandbox("env-file");
-            let project_graph = create_project_graph();
-            let project = create_project(sandbox.path());
-
-            let mut task = create_task();
-            task.options.env_files = Some(vec![Input::parse(".env-invalid").unwrap()]);
-
-            let context = create_context(sandbox.path());
-            TaskExpander::new(&project_graph, &project, &context)
-                .expand_env(&mut task)
-                .unwrap();
         }
     }
 

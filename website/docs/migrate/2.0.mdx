@@ -269,6 +269,8 @@ toolchains:
 - Removed setting values:
   - `tasks.*.preset` value `watcher`
 - Changed option defaults:
+  - `tasks.*.options.envFile` now defaults to a list of files, instead of a single file, when
+    `true`. Refer to the blog post for more information.
   - `tasks.*.options.inferInputs` now defaults to `false` instead of `true`.
   - `tasks.*.options.shell` now defaults to `true` instead of `false`.
   - `tasks.*.options.unixShell` now defaults to `bash` instead of nothing.
@@ -318,6 +320,86 @@ tasks:
     options:
       shell: false
 ```
+
+### Env var substitution behavior
+
+The syntax and behavior for substituting (expanding/interpolation) environment variables has
+changed, to better align with the standard of `.env` files. The biggest change is that flagless
+tokens (`$VAR`) and `?` flag tokens (`$VAR?`) swapped functionality. Refer to the following table:
+
+| Syntax                                  | v1                                                         | v2                                                            |
+| --------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| `$VAR`                                  | Substitute with variable syntax (`$VAR`) if variable empty | 💥 Substitute with empty string if variable empty             |
+| `$VAR!`                                 | Don't substitute and keep variable syntax (`$VAR`)         | 💥 Removed syntax                                             |
+| `$VAR?`                                 | Substitute with empty string if variable empty             | 💥 Removed syntax                                             |
+| `${VAR}`                                | Substitute with variable syntax (`$VAR`) if variable empty | 💥 Substitute with empty string if variable empty             |
+| `${VAR!}`                               | Don't substitute and keep variable syntax (`$VAR`)         | ~                                                             |
+| `${VAR?}`                               | Substitute with empty string if variable empty             | 💥 Substitute with variable syntax (`$VAR`) if variable empty |
+| `${VAR:default}`                        | Use default value if variable empty                        | ~                                                             |
+| `${VAR:-default}`, `${VAR-default}`     | ⛔️ Not supported                                          | Use default value if variable empty                           |
+| `${VAR:+alternate}`, `${VAR+alternate}` | ⛔️ Not supported                                          | Use alternate value if variable non-empty                     |
+
+Legend:
+
+- `~` indicates the syntax/functionality is the same as v1
+- `💥` indicates breaking change
+- `⛔️` indicates not supported
+
+### Env var precedence
+
+The order of precedence for environment variables has slightly changed when running tasks, as it was
+confusing to users. The new order of precedence is as follows, from lowest to highest tier, with the
+latter overwriting the former:
+
+- Task `.env` files
+  - via `options.envFile`
+- Task env variables
+  - via `env` or `deps.*.env`
+- System variables
+  - via profile scripts (`.bashrc`, `.zshrc`, etc)
+  - via command line: `KEY=value moon ...`
+
+In regards to variable substitution, each tier can reference variables within the same tier, or the
+higher tier(s), but _not_ from lower tier(s). This is because variables are processed in _reverse
+order_. Refer to the following table:
+
+| Tier   | Can reference        | Evaluated during      |
+| ------ | -------------------- | --------------------- |
+| Dotenv | Dotenv, Task, System | Before task execution |
+| Task   | Task, System         | After task creation   |
+| System | System               | CLI startup           |
+
+If you don't want to inherit a system variable, you can override it in the task with a null value.
+
+```yaml
+tasks:
+  dev:
+    env:
+      EXAMPLE: null
+```
+
+### Deferred `.env` files
+
+In v1, when `options.envFile` was enabled, the `.env` file(s) were loaded at the time of task
+creation, during the building of project/task graphs. This meant that if the `.env` file changed
+between the time of graph creation and task execution, the changes would not be reflected.
+
+In v2 and later, `.env` files are loaded _just before_ task execution, ensuring that any changes to
+the file are picked up.
+
+:::caution
+
+Because of this change, task `env` variables will continue to override `.env` file variables, BUT
+can no longer reference them for substitution. This is because the `.env` files are loaded later in
+the process.
+
+:::
+
+### Other changes
+
+- When `options.affectedFiles` is enabled, the list of files will be joined with the OS path
+  separator (`:` on Unix, `;` on Windows) instead of a comma (`,`) when passed as the
+  `MOON_AFFECTED_FILES` environment variable.
 
 ## Task inheritance
 

@@ -1,4 +1,4 @@
-use crate::env_substitutor::{ENV_VAR_SUBSTITUTE, ENV_VAR_SUBSTITUTE_BRACKETS};
+use crate::{ENV_VAR, ENV_VAR_BRACKETS};
 use rustc_hash::FxHashSet;
 
 #[derive(Default)]
@@ -17,29 +17,27 @@ impl EnvScanner {
         if !value.contains('$') {
             self.found.clear();
 
-            return value.to_owned();
+            return value.into();
         }
 
         let mut found = FxHashSet::default();
 
-        ENV_VAR_SUBSTITUTE.replace_all(value, |caps: &regex::Captures| {
-            self.do_replace(caps, &mut found)
-        });
+        for caps in ENV_VAR.captures_iter(value) {
+            self.do_capture(caps, &mut found);
+        }
 
-        ENV_VAR_SUBSTITUTE_BRACKETS.replace_all(value, |caps: &regex::Captures| {
-            self.do_replace(caps, &mut found)
-        });
+        for caps in ENV_VAR_BRACKETS.captures_iter(value) {
+            self.do_capture(caps, &mut found);
+        }
 
         self.found = found;
 
         value.into()
     }
 
-    fn do_replace(&self, caps: &regex::Captures, found: &mut FxHashSet<String>) -> String {
+    fn do_capture(&self, caps: regex::Captures, found: &mut FxHashSet<String>) {
         if let Some(name) = caps.name("name").map(|cap| cap.as_str()) {
             found.insert(name.to_owned());
         }
-
-        String::new()
     }
 }

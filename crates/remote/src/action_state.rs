@@ -66,9 +66,11 @@ impl ActionState<'_> {
         command.arguments.extend(self.task.args.clone());
 
         for (name, value) in BTreeMap::from_iter(self.task.env.clone()) {
-            command
-                .environment_variables
-                .push(command::EnvironmentVariable { name, value });
+            if let Some(value) = value {
+                command
+                    .environment_variables
+                    .push(command::EnvironmentVariable { name, value });
+            }
         }
 
         self.action = Some(action);

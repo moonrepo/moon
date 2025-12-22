@@ -1,4 +1,4 @@
-use crate::command::Command;
+use crate::command::{Command, EnvBehavior};
 use crate::command_line::CommandLine;
 // use crate::output_stream::capture_stream;
 use crate::output::Output;
@@ -455,34 +455,40 @@ impl Command {
 
     fn create_async_command(&self) -> miette::Result<(TokioCommand, CommandLine, Instant)> {
         let command_line = self.create_command_line();
+        let bag = GlobalEnvBag::instance();
 
         let mut command = TokioCommand::new(&command_line.command[0]);
         command.args(&command_line.command[1..]);
 
-        // Inherit global env first
-        let bag = GlobalEnvBag::instance();
-
+        // Inherit added/removed vars first
         bag.list_added(|key, value| {
             command.env(key, value);
-            true
         });
 
         bag.list_removed(|key| {
             command.env_remove(key);
-            true
         });
 
-        // Then inherit local so we can override global
+        // Then set explicit vars
         for (key, value) in &self.env {
-            if let Some(value) = value {
-                command.env(key, value);
-            } else {
-                command.env_remove(key);
-            }
+            match value {
+                EnvBehavior::Set(value) => {
+                    command.env(key, value);
+                }
+                EnvBehavior::SetIfMissing(value) => {
+                    if !bag.has(key) {
+                        command.env(key, value);
+                    }
+                }
+                EnvBehavior::Unset => {
+                    command.env_remove(key);
+                }
+            };
         }
 
         if let Some(cwd) = &self.cwd {
             command.current_dir(cwd);
+            command.env("PWD", cwd);
         }
 
         // And lastly inherit lookup paths
@@ -517,7 +523,9 @@ impl Command {
         let bag = GlobalEnvBag::instance();
 
         let workspace_env_key = OsString::from("MOON_WORKSPACE_ROOT");
-        let workspace_root = if let Some(Some(value)) = self.env.get(&workspace_env_key) {
+        let workspace_root = if let Some(var) = self.env.get(&workspace_env_key)
+            && let Some(value) = var.get_value()
+        {
             PathBuf::from(value)
         } else {
             bag.get(&workspace_env_key).map_or_else(
@@ -548,7 +556,7 @@ impl Command {
             .env
             .iter()
             .filter_map(|(key, value)| {
-                if value.is_none() {
+                if value == &EnvBehavior::Unset {
                     None
                 } else if debug_env
                     || key
@@ -556,7 +564,7 @@ impl Command {
                         .map(|k| k.starts_with("MOON_"))
                         .unwrap_or_default()
                 {
-                    Some((key, value.as_ref().unwrap()))
+                    Some((key, value.get_value().unwrap()))
                 } else {
                     None
                 }

@@ -24,6 +24,10 @@
     `SyncWorkspaceInput.extension_config` fields.
   - Added `RegisterToolchainOutput.language` field.
 
+#### 🐞 Fixes
+
+- Fixed an issue where env var substitution would not process in the order they were defined.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.54.0](https://github.com/moonrepo/proto/releases/tag/v0.54.0) (from 0.53.2).

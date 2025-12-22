@@ -2,6 +2,7 @@
 source: crates/cli/tests/run_node_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ pnpm install
 ▪▪▪▪ pnpm:viaScript
 node+pnpm platform
 v18.0.0

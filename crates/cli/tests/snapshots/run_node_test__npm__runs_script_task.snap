@@ -2,6 +2,7 @@
 source: crates/cli/tests/run_node_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ npm install
 ▪▪▪▪ npm:viaScript
 node+npm platform
 v18.0.0

@@ -2,6 +2,7 @@
 source: crates/cli/tests/run_node_test.rs
 expression: assert.output()
 ---
+▪▪▪▪ yarn install
 ▪▪▪▪ yarn:viaScript
 node+yarn platform
 v18.0.0

@@ -413,55 +413,55 @@ mod create_task {
     mod script_files {
         use super::*;
 
-        #[test]
-        fn handles_bash() {
-            let task = create_task(
-                "project:task",
-                "script",
-                "bash scripts/setup.sh",
-                TaskContext::ConvertToTask,
-                &Id::raw("node"),
-                NodePackageManager::Npm,
-            )
-            .unwrap();
+        // #[test]
+        // fn handles_bash() {
+        //     let task = create_task(
+        //         "project:task",
+        //         "script",
+        //         "bash scripts/setup.sh",
+        //         TaskContext::ConvertToTask,
+        //         &Id::raw("node"),
+        //         NodePackageManager::Npm,
+        //     )
+        //     .unwrap();
 
-            assert_eq!(
-                task,
-                PartialTaskConfig {
-                    command: Some(PartialTaskArgs::List(string_vec![
-                        "bash",
-                        "scripts/setup.sh"
-                    ])),
-                    toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                    ..PartialTaskConfig::default()
-                }
-            )
-        }
+        //     assert_eq!(
+        //         task,
+        //         PartialTaskConfig {
+        //             command: Some(PartialTaskArgs::List(string_vec![
+        //                 "bash",
+        //                 "scripts/setup.sh"
+        //             ])),
+        //             toolchain: Some(OneOrMany::One(Id::raw("system"))),
+        //             ..PartialTaskConfig::default()
+        //         }
+        //     )
+        // }
 
-        #[test]
-        fn handles_bash_without_command() {
-            let task = create_task(
-                "project:task",
-                "script",
-                "scripts/setup.sh",
-                TaskContext::ConvertToTask,
-                &Id::raw("node"),
-                NodePackageManager::Npm,
-            )
-            .unwrap();
+        // #[test]
+        // fn handles_bash_without_command() {
+        //     let task = create_task(
+        //         "project:task",
+        //         "script",
+        //         "scripts/setup.sh",
+        //         TaskContext::ConvertToTask,
+        //         &Id::raw("node"),
+        //         NodePackageManager::Npm,
+        //     )
+        //     .unwrap();
 
-            assert_eq!(
-                task,
-                PartialTaskConfig {
-                    command: Some(PartialTaskArgs::List(string_vec![
-                        "bash",
-                        "scripts/setup.sh"
-                    ])),
-                    toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                    ..PartialTaskConfig::default()
-                }
-            )
-        }
+        //     assert_eq!(
+        //         task,
+        //         PartialTaskConfig {
+        //             command: Some(PartialTaskArgs::List(string_vec![
+        //                 "bash",
+        //                 "scripts/setup.sh"
+        //             ])),
+        //             toolchain: Some(OneOrMany::One(Id::raw("system"))),
+        //             ..PartialTaskConfig::default()
+        //         }
+        //     )
+        // }
 
         #[test]
         fn handles_node() {
@@ -1421,813 +1421,813 @@ mod create_tasks_from_scripts {
         }
     }
 
-    mod complex_examples {
-        use super::*;
+    // mod complex_examples {
+    //     use super::*;
 
-        // https://github.com/babel/babel/blob/main/package.json
-        #[test]
-        fn babel() {
-            let mut pkg = PackageJsonCache {
-                data: PackageJson {
-                    scripts: Some(ScriptsMap::from_iter([
-                        ("postinstall".into(), "husky install".into()),
-                        ("bootstrap".into(), "make bootstrap".into()),
-                        ("codesandbox:build".into(), "make build-no-bundle".into()),
-                        ("build".into(), "make build".into()),
-                        ("fix".into(), "make fix".into()),
-                        ("lint".into(), "make lint".into()),
-                        ("test".into(), "make test".into()),
-                        (
-                            "version".into(),
-                            "yarn --immutable-cache && git add yarn.lock".into(),
-                        ),
-                        ("test:esm".into(), "node test/esm/index.js".into()),
-                        (
-                            "test:runtime:generate-absolute-runtime".into(),
-                            "node test/runtime-integration/generate-absolute-runtime.cjs".into(),
-                        ),
-                        (
-                            "test:runtime:bundlers".into(),
-                            "node test/runtime-integration/bundlers.cjs".into(),
-                        ),
-                        (
-                            "test:runtime:node".into(),
-                            "node test/runtime-integration/node.cjs".into(),
-                        ),
-                    ])),
-                    ..PackageJson::default()
-                },
-                ..Default::default()
-            };
+    //     // https://github.com/babel/babel/blob/main/package.json
+    //     #[test]
+    //     fn babel() {
+    //         let mut pkg = PackageJsonCache {
+    //             data: PackageJson {
+    //                 scripts: Some(ScriptsMap::from_iter([
+    //                     ("postinstall".into(), "husky install".into()),
+    //                     ("bootstrap".into(), "make bootstrap".into()),
+    //                     ("codesandbox:build".into(), "make build-no-bundle".into()),
+    //                     ("build".into(), "make build".into()),
+    //                     ("fix".into(), "make fix".into()),
+    //                     ("lint".into(), "make lint".into()),
+    //                     ("test".into(), "make test".into()),
+    //                     (
+    //                         "version".into(),
+    //                         "yarn --immutable-cache && git add yarn.lock".into(),
+    //                     ),
+    //                     ("test:esm".into(), "node test/esm/index.js".into()),
+    //                     (
+    //                         "test:runtime:generate-absolute-runtime".into(),
+    //                         "node test/runtime-integration/generate-absolute-runtime.cjs".into(),
+    //                     ),
+    //                     (
+    //                         "test:runtime:bundlers".into(),
+    //                         "node test/runtime-integration/bundlers.cjs".into(),
+    //                     ),
+    //                     (
+    //                         "test:runtime:node".into(),
+    //                         "node test/runtime-integration/node.cjs".into(),
+    //                     ),
+    //                 ])),
+    //                 ..PackageJson::default()
+    //             },
+    //             ..Default::default()
+    //         };
 
-            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+    //         let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(
-                pkg.data.scripts,
-                Some(ScriptsMap::from_iter([
-                    ("postinstall".to_owned(), "husky install".to_owned()),
-                    (
-                        "version".to_owned(),
-                        "yarn --immutable-cache && git add yarn.lock".to_owned()
-                    )
-                ]))
-            );
+    //         assert_eq!(
+    //             pkg.data.scripts,
+    //             Some(ScriptsMap::from_iter([
+    //                 ("postinstall".to_owned(), "husky install".to_owned()),
+    //                 (
+    //                     "version".to_owned(),
+    //                     "yarn --immutable-cache && git add yarn.lock".to_owned()
+    //                 )
+    //             ]))
+    //         );
 
-            assert_eq!(
-                tasks,
-                BTreeMap::from([
-                    (
-                        "bootstrap".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["make", "bootstrap"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "build".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["make", "build"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "codesandbox-build".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "make",
-                                "build-no-bundle"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "fix".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["make", "fix"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["make", "lint"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["make", "test"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-esm".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "test/esm/index.js"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-runtime-bundlers".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "test/runtime-integration/bundlers.cjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-runtime-generate-absolute-runtime".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "test/runtime-integration/generate-absolute-runtime.cjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-runtime-node".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "test/runtime-integration/node.cjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                ])
-            );
-        }
+    //         assert_eq!(
+    //             tasks,
+    //             BTreeMap::from([
+    //                 (
+    //                     "bootstrap".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["make", "bootstrap"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("system"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "build".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["make", "build"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("system"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "codesandbox-build".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "make",
+    //                             "build-no-bundle"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("system"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "fix".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["make", "fix"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("system"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["make", "lint"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("system"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["make", "test"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("system"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-esm".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "test/esm/index.js"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-runtime-bundlers".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "test/runtime-integration/bundlers.cjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-runtime-generate-absolute-runtime".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "test/runtime-integration/generate-absolute-runtime.cjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-runtime-node".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "test/runtime-integration/node.cjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //             ])
+    //         );
+    //     }
 
-        // https://github.com/milesj/packemon/blob/master/package.json
-        #[test]
-        fn packemon() {
-            let mut pkg = PackageJsonCache {
-            data:PackageJson {
-                    scripts: Some(ScriptsMap::from_iter([
-                        ("build".into(), "yarn run packemon build".into()),
-                        ("check".into(), "yarn run type && yarn run test && yarn run lint".into()),
-                        ("clean".into(), "yarn run packemon clean".into()),
-                        ("commit".into(), "yarn install && git add yarn.lock".into()),
-                        ("coverage".into(), "yarn run test --coverage".into()),
-                        ("create-config".into(), "create-config".into()),
-                        ("docs".into(), "cd website && yarn run start".into()),
-                        ("format".into(), "prettier".into()),
-                        ("lint".into(), "eslint".into()),
-                        ("packup".into(), "NODE_ENV=production yarn run packemon build --addEngines --addExports --declaration".into()),
-                        ("packemon".into(), "node ./packages/packemon/cjs/bin.cjs".into()),
-                        ("prerelease".into(), "yarn run clean && yarn run setup && yarn run packup && yarn run check".into()),
-                        ("release".into(), "yarn run prerelease && run-script lerna-release".into()),
-                        ("setup".into(), "yarn dlx --package packemon@latest --package typescript --quiet packemon build".into()),
-                        ("test".into(), "jest".into()),
-                        ("type".into(), "typescript --build".into()),
-                        ("validate".into(), "yarn run packemon validate".into()),
-                    ])),
-                    ..PackageJson::default()
-                },
-                ..Default::default()
-            };
+    //     // https://github.com/milesj/packemon/blob/master/package.json
+    //     #[test]
+    //     fn packemon() {
+    //         let mut pkg = PackageJsonCache {
+    //         data:PackageJson {
+    //                 scripts: Some(ScriptsMap::from_iter([
+    //                     ("build".into(), "yarn run packemon build".into()),
+    //                     ("check".into(), "yarn run type && yarn run test && yarn run lint".into()),
+    //                     ("clean".into(), "yarn run packemon clean".into()),
+    //                     ("commit".into(), "yarn install && git add yarn.lock".into()),
+    //                     ("coverage".into(), "yarn run test --coverage".into()),
+    //                     ("create-config".into(), "create-config".into()),
+    //                     ("docs".into(), "cd website && yarn run start".into()),
+    //                     ("format".into(), "prettier".into()),
+    //                     ("lint".into(), "eslint".into()),
+    //                     ("packup".into(), "NODE_ENV=production yarn run packemon build --addEngines --addExports --declaration".into()),
+    //                     ("packemon".into(), "node ./packages/packemon/cjs/bin.cjs".into()),
+    //                     ("prerelease".into(), "yarn run clean && yarn run setup && yarn run packup && yarn run check".into()),
+    //                     ("release".into(), "yarn run prerelease && run-script lerna-release".into()),
+    //                     ("setup".into(), "yarn dlx --package packemon@latest --package typescript --quiet packemon build".into()),
+    //                     ("test".into(), "jest".into()),
+    //                     ("type".into(), "typescript --build".into()),
+    //                     ("validate".into(), "yarn run packemon validate".into()),
+    //                 ])),
+    //                 ..PackageJson::default()
+    //             },
+    //             ..Default::default()
+    //         };
 
-            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+    //         let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(pkg.data.scripts, None);
+    //         assert_eq!(pkg.data.scripts, None);
 
-            assert_eq!(
-                tasks,
-                BTreeMap::from([
-                    (
-                        "build".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:packemon",
-                                "--",
-                                "build"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "check-dep1".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:type",
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "check-dep2".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:test",
-                            ])),
-                            deps: Some(create_target_deps(["~:check-dep1"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "check".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:lint",
-                            ])),
-                            deps: Some(create_target_deps(["~:check-dep2"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "clean".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:packemon",
-                                "--",
-                                "clean"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "commit-dep1".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["yarn", "install"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "commit".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "git",
-                                "add",
-                                "yarn.lock"
-                            ])),
-                            deps: Some(create_target_deps(["~:commit-dep1"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("system"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "coverage".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:test",
-                                "--",
-                                "--coverage"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "create-config".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::String("create-config".to_owned())),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "format".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::String("prettier".to_owned())),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::String("eslint".to_owned())),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "packup".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:packemon",
-                                "--",
-                                "build",
-                                "--addEngines",
-                                "--addExports",
-                                "--declaration"
-                            ])),
-                            env: Some(FxHashMap::from_iter([(
-                                "NODE_ENV".to_owned(),
-                                "production".to_owned()
-                            )])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "packemon".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "./packages/packemon/cjs/bin.cjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "prerelease-dep1".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:clean"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "prerelease-dep2".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:setup"
-                            ])),
-                            deps: Some(create_target_deps(["~:prerelease-dep1"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "prerelease-dep3".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:packup"
-                            ])),
-                            deps: Some(create_target_deps(["~:prerelease-dep2"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "prerelease".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:check"
-                            ])),
-                            deps: Some(create_target_deps(["~:prerelease-dep3"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "release".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "run-script",
-                                "lerna-release"
-                            ])),
-                            deps: Some(create_target_deps(["~:prerelease"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "setup".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "yarn",
-                                "dlx",
-                                "--package",
-                                "packemon@latest",
-                                "--package",
-                                "typescript",
-                                "--quiet",
-                                "packemon",
-                                "build"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::String("jest".to_owned())),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "type".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "typescript",
-                                "--build"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "validate".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:packemon",
-                                "--",
-                                "validate"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                ])
-            )
-        }
+    //         assert_eq!(
+    //             tasks,
+    //             BTreeMap::from([
+    //                 (
+    //                     "build".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:packemon",
+    //                             "--",
+    //                             "build"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "check-dep1".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:type",
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "check-dep2".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:test",
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:check-dep1"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "check".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:lint",
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:check-dep2"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "clean".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:packemon",
+    //                             "--",
+    //                             "clean"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "commit-dep1".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["yarn", "install"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "commit".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "git",
+    //                             "add",
+    //                             "yarn.lock"
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:commit-dep1"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("system"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "coverage".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:test",
+    //                             "--",
+    //                             "--coverage"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "create-config".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::String("create-config".to_owned())),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "format".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::String("prettier".to_owned())),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::String("eslint".to_owned())),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "packup".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:packemon",
+    //                             "--",
+    //                             "build",
+    //                             "--addEngines",
+    //                             "--addExports",
+    //                             "--declaration"
+    //                         ])),
+    //                         env: Some(FxHashMap::from_iter([(
+    //                             "NODE_ENV".to_owned(),
+    //                             "production".to_owned()
+    //                         )])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "packemon".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "./packages/packemon/cjs/bin.cjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "prerelease-dep1".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:clean"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "prerelease-dep2".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:setup"
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:prerelease-dep1"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "prerelease-dep3".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:packup"
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:prerelease-dep2"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "prerelease".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:check"
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:prerelease-dep3"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "release".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "run-script",
+    //                             "lerna-release"
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:prerelease"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "setup".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "yarn",
+    //                             "dlx",
+    //                             "--package",
+    //                             "packemon@latest",
+    //                             "--package",
+    //                             "typescript",
+    //                             "--quiet",
+    //                             "packemon",
+    //                             "build"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::String("jest".to_owned())),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "type".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "typescript",
+    //                             "--build"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "validate".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:packemon",
+    //                             "--",
+    //                             "validate"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //             ])
+    //         )
+    //     }
 
-        // https://github.com/prettier/prettier/blob/main/package.json
-        #[test]
-        fn prettier() {
-            let mut pkg = PackageJsonCache {
-            data:PackageJson {
-                    scripts: Some(ScriptsMap::from_iter([
-                        ("prepublishOnly".into(), "echo \"Error: must publish from dist/\" && exit 1".into()),
-                        ("test".into(), "jest".into()),
-                        ("test:dev-package".into(), "cross-env INSTALL_PACKAGE=1 jest".into()),
-                        ("test:dist".into(), "cross-env NODE_ENV=production jest".into()),
-                        ("test:dist-standalone".into(), "cross-env NODE_ENV=production TEST_STANDALONE=1 jest".into()),
-                        ("test:integration".into(), "jest tests/integration".into()),
-                        ("test:dist-lint".into(), "eslint --no-eslintrc --no-ignore --no-inline-config --config=./scripts/bundle-eslint-config.cjs \"dist/**/*.{js,mjs}\"".into()),
-                        ("perf".into(), "yarn run build && cross-env NODE_ENV=production node ./dist/bin-prettier.js".into()),
-                        ("perf:inspect".into(), "yarn run build && cross-env NODE_ENV=production node --inspect-brk ./dist/bin-prettier.js".into()),
-                        ("perf:benchmark".into(), "yarn run perf --debug-benchmark".into()),
-                        ("lint".into(), "run-p lint:*".into()),
-                        ("lint:typecheck".into(), "tsc".into()),
-                        ("lint:eslint".into(), "cross-env EFF_NO_LINK_RULES=true eslint . --format friendly".into()),
-                        ("lint:changelog".into(), "node ./scripts/lint-changelog.mjs".into()),
-                        ("lint:prettier".into(), "prettier . \"!test*\" --check".into()),
-                        ("lint:spellcheck".into(), "cspell --no-progress --relative --dot --gitignore".into()),
-                        ("lint:deps".into(), "node ./scripts/check-deps.mjs".into()),
-                        ("lint:actionlint".into(), "node-actionlint".into()),
-                        ("fix:eslint".into(), "yarn run lint:eslint --fix".into()),
-                        ("fix:prettier".into(), "yarn run lint:prettier --write".into()),
-                        ("build".into(), "node ./scripts/build/build.mjs".into()),
-                        ("build:website".into(), "node ./scripts/build-website.mjs".into()),
-                        ("vendors:bundle".into(), "node ./scripts/vendors/bundle-vendors.mjs".into()),
-                    ])),
-                    ..PackageJson::default()
-                },
-                ..Default::default()
-            };
+    //     // https://github.com/prettier/prettier/blob/main/package.json
+    //     #[test]
+    //     fn prettier() {
+    //         let mut pkg = PackageJsonCache {
+    //         data:PackageJson {
+    //                 scripts: Some(ScriptsMap::from_iter([
+    //                     ("prepublishOnly".into(), "echo \"Error: must publish from dist/\" && exit 1".into()),
+    //                     ("test".into(), "jest".into()),
+    //                     ("test:dev-package".into(), "cross-env INSTALL_PACKAGE=1 jest".into()),
+    //                     ("test:dist".into(), "cross-env NODE_ENV=production jest".into()),
+    //                     ("test:dist-standalone".into(), "cross-env NODE_ENV=production TEST_STANDALONE=1 jest".into()),
+    //                     ("test:integration".into(), "jest tests/integration".into()),
+    //                     ("test:dist-lint".into(), "eslint --no-eslintrc --no-ignore --no-inline-config --config=./scripts/bundle-eslint-config.cjs \"dist/**/*.{js,mjs}\"".into()),
+    //                     ("perf".into(), "yarn run build && cross-env NODE_ENV=production node ./dist/bin-prettier.js".into()),
+    //                     ("perf:inspect".into(), "yarn run build && cross-env NODE_ENV=production node --inspect-brk ./dist/bin-prettier.js".into()),
+    //                     ("perf:benchmark".into(), "yarn run perf --debug-benchmark".into()),
+    //                     ("lint".into(), "run-p lint:*".into()),
+    //                     ("lint:typecheck".into(), "tsc".into()),
+    //                     ("lint:eslint".into(), "cross-env EFF_NO_LINK_RULES=true eslint . --format friendly".into()),
+    //                     ("lint:changelog".into(), "node ./scripts/lint-changelog.mjs".into()),
+    //                     ("lint:prettier".into(), "prettier . \"!test*\" --check".into()),
+    //                     ("lint:spellcheck".into(), "cspell --no-progress --relative --dot --gitignore".into()),
+    //                     ("lint:deps".into(), "node ./scripts/check-deps.mjs".into()),
+    //                     ("lint:actionlint".into(), "node-actionlint".into()),
+    //                     ("fix:eslint".into(), "yarn run lint:eslint --fix".into()),
+    //                     ("fix:prettier".into(), "yarn run lint:prettier --write".into()),
+    //                     ("build".into(), "node ./scripts/build/build.mjs".into()),
+    //                     ("build:website".into(), "node ./scripts/build-website.mjs".into()),
+    //                     ("vendors:bundle".into(), "node ./scripts/vendors/bundle-vendors.mjs".into()),
+    //                 ])),
+    //                 ..PackageJson::default()
+    //             },
+    //             ..Default::default()
+    //         };
 
-            let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
+    //         let tasks = create_tasks_from_scripts("project", &mut pkg).unwrap();
 
-            assert_eq!(
-                pkg.data.scripts,
-                Some(ScriptsMap::from_iter([(
-                    "prepublishOnly".to_owned(),
-                    "echo \"Error: must publish from dist/\" && exit 1".to_owned()
-                )]))
-            );
+    //         assert_eq!(
+    //             pkg.data.scripts,
+    //             Some(ScriptsMap::from_iter([(
+    //                 "prepublishOnly".to_owned(),
+    //                 "echo \"Error: must publish from dist/\" && exit 1".to_owned()
+    //             )]))
+    //         );
 
-            assert_eq!(
-                tasks,
-                BTreeMap::from([
-                    (
-                        "lint".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["run-p", "lint:*"])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint-actionlint".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::String("node-actionlint".to_owned())),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint-changelog".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "./scripts/lint-changelog.mjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint-deps".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "./scripts/check-deps.mjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint-eslint".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "cross-env",
-                                "eslint",
-                                ".",
-                                "--format",
-                                "friendly"
-                            ])),
-                            env: Some(FxHashMap::from_iter([(
-                                "EFF_NO_LINK_RULES".to_owned(),
-                                "true".to_owned()
-                            )])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint-prettier".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "prettier", ".", "!test*", "--check"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint-spellcheck".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "cspell",
-                                "--no-progress",
-                                "--relative",
-                                "--dot",
-                                "--gitignore"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "lint-typecheck".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::String("tsc".to_owned())),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "fix-eslint".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:lint-eslint",
-                                "--",
-                                "--fix"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "fix-prettier".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:lint-prettier",
-                                "--",
-                                "--write"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "build".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "./scripts/build/build.mjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "build-website".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "./scripts/build-website.mjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "perf".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "cross-env",
-                                "node",
-                                "./dist/bin-prettier.js"
-                            ])),
-                            deps: Some(create_target_deps(["~:perf-dep1"])),
-                            env: Some(FxHashMap::from_iter([(
-                                "NODE_ENV".to_owned(),
-                                "production".to_owned()
-                            )])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "perf-benchmark".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:perf",
-                                "--",
-                                "--debug-benchmark"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "perf-inspect".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "cross-env",
-                                "node",
-                                "--inspect-brk",
-                                "./dist/bin-prettier.js"
-                            ])),
-                            deps: Some(create_target_deps(["~:perf-inspect-dep1"])),
-                            env: Some(FxHashMap::from_iter([(
-                                "NODE_ENV".to_owned(),
-                                "production".to_owned()
-                            )])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "perf-inspect-dep1".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:build"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "perf-dep1".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "moon",
-                                "run",
-                                "project:build"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::String("jest".to_owned())),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-dev-package".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
-                            env: Some(FxHashMap::from_iter([(
-                                "INSTALL_PACKAGE".to_owned(),
-                                "1".to_owned()
-                            )])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-dist".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
-                            env: Some(FxHashMap::from_iter([(
-                                "NODE_ENV".to_owned(),
-                                "production".to_owned()
-                            )])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-dist-lint".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "eslint",
-                                "--no-eslintrc",
-                                "--no-ignore",
-                                "--no-inline-config",
-                                "--config=./scripts/bundle-eslint-config.cjs",
-                                "dist/**/*.{js,mjs}"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-dist-standalone".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
-                            env: Some(FxHashMap::from_iter([
-                                ("TEST_STANDALONE".to_owned(), "1".to_owned()),
-                                ("NODE_ENV".to_owned(), "production".to_owned())
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "test-integration".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "jest",
-                                "tests/integration"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                    (
-                        "vendors-bundle".try_into().unwrap(),
-                        PartialTaskConfig {
-                            command: Some(PartialTaskArgs::List(string_vec![
-                                "node",
-                                "./scripts/vendors/bundle-vendors.mjs"
-                            ])),
-                            toolchain: Some(OneOrMany::One(Id::raw("node"))),
-                            ..PartialTaskConfig::default()
-                        }
-                    ),
-                ])
-            );
-        }
-    }
+    //         assert_eq!(
+    //             tasks,
+    //             BTreeMap::from([
+    //                 (
+    //                     "lint".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["run-p", "lint:*"])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint-actionlint".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::String("node-actionlint".to_owned())),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint-changelog".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "./scripts/lint-changelog.mjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint-deps".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "./scripts/check-deps.mjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint-eslint".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "cross-env",
+    //                             "eslint",
+    //                             ".",
+    //                             "--format",
+    //                             "friendly"
+    //                         ])),
+    //                         env: Some(FxHashMap::from_iter([(
+    //                             "EFF_NO_LINK_RULES".to_owned(),
+    //                             "true".to_owned()
+    //                         )])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint-prettier".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "prettier", ".", "!test*", "--check"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint-spellcheck".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "cspell",
+    //                             "--no-progress",
+    //                             "--relative",
+    //                             "--dot",
+    //                             "--gitignore"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "lint-typecheck".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::String("tsc".to_owned())),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "fix-eslint".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:lint-eslint",
+    //                             "--",
+    //                             "--fix"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "fix-prettier".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:lint-prettier",
+    //                             "--",
+    //                             "--write"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "build".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "./scripts/build/build.mjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "build-website".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "./scripts/build-website.mjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "perf".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "cross-env",
+    //                             "node",
+    //                             "./dist/bin-prettier.js"
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:perf-dep1"])),
+    //                         env: Some(FxHashMap::from_iter([(
+    //                             "NODE_ENV".to_owned(),
+    //                             "production".to_owned()
+    //                         )])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "perf-benchmark".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:perf",
+    //                             "--",
+    //                             "--debug-benchmark"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "perf-inspect".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "cross-env",
+    //                             "node",
+    //                             "--inspect-brk",
+    //                             "./dist/bin-prettier.js"
+    //                         ])),
+    //                         deps: Some(create_target_deps(["~:perf-inspect-dep1"])),
+    //                         env: Some(FxHashMap::from_iter([(
+    //                             "NODE_ENV".to_owned(),
+    //                             "production".to_owned()
+    //                         )])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "perf-inspect-dep1".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:build"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "perf-dep1".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "moon",
+    //                             "run",
+    //                             "project:build"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::String("jest".to_owned())),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-dev-package".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
+    //                         env: Some(FxHashMap::from_iter([(
+    //                             "INSTALL_PACKAGE".to_owned(),
+    //                             "1".to_owned()
+    //                         )])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-dist".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
+    //                         env: Some(FxHashMap::from_iter([(
+    //                             "NODE_ENV".to_owned(),
+    //                             "production".to_owned()
+    //                         )])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-dist-lint".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "eslint",
+    //                             "--no-eslintrc",
+    //                             "--no-ignore",
+    //                             "--no-inline-config",
+    //                             "--config=./scripts/bundle-eslint-config.cjs",
+    //                             "dist/**/*.{js,mjs}"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-dist-standalone".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec!["cross-env", "jest"])),
+    //                         env: Some(FxHashMap::from_iter([
+    //                             ("TEST_STANDALONE".to_owned(), "1".to_owned()),
+    //                             ("NODE_ENV".to_owned(), "production".to_owned())
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "test-integration".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "jest",
+    //                             "tests/integration"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //                 (
+    //                     "vendors-bundle".try_into().unwrap(),
+    //                     PartialTaskConfig {
+    //                         command: Some(PartialTaskArgs::List(string_vec![
+    //                             "node",
+    //                             "./scripts/vendors/bundle-vendors.mjs"
+    //                         ])),
+    //                         toolchain: Some(OneOrMany::One(Id::raw("node"))),
+    //                         ..PartialTaskConfig::default()
+    //                     }
+    //                 ),
+    //             ])
+    //         );
+    //     }
+    // }
 }

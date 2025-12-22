@@ -54,13 +54,15 @@ impl<'a> DotEnv<'a> {
                 continue;
             };
 
-            let value = if quote == QuoteStyle::Single {
-                value
+            let value = if value == "null" || value == "nil" {
+                None
+            } else if quote == QuoteStyle::Single {
+                Some(value)
             } else {
-                self.substitute_value(&key, &value, &vars)
+                Some(self.substitute_value(&key, &value, &vars))
             };
 
-            vars.insert(key, Some(value));
+            vars.insert(key, value);
         }
 
         Ok(vars)

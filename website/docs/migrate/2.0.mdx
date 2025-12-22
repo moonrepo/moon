@@ -363,11 +363,11 @@ In regards to variable substitution, each tier can reference variables within th
 higher tier(s), but _not_ from lower tier(s). This is because variables are processed in _reverse
 order_. Refer to the following table:
 
-| Tier   | Can reference        |
-| ------ | -------------------- |
-| Dotenv | Dotenv, Task, System |
-| Task   | Task, System         |
-| System | System               |
+| Tier   | Can reference        | Evaluated during      |
+| ------ | -------------------- | --------------------- |
+| Dotenv | Dotenv, Task, System | Before task execution |
+| Task   | Task, System         | After task creation   |
+| System | System               | CLI startup           |
 
 If you don't want to inherit a system variable, you can override it in the task with a null value.
 

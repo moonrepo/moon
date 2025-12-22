@@ -239,12 +239,14 @@ impl<'task> CommandBuilder<'task> {
                 }
             }
 
-            // Don't override task-level variables
             for (key, value) in dot_env {
-                if let Some(value) = value
-                    && !self.command.contains_env(&key)
+                if
+                // Don't override task-level variables
+                !self.command.contains_env(&key)
+                    // Don't override system variables
+                    && !self.env_bag.has(&key)
                 {
-                    self.command.env(key, value);
+                    self.command.env_opt(key, value);
                 }
             }
         }

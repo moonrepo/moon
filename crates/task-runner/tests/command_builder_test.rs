@@ -350,6 +350,67 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn cannot_overwrite_system_env_from_task_env() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(
+                command.env.get(&OsString::from("KEY1")).unwrap(),
+                &EnvBehavior::SetIfMissing(OsString::from("value1"))
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_unset_system_env_from_task_env() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "unset-system").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(
+                command
+                    .env
+                    .get(&OsString::from("UNSET_SYSTEM_LOCAL"))
+                    .unwrap(),
+                &EnvBehavior::Unset
+            );
+        }
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_unset_system_env_from_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "unset-system").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(
+                command
+                    .env
+                    .get(&OsString::from("UNSET_SYSTEM_FILE"))
+                    .unwrap(),
+                &EnvBehavior::Unset
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn cannot_overwrite_task_env_from_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(get_env(&command, "KEY2").unwrap(), "value2");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn cannot_overwrite_system_env_from_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;
+            container.env_bag.set("KEY3", "system");
+
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert!(!command.contains_env("KEY3"));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn loads_from_env_file() {
             let container =
                 TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;
@@ -380,7 +441,7 @@ mod command_builder {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_substitute_self_from_system() {
-            // Must be on the instance since its reference during graph creation
+            // Must be on the instance since its referenced during graph creation
             let bag = GlobalEnvBag::instance();
             bag.set("MYPATH", "/another/path");
 

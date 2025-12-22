@@ -36,3 +36,9 @@ tasks:
       KEY: value
     options:
       envFile: '.env.invalid'
+
+  unset-system:
+    env:
+      UNSET_SYSTEM_LOCAL: null
+    options:
+      envFile: '.env.unset'

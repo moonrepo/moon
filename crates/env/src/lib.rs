@@ -56,7 +56,6 @@ impl MoonEnvironment {
 
     pub fn get_virtual_paths(&self) -> BTreeMap<PathBuf, PathBuf> {
         BTreeMap::from_iter([
-            (self.working_dir.clone(), "/cwd".into()),
             (self.store_root.clone(), "/moon".into()),
             (self.home_dir.clone(), "/userhome".into()),
             (self.workspace_root.clone(), "/workspace".into()),

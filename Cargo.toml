@@ -16,7 +16,7 @@ clap = { version = "4.5.53", default-features = false, features = [
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.61"
+clap_complete = "4.5.62"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
 ] }
@@ -37,33 +37,33 @@ regex = { version = "1.12.2", default-features = false, features = [
     "std",
     "perf",
 ] }
-reqwest = { version = "0.12.24", default-features = false, features = [
+reqwest = { version = "0.12.28", default-features = false, features = [
     "rustls-tls-native-roots",
     # We don't use openssl but its required for musl builds
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
-scc = "3.4.6"
+scc = "3.4.8"
 schematic = { version = "0.19.1", default-features = false, features = [
     "schema",
 ] }
 serial_test = "3.2.0"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.145"
+serde_json = "1.0.146"
 sha2 = "0.10.9"
-starbase = { version = "0.10.7" }
-starbase_archive = { version = "0.12.0", default-features = false, features = [
+starbase = { version = "0.10.8" }
+starbase_archive = { version = "0.12.1", default-features = false, features = [
     "miette",
     "tar-all",
     "zip-all",
 ] }
-starbase_console = { version = "0.6.20", features = ["miette"] }
-starbase_id = { version = "0.3.0", features = ["miette", "schematic"] }
-starbase_sandbox = "0.10.2"
-starbase_shell = "0.10.2"
+starbase_console = { version = "0.6.21", features = ["miette"] }
+starbase_id = { version = "0.3.1", features = ["miette", "schematic"] }
+starbase_sandbox = "0.10.3"
+starbase_shell = "0.10.4"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.12.2", default-features = false, features = [
+starbase_utils = { version = "0.12.3", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",
@@ -82,15 +82,15 @@ tokio = { version = "1.48.0", default-features = false, features = [
 ] }
 tokio-util = "0.7.17"
 typescript_tsconfig_json = { version = "0.5.0", features = ["serialize"] }
-tracing = "0.1.43"
+tracing = "0.1.44"
 url = "2.5.7"
 uuid = { version = "1.18.1", features = ["v4"] }
 
 # proto/plugin related
 extism = "=1.13.0"
 extism-pdk = "1.4.1"
-proto_core = "0.54.1"
-proto_pdk_api = "0.31.3"
+proto_core = "0.54.2"
+proto_pdk_api = "0.31.4"
 proto_pdk_test_utils = "0.42.1"
 system_env = "0.9.0"
 version_spec = "0.10.0"

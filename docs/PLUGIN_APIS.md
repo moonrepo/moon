@@ -1,4 +1,4 @@
-# WASM toolchain plugins
+# WASM toolchain plugin APIs
 
 ## Tier 1 - 10/10
 

@@ -12,6 +12,7 @@
 
 #### 🚀 Updates
 
+- Updated all extension and toolchain plugins to the latest moon v2 APIs.
 - **WASM API**
   - Added a `load_extension_config_by_id` host function.
   - Added `define_extension_config`, `initialize_extension`, and `extend_command` plugin functions.
@@ -24,13 +25,29 @@
     `SyncWorkspaceInput.extension_config` fields.
   - Added `RegisterToolchainOutput.language` field.
 
+#### 🧩 Extensions
+
+- **Migrate Nx**
+  - Added support for the following `project.json` fields: `targets.*.continuous`
+- **Migrate Turborepo**
+  - Added support for the following `turbo.json` fields: `tags`, `tasks.*.env` (wildcards and
+    negation)
+- **Unpack**
+  - Updated to use `unzip` and `tar` commands.
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Added support for Yarn v4.10 catalogs.
+  - Fixed an issue where implicit dependencies would sometimes not resolve.
+
 #### 🐞 Fixes
 
 - Fixed an issue where env var substitution would not process in the order they were defined.
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.54.0](https://github.com/moonrepo/proto/releases/tag/v0.54.0) (from 0.53.2).
+- Updated proto to [v0.54.1](https://github.com/moonrepo/proto/releases/tag/v0.54.0) (from 0.53.2).
 - Updated wasmtime to v37.
 - Updated Rust to v1.92.0.
 - Updated dependencies.

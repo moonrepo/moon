@@ -1,6 +1,6 @@
 [package]
 name = "moon_project"
-version = "0.2.0"
+version = "1.0.0"
 edition = "2024"
 license = "MIT"
 description = "A project in moon."
@@ -9,10 +9,10 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
-moon_common = { version = "0.2.0", path = "../common" }
-moon_config = { version = "0.2.0", path = "../config" }
-moon_file_group = { version = "0.2.0", path = "../file-group" }
-moon_task = { version = "0.2.0", path = "../task" }
+moon_common = { version = "1.0.0", path = "../common" }
+moon_config = { version = "1.0.0", path = "../config" }
+moon_file_group = { version = "1.0.0", path = "../file-group" }
+moon_task = { version = "1.0.0", path = "../task" }
 miette = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }

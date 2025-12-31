@@ -170,7 +170,6 @@ impl MoonWasmSandbox {
         with_proto: bool,
     ) -> PluginContainer {
         let virtual_paths = BTreeMap::<PathBuf, PathBuf>::from_iter([
-            (self.root.clone(), "/cwd".into()),
             (self.root.clone(), "/workspace".into()),
             (self.home_dir.clone(), "/userhome".into()),
             (self.moon_dir.clone(), "/moon".into()),

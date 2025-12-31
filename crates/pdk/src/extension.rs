@@ -29,7 +29,7 @@ pub fn parse_extension_config<T: Default + DeserializeOwned>(value: json::Value)
 #[cfg(feature = "schematic")]
 pub fn parse_extension_config_schema<T: schematic::Config>(value: json::Value) -> AnyResult<T> {
     use moon_pdk_api::anyhow;
-    use schematic::{ConfigLoader, Format};
+    use schematic::ConfigLoader;
 
     match ConfigLoader::<T>::new()
         .code(
@@ -37,7 +37,7 @@ pub fn parse_extension_config_schema<T: schematic::Config>(value: json::Value) -
                 json::Value::Null => "{}".to_owned(),
                 _ => json::to_string(&value)?,
             },
-            Format::Json,
+            "extension.json",
         )?
         .load()
     {

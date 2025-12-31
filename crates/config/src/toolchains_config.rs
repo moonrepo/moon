@@ -118,20 +118,20 @@ impl ToolchainsConfig {
     }
 
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
-        use crate::plugin_compat::find_plugin_locator as locate;
+        use proto_core::warpgate::find_debug_locator_with_url_fallback as locate;
 
         match id.as_str() {
-            "bun" => Some(locate("bun_toolchain", "0.2.0")),
-            "deno" => Some(locate("deno_toolchain", "0.1.0")),
-            "go" => Some(locate("go_toolchain", "0.2.0")),
-            "javascript" => Some(locate("javascript_toolchain", "0.2.2")),
-            "node" => Some(locate("node_toolchain", "0.2.0")),
-            "npm" => Some(locate("node_depman_toolchain", "0.2.0")),
-            "pnpm" => Some(locate("node_depman_toolchain", "0.2.0")),
-            "rust" => Some(locate("rust_toolchain", "0.3.0")),
-            "system" => Some(locate("system_toolchain", "0.0.1")),
-            "typescript" => Some(locate("typescript_toolchain", "0.3.0")),
-            "yarn" => Some(locate("node_depman_toolchain", "0.2.0")),
+            "bun" => Some(locate("bun_toolchain", "1.0.0")),
+            "deno" => Some(locate("deno_toolchain", "1.0.0")),
+            "go" => Some(locate("go_toolchain", "1.0.0")),
+            "javascript" => Some(locate("javascript_toolchain", "1.0.0")),
+            "node" => Some(locate("node_toolchain", "1.0.0")),
+            "npm" => Some(locate("node_depman_toolchain", "1.0.0")),
+            "pnpm" => Some(locate("node_depman_toolchain", "1.0.0")),
+            "rust" => Some(locate("rust_toolchain", "1.0.0")),
+            "system" => Some(locate("system_toolchain", "1.0.0")),
+            "typescript" => Some(locate("typescript_toolchain", "1.0.0")),
+            "yarn" => Some(locate("node_depman_toolchain", "1.0.0")),
             _ => None,
         }
     }

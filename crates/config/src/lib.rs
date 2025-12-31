@@ -13,8 +13,6 @@ mod inherited_tasks_config;
 mod inherited_tasks_manager;
 mod macros;
 pub mod patterns;
-#[cfg(feature = "proto")]
-mod plugin_compat;
 mod project;
 mod project_config;
 mod shapes;

@@ -12,6 +12,7 @@
 
 #### 🚀 Updates
 
+- Updated all toolchain plugins to the latest moon v2 APIs.
 - **WASM API**
   - Added a `load_extension_config_by_id` host function.
   - Added `define_extension_config`, `initialize_extension`, and `extend_command` plugin functions.
@@ -23,6 +24,12 @@
     `ExtendTaskScriptInput.extension_config`, `SyncProjectInput.extension_config`, and
     `SyncWorkspaceInput.extension_config` fields.
   - Added `RegisterToolchainOutput.language` field.
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Added support for Yarn v4.10 catalogs.
+  - Fixed an issue where implicit dependencies would sometimes not resolve.
 
 #### 🐞 Fixes
 

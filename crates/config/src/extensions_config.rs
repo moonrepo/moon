@@ -60,7 +60,7 @@ impl ExtensionsConfig {
 #[cfg(feature = "proto")]
 impl ExtensionsConfig {
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
-        use crate::plugin_compat::find_plugin_locator as locate;
+        use proto_core::warpgate::find_debug_locator_with_url_fallback as locate;
 
         match id.as_str() {
             "download" => Some(locate("download_extension", "0.0.11")),

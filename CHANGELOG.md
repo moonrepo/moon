@@ -4,6 +4,9 @@
 
 #### 💥 Breaking
 
+View the [migration guide](https://moonrepo.dev/docs/migrate/2.0) for a full list of breaking
+changes and how to easily migrate!
+
 - **WASM API**
   - Renamed `ProjectFragment.alias` to `ProjectFragment.aliases` and changed its type from
     `Option<String>` to `Vec<String>`.
@@ -12,7 +15,9 @@
 
 #### 🚀 Updates
 
-- Updated all extension and toolchain plugins to the latest moon v2 APIs.
+View the [announcement blog post](https://moonrepo.dev/blog/moon-v2.0) for all updates, new
+features, improvements, and much more!
+
 - **WASM API**
   - Added a `load_extension_config_by_id` host function.
   - Added `define_extension_config`, `initialize_extension`, and `extend_command` plugin functions.
@@ -43,6 +48,7 @@
 
 #### 🐞 Fixes
 
+- Fixed task job parallelism to partition _after_ tasks have been filtered based on affected state.
 - Fixed an issue where env var substitution would not process in the order they were defined.
 
 #### ⚙️ Internal

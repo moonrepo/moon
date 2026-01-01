@@ -1,5 +1,5 @@
 ---
-title: template.{pkl,yml}
+title: template.*
 toc_max_heading_level: 6
 ---
 
@@ -11,16 +11,6 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `template.yml` file configures metadata and variables for a template,
 [used by the generator](../guides/codegen), and must exist at the root of a named template folder.
-
-```yaml title="template.yml"
-$schema: 'https://moonrepo.dev/schemas/template.json'
-```
-
-:::info
-
-Template configuration can also be written in [Pkl](../guides/pkl-config) instead of YAML.
-
-:::
 
 ## `id`<VersionLabel version="1.23.0" />
 

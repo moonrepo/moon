@@ -45,7 +45,7 @@ To mark a task as local only, enable the [`local`](../config/project#local) sett
 tasks:
   dev:
     command: 'start-dev-server'
-    local: true
+    preset: 'server'
 ```
 
 ### Internal only<VersionLabel version="1.23.0" />
@@ -103,7 +103,7 @@ To mark a task as persistent, enable the [`local`](../config/project#local) or
 tasks:
   dev:
     command: 'start-dev-server'
-    local: true
+    preset: 'server'
     # OR
     options:
       persistent: true

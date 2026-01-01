@@ -75,6 +75,7 @@ const sidebars: SidebarsConfig = {
 			label: 'Config files',
 			items: [
 				'config/workspace',
+				'config/extensions',
 				'config/toolchain',
 				'config/tasks',
 				'config/project',

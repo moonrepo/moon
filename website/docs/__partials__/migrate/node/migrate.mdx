@@ -20,7 +20,7 @@ tasks:
     inputs:
       - '@globs(sources)'
       - 'webpack.config.js'
-    local: true
+    preset: 'server'
   format:
     command: 'prettier --check .'
     inputs:

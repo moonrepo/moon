@@ -63,12 +63,11 @@ proxies, and more.
 ### Configure remote caching
 
 Once your service is running, you can enable remote caching by configuring the
-[`unstable_remote`](../config/workspace#unstable_remote) settings in
-[`.moon/workspace.yml`](../config/workspace). At minimum, the only setting that is required is
-`host`.
+[`remote`](../config/workspace#remote) settings in [`.moon/workspace.yml`](../config/workspace). At
+minimum, the only setting that is required is `host`.
 
 ```yaml title=".moon/workspace.yml"
-unstable_remote:
+remote:
   host: 'grpc://your-host.com:9092'
 ```
 
@@ -81,14 +80,14 @@ tested. There's also [many](https://github.com/hyperium/tonic/issues/1652)
 
 ```yaml title=".moon/workspace.yml"
 # TLS
-unstable_remote:
+remote:
   host: 'grpcs://your-host.com:9092'
   tls:
     cert: 'certs/ca.pem'
     domain: 'your-host.com'
 
 # mTLS
-unstable_remote:
+remote:
   host: 'grpcs://your-host.com:9092'
   mtls:
     caCert: 'certs/ca.pem'
@@ -114,7 +113,7 @@ configuration. If your Depot account has more than 1 organization, you'll need t
 `X-Depot-Org` header.
 
 ```yaml title=".moon/workspace.yml"
-unstable_remote:
+remote:
   host: 'grpcs://cache.depot.dev'
   auth:
     token: 'DEPOT_TOKEN'

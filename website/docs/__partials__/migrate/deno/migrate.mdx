@@ -13,7 +13,7 @@ tasks:
     command: 'deno task dev'
     inputs:
       - '@globs(sources)'
-    local: true
+    preset: 'server'
   format:
     command: 'deno fmt --check'
     inputs:

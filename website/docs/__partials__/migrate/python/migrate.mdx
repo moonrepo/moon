@@ -13,7 +13,7 @@ tasks:
     command: 'flask run'
     inputs:
       - '@globs(sources)'
-    local: true
+    preset: 'server'
   format:
     command: 'black --check .'
     inputs:

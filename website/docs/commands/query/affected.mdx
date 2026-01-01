@@ -1,0 +1,33 @@
+---
+title: query affected
+sidebar_label: affected
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.0.0" header />
+
+Use the `moon query affected` sub-command to query for all affected projects and tasks based on the
+state of the workspace and VCS.
+
+```shell
+# Return affected
+$ moon query affected
+
+# Return affected including dependency relationships
+$ moon query affected --upstream deep
+```
+
+This will output a map of projects and tasks as JSON. The output has the following structure:
+
+```ts
+{
+	projects: Record<Id, AffectedState>,
+	tasks: Record<Target, AffectedState>,
+}
+```
+
+### Options
+
+- `--downstream` - Include downstream dependents. Supports "none" (default), "direct", "deep".
+- `--upstream` - Include upstream dependencies. Supports "none", "direct", "deep" (default).

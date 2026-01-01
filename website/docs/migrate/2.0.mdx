@@ -12,9 +12,7 @@ toc_max_heading_level: 6
 ### Commands
 
 - We've done a large polish pass for all commands, based on the [CLI guidelines](https://clig.dev).
-- Updated the `moonx` binary and task running shorthand syntax (`moon <task>`) to use `moon exec`
-  instead of `moon run` under the hood.
-  - Example: `moonx app:build` / `moon app:build` now runs `moon exec app:build`
+- Updated the `moonx` binary to use `moon exec` instead of `moon run` under the hood.
 - Renamed all options and flags to kebab-case instead of camelCase.
   - Example: `--logLevel` -> `--log-level`
 - Renamed options for all commands:

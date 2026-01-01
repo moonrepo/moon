@@ -30,17 +30,8 @@ $ moon ci :build :lint
 
 ### Options
 
-- `--base <rev>` - Base branch, commit, or revision to compare against
-  ([learn more](../guides/ci#comparing-revisions)).
-- `--downstream` - Control the depth of downstream dependents. Defaults to `direct`.
-  <VersionLabel version="1.41.7" />
-- `--head <rev>` - Current branch, commit, or revision to compare with
-  ([learn more](../guides/ci#comparing-revisions)).
-- `--job <index>` - Index of the current job.
-- `--jobTotal <total>` Total amount of jobs to run.
-- `--stdin` - Accept touched files from stdin for affected checks. <VersionLabel version="1.36.0" />
-- `--upstream` - Control the depth of upstream dependencies. Defaults to `deep`.
-  <VersionLabel version="1.41.7" />
+Inherits all options from [`moon exec`](./exec) except for `--affected`, `--on-failure`, and
+`--only-ci-tasks`.
 
 ### Configuration
 

@@ -60,7 +60,7 @@ pub trait PortablePath: Sized {
 
 macro_rules! path_type {
     ($name:ident) => {
-        #[derive(Clone, Debug, Default, Deserialize, Hash, Serialize)]
+        #[derive(Clone, Debug, Default, Deserialize, Serialize)]
         #[serde(into = "String", try_from = "String")]
         pub struct $name(pub RelativePathBuf);
 
@@ -77,6 +77,12 @@ macro_rules! path_type {
         }
 
         impl Eq for $name {}
+
+        impl std::hash::Hash for $name {
+            fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+                state.write(self.as_str().as_bytes());
+            }
+        }
 
         impl AsRef<str> for $name {
             fn as_ref(&self) -> &str {

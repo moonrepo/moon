@@ -95,6 +95,7 @@ pub enum Commands {
     },
 
     #[command(
+        alias = "x",
         name = "exec",
         about = "Low-level command for executing tasks in the action pipeline."
     )]

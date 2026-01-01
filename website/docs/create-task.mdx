@@ -12,7 +12,7 @@ The primary focus of moon is a task runner, and for it to operate in any capacit
 to run. In moon, a task is a binary or system command that is ran as a child process within the
 context of a project (is the current working directory). Tasks are defined per project with
 [`moon.yml`](./config/project), or inherited by many projects with
-[`.moon/tasks.yml`](./config/tasks), but can also be inferred from a language's ecosystem
+[`.moon/tasks/all.yml`](./config/tasks), but can also be inferred from a language's ecosystem
 ([we'll talk about this later](./migrate-to-moon)).
 
 :::tip
@@ -240,7 +240,7 @@ encourage certain file structures for consuming projects!
       icon: 'project-config-global',
       label: (
         <span>
-          Configure <code>.moon/tasks.yml</code> further
+          Configure <code>.moon/tasks/all.yml</code> further
         </span>
       ),
       url: './config/tasks',

@@ -8,61 +8,63 @@ Unlike other task runners that require the same tasks to be repeatedly defined f
 moon uses an inheritance model where tasks can be defined once at the workspace-level, and are then
 inherited by _many or all_ projects.
 
-Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks.yml`][tasks] or
-[`.moon/tasks/**/*.yml`][tasks], and are inherited by default. However, projects are able to
-include, exclude, or rename inherited tasks using the
-[`workspace.inheritedTasks`](../config/project#inheritedtasks) in [`moon.yml`](../config/project).
+Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks/**/*.yml`][tasks],
+and are inherited by based on conditions. However, projects are able to include, exclude, or rename
+inherited tasks using the [`workspace.inheritedTasks`](../config/project#inheritedtasks) in
+[`moon.yml`](../config/project).
 
-## Scope by project metadata
+## Conditional inheritance
 
-By default tasks defined in [`.moon/tasks.yml`][tasks] will be inherited by _all_ projects. This
-approach works well when a monorepo is comprised of a single programming language, but breaks down
-quickly in multi-language setups.
+Task inheritance is powered by the [`inheritedBy`](../config/tasks#inheritedby) setting in global
+task configurations (those in [`.moon/tasks/**/*`][tasks]). This setting defines conditions that a
+project must meet in order for inheritance to occur. If the setting is not defined, or no conditions
+are defined, the configuration is inherited by _all_ projects.
 
-To support these complex repositories, we support scoped tasks with [`.moon/tasks/**/*.yml`][tasks],
-where `*.yml` maps to a project based on a combination of its [language][language], [stack][stack],
-[layer][layer], or [tags][tags]. This enables you to easily declare tasks for "JavaScript projects",
-"Go applications", "Ruby libraries", so on and so forth.
+The following conditions are supported:
 
-When resolving configuration files, moon will locate and _shallow_ merge files in the following
-order, from widest scope to narrowest scope:
+- `file`, `files` - Inherit for projects that contain specific files.
+- `language`, `languages` - Inherit for projects that belong to specific
+  [`language`](../config/project#language)s.
+- `layer`, `layers` - Inherit for projects that belong to specific
+  [`layer`](../config/project#layer)s.
+- `stack`, `stacks` - Inherit for projects that belong to specific
+  [`stack`](../config/project#stack)s.
+- `tag`, `tags` - Inherit for projects that have specific [`tags`](../config/project#tags).
+- `toolchain`, `toolchains` - Inherit for projects that belong to specific
+  [`toolchains`](../config/project#toolchains).
 
-- `.moon/tasks.yml` - All projects.
-- `.moon/tasks/<language>.yml` - Projects with a matching [`language`][language] setting.
-- `.moon/tasks/<stack>.yml` - Projects with a matching [`stack`][stack] setting.
-  <VersionLabel version="1.23.0" />
-- `.moon/tasks/<language>-<stack>.yml` - Projects with a matching [`language`][language] and
-  [`stack`][stack] settings. <VersionLabel version="1.23.0" />
-- `.moon/tasks/<stack>-<layer>.yml` - Projects with matching [`stack`][stack] and [`layer`][layer]
-  settings. <VersionLabel version="1.23.0" />
-- `.moon/tasks/<language>-<layer>.yml` - Projects with matching [`language`][language] and
-  [`layer`][layer] settings.
-- `.moon/tasks/<language>-<stack>-<layer>.yml` - Projects with matching [`language`][language],
-  [`stack`][stack], and [`layer`][layer] settings. <VersionLabel version="1.23.0" />
-- `.moon/tasks/tag-<name>.yml` - Projects with a matching [`tag`][tags].
-  <VersionLabel version="1.2.0" />
+One or many conditions can be defined, and all conditions must be met for inheritance to occur. For
+example, the following configuration will only be inherited by Node.js frontend libraries.
 
-As mentioned above, all of these files are shallow merged into a single "global tasks" configuration
-that is unique per-project. Merging **does not** utilize the [merge strategies](#merge-strategies)
-below, as those strategies are only utilized when merging global and local tasks.
+```yaml title=".moon/tasks/node-frontend-library.yml"
+inheritedBy:
+  toolchain: 'node'
+  stack: 'frontend'
+  layer: 'library'
+```
 
-> Tags are resolved in the order they are defined in `moon.yml` `tags` setting.
+Each condition supports a single value or an array of values. For example, the previous example
+could be rewritten to inherit for both Node.js or Deno frontend libraries.
 
-### JavaScript runtimes
+```yaml title=".moon/tasks/js-frontend-library.yml"
+inheritedBy:
+  toolchains: ['node', 'deno']
+  stack: 'frontend'
+  layer: 'library'
+```
 
-Unlike most languages that have 1 runtime, JavaScript has 3 (Node.js, Deno, Bun), and we must
-support repositories that are comprised of any combination of these 3. As such, JavaScript (and
-TypeScript) based projects have the following additional lookups using
-[`toolchain`](../config/project#toolchain) to account for this:
+### Clauses
 
-- `.moon/tasks/<toolchain>.yml`
-- `.moon/tasks/<toolchain>-<stack>.yml`
-- `.moon/tasks/<toolchain>-<layer>.yml`
-- `.moon/tasks/<toolchain>-<stack>-<layer>.yml`
+The `tags` and `toolchains` conditions support special clauses `and`, `or` (the default), and `not`
+for matching more complex scenarios.
 
-For example, `node.yml` would be inherited for Node.js projects, `bun-library.yml` for Bun
-libraries, and `deno-application.yml` for Deno applications. While `javascript.yml`,
-`typescript-library.yml`, etc, will be inherited for all toolchains.
+```yaml
+inheritedBy:
+  toolchains:
+    or: ['javascript', 'typescript']
+    not: ['ruby']
+  layer: 'library'
+```
 
 ## Merge strategies
 
@@ -72,11 +74,13 @@ name exist, they are merged into a single task. To accomplish this, one of many
 
 Merging is applied to the parameters [`args`](../config/project#args),
 [`deps`](../config/project#deps), [`env`](../config/project#env-1),
-[`inputs`](../config/project#inputs), and [`outputs`](../config/project#outputs), using the
-[`merge`](../config/project#merge), [`mergeArgs`](../config/project#mergeargs),
-[`mergeDeps`](../config/project#mergedeps), [`mergeEnv`](../config/project#mergeenv),
-[`mergeInputs`](../config/project#mergeinputs) and [`mergeOutputs`](../config/project#mergeoutputs)
-options respectively. Each of these options support one of the following strategy values.
+[`inputs`](../config/project#inputs), [`outputs`](../config/project#outputs), and
+[`toolchains`](../config/project#toolchains), using the [`merge`](../config/project#merge),
+[`mergeArgs`](../config/project#mergeargs), [`mergeDeps`](../config/project#mergedeps),
+[`mergeEnv`](../config/project#mergeenv), [`mergeInputs`](../config/project#mergeinputs),
+[`mergeOutputs`](../config/project#mergeoutputs) and
+[`mergeToolchains`](../config/project#mergetoolchains) options respectively. Each of these options
+support one of the following strategy values.
 
 - `append` (default) - Values found in the local task are merged _after_ the values found in the
   global task. For example, this strategy is useful for toggling flag arguments.

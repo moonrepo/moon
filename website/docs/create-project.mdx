@@ -45,9 +45,9 @@ to not manually curate the projects list!
 
 A project can be configured in 1 of 2 ways:
 
-- Through the [`.moon/tasks.yml`](./config/tasks) config file, which defines file groups and tasks
-  that are inherited by _all_ projects within the workspace. Perfect for standardizing common tasks
-  like linting, typechecking, and code formatting.
+- Through the [`.moon/tasks/all.yml`](./config/tasks) config file, which defines file groups and
+  tasks that are inherited by _all_ projects within the workspace. Perfect for standardizing common
+  tasks like linting, typechecking, and code formatting.
 - Through the [`moon.yml`](./config/project) config file, found at the root of each project, which
   defines files groups, tasks, dependencies, and more that are unique to that project.
 
@@ -94,7 +94,7 @@ tasks:
 </TabItem>
 <TabItem value="inherit">
 
-```yaml title=".moon/tasks.yml"
+```yaml title=".moon/tasks/all.yml"
 tasks:
   format:
     command: 'prettier --check .'
@@ -154,7 +154,7 @@ project:
       icon: 'project-config-global',
       label: (
         <span>
-          Configure <code>.moon/tasks.yml</code> further
+          Configure <code>.moon/tasks/all.yml</code> further
         </span>
       ),
       url: './config/tasks',

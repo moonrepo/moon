@@ -1,12 +1,12 @@
 ---
-title: .moon/tasks/*.*
+title: .moon/tasks/**/*
 ---
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/tasks.yml` file configures file groups and tasks that are inherited by _every_ project in
-the workspace, while `.moon/tasks/**/*.yml` configures for projects based on their language or type.
+The `.moon/tasks/**/*` files configures file groups and tasks that are inherited by _every_ project
+in the workspace based on inheritance conditions.
 [Learn more about task inheritance!](../concepts/task-inheritance)
 
 Projects can override or merge with these settings within their respective [`moon.yml`](./project).
@@ -15,12 +15,12 @@ Projects can override or merge with these settings within their respective [`moo
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#extends" />
 
-Defines one or many external `.moon/tasks.yml`'s to extend and inherit settings from. Perfect for
-reusability and sharing configuration across repositories and projects. When defined, this setting
-must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/tasks/all.yml`'s to extend and inherit settings from. Perfect
+for reusability and sharing configuration across repositories and projects. When defined, this
+setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
-```yaml title=".moon/tasks.yml" {1}
-extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/tasks.yml'
+```yaml title=".moon/tasks/all.yml" {1}
+extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/tasks/all.yml'
 ```
 
 :::caution
@@ -42,7 +42,7 @@ Defines [file groups](../concepts/file-group) that will be inherited by projects
 enforcement of organizational patterns and file locations. For example, encourage projects to place
 source files in a `src` folder, and all test files in `tests`.
 
-```yaml title=".moon/tasks.yml"
+```yaml title=".moon/tasks/all.yml"
 fileGroups:
   configs:
     - '*.config.{js,cjs,mjs}'
@@ -75,7 +75,7 @@ Defines task [`deps`](./project#deps) that are implicitly inserted into _all_ in
 a project. This is extremely useful for pre-building projects that are used extensively throughout
 the repo, or always building project dependencies. Defaults to an empty list.
 
-```yaml title=".moon/tasks.yml" {1-2}
+```yaml title=".moon/tasks/all.yml" {1-2}
 implicitDeps:
   - '^:build'
 ```
@@ -111,6 +111,32 @@ option.
 
 :::
 
+## `inheritedBy`<VersionLabel version="2.0.0" />
+
+<HeadingApiLink to="/api/types/interface/InheritedTasksConfig#inheritedBy" />
+
+A map of conditions that must be met for the configuration within the file to be inherited by a
+project. When this field is not defined, or is an empty map, the configuration will be inherited by
+all projects.
+
+```yaml title=".moon/tasks/custom.yml"
+inheritedBy:
+  # Project belongs to either javascript or typescript toolchain, but not the ruby toolchain
+  toolchains:
+    or: ['javascript', 'typescript']
+    not: ['ruby']
+  # And project is either a frontend or backend stack
+  stacks: ['frontend', 'backend']
+  # And project is either a library or tool layer
+  layers: ['library', 'tool']
+```
+
+:::info
+
+View the [official task inheritance guide](../concepts/task-inheritance) for more information!
+
+:::
+
 ## `tasks`
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#tasks" />
@@ -124,7 +150,7 @@ linting, typechecking, testing, code formatting, so on and so forth. To reduce t
 boilerplate that _every_ project would require, this setting offers the ability to define tasks that
 are inherited by many projects within the workspace, but can also be overridden per project.
 
-```yaml title=".moon/tasks.yml"
+```yaml title=".moon/tasks/all.yml"
 tasks:
   format:
     command: 'prettier --check .'
@@ -157,7 +183,7 @@ Like [tasks](#tasks), this setting allows you to define task options that will b
 tasks_ within the configured file, and by all project-level inherited tasks. This setting is the 1st
 link in the inheritance chain, and can be overridden within each task.
 
-```yaml title=".moon/tasks.yml"
+```yaml title=".moon/tasks/all.yml"
 taskOptions:
   # Never cache builds
   cache: false

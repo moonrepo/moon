@@ -210,8 +210,6 @@ The layer within a [stack](#stack). Supports the following values:
 - `scaffolding` - Templates or generators for scaffolding.
   <VersionLabel version="1.22.0" />
 - `tool` - An internal tool, CLI, one-off script, etc.
-- `data` - A data source, like a database, CSV files, etc.
-  <VersionLabel version="2.0.0" />
 - `unknown` (default) - When not configured.
 
 ```yaml title="moon.yml"
@@ -298,8 +296,9 @@ project:
 The technology stack this project belongs to, primarily for categorization. Supports the following
 values:
 
+- `backend` - Server-side APIs, etc.
+- `data` - Data sources, database layers, etc. <VersionLabel version="2.0.0" />
 - `frontend` - Client-side user interfaces, etc.
-- `backend` - Server-side APIs, database layers, etc.
 - `infrastructure` - Cloud/server infrastructure, Docker, etc.
 - `systems` - Low-level systems programming.
 - `unknown` (default) - When not configured.
@@ -436,7 +435,7 @@ Defines [file groups](../concepts/file-group) to be used by local tasks. By defa
 _is not required_ for the following reasons:
 
 - File groups are an optional feature, and are designed for advanced use cases.
-- File groups defined in [`.moon/tasks.yml`](./tasks) will be inherited by all projects.
+- File groups defined in [`.moon/tasks/all.yml`](./tasks) will be inherited by all projects.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
 list of [globs or file paths](../concepts/file-pattern), or environment variables. Globs and paths
@@ -1617,9 +1616,9 @@ tasks:
 
 Dictates how a project interacts with settings defined at the top-level.
 
-## `toolchain`
+## `toolchains`
 
-<HeadingApiLink to="/api/types/interface/ProjectConfig#toolchain" />
+<HeadingApiLink to="/api/types/interface/ProjectConfig#toolchains" />
 
 ### `default`<VersionLabel version="1.31.0" />
 
@@ -1630,7 +1629,7 @@ The default [`toolchain`](#toolchain-1) for all task's within the current projec
 value, otherwise the toolchain will be detected from the project's environment.
 
 ```yaml title="moon.yml"
-toolchain:
+toolchains:
   default: 'node'
 ```
 
@@ -1646,7 +1645,7 @@ Defines the explicit Bun [version specification](../concepts/toolchain#version-s
 when _running tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   bun:
     version: '1.0.0'
 ```
@@ -1663,7 +1662,7 @@ Defines the explicit Deno [version specification](../concepts/toolchain#version-
 use when _running tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   deno:
     version: '1.40.0'
 ```
@@ -1681,7 +1680,7 @@ Defines the explicit Node.js [version specification](../concepts/toolchain#versi
 use when _running tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   node:
     version: '12.12.0'
 ```
@@ -1700,7 +1699,7 @@ Defines the explicit Python
 tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   python:
     version: '3.12.0'
 ```
@@ -1718,7 +1717,7 @@ Defines the explicit Rust
 tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   rust:
     version: '1.68.0'
 ```
@@ -1736,7 +1735,7 @@ Overrides the workspace-level
 undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     includeProjectReferenceSources: false
 ```
@@ -1749,7 +1748,7 @@ Overrides the workspace-level [`includeSharedTypes`](./toolchain#includesharedty
 Defaults to undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     includeSharedTypes: false
 ```
@@ -1762,7 +1761,7 @@ Overrides the workspace-level [`routeOutDirToCache`](./toolchain#routeoutdirtoca
 Defaults to undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     routeOutDirToCache: false
 ```
@@ -1775,7 +1774,7 @@ Overrides the workspace-level [`syncProjectReferences`](./toolchain#syncprojectr
 Defaults to undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     syncProjectReferences: false
 ```
@@ -1789,7 +1788,7 @@ Overrides the workspace-level
 undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     syncProjectReferencesToPaths: false
 ```
@@ -1802,7 +1801,7 @@ toolchain:
 
 <HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#inheritedTasks" />
 
-Provides a layer of control when inheriting tasks from [`.moon/tasks.yml`](./tasks).
+Provides a layer of control when inheriting tasks from [`.moon/tasks/all.yml`](./tasks).
 
 #### `exclude`
 

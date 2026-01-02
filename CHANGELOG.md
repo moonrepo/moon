@@ -8,6 +8,7 @@ View the [migration guide](https://moonrepo.dev/docs/migrate/2.0) for a full lis
 changes and how to easily migrate!
 
 - **WASM API**
+  - Removed the `/cwd` virtual path.
   - Renamed `ProjectFragment.alias` to `ProjectFragment.aliases` and changed its type from
     `Option<String>` to `Vec<String>`.
   - Removed `RegisterExtensionOutput.config_schema` field. Use the new `define_extension_config`

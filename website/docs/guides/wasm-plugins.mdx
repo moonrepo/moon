@@ -56,13 +56,12 @@ paths provided via function input or context use them.
 Virtual paths are implemented by mapping a real path (host machine) to a virtual path (guest
 runtime) using file path prefixes. The following prefixes are currently supported:
 
-| Real path         | Virtual path | Only for |
-| ----------------- | ------------ | -------- |
-| `~`               | `/userhome`  | ~        |
-| `~/.proto`        | `/proto`     | ~        |
-| `~/.moon`         | `/moon`      | moon     |
-| Working directory | `/cwd`       | ~        |
-| moon workspace    | `/workspace` | moon     |
+| Real path      | Virtual path | Only for |
+| -------------- | ------------ | -------- |
+| `~`            | `/userhome`  | ~        |
+| `~/.proto`     | `/proto`     | ~        |
+| `~/.moon`      | `/moon`      | moon     |
+| moon workspace | `/workspace` | moon     |
 
 For example, from the context of WASM, you may have a virtual path of `/proto/tools/node/1.2.3`,
 which simply maps back to `~/.proto/tools/node/1.2.3` on the host machine. However, this should

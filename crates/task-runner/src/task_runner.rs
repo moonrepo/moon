@@ -128,7 +128,7 @@ impl<'task> TaskRunner<'task> {
             self.execute(context, node).await?;
         }
 
-        return Ok(Some(hash));
+        Ok(Some(hash))
     }
 
     #[instrument(skip(self, context))]

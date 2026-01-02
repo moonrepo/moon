@@ -1,0 +1,60 @@
+---
+slug: moon-v2-alpha
+title: Alpha release of moon v2 now available!
+authors: [milesj]
+tags: [alpha, major, release, v2]
+---
+
+After months of hard work, we are excited to announce the alpha release of moon v2! This major
+release brings a host of new features, improvements, and breaking changes that we believe will
+greatly enhance your experience with moon.
+
+<!--truncate-->
+
+## How to use
+
+You can install the alpha with proto, or download it directly from the
+[GitHub release page](https://github.com/moonrepo/moon/releases/tag/v2.0.0-alpha.2). We currently
+aren't publishing the npm package.
+
+```shell
+$ proto install moon 2.0.0-alpha.4
+```
+
+> This requires proto v0.54.1 or later.
+
+## Breaking changes
+
+Since this is our first major release after v1, there are quite a few breaking changes, far too many
+to list here! Please refer to the [official migration guide](/docs/migrate/2.0) for a comprehensive
+list of breaking changes and how to address them.
+
+## New features
+
+This wouldn't be a major release without some exciting new features! Here are some of the
+highlights:
+
+- New and improved CLI commands
+- New configuration formats
+- Toolchain and extension WASM plugins
+- Default projects
+- Config based task inheritance
+- Reworked env var handling
+- And much more!
+
+For a in-depth look at all the new features and improvements, check out the
+[official v2 blog post](/blog/moon-v2.0), which has not been published yet (still a work in
+progress).
+
+## Work in a progress
+
+Before we stabilize v2, there are still some features and improvements we want to make. Here are
+some of the things we are currently working on:
+
+- Rewriting the [Python toolchain](https://github.com/moonrepo/plugins/pull/101) as a WASM plugin.
+  Because this is incomplete, Python is currently not supported in the v2 alpha.
+- Updating the `@moonrepo/cli` npm package with the new distribution format. Because of this, the
+  npm package is not yet published.
+- Removing the auto-escaping/quoting from task arguments. This is a source of much confusion, and is
+  only exacerbated by the differences between shells.
+- Auditing open issues and PRs to see what else needs to be done before the stable release.

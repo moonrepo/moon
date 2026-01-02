@@ -4,6 +4,17 @@ sidebar_label: v2.0
 toc_max_heading_level: 6
 ---
 
+To ease the migration process from moon v1 to v2, we've compiled a list of all breaking changes and
+important changes that you should be aware of. Please read through these carefully before upgrading
+your workspace.
+
+To automate some of the migration process, we've created the `moon migrate v2` command that will
+migrate all applicable settings in configuration files.
+
+```shell
+$ moon migrate v2
+```
+
 ## CLI
 
 - Removed `x86_64-apple-darwin` (Apple Intel) as a supported operating system. Only

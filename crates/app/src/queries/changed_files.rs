@@ -3,7 +3,7 @@ use miette::IntoDiagnostic;
 use moon_common::is_ci;
 use moon_common::path::{WorkspaceRelativePathBuf, standardize_separators};
 use moon_env_var::GlobalEnvBag;
-use moon_vcs::{BoxedVcs, ChangedStatus};
+use moon_vcs::{BoxedVcs, ChangedFiles, ChangedStatus};
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase_styles::color;
@@ -105,33 +105,38 @@ async fn query_changed_files_without_stdin(
         check_shallow!(vcs);
     }
 
-    // Check locally changed files
-    let changed_files_map = if options.local && base_value.is_none() {
-        trace!("Against local index");
-
-        vcs.get_changed_files().await?
-    }
-    // Otherwise compare against previous commit
-    else if check_against_previous {
-        trace!(
-            "Against previous revision, as we're on the default branch \"{}\"",
-            current_branch
-        );
-
-        vcs.get_changed_files_against_previous_revision(&default_branch)
-            .await?
-    }
-    // Otherwise against remote between 2 revisions
-    else {
-        trace!(
-            "Against remote using base \"{}\" with head \"{}\"",
-            base, head,
-        );
-
-        vcs.get_changed_files_between_revisions(base, head).await?
-    };
-
+    let only_local = options.local && base_value.is_none();
+    let mut changed_files_map = ChangedFiles::default();
     let mut changed_files = FxHashSet::default();
+
+    if !only_local {
+        // Compare against previous commit
+        if check_against_previous {
+            trace!(
+                "Against previous revision, as we're on the default branch \"{}\"",
+                current_branch
+            );
+
+            changed_files_map.merge(
+                vcs.get_changed_files_against_previous_revision(&default_branch)
+                    .await?,
+            );
+        }
+        // Otherwise against remote between 2 revisions
+        else {
+            trace!(
+                "Against remote using base \"{}\" with head \"{}\"",
+                base, head,
+            );
+
+            changed_files_map.merge(vcs.get_changed_files_between_revisions(base, head).await?);
+        }
+    }
+
+    // Always include local changes
+    trace!("Against local index");
+
+    changed_files_map.merge(vcs.get_changed_files().await?);
 
     if options.status.is_empty() {
         debug!(

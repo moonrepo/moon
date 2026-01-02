@@ -42,8 +42,8 @@ verify that the inherited configuration is also correct. In the `snapshot.json` 
 root `inherited` object, which is structured as follows:
 
 - `order` - The order in which configuration files from `.moon` are loaded, from lowest to highest
-  priority, and the order files are merged. The `*` entry is `.moon/tasks.yml`, while other entries
-  map to `.moon/tasks/**/*.yml`.
+  priority, and the order files are merged. The `*` entry is `.moon/tasks/all.yml`, while other
+  entries map to `.moon/tasks/**/*.yml`.
 - `layers` - A mapping of configuration files that were loaded, derived from the `order`. Each layer
   represents a partial object (not expanded or resolved). Only files that exist will be mapped here.
 - `config` - A partial configuration object representing the state of all merged layers. This is
@@ -99,11 +99,10 @@ Let's copy the hash and move on to the next step.
 ## Inspect the hash manifest
 
 With the hash in hand, let's dig deeper into moon's internals, by inspecting the hash manifest at
-`.moon/cache/hashes/<hash>.json`, or running the [`moon query hash`](../commands/query/hash)
-command:
+`.moon/cache/hashes/<hash>.json`, or running the [`moon hash`](../commands/hash) command:
 
 ```shell
-moon query hash <hash>
+moon hash <hash>
 ```
 
 The manifest is JSON and its contents are all the information used to generate its unique hash. This
@@ -135,12 +134,11 @@ we require multiple hashes, we'll need to run the task multiple times,
 [inspect the logs](#inspect-trace-logs), and extract the hash for each. If you receive the same hash
 for each run, you'll need to tweak configuration or change files to produce a different hash.
 
-Once you have 2 unique hashes, we can pass them to the
-[`moon query hash-diff`](../commands/query/hash-diff) command. This will produce a `git diff` styled
-output, allowing for simple line-by-line comparison debugging.
+Once you have 2 unique hashes, we can pass them to the [`moon hash`](../commands/hash) command. This
+will produce a `git diff` styled output, allowing for simple line-by-line comparison debugging.
 
 ```shell
-moon query hash-diff <hash-left> <hash-right>
+moon hash <hash-left> <hash-right>
 ```
 
 ```diff

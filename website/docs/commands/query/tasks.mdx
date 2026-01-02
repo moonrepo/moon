@@ -19,20 +19,7 @@ $ moon query tasks --id react
 $ moon query tasks "task~react"
 ```
 
-By default, this will output a list of projects, and tasks within the project being indented (with a
-tab) on their own line, in the format of `<id> | <command> | <type> | <toolchain> | <description>`.
-If no description is defined, "..." will be displayed instead.
-
-```
-web
-	lint | eslint | test | node | ...
-	test | jest | test | node | ...
-app
-	format | prettier | test | node | ...
-```
-
-The tasks can also be output in JSON by passing the `--json` flag. The output has the following
-structure:
+This will output a list of projects as JSON. The output has the following structure:
 
 ```ts
 {
@@ -47,8 +34,6 @@ structure:
   provided, all [filter options](#filters) are ignored. <VersionLabel version="1.4.0" />
 
 ### Options
-
-- `--json` - Display the projects in JSON format.
 
 #### Affected
 

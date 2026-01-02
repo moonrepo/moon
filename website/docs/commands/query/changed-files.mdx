@@ -27,15 +27,7 @@ $ moon query changed-files --status deleted
 $ moon query changed-files --base <branch> --head <commit>
 ```
 
-By default, this will output a list of absolute file paths, separated by new lines.
-
-```
-/absolute/file/one.ts
-/absolute/file/two.ts
-```
-
-The files can also be output in JSON by passing the `--json` flag. The output has the following
-structure:
+This will output a list of workspace relative files as JSON. The output has the following structure:
 
 ```ts
 {
@@ -46,11 +38,10 @@ structure:
 
 ### Options
 
-- `--defaultBranch` - When on the default branch, compare against the previous revision.
+- `--default-branch` - When on the default branch, compare against the previous revision.
 - `--base <rev>` - Base branch, commit, or revision to compare against. Defaults to
   [`vcs.defaultBranch`](../../config/workspace#defaultbranch).
 - `--head <rev>` - Current branch, commit, or revision to compare with. Defaults to `HEAD`.
-- `--json` - Display the files in JSON format.
 - `--local` - Gather files from the local state instead of remote.
 - `--remote` - Gather files from the remote state instead of local.
 - `--status <type>` - Filter files based on a changed status. Can be passed multiple times.

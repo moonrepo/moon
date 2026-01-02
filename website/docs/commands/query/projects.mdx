@@ -23,16 +23,7 @@ $ moon query projects --tasks "lint|build"
 $ moon query projects "task=[lint,build]"
 ```
 
-By default, this will output a list of projects in the format of
-`<id> | <source> | <stack> | <type> | <language> | <description>`, separated by new lines. If no
-description is defined, "..." will be displayed instead.
-
-```
-web | apps/web | frontend | application | typescript | ...
-```
-
-The projects can also be output in JSON by passing the `--json` flag. The output has the following
-structure:
+This will output a list of projects as JSON. The output has the following structure:
 
 ```ts
 {
@@ -44,14 +35,14 @@ structure:
 ### Affected projects
 
 This command can also be used to query for affected projects, based on the state of the VCS working
-tree. For advanced control, you can also pass the results of `moon query touched-files` to stdin.
+tree. For advanced control, you can also pass the results of `moon query changed-files` to stdin.
 
 ```shell
 # Find all affected projects
 $ moon query projects --affected
 
 # Find all affected projects using the results of another query
-$ moon query touched-files | moon query projects --affected
+$ moon query changed-files | moon query projects --affected
 ```
 
 ### Arguments
@@ -60,8 +51,6 @@ $ moon query touched-files | moon query projects --affected
   provided, all [filter options](#filters) are ignored. <VersionLabel version="1.4.0" />
 
 ### Options
-
-- `--json` - Display the projects in JSON format.
 
 #### Affected
 

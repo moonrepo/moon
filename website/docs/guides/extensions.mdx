@@ -132,6 +132,21 @@ $ moon ext migrate-turborepo
 - `--bun` - Migrate to Bun based commands instead of Node.js.
 - `--cleanup` - Remove Turborepo configs/files after migrating.
 
+### `unpack`<VersionLabel version="2.0.0" />
+
+The `unpack` extension can be used to unpack an archive (zip/tar) from a file path or URL into a
+destination folder.
+
+```shell
+$ moon ext unpack -- --src ./path/to/archive.zip --dest ./output --prefix path/to/strip
+```
+
+#### Arguments
+
+- `--src` (required) - Path or URL of a file to unpack.
+- `--dest` - Destination folder to unpack into. Defaults to the current working directory.
+- `--prefix` - A prefix path to strip from unpacked files.
+
 ## Creating an extension
 
 Refer to our [official WASM guide](./wasm-plugins) for more information on how our WASM plugins

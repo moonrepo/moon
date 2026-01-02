@@ -249,7 +249,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Can define tasks globally',
 		support: {
-			moon: [SUPPORTED, 'with `.moon/tasks.yml`'],
+			moon: [SUPPORTED, 'with `.moon/tasks/all.yml`'],
 			nx: [PARTIALLY_SUPPORTED, 'with `targetDefaults`'],
 		},
 	},

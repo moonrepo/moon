@@ -26,9 +26,9 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable Rust, define the [`rust`](../../config/toolchain#rust) setting in
-[`.moon/toolchain.yml`](../../config/toolchain), even if an empty object.
+[`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
 
-```yaml title=".moon/toolchain.yml"
+```yaml title=".moon/toolchains.yml"
 # Enable Rust
 rust: {}
 
@@ -36,13 +36,6 @@ rust: {}
 rust:
   syncToolchainConfig: true
 ```
-
-:::info
-
-In moon v1.37+, use `unstable_rust` instead of `rust` to enable the new WASM powered Rust toolchain,
-which is far more accurate and efficient. The non-WASM toolchain will be deprecated in the future.
-
-:::
 
 Or by pinning a `rust` version in [`.prototools`](../../proto/config) in the workspace root.
 
@@ -72,7 +65,7 @@ across all machines.
 Enabling the toolchain is as simple as defining the
 [`rust.version`](../../config/toolchain#version-2) setting.
 
-```yaml title=".moon/toolchain.yml"
+```yaml title=".moon/toolchains.yml"
 # Enable Rust toolchain with an explicit version
 rust:
   version: '1.69.0'
@@ -273,7 +266,7 @@ them as part of the task runner install dependencies action. Furthermore, binari
 with [`cargo-binstall`](https://crates.io/crates/cargo-binstall) in an effort to reduce build and
 compilation times.
 
-```yaml title=".moon/toolchain.yml" {2-4}
+```yaml title=".moon/toolchains.yml" {2-4}
 rust:
   bins:
     - 'cargo-make@0.35.0'

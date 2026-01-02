@@ -25,9 +25,9 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable JavaScript support via Node.js, define the [`node`](../../config/toolchain#node) setting
-in [`.moon/toolchain.yml`](../../config/toolchain), even if an empty object.
+in [`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
 
-```yaml title=".moon/toolchain.yml"
+```yaml title=".moon/toolchains.yml"
 # Enable Node.js
 node: {}
 
@@ -38,9 +38,9 @@ node:
 
 :::info
 
-In moon v1.40+, use `unstable_javascript` and `unstable_node` instead of `node` to enable the new
-WASM powered Node.js toolchain, which is far more accurate and efficient. The non-WASM toolchain
-will be deprecated in the future.
+In moon v1.40+, use `javascript` and `node` instead of `node` to enable the new WASM powered Node.js
+toolchain, which is far more accurate and efficient. The non-WASM toolchain will be deprecated in
+the future.
 
 :::
 
@@ -78,7 +78,7 @@ across all machines.
 Enabling the toolchain is as simple as defining the [`node.version`](../../config/toolchain#version)
 setting.
 
-```yaml title=".moon/toolchain.yml"
+```yaml title=".moon/toolchains.yml"
 # Enable Node.js toolchain with an explicit version
 node:
   version: '18.0.0'
@@ -93,7 +93,7 @@ moon to inherit `package.json` scripts, and internally convert them to moon task
 achieved with the [`node.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
 setting.
 
-```yaml title=".moon/toolchain.yml"
+```yaml title=".moon/toolchains.yml"
 node:
   inferTasksFromScripts: true
 ```

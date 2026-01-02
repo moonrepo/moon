@@ -47,7 +47,7 @@ fileGroups:
 tasks:
   nuxt:
     command: 'nuxt'
-    local: true
+    preset: 'server'
 
   # Production build
   build:
@@ -61,14 +61,14 @@ tasks:
   # Development server
   dev:
     command: 'nuxt dev'
-    local: true
+    preset: 'server'
 
   # Preview production build locally
   preview:
     command: 'nuxt preview'
     deps:
       - '~:build'
-    local: true
+    preset: 'server'
 ```
 
 Be sure to keep the `postinstall` script in your project's `package.json`.

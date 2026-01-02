@@ -13,7 +13,7 @@ manages, downloads, and installs Node.js and other languages behind the scenes u
 [proto](/proto). It also enables [advanced functionality](./how-it-works/languages#tier-2--platform)
 for task running based on the platform (language and environment combination) it runs in.
 
-The toolchain is configured with [`.moon/toolchain.yml`](./config/toolchain).
+The toolchain is configured with [`.moon/toolchains.yml`](./config/toolchain).
 
 :::tip
 
@@ -34,18 +34,18 @@ day-to-day.
 
 :::
 
-## Enabling a platform
+## Enabling a toolchain
 
 By default all tasks run through the
-[system platform](./how-it-works/languages#system-language-and-toolchain) and inherit _no_ special
+[system toolchain](./how-it-works/languages#system-language-and-toolchain) and inherit _no_ special
 functionality. If you want to take advantage of this functionality, like dependency hashing, package
-shorthand execution, and lockfile management, you'll need to enable the platform in
-[`.moon/toolchain.yml`](./config/toolchain). Otherwise, you can skip to the
+shorthand execution, and lockfile management, you'll need to enable the toolchain in
+[`.moon/toolchains.yml`](./config/toolchain). Otherwise, you can skip to the
 [create a task](./create-task) guide.
 
 Begin by declaring the necessary configuration block, even if an empty object! This configuration
-can also be injected using the [`moon init <tool>`](./commands/init) command (doesn't support all
-languages).
+can also be injected using the [`moon toolchain add <toolchain>`](./commands/toolchain/add) command
+(doesn't support all languages).
 
 import Tier2Bun from './__partials__/setup-toolchain/bun/tier2.mdx';
 import Tier2Deno from './__partials__/setup-toolchain/deno/tier2.mdx';
@@ -67,7 +67,7 @@ import Tier2Rust from './__partials__/setup-toolchain/rust/tier2.mdx';
   <Tier2Rust key="rust" />
 </LangPartials>
 
-Although we've enabled the platform, language binaries must exist on `PATH` for task execution to
+Although we've enabled the toolchain, language binaries must exist on `PATH` for task execution to
 function correctly. Continue reading to learn how to automate this flow using tier 3 support.
 
 ## Automatically installing a tool
@@ -84,7 +84,7 @@ feature solves the following pain points:
 
 If you have dealt with any of these pain points before and would like to eliminate them for you and
 all your developers, you can try enabling moon's tier 3 support for supported tools. This is easily
-done by defining the `version` field for each platform.
+done by defining the `version` field for each toolchain.
 
 import Tier3Bun from './__partials__/setup-toolchain/bun/tier3.mdx';
 import Tier3Deno from './__partials__/setup-toolchain/deno/tier3.mdx';
@@ -119,7 +119,7 @@ variables automatically. Amazing right?
       icon: 'toolchain-config',
       label: (
         <span>
-          Configure <code>.moon/toolchain.yml</code> further
+          Configure <code>.moon/toolchains.yml</code> further
         </span>
       ),
       url: './config/toolchain',

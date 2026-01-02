@@ -12,7 +12,7 @@ tasks:
     command: 'php artisan serve'
     inputs:
       - '@globs(sources)'
-    local: true
+    preset: 'server'
   format:
     command: './vendor/bin/phpcbf .'
     inputs:

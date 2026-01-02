@@ -1,0 +1,38 @@
+---
+title: tasks
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.0.0" header />
+
+The `moon tasks` command will list all tasks available in the workspace as a table of information.
+
+```shell
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│Task                          Command          Type        Preset      Toolchains                                Description                                                           │
+│───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│website:build                 docusaurus       build                   typescript, javascript, node, yarn        Builds the Docusaurus app.                                            │
+│website:format                prettier         test                    javascript, node, yarn                                                                                          │
+│website:format-write          prettier         test                    javascript, node, yarn                                                                                          │
+│website:lint                  eslint           test                    javascript, node, yarn                                                                                          │
+│website:lint-fix              eslint           test                    javascript, node, yarn                                                                                          │
+│website:start                 docusaurus       run         server      typescript, javascript, node, yarn                                                                              │
+│website:test                  jest             test                    javascript, node, yarn                                                                                          │
+│website:typecheck             tsc              test                    typescript, javascript, node, yarn                                                                              │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+:::info
+
+Use [`moon query tasks`](./query/tasks) for advanced querying and filtering of tasks.
+
+:::
+
+### Arguments
+
+- `[id]` - Filter tasks to a specific project ID.
+
+### Options
+
+- `--json` - Print the projects as JSON.

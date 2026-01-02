@@ -457,6 +457,17 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
+        // If we are going to parallelize, then we need to filter the
+        // tasks list based on affected state before partitioning!
+        if reqs.job.is_some()
+            && reqs.job_total.is_some()
+            && !reqs.skip_affected
+            && let Some(affected) = &self.affected
+        {
+            tasks.retain(|task| affected.is_task_marked(task));
+        }
+
+        // Now partition the tasks list based on the job information
         if let Some(job_index) = reqs.job
             && let Some(job_total) = reqs.job_total
             && job_total > 0

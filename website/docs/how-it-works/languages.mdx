@@ -23,9 +23,9 @@ chose this pattern to avoid unnecessary overhead, especially for the future when
 built-in languages.
 
 To enable a supported language, simply define a configuration block with the language's name in
-[`.moon/toolchain.yml`](../config/toolchain). Even an empty block will enable the language.
+[`.moon/toolchains.yml`](../config/toolchain). Even an empty block will enable the language.
 
-```yaml title=".moon/toolchain.yml"
+```yaml title=".moon/toolchains.yml"
 # Enable Node.js
 node: {}
 
@@ -113,7 +113,7 @@ complex of all tiers, and the tier is in charge of:
 - Running a target's command with proper arguments, environment variables, and flags.
 - Maps to a project's [`toolchain.default`](../config/project#toolchain-1) or task's
   [`toolchain`](../config/project#toolchain) setting.
-- Supports a configuration block by name in [`.moon/toolchain.yml`](../config/toolchain).
+- Supports a configuration block by name in [`.moon/toolchains.yml`](../config/toolchain).
 
 ```yaml title="moon.yml"
 tasks:
@@ -122,7 +122,7 @@ tasks:
     toolchain: 'node'
 ```
 
-```yaml title=".moon/toolchain.yml"
+```yaml title=".moon/toolchains.yml"
 node: {}
 ```
 
@@ -137,9 +137,9 @@ tier. This tier handles:
 - Detecting appropriate versions of tools to use.
 - Determining which binary to use and execute targets with.
 - Supports a `version` field in the named configuration block in
-  [`.moon/toolchain.yml`](../config/toolchain).
+  [`.moon/toolchains.yml`](../config/toolchain).
 
-```yaml title=".moon/toolchain.yml"
+```yaml title=".moon/toolchains.yml"
 node:
   version: '18.0.0'
 ```

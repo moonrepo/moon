@@ -1,0 +1,191 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Configures all toolchains. Docs: https://moonrepo.dev/docs/config/toolchain",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "title": "$schema",
+      "default": "./cache/schemas/toolchains.json",
+      "type": "string"
+    },
+    "extends": {
+      "title": "extends",
+      "description": "Extends one or many toolchain configuration files. Supports a relative file path or a secure URL. @since 1.12.0",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ExtendsFrom"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "moon": {
+      "title": "moon",
+      "description": "Configures moon itself.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/MoonConfig"
+        }
+      ]
+    },
+    "plugins": {
+      "title": "plugins",
+      "description": "Configures and integrates toolchains into the system using a unique identifier.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ToolchainPluginConfig"
+      },
+      "propertyNames": {
+        "$ref": "#/definitions/Id"
+      }
+    },
+    "proto": {
+      "title": "proto",
+      "description": "Configures how moon integrates with proto.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ProtoConfig"
+        }
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "ExtendsFrom": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "Id": {
+      "type": "string"
+    },
+    "MoonConfig": {
+      "description": "Configures how and where moon updates will be received.",
+      "type": "object",
+      "properties": {
+        "downloadUrl": {
+          "title": "downloadUrl",
+          "description": "A secure URL for downloading the moon binary itself.",
+          "default": "https://github.com/moonrepo/moon/releases/latest/download",
+          "type": "string"
+        },
+        "manifestUrl": {
+          "title": "manifestUrl",
+          "description": "A secure URL to lookup the latest available version.",
+          "default": "https://launch.moonrepo.app/moon/check_version",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "PluginLocator": {
+      "description": "Strategies and protocols for locating plugins.",
+      "type": "string"
+    },
+    "ProtoConfig": {
+      "description": "Configures how moon integrates with proto.",
+      "type": "object",
+      "properties": {
+        "version": {
+          "title": "version",
+          "description": "The version of proto to download and install, and to use for installing and running other toolchains.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VersionSpec"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolchainPluginConfig": {
+      "description": "Configures an individual toolchain.",
+      "type": "object",
+      "properties": {
+        "config": {
+          "title": "config",
+          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "boolean",
+              "object",
+              "array",
+              "number",
+              "string",
+              "integer"
+            ]
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "plugin": {
+          "title": "plugin",
+          "description": "Location of the WASM plugin to use.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PluginLocator"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "title": "version",
+          "description": "The version of the toolchain to download and install.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UnresolvedVersionSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "versionFromPrototools": {
+          "title": "versionFromPrototools",
+          "description": "Inherit the version from the root .prototools. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ToolchainPluginVersionFrom"
+            }
+          ],
+          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolchainPluginVersionFrom": {
+      "description": "The strategy in which to inherit a version from .prototools.",
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "markdownDescription": "The strategy in which to inherit a version from `.prototools`."
+    },
+    "UnresolvedVersionSpec": {
+      "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",
+      "type": "string",
+      "markdownDescription": "Represents an unresolved version or alias that must be resolved to a fully-qualified version."
+    },
+    "VersionSpec": {
+      "description": "Represents a resolved version or alias.",
+      "type": "string"
+    }
+  }
+}

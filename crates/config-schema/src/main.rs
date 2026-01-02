@@ -7,7 +7,7 @@ use std::process::Command;
 fn main() {
     let cwd = env::current_dir().unwrap();
 
-    generate_json_schemas(cwd.join("website/static/schemas"), Default::default()).unwrap();
+    generate_json_schemas(cwd.join("website/static/schemas/v2"), Default::default()).unwrap();
 
     #[cfg(feature = "typescript")]
     generate_typescript_types(cwd.join("packages/types/src")).unwrap();

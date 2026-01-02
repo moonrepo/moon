@@ -508,7 +508,7 @@ export interface TaskConfig {
  * Docs: https://moonrepo.dev/docs/config/tasks
  */
 export interface InheritedTasksConfig {
-	/** @default './cache/schemas/tasks.json' */
+	/** @default '../cache/schemas/tasks.json' */
 	$schema?: string;
 	/**
 	 * Extends one or many tasks configuration files.
@@ -913,7 +913,7 @@ export interface PartialTaskConfig {
  * Docs: https://moonrepo.dev/docs/config/tasks
  */
 export interface PartialInheritedTasksConfig {
-	/** @default './cache/schemas/tasks.json' */
+	/** @default '../cache/schemas/tasks.json' */
 	$schema?: string | null;
 	/**
 	 * Extends one or many tasks configuration files.

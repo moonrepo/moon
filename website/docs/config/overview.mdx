@@ -1,0 +1,95 @@
+---
+title: Overview
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+## Supported formats<VersionLabel version="2.0.0" />
+
+In moon, you can define configuration files in a variety of formats. We currently support the
+following:
+
+- JSON (`.json`)
+- JSON with comments (`.jsonc`)
+- [HCL](https://github.com/hashicorp/hcl) (`.hcl`)
+- [Pkl](https://pkl-lang.org/) (`.pkl`)
+- [TOML](https://toml.io/en/) (`.toml`)
+- YAML (`.yml`, `.yaml`)
+
+:::info
+
+In moon v1, only YAML (`.yml`) and Pkl (`.pkl`) configuration files were supported.
+
+:::
+
+## Schema validation<VersionLabel version="1.33.0" />
+
+We support schema validation for all configuration files through
+[JSON Schema](https://json-schema.org/), even for formats that are not JSON (depends on tool/editor
+support). To reference the schema for a specific configuration file, configure the `$schema`
+property at the top of the file with the appropriate schema found at `.moon/cache/schemas`.
+
+<Tabs
+  groupId="configs"
+  defaultValue=".moon/workspace"
+>
+<TabItem value=".moon/workspace">
+
+```yaml title=".moon/workspace.yml"
+$schema: './cache/schemas/workspace.json'
+```
+
+</TabItem>
+<TabItem value=".moon/extensions">
+
+```yaml title=".moon/extensions.yml"
+$schema: './cache/schemas/extensions.json'
+```
+
+</TabItem>
+<TabItem value=".moon/toolchains">
+
+```yaml title=".moon/toolchains.yml"
+$schema: './cache/schemas/toolchains.json'
+```
+
+</TabItem>
+<TabItem value=".moon/tasks">
+
+```yaml title=".moon/tasks/all.yml"
+$schema: '../cache/schemas/tasks.json'
+```
+
+</TabItem>
+<TabItem value="moon">
+
+```yaml title="moon.yml"
+$schema: '../path/to/.moon/cache/schemas/project.json'
+```
+
+</TabItem>
+<TabItem value="template">
+
+```yaml title="template.yml"
+$schema: '../path/to/.moon/cache/schemas/template.json'
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+
+The schemas are automatically created when running a task. If they do not exist yet, you can run
+[`moon sync config-schemas`](../commands/sync/config-schemas) to generate them manually.
+
+:::
+
+:::danger
+
+In older versions of moon, the schema files were located at `https://moonrepo.dev/schemas`. These
+URLs are now deprecated, as they do not support dynamic settings. Please update your `$schema`
+references to point to the local schema files in `.moon/cache/schemas`.
+
+:::

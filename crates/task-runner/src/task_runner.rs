@@ -99,14 +99,14 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // If cache is enabled, then generate a hash and manage outputs
+        // Always generate a hash
+        let hash = self.generate_hash(context, node).await?;
+
         if self.is_cache_enabled() {
             debug!(
                 task_target = self.task.target.as_str(),
-                "Caching is enabled for task, will generate a hash and manage outputs"
+                "Caching is enabled for task, will attempt to hydrate and archive outputs"
             );
-
-            let hash = self.generate_hash(context, node).await?;
 
             // Exit early if this build has already been cached/hashed
             if self.hydrate(&hash).await? {
@@ -118,19 +118,17 @@ impl<'task> TaskRunner<'task> {
 
             // If we created outputs, archive them into the cache
             self.archive(&hash).await?;
+        } else {
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Caching is disabled for task, will attempt to run the command as normal"
+            );
 
-            return Ok(Some(hash));
+            // Build and execute without managing cache
+            self.execute(context, node).await?;
         }
 
-        debug!(
-            task_target = self.task.target.as_str(),
-            "Caching is disabled for task, will not generate a hash, and will attempt to run a command as normal"
-        );
-
-        // Otherwise build and execute the command as a child process
-        self.execute(context, node).await?;
-
-        Ok(None)
+        Ok(Some(hash))
     }
 
     #[instrument(skip(self, context))]

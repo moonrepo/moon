@@ -8,6 +8,7 @@ View the [migration guide](https://moonrepo.dev/docs/migrate/2.0) for a full lis
 changes and how to easily migrate!
 
 - **WASM API**
+  - Removed the `/cwd` virtual path.
   - Renamed `ProjectFragment.alias` to `ProjectFragment.aliases` and changed its type from
     `Option<String>` to `Vec<String>`.
   - Removed `RegisterExtensionOutput.config_schema` field. Use the new `define_extension_config`
@@ -18,6 +19,8 @@ changes and how to easily migrate!
 View the [announcement blog post](https://moonrepo.dev/blog/moon-v2.0) for all updates, new
 features, improvements, and much more!
 
+- **Action pipeline**
+  - Will now always generate a hash for a task, even if caching is disabled.
 - **WASM API**
   - Added a `load_extension_config_by_id` host function.
   - Added `define_extension_config`, `initialize_extension`, and `extend_command` plugin functions.

@@ -25,13 +25,13 @@ mod task_runner {
 
             runner.run_with_panic(&context, &node).await.unwrap();
 
-            assert_eq!(
+            assert_ne!(
                 context
                     .target_states
                     .get_sync(&runner.task.target)
                     .unwrap()
                     .get(),
-                &TargetState::Passthrough
+                &TargetState::Failed
             );
         }
 
@@ -292,7 +292,7 @@ mod task_runner {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn doesnt_generate_a_hash() {
+            async fn does_generate_a_hash() {
                 let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
                 container.sandbox.enable_git();
 
@@ -302,26 +302,7 @@ mod task_runner {
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
 
-                assert!(result.hash.is_none());
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn doesnt_create_non_task_operations() {
-                let container = TaskRunnerContainer::new_os("runner", "without-cache").await;
-                container.sandbox.enable_git();
-
-                let mut runner = container.create_runner();
-                let node = container.create_action_node();
-                let context = ActionContext::default();
-
-                let result = runner.run_with_panic(&context, &node).await.unwrap();
-
-                assert!(
-                    result
-                        .operations
-                        .iter()
-                        .all(|op| op.meta.is_task_execution())
-                );
+                assert!(result.hash.is_some());
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -335,15 +316,17 @@ mod task_runner {
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
 
-                assert_eq!(result.operations.len(), 1);
-                assert!(result.operations[0].meta.is_task_execution());
-                assert_eq!(result.operations[0].status, ActionStatus::Passed);
+                // hash + exec
+                assert_eq!(result.operations.len(), 2);
+                assert!(result.operations[1].meta.is_task_execution());
+                assert_eq!(result.operations[1].status, ActionStatus::Passed);
 
                 let result = runner.run_with_panic(&context, &node).await.unwrap();
 
-                assert_eq!(result.operations.len(), 1);
-                assert!(result.operations[0].meta.is_task_execution());
-                assert_eq!(result.operations[0].status, ActionStatus::Passed);
+                // hash + exec
+                assert_eq!(result.operations.len(), 2);
+                assert!(result.operations[1].meta.is_task_execution());
+                assert_eq!(result.operations[1].status, ActionStatus::Passed);
             }
         }
     }

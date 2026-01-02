@@ -117,7 +117,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Task graph](https://moonrepo.dev/docs/how-it-works/task-graph): import TaskGraph from '@site/src/components/Docs/TaskGraph';
 - [Install moon](https://moonrepo.dev/docs/install): import Tabs from '@theme/Tabs';
 - [Introduction](https://moonrepo.dev/docs/intro): import FeatureStatus from '@site/src/components/FeatureStatus';
-- [Migrate to moon v2.0](https://moonrepo.dev/docs/migrate/2.0): - Removed `x86_64-apple-darwin` (Apple Intel) as a supported operating system. Only
+- [Migrate to moon v2.0](https://moonrepo.dev/docs/migrate/2.0): To ease the migration process from moon v1 to v2, we've compiled a list of all breaking changes and
 - [Migrate to moon](https://moonrepo.dev/docs/migrate-to-moon): import NextSteps from '@site/src/components/NextSteps';
 - [activate](https://moonrepo.dev/docs/proto/commands/activate): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [alias](https://moonrepo.dev/docs/proto/commands/alias): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -268,4 +268,5 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [moon v1.40 - JavaScript ecosystem WASM toolchains and more](https://moonrepo.dev/blog/2025-09-01_moon-v1.40): It's been a while since our last release, as we've been busy working on new JavaScript ecosystem
 - [proto v0.53 - New exec command and backend configuration](https://moonrepo.dev/blog/2025-09-18_proto-v0.53): In this release, we're introducing another way to execute tools within proto.
 - [moon v1.41 - Deno WASM toolchain and task input/output improvements](https://moonrepo.dev/blog/2025-09-28_moon-v1.41): With this release, we're introducing the final piece of the JavaScript ecosystem puzzle, Deno!
+- [Alpha release of moon v2 now available!](https://moonrepo.dev/blog/2026-01-01_moon-v2-alpha): After months of hard work, we are excited to announce the alpha release of moon v2! This major
 - [moon v2.0 - Official "Phobos" release!](https://moonrepo.dev/blog/2026-01-05_moon-v2.0): TODO: This blog post is a work in progress!

@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.9592ebe1.css">
-<script src="/assets/js/runtime~main.3f2d8e8f.js" defer="defer"></script>
-<script src="/assets/js/main.8f0e26a2.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.d454313b.js" defer="defer"></script>
+<script src="/assets/js/main.5391c219.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg style="display: none;"><defs>
@@ -56,7 +56,7 @@ we can provide sandboxed access to a pre-defined list of allowed directories. We
 paths provided via function input or context use them.</p>
 <p>Virtual paths are implemented by mapping a real path (host machine) to a virtual path (guest
 runtime) using file path prefixes. The following prefixes are currently supported:</p>
-<table><thead><tr><th>Real path</th><th>Virtual path</th><th>Only for</th></tr></thead><tbody><tr><td><code>~</code></td><td><code>/userhome</code></td><td>~</td></tr><tr><td><code>~/.proto</code></td><td><code>/proto</code></td><td>~</td></tr><tr><td><code>~/.moon</code></td><td><code>/moon</code></td><td>moon</td></tr><tr><td>Working directory</td><td><code>/cwd</code></td><td>~</td></tr><tr><td>moon workspace</td><td><code>/workspace</code></td><td>moon</td></tr></tbody></table>
+<table><thead><tr><th>Real path</th><th>Virtual path</th><th>Only for</th></tr></thead><tbody><tr><td><code>~</code></td><td><code>/userhome</code></td><td>~</td></tr><tr><td><code>~/.proto</code></td><td><code>/proto</code></td><td>~</td></tr><tr><td><code>~/.moon</code></td><td><code>/moon</code></td><td>moon</td></tr><tr><td>moon workspace</td><td><code>/workspace</code></td><td>moon</td></tr></tbody></table>
 <p>For example, from the context of WASM, you may have a virtual path of <code>/proto/tools/node/1.2.3</code>,
 which simply maps back to <code>~/.proto/tools/node/1.2.3</code> on the host machine. However, this should
 almost always be transparent to you, the developer, and to end users.</p>

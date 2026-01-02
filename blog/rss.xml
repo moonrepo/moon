@@ -4,10 +4,65 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Sun, 28 Sep 2025 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 01 Jan 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[Alpha release of moon v2 now available!]]></title>
+            <link>https://moonrepo.dev/blog/moon-v2-alpha</link>
+            <guid>https://moonrepo.dev/blog/moon-v2-alpha</guid>
+            <pubDate>Thu, 01 Jan 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[After months of hard work, we are excited to announce the alpha release of moon v2! This major]]></description>
+            <content:encoded><![CDATA[<p>After months of hard work, we are excited to announce the alpha release of moon v2! This major
+release brings a host of new features, improvements, and breaking changes that we believe will
+greatly enhance your experience with moon.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="how-to-use">How to use<a href="https://moonrepo.dev/blog/moon-v2-alpha#how-to-use" class="hash-link" aria-label="Direct link to How to use" title="Direct link to How to use" translate="no">​</a></h2>
+<p>You can install the alpha with proto (&gt;= 0.54.1), or download it directly from the
+<a href="https://github.com/moonrepo/moon/releases/tag/v2.0.0-alpha.2" target="_blank" rel="noopener noreferrer" class="">GitHub release page</a>.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> moon </span><span class="token number" style="color:#94dded">2.0</span><span class="token plain">.0-alpha.2</span><br></span></code></pre></div></div>
+<p>Alternatively, you can try using the new experimental shell install scripts. Be warned that these
+haven't been tested thoroughly yet!</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Unix</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token function" style="color:#ff94ff;font-weight:bold">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--proto</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'=https'</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--tlsv1.2</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">-LsSf</span><span class="token plain"> https://github.com/moonrepo/moon/releases/download/v2.0.0-alpha.2/moon_cli-installer.sh </span><span class="token operator" style="color:#b7a9f9">|</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">sh</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Windows</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">powershell </span><span class="token parameter variable" style="color:#fef9c3">-ExecutionPolicy</span><span class="token plain"> Bypass </span><span class="token parameter variable" style="color:#fef9c3">-c</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"irm https://github.com/moonrepo/moon/releases/download/v2.0.0-alpha.2/moon_cli-installer.ps1 | iex"</span><br></span></code></pre></div></div>
+<blockquote>
+<p>The existing shell install script and npm packages have not been updated for v2 yet.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="breaking-changes">Breaking changes<a href="https://moonrepo.dev/blog/moon-v2-alpha#breaking-changes" class="hash-link" aria-label="Direct link to Breaking changes" title="Direct link to Breaking changes" translate="no">​</a></h2>
+<p>Since this is our first major release after v1, there are quite a few breaking changes, far too many
+to list here! Please refer to the <a class="" href="https://moonrepo.dev/docs/migrate/2.0">official migration guide</a> for a comprehensive
+list of breaking changes and how to address them.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-features">New features<a href="https://moonrepo.dev/blog/moon-v2-alpha#new-features" class="hash-link" aria-label="Direct link to New features" title="Direct link to New features" translate="no">​</a></h2>
+<p>This wouldn't be a major release without some exciting new features! Here are some of the
+highlights:</p>
+<ul>
+<li class="">New and improved CLI commands</li>
+<li class="">New configuration formats</li>
+<li class="">Toolchain and extension WASM plugins</li>
+<li class="">Default projects</li>
+<li class="">Config based task inheritance</li>
+<li class="">Reworked env var handling</li>
+<li class="">And much more!</li>
+</ul>
+<p>For a in-depth look at all the new features and improvements, check out the
+<a class="" href="https://moonrepo.dev/blog/moon-v2.0">official v2 blog post</a>, which has not been published yet (still a work in
+progress).</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="work-in-a-progress">Work in a progress<a href="https://moonrepo.dev/blog/moon-v2-alpha#work-in-a-progress" class="hash-link" aria-label="Direct link to Work in a progress" title="Direct link to Work in a progress" translate="no">​</a></h2>
+<p>Before we stabilize v2, there are still some features and improvements we want to make. Here are
+some of the things we are currently working on:</p>
+<ul>
+<li class="">Rewriting the <a href="https://github.com/moonrepo/plugins/pull/101" target="_blank" rel="noopener noreferrer" class="">Python toolchain</a> as a WASM plugin.
+Because this is incomplete, Python is currently not supported in the v2 alpha.</li>
+<li class="">Updating the <code>@moonrepo/cli</code> npm package with the new distribution format. Because of this, the
+npm package is not yet published.</li>
+<li class="">Removing the auto-escaping/quoting from task arguments. This is a source of much confusion, and is
+only exacerbated by the differences between shells.</li>
+<li class="">Auditing open issues and PRs to see what else needs to be done before the stable release.</li>
+</ul>]]></content:encoded>
+            <category>alpha</category>
+            <category>major</category>
+            <category>release</category>
+            <category>v2</category>
+        </item>
         <item>
             <title><![CDATA[moon v1.41 - Deno WASM toolchain and task input/output improvements]]></title>
             <link>https://moonrepo.dev/blog/moon-v1.41</link>
@@ -1725,133 +1780,6 @@ of changes.</p>
             <category>ui</category>
             <category>user</category>
             <category>interface</category>
-        </item>
-        <item>
-            <title><![CDATA[moon v1.30 - Python support, self-hosted remote caching, task graph, and more!]]></title>
-            <link>https://moonrepo.dev/blog/moon-v1.30</link>
-            <guid>https://moonrepo.dev/blog/moon-v1.30</guid>
-            <pubDate>Mon, 25 Nov 2024 00:00:00 GMT</pubDate>
-            <description><![CDATA[It's been almost 2 months since our last release, and we're excited to announce some major features]]></description>
-            <content:encoded><![CDATA[<p>It's been almost 2 months since our last release, and we're excited to announce some major features
-requested by the community!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="experimental-python-tier-2-and-3-support">Experimental Python tier 2 and 3 support<a href="https://moonrepo.dev/blog/moon-v1.30#experimental-python-tier-2-and-3-support" class="hash-link" aria-label="Direct link to Experimental Python tier 2 and 3 support" title="Direct link to Experimental Python tier 2 and 3 support" translate="no">​</a></h2>
-<p>Thanks to a contribution from <a href="https://github.com/harlequin" target="_blank" rel="noopener noreferrer" class="">@harlequin</a>, we now provide Python tier
-<a class="" href="https://moonrepo.dev/docs/how-it-works/languages#tier-2--platform">2</a> and
-<a class="" href="https://moonrepo.dev/docs/how-it-works/languages#tier-3--toolchain">3</a> support. Python is a very popular language, so
-it was about time that we officially supported it in some capacity. When enabling Python in moon,
-the following functionality will be enabled:</p>
-<ul>
-<li class="">Will download and install Python into the toolchain (if <code>python.version</code> is defined).</li>
-<li class="">Will parse <code>requirements.txt</code> to extract dependency and version information for hashing.</li>
-<li class="">Will automatically activate virtual environments and setup <code>PATH</code> for tasks.</li>
-<li class="">Will automatically install dependencies for <code>requirements.txt</code> via pip.</li>
-<li class="">And a handful of internal interoperability features.</li>
-</ul>
-<p>However, we're still marking this implementation as experimental, as it hasn't been thoroughly
-tested, and we're not 100% positive the workflows are what users expect. So please provide any
-feedback, good or bad!</p>
-<p>Furthermore, as mentioned above, we install dependencies with pip (the version of pip that comes
-pre-installed with the current Python version). At this time, <em>we do not support</em> other package
-managers like Poetry, Hatch, PDM, Rye, or uv, but we will in the future!</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-python-configurations">New <code>python</code> configurations<a href="https://moonrepo.dev/blog/moon-v1.30#new-python-configurations" class="hash-link" aria-label="Direct link to new-python-configurations" title="Direct link to new-python-configurations" translate="no">​</a></h3>
-<p>Languages in
-<a class="" href="https://moonrepo.dev/docs/how-it-works/languages#enabling-a-language">moon are enabled through configuration</a> blocks in
-<a class="" href="https://moonrepo.dev/docs/config/toolchain"><code>.moon/toolchain.yml</code></a>, and Python is no different. We now support a
-<a class="" href="https://moonrepo.dev/docs/config/toolchain#python"><code>python</code></a> toolchain setting
-(<a class="" href="https://moonrepo.dev/docs/config/toolchain">view all available settings</a>).</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'3.14.0'</span><br></span></code></pre></div></div>
-<p>When the <code>python</code> setting is defined, it will enable the language and
-<a class="" href="https://moonrepo.dev/docs/how-it-works/languages#tier-2--platform">deep platform integration</a>, and when the
-<code>python.version</code> field is defined, it will further enable
-<a class="" href="https://moonrepo.dev/docs/how-it-works/languages#tier-3--toolchain">toolchain support</a>. Both of these features provide
-heavy automation, improving the overall developer experience.</p>
-<p>This is fantastic, but what if another Python project in the monorepo requires a different toolchain
-channel/version? If so, they can use the new <a class="" href="https://moonrepo.dev/docs/config/project#python"><code>toolchain.python</code></a>
-setting in <a class="" href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a> to define project-level overrides.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">&lt;project&gt;/moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'3.12.0'</span><br></span></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="built-in-virtual-environments">Built-in virtual environments<a href="https://moonrepo.dev/blog/moon-v1.30#built-in-virtual-environments" class="hash-link" aria-label="Direct link to Built-in virtual environments" title="Direct link to Built-in virtual environments" translate="no">​</a></h3>
-<p>Of course we also have support for Python virtual environments. When running a task, moon will
-automatically enable the virtual environment in the workspace root or a project root (depending on
-config)! The name of the venv can be customized with the
-<a class="" href="https://moonrepo.dev/docs/config/toolchain#venvname"><code>python.venvName</code></a> setting, otherwise it defaults to <code>.venv</code>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">venvName</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'.venvcustom'</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="unstable-self-hosted-remote-caching">Unstable self-hosted remote caching<a href="https://moonrepo.dev/blog/moon-v1.30#unstable-self-hosted-remote-caching" class="hash-link" aria-label="Direct link to Unstable self-hosted remote caching" title="Direct link to Unstable self-hosted remote caching" translate="no">​</a></h2>
-<p>This has been a request from the community for a very long time, and we get it, not every user wants
-to store their build artifacts (not source code) in a third-party cloud provider. While we're proud
-of our <a class="" href="https://moonrepo.dev/moonbase">moonbase service</a>, it wasn't a viable option for many companies because of their
-proprietary requirements. We spent a few months reworking moonbase to work as a self-hosted service,
-so users can host it as on-prem solution, but it has been a very costly initiative. During this
-process, we came to the conclusion that spending our time and resources on moonbase simply isn't
-worth it, so we made the hard decision to sunset moonbase in the future.</p>
-<p>So what does that mean for remote caching? Simply put, you can now host your own remote caching
-service! Instead of building a custom API for consumers to implement, we opted to implement the
-<a href="https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto" target="_blank" rel="noopener noreferrer" class="">Bazel Remote Execution API</a>,
-which supports a content addressable storage (CAS) API, and is used by other popular build tools,
-like Bazel, Buck, Pants, and more!</p>
-<p>Because we opted for a community solution, we can now focus all our efforts on <a class="" href="https://moonrepo.dev/moon">moon</a> and
-<a class="" href="https://moonrepo.dev/proto">proto</a>! Additionally, adopting RE API allows you, the user, to use an off-the-shelf
-solution, like <a href="https://github.com/buchgr/bazel-remote" target="_blank" rel="noopener noreferrer" class=""><code>bazel-remote</code></a>, instead of building your
-own custom caching server! For example, to make use of remote caching, simply serve <code>bazel-remote</code>:</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">bazel-remote </span><span class="token parameter variable" style="color:#fef9c3">--dir</span><span class="token plain"> /path/to/moon-cache </span><span class="token parameter variable" style="color:#fef9c3">--max_size</span><span class="token plain"> </span><span class="token number" style="color:#94dded">10</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--storage_mode</span><span class="token plain"> uncompressed </span><span class="token parameter variable" style="color:#fef9c3">--grpc_address</span><span class="token plain"> </span><span class="token number" style="color:#94dded">0.0</span><span class="token plain">.0.0:9092</span><br></span></code></pre></div></div>
-<p>And then configure the new <a class="" href="https://moonrepo.dev/docs/config/workspace#unstable_remote"><code>unstable_remote</code></a> setting in
-<a class="" href="https://moonrepo.dev/docs/config/workspace"><code>.moon/workspace.yml</code></a>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">host</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'grpc://your-host.com:9092'</span><br></span></code></pre></div></div>
-<p>Pretty awesome right? Jump to the
-<a class="" href="https://moonrepo.dev/docs/guides/remote-cache#self-hosted-unstable">official remote caching</a> documentation for more
-information on this implementation.</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="unsupported-features">Unsupported features<a href="https://moonrepo.dev/blog/moon-v1.30#unsupported-features" class="hash-link" aria-label="Direct link to Unsupported features" title="Direct link to Unsupported features" translate="no">​</a></h3>
-<p>Since this is a new feature, we're marking it as unstable, as it hasn't been thoroughly tested, and
-<em>does not</em> support the entire Bazel RE API. The following features <em>have not</em> been implemented, but
-will be in the future.</p>
-<ul>
-<li class="">HTTP(S) host (we only support gRPC(S))</li>
-<li class="">Digest hashing functions besides SHA256</li>
-<li class="">Compression formats (we only support identity/uncompressed right now)</li>
-<li class="">Write/read bytestream for large blobs (4mb is the current limit)</li>
-<li class="">Better TLS/mTLS support (it has some issues)</li>
-<li class="">Directory blob types</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-task-graph-and-improved-affected-tracker">New task graph and improved affected tracker<a href="https://moonrepo.dev/blog/moon-v1.30#new-task-graph-and-improved-affected-tracker" class="hash-link" aria-label="Direct link to New task graph and improved affected tracker" title="Direct link to New task graph and improved affected tracker" translate="no">​</a></h2>
-<p>In our <a class="" href="https://moonrepo.dev/blog/moon-v1.29#new-affected-projects-tracker">last release</a>, we announced a new affected
-tracker for projects, but <em>not</em> for tasks. The reason behind this was simple, we couldn't! Up until
-now, we had no concept of a task graph, we had a project graph (that had tasks) and an action graph
-(that ran tasks), but the relationships between tasks were split across both of these graphs.</p>
-<p>This made it complicated to support tasks for the new affected tracker, as the action graph
-<em>consumes</em> the tracker, not the other way around. To remedy this issue, we now support an official
-task graph, which is derived from the project graph, and then feeds into the action graph. Since the
-task graph sits outside of the action graph, we're now able to support tasks in the affected
-tracker!</p>
-<p>Because of the new task graph, the following improvements have been introduced:</p>
-<ul>
-<li class="">Tasks are now supported in the affected tracker (as mentioned).</li>
-<li class="">We can now properly query dependencies and dependents of specific tasks.</li>
-<li class="">We can now associate types to relationships (graph edges). For example, in the future we can add
-optional, cleanup, and other kinds of dependencies.</li>
-<li class="">We've added a new command, <a class="" href="https://moonrepo.dev/docs/commands/task-graph"><code>moon task-graph</code></a>, that can visualize
-tasks in isolation.</li>
-<li class="">We've updated the <a class="" href="https://moonrepo.dev/docs/commands/query/tasks"><code>moon query tasks</code></a> to derive information from the
-task graph.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.30#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.30.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added basic support for Git submodules, and will now extract touched files from all submodules.</li>
-<li class="">Added 7 new token variables: <code>$arch</code>, <code>$os</code>, <code>$osFamily</code>, <code>$vcsBranch</code>, <code>$vcsRepository</code>,
-<code>$vcsRevision</code>, <code>$workingDir</code></li>
-<li class="">Added a <code>rust.binstallVersion</code> setting to <code>.moon/toolchain.yml</code>.</li>
-<li class="">Updated Pkl configurations to support <code>read()</code> for environment variables.</li>
-</ul>]]></content:encoded>
-            <category>affected</category>
-            <category>detection</category>
-            <category>tracker</category>
-            <category>task</category>
-            <category>graph</category>
-            <category>self-hosted</category>
-            <category>remote</category>
-            <category>cache</category>
-            <category>python</category>
-            <category>toolchain</category>
         </item>
     </channel>
 </rss>

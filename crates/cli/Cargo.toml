@@ -11,9 +11,11 @@ default-run = "moon"
 dist = true
 
 [package.metadata.release]
+publish = false
 pre-release-replacements = [
 	{ file = "../../CHANGELOG.md", search = "Unreleased", replace = "{{version}}" },
 ]
+tag-name = "v{{version}}"
 
 [[bin]]
 name = "moon"

@@ -8,7 +8,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 
 - [Cheat sheet](https://moonrepo.dev/docs/cheat-sheet): import Columns from '@site/src/components/Columns';
 - [action-graph](https://moonrepo.dev/docs/commands/action-graph): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [bin](https://moonrepo.dev/docs/commands/bin): The `moon bin <tool>` command will return an absolute path to a tool's binary within the toolchain.
+- [bin](https://moonrepo.dev/docs/commands/bin): The `moon bin <toolchain>` command will return an absolute path to a tool's binary within the
 - [check](https://moonrepo.dev/docs/commands/check): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [ci](https://moonrepo.dev/docs/commands/ci): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [clean](https://moonrepo.dev/docs/commands/clean): The `moon clean` command will clean the current workspace by deleting stale cache. For the most
@@ -17,20 +17,22 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [docker prune](https://moonrepo.dev/docs/commands/docker/prune): The `moon docker prune` command will reduce the overall filesize of the Docker environment by
 - [docker scaffold](https://moonrepo.dev/docs/commands/docker/scaffold): The `moon docker scaffold <...projects>` command creates multiple repository skeletons for use
 - [docker setup](https://moonrepo.dev/docs/commands/docker/setup): The `moon docker setup` command will efficiently install dependencies for focused projects. This is
+- [exec](https://moonrepo.dev/docs/commands/exec): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [ext](https://moonrepo.dev/docs/commands/ext): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [generate](https://moonrepo.dev/docs/commands/generate): The `moon generate <name>` (or `moon g`) command will generate code (files and folders) from a
+- [extension add](https://moonrepo.dev/docs/commands/extension/add): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [extension info](https://moonrepo.dev/docs/commands/extension/info): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [generate](https://moonrepo.dev/docs/commands/generate): The `moon generate <id>` (or `moon g`) command will generate code (files and folders) from a
+- [hash](https://moonrepo.dev/docs/commands/hash): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [init](https://moonrepo.dev/docs/commands/init): The `moon init` command will initialize moon into a repository and scaffold necessary config files
 - [mcp](https://moonrepo.dev/docs/commands/mcp): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [migrate from-package-json](https://moonrepo.dev/docs/commands/migrate/from-package-json): Use the `moon migrate from-package-json <project>` sub-command to migrate a project's `package.json`
-- [migrate from-turborepo](https://moonrepo.dev/docs/commands/migrate/from-turborepo): This command has been deprecated, use the
 - [Overview](https://moonrepo.dev/docs/commands/overview): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [project-graph](https://moonrepo.dev/docs/commands/project-graph): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [project](https://moonrepo.dev/docs/commands/project): The `moon project <name>` (or `moon p`) command will display all available information about a
-- [query hash-diff](https://moonrepo.dev/docs/commands/query/hash-diff): Use the `moon query hash-diff` sub-command to query the content and source differences between 2
-- [query hash](https://moonrepo.dev/docs/commands/query/hash): Use the `moon query hash` sub-command to inspect the contents and sources of a generated hash, also
+- [project](https://moonrepo.dev/docs/commands/project): The `moon project [id]` (or `moon p`) command will display all available information about a project
+- [projects](https://moonrepo.dev/docs/commands/projects): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [query affected](https://moonrepo.dev/docs/commands/query/affected): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [query changed-files](https://moonrepo.dev/docs/commands/query/changed-files): Use the `moon query changed-files` sub-command to query for a list of changed files (added,
 - [query projects](https://moonrepo.dev/docs/commands/query/projects): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [query tasks](https://moonrepo.dev/docs/commands/query/tasks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [query touched-files](https://moonrepo.dev/docs/commands/query/touched-files): Use the `moon query touched-files` sub-command to query for a list of touched files (added,
 - [run](https://moonrepo.dev/docs/commands/run): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [setup](https://moonrepo.dev/docs/commands/setup): The `moon setup` command can be used to setup the developer and pipeline environments. It achieves
 - [sync codeowners](https://moonrepo.dev/docs/commands/sync/codeowners): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -39,7 +41,9 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [sync projects](https://moonrepo.dev/docs/commands/sync/projects): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [task-graph](https://moonrepo.dev/docs/commands/task-graph): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [task](https://moonrepo.dev/docs/commands/task): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [tasks](https://moonrepo.dev/docs/commands/tasks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [teardown](https://moonrepo.dev/docs/commands/teardown): The `moon teardown` command, as its name infers, will teardown and clean the current environment,
+- [template](https://moonrepo.dev/docs/commands/template): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [templates](https://moonrepo.dev/docs/commands/templates): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [toolchain add](https://moonrepo.dev/docs/commands/toolchain/add): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [toolchain info](https://moonrepo.dev/docs/commands/toolchain/info): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -56,11 +60,12 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Tokens](https://moonrepo.dev/docs/concepts/token): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Toolchain](https://moonrepo.dev/docs/concepts/toolchain): The toolchain is an internal layer for downloading, installing, and managing tools (languages,
 - [Workspace](https://moonrepo.dev/docs/concepts/workspace): A workspace is a directory that contains [projects](./project), manages a [toolchain](./toolchain),
-- [moon.{pkl,yml}](https://moonrepo.dev/docs/config/project): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-- [.moon/tasks[/**/*].{pkl,yml}](https://moonrepo.dev/docs/config/tasks): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-- [template.{pkl,yml}](https://moonrepo.dev/docs/config/template): import Tabs from '@theme/Tabs';
-- [.moon/toolchain.{pkl,yml}](https://moonrepo.dev/docs/config/toolchain): import Tabs from '@theme/Tabs';
-- [.moon/workspace.{pkl,yml}](https://moonrepo.dev/docs/config/workspace): import Tabs from '@theme/Tabs';
+- [.moon/extensions.*](https://moonrepo.dev/docs/config/extensions): import Tabs from '@theme/Tabs';
+- [moon.*](https://moonrepo.dev/docs/config/project): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [.moon/tasks/**/*](https://moonrepo.dev/docs/config/tasks): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [template.*](https://moonrepo.dev/docs/config/template): import Tabs from '@theme/Tabs';
+- [.moon/toolchains.*](https://moonrepo.dev/docs/config/toolchain): import Tabs from '@theme/Tabs';
+- [.moon/workspace.*](https://moonrepo.dev/docs/config/workspace): import Tabs from '@theme/Tabs';
 - [Create a project](https://moonrepo.dev/docs/create-project): import Tabs from '@theme/Tabs';
 - [Create a task](https://moonrepo.dev/docs/create-task): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 - [VS Code extension](https://moonrepo.dev/docs/editors/vscode): import Image from '@site/src/components/Image';
@@ -112,6 +117,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Task graph](https://moonrepo.dev/docs/how-it-works/task-graph): import TaskGraph from '@site/src/components/Docs/TaskGraph';
 - [Install moon](https://moonrepo.dev/docs/install): import Tabs from '@theme/Tabs';
 - [Introduction](https://moonrepo.dev/docs/intro): import FeatureStatus from '@site/src/components/FeatureStatus';
+- [Migrate to moon v2.0](https://moonrepo.dev/docs/migrate/2.0): - Removed `x86_64-apple-darwin` (Apple Intel) as a supported operating system. Only
 - [Migrate to moon](https://moonrepo.dev/docs/migrate-to-moon): import NextSteps from '@site/src/components/NextSteps';
 - [activate](https://moonrepo.dev/docs/proto/commands/activate): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [alias](https://moonrepo.dev/docs/proto/commands/alias): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -177,7 +183,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Introducing proto, a next-generation toolchain manager!](https://moonrepo.dev/blog/2023-03-09_proto): import Button from '@site/src/ui/Button';
 - [moon v0.26 - Deeper proto integration, Docker setup, and query commands](https://moonrepo.dev/blog/2023-03-13_v0.26): import Tabs from '@theme/Tabs';
 - [proto v0.3 - Improved npm, go, and version requirement support](https://moonrepo.dev/blog/2023-03-15_proto-v0.3): With this release, we're improving some workflows and version detection logic based on initial
-- [moon v1.0 - Official release! Project constraints, tagging, and more!](https://moonrepo.dev/blog/2023-03-27_moon-v1.0): 🎉 It's finally here! After almost a year of development, a handful of breaking changes, we've
+- [moon v1.0 - Official "Luna" release! Project constraints, tagging, and more!](https://moonrepo.dev/blog/2023-03-27_moon-v1.0): 🎉 It's finally here! After almost a year of development, a handful of breaking changes, we've
 - [proto v0.4 - Rust support, user configs, and more](https://moonrepo.dev/blog/2023-03-31_proto-v0.4): With this release, we've added Rust language support, user configs, and a few other improvements.
 - [moon v1.1 - Task debugging and improvements](https://moonrepo.dev/blog/2023-04-03_moon-v1.1): With this release, we're introducing some quality of life task improvements.
 - [proto v0.5 - Version aliasing and global binaries](https://moonrepo.dev/blog/2023-04-06_proto-v0.5): With this release, we're providing solutions for installing globals and using aliases.
@@ -262,3 +268,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [moon v1.40 - JavaScript ecosystem WASM toolchains and more](https://moonrepo.dev/blog/2025-09-01_moon-v1.40): It's been a while since our last release, as we've been busy working on new JavaScript ecosystem
 - [proto v0.53 - New exec command and backend configuration](https://moonrepo.dev/blog/2025-09-18_proto-v0.53): In this release, we're introducing another way to execute tools within proto.
 - [moon v1.41 - Deno WASM toolchain and task input/output improvements](https://moonrepo.dev/blog/2025-09-28_moon-v1.41): With this release, we're introducing the final piece of the JavaScript ecosystem puzzle, Deno!
+- [moon v2.0 - Official "Phobos" release!](https://moonrepo.dev/blog/2026-01-05_moon-v2.0): TODO: This blog post is a work in progress!

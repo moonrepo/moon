@@ -1,23 +1,25 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "description": "Docs: https://moonrepo.dev/docs/config/template#frontmatter",
+  "description": "Configures the leading frontmatter within a template file. Docs: https://moonrepo.dev/docs/config/template#frontmatter",
   "type": "object",
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/template-frontmatter.json",
       "type": "string"
     },
     "force": {
       "title": "force",
+      "description": "Force overwrite a file at the destination if there is a conflict.",
       "type": "boolean"
     },
     "skip": {
       "title": "skip",
+      "description": "Skip writing this file to the destination.",
       "type": "boolean"
     },
     "to": {
       "title": "to",
+      "description": "Override the destination using a relative file path.",
       "anyOf": [
         {
           "type": "string"

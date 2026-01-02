@@ -5,7 +5,6 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/template.json",
       "type": "string"
     },
     "description": {
@@ -43,7 +42,7 @@
     },
     "id": {
       "title": "id",
-      "description": "Overrides the ID of the template, instead of using the folder name.",
+      "description": "Overrides the identifier of the template, instead of using the folder name.",
       "anyOf": [
         {
           "$ref": "#/definitions/Id"
@@ -61,7 +60,7 @@
     },
     "variables": {
       "title": "variables",
-      "description": "A mapping of variables that'll be interpolated within each template file. Variables can also be populated by passing command line arguments.",
+      "description": "A map of variables that'll be interpolated within each template file. Variables can also be populated by passing command line arguments.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TemplateVariable"
@@ -261,6 +260,15 @@
       "properties": {
         "default": {
           "title": "default",
+          "description": "The default value of the variable if none was provided.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TemplateVariableEnumDefault"
+            }
+          ]
+        },
+        "defaultValue": {
+          "title": "defaultValue",
           "description": "The default value of the variable if none was provided.",
           "allOf": [
             {

@@ -5,7 +5,6 @@
   "properties": {
     "$schema": {
       "title": "$schema",
-      "default": "https://moonrepo.dev/schemas/project.json",
       "type": "string"
     },
     "dependsOn": {
@@ -16,9 +15,17 @@
         "$ref": "#/definitions/ProjectDependsOn"
       }
     },
+    "deps": {
+      "title": "deps",
+      "description": "Other projects that this project depends on.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ProjectDependsOn"
+      }
+    },
     "docker": {
       "title": "docker",
-      "description": "Configures Docker integration for this project.",
+      "description": "Configures Docker integration for this project. @since 1.27.0",
       "allOf": [
         {
           "$ref": "#/definitions/ProjectDockerConfig"
@@ -27,10 +34,17 @@
     },
     "env": {
       "title": "env",
-      "description": "A mapping of environment variables that will be set for all tasks within the project.",
+      "description": "A map of environment variables that will be inherited by all tasks within the project.",
       "type": "object",
       "additionalProperties": {
-        "type": "string"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "propertyNames": {
         "type": "string"
@@ -38,7 +52,7 @@
     },
     "fileGroups": {
       "title": "fileGroups",
-      "description": "A mapping of group IDs to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
+      "description": "A map of group identifiers to a list of file paths, globs, and environment variables, that can be referenced from tasks.",
       "type": "object",
       "additionalProperties": {
         "type": "array",
@@ -52,7 +66,7 @@
     },
     "id": {
       "title": "id",
-      "description": "Overrides the ID within the project graph, as defined in the workspace projects setting.",
+      "description": "Overrides the identifier within the project graph, as defined in the workspace projects setting. @since 1.18.0",
       "anyOf": [
         {
           "$ref": "#/definitions/Id"
@@ -61,7 +75,7 @@
           "type": "null"
         }
       ],
-      "markdownDescription": "Overrides the ID within the project graph, as defined in the workspace `projects` setting."
+      "markdownDescription": "Overrides the identifier within the project graph, as defined in the workspace `projects` setting. @since 1.18.0"
     },
     "language": {
       "title": "language",
@@ -75,7 +89,7 @@
     },
     "layer": {
       "title": "layer",
-      "description": "The layer within the project stack, for categorizing.",
+      "description": "The layer within the technology stack, for categorizing.",
       "default": "unknown",
       "allOf": [
         {
@@ -85,24 +99,10 @@
     },
     "owners": {
       "title": "owners",
-      "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
+      "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group. @since 1.8.0",
       "allOf": [
         {
           "$ref": "#/definitions/OwnersConfig"
-        }
-      ]
-    },
-    "platform": {
-      "title": "platform",
-      "description": "The default platform for all tasks within the project, if their platform is unknown.",
-      "default": "unknown",
-      "deprecated": true,
-      "anyOf": [
-        {
-          "$ref": "#/definitions/PlatformType"
-        },
-        {
-          "type": "null"
         }
       ]
     },
@@ -120,7 +120,7 @@
     },
     "stack": {
       "title": "stack",
-      "description": "The technology stack of the project, for categorizing.",
+      "description": "The technology stack of the project, for categorizing. @since 1.22.0",
       "default": "unknown",
       "allOf": [
         {
@@ -138,34 +138,25 @@
     },
     "tasks": {
       "title": "tasks",
-      "description": "A mapping of tasks by ID to parameters required for running the task.",
+      "description": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline.",
       "type": "object",
       "additionalProperties": {
         "$ref": "#/definitions/TaskConfig"
       },
       "propertyNames": {
         "$ref": "#/definitions/Id"
-      }
+      },
+      "markdownDescription": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline."
     },
-    "toolchain": {
-      "title": "toolchain",
+    "toolchains": {
+      "title": "toolchains",
       "description": "Overrides top-level toolchain settings, scoped to this project.",
       "allOf": [
         {
-          "$ref": "#/definitions/ProjectToolchainConfig"
+          "$ref": "#/definitions/ProjectToolchainsConfig"
         }
       ],
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
-    },
-    "type": {
-      "title": "type",
-      "description": "The layer within the project stack, for categorizing.",
-      "default": "unknown",
-      "allOf": [
-        {
-          "$ref": "#/definitions/LayerType"
-        }
-      ]
     },
     "workspace": {
       "title": "workspace",
@@ -181,7 +172,7 @@
   "additionalProperties": false,
   "definitions": {
     "DependencyScope": {
-      "description": "The scope and or relationship of the dependency.",
+      "description": "The relationship scope of a dependency.",
       "type": "string",
       "enum": [
         "build",
@@ -198,6 +189,114 @@
         "explicit",
         "implicit"
       ]
+    },
+    "DockerFileConfig": {
+      "description": "Configures Dockerfile generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
+      "type": "object",
+      "properties": {
+        "buildTask": {
+          "title": "buildTask",
+          "description": "A task identifier within the current project for building the project. If not defined, will skip the build step.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image": {
+          "title": "image",
+          "description": "The base Docker image to use. If not defined, will use the provided image from the first matching toolchain, otherwise defaults to \"scratch\".",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runPrune": {
+          "title": "runPrune",
+          "description": "Run the moon docker prune command after building the project, but before starting it. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker prune` command after building the project, but before starting it. @since 2.0.0"
+        },
+        "runSetup": {
+          "title": "runSetup",
+          "description": "Run the moon docker setup command after scaffolding, but before building the project. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker setup` command after scaffolding, but before building the project. @since 2.0.0"
+        },
+        "startTask": {
+          "title": "startTask",
+          "description": "A task identifier within the current project for starting the project within the CMD instruction. If not defined, will skip the start step and not include the CMD instruction.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "A task identifier within the current project for starting the project within the `CMD` instruction. If not defined, will skip the start step and not include the `CMD` instruction."
+        },
+        "template": {
+          "title": "template",
+          "description": "A custom template file, relative from the workspace root, to use when rendering the Dockerfile. Powered by Tera.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`. Powered by Tera."
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures `Dockerfile` generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level."
+    },
+    "DockerScaffoldConfig": {
+      "description": "Configures aspects of the Docker scaffolding process. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
+      "type": "object",
+      "properties": {
+        "configsPhaseGlobs": {
+          "title": "configsPhaseGlobs",
+          "description": "List of glob patterns in which to include/exclude files in the \"configs\" skeleton. Applies to both project and workspace level scaffolding.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sourcesPhaseGlobs": {
+          "title": "sourcesPhaseGlobs",
+          "description": "List of glob patterns in which to include/exclude files in the \"sources\" skeleton. Applies to both project and workspace level scaffolding.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures aspects of the Docker scaffolding process. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level."
     },
     "FileGroupInput": {
       "description": "A file group input.",
@@ -384,12 +483,32 @@
           "const": "batch"
         },
         {
+          "title": "CPlusPlus",
+          "const": "cplusplus"
+        },
+        {
+          "title": "CSharp",
+          "const": "csharp"
+        },
+        {
+          "title": "DotNet",
+          "const": "dotnet"
+        },
+        {
           "title": "Go",
           "const": "go"
         },
         {
+          "title": "Java",
+          "const": "java"
+        },
+        {
           "title": "JavaScript",
           "const": "javascript"
+        },
+        {
+          "title": "Kotlin",
+          "const": "kotlin"
         },
         {
           "title": "Php",
@@ -408,6 +527,10 @@
           "const": "rust"
         },
         {
+          "title": "Swift",
+          "const": "swift"
+        },
+        {
           "title": "TypeScript",
           "const": "typescript"
         },
@@ -418,13 +541,13 @@
         },
         {
           "title": "Other",
-          "description": "An unsupported language.",
+          "description": "A custom language.",
           "type": "string"
         }
       ]
     },
     "LayerType": {
-      "description": "The layer within the project stack, for categorizing.",
+      "description": "The layer within the technology stack, for categorizing.",
       "type": "string",
       "enum": [
         "application",
@@ -450,12 +573,12 @@
       ]
     },
     "OwnersConfig": {
-      "description": "Defines ownership of source code within the current project, by mapping file paths and globs to owners. An owner is either a user, team, or group.",
+      "description": "Defines ownership of source code within the current project, by mapping file paths and glob patterns to owners. An owner is either a user, team, or group.",
       "type": "object",
       "properties": {
         "customGroups": {
           "title": "customGroups",
-          "description": "Bitbucket only. A mapping of custom groups (prefixed with @@@), to a list of user and normal groups.",
+          "description": "Bitbucket only. A map of custom groups (prefixed with @@@), to a list of user and normal groups.",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -466,7 +589,7 @@
           "propertyNames": {
             "type": "string"
           },
-          "markdownDescription": "Bitbucket only. A mapping of custom groups (prefixed with `@@@`), to a list of user and normal groups."
+          "markdownDescription": "Bitbucket only. A map of custom groups (prefixed with `@@@`), to a list of user and normal groups."
         },
         "defaultOwner": {
           "title": "defaultOwner",
@@ -488,13 +611,13 @@
         },
         "paths": {
           "title": "paths",
-          "description": "A mapping of file paths and file globs to owners. When a list, the defaultOwner is the owner, and each item is a path. When an object, the key is a path, and the value is a list of owners.",
+          "description": "A list or map of file paths and glob patterns to owners. When a list, the defaultOwner is the owner, and each item is a path. When a map, the key is a path, and the value is a list of owners.",
           "allOf": [
             {
               "$ref": "#/definitions/OwnersPaths"
             }
           ],
-          "markdownDescription": "A mapping of file paths and file globs to owners. When a list, the `defaultOwner` is the owner, and each item is a path. When an object, the key is a path, and the value is a list of owners."
+          "markdownDescription": "A list or map of file paths and glob patterns to owners. When a list, the `defaultOwner` is the owner, and each item is a path. When a map, the key is a path, and the value is a list of owners."
         },
         "requiredApprovals": {
           "title": "requiredApprovals",
@@ -535,19 +658,6 @@
         }
       ]
     },
-    "PlatformType": {
-      "description": "Platforms that each programming language can belong to.",
-      "type": "string",
-      "enum": [
-        "bun",
-        "deno",
-        "node",
-        "python",
-        "rust",
-        "system",
-        "unknown"
-      ]
-    },
     "PluginLocator": {
       "description": "Strategies and protocols for locating plugins.",
       "type": "string"
@@ -558,7 +668,7 @@
       "properties": {
         "id": {
           "title": "id",
-          "description": "ID of the depended on project.",
+          "description": "Identifier of the depended on project.",
           "allOf": [
             {
               "$ref": "#/definitions/Id"
@@ -612,86 +722,27 @@
       ]
     },
     "ProjectDockerConfig": {
-      "description": "Configures our Docker integration.",
+      "description": "Configures our Docker integration. @since 1.27.0",
       "type": "object",
       "properties": {
         "file": {
           "title": "file",
-          "description": "Configures aspects of the Dockerfile generation process.",
+          "description": "Configures aspects of the Dockerfile generation process. @since 1.27.0",
           "allOf": [
             {
-              "$ref": "#/definitions/ProjectDockerFileConfig"
+              "$ref": "#/definitions/DockerFileConfig"
             }
           ],
-          "markdownDescription": "Configures aspects of the `Dockerfile` generation process."
+          "markdownDescription": "Configures aspects of the `Dockerfile` generation process. @since 1.27.0"
         },
         "scaffold": {
           "title": "scaffold",
-          "description": "Configures aspects of the Docker scaffolding process.",
+          "description": "Configures aspects of the Docker scaffolding process. @since 1.27.0",
           "allOf": [
             {
-              "$ref": "#/definitions/ProjectDockerScaffoldConfig"
+              "$ref": "#/definitions/DockerScaffoldConfig"
             }
           ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "ProjectDockerFileConfig": {
-      "description": "Configures Dockerfile generation.",
-      "type": "object",
-      "properties": {
-        "buildTask": {
-          "title": "buildTask",
-          "description": "A task within the current project for building the project.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Id"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "image": {
-          "title": "image",
-          "description": "The base Docker image.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "startTask": {
-          "title": "startTask",
-          "description": "A task within the current project for starting the project.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/Id"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false,
-      "markdownDescription": "Configures `Dockerfile` generation."
-    },
-    "ProjectDockerScaffoldConfig": {
-      "description": "Configures aspects of the Docker scaffolding process.",
-      "type": "object",
-      "properties": {
-        "include": {
-          "title": "include",
-          "description": "List of glob patterns, relative from the project root, to include (or exclude) in the sources skeleton.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "additionalProperties": false
@@ -746,7 +797,7 @@
       "properties": {
         "channel": {
           "title": "channel",
-          "description": "The Slack, Discord, etc, channel to discuss the project. Must start with a #.",
+          "description": "The Slack, Discord, IRC, etc, channel to discuss the project. Must start with a #.",
           "anyOf": [
             {
               "type": "string"
@@ -755,12 +806,19 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "The Slack, Discord, etc, channel to discuss the project. Must start with a `#`."
+          "markdownDescription": "The Slack, Discord, IRC, etc, channel to discuss the project. Must start with a `#`."
         },
         "description": {
           "title": "description",
-          "description": "A description on what the project does, and why it exists.",
-          "type": "string"
+          "description": "A description on what the project does and why it exists.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "maintainers": {
           "title": "maintainers",
@@ -788,19 +846,6 @@
             "type": "string"
           }
         },
-        "name": {
-          "title": "name",
-          "description": "A human-readable name of the project.",
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "A human-readable name of the project."
-        },
         "owner": {
           "title": "owner",
           "description": "The owner of the project. Can be an individual, team, or organization. The format is unspecified.",
@@ -812,50 +857,45 @@
               "type": "null"
             }
           ]
-        }
-      },
-      "additionalProperties": false
-    },
-    "ProjectToolchainCommonToolConfig": {
-      "description": "Overrides top-level toolchain settings.",
-      "type": "object",
-      "properties": {
-        "version": {
-          "title": "version",
-          "description": "Version of the tool this project will use.",
+        },
+        "title": {
+          "title": "title",
+          "description": "A human-readable title of the project.",
           "anyOf": [
             {
-              "$ref": "#/definitions/UnresolvedVersionSpec"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        }
-      },
-      "additionalProperties": false,
-      "markdownDescription": "Overrides top-level toolchain settings."
-    },
-    "ProjectToolchainConfig": {
-      "description": "Overrides top-level toolchain settings, scoped to this project.",
-      "type": "object",
-      "properties": {
-        "bun": {
-          "title": "bun",
-          "description": "Overrides bun settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
+              "type": "string"
             },
             {
               "type": "null"
             }
           ],
-          "markdownDescription": "Overrides `bun` settings."
+          "markdownDescription": "A human-readable title of the project."
+        }
+      },
+      "additionalProperties": false
+    },
+    "ProjectToolchainEntry": {
+      "description": "Variants a project-level toolchain can be configured.",
+      "anyOf": [
+        {
+          "type": "null"
         },
+        {
+          "type": "boolean"
+        },
+        {
+          "$ref": "#/definitions/ToolchainPluginConfig"
+        }
+      ],
+      "markdownDescription": "Variants a project-level toolchain can be configured."
+    },
+    "ProjectToolchainsConfig": {
+      "description": "Overrides top-level toolchain settings, scoped to this project.",
+      "type": "object",
+      "properties": {
         "default": {
           "title": "default",
-          "description": "The default toolchain(s) for all tasks within the project, if their toolchain is unknown.",
+          "description": "A single toolchain, or list of toolchains, to inherit for this project and all of its tasks. @since 1.31.0",
           "anyOf": [
             {
               "anyOf": [
@@ -877,7 +917,7 @@
         },
         "defaults": {
           "title": "defaults",
-          "description": "The default toolchain(s) for all tasks within the project, if their toolchain is unknown.",
+          "description": "A single toolchain, or list of toolchains, to inherit for this project and all of its tasks. @since 1.31.0",
           "anyOf": [
             {
               "anyOf": [
@@ -897,88 +937,24 @@
             }
           ]
         },
-        "deno": {
-          "title": "deno",
-          "description": "Overrides deno settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `deno` settings."
-        },
-        "node": {
-          "title": "node",
-          "description": "Overrides node settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `node` settings."
-        },
         "plugins": {
           "title": "plugins",
-          "description": "Overrides toolchains by their ID.",
+          "description": "Overrides workspace-level toolchains by their identifier.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/ProjectToolchainEntry"
           },
           "propertyNames": {
             "$ref": "#/definitions/Id"
-          }
-        },
-        "python": {
-          "title": "python",
-          "description": "Overrides python settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `python` settings."
-        },
-        "rust": {
-          "title": "rust",
-          "description": "Overrides rust settings.",
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ProjectToolchainCommonToolConfig"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Overrides `rust` settings."
+          },
+          "markdownDescription": "Overrides workspace-level toolchains by their identifier."
         }
       },
       "additionalProperties": false,
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
-    "ProjectToolchainEntry": {
-      "anyOf": [
-        {
-          "type": "null"
-        },
-        {
-          "type": "boolean"
-        },
-        {
-          "$ref": "#/definitions/ToolchainPluginConfig"
-        }
-      ]
-    },
     "ProjectWorkspaceConfig": {
-      "description": "Overrides top-level workspace settings, scoped to this project.",
+      "description": "Overrides workspace settings, scoped to this project.",
       "type": "object",
       "properties": {
         "inheritedTasks": {
@@ -991,16 +967,15 @@
           ]
         }
       },
-      "additionalProperties": false,
-      "markdownDescription": "Overrides top-level workspace settings, scoped to this project."
+      "additionalProperties": false
     },
     "ProjectWorkspaceInheritedTasksConfig": {
-      "description": "Controls how tasks are inherited.",
+      "description": "Controls how workspace-level tasks are inherited.",
       "type": "object",
       "properties": {
         "exclude": {
           "title": "exclude",
-          "description": "Excludes inheriting tasks by ID.",
+          "description": "Excludes inheriting tasks by their identifier.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/Id"
@@ -1008,7 +983,7 @@
         },
         "include": {
           "title": "include",
-          "description": "Only inherits tasks by ID, and ignores the rest. When not defined, inherits all matching tasks. When an empty list, inherits no tasks.",
+          "description": "Only inherits tasks with the provided identifiers, and ignores the rest. When not defined, inherits all matching tasks. When an empty list, inherits no tasks.",
           "anyOf": [
             {
               "type": "array",
@@ -1023,7 +998,7 @@
         },
         "rename": {
           "title": "rename",
-          "description": "Renames inherited tasks to a new ID.",
+          "description": "Renames inherited tasks by mapping their existing identifier to a new identifier, scoped to this project.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/definitions/Id"
@@ -1033,13 +1008,15 @@
           }
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Controls how workspace-level tasks are inherited."
     },
     "StackType": {
       "description": "The technology stack of the project, for categorizing.",
       "type": "string",
       "enum": [
         "backend",
+        "data",
         "frontend",
         "infrastructure",
         "systems",
@@ -1047,7 +1024,7 @@
       ]
     },
     "TaskArgs": {
-      "description": "Configures a command to execute, and its arguments.",
+      "description": "Configures a command and its arguments to execute.",
       "anyOf": [
         {
           "type": "null"
@@ -1078,10 +1055,25 @@
         },
         "command": {
           "title": "command",
-          "description": "The command or command line to execute when the task is ran. Supports the command name, with or without arguments. Can be defined as a string, or a list of individual arguments.",
+          "description": "The command line to execute when the task is ran. Supports the command (executable) with or without arguments. Can be defined as a string, or a list of individual arguments.",
           "allOf": [
             {
               "$ref": "#/definitions/TaskArgs"
+            }
+          ]
+        },
+        "dependsOn": {
+          "title": "dependsOn",
+          "description": "Other tasks that this task depends on, and must run to completion before this task is ran. Can depend on sibling tasks, or tasks in other projects, using targets.",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TaskDependency"
+              }
+            },
+            {
+              "type": "null"
             }
           ]
         },
@@ -1102,7 +1094,7 @@
         },
         "description": {
           "title": "description",
-          "description": "A human-readable description about the task.",
+          "description": "A human-readable description about the task. @since 1.22.0",
           "anyOf": [
             {
               "type": "string"
@@ -1114,12 +1106,19 @@
         },
         "env": {
           "title": "env",
-          "description": "A mapping of environment variables that will be set when the task is ran.",
+          "description": "A map of environment variables that will be set in the child process when the task is ran.",
           "anyOf": [
             {
               "type": "object",
               "additionalProperties": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "propertyNames": {
                 "type": "string"
@@ -1132,7 +1131,7 @@
         },
         "extends": {
           "title": "extends",
-          "description": "Extends settings from a sibling task by ID.",
+          "description": "Extends settings from a sibling task by identifier.",
           "anyOf": [
             {
               "$ref": "#/definitions/Id"
@@ -1144,7 +1143,7 @@
         },
         "inputs": {
           "title": "inputs",
-          "description": "Inputs and sources that will mark the task as affected when comparing against touched files. When not provided, all files within the project are considered an input. When an empty list, no files are considered. Otherwise, an explicit list of inputs are considered.",
+          "description": "A list of inputs that will be hashing and compared against changed files to determine affected status. If affected, the task will run, otherwise it will exit early. An input can be a literal file path, a glob pattern, environment variable, and more.  When not provided, all files within the project are considered inputs. When an empty list, no files are considered. Otherwise, an explicit list of inputs are considered.",
           "anyOf": [
             {
               "type": "array",
@@ -1157,23 +1156,9 @@
             }
           ]
         },
-        "local": {
-          "title": "local",
-          "description": "Marks the task as local only. Local tasks do not run in CI, do not have options.cache enabled, and are marked as options.persistent.",
-          "deprecated": true,
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "Marks the task as local only. Local tasks do not run in CI, do not have `options.cache` enabled, and are marked as `options.persistent`."
-        },
         "options": {
           "title": "options",
-          "description": "Options to control task inheritance and execution.",
+          "description": "Options to control task inheritance, execution, and more.",
           "allOf": [
             {
               "$ref": "#/definitions/TaskOptionsConfig"
@@ -1182,7 +1167,7 @@
         },
         "outputs": {
           "title": "outputs",
-          "description": "Outputs that will be created when the task has successfully ran. When cache is enabled, the outputs will be persisted for subsequent runs.",
+          "description": "A list of outputs that will be created when the task has successfully ran. An output can be a literal file path, or a glob pattern.",
           "anyOf": [
             {
               "type": "array",
@@ -1192,17 +1177,6 @@
             },
             {
               "type": "null"
-            }
-          ],
-          "markdownDescription": "Outputs that will be created when the task has successfully ran. When `cache` is enabled, the outputs will be persisted for subsequent runs."
-        },
-        "platform": {
-          "title": "platform",
-          "description": "The platform in which the task will be ran in. The platform determines available binaries, lookup paths, and more. When not provided, will be automatically detected.",
-          "default": "unknown",
-          "allOf": [
-            {
-              "$ref": "#/definitions/PlatformType"
             }
           ]
         },
@@ -1220,7 +1194,7 @@
         },
         "script": {
           "title": "script",
-          "description": "A script to run within a shell. A script is anything from a single command, to multiple commands (&&, etc), or shell specific syntax. Does not support arguments, merging, or inheritance.",
+          "description": "A script to run within a shell. A script is anything from a single command, to multiple commands, or shell specific syntax. Does not support arguments, merging, or inheritance. This overrides command and args. @since 1.27.0",
           "anyOf": [
             {
               "type": "string"
@@ -1228,41 +1202,56 @@
             {
               "type": "null"
             }
-          ]
+          ],
+          "markdownDescription": "A script to run within a shell. A script is anything from a single command, to multiple commands, or shell specific syntax. Does not support arguments, merging, or inheritance. This overrides `command` and `args`. @since 1.27.0"
         },
         "toolchain": {
           "title": "toolchain",
-          "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
+          "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
           "anyOf": [
             {
-              "$ref": "#/definitions/Id"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
             },
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Id"
-              }
+              "type": "null"
             }
           ]
         },
         "toolchains": {
           "title": "toolchains",
-          "description": "List of additional toolchain(s) in which the task will be ran in. The toolchain determines available binaries, lookup paths, and more. This list will be merged with detected toolchains.",
+          "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
           "anyOf": [
             {
-              "$ref": "#/definitions/Id"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Id"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Id"
+                  }
+                }
+              ]
             },
             {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Id"
-              }
+              "type": "null"
             }
           ]
         },
         "type": {
           "title": "type",
-          "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined.",
+          "description": "The type of task, primarily used for categorical reasons. When not provided, will be automatically determined based on configured outputs.",
           "default": "test",
           "anyOf": [
             {
@@ -1277,7 +1266,7 @@
       "additionalProperties": false
     },
     "TaskDependency": {
-      "description": "Configures another task that a task depends on.",
+      "description": "Configures another task that this task depends on.",
       "anyOf": [
         {
           "type": "string"
@@ -1302,10 +1291,17 @@
         },
         "env": {
           "title": "env",
-          "description": "A mapping of environment variables specific to this dependency.",
+          "description": "A map of environment variables specific to this dependency.",
           "type": "object",
           "additionalProperties": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "propertyNames": {
             "type": "string"
@@ -1313,7 +1309,7 @@
         },
         "optional": {
           "title": "optional",
-          "description": "Marks the dependency is optional when being inherited from the top-level.",
+          "description": "Marks the dependency as optional when being inherited from the top-level. @since 1.20.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -1322,7 +1318,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Marks the dependency is optional when being inherited from the top-level."
+          "markdownDescription": "Marks the dependency as optional when being inherited from the top-level. @since 1.20.0"
         },
         "target": {
           "title": "target",
@@ -1368,7 +1364,7 @@
       ]
     },
     "TaskOptionsConfig": {
-      "description": "Options to control task inheritance and execution.",
+      "description": "Options to control task inheritance, execution, and more.",
       "type": "object",
       "properties": {
         "affectedFiles": {
@@ -1396,7 +1392,7 @@
         },
         "affectedPassInputs": {
           "title": "affectedPassInputs",
-          "description": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of ..",
+          "description": "When affected and no files are matching, pass the task's inputs as arguments to the command, instead of ..",
           "anyOf": [
             {
               "type": "boolean"
@@ -1405,11 +1401,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "When affected and no files are matching, pass the task inputs as arguments to the command, instead of `.`."
+          "markdownDescription": "When affected and no files are matching, pass the task's inputs as arguments to the command, instead of `.`."
         },
         "allowFailure": {
           "title": "allowFailure",
-          "description": "Allows the task to fail without failing the entire pipeline.",
+          "description": "Allow the task to fail without failing the entire action pipeline. @since 1.13.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -1421,7 +1417,7 @@
         },
         "cache": {
           "title": "cache",
-          "description": "Caches the outputs of the task. Defaults to true if outputs are configured for the task.",
+          "description": "Cache the outputs of the task for incremental builds. Defaults to true if outputs are configured for the task.",
           "anyOf": [
             {
               "anyOf": [
@@ -1441,7 +1437,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Caches the `outputs` of the task. Defaults to `true` if outputs are configured for the task."
+          "markdownDescription": "Cache the `outputs` of the task for incremental builds. Defaults to `true` if outputs are configured for the task."
         },
         "cacheKey": {
           "title": "cacheKey",
@@ -1457,7 +1453,7 @@
         },
         "cacheLifetime": {
           "title": "cacheLifetime",
-          "description": "Lifetime to cache the task itself, in the format of \"1h\", \"30m\", etc. If not defined, caches live forever, or until inputs change.",
+          "description": "Lifetime to cache the task itself, in the format of \"1h\", \"30m\", etc. If not defined, caches live forever, or until inputs change. @since 1.29.0",
           "anyOf": [
             {
               "type": "string"
@@ -1469,7 +1465,7 @@
         },
         "envFile": {
           "title": "envFile",
-          "description": "Loads and sets environment variables from the .env file when running the task.",
+          "description": "Loads and sets environment variables from the .env file(s) when running the task.",
           "anyOf": [
             {
               "$ref": "#/definitions/TaskOptionEnvFile"
@@ -1478,11 +1474,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Loads and sets environment variables from the `.env` file when running the task."
+          "markdownDescription": "Loads and sets environment variables from the `.env` file(s) when running the task."
         },
         "inferInputs": {
           "title": "inferInputs",
-          "description": "Automatically infer inputs from file groups or environment variables that were utilized within command, script, args, and env.",
+          "description": "Automatically infer inputs from file groups or environment variables that were utilized within command, script, args, and env. @since 1.31.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -1491,11 +1487,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Automatically infer inputs from file groups or environment variables that were utilized within `command`, `script`, `args`, and `env`."
+          "markdownDescription": "Automatically infer inputs from file groups or environment variables that were utilized within `command`, `script`, `args`, and `env`. @since 1.31.0"
         },
         "interactive": {
           "title": "interactive",
-          "description": "Marks the task as interactive, so that it will run in isolation, and have direct access to stdin.",
+          "description": "Marks the task as interactive, so that it will run in isolation, and have direct access to stdin. @since 1.12.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -1507,7 +1503,7 @@
         },
         "internal": {
           "title": "internal",
-          "description": "Marks the task as internal, which disables it from begin ran from the command line, but can be depended on.",
+          "description": "Marks the task as internal, which disables it from being ran from the command line, but can still be depended on by other tasks. @since 1.23.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -1601,9 +1597,23 @@
           ],
           "markdownDescription": "The strategy to use when merging `outputs` with an inherited task."
         },
+        "mergeToolchains": {
+          "title": "mergeToolchains",
+          "description": "The strategy to use when merging toolchains with an inherited task. @since 2.0.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `toolchains` with an inherited task. @since 2.0.0"
+        },
         "mutex": {
           "title": "mutex",
-          "description": "Creates an exclusive lock on a virtual resource, preventing other tasks using the same resource from running concurrently.",
+          "description": "Creates an exclusive lock on a virtual resource, preventing other tasks using the same resource from running concurrently. @since 1.24.0",
           "anyOf": [
             {
               "type": "string"
@@ -1650,7 +1660,7 @@
         },
         "persistent": {
           "title": "persistent",
-          "description": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes.",
+          "description": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes. @since 1.6.0",
           "anyOf": [
             {
               "type": "boolean"
@@ -1659,11 +1669,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes."
+          "markdownDescription": "Marks the task as persistent (continuously running). This is ideal for watchers, servers, or never-ending processes. @since 1.6.0"
         },
         "priority": {
           "title": "priority",
-          "description": "Marks the task with a certain priority, which determines the order in which it is ran within the pipeline.",
+          "description": "Marks the task with a certain priority, which determines the order in which it is ran within the action pipeline.",
           "default": "normal",
           "anyOf": [
             {
@@ -1713,7 +1723,7 @@
         },
         "runInCI": {
           "title": "runInCI",
-          "description": "Whether to run the task in CI or not, when executing moon ci or moon run.",
+          "description": "Whether to run the task in CI or not, when executing moon ci, moon check, or moon run.",
           "anyOf": [
             {
               "anyOf": [
@@ -1735,11 +1745,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci` or `moon run`."
+          "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci`, `moon check`, or `moon run`."
         },
         "shell": {
           "title": "shell",
-          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on PATH resolution.",
+          "description": "Runs the task within a shell. When not defined, runs the task directly while relying on native PATH resolution.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1748,7 +1758,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Runs the task within a shell. When not defined, runs the task directly while relying on `PATH` resolution."
+          "markdownDescription": "Runs the task within a shell. When not defined, runs the task directly while relying on native `PATH` resolution."
         },
         "timeout": {
           "title": "timeout",
@@ -1764,7 +1774,7 @@
         },
         "unixShell": {
           "title": "unixShell",
-          "description": "The shell to run the task in when on a Unix-based machine.",
+          "description": "The shell to run the task in when on a Unix-based machine. @since 1.21.0",
           "default": "bash",
           "anyOf": [
             {
@@ -1774,11 +1784,11 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "The shell to run the task in when on a Unix-based machine."
+          "markdownDescription": "The shell to run the task in when on a Unix-based machine. @since 1.21.0"
         },
         "windowsShell": {
           "title": "windowsShell",
-          "description": "The shell to run the task in when on a Windows machine.",
+          "description": "The shell to run the task in when on a Windows machine. @since 1.21.0",
           "default": "pwsh",
           "anyOf": [
             {
@@ -1807,12 +1817,12 @@
       "description": "Preset options to inherit.",
       "type": "string",
       "enum": [
-        "server",
-        "watcher"
+        "utility",
+        "server"
       ]
     },
     "TaskPriority": {
-      "description": "The priority levels a task can be bucketed into.",
+      "description": "The priority levels a task can be bucketed into when running in the action pipeline.",
       "type": "string",
       "enum": [
         "critical",
@@ -1880,10 +1890,6 @@
             "type": "string"
           }
         },
-        "disabled": {
-          "title": "disabled",
-          "type": "boolean"
-        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use.",
@@ -1910,19 +1916,19 @@
         },
         "versionFromPrototools": {
           "title": "versionFromPrototools",
-          "description": "Inherit the version from the root .prototools. When true, matches using the same ID, otherwise a string can be provided for a custom ID.",
+          "description": "Inherit the version from the root .prototools. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier.",
           "allOf": [
             {
               "$ref": "#/definitions/ToolchainPluginVersionFrom"
             }
           ],
-          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same ID, otherwise a string can be provided for a custom ID."
+          "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
         }
       },
       "additionalProperties": false
     },
     "ToolchainPluginVersionFrom": {
-      "description": "Strategy in which to inherit a version from .prototools.",
+      "description": "The strategy in which to inherit a version from .prototools.",
       "anyOf": [
         {
           "type": "boolean"
@@ -1931,7 +1937,7 @@
           "type": "string"
         }
       ],
-      "markdownDescription": "Strategy in which to inherit a version from `.prototools`."
+      "markdownDescription": "The strategy in which to inherit a version from `.prototools`."
     },
     "UnresolvedVersionSpec": {
       "description": "Represents an unresolved version or alias that must be resolved to a fully-qualified version.",

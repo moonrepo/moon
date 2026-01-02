@@ -1442,13 +1442,7 @@ mod run_legacy {
 
             let output = assert.output();
 
-            // CI doesn't check the local index
-            if is_ci() {
-                assert!(predicate::str::contains("affected by changed files").eval(&output));
-                assert!(predicate::str::contains("untracked").eval(&output));
-            } else {
-                assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-            }
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
         }
 
         #[test]

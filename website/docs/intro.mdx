@@ -70,14 +70,14 @@ incrementally integrate and improve them over time. The 4 tiers are as follows:
   to infer dependencies, tasks, and other necessary information.
 - &nbsp;<Label text="Tier 3" variant="success" /> &nbsp; **Toolchain integration** - Language is
   directly supported in the toolchain, configured in
-  [`.moon/toolchain.yml`](/docs/config/toolchain), and will automatically be downloaded and
+  [`.moon/toolchains.yml`](/docs/config/toolchain), and will automatically be downloaded and
   installed.
 
 |                               | Tier 0 | Tier 1 | Tier 2 | Tier 3 |
 | :---------------------------- | :----: | :----: | :----: | :----: |
 | Bash/Batch                    |   🟢   |   🟢   |        |        |
 | Bun (JavaScript, TypeScript)  |   🟢   |   🟢   |   🟢   |   🟢   |
-| Deno (JavaScript, TypeScript) |   🟢   |   🟢   |   🟣   |   🟣   |
+| Deno (JavaScript, TypeScript) |   🟢   |   🟢   |   🟢   |   🟢   |
 | Go                            |   🟢   |   🟢   |   🟢   |   🟢   |
 | Node (JavaScript, TypeScript) |   🟢   |   🟢   |   🟢   |   🟢   |
 | └─ npm, pnpm, yarn            |   🟢   |   ⚪️   |   🟢   |   🟢   |
@@ -88,7 +88,7 @@ incrementally integrate and improve them over time. The 4 tiers are as follows:
 | Ruby                          |   🟢   |   🟢   |        |        |
 | └─ Gems, Bundler              |   🟢   |   ⚪️   |        |        |
 | Rust                          |   🟢   |   🟢   |   🟢   |   🟢   |
-| └─ Cargo                      |   🟢   |   ⚪️   |   🟣   |   🟣   |
+| └─ Cargo                      |   🟢   |   ⚪️   |   🟢   |   🟢   |
 | Other (Kotlin, Java, C#, ...) |   🟢   |        |        |        |
 
 - ⚪️ Not applicable

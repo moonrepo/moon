@@ -2,9 +2,9 @@
 title: project
 ---
 
-The `moon project <name>` (or `moon p`) command will display all available information about a
-project that has been configured and exists within the graph. If a project does not exist, the
-program will return with a 1 exit code.
+The `moon project [id]` (or `moon p`) command will display all available information about a project
+that has been configured and exists within the graph. If a project does not exist, the program will
+return with a 1 exit code.
 
 ```shell
 $ moon project web
@@ -12,11 +12,12 @@ $ moon project web
 
 ### Arguments
 
-- `<name>` - Name or alias of a project, as defined in [`projects`](../config/workspace#projects).
+- `[id]` - ID or alias of a project, as defined in [`projects`](../config/workspace#projects).
 
 ### Options
 
 - `--json` - Print the project and its configuration as JSON.
+- `--no-tasks` - Do not list tasks for the project.
 
 ## Example output
 

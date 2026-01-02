@@ -1,0 +1,29 @@
+---
+title: projects
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.0.0" header />
+
+The `moon projects` command will list all projects configured in the workspace as a table of
+information.
+
+```shell
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│Project          Source                    Stack             Layer             Toolchains                                Description                                                   │
+│───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│types            packages/types            frontend          library           javascript, node, typescript, yarn                                                                      │
+│website          website                   frontend          application       javascript, node, typescript, yarn        A static website powered by Docusaurus.                       │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+:::info
+
+Use [`moon query projects`](./query/projects) for advanced querying and filtering of projects.
+
+:::
+
+### Options
+
+- `--json` - Print the projects as JSON.

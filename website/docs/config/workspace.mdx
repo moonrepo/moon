@@ -1,5 +1,5 @@
 ---
-title: .moon/workspace.{pkl,yml}
+title: .moon/workspace.*
 toc_max_heading_level: 6
 ---
 
@@ -11,16 +11,6 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/workspace.yml` file configures projects and services in the workspace. This file is
 _required_.
-
-```yaml title=".moon/workspace.yml"
-$schema: 'https://moonrepo.dev/schemas/workspace.json'
-```
-
-:::info
-
-Workspace configuration can also be written in [Pkl](../guides/pkl-config) instead of YAML.
-
-:::
 
 ## `extends`
 
@@ -108,6 +98,29 @@ projects:
     www: 'www'
 ```
 
+Additionally, you can customize the format of project IDs for glob discovered projects. By default
+it inherits the fodler name, but this has a high chance of collision. Instead you can configure
+`globFormat` to use a different format, for example, using the full workspace relative path as the
+project ID.
+
+```yaml title=".moon/workspace.yml"
+projects:
+  globFormat: 'source-path'
+  globs:
+    - 'packages/**/moon.yml'
+```
+
+## `defaultProject`<VersionLabel version="2.0.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#defaultProject" />
+
+Defines the default project to focus on when no project scope is specified on the command line for
+task targets.
+
+```yaml title=".moon/workspace.yml" {2}
+defaultProject: 'web'
+```
+
 ## `codeowners`<VersionLabel version="1.8.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#codeowners" />
@@ -135,16 +148,16 @@ codeowners:
 <HeadingApiLink to="/api/types/interface/CodeownersConfig#orderBy" />
 
 The order in which code owners, grouped by project, are listed in the `CODEOWNERS` file. Accepts
-"file-source" (default) or "project-name".
+"file-source" (default) or "project-id".
 
 ```yaml title=".moon/workspace.yml" {2}
 codeowners:
-  orderBy: 'project-name'
+  orderBy: 'project-id'
 ```
 
-### `syncOnRun`
+### `sync`
 
-<HeadingApiLink to="/api/types/interface/CodeownersConfig#syncOnRun" />
+<HeadingApiLink to="/api/types/interface/CodeownersConfig#sync" />
 
 Will automatically generate a `CODEOWNERS` file by aggregating and syncing all project
 [`owners`](./project#owners) in the workspace when a [target is run](../concepts/target). The format
@@ -153,7 +166,7 @@ to `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 codeowners:
-  syncOnRun: true
+  sync: true
 ```
 
 ## `constraints`
@@ -166,9 +179,6 @@ also known as project boundaries.
 ### `enforceLayerRelationships`
 
 <HeadingApiLink to="/api/types/interface/ConstraintsConfig#enforceLayerRelationships" />
-
-> This was previously known as `enforceProjectTypeRelationships` and was renamed to
-> `enforceLayerRelationships` in v1.39.
 
 Enforces allowed relationships between a project and its dependencies based on the project's
 [`layer`](./project#layer) and [`stack`](./project#stack) settings. When a project depends on
@@ -257,9 +267,9 @@ docker:
 
 > This process happens before toolchain dependencies are installed.
 
-#### `installToolchainDeps`
+#### `installToolchainDependencies`
 
-<HeadingApiLink to="/api/types/interface/DockerPruneConfig#installToolchainDeps" />
+<HeadingApiLink to="/api/types/interface/DockerPruneConfig#installToolchainDependencies" />
 
 Automatically install production dependencies for all required toolchain's of the focused projects
 within the Docker build. For example, `node_modules` for JavaScript. Defaults to `true`.
@@ -267,7 +277,7 @@ within the Docker build. For example, `node_modules` for JavaScript. Defaults to
 ```yaml title=".moon/workspace.yml" {3}
 docker:
   prune:
-    installToolchainDeps: false
+    installToolchainDependencies: false
 ```
 
 > This process happens after vendor directories are deleted.
@@ -280,24 +290,7 @@ Configures aspects of the Docker scaffolding process when
 [`moon docker scaffold`](../commands/docker/scaffold) is executed. Only applies to the
 [workspace skeleton](../commands/docker/scaffold#workspace).
 
-#### `copyToolchainFiles`
-
-<HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#copyToolchainFiles" />
-
-Copy all toolchain specific configs, manifests, and related files in the entire repository into the
-`.moon/docker/workspace` skeleton. This is required for certain tools, like package managers, to
-work correctly. Defaults to `true`.
-
-```yaml title=".moon/workspace.yml" {3}
-docker:
-  scaffold:
-    copyToolchainFiles: false
-```
-
-> If you disable this feature, you'll most likely need to manually `COPY` all necessary files in
-> your `Dockerfile`.
-
-#### `include`
+#### `configsPhaseGlobs`
 
 <HeadingApiLink to="/api/types/interface/DockerScaffoldConfig#include" />
 
@@ -307,7 +300,7 @@ skeleton. When not defined, does nothing.
 ```yaml title=".moon/workspace.yml" {3,4}
 docker:
   scaffold:
-    include:
+    configsPhaseGlobs:
       - '**/package.json'
 ```
 
@@ -348,43 +341,6 @@ experiments:
   gitV2: true
 ```
 
-## `extensions`<VersionLabel version="1.20.0" />
-
-<HeadingApiLink to="/api/types/interface/WorkspaceConfig#extensions" />
-
-A mapping of extensions that can be downloaded and executed with the [`moon ext`](../commands/ext)
-command. An extension is a WASM plugin, and the location of the WASM file must be defined with the
-`plugin` field, which requires a
-[plugin locator string](../guides/wasm-plugins#configuring-plugin-locations).
-
-```yaml title=".moon/workspace.yml" {2-5}
-extensions:
-  example:
-    plugin: 'file://./path/to/example.wasm'
-    # or
-    plugin: 'https://example.com/path/to/example.wasm'
-```
-
-Additionally, extensions support custom configuration that is passed to the WASM runtime when the
-plugin is instantiated. This configuration is defined by inserting additional fields under the
-extension name, relative to the `plugin` field. Each extension may have its own settings, so refer
-to their documentation for more information.
-
-```yaml title=".moon/workspace.yml" {2-5}
-extensions:
-  example:
-    plugin: 'file://./path/to/example.wasm'
-    setting1: true
-    setting2: 'abc'
-```
-
-:::info
-
-View our official [extensions guide](../guides/extensions) for more information, including built-in
-extensions!
-
-:::
-
 ## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />
@@ -419,24 +375,6 @@ generator:
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#hasher" />
 
 Configures aspects of the smart hashing layer.
-
-### `batchSize`
-
-<HeadingApiLink to="/api/types/interface/HasherConfig#batchSize" />
-
-> This setting is deprecated!
-
-When hashing a list of files, we split the list into batches to help reduce memory footprint and
-avoid overloading the configured VCS. This setting controls how many files are in each batch and
-defaults to `2500`.
-
-If you're running into memory issues, or moon hanging during the file hashing process, lowering this
-number may help resolve the issue.
-
-```yaml title=".moon/workspace.yml" {2}
-hasher:
-  batchSize: 1000
-```
 
 ### `ignoreMissingPatterns`<VersionLabel version="1.10.0" />
 
@@ -574,31 +512,6 @@ notifier:
 
 Configures aspects of task running and the action pipeline.
 
-### `archivableTargets`
-
-<HeadingApiLink to="/api/types/interface/PipelineConfig#archivableTargets" />
-
-:::info
-
-This setting is deprecated and purely existed for moonbase, our old cloud remote caching service.
-Going forward, if using Bazel Remote Caching, all tasks are automatically cached (archived).
-
-:::
-
-Defines a list of [targets](../concepts/target), with or without scope, that will be cached and
-archived within the pipeline. Tasks that produce [outputs](./project#outputs) are automatically
-archived, and do not need to be defined here. Defaults to an empty list.
-
-```yaml title=".moon/workspace.yml" {2-4}
-pipeline:
-  archivableTargets:
-    - ':test'
-    - 'app:typecheck'
-```
-
-> This setting primarily exists for [remote caching](../guides/remote-cache) as it will create and
-> persist tar archives located in `.moon/cache/outputs`.
-
 ### `autoCleanCache`<VersionLabel version="1.24.0" />
 
 <HeadingApiLink to="/api/types/interface/PipelineConfig#autoCleanCache" />
@@ -722,9 +635,9 @@ pipeline:
 
 > The [`moon sync ...`](../commands/sync) sub-commands can be executed to manually sync features.
 
-## `unstable_remote`<VersionLabel version="1.30.0" />
+## `remote`<VersionLabel version="1.30.0" />
 
-<HeadingApiLink to="/api/types/interface/WorkspaceConfig#unstable_remote" />
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#remote" />
 
 Configures a remote service, primarily for cloud-based caching of artifacts. Learn more about this
 in the [remote caching](../guides/remote-cache) guide.
@@ -740,7 +653,7 @@ communicating with. Supports the following:
 - `http` - Uses the HTTP API: https://bazel.build/remote/caching#http-caching
 
 ```yaml title=".moon/workspace.yml" {2}
-unstable_remote:
+remote:
   api: 'grpc'
 ```
 
@@ -758,7 +671,7 @@ A mapping of HTTP headers to include in all requests to the remote server. These
 to all [API formats and protocols](#api), not just HTTP.
 
 ```yaml title=".moon/workspace.yml" {2-4}
-unstable_remote:
+remote:
   auth:
     headers:
       'X-Custom-Header': 'value'
@@ -775,7 +688,7 @@ An `Authorization` HTTP header will be included in all requests to the remote se
 If the token does not exist, or is not enabled, remote caching will be disabled.
 
 ```yaml title=".moon/workspace.yml" {2-4}
-unstable_remote:
+remote:
   auth:
     token: 'ENV_VAR_NAME'
 ```
@@ -795,7 +708,7 @@ The compression format to use when uploading/downloading blobs. Supports `none` 
 defaults to no compression (`identity` format in RE API).
 
 ```yaml title=".moon/workspace.yml" {3}
-unstable_remote:
+remote:
   cache:
     compression: 'zstd'
 ```
@@ -816,7 +729,7 @@ used to distinguish between the various instances on the host. This allows the s
 to serve and partition multiple moon repositories. Defaults to `moon-outputs`.
 
 ```yaml title=".moon/workspace.yml" {3}
-unstable_remote:
+remote:
   cache:
     instanceName: 'custom-dir-name'
 ```
@@ -831,7 +744,7 @@ When enabled and developing locally, existing remote blobs will only be download
 blobs will _not_ be uploaded. Blobs will only be uploaded in CI environments.
 
 ```yaml title=".moon/workspace.yml" {3}
-unstable_remote:
+remote:
   cache:
     localReadOnly: true
 ```
@@ -845,7 +758,7 @@ contents. This will reduce performance but ensure partial or corrupted blobs won
 Defaults to `false`.
 
 ```yaml title=".moon/workspace.yml" {3}
-unstable_remote:
+remote:
   cache:
     verifyIntegrity: true
 ```
@@ -858,7 +771,7 @@ The host URL to communicate with when uploading and downloading artifacts. Suppo
 `grpc(s)://` and `http(s)://` protocols. This field is required!
 
 ```yaml title=".moon/workspace.yml" {2}
-unstable_remote:
+remote:
   host: 'grpcs://your-host.com:9092'
 ```
 
@@ -870,7 +783,7 @@ Connect to the host using server and client authentication with mTLS. This takes
 normal TLS.
 
 ```yaml title=".moon/workspace.yml" {3-7}
-unstable_remote:
+remote:
   # ...
   mtls:
     caCert: 'certs/ca.pem'
@@ -920,7 +833,7 @@ The domain name in which to verify the TLS certificate.
 Connect to the host using server-only authentication with TLS.
 
 ```yaml title=".moon/workspace.yml" {3-5}
-unstable_remote:
+remote:
   # ...
   tls:
     cert: 'certs/ca.pem'
@@ -946,12 +859,6 @@ certificate (typically `ca.pem`).
 <HeadingApiLink to="/api/types/interface/RemoteTlsConfig#domain" />
 
 The domain name in which to verify the TLS certificate.
-
-## `runner`
-
-<HeadingApiLink to="/api/types/interface/WorkspaceConfig#pipeline" />
-
-This setting was renamed to [`pipeline`](#pipeline) but still works for backwards compatibility.
 
 ## `telemetry`
 
@@ -1024,7 +931,7 @@ vcs:
   hookFormat: 'bash'
 ```
 
-### `manager`
+### `client`
 
 <HeadingApiLink to="/api/types/interface/VcsConfig#manager" />
 
@@ -1033,7 +940,7 @@ Expect more version control systems in the future!
 
 ```yaml title=".moon/workspace.yml" {2}
 vcs:
-  manager: 'git'
+  client: 'git'
 ```
 
 ### `provider`<VersionLabel version="1.8.0" />
@@ -1062,19 +969,19 @@ vcs:
     - 'upstream'
 ```
 
-### `syncHooks`<VersionLabel version="1.9.0" />
+### `sync`<VersionLabel version="1.9.0" />
 
-<HeadingApiLink to="/api/types/interface/VcsConfig#syncHooks" />
+<HeadingApiLink to="/api/types/interface/VcsConfig#sync" />
 
 Will automatically generate [hook scripts](#hooks) to `.moon/hooks` and sync the scripts to the
-local VCS checkout. The hooks format and location is based on the [`vcs.manager`](#manager) setting.
+local VCS checkout. The hooks format and location is based on the [`vcs.client`](#client) setting.
 Defaults to `false`.
 
 ```yaml title=".moon/workspace.yml" {4}
 vcs:
   hooks:
     # ...
-  syncHooks: true
+  sync: true
 ```
 
 :::caution

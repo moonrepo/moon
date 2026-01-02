@@ -1,0 +1,38 @@
+---
+title: template
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.0.0" header />
+
+The `moon template [id]` command will display information about a template, its files, and
+variables.
+
+```shell
+Template title ───────────────────────────────────────────────────────────
+
+  Some description of the template and its files.
+
+About ────────────────────────────────────────────────────────────────────
+
+  Template: package
+  Location: /templates/package
+  Destination: packages/[name | kebab_case]
+  Extends: —
+  Assets: —
+  Files:
+    - package.json
+
+Variables ────────────────────────────────────────────────────────────────
+
+  name: string
+```
+
+### Arguments
+
+- `[id]` - The template ID.
+
+### Options
+
+- `--json` - Print the template as JSON.

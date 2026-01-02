@@ -19,7 +19,7 @@ tasks:
     inputs:
       - '@globs(sources)'
       - 'Cargo.toml'
-    local: true
+    preset: 'server'
   format:
     command: 'cargo fmt --all --check'
     inputs:

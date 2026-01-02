@@ -10,14 +10,14 @@ command for verifying the current state of a project, instead of running multipl
 [`moon run`](./run) commands.
 
 ```shell
-# Check project at current working directory
-$ moon check
-
 # Check project by name
 $ moon check app
 
 # Check multiple projects by name
 $ moon check client server
+
+# Check project at current working directory
+$ moon check --closest
 
 # Check ALL projects (may be costly)
 $ moon check --all
@@ -25,17 +25,18 @@ $ moon check --all
 
 ### Arguments
 
-- `[...names]` - List of project names or aliases to explicitly check, as defined in
+- `[...id]` - List of project IDs or aliases to explicitly check, as defined in
   [`projects`](../config/workspace#projects).
 
 ### Options
 
+Inherits all options from [`moon exec`](./exec) except for `--on-failure`.
+
 - `--all` - Run check for all projects in the workspace.
-- `-u`, `--updateCache` - Bypass cache and force update any existing items.
-- `--summary` - Display a summary and stats of the current run. <VersionLabel version="1.25.0" />
+- `--closest` - Run check for the closest project starting from the current working directory.
 
 ### Configuration
 
 - [`projects`](../config/workspace#projects) in `.moon/workspace.yml`
-- [`tasks`](../config/tasks#tasks) in `.moon/tasks.yml`
+- [`tasks`](../config/tasks#tasks) in `.moon/tasks/all.yml`
 - [`tasks`](../config/project#tasks) in `moon.yml`

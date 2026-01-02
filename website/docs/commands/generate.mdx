@@ -2,7 +2,7 @@
 title: generate
 ---
 
-The `moon generate <name>` (or `moon g`) command will generate code (files and folders) from a
+The `moon generate <id>` (or `moon g`) command will generate code (files and folders) from a
 pre-defined template of the same name, using an interactive series of prompts. Templates are located
 based on the [`generator.templates`](../config/workspace#templates) setting.
 
@@ -11,10 +11,10 @@ based on the [`generator.templates`](../config/workspace#templates) setting.
 $ moon generate npm-package
 
 # Generate code from a template to a target directory
-$ moon generate npm-package ./packages/example
+$ moon generate npm-package --to ./packages/example
 
 # Generate code while declaring custom variable values
-$ moon generate npm-package ./packages/example -- --name "@company/example"
+$ moon generate npm-package --to ./packages/example -- --name "@company/example"
 
 # Create a new template
 $ moon generate react-app --template
@@ -25,17 +25,17 @@ $ moon generate react-app --template
 
 ### Arguments
 
-- `<name>` - Name of the template to generate.
-- `[dest]` - Destination to write files to, relative from the current working directory. If not
-  defined, will be prompted during generation.
+- `<id>` - ID of the template to generate.
 - `[-- <vars>]` - Additional arguments to override default variable values.
 
 ### Options
 
 - `--defaults` - Use the default value of all variables instead of prompting the user.
-- `--dryRun` - Run entire generator process without writing files.
+- `--dry-run` - Run entire generator process without writing files.
 - `--force` - Force overwrite any existing files at the destination.
 - `--template` - Create a new template with the provided name.
+- `--to` - Destination to write files to, relative from the current working directory. If not
+  defined, will be prompted during generation.
 
 ### Configuration
 

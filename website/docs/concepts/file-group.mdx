@@ -10,7 +10,7 @@ change, deterministic builds, and more.
 ## Configuration
 
 File groups can be configured per project through [`moon.yml`](../config/project), or for many
-projects through [`.moon/tasks.yml`](../config/tasks).
+projects through [`.moon/tasks/all.yml`](../config/tasks).
 
 ### Token functions
 
@@ -36,7 +36,7 @@ _override_ file groups defined at the workspace-level. For example, say we want 
 `sources` file group because our source folder is named "lib" and not "src", we would define our
 file groups as followed.
 
-```yaml title=".moon/tasks.yml"
+```yaml title=".moon/tasks/all.yml"
 fileGroups:
   sources:
     - 'src/**/*'

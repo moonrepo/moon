@@ -1,5 +1,5 @@
 ---
-title: moon.{pkl,yml}
+title: moon.*
 toc_max_heading_level: 6
 ---
 
@@ -10,16 +10,6 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 The `moon.yml` configuration file _is not required_ but can be used to define additional metadata
 for a project, override inherited tasks, and more at the project-level. When used, this file must
 exist in a project's root, as configured in [`projects`](./workspace#projects).
-
-```yaml title="moon.yml"
-$schema: 'https://moonrepo.dev/schemas/project.json'
-```
-
-:::info
-
-Project configuration can also be written in [Pkl](../guides/pkl-config) instead of YAML.
-
-:::
 
 ## `dependsOn`
 
@@ -241,7 +231,7 @@ The `project` setting defines metadata about the project itself.
 
 ```yaml title="moon.yml"
 project:
-  name: 'moon'
+  title: 'moon'
   description: 'A monorepo management tool.'
   channel: '#moon'
   owner: 'infra.platform'
@@ -272,20 +262,7 @@ is the kind of information search engines would index on.
 A list of people/developers that maintain the project, review code changes, and can provide support.
 Can be a name, email, LDAP name, GitHub username, etc, the choice is yours.
 
-### `metadata`<VersionLabel version="1.27.0" />
-
-<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#metadata" />
-
-A map of custom metadata to associate to this project. Supports all value types that are valid JSON.
-
-```yaml title="moon.yml"
-project:
-  # ...
-  metadata:
-    deprecated: true
-```
-
-### `name`
+### `title`
 
 <HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#name" />
 
@@ -299,6 +276,19 @@ A human readable name of the project. This is _different_ from the unique projec
 The team or organization that owns the project. Can be a title, LDAP name, GitHub team, etc. We
 suggest _not_ listing people/developers as the owner, use [maintainers](#maintainers) instead.
 
+### Custom fields<VersionLabel version="2.0.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectMetadataConfig#metadata" />
+
+Additional fields can be configured as custom metadata to associate to this project. Supports all
+value types that are valid JSON.
+
+```yaml title="moon.yml"
+project:
+  # ...
+  deprecated: true
+```
+
 ## `stack`<VersionLabel version="1.22.0" />
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#stack" />
@@ -306,8 +296,9 @@ suggest _not_ listing people/developers as the owner, use [maintainers](#maintai
 The technology stack this project belongs to, primarily for categorization. Supports the following
 values:
 
+- `backend` - Server-side APIs, etc.
+- `data` - Data sources, database layers, etc. <VersionLabel version="2.0.0" />
 - `frontend` - Client-side user interfaces, etc.
-- `backend` - Server-side APIs, database layers, etc.
 - `infrastructure` - Cloud/server infrastructure, Docker, etc.
 - `systems` - Low-level systems programming.
 - `unknown` (default) - When not configured.
@@ -406,9 +397,9 @@ Configures aspects of the Docker scaffolding process when
 [`moon docker scaffold`](../commands/docker/scaffold) is executed. Only applies to the
 [sources skeleton](../commands/docker/scaffold#sources).
 
-#### `include`
+#### `sourcesPhaseGlobs`
 
-<HeadingApiLink to="/api/types/interface/ProjectDockerScaffoldConfig#include" />
+<HeadingApiLink to="/api/types/interface/ProjectDockerScaffoldConfig#sourcesPhaseGlobs" />
 
 List of globs in which to copy project-relative files into the `.moon/docker/sources` skeleton. When
 not defined, defaults to `**/*`.
@@ -416,7 +407,7 @@ not defined, defaults to `**/*`.
 ```yaml title="moon.yml" {3,4}
 docker:
   scaffold:
-    include:
+    sourcesPhaseGlobs:
       - 'src/**/*'
 ```
 
@@ -444,7 +435,7 @@ Defines [file groups](../concepts/file-group) to be used by local tasks. By defa
 _is not required_ for the following reasons:
 
 - File groups are an optional feature, and are designed for advanced use cases.
-- File groups defined in [`.moon/tasks.yml`](./tasks) will be inherited by all projects.
+- File groups defined in [`.moon/tasks/all.yml`](./tasks) will be inherited by all projects.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
 list of [globs or file paths](../concepts/file-pattern), or environment variables. Globs and paths
@@ -524,7 +515,7 @@ tasks:
   lint-fix:
     extends: 'lint'
     args: '--fix'
-    local: true
+    preset: 'utility'
 ```
 
 ### `description`<VersionLabel version="1.22.0" />
@@ -907,34 +898,6 @@ tasks:
         filter: ['src/**/*']
 ```
 
-### `local`
-
-<HeadingApiLink to="/api/types/interface/TaskConfig#local" />
-
-:::info
-
-This setting is deprecated and will be removed in v2. We suggest using [`preset`](#preset) instead.
-
-:::
-
-Marks the task as local only. This should primarily be enabled for long-running or never-ending
-tasks, like development servers and watch mode. Defaults to `true` if the task name is "dev",
-"start", or "serve", and `false` otherwise.
-
-This is a convenience setting for local development that sets the following task options:
-
-- [`cache`](#cache) -> Turned off
-- [`outputStyle`](#outputstyle) -> Set to "stream"
-- [`persistent`](#persistent) -> Turned on
-- [`runInCI`](#runinci) -> Turned off
-
-```yaml title="moon.yml" {5}
-tasks:
-  dev:
-    command: 'webpack server'
-    local: true
-```
-
 ### `outputs`
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#outputs" />
@@ -1019,9 +982,12 @@ are available:
   - [`outputStyle`](#outputstyle) -> Set to "stream"
   - [`persistent`](#persistent) -> Turned on
   - [`runInCI`](#runinci) -> Turned off
-- `watcher`
-  - Inherits `server` options
+- `utility` <VersionLabel version="2.0.0" />
+  - [`cache`](#cache) -> Turned off
   - [`interactive`](#interactive) -> Turned on
+  - [`outputStyle`](#outputstyle) -> Set to "stream"
+  - [`persistent`](#persistent) -> Turned off
+  - [`runInCI`](#runinci) -> Skipped
 
 Tasks named "dev", "start", or "serve" are marked as `server` automatically.
 
@@ -1062,7 +1028,7 @@ more about [commands vs scripts](../concepts/task#commands-vs-scripts).
 
 :::
 
-### `toolchain`<VersionLabel version="1.31.0" />
+### `toolchains`<VersionLabel version="1.31.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#toolchain" />
 
@@ -1074,7 +1040,7 @@ project's [`language`](#language), default [`toolchain.default`](#toolchain-1), 
 tasks:
   env:
     command: 'printenv'
-    toolchain: 'system'
+    toolchains: 'system'
 ```
 
 This setting also supports multiple values.
@@ -1083,7 +1049,7 @@ This setting also supports multiple values.
 tasks:
   build:
     command: 'npm run build'
-    toolchain: ['javascript', 'node', 'npm']
+    toolchains: ['javascript', 'node', 'npm']
 ```
 
 ### `options`
@@ -1261,6 +1227,16 @@ tasks:
       envFile: '/.env.shared'
 ```
 
+When set to `true`, moon will load the following files in order, with later files taking precedence
+over earlier ones:
+
+- `/.env`
+- `/.env.local`
+- `.env`
+- `.env.local`
+- `.env.<task_id>`
+- `.env.<task_id>.local`
+
 Additionally, a list of file paths can also be provided. When using a list, the order of the files
 is important, as environment variables from all files will be aggregated into a single map, with
 subsequent files taking precedence over previous ones. Once aggregated, the variables will be passed
@@ -1276,20 +1252,12 @@ tasks:
         - '.env.production'
 ```
 
-:::caution
-
-File parsing is done using the Rust [`dotenvy`](https://crates.io/crates/dotenvy) crate, which is
-_different_ than the Node.js [`dotenv`](https://www.npmjs.com/package/dotenv) package. The biggest
-differences are around quote handling and variable substitution, so be aware of this!
-
-:::
-
 #### `inferInputs`<VersionLabel version="1.31.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#inferInputs" />
 
 Automatically infer [inputs](#inputs) based on the following parameters configured within the task's
-`command`, `script`, `args`, or `env`. Defaults to `true`.
+`command`, `script`, `args`, or `env`. Defaults to `false`.
 
 - File/glob paths derived from [file group based token functions](../concepts/token#file-groups).
 - Environment variables being substituted within a command or script.
@@ -1325,7 +1293,7 @@ Marks the task as interactive. [Interactive tasks](../concepts/task#interactive)
 that they can interact with stdin.
 
 This setting also disables caching, turns of CI, and other functionality, similar to the
-[`local`](#local) setting.
+[`preset`](#preset) setting.
 
 ```yaml title="moon.yml" {5}
 tasks:
@@ -1377,6 +1345,13 @@ The [strategy](../concepts/task-inheritance#merge-strategies) to use when mergin
 
 The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
 [`outputs`](#outputs) list with an inherited task. Defaults to "append".
+
+#### `mergeToolchains`
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeToolchains" />
+
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`toolchains`](#toolchains) list with an inherited task. Defaults to "append".
 
 #### `mutex`<VersionLabel version="1.24.0" />
 
@@ -1467,8 +1442,8 @@ tasks:
       persistent: true
 ```
 
-> We suggest using the [`local`](#local) setting instead, which enables this setting, amongst other
-> useful settings.
+> We suggest using the [`preset`](#preset) setting instead, which enables this setting, amongst
+> other useful settings.
 
 #### `priority`<VersionLabel version="1.35.0" />
 
@@ -1612,7 +1587,7 @@ tasks:
 
 Customize the shell to run with when on a Unix operating system. Accepts `bash`, `elvish`, `fish`,
 `ion`, `murex`, `nu`, `pwsh`, `xonsh`, or `zsh`. If not defined, will derive the shell from the
-`SHELL` environment variable, or defaults to `sh`.
+`SHELL` environment variable, or defaults to `bash`.
 
 ```yaml title="moon.yml" {5}
 tasks:
@@ -1641,9 +1616,9 @@ tasks:
 
 Dictates how a project interacts with settings defined at the top-level.
 
-## `toolchain`
+## `toolchains`
 
-<HeadingApiLink to="/api/types/interface/ProjectConfig#toolchain" />
+<HeadingApiLink to="/api/types/interface/ProjectConfig#toolchains" />
 
 ### `default`<VersionLabel version="1.31.0" />
 
@@ -1654,7 +1629,7 @@ The default [`toolchain`](#toolchain-1) for all task's within the current projec
 value, otherwise the toolchain will be detected from the project's environment.
 
 ```yaml title="moon.yml"
-toolchain:
+toolchains:
   default: 'node'
 ```
 
@@ -1670,7 +1645,7 @@ Defines the explicit Bun [version specification](../concepts/toolchain#version-s
 when _running tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   bun:
     version: '1.0.0'
 ```
@@ -1687,7 +1662,7 @@ Defines the explicit Deno [version specification](../concepts/toolchain#version-
 use when _running tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   deno:
     version: '1.40.0'
 ```
@@ -1705,7 +1680,7 @@ Defines the explicit Node.js [version specification](../concepts/toolchain#versi
 use when _running tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   node:
     version: '12.12.0'
 ```
@@ -1724,7 +1699,7 @@ Defines the explicit Python
 tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   python:
     version: '3.12.0'
 ```
@@ -1742,7 +1717,7 @@ Defines the explicit Rust
 tasks_ for this project.
 
 ```yaml title="moon.yml" {2,3}
-toolchain:
+toolchains:
   rust:
     version: '1.68.0'
 ```
@@ -1750,19 +1725,6 @@ toolchain:
 ### `typescript`
 
 <HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#typescript" />
-
-#### `disabled`
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#disabled" />
-
-Disables [TypeScript support](./toolchain#typescript) entirely for this project. Defaults to
-`false`.
-
-```yaml title="moon.yml" {3}
-toolchain:
-  typescript:
-    disabled: true
-```
 
 #### `includeProjectReferenceSources`<VersionLabel version="1.17.0" />
 
@@ -1773,7 +1735,7 @@ Overrides the workspace-level
 undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     includeProjectReferenceSources: false
 ```
@@ -1786,7 +1748,7 @@ Overrides the workspace-level [`includeSharedTypes`](./toolchain#includesharedty
 Defaults to undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     includeSharedTypes: false
 ```
@@ -1799,7 +1761,7 @@ Overrides the workspace-level [`routeOutDirToCache`](./toolchain#routeoutdirtoca
 Defaults to undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     routeOutDirToCache: false
 ```
@@ -1812,7 +1774,7 @@ Overrides the workspace-level [`syncProjectReferences`](./toolchain#syncprojectr
 Defaults to undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     syncProjectReferences: false
 ```
@@ -1826,7 +1788,7 @@ Overrides the workspace-level
 undefined.
 
 ```yaml title="moon.yml" {3}
-toolchain:
+toolchains:
   typescript:
     syncProjectReferencesToPaths: false
 ```
@@ -1839,7 +1801,7 @@ toolchain:
 
 <HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#inheritedTasks" />
 
-Provides a layer of control when inheriting tasks from [`.moon/tasks.yml`](./tasks).
+Provides a layer of control when inheriting tasks from [`.moon/tasks/all.yml`](./tasks).
 
 #### `exclude`
 

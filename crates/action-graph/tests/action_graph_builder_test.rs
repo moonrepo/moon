@@ -216,8 +216,8 @@ mod action_graph_builder {
                     ActionNode::setup_toolchain(SetupToolchainNode { toolchain: spec2 }),
                     ActionNode::install_dependencies(InstallDependenciesNode {
                         members: None,
-                        project_id: None,
-                        root: WorkspaceRelativePathBuf::new(),
+                        project_id: Some(Id::raw("bar")),
+                        root: WorkspaceRelativePathBuf::from("bar"),
                         toolchain_id: spec1.id,
                     })
                 ]

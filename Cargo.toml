@@ -113,7 +113,3 @@ assigning_clones = "allow"
 
 [workspace.metadata.cargo-shear]
 ignored = ["serde"]
-
-[profile.dist]
-inherits = "release"
-lto = "thin"

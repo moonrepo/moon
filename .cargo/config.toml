@@ -19,6 +19,9 @@ opt-level = "z"
 panic = "abort"
 strip = "debuginfo"
 
+[profile.dist]
+inherits = "release"
+
 # [target.aarch64-apple-darwin]
 # rustflags = ["-C", "link-arg=-fuse-ld=/opt/homebrew/opt/llvm/bin/ld64.lld"]
 

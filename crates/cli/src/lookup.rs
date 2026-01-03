@@ -63,6 +63,12 @@ pub fn has_locally_installed(home_dir: &Path, current_dir: &Path) -> Option<Path
             if cli_bin.exists() {
                 return Some(cli_bin);
             }
+
+            let cli_js = cli_dir.join("moon.js");
+
+            if cli_js.exists() {
+                return Some(cli_js);
+            }
         }
 
         if dir == home_dir {

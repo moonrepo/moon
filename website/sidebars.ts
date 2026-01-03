@@ -74,6 +74,7 @@ const sidebars: SidebarsConfig = {
 			type: 'category',
 			label: 'Config files',
 			items: [
+				'config/overview',
 				'config/workspace',
 				'config/extensions',
 				'config/toolchain',
@@ -172,10 +173,10 @@ const sidebars: SidebarsConfig = {
 					type: 'category',
 					label: 'sync',
 					items: [
-						'commands/sync/codeowners',
+						'commands/sync/code-owners',
 						'commands/sync/config-schemas',
-						'commands/sync/hooks',
 						'commands/sync/projects',
+						'commands/sync/vcs-hooks',
 					],
 					link: {
 						type: 'generated-index',

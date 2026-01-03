@@ -1,0 +1,1041 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Configures all aspects of the moon workspace. Docs: https://moonrepo.dev/docs/config/workspace",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "title": "$schema",
+      "default": "./cache/schemas/workspace.json",
+      "type": "string"
+    },
+    "codeowners": {
+      "title": "codeowners",
+      "description": "Configures code ownership rules for generating a CODEOWNERS file. @since 1.8.0",
+      "allOf": [
+        {
+          "$ref": "#/definitions/CodeownersConfig"
+        }
+      ],
+      "markdownDescription": "Configures code ownership rules for generating a `CODEOWNERS` file. @since 1.8.0"
+    },
+    "constraints": {
+      "title": "constraints",
+      "description": "Configures boundaries and constraints between projects.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConstraintsConfig"
+        }
+      ]
+    },
+    "defaultProject": {
+      "title": "defaultProject",
+      "description": "The default/main project within the workspace. When a task is ran without a project, the default will be used. @since 2.0.0",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "docker": {
+      "title": "docker",
+      "description": "Configures Docker integration for the workspace. @since 1.27.0",
+      "allOf": [
+        {
+          "$ref": "#/definitions/DockerConfig"
+        }
+      ]
+    },
+    "experiments": {
+      "title": "experiments",
+      "description": "Configures experiments across the entire moon workspace. @since 1.11.0",
+      "allOf": [
+        {
+          "$ref": "#/definitions/ExperimentsConfig"
+        }
+      ]
+    },
+    "extends": {
+      "title": "extends",
+      "description": "Extends one or many workspace configuration file. Supports a relative file path or a secure URL. @since 1.12.0",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ExtendsFrom"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "generator": {
+      "title": "generator",
+      "description": "Configures the generator for scaffolding from templates.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/GeneratorConfig"
+        }
+      ]
+    },
+    "hasher": {
+      "title": "hasher",
+      "description": "Configures aspects of the content hashing engine.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/HasherConfig"
+        }
+      ]
+    },
+    "notifier": {
+      "title": "notifier",
+      "description": "Configures how and where notifications are sent.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/NotifierConfig"
+        }
+      ]
+    },
+    "pipeline": {
+      "title": "pipeline",
+      "description": "Configures aspects of the action pipeline.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/PipelineConfig"
+        }
+      ]
+    },
+    "projects": {
+      "title": "projects",
+      "description": "Configures all projects within the workspace to create a project graph. Accepts a list of globs, a mapping of projects to relative file paths, or both values.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/WorkspaceProjects"
+        }
+      ]
+    },
+    "remote": {
+      "title": "remote",
+      "description": "Configures aspects of the remote service.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/RemoteConfig"
+        }
+      ]
+    },
+    "runner": {
+      "title": "runner",
+      "deprecated": true,
+      "allOf": [
+        {
+          "$ref": "#/definitions/PipelineConfig"
+        }
+      ]
+    },
+    "telemetry": {
+      "title": "telemetry",
+      "description": "Collects anonymous usage information, and checks for new moon versions.",
+      "default": true,
+      "type": "boolean"
+    },
+    "vcs": {
+      "title": "vcs",
+      "description": "Configures the version control system (VCS). Also known as source code management (SCM).",
+      "allOf": [
+        {
+          "$ref": "#/definitions/VcsConfig"
+        }
+      ]
+    },
+    "versionConstraint": {
+      "title": "versionConstraint",
+      "description": "Requires a specific version of the moon binary.",
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "markdownDescription": "Requires a specific version of the `moon` binary."
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "CodeownersConfig": {
+      "description": "Configures code ownership rules for generating a CODEOWNERS file.",
+      "type": "object",
+      "properties": {
+        "globalPaths": {
+          "title": "globalPaths",
+          "description": "A map of global file paths and glob patterns to a list of owners. Can be relative from the workspace root, or a wildcard match for any depth.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "orderBy": {
+          "title": "orderBy",
+          "description": "How to order ownership rules within the generated file.",
+          "default": "file-source",
+          "allOf": [
+            {
+              "$ref": "#/definitions/CodeownersOrderBy"
+            }
+          ]
+        },
+        "requiredApprovals": {
+          "title": "requiredApprovals",
+          "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. This will be applied to all paths. @since 1.28.0",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sync": {
+          "title": "sync",
+          "description": "Automatically generate a CODEOWNERS file during a sync operation, after aggregating all ownership rules from each project in the workspace.",
+          "type": "boolean",
+          "markdownDescription": "Automatically generate a `CODEOWNERS` file during a sync operation, after aggregating all ownership rules from each project in the workspace."
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures code ownership rules for generating a `CODEOWNERS` file."
+    },
+    "CodeownersOrderBy": {
+      "description": "How to order ownership rules within the generated file.",
+      "type": "string",
+      "enum": [
+        "file-source",
+        "project-id"
+      ]
+    },
+    "ConstraintsConfig": {
+      "description": "Configures boundaries and constraints between projects.",
+      "type": "object",
+      "properties": {
+        "enforceLayerRelationships": {
+          "title": "enforceLayerRelationships",
+          "description": "Enforces relationships between projects based on each project's layer setting.",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Enforces relationships between projects based on each project's `layer` setting."
+        },
+        "tagRelationships": {
+          "title": "tagRelationships",
+          "description": "Enforces relationships between projects based on each project's tags setting. Requires a mapping of tags, to acceptable tags.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Id"
+            }
+          },
+          "propertyNames": {
+            "$ref": "#/definitions/Id"
+          },
+          "markdownDescription": "Enforces relationships between projects based on each project's `tags` setting. Requires a mapping of tags, to acceptable tags."
+        }
+      },
+      "additionalProperties": false
+    },
+    "DockerConfig": {
+      "description": "Configures our Docker integration.",
+      "type": "object",
+      "properties": {
+        "file": {
+          "title": "file",
+          "description": "Configures aspects of the Dockerfile generation process. @since 2.0.0",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DockerFileConfig"
+            }
+          ],
+          "markdownDescription": "Configures aspects of the `Dockerfile` generation process. @since 2.0.0"
+        },
+        "prune": {
+          "title": "prune",
+          "description": "Configures aspects of the Docker pruning process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DockerPruneConfig"
+            }
+          ]
+        },
+        "scaffold": {
+          "title": "scaffold",
+          "description": "Configures aspects of the Docker scaffolding process.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DockerScaffoldConfig"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "DockerFileConfig": {
+      "description": "Configures Dockerfile generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
+      "type": "object",
+      "properties": {
+        "buildTask": {
+          "title": "buildTask",
+          "description": "A task identifier within the current project for building the project. If not defined, will skip the build step.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "image": {
+          "title": "image",
+          "description": "The base Docker image to use. If not defined, will use the provided image from the first matching toolchain, otherwise defaults to \"scratch\".",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "runPrune": {
+          "title": "runPrune",
+          "description": "Run the moon docker prune command after building the project, but before starting it. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker prune` command after building the project, but before starting it. @since 2.0.0"
+        },
+        "runSetup": {
+          "title": "runSetup",
+          "description": "Run the moon docker setup command after scaffolding, but before building the project. @since 2.0.0",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Run the `moon docker setup` command after scaffolding, but before building the project. @since 2.0.0"
+        },
+        "startTask": {
+          "title": "startTask",
+          "description": "A task identifier within the current project for starting the project within the CMD instruction. If not defined, will skip the start step and not include the CMD instruction.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Id"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "A task identifier within the current project for starting the project within the `CMD` instruction. If not defined, will skip the start step and not include the `CMD` instruction."
+        },
+        "template": {
+          "title": "template",
+          "description": "A custom template file, relative from the workspace root, to use when rendering the Dockerfile. Powered by Tera.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`. Powered by Tera."
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures `Dockerfile` generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level."
+    },
+    "DockerPruneConfig": {
+      "description": "Configures aspects of the Docker pruning process.",
+      "type": "object",
+      "properties": {
+        "deleteVendorDirectories": {
+          "title": "deleteVendorDirectories",
+          "description": "Automatically delete vendor directories (package manager dependencies, build targets, etc) while pruning. This is handled by each toolchain plugin and not moon directly.",
+          "default": true,
+          "type": "boolean"
+        },
+        "installToolchainDependencies": {
+          "title": "installToolchainDependencies",
+          "description": "Automatically install production dependencies for all required toolchain's of the focused projects within the Docker build.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "DockerScaffoldConfig": {
+      "description": "Configures aspects of the Docker scaffolding process. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
+      "type": "object",
+      "properties": {
+        "configsPhaseGlobs": {
+          "title": "configsPhaseGlobs",
+          "description": "List of glob patterns in which to include/exclude files in the \"configs\" skeleton. Applies to both project and workspace level scaffolding.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sourcesPhaseGlobs": {
+          "title": "sourcesPhaseGlobs",
+          "description": "List of glob patterns in which to include/exclude files in the \"sources\" skeleton. Applies to both project and workspace level scaffolding.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures aspects of the Docker scaffolding process. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level."
+    },
+    "ExperimentsConfig": {
+      "description": "Configures experiments across the entire moon workspace.",
+      "type": "object",
+      "additionalProperties": false
+    },
+    "ExtendsFrom": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "GeneratorConfig": {
+      "description": "Configures the generator for scaffolding from templates.",
+      "type": "object",
+      "properties": {
+        "templates": {
+          "title": "templates",
+          "description": "The list of file paths, relative from the workspace root, in which to locate templates.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "HasherConfig": {
+      "description": "Configures aspects of the content hashing engine.",
+      "type": "object",
+      "properties": {
+        "ignoreMissingPatterns": {
+          "title": "ignoreMissingPatterns",
+          "description": "When warnOnMissingInputs is enabled, filters missing file paths from logging a warning. @since 1.10.0",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "When `warnOnMissingInputs` is enabled, filters missing file paths from logging a warning. @since 1.10.0"
+        },
+        "ignorePatterns": {
+          "title": "ignorePatterns",
+          "description": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with ** is recommended. @since 1.10.0",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "Filters file paths that match a configured glob pattern when a hash is being generated. Patterns are workspace relative, so prefixing with `**` is recommended. @since 1.10.0"
+        },
+        "optimization": {
+          "title": "optimization",
+          "description": "The optimization to use when hashing.",
+          "default": "accuracy",
+          "allOf": [
+            {
+              "$ref": "#/definitions/HasherOptimization"
+            }
+          ]
+        },
+        "walkStrategy": {
+          "title": "walkStrategy",
+          "description": "The strategy to use when walking the file system.",
+          "default": "vcs",
+          "allOf": [
+            {
+              "$ref": "#/definitions/HasherWalkStrategy"
+            }
+          ]
+        },
+        "warnOnMissingInputs": {
+          "title": "warnOnMissingInputs",
+          "description": "Logs a warning when a task has configured an explicit file path input, and that file does not exist when hashing.",
+          "default": true,
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "HasherOptimization": {
+      "description": "The optimization to use when hashing.",
+      "type": "string",
+      "enum": [
+        "accuracy",
+        "performance"
+      ]
+    },
+    "HasherWalkStrategy": {
+      "description": "The strategy to use when walking the file system.",
+      "type": "string",
+      "enum": [
+        "glob",
+        "vcs"
+      ]
+    },
+    "Id": {
+      "type": "string"
+    },
+    "NotifierConfig": {
+      "description": "Configures how and where notifications are sent.",
+      "type": "object",
+      "properties": {
+        "terminalNotifications": {
+          "title": "terminalNotifications",
+          "description": "Display an OS notification for certain action pipeline events. @since 1.38.0",
+          "default": "never",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NotifierEventType"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "webhookAcknowledge": {
+          "title": "webhookAcknowledge",
+          "description": "Whether webhook requests require acknowledgment (2xx response). @since 1.38.0",
+          "type": "boolean"
+        },
+        "webhookUrl": {
+          "title": "webhookUrl",
+          "description": "A secure URL in which to send webhooks to.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "NotifierEventType": {
+      "description": "The types of events in which to send notifications.",
+      "type": "string",
+      "enum": [
+        "never",
+        "always",
+        "failure",
+        "success",
+        "task-failure"
+      ]
+    },
+    "PipelineActionSwitch": {
+      "description": "Toggles the state of actions within the pipeline.",
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Id"
+          }
+        }
+      ]
+    },
+    "PipelineConfig": {
+      "description": "Configures aspects of the action pipeline.",
+      "type": "object",
+      "properties": {
+        "autoCleanCache": {
+          "title": "autoCleanCache",
+          "description": "Automatically clean the cache after every task run. @since 1.24.0",
+          "default": true,
+          "type": "boolean"
+        },
+        "cacheLifetime": {
+          "title": "cacheLifetime",
+          "description": "The lifetime in which task outputs will be cached.",
+          "default": "7 days",
+          "type": "string"
+        },
+        "inheritColorsForPipedTasks": {
+          "title": "inheritColorsForPipedTasks",
+          "description": "Automatically inherit color settings for all tasks being ran.",
+          "default": true,
+          "type": "boolean"
+        },
+        "installDependencies": {
+          "title": "installDependencies",
+          "description": "Run the InstallDependencies actions for each running task when changes to lockfiles and manifests are detected. @since 1.34.0",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PipelineActionSwitch"
+            }
+          ],
+          "markdownDescription": "Run the `InstallDependencies` actions for each running task when changes to lockfiles and manifests are detected. @since 1.34.0"
+        },
+        "killProcessThreshold": {
+          "title": "killProcessThreshold",
+          "description": "A threshold in milliseconds in which to force kill running child processes after the pipeline receives an external signal. A value of 0 will not kill the process and let them run to completion.",
+          "default": 2000,
+          "type": "number"
+        },
+        "logRunningCommand": {
+          "title": "logRunningCommand",
+          "description": "Logs the task's command and arguments when running the task.",
+          "type": "boolean"
+        },
+        "syncProjectDependencies": {
+          "title": "syncProjectDependencies",
+          "description": "When creating SyncProject actions, recursively create a SyncProject action for each project dependency, and link them as a relationship. @since 1.34.0",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "When creating `SyncProject` actions, recursively create a `SyncProject` action for each project dependency, and link them as a relationship. @since 1.34.0"
+        },
+        "syncProjects": {
+          "title": "syncProjects",
+          "description": "Run the SyncProject actions in the pipeline for each owning project of a running task. @since 1.34.0",
+          "allOf": [
+            {
+              "$ref": "#/definitions/PipelineActionSwitch"
+            }
+          ],
+          "markdownDescription": "Run the `SyncProject` actions in the pipeline for each owning project of a running task. @since 1.34.0"
+        },
+        "syncWorkspace": {
+          "title": "syncWorkspace",
+          "description": "Run the SyncWorkspace action before all actions in the pipeline. @since 1.34.0",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Run the `SyncWorkspace` action before all actions in the pipeline. @since 1.34.0"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RemoteApi": {
+      "description": "The API format of the remote service. @since 1.32.0",
+      "type": "string",
+      "enum": [
+        "grpc",
+        "http"
+      ]
+    },
+    "RemoteAuthConfig": {
+      "description": "Configures basic HTTP authentication. @since 1.32.0",
+      "type": "object",
+      "properties": {
+        "headers": {
+          "title": "headers",
+          "description": "A map of HTTP headers to inject into every request.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "token": {
+          "title": "token",
+          "description": "The name of an environment variable to use as a bearer token.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "RemoteCacheConfig": {
+      "description": "Configures the action cache (AC) and content addressable cache (CAS). @since 1.30.0",
+      "type": "object",
+      "properties": {
+        "compression": {
+          "title": "compression",
+          "description": "The compression format to use when uploading/downloading blobs. @since 1.31.0",
+          "default": "none",
+          "allOf": [
+            {
+              "$ref": "#/definitions/RemoteCompression"
+            }
+          ]
+        },
+        "instanceName": {
+          "title": "instanceName",
+          "description": "Unique instance name for blobs. Will be used as a folder name.",
+          "default": "moon-outputs",
+          "type": "string"
+        },
+        "localReadOnly": {
+          "title": "localReadOnly",
+          "description": "When local, only download matching blobs and do not upload new blobs. Blobs will only be uploaded in CI environments. @since 1.40.0",
+          "type": "boolean"
+        },
+        "verifyIntegrity": {
+          "title": "verifyIntegrity",
+          "description": "When downloading blobs, verify the digests/hashes in the response match the associated blob contents. This will reduce performance but ensure partial or corrupted blobs won't cause failures. @since 1.36.0",
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "RemoteCompression": {
+      "description": "Supported blob compression levels for gRPC APIs. @since 1.31.0",
+      "type": "string",
+      "enum": [
+        "none",
+        "zstd"
+      ]
+    },
+    "RemoteConfig": {
+      "description": "Configures the remote service, powered by the Bazel Remote Execution API. @since 1.30.0",
+      "type": "object",
+      "properties": {
+        "api": {
+          "title": "api",
+          "description": "The API format of the remote service. @since 1.32.0",
+          "default": "grpc",
+          "allOf": [
+            {
+              "$ref": "#/definitions/RemoteApi"
+            }
+          ]
+        },
+        "auth": {
+          "title": "auth",
+          "description": "Connect to the host using basic HTTP authentication. @since 1.32.0",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RemoteAuthConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cache": {
+          "title": "cache",
+          "description": "Configures the action cache (AC) and content addressable cache (CAS).",
+          "allOf": [
+            {
+              "$ref": "#/definitions/RemoteCacheConfig"
+            }
+          ]
+        },
+        "host": {
+          "title": "host",
+          "description": "The remote host to connect and send requests to. Supports gRPC protocols.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mtls": {
+          "title": "mtls",
+          "description": "Connect to the host using server and client authentication with mTLS. This takes precedence over normal TLS.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RemoteMtlsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tls": {
+          "title": "tls",
+          "description": "Connect to the host using server-only authentication with TLS.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RemoteTlsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Connect to the host using server-only authentication with TLS."
+        }
+      },
+      "additionalProperties": false
+    },
+    "RemoteMtlsConfig": {
+      "description": "Configures for both server and client authentication with mTLS. @since 1.30.0",
+      "type": "object",
+      "properties": {
+        "assumeHttp2": {
+          "title": "assumeHttp2",
+          "description": "If true, assume that the server supports HTTP/2, even if it doesn't provide protocol negotiation via ALPN.",
+          "type": "boolean"
+        },
+        "caCert": {
+          "title": "caCert",
+          "description": "A file path, relative from the workspace root, to the certificate authority PEM encoded X509 certificate.",
+          "type": "string"
+        },
+        "clientCert": {
+          "title": "clientCert",
+          "description": "A file path, relative from the workspace root, to the client's PEM encoded X509 certificate.",
+          "type": "string"
+        },
+        "clientKey": {
+          "title": "clientKey",
+          "description": "A file path, relative from the workspace root, to the client's PEM encoded X509 private key.",
+          "type": "string"
+        },
+        "domain": {
+          "title": "domain",
+          "description": "The domain name in which to verify the TLS certificate.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "RemoteTlsConfig": {
+      "description": "Configures for server-only authentication with TLS. @since 1.30.0",
+      "type": "object",
+      "properties": {
+        "assumeHttp2": {
+          "title": "assumeHttp2",
+          "description": "If true, assume that the server supports HTTP/2, even if it doesn't provide protocol negotiation via ALPN.",
+          "type": "boolean"
+        },
+        "cert": {
+          "title": "cert",
+          "description": "A file path, relative from the workspace root, to the certificate authority PEM encoded X509 certificate.",
+          "type": "string"
+        },
+        "domain": {
+          "title": "domain",
+          "description": "The domain name in which to verify the TLS certificate.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures for server-only authentication with TLS. @since 1.30.0"
+    },
+    "VcsClient": {
+      "description": "The VCS being utilized by the repository.",
+      "type": "string",
+      "enum": [
+        "git"
+      ]
+    },
+    "VcsConfig": {
+      "description": "Configures the version control system (VCS).",
+      "type": "object",
+      "properties": {
+        "client": {
+          "title": "client",
+          "description": "The VCS client being utilized by the repository.",
+          "default": "git",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VcsClient"
+            }
+          ]
+        },
+        "defaultBranch": {
+          "title": "defaultBranch",
+          "description": "The default branch / base.",
+          "default": "master",
+          "type": "string"
+        },
+        "hookFormat": {
+          "title": "hookFormat",
+          "description": "The format to use for generated VCS hook files. @since 1.29.0",
+          "default": "native",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VcsHookFormat"
+            }
+          ]
+        },
+        "hooks": {
+          "title": "hooks",
+          "description": "A map of hooks to a list of commands to run when the hook is triggered. @since 1.9.0",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "type": "string"
+          }
+        },
+        "provider": {
+          "title": "provider",
+          "description": "The upstream version control provider, where the repository source code is stored. @since 1.8.0",
+          "default": "github",
+          "allOf": [
+            {
+              "$ref": "#/definitions/VcsProvider"
+            }
+          ]
+        },
+        "remoteCandidates": {
+          "title": "remoteCandidates",
+          "description": "List of remote's in which to compare branches against.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "sync": {
+          "title": "sync",
+          "description": "Automatically generate hooks and scripts during a sync operation, based on the hooks setting. @since 1.9.0",
+          "type": "boolean",
+          "markdownDescription": "Automatically generate hooks and scripts during a sync operation, based on the `hooks` setting. @since 1.9.0"
+        }
+      },
+      "additionalProperties": false
+    },
+    "VcsHookFormat": {
+      "description": "The format to use for generated VCS hook files. @since 1.29.0",
+      "type": "string",
+      "enum": [
+        "bash",
+        "native"
+      ]
+    },
+    "VcsProvider": {
+      "description": "The upstream version control provider, where the repository source code is stored.",
+      "type": "string",
+      "enum": [
+        "bitbucket",
+        "github",
+        "gitlab",
+        "other"
+      ]
+    },
+    "WorkspaceProjectGlobFormat": {
+      "description": "The project identifier format for glob located projects.",
+      "type": "string",
+      "enum": [
+        "dir-name",
+        "source-path"
+      ]
+    },
+    "WorkspaceProjects": {
+      "description": "Configures projects in the workspace.",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/WorkspaceProjectsConfig"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "$ref": "#/definitions/Id"
+          }
+        }
+      ]
+    },
+    "WorkspaceProjectsConfig": {
+      "description": "Configures projects in the workspace, using both globs and explicit source paths.",
+      "type": "object",
+      "properties": {
+        "globFormat": {
+          "title": "globFormat",
+          "description": "The project identifier format for glob located projects. @since 2.0.0",
+          "default": "dir-name",
+          "allOf": [
+            {
+              "$ref": "#/definitions/WorkspaceProjectGlobFormat"
+            }
+          ]
+        },
+        "globs": {
+          "title": "globs",
+          "description": "A list of glob patterns in which to locate project directories. Can be suffixed with a moon.* config file to only find distinct projects.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "A list of glob patterns in which to locate project directories. Can be suffixed with a `moon.*` config file to only find distinct projects."
+        },
+        "sources": {
+          "title": "sources",
+          "description": "A map of project identifiers to relative file paths to each project directory.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "propertyNames": {
+            "$ref": "#/definitions/Id"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -35,10 +35,10 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [query tasks](https://moonrepo.dev/docs/commands/query/tasks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [run](https://moonrepo.dev/docs/commands/run): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [setup](https://moonrepo.dev/docs/commands/setup): The `moon setup` command can be used to setup the developer and pipeline environments. It achieves
-- [sync codeowners](https://moonrepo.dev/docs/commands/sync/codeowners): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [sync code-owners](https://moonrepo.dev/docs/commands/sync/code-owners): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [sync config-schemas](https://moonrepo.dev/docs/commands/sync/config-schemas): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [sync hooks](https://moonrepo.dev/docs/commands/sync/hooks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [sync projects](https://moonrepo.dev/docs/commands/sync/projects): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [sync vcs-hooks](https://moonrepo.dev/docs/commands/sync/vcs-hooks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [task-graph](https://moonrepo.dev/docs/commands/task-graph): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [task](https://moonrepo.dev/docs/commands/task): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [tasks](https://moonrepo.dev/docs/commands/tasks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -60,12 +60,13 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Tokens](https://moonrepo.dev/docs/concepts/token): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Toolchain](https://moonrepo.dev/docs/concepts/toolchain): The toolchain is an internal layer for downloading, installing, and managing tools (languages,
 - [Workspace](https://moonrepo.dev/docs/concepts/workspace): A workspace is a directory that contains [projects](./project), manages a [toolchain](./toolchain),
-- [.moon/extensions.*](https://moonrepo.dev/docs/config/extensions): import Tabs from '@theme/Tabs';
-- [moon.*](https://moonrepo.dev/docs/config/project): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-- [.moon/tasks/**/*](https://moonrepo.dev/docs/config/tasks): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-- [template.*](https://moonrepo.dev/docs/config/template): import Tabs from '@theme/Tabs';
-- [.moon/toolchains.*](https://moonrepo.dev/docs/config/toolchain): import Tabs from '@theme/Tabs';
-- [.moon/workspace.*](https://moonrepo.dev/docs/config/workspace): import Tabs from '@theme/Tabs';
+- [.moon/extensions](https://moonrepo.dev/docs/config/extensions): import Tabs from '@theme/Tabs';
+- [Overview](https://moonrepo.dev/docs/config/overview): import Tabs from '@theme/Tabs';
+- [moon](https://moonrepo.dev/docs/config/project): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [.moon/tasks](https://moonrepo.dev/docs/config/tasks): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [template](https://moonrepo.dev/docs/config/template): import Tabs from '@theme/Tabs';
+- [.moon/toolchains](https://moonrepo.dev/docs/config/toolchain): import Tabs from '@theme/Tabs';
+- [.moon/workspace](https://moonrepo.dev/docs/config/workspace): import Tabs from '@theme/Tabs';
 - [Create a project](https://moonrepo.dev/docs/create-project): import Tabs from '@theme/Tabs';
 - [Create a task](https://moonrepo.dev/docs/create-task): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 - [VS Code extension](https://moonrepo.dev/docs/editors/vscode): import Image from '@site/src/components/Image';

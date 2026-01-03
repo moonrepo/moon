@@ -1716,18 +1716,18 @@ commands, like detecting affected projects, running a task, or generating a buil
 
 ---
 
-## sync codeowners
+## sync code-owners
 
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.8.0" header />
 
-The `moon sync codeowners` command will manually sync code owners, by aggregating all owners from
+The `moon sync code-owners` command will manually sync code owners, by aggregating all owners from
 projects, and generating a single `CODEOWNERS` file. Refer to the official
 [code owners](../../guides/codeowners) guide for more information.
 
 ```shell
-$ moon sync codeowners
+$ moon sync code-owners
 ```
 
 ### Options
@@ -1761,32 +1761,6 @@ $ moon sync config-schemas
 
 ---
 
-## sync hooks
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
-<VersionLabel version="1.9.0" header />
-
-The `moon sync hooks` command will manually sync hooks for the configured
-[VCS](../../config/workspace#vcs), by generating and referencing hook scripts from the
-[`vcs.hooks`](../../config/workspace#hooks) setting. Refer to the official
-[VCS hooks](../../guides/vcs-hooks) guide for more information.
-
-```shell
-$ moon sync hooks
-```
-
-### Options
-
-- `--clean` - Clean and remove previously generated hooks.
-- `--force` - Bypass cache and force create hooks.
-
-### Configuration
-
-- [`vcs.hooks`](../../config/workspace#hooks) in `.moon/workspace.yml`
-
----
-
 ## sync projects
 
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -1814,6 +1788,32 @@ $ moon sync projects
 ### Configuration
 
 - [`projects`](../../config/workspace#projects) in `.moon/workspace.yml`
+
+---
+
+## sync vcs-hooks
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="1.9.0" header />
+
+The `moon sync vcs-hooks` command will manually sync hooks for the configured
+[VCS](../../config/workspace#vcs), by generating and referencing hook scripts from the
+[`vcs.hooks`](../../config/workspace#hooks) setting. Refer to the official
+[VCS hooks](../../guides/vcs-hooks) guide for more information.
+
+```shell
+$ moon sync vcs-hooks
+```
+
+### Options
+
+- `--clean` - Clean and remove previously generated hooks.
+- `--force` - Bypass cache and force create hooks.
+
+### Configuration
+
+- [`vcs.hooks`](../../config/workspace#hooks) in `.moon/workspace.yml`
 
 ---
 
@@ -3982,7 +3982,7 @@ Configuration that's applied to the entire workspace is defined in
 
 ---
 
-## .moon/extensions.*
+## .moon/extensions
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -4046,7 +4046,103 @@ View the [official guide](../guides/extensions) for all built-in extensions.
 
 ---
 
-## moon.*
+## Overview(Config)
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+## Supported formats<VersionLabel version="2.0.0" />
+
+In moon, you can define configuration files in a variety of formats. We currently support the
+following:
+
+- JSON (`.json`)
+- JSON with comments (`.jsonc`)
+- [HCL](https://github.com/hashicorp/hcl) (`.hcl`)
+- [Pkl](https://pkl-lang.org/) (`.pkl`)
+- [TOML](https://toml.io/en/) (`.toml`)
+- YAML (`.yml`, `.yaml`)
+
+:::info
+
+In moon v1, only YAML (`.yml`) and Pkl (`.pkl`) configuration files were supported.
+
+:::
+
+## Schema validation<VersionLabel version="1.33.0" />
+
+We support schema validation for all configuration files through
+[JSON Schema](https://json-schema.org/), even for formats that are not JSON (depends on tool/editor
+support). To reference the schema for a specific configuration file, configure the `$schema`
+property at the top of the file with the appropriate schema found at `.moon/cache/schemas`.
+
+<Tabs
+  groupId="configs"
+  defaultValue=".moon/workspace"
+>
+<TabItem value=".moon/workspace">
+
+```yaml title=".moon/workspace.yml"
+$schema: './cache/schemas/workspace.json'
+```
+
+</TabItem>
+<TabItem value=".moon/extensions">
+
+```yaml title=".moon/extensions.yml"
+$schema: './cache/schemas/extensions.json'
+```
+
+</TabItem>
+<TabItem value=".moon/toolchains">
+
+```yaml title=".moon/toolchains.yml"
+$schema: './cache/schemas/toolchains.json'
+```
+
+</TabItem>
+<TabItem value=".moon/tasks">
+
+```yaml title=".moon/tasks/all.yml"
+$schema: '../cache/schemas/tasks.json'
+```
+
+</TabItem>
+<TabItem value="moon">
+
+```yaml title="moon.yml"
+$schema: '../path/to/.moon/cache/schemas/project.json'
+```
+
+</TabItem>
+<TabItem value="template">
+
+```yaml title="template.yml"
+$schema: '../path/to/.moon/cache/schemas/template.json'
+```
+
+</TabItem>
+</Tabs>
+
+:::info
+
+The schemas are automatically created when running a task. If they do not exist yet, you can run
+[`moon sync config-schemas`](../commands/sync/config-schemas) to generate them manually.
+
+:::
+
+:::danger
+
+In older versions of moon, the schema files were located at `https://moonrepo.dev/schemas`. These
+URLs are now deprecated, as they do not support dynamic settings. Please update your `$schema`
+references to point to the local schema files in `.moon/cache/schemas`.
+
+:::
+
+---
+
+## moon
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
@@ -5905,7 +6001,7 @@ workspace:
 
 ---
 
-## .moon/tasks/**/*
+## .moon/tasks
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -6105,7 +6201,7 @@ tasks:
 
 ---
 
-## template.*
+## template(Config)
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -6447,7 +6543,7 @@ Some template content!
 
 ---
 
-## .moon/toolchains.*
+## .moon/toolchains
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -6625,7 +6721,7 @@ Run `moon toolchain info rust` for all available settings.
 
 ---
 
-## .moon/workspace.*
+## .moon/workspace
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -9626,7 +9722,7 @@ config/ @app-platform
 ## Generating `CODEOWNERS`
 
 Code owners is an opt-in feature, and as such, the `CODEOWNERS` file can be generated in a few ways.
-The first is manually, with the [`moon sync codeowners`](../commands/sync/codeowners) command.
+The first is manually, with the [`moon sync codeowners`](../commands/sync/code-owners) command.
 
 ```shell
 $ moon sync codeowners
@@ -15614,7 +15710,7 @@ hook commands you define in the [`.moon/workspace.yml`](../config/workspace) fil
 ### Manually by each developer
 
 If you'd prefer contributors to have a choice in whether or not they want to use hooks, then simply
-do nothing, and guide them to run the [`moon sync hooks`](../commands/sync/hooks) command. This
+do nothing, and guide them to run the [`moon sync hooks`](../commands/sync/vcs-hooks) command. This
 command will generate hook scripts and link them with the local VCS checkout.
 
 ```shell
@@ -26346,7 +26442,7 @@ These paths will then be prefixed with the project source when
 Although moon can [automatically generate](/docs/config/workspace#synconrun) the `CODEOWNERS` file
 when running a target, there may be situations where this is disabled, or teams/developers would
 like to generate the file manually. To handle this, we're providing the
-[`moon sync codeowners`](/docs/commands/sync/codeowners) command, which will trigger the generation
+[`moon sync codeowners`](/docs/commands/sync/code-owners) command, which will trigger the generation
 process.
 
 ```shell
@@ -26484,7 +26580,7 @@ approach that works best for you or your team!
 
 Although moon can [automatically create](/docs/config/workspace#synchooks) hooks when running a
 target, this may be undesirable or abrasive for some developers. Instead, we also support an opt-in
-solution through the [`moon sync hooks`](/docs/commands/sync/hooks) command, which will manually
+solution through the [`moon sync hooks`](/docs/commands/sync/vcs-hooks) command, which will manually
 create the hooks.
 
 ```shell

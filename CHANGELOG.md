@@ -14,6 +14,7 @@ changes and how to easily migrate!
   - Renamed all options and flags to kebab-case instead of camelCase.
   - Reworked many commands and their arguments. Refer to the migration guide for details.
   - Reworked console output handling. Updated `--summary` with different levels.
+  - Reworked release distribution to use archives instead of direct executables.
 - **Configuration**
   - Renamed, removed, or changed _many_ settings. Refer to the migration guide for details.
   - Renamed `.moon/toolchain.yml` to `.moon/toolchains.yml` (plural).
@@ -21,11 +22,18 @@ changes and how to easily migrate!
   - Reworked how the `language` is detected.
   - Flattened `project` metadata structure.
 - **Tasks**
+  - Task inheritance now deep merges instead of shallow merges when dealing with extends and
+    multi-global.
+  - Removed "watcher" task `preset`.
+  - Reworked env var merge order, substitution, and more. Refer to the migration guide for details.
   - Reworked `.env` handling.
-  - Reworked env var merge order, interpolation, and more.
+    - Moved loading to occur before task execution, instead of creation.
+    - Can _no longer_ reference task `env` vars for substitution.
 - **Toolchain**
   - Removed the old platform system, and replaced it with the new WASM plugin system.
     - All old "stable" toolchains have been replaced with the new "unstable" toolchains.
+- **VCS**
+  - Reworked the hooks layer for better interoperability.
 - **WASM API**
   - Removed the `/cwd` virtual path.
   - Renamed `ProjectFragment.alias` to `ProjectFragment.aliases` and changed its type from
@@ -40,17 +48,30 @@ features, improvements, and much more!
 
 - **Action pipeline**
   - Will now always generate a hash for a task, even if caching is disabled.
+  - Applies "transitive reduction" to the graph, removing unnecessary edges for better performance.
+  - Improved console output, logging, and error handling.
+  - Improved parallelism when running tasks.
+    - Now resolves and expands targets _before_ partitioning.
+    - Now partitions _after_ filtering based on affected state.
 - **CLI**
   - New commands: `moon exec`, `moon extension`, `moon hash`, `moon projects`, `moon tasks`,
     `moon query affected`, `moon template`
+  - Updated commands `moon check`, `moon ci`, and `moon run`:
+    - Now uses `moon exec` under the hood.
+    - Added levels to `--summary`.
+  - Updated commands that require an identifier to prompt for it if not provided.
   - Stabilized the `moonx` binary (which uses `moon exec` under the hood).
   - Added support for `.config/moon` instead of `.moon`.
+  - Added support for `...` in task targets, which is an alias for `**/*`. This is similar to how
+    Bazel targets work.
+  - Improved stack memory usage by pushing thread data to the heap. This resolves spurious stack
+    overflow issues.
 - **Configuration**
   - Added support for more formats: JSON, TOML, and HCL.
   - `.moon/extensions.*`
     - New file for configuring extensions (formerly in `workspace.extensions`).
   - `.moon/tasks.*`
-    - Added `inheritedBy` for configuration based task inheritance.
+    - Added `inheritedBy` setting for configuration based task inheritance.
   - `.moon/workspace.*`
     - Added `projects.globFormat` setting.
     - Added `defaultProject` setting.
@@ -74,18 +95,20 @@ features, improvements, and much more!
   - Added path based IDs instead of dir name IDs.
   - Updated projects to support multiple aliases (one from each applicable toolchain).
 - **Tasks**
-  - Added `inheritedBy` task option for configuration based task inheritance.
-  - Added deep merging support to task inheritance.
-  - Updated `.env` loading to occur before task execution, instead of creation.
+  - Added deep merging support for task inheritance.
+  - Improved `.env` handling:
+    - Updated the parser to support more syntax.
+    - Updated loading to occur before task execution, instead of creation.
+    - Can now reference system/moon/task env vars for substitution.
+  - Updated `env` values to support `null`, which would remove an inherited system env var.
 - **Toolchains**
-  - Integrated the new WASM plugin system.
+  - Stabilized the new WASM plugin system.
   - Improved how toolchains extend env vars and paths for commands and scripts.
 - **Tokens**
   - Added new tokens: `$projectTitle`, `$projectAliases`, `$taskToolchains`
 - **VCS**
   - Replaced the old v1 Git implementation with a new v2 implementation.
   - Improved support for worktrees, submodules, and more.
-  - Rewrote the hooks layer for better interoperability.
 - **WASM API**
   - Added a `load_extension_config_by_id` host function.
   - Added `define_extension_config`, `initialize_extension`, and `extend_command` plugin functions.

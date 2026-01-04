@@ -14,7 +14,7 @@ mod target_locator {
                 TargetLocator::GlobMatch {
                     original: String::from(":build-*"),
                     scope: Some(TargetScope::All),
-                    project_glob: None,
+                    scope_glob: None,
                     task_glob: String::from("build-*"),
                 }
             );
@@ -24,7 +24,7 @@ mod target_locator {
                 TargetLocator::GlobMatch {
                     original: String::from("*:build"),
                     scope: Some(TargetScope::All),
-                    project_glob: None,
+                    scope_glob: None,
                     task_glob: String::from("build"),
                 }
             );
@@ -37,7 +37,7 @@ mod target_locator {
                 TargetLocator::GlobMatch {
                     original: String::from("^:build-*"),
                     scope: Some(TargetScope::Deps),
-                    project_glob: None,
+                    scope_glob: None,
                     task_glob: String::from("build-*"),
                 }
             );
@@ -50,7 +50,7 @@ mod target_locator {
                 TargetLocator::GlobMatch {
                     original: String::from("~:build-*"),
                     scope: Some(TargetScope::OwnSelf),
-                    project_glob: None,
+                    scope_glob: None,
                     task_glob: String::from("build-*"),
                 }
             );
@@ -63,7 +63,7 @@ mod target_locator {
                 TargetLocator::GlobMatch {
                     original: String::from("#tag:build-*"),
                     scope: None,
-                    project_glob: Some(String::from("#tag")),
+                    scope_glob: Some(String::from("#tag")),
                     task_glob: String::from("build-*"),
                 }
             );
@@ -73,7 +73,7 @@ mod target_locator {
                 TargetLocator::GlobMatch {
                     original: String::from("#tag-*:build-*"),
                     scope: None,
-                    project_glob: Some(String::from("#tag-*")),
+                    scope_glob: Some(String::from("#tag-*")),
                     task_glob: String::from("build-*"),
                 }
             );
@@ -86,7 +86,7 @@ mod target_locator {
                 TargetLocator::GlobMatch {
                     original: String::from("project:build-*"),
                     scope: None,
-                    project_glob: Some(String::from("project")),
+                    scope_glob: Some(String::from("project")),
                     task_glob: String::from("build-*"),
                 }
             );
@@ -96,7 +96,30 @@ mod target_locator {
                 TargetLocator::GlobMatch {
                     original: String::from("proj-*:build-*"),
                     scope: None,
-                    project_glob: Some(String::from("proj-*")),
+                    scope_glob: Some(String::from("proj-*")),
+                    task_glob: String::from("build-*"),
+                }
+            );
+        }
+
+        #[test]
+        fn project_scope_with_bazel_spread() {
+            assert_eq!(
+                TargetLocator::parse("a/b/...:build-*").unwrap(),
+                TargetLocator::GlobMatch {
+                    original: String::from("a/b/...:build-*"),
+                    scope: None,
+                    scope_glob: Some(String::from("a/b/**/*")),
+                    task_glob: String::from("build-*"),
+                }
+            );
+
+            assert_eq!(
+                TargetLocator::parse("a/.../b:build-*").unwrap(),
+                TargetLocator::GlobMatch {
+                    original: String::from("a/.../b:build-*"),
+                    scope: None,
+                    scope_glob: Some(String::from("a/**/*/b")),
                     task_glob: String::from("build-*"),
                 }
             );

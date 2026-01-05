@@ -94,18 +94,16 @@ pub fn has_locally_installed(home_dir: &Path, current_dir: &Path) -> Option<Path
 
                 // 2. Real Path (pnpm, Bun, Yarn Berry)
                 // If it's a symlink, resolve it to find the real location in the store or cache.
-                if let Ok(real_path) = fs::canonicalize(&cli_dir) {
-                    if real_path != cli_dir {
-                        search_paths.push(real_path.clone()); // Inside the package itself
-                        if let Some(parent) = real_path.parent() {
-                            search_paths.push(parent.to_path_buf()); // Sibling in store
-                        }
-                        if let Some(grandparent) = real_path.parent().and_then(|p| p.parent()) {
-                            search_paths.push(grandparent.to_path_buf()); // Parent of scope
-                        }
-                        // Check for dependencies inside the package (unhoisted)
-                        search_paths.push(real_path.join("node_modules").join("@moonrepo"));
+                if let Some(real_path) = fs::canonicalize(&cli_dir).ok().filter(|p| p != &cli_dir) {
+                    search_paths.push(real_path.clone()); // Inside the package itself
+                    if let Some(parent) = real_path.parent() {
+                        search_paths.push(parent.to_path_buf()); // Sibling in store
                     }
+                    if let Some(grandparent) = real_path.parent().and_then(|p| p.parent()) {
+                        search_paths.push(grandparent.to_path_buf()); // Parent of scope
+                    }
+                    // Check for dependencies inside the package (unhoisted)
+                    search_paths.push(real_path.join("node_modules").join("@moonrepo"));
                 }
 
                 // Scan all potential locations

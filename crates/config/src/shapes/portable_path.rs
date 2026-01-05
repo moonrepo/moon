@@ -14,25 +14,37 @@ pub fn is_glob_like(value: &str) -> bool {
     }
 
     // Check for brace patterns, but exclude environment variable syntax
-    if let (Some(l), Some(r)) = (value.find('{'), value.find('}'))
-        && l < r
-    {
-        // Check if this is an environment variable: ${VAR} or ${VAR:-default}
-        // Environment variables have $ immediately before the {
-        if l > 0 && value.as_bytes().get(l - 1) == Some(&b'$') {
-            // This is likely an env var like ${VAR}, check the contents
-            let inside = &value[l + 1..r];
+    // We need to check ALL brace pairs, not just the first one, because a path
+    // like .env.${VAR}.{a,b} has both an env var and a glob pattern
+    let mut search_from = 0;
+    while let Some(l) = value[search_from..].find('{') {
+        let l = search_from + l;
+        if let Some(r_offset) = value[l..].find('}') {
+            let r = l + r_offset;
 
-            // If it contains comma or .. it's a glob {a,b} or {a..z}
-            // If it's alphanumeric/underscore with optional flags, it's an env var
-            if inside.contains(',') || inside.contains("..") {
+            // Check if this is an environment variable: ${VAR} or ${VAR:-default}
+            // Environment variables have $ immediately before the {
+            if l > 0 && value.as_bytes().get(l - 1) == Some(&b'$') {
+                // This is likely an env var like ${VAR}, check the contents
+                let inside = &value[l + 1..r];
+
+                // If it contains comma or .. it's a glob {a,b} or {a..z}
+                // If it's alphanumeric/underscore with optional flags, it's an env var
+                if inside.contains(',') || inside.contains("..") {
+                    return true;
+                }
+
+                // Otherwise, it's an env var, not a glob - continue to next brace pair
+            } else {
+                // No $ before {, this is a glob pattern like {a,b}
                 return true;
             }
 
-            // Otherwise, it's an env var, not a glob - continue checking
+            // Move search position past this brace pair
+            search_from = r + 1;
         } else {
-            // No $ before {, this is a glob pattern like {a,b}
-            return true;
+            // No matching closing brace, stop searching
+            break;
         }
     }
 
@@ -255,6 +267,23 @@ mod tests {
         // Edge case: env var that contains comma (should be detected as glob)
         assert!(is_glob_like("${VAR,OTHER}"));
         assert!(is_glob_like("${VAR..OTHER}"));
+    }
+
+    #[test]
+    fn test_is_glob_like_multiple_brace_pairs() {
+        // Multiple env vars should NOT be detected as globs
+        assert!(!is_glob_like(".env.${VAR1}.${VAR2}"));
+        assert!(!is_glob_like("${HOME}/.env.${NODE_ENV}"));
+        assert!(!is_glob_like("${VAR1}/${VAR2}/${VAR3}"));
+
+        // First brace is env var, second is glob - should be detected as glob
+        assert!(is_glob_like(".env.${VAR}.{a,b}"));
+        assert!(is_glob_like("${HOME}/config.{js,ts}"));
+        assert!(is_glob_like(".env.${NODE_ENV}.file{1..10}.txt"));
+
+        // First brace is glob, second is env var - should be detected as glob
+        assert!(is_glob_like("config.{js,ts}.${VAR}"));
+        assert!(is_glob_like("{a,b}/${HOME}/file"));
     }
 
     #[test]

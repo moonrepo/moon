@@ -2,7 +2,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{test_utils::*, *};
+use moon_env_var::GlobalEnvBag;
 use moon_target::Target;
+use serial_test::serial;
 use starbase_sandbox::create_sandbox;
 use utils::TasksBuilderContainer;
 
@@ -699,14 +701,15 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        #[serial]
         async fn env_file_with_variable_substitution() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path());
 
+            let bag = GlobalEnvBag::instance();
+
             // Set test environment variable
-            unsafe {
-                std::env::set_var("TEST_ENV", "staging");
-            }
+            bag.set("TEST_ENV", "staging");
 
             let tasks = container.build_tasks("options").await;
 
@@ -736,9 +739,7 @@ tasks:
             );
 
             // Clean up
-            unsafe {
-                std::env::remove_var("TEST_ENV");
-            }
+            bag.remove("TEST_ENV");
         }
 
         #[tokio::test(flavor = "multi_thread")]

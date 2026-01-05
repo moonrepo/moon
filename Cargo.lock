@@ -4285,6 +4285,7 @@ dependencies = [
  "moon_toolchain",
  "moon_toolchain_plugin",
  "rustc-hash",
+ "serial_test",
  "starbase_sandbox",
  "thiserror 2.0.17",
  "tokio",

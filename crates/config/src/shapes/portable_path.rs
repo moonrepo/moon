@@ -13,10 +13,27 @@ pub fn is_glob_like(value: &str) -> bool {
         return true;
     }
 
+    // Check for brace patterns, but exclude environment variable syntax
     if let (Some(l), Some(r)) = (value.find('{'), value.find('}'))
         && l < r
     {
-        return true;
+        // Check if this is an environment variable: ${VAR} or ${VAR:-default}
+        // Environment variables have $ immediately before the {
+        if l > 0 && value.as_bytes().get(l - 1) == Some(&b'$') {
+            // This is likely an env var like ${VAR}, check the contents
+            let inside = &value[l + 1..r];
+
+            // If it contains comma or .. it's a glob {a,b} or {a..z}
+            // If it's alphanumeric/underscore with optional flags, it's an env var
+            if inside.contains(',') || inside.contains("..") {
+                return true;
+            }
+
+            // Otherwise, it's an env var, not a glob - continue checking
+        } else {
+            // No $ before {, this is a glob pattern like {a,b}
+            return true;
+        }
     }
 
     if let (Some(l), Some(r)) = (value.find('['), value.find(']'))
@@ -210,5 +227,46 @@ impl PortablePath for FilePath {
 
         // Remove ./ leading parts
         Ok(FilePath(value.trim_start_matches("./").into()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_glob_like_distinguishes_env_vars_from_globs() {
+        // Environment variables should NOT be detected as globs
+        assert!(!is_glob_like(".env.${NODE_ENV}"));
+        assert!(!is_glob_like(".env.${NODE_ENV:-production}"));
+        assert!(!is_glob_like("$HOME/.env"));
+        assert!(!is_glob_like("${HOME}/.env"));
+        assert!(!is_glob_like(".env.${VAR1}.${VAR2}"));
+
+        // Actual globs should still be detected
+        assert!(is_glob_like("*.js"));
+        assert!(is_glob_like("**/*.ts"));
+        assert!(is_glob_like("config.{js,ts}"));
+        assert!(is_glob_like("file{1..10}.txt"));
+        assert!(is_glob_like("test-?.js"));
+        assert!(is_glob_like("[abc]*.txt"));
+        assert!(is_glob_like("a|b"));
+
+        // Edge case: env var that contains comma (should be detected as glob)
+        assert!(is_glob_like("${VAR,OTHER}"));
+        assert!(is_glob_like("${VAR..OTHER}"));
+    }
+
+    #[test]
+    fn test_filepath_parse_accepts_env_vars() {
+        // These should now be accepted
+        assert!(FilePath::parse(".env.${NODE_ENV}").is_ok());
+        assert!(FilePath::parse(".env.$NODE_ENV").is_ok());
+        assert!(FilePath::parse("${HOME}/.env").is_ok());
+        assert!(FilePath::parse(".env.${VAR:-default}").is_ok());
+
+        // Globs should still be rejected
+        assert!(FilePath::parse("*.js").is_err());
+        assert!(FilePath::parse("config.{js,ts}").is_err());
     }
 }

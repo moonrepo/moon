@@ -710,6 +710,85 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(options)
     }
 
+    /// Substitute environment variables and token variables in envFile paths
+    fn substitute_env_file_path(&self, path: &str) -> miette::Result<String> {
+        use moon_config::patterns;
+        use moon_env_var::{EnvSubstitutor, GlobalEnvBag};
+
+        let mut result = path.to_owned();
+
+        // Step 1: Substitute environment variables first (system environment variables)
+        if contains_env_var(&result) {
+            let mut substitutor =
+                EnvSubstitutor::default().with_global_vars(GlobalEnvBag::instance());
+            result = substitutor.substitute(&result);
+        }
+
+        // Step 2: Substitute token variables
+        if result.contains('$') && patterns::TOKEN_VAR.is_match(&result) {
+            result = self.substitute_token_variables(&result)?;
+        }
+
+        // Step 3: Validate that substitution didn't result in a glob pattern
+        if is_glob_like(&result) {
+            return Err(TasksBuilderError::InvalidEnvFilePath {
+                original: path.to_owned(),
+                resolved: result,
+                reason: "Path resolved to a glob pattern, which is not allowed".to_owned(),
+            }
+            .into());
+        }
+
+        Ok(result)
+    }
+
+    /// Substitute token variables (path-related only) in envFile paths.
+    ///
+    /// Note: Only a limited subset of tokens are supported at task build time,
+    /// as the full Task object and Project graph are not yet available:
+    ///
+    /// - `$workspaceRoot` - Workspace root absolute path
+    /// - `$projectRoot` - Project root absolute path
+    /// - `$projectSource` - Project source relative path
+    ///
+    /// Task-specific tokens (`$taskId`, `$target`, etc.) are NOT available here
+    /// as they require the Task object which is constructed later in the pipeline.
+    /// For full token expansion, see TokenExpander in the task-expander crate.
+    fn substitute_token_variables(&self, path: &str) -> miette::Result<String> {
+        use std::borrow::Cow;
+
+        let mut result = Cow::Borrowed(path);
+
+        // $workspaceRoot
+        if result.contains("$workspaceRoot") {
+            let workspace_root_str = self.context.workspace_root.to_str().ok_or_else(|| {
+                TasksBuilderError::InvalidPath {
+                    path: self.context.workspace_root.to_string_lossy().to_string(),
+                }
+            })?;
+            result = Cow::Owned(result.replace("$workspaceRoot", workspace_root_str));
+        }
+
+        // $projectRoot
+        if result.contains("$projectRoot") {
+            let project_root = self.project_source.to_path(self.context.workspace_root);
+            let project_root_str =
+                project_root
+                    .to_str()
+                    .ok_or_else(|| TasksBuilderError::InvalidPath {
+                        path: project_root.to_string_lossy().to_string(),
+                    })?;
+            result = Cow::Owned(result.replace("$projectRoot", project_root_str));
+        }
+
+        // $projectSource
+        if result.contains("$projectSource") {
+            result = Cow::Owned(result.replace("$projectSource", self.project_source.as_str()));
+        }
+
+        Ok(result.to_string())
+    }
+
     fn resolve_env_files(
         &self,
         task_id: &Id,
@@ -734,11 +813,13 @@ impl<'proj> TasksBuilder<'proj> {
             }
             TaskOptionEnvFile::Enabled(false) => {}
             TaskOptionEnvFile::File(path) => {
-                list.push(Input::parse(path.as_str())?);
+                let resolved_path = self.substitute_env_file_path(path.as_str())?;
+                list.push(Input::parse(&resolved_path)?);
             }
             TaskOptionEnvFile::Files(paths) => {
                 for path in paths {
-                    list.push(Input::parse(path.as_str())?);
+                    let resolved_path = self.substitute_env_file_path(path.as_str())?;
+                    list.push(Input::parse(&resolved_path)?);
                 }
             }
         };

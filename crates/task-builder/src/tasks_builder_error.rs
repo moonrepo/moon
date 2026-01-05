@@ -90,4 +90,21 @@ pub enum TasksBuilderError {
         .task.style(Style::Label),
     )]
     UnknownProjectInput { dep: String, task: Target },
+
+    #[diagnostic(code(task_builder::invalid_path))]
+    #[error("Invalid path: {}", .path.style(Style::File))]
+    InvalidPath { path: String },
+
+    #[diagnostic(code(task_builder::invalid_env_file_path))]
+    #[error(
+        "Invalid envFile path after variable substitution.\nOriginal: {}\nResolved: {}\nReason: {}",
+        .original.style(Style::File),
+        .resolved.style(Style::File),
+        .reason
+    )]
+    InvalidEnvFilePath {
+        original: String,
+        resolved: String,
+        reason: String,
+    },
 }

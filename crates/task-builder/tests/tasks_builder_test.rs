@@ -699,6 +699,49 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn env_file_with_variable_substitution() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            // Set test environment variable
+            unsafe {
+                std::env::set_var("TEST_ENV", "staging");
+            }
+
+            let tasks = container.build_tasks("options").await;
+
+            // Test environment variable substitution
+            let task = tasks.get("env-file-with-env-var").unwrap();
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![Input::File(stub_file_input(".env.staging"))])
+            );
+
+            // Test token variable substitution
+            let task = tasks.get("env-file-with-token-var").unwrap();
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![Input::File(stub_file_input("options/.env.token"))])
+            );
+
+            // Test list with mixed variables
+            let task = tasks.get("env-file-list-with-vars").unwrap();
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![
+                    Input::File(stub_file_input(".env")),
+                    Input::File(stub_file_input(".env.staging")),
+                    Input::File(stub_file_input("/options/.env.shared"))
+                ])
+            );
+
+            // Clean up
+            unsafe {
+                std::env::remove_var("TEST_ENV");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn adds_env_file_as_an_input() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path());

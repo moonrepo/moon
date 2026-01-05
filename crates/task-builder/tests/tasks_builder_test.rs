@@ -743,6 +743,69 @@ tasks:
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        #[serial]
+        #[should_panic(expected = "glob pattern")]
+        async fn env_file_errors_when_substitution_resolves_to_glob() {
+            let sandbox = create_sandbox("builder");
+
+            // Add a task that uses env var substitution
+            sandbox.create_file(
+                "glob-test/moon.yml",
+                r#"
+tasks:
+  test-glob:
+    options:
+      envFile: '.env.${GLOB_VAR}'
+"#,
+            );
+
+            let bag = GlobalEnvBag::instance();
+
+            // Set env var to a value that looks like a glob pattern
+            bag.set("GLOB_VAR", "{a,b}");
+
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            // Should panic because .env.{a,b} is a glob pattern
+            let _tasks = container.build_tasks("glob-test").await;
+
+            // Clean up (won't be reached due to panic, but serial test ensures isolation)
+            bag.remove("GLOB_VAR");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[serial]
+        async fn env_file_handles_undefined_env_var() {
+            let sandbox = create_sandbox("builder");
+
+            // Add a task that uses an undefined env var
+            sandbox.create_file(
+                "undefined-test/moon.yml",
+                r#"
+tasks:
+  test-undefined:
+    options:
+      envFile: '.env.${UNDEFINED_VAR}'
+"#,
+            );
+
+            let bag = GlobalEnvBag::instance();
+
+            // Make sure the var is not set
+            bag.remove("UNDEFINED_VAR");
+
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("undefined-test").await;
+
+            // EnvSubstitutor replaces undefined vars with empty string
+            let task = tasks.get("test-undefined").unwrap();
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![Input::File(stub_file_input(".env."))])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn adds_env_file_as_an_input() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path());

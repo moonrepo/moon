@@ -4,13 +4,9 @@
 members = ["cargo:."]
 
 [dist]
-# The preferred dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.30.2"
-# CI backends to support
 ci = "github"
-# The installers to generate for each app
-installers = ["shell", "powershell"]
-# Target platforms to build apps for (Rust target-triple syntax)
+pr-run-mode = "upload"
 targets = [
 	"aarch64-apple-darwin",
 	"aarch64-unknown-linux-gnu",
@@ -19,15 +15,10 @@ targets = [
 	"x86_64-unknown-linux-musl",
 	"x86_64-pc-windows-msvc",
 ]
-# A namespace to use when publishing this package to the npm registry
-# npm-scope = "@moonrepo"
-# Path that installers should place binaries in
+installers = ["shell", "powershell"]
 install-path = ["$MOON_HOME/bin", "~/.moon/bin"]
-# Which actions to run on pull requests
-pr-run-mode = "upload"
-# Skip checking whether the specified configuration files are up to date
+# install-success-msg = " "
 allow-dirty = ["ci"]
-# Custom job to publish the npm packages
 # publish-jobs = ["./release-npm"]
 
 [dist.github-custom-runners]

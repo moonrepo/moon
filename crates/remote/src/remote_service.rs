@@ -236,7 +236,7 @@ impl RemoteService {
         self.upload_requests
             .write()
             .await
-            .push(tokio::spawn(async move {
+            .push(tokio::spawn(Box::pin(async move {
                 if let Some(metadata) = &mut result.execution_metadata {
                     metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
                 }
@@ -273,7 +273,7 @@ impl RemoteService {
                         color::muted_light(error.to_string()),
                     );
                 }
-            }));
+            })));
 
         // We don't actually know at this point if they all uploaded
         Ok(true)
@@ -407,7 +407,9 @@ async fn batch_find_blobs(
             );
         }
 
-        set.spawn(async move { client.find_missing_blobs(group.items).await });
+        set.spawn(Box::pin(async move {
+            client.find_missing_blobs(group.items).await
+        }));
     }
 
     let mut missing_digests = vec![];
@@ -479,14 +481,16 @@ async fn batch_upload_blobs(
         }
 
         if group.stream {
-            set.spawn(async move {
+            set.spawn(Box::pin(async move {
                 client
                     .stream_update_blob(&action_digest, group.items.remove(0))
                     .await
                     .map(|res| vec![Some(res)])
-            });
+            }));
         } else {
-            set.spawn(async move { client.batch_update_blobs(&action_digest, group.items).await });
+            set.spawn(Box::pin(async move {
+                client.batch_update_blobs(&action_digest, group.items).await
+            }));
         }
     }
 
@@ -557,14 +561,16 @@ async fn batch_download_blobs(
         }
 
         if group.stream {
-            set.spawn(async move {
+            set.spawn(Box::pin(async move {
                 client
                     .stream_read_blob(&action_digest, group.items.remove(0))
                     .await
                     .map(|res| vec![res])
-            });
+            }));
         } else {
-            set.spawn(async move { client.batch_read_blobs(&action_digest, group.items).await });
+            set.spawn(Box::pin(async move {
+                client.batch_read_blobs(&action_digest, group.items).await
+            }));
         }
     }
 

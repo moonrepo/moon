@@ -254,7 +254,7 @@ impl ActionPipeline {
 
         debug!(total_jobs = node_count, "Dispatching jobs in the pipeline");
 
-        Ok(tokio::spawn(async move {
+        Ok(tokio::spawn(Box::pin(async move {
             let mut dispatcher =
                 JobDispatcher::new(&action_graph, job_context.clone(), priority_groups);
             let mut persistent_indices = vec![];
@@ -365,7 +365,7 @@ impl ActionPipeline {
                 });
 
             job_handles
-        }))
+        })))
     }
 
     fn monitor_signals(&self, cancel_token: CancellationToken) -> JoinHandle<SignalType> {

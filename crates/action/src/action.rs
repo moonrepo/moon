@@ -168,6 +168,13 @@ impl Action {
 
     pub fn should_abort(&self) -> bool {
         matches!(self.status, ActionStatus::Aborted)
+            // Tasks that errored before the command is spawned are injected with
+            // a fake execution operation with an aborted status. We should bubble
+            // up this hard failure and abort the entire pipeline!
+            || self
+                .operations
+                .get_last_execution()
+                .is_some_and(|exec| matches!(exec.status, ActionStatus::Aborted))
     }
 
     pub fn should_bail(&self) -> bool {

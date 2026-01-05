@@ -144,6 +144,8 @@ features, improvements, and much more!
 - Fixed an issue where ctrl+c wouldn't exit when a prompt was waiting for input.
 - Fixed an issue where `project` based task inputs would not be reflected internally in the input
   files/globs list.
+- Fixed an issue where running a task that triggers a system/moon error wouldn't output the error
+  message. This also aborts the action pipeline correctly now.
 
 #### ⚙️ Internal
 

@@ -659,9 +659,9 @@ impl<'query> ActionGraphBuilder<'query> {
 
         match locator {
             TargetLocator::GlobMatch {
-                project_glob,
-                task_glob,
                 scope,
+                scope_glob,
+                task_glob,
                 ..
             } => {
                 let mut is_all = false;
@@ -670,7 +670,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
                 // Query for all applicable projects first since we can't
                 // query projects + tasks at the same time
-                if let Some(glob) = project_glob {
+                if let Some(glob) = scope_glob {
                     let query = if let Some(tag_glob) = glob.strip_prefix('#') {
                         format!("tag~{tag_glob}")
                     } else {

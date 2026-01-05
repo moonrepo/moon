@@ -11,7 +11,7 @@ cached = "0.56.0"
 chrono = { version = "0.4.42", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
-clap = { version = "4.5.53", default-features = false, features = [
+clap = { version = "4.5.54", default-features = false, features = [
     "derive",
     "std",
     "error-context",
@@ -70,7 +70,7 @@ starbase_utils = { version = "0.12.3", default-features = false, features = [
 ] }
 tera = { version = "1.20.1", features = ["preserve_order"] }
 thiserror = "2.0.17"
-tokio = { version = "1.48.0", default-features = false, features = [
+tokio = { version = "1.49.0", default-features = false, features = [
     "macros",
     "process",
     "rt-multi-thread",

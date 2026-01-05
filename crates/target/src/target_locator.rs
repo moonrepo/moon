@@ -12,7 +12,7 @@ pub enum TargetLocator {
     GlobMatch {
         original: String,
         scope: Option<TargetScope>,
-        project_glob: Option<String>,
+        scope_glob: Option<String>,
         task_glob: String,
     },
 
@@ -61,24 +61,24 @@ impl FromStr for TargetLocator {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         if value.contains(':') {
-            if is_glob(value) {
+            if value.contains(['*', '?', '[', ']', '{', '}', '!']) || value.contains("...") {
                 let (base_scope, base_id) = value.split_once(':').unwrap();
                 let mut scope = None;
                 let mut project_glob = None;
 
                 match base_scope {
-                    "" | "*" | "**" | "**/*" => scope = Some(TargetScope::All),
+                    "" | "*" | "**" | "**/*" | "..." => scope = Some(TargetScope::All),
                     "~" => scope = Some(TargetScope::OwnSelf),
                     "^" => scope = Some(TargetScope::Deps),
                     inner => {
-                        project_glob = Some(inner.to_owned());
+                        project_glob = Some(inner.replace("...", "**/*"));
                     }
                 };
 
                 Ok(TargetLocator::GlobMatch {
                     original: value.to_owned(),
                     scope,
-                    project_glob,
+                    scope_glob: project_glob,
                     task_glob: base_id.to_owned(),
                 })
             } else {
@@ -108,8 +108,4 @@ impl Serialize for TargetLocator {
     {
         serializer.serialize_str(self.as_str())
     }
-}
-
-fn is_glob(value: &str) -> bool {
-    value.contains(['*', '?', '[', ']', '{', '}', '!'])
 }

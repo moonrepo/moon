@@ -139,6 +139,7 @@ features, improvements, and much more!
 
 #### 🐞 Fixes
 
+- Fixed local executables in `@moonrepo` packages not being detected correctly.
 - Fixed task job parallelism to partition _after_ tasks have been filtered based on affected state.
 - Fixed an issue where env var substitution would not process in the order they were defined.
 - Fixed an issue where ctrl+c wouldn't exit when a prompt was waiting for input.

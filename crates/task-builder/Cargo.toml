@@ -28,7 +28,6 @@ tracing = { workspace = true }
 moon_config = { path = "../config", features = ["loader", "proto"] }
 moon_project = { path = "../project" }
 moon_test_utils2 = { path = "../test-utils" }
-serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 

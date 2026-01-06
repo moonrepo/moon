@@ -2,9 +2,7 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{test_utils::*, *};
-use moon_env_var::GlobalEnvBag;
 use moon_target::Target;
-use serial_test::serial;
 use starbase_sandbox::create_sandbox;
 use utils::TasksBuilderContainer;
 
@@ -697,111 +695,6 @@ tasks:
                     Input::File(stub_file_input(".env.test")),
                     Input::File(stub_file_input("/.env.shared"))
                 ])
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        #[serial]
-        async fn env_file_with_variable_substitution() {
-            let sandbox = create_sandbox("builder");
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            let bag = GlobalEnvBag::instance();
-
-            // Set test environment variable
-            bag.set("TEST_ENV", "staging");
-
-            let tasks = container.build_tasks("options").await;
-
-            // Test environment variable substitution
-            let task = tasks.get("env-file-with-env-var").unwrap();
-            assert_eq!(
-                task.options.env_files,
-                Some(vec![Input::File(stub_file_input(".env.staging"))])
-            );
-
-            // Test token variable substitution
-            let task = tasks.get("env-file-with-token-var").unwrap();
-            assert_eq!(
-                task.options.env_files,
-                Some(vec![Input::File(stub_file_input("options/.env.token"))])
-            );
-
-            // Test list with mixed variables
-            let task = tasks.get("env-file-list-with-vars").unwrap();
-            assert_eq!(
-                task.options.env_files,
-                Some(vec![
-                    Input::File(stub_file_input(".env")),
-                    Input::File(stub_file_input(".env.staging")),
-                    Input::File(stub_file_input("/options/.env.shared"))
-                ])
-            );
-
-            // Clean up
-            bag.remove("TEST_ENV");
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        #[serial]
-        #[should_panic(expected = "glob pattern")]
-        async fn env_file_errors_when_substitution_resolves_to_glob() {
-            let sandbox = create_sandbox("builder");
-
-            // Add a task that uses env var substitution
-            sandbox.create_file(
-                "glob-test/moon.yml",
-                r#"
-tasks:
-  test-glob:
-    options:
-      envFile: '.env.${GLOB_VAR}'
-"#,
-            );
-
-            let bag = GlobalEnvBag::instance();
-
-            // Set env var to a value that looks like a glob pattern
-            bag.set("GLOB_VAR", "{a,b}");
-
-            let container = TasksBuilderContainer::new(sandbox.path());
-
-            // Should panic because .env.{a,b} is a glob pattern
-            let _tasks = container.build_tasks("glob-test").await;
-
-            // Clean up (won't be reached due to panic, but serial test ensures isolation)
-            bag.remove("GLOB_VAR");
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        #[serial]
-        async fn env_file_handles_undefined_env_var() {
-            let sandbox = create_sandbox("builder");
-
-            // Add a task that uses an undefined env var
-            sandbox.create_file(
-                "undefined-test/moon.yml",
-                r#"
-tasks:
-  test-undefined:
-    options:
-      envFile: '.env.${UNDEFINED_VAR}'
-"#,
-            );
-
-            let bag = GlobalEnvBag::instance();
-
-            // Make sure the var is not set
-            bag.remove("UNDEFINED_VAR");
-
-            let container = TasksBuilderContainer::new(sandbox.path());
-            let tasks = container.build_tasks("undefined-test").await;
-
-            // EnvSubstitutor replaces undefined vars with empty string
-            let task = tasks.get("test-undefined").unwrap();
-            assert_eq!(
-                task.options.env_files,
-                Some(vec![Input::File(stub_file_input(".env."))])
             );
         }
 

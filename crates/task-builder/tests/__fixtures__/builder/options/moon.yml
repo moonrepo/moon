@@ -30,19 +30,6 @@ tasks:
     options:
       envFile: false
 
-  env-file-with-env-var:
-    options:
-      envFile: '.env.${TEST_ENV}'
-  env-file-with-token-var:
-    options:
-      envFile: '$projectSource/.env.token'
-  env-file-list-with-vars:
-    options:
-      envFile:
-        - '.env'
-        - '.env.${TEST_ENV}'
-        - '/$projectSource/.env.shared'
-
   interactive:
     options:
       interactive: true

@@ -1,6 +1,6 @@
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::TaskArgs;
+use moon_config::{EnvMap, TaskArgs};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
@@ -49,6 +49,7 @@ impl<'graph> TaskExpander<'graph> {
         }
 
         self.expand_env(&mut task)?;
+        self.expand_env_files(&mut task)?;
         self.expand_deps(&mut task)?;
         self.expand_inputs(&mut task)?;
         self.expand_outputs(&mut task)?;
@@ -153,6 +154,44 @@ impl<'graph> TaskExpander<'graph> {
         );
 
         task.env = self.token.expand_env(task)?;
+
+        Ok(())
+    }
+
+    #[instrument(skip_all)]
+    pub fn expand_env_files(&mut self, task: &mut Task) -> miette::Result<()> {
+        use moon_config::Input;
+
+        if let Some(env_files) = &task.options.env_files {
+            trace!(
+                task_target = task.target.as_str(),
+                env_files = ?env_files.iter().map(|f| f.as_str()).collect::<Vec<_>>(),
+                "Expanding tokens and variables in envFile paths"
+            );
+
+            let mut expanded_files = Vec::with_capacity(env_files.len());
+
+            for input in env_files {
+                match input {
+                    Input::File(file_input) => {
+                        // Expand both token variables and environment variables
+                        let expanded_path = self.token.replace_variables_and_substitute(
+                            task,
+                            &EnvMap::default(),
+                            file_input.file.as_str(),
+                        )?;
+
+                        // Parse the expanded path back into an Input
+                        // Note: After expansion, the path might become a glob pattern
+                        expanded_files.push(Input::parse(&expanded_path)?);
+                    }
+                    // Other Input types are kept as-is (though envFile should only be File)
+                    other => expanded_files.push(other.clone()),
+                }
+            }
+
+            task.options.env_files = Some(expanded_files);
+        }
 
         Ok(())
     }

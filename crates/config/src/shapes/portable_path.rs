@@ -13,10 +13,39 @@ pub fn is_glob_like(value: &str) -> bool {
         return true;
     }
 
-    if let (Some(l), Some(r)) = (value.find('{'), value.find('}'))
-        && l < r
-    {
-        return true;
+    // Check for brace patterns, but exclude environment variable syntax
+    // We need to check ALL brace pairs, not just the first one, because a path
+    // like .env.${VAR}.{a,b} has both an env var and a glob pattern
+    let mut search_from = 0;
+    while let Some(l) = value[search_from..].find('{') {
+        let l = search_from + l;
+        if let Some(r_offset) = value[l..].find('}') {
+            let r = l + r_offset;
+
+            // Check if this is an environment variable: ${VAR} or ${VAR:-default}
+            // Environment variables have $ immediately before the {
+            if l > 0 && value.as_bytes().get(l - 1) == Some(&b'$') {
+                // This is likely an env var like ${VAR}, check the contents
+                let inside = &value[l + 1..r];
+
+                // If it contains comma or .. it's a glob {a,b} or {a..z}
+                // If it's alphanumeric/underscore with optional flags, it's an env var
+                if inside.contains(',') || inside.contains("..") {
+                    return true;
+                }
+
+                // Otherwise, it's an env var, not a glob - continue to next brace pair
+            } else {
+                // No $ before {, this is a glob pattern like {a,b}
+                return true;
+            }
+
+            // Move search position past this brace pair
+            search_from = r + 1;
+        } else {
+            // No matching closing brace, stop searching
+            break;
+        }
     }
 
     if let (Some(l), Some(r)) = (value.find('['), value.find(']'))
@@ -210,5 +239,63 @@ impl PortablePath for FilePath {
 
         // Remove ./ leading parts
         Ok(FilePath(value.trim_start_matches("./").into()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_glob_like_distinguishes_env_vars_from_globs() {
+        // Environment variables should NOT be detected as globs
+        assert!(!is_glob_like(".env.${NODE_ENV}"));
+        assert!(!is_glob_like(".env.${NODE_ENV:-production}"));
+        assert!(!is_glob_like("$HOME/.env"));
+        assert!(!is_glob_like("${HOME}/.env"));
+        assert!(!is_glob_like(".env.${VAR1}.${VAR2}"));
+
+        // Actual globs should still be detected
+        assert!(is_glob_like("*.js"));
+        assert!(is_glob_like("**/*.ts"));
+        assert!(is_glob_like("config.{js,ts}"));
+        assert!(is_glob_like("file{1..10}.txt"));
+        assert!(is_glob_like("test-?.js"));
+        assert!(is_glob_like("[abc]*.txt"));
+        assert!(is_glob_like("a|b"));
+
+        // Edge case: env var that contains comma (should be detected as glob)
+        assert!(is_glob_like("${VAR,OTHER}"));
+        assert!(is_glob_like("${VAR..OTHER}"));
+    }
+
+    #[test]
+    fn test_is_glob_like_multiple_brace_pairs() {
+        // Multiple env vars should NOT be detected as globs
+        assert!(!is_glob_like(".env.${VAR1}.${VAR2}"));
+        assert!(!is_glob_like("${HOME}/.env.${NODE_ENV}"));
+        assert!(!is_glob_like("${VAR1}/${VAR2}/${VAR3}"));
+
+        // First brace is env var, second is glob - should be detected as glob
+        assert!(is_glob_like(".env.${VAR}.{a,b}"));
+        assert!(is_glob_like("${HOME}/config.{js,ts}"));
+        assert!(is_glob_like(".env.${NODE_ENV}.file{1..10}.txt"));
+
+        // First brace is glob, second is env var - should be detected as glob
+        assert!(is_glob_like("config.{js,ts}.${VAR}"));
+        assert!(is_glob_like("{a,b}/${HOME}/file"));
+    }
+
+    #[test]
+    fn test_filepath_parse_accepts_env_vars() {
+        // These should now be accepted
+        assert!(FilePath::parse(".env.${NODE_ENV}").is_ok());
+        assert!(FilePath::parse(".env.$NODE_ENV").is_ok());
+        assert!(FilePath::parse("${HOME}/.env").is_ok());
+        assert!(FilePath::parse(".env.${VAR:-default}").is_ok());
+
+        // Globs should still be rejected
+        assert!(FilePath::parse("*.js").is_err());
+        assert!(FilePath::parse("config.{js,ts}").is_err());
     }
 }

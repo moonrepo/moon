@@ -737,7 +737,7 @@ impl<'graph> TokenExpander<'graph> {
         ))
     }
 
-    fn replace_variables_and_substitute<T: AsRef<str>>(
+    pub(crate) fn replace_variables_and_substitute<T: AsRef<str>>(
         &self,
         task: &Task,
         env: &EnvMap,

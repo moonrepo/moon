@@ -557,6 +557,175 @@ mod task_expander {
         }
     }
 
+    mod expand_env_files {
+        use super::*;
+
+        #[test]
+        fn expands_environment_variables() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = Some(vec![Input::parse(".env.${TEST_ENV_1}").unwrap()]);
+
+            let bag = GlobalEnvBag::instance();
+            bag.set("TEST_ENV_1", "staging");
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context)
+                .expand_env_files(&mut task)
+                .unwrap();
+
+            bag.remove("TEST_ENV_1");
+
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![Input::parse(".env.staging").unwrap()])
+            );
+        }
+
+        #[test]
+        fn expands_token_variables() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = Some(vec![Input::parse("$projectSource/.env.local").unwrap()]);
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context)
+                .expand_env_files(&mut task)
+                .unwrap();
+
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![Input::parse("project/source/.env.local").unwrap()])
+            );
+        }
+
+        #[test]
+        fn expands_mixed_variables() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = Some(vec![
+                Input::parse(".env").unwrap(),
+                Input::parse(".env.${TEST_ENV_2}").unwrap(),
+                Input::parse("/$projectSource/.env.shared").unwrap(),
+            ]);
+
+            let bag = GlobalEnvBag::instance();
+            bag.set("TEST_ENV_2", "production");
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context)
+                .expand_env_files(&mut task)
+                .unwrap();
+
+            bag.remove("TEST_ENV_2");
+
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![
+                    Input::parse(".env").unwrap(),
+                    Input::parse(".env.production").unwrap(),
+                    Input::parse("/project/source/.env.shared").unwrap(),
+                ])
+            );
+        }
+
+        #[test]
+        fn expands_task_specific_tokens() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = Some(vec![Input::parse(".env.$taskId").unwrap()]);
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context)
+                .expand_env_files(&mut task)
+                .unwrap();
+
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![Input::parse(".env.task").unwrap()])
+            );
+        }
+
+        #[test]
+        fn handles_undefined_env_var() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = Some(vec![Input::parse(".env.${UNDEFINED_VAR}").unwrap()]);
+
+            let bag = GlobalEnvBag::instance();
+            bag.remove("UNDEFINED_VAR");
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context)
+                .expand_env_files(&mut task)
+                .unwrap();
+
+            // EnvSubstitutor replaces undefined vars with empty string
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![Input::parse(".env.").unwrap()])
+            );
+        }
+
+        #[test]
+        fn handles_env_var_with_default() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = Some(vec![
+                Input::parse(".env.${TEST_ENV_3:-development}").unwrap(),
+            ]);
+
+            let bag = GlobalEnvBag::instance();
+            bag.remove("TEST_ENV_3");
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context)
+                .expand_env_files(&mut task)
+                .unwrap();
+
+            // Should use default value when var is not set
+            assert_eq!(
+                task.options.env_files,
+                Some(vec![Input::parse(".env.development").unwrap()])
+            );
+        }
+
+        #[test]
+        fn preserves_none_when_no_env_files() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph();
+            let project = create_project(sandbox.path());
+
+            let mut task = create_task();
+            task.options.env_files = None;
+
+            let context = create_context(sandbox.path());
+            TaskExpander::new(&project_graph, &project, &context)
+                .expand_env_files(&mut task)
+                .unwrap();
+
+            assert_eq!(task.options.env_files, None);
+        }
+    }
+
     mod expand_inputs {
         use super::*;
 

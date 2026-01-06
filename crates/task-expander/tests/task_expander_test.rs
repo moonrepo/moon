@@ -689,7 +689,9 @@ mod task_expander {
             let project = create_project(sandbox.path());
 
             let mut task = create_task();
-            task.options.env_files = Some(vec![Input::parse(".env.${TEST_ENV_3:-development}").unwrap()]);
+            task.options.env_files = Some(vec![
+                Input::parse(".env.${TEST_ENV_3:-development}").unwrap(),
+            ]);
 
             let bag = GlobalEnvBag::instance();
             bag.remove("TEST_ENV_3");

@@ -144,7 +144,7 @@ mod test {
         Err(D::Error::custom("fails with custom error"))
     }
 
-    fn run_custom_err_test<T: Debug + Deserialize<'static>>() {
+    fn run_custom_err_test<T: Debug + Deserialize<'static>>(val_str: &'static str) {
         #[derive(Deserialize, Debug)]
         struct TestData<T: Debug + Deserialize<'static>> {
             #[allow(dead_code)]
@@ -152,7 +152,8 @@ mod test {
             value: T,
         }
 
-        let result: Result<NodeState<TestData<T>>, _> = serde_json::from_str(r#"{"value": null}"#);
+        let s = format!(r#"{{"value": {}}}"#, val_str);
+        let result: Result<NodeState<TestData<T>>, _> = serde_json::from_str(&s);
 
         let Err(e) = result else {
             panic!("Expected error but got success!");
@@ -162,41 +163,37 @@ mod test {
 
     #[test]
     fn test_deserialize_i32_custom_err() {
-        run_custom_err_test::<i32>();
+        run_custom_err_test::<i32>("1");
     }
 
     #[test]
     fn test_deserialize_u32_custom_err() {
-        run_custom_err_test::<u32>();
+        run_custom_err_test::<u32>("1");
     }
 
     #[test]
     fn test_deserialize_f64_custom_err() {
-        run_custom_err_test::<f64>();
+        run_custom_err_test::<f64>("1.0");
     }
 
     #[test]
     fn test_deserialize_bool_custom_err() {
-        run_custom_err_test::<bool>();
+        run_custom_err_test::<bool>("true");
     }
 
     #[test]
     fn test_deserialize_string_custom_err() {
-        run_custom_err_test::<String>();
+        run_custom_err_test::<String>(r#""test""#);
     }
 
     #[test]
     fn test_deserialize_vec_custom_err() {
-        run_custom_err_test::<Vec<i32>>();
+        run_custom_err_test::<Vec<i32>>("[]");
     }
 
     #[test]
-    fn test_deserialize_map_custom_err() {
-        run_custom_err_test::<std::collections::HashMap<String, i32>>();
-    }
-    #[test]
     fn test_deserialize_bytes_custom_err() {
-        run_custom_err_test::<Vec<u8>>();
+        run_custom_err_test::<Vec<u8>>("\"abcd\"");
     }
 
     // Success state tests

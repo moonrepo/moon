@@ -15,7 +15,6 @@ use moon_config::{
 use moon_env_var::contains_env_var;
 use moon_target::Target;
 use moon_task::{Task, TaskOptionEnvFile, TaskOptions};
-use moon_task_args::parse_task_args;
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -907,25 +906,25 @@ impl<'proj> TasksBuilder<'proj> {
 
         let mut command = None;
         let mut args = None;
-        let mut cmd_list = parse_task_args(&config.command)?;
+        // let mut cmd_list = parse_task_args(&config.command)?;
 
-        if !cmd_list.is_empty() {
-            command = Some(cmd_list.remove(0));
+        // if !cmd_list.is_empty() {
+        //     command = Some(cmd_list.remove(0));
 
-            if !cmd_list.is_empty() {
-                args = Some(cmd_list);
-            }
-        }
+        //     if !cmd_list.is_empty() {
+        //         args = Some(cmd_list);
+        //     }
+        // }
 
-        if config.args != TaskArgs::None {
-            let arg_list = parse_task_args(&config.args)?;
+        // if config.args != TaskArgs::None {
+        //     let arg_list = parse_task_args(&config.args)?;
 
-            if let Some(inner) = &mut args {
-                inner.extend(arg_list);
-            } else {
-                args = Some(arg_list);
-            }
-        }
+        //     if let Some(inner) = &mut args {
+        //         inner.extend(arg_list);
+        //     } else {
+        //         args = Some(arg_list);
+        //     }
+        // }
 
         Ok((command, args))
     }

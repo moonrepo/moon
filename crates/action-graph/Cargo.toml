@@ -19,7 +19,6 @@ moon_graph_utils = { path = "../graph-utils" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_project = { path = "../project" }
 moon_task = { path = "../task" }
-moon_task_args = { path = "../task-args" }
 moon_toolchain = { path = "../toolchain" }
 moon_query = { path = "../query" }
 moon_workspace_graph = { path = "../workspace-graph" }

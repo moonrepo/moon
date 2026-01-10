@@ -3431,7 +3431,6 @@ dependencies = [
  "moon_project",
  "moon_query",
  "moon_task",
- "moon_task_args",
  "moon_test_utils2",
  "moon_toolchain",
  "moon_workspace_graph",
@@ -4260,15 +4259,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_task_args"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_args",
- "moon_config",
-]
-
-[[package]]
 name = "moon_task_builder"
 version = "0.0.1"
 dependencies = [
@@ -4280,7 +4270,6 @@ dependencies = [
  "moon_project",
  "moon_target",
  "moon_task",
- "moon_task_args",
  "moon_test_utils2",
  "moon_toolchain",
  "moon_toolchain_plugin",
@@ -4306,7 +4295,6 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_task",
- "moon_task_args",
  "moon_time",
  "pathdiff",
  "regex",

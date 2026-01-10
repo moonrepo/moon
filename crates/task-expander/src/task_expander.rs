@@ -1,12 +1,11 @@
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::{EnvMap, TaskArgs};
+use moon_config::EnvMap;
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
-use moon_task_args::parse_task_args;
 use std::mem;
 use tracing::{debug, instrument, trace, warn};
 
@@ -123,17 +122,12 @@ impl<'graph> TaskExpander<'graph> {
         for dep in deps.iter_mut() {
             let dep_args = self
                 .token
-                .expand_args_with_task(task, Some(parse_task_args(&dep.args)?))?;
+                .expand_args_with_task(task, Some(mem::take(&mut dep.args)))?;
             let dep_env = self
                 .token
                 .expand_env_with_task(task, Some(mem::take(&mut dep.env)))?;
 
-            dep.args = if dep_args.is_empty() {
-                TaskArgs::None
-            } else {
-                TaskArgs::List(dep_args)
-            };
-
+            dep.args = dep_args;
             dep.env = EnvSubstitutor::default()
                 .with_global_vars(GlobalEnvBag::instance())
                 .with_local_vars(&dep_env)

@@ -67,9 +67,6 @@ pub struct Command {
     /// Convert non-zero exits to errors
     pub error_on_nonzero: bool,
 
-    /// Escape/quote arguments when joining
-    pub escape_args: bool,
-
     /// Values to pass to stdin
     pub input: Vec<OsString>,
 
@@ -98,7 +95,6 @@ impl Command {
             env: FxHashMap::default(),
             exe: CommandExecutable::Binary(bin.as_ref().to_os_string()),
             error_on_nonzero: true,
-            escape_args: true,
             input: vec![],
             paths: VecDeque::new(),
             prefix: None,

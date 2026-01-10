@@ -42,11 +42,7 @@ impl CommandLine {
             // Otherwise append as a *single* argument. This typically
             // appears after a "-" argument (should come from shell).
             else {
-                command_line.push(if command.escape_args {
-                    shell.join_args(main_line)
-                } else {
-                    main_line.join(OsStr::new(" "))
-                });
+                command_line.push(main_line.join(OsStr::new(" ")));
             }
 
             // Otherwise we have a normal command and arguments.
@@ -72,7 +68,11 @@ impl CommandLine {
         let mut command = if !with_shell && self.shell {
             self.command.last().cloned().unwrap_or_else(OsString::new)
         } else {
-            join_args_os(&self.command)
+            self.command
+                .iter()
+                .map(|arg| arg.as_os_str())
+                .collect::<Vec<_>>()
+                .join(OsStr::new(" "))
         };
 
         if with_input && !self.input.is_empty() {

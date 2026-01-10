@@ -4,7 +4,7 @@ use moon_app_context::AppContext;
 use moon_common::is_ci_env;
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{Command, CommandLine, Output, args::join_args};
+use moon_process::{Command, CommandLine, Output};
 use moon_project::Project;
 use moon_task::Task;
 use std::time::Duration;
@@ -329,7 +329,10 @@ impl<'task> CommandExecutor<'task> {
                 args.extend(&context.passthrough_args);
             }
 
-            join_args(args)
+            args.iter()
+                .map(|arg| arg.as_str())
+                .collect::<Vec<_>>()
+                .join(" ")
         }
     }
 

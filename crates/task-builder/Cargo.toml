@@ -22,6 +22,7 @@ miette = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+starbase_args = { workspace = true }
 
 [dev-dependencies]
 moon_config = { path = "../config", features = ["loader", "proto"] }

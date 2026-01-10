@@ -4274,6 +4274,7 @@ dependencies = [
  "moon_toolchain",
  "moon_toolchain_plugin",
  "rustc-hash",
+ "starbase_args",
  "starbase_sandbox",
  "thiserror 2.0.17",
  "tokio",
@@ -6647,6 +6648,16 @@ dependencies = [
  "tracing",
  "zip",
  "zstd",
+]
+
+[[package]]
+name = "starbase_args"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c329405c6ce64d503fe017bf85f5bbffec52a868c6b5d5c3e5b420af84ca4c4"
+dependencies = [
+ "pest",
+ "pest_derive",
 ]
 
 [[package]]

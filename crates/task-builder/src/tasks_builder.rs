@@ -468,7 +468,7 @@ impl<'proj> TasksBuilder<'proj> {
         // all necessary fields and populate/calculate with values.
 
         if task.command.is_empty() {
-            task.command = TaskArg::new("noop");
+            task.command = TaskArg::new_unquoted("noop");
         }
 
         if !global_deps.is_empty() {
@@ -540,7 +540,7 @@ impl<'proj> TasksBuilder<'proj> {
                     "Task has been marked for another operating system, disabling command/script",
                 );
 
-                task.command = TaskArg::new("noop");
+                task.command = TaskArg::new_unquoted("noop");
                 task.args.clear();
                 task.script = None;
             }
@@ -907,6 +907,7 @@ impl<'proj> TasksBuilder<'proj> {
                 use starbase_args::*;
 
                 let mut args = vec![];
+                // TODO bubble up
                 let mut env = EnvMap::default();
 
                 if cmd.is_empty() {
@@ -925,7 +926,7 @@ impl<'proj> TasksBuilder<'proj> {
                         Pipeline::Start(commands) => {
                             for sequence in commands.iter() {
                                 if matches!(sequence, Sequence::Passthrough(_)) {
-                                    args.push(TaskArg::new("--"));
+                                    args.push(TaskArg::new_unquoted("--"));
                                 }
 
                                 match sequence {

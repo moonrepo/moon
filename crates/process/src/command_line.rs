@@ -1,8 +1,7 @@
 use crate::command::{Command, CommandExecutable};
-use moon_args::join_args_os;
 use moon_common::color;
 use moon_env_var::GlobalEnvBag;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display};
 use std::path::Path;
 
@@ -125,7 +124,7 @@ impl CommandLine {
 
         if with_input && !self.input.is_empty() {
             let debug_input = GlobalEnvBag::instance().should_debug_process_input();
-            let input = join_args_os(self.input.iter().flat_map(|i| i.to_str().map(|s| s.trim())));
+            let input = self.input.join(OsStr::new(" "));
 
             if line
                 .as_os_str()

@@ -1,5 +1,4 @@
 use crate::token_expander_error::TokenExpanderError;
-use moon_args::join_args;
 use moon_common::path::{self, RelativeFrom, WorkspaceRelativePathBuf};
 use moon_config::{EnvMap, Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
@@ -142,7 +141,7 @@ impl<'graph> TokenExpander<'graph> {
                     items.push(value);
                 }
 
-                script = Cow::Owned(script.replace(&token, &join_args(&items)));
+                script = Cow::Owned(script.replace(&token, &items.join(" ")));
             }
         }
 

@@ -11,7 +11,6 @@ mod signal;
 
 pub use command::*;
 pub use command_line::*;
-pub use moon_args as args;
 pub use output::*;
 pub use process_error::*;
 pub use process_registry::*;

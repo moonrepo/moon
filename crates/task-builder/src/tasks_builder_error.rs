@@ -107,7 +107,7 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::unsupported_command_syntax))]
     #[error(
-        "Unable to build task {}, as {} and {} settings do not support pipes, redirects, or multiple commands. Instead you can either:\n- Use the {} setting, which supports raw syntax.\n- Wrap the command in a script file and execute that directly.",
+        "Unable to build task {}, as the {} and {} settings do not support pipes, redirects, or multiple commands. Instead you can either:\n\n- Use the {} setting, which supports raw shell syntax.\n- Wrap the command in a script file and execute that directly.",
         .task.style(Style::Label),
         "command".style(Style::Property),
         "args".style(Style::Property),

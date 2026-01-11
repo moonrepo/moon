@@ -6652,9 +6652,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_args"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c329405c6ce64d503fe017bf85f5bbffec52a868c6b5d5c3e5b420af84ca4c4"
+checksum = "cf128642e0d7f4f232f8c7dac5dd0516561b136b76262610467ea109f90cc553"
 dependencies = [
  "pest",
  "pest_derive",

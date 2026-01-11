@@ -932,19 +932,18 @@ impl<'proj> TasksBuilder<'proj> {
                                     Sequence::Start(command) | Sequence::Passthrough(command) => {
                                         for arg in command.iter() {
                                             if let Argument::Value(value) = arg {
-                                                let inner_value = value.get_quoted();
-
-                                                // If empty, then not a quoted value
-                                                if inner_value.is_empty() {
-                                                    args.push(TaskArg::new(value.to_string()));
-                                                } else {
+                                                if value.is_quoted() {
                                                     args.push(TaskArg::new_quoted(
-                                                        inner_value.to_string(),
+                                                        value.get_quoted_value().to_string(),
+                                                        value.to_string(),
+                                                    ));
+                                                } else {
+                                                    args.push(TaskArg::new_unquoted(
                                                         value.to_string(),
                                                     ));
                                                 }
                                             } else {
-                                                args.push(TaskArg::new(arg.to_string()));
+                                                args.push(TaskArg::new_unquoted(arg.to_string()));
                                             }
                                         }
                                     }
@@ -955,7 +954,7 @@ impl<'proj> TasksBuilder<'proj> {
                                             if let Argument::EnvVar(key, value, _) = arg {
                                                 env.insert(
                                                     key.to_owned(),
-                                                    Some(value.get_quoted().to_owned()),
+                                                    Some(value.as_str().to_owned()),
                                                 );
                                             } else {
                                                 return Err(

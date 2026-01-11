@@ -78,10 +78,10 @@ cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
     #[serde(default)]
     pub struct Task {
+        pub command: TaskArg,
+
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub args: Vec<TaskArg>,
-
-        pub command: TaskArg,
 
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub deps: Vec<TaskDependencyConfig>,
@@ -348,8 +348,8 @@ impl Task {
 impl Default for Task {
     fn default() -> Self {
         Self {
-            args: vec![],
             command: TaskArg::new("noop"),
+            args: vec![],
             deps: vec![],
             description: None,
             env: EnvMap::default(),

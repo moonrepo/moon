@@ -16,11 +16,12 @@ cacheable!(
 impl TaskArg {
     pub fn new(base_value: impl AsRef<str>) -> Self {
         let base_value = base_value.as_ref();
+        let mut is_quoted = false;
         let mut quoted_value = None;
         let mut value = String::new();
 
         // Keep in sync with starbase!
-        for (l, r) in [
+        for (start, end) in [
             ("\"", "\""),
             ("'", "'"),
             ("$\"", "\""),
@@ -28,11 +29,16 @@ impl TaskArg {
             ("%(", ")"),
             ("r#'", "'#"),
         ] {
-            if base_value.starts_with(l) && base_value.ends_with(r) {
-                value.push_str(base_value.trim_start_matches(l).trim_end_matches(r));
+            if base_value.starts_with(start) && base_value.ends_with(end) {
+                value.push_str(base_value.trim_start_matches(start).trim_end_matches(end));
                 quoted_value = Some(base_value.to_owned());
+                is_quoted = true;
                 break;
             }
+        }
+
+        if !is_quoted {
+            value.push_str(base_value);
         }
 
         Self {
@@ -44,6 +50,13 @@ impl TaskArg {
     pub fn new_quoted(value: String, quoted_value: String) -> Self {
         Self {
             quoted_value: Some(quoted_value),
+            value,
+        }
+    }
+
+    pub fn new_unquoted(value: String) -> Self {
+        Self {
+            quoted_value: None,
             value,
         }
     }

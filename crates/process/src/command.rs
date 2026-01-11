@@ -30,33 +30,21 @@ impl EnvBehavior {
 }
 
 #[derive(Debug)]
-pub enum CommandExecutable {
-    /// Single file name: git
-    Binary(OsString),
-
-    /// Full script: git commit --allow-empty
-    Script(OsString),
-}
-
-impl CommandExecutable {
-    pub fn as_os_str(&self) -> &OsStr {
-        match self {
-            Self::Binary(inner) => inner,
-            Self::Script(inner) => inner,
-        }
-    }
-
-    pub fn into_os_string(self) -> OsString {
-        self.as_os_str().into()
-    }
-}
-
-#[derive(Debug)]
 pub struct CommandArg {
     // In shells: "value"
     pub quoted_value: Option<OsString>,
+
     // Not in shells: value
     pub value: OsString,
+}
+
+#[derive(Debug)]
+pub enum CommandExecutable {
+    /// Single file name: git
+    Binary(CommandArg),
+
+    /// Full script: git commit --allow-empty
+    Script(OsString),
 }
 
 #[derive(Debug)]
@@ -101,7 +89,10 @@ impl Command {
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
-            exe: CommandExecutable::Binary(bin.as_ref().to_os_string()),
+            exe: CommandExecutable::Binary(CommandArg {
+                quoted_value: None,
+                value: bin.as_ref().to_os_string(),
+            }),
             error_on_nonzero: true,
             input: vec![],
             paths: VecDeque::new(),
@@ -113,8 +104,8 @@ impl Command {
     }
 
     pub fn new_script<T: AsRef<OsStr>>(script: T) -> Self {
-        let mut command = Self::new(script);
-        command.exe = CommandExecutable::Script(command.exe.into_os_string());
+        let mut command = Self::new("");
+        command.exe = CommandExecutable::Script(script.as_ref().to_os_string());
         command
     }
 
@@ -317,7 +308,7 @@ impl Command {
 
     pub fn get_bin_name(&self) -> String {
         match &self.exe {
-            CommandExecutable::Binary(bin) => bin.to_string_lossy().to_string(),
+            CommandExecutable::Binary(bin) => bin.value.to_string_lossy().to_string(),
             CommandExecutable::Script(script) => {
                 if let Some(inner) = script.to_str() {
                     match inner.find(' ') {
@@ -363,7 +354,7 @@ impl Command {
 
         match &self.exe {
             CommandExecutable::Binary(exe) => {
-                write(exe);
+                write(&exe.value);
             }
             CommandExecutable::Script(exe) => {
                 write(exe);
@@ -402,7 +393,14 @@ impl Command {
     }
 
     pub fn set_bin<T: AsRef<OsStr>>(&mut self, bin: T) -> &mut Self {
-        self.exe = CommandExecutable::Binary(bin.as_ref().to_os_string());
+        self.set_bin_arg(CommandArg {
+            quoted_value: None,
+            value: bin.as_ref().to_os_string(),
+        })
+    }
+
+    pub fn set_bin_arg(&mut self, bin: CommandArg) -> &mut Self {
+        self.exe = CommandExecutable::Binary(bin);
         self
     }
 

@@ -1,4 +1,4 @@
-use crate::command::Command;
+use crate::command::{Command, CommandExecutable};
 use moon_args::join_args_os;
 use moon_common::color;
 use moon_env_var::GlobalEnvBag;
@@ -7,9 +7,7 @@ use std::fmt::{self, Display};
 use std::path::Path;
 
 fn should_quote(value: &str) -> bool {
-    value
-        .chars()
-        .any(|ch| ch == ' ' || ch == '\n' || ch == '\t')
+    value.chars().any(|ch| ch.is_ascii_whitespace())
 }
 
 #[derive(Debug)]
@@ -26,7 +24,7 @@ impl CommandLine {
         let mut in_shell = false;
 
         // If wrapped in a shell, the shell binary and arguments
-        // must be placed at the start of the line.
+        // must be placed at the start of the line
         if let Some(shell) = &command.shell {
             in_shell = true;
             command_line.push(shell.bin.as_os_str().to_owned());
@@ -34,42 +32,61 @@ impl CommandLine {
 
             // Within a shell, the command is a string. For arguments,
             // use the original quoted value if available!
-            let mut shell_line = command.exe.as_os_str().to_os_string();
+            let mut shell_line = OsString::new();
 
-            for arg in &command.args {
-                shell_line.push(OsStr::new(" "));
+            match &command.exe {
+                CommandExecutable::Binary(bin) => {
+                    let mut args = vec![bin];
+                    args.extend(&command.args);
 
-                if let Some(quoted_value) = &arg.quoted_value {
-                    shell_line.push(quoted_value);
-                } else if let Some(str_value) = arg.value.to_str()
-                    && should_quote(str_value)
-                {
-                    shell_line.push(shell.instance.quote(str_value));
-                } else {
-                    shell_line.push(&arg.value);
+                    for arg in args {
+                        if !shell_line.is_empty() {
+                            shell_line.push(OsStr::new(" "));
+                        }
+
+                        if let Some(quoted_value) = &arg.quoted_value {
+                            shell_line.push(quoted_value);
+                        } else if let Some(value) = arg.value.to_str()
+                            && should_quote(value)
+                        {
+                            shell_line.push(shell.instance.quote(value));
+                        } else {
+                            shell_line.push(&arg.value);
+                        }
+                    }
                 }
-            }
+                CommandExecutable::Script(script) => {
+                    shell_line.push(script);
+                }
+            };
 
             // If the main command should be passed via stdin,
-            // then append the input line instead of the command line.
+            // then append the input line instead of the command line
             if shell.command.pass_args_stdin {
                 input_line.push(shell_line);
             }
             // Otherwise append as a *single* argument. This typically
-            // appears after a "-c" argument (should come from shell).
+            // appears after a "-c" argument (should come from shell)
             else {
                 command_line.push(shell_line);
             }
         }
-        // Otherwise we have a normal command and arguments.
+        // Otherwise we have a normal command and arguments
         else {
-            command_line.push(command.exe.as_os_str().to_os_string());
+            match &command.exe {
+                CommandExecutable::Binary(bin) => {
+                    command_line.push(bin.value.clone());
 
-            for arg in &command.args {
-                command_line.push(arg.value.clone());
-            }
+                    for arg in &command.args {
+                        command_line.push(arg.value.clone());
+                    }
+                }
+                CommandExecutable::Script(script) => {
+                    command_line.push(script.clone());
+                }
+            };
 
-            // That also may have input.
+            // That also may have input
             if !command.input.is_empty() {
                 for input in &command.input {
                     input_line.push(input.to_owned());

@@ -2,7 +2,7 @@ use crate::command::{Command, CommandExecutable};
 use moon_args::join_args_os;
 use moon_common::color;
 use moon_env_var::GlobalEnvBag;
-use std::ffi::{OsStr, OsString};
+use std::ffi::OsString;
 use std::fmt::{self, Display};
 use std::path::Path;
 
@@ -32,7 +32,7 @@ impl CommandLine {
 
             // Within a shell, the command is a string. For arguments,
             // use the original quoted value if available!
-            let mut shell_line = OsString::new();
+            let mut shell_command = OsString::new();
 
             match &command.exe {
                 CommandExecutable::Binary(bin) => {
@@ -40,35 +40,35 @@ impl CommandLine {
                     args.extend(&command.args);
 
                     for arg in args {
-                        if !shell_line.is_empty() {
-                            shell_line.push(OsStr::new(" "));
+                        if !shell_command.is_empty() {
+                            shell_command.push(" ");
                         }
 
                         if let Some(quoted_value) = &arg.quoted_value {
-                            shell_line.push(quoted_value);
+                            shell_command.push(quoted_value);
                         } else if let Some(value) = arg.value.to_str()
                             && should_quote(value)
                         {
-                            shell_line.push(shell.instance.quote(value));
+                            shell_command.push(shell.instance.quote(value));
                         } else {
-                            shell_line.push(&arg.value);
+                            shell_command.push(&arg.value);
                         }
                     }
                 }
                 CommandExecutable::Script(script) => {
-                    shell_line.push(script);
+                    shell_command.push(script);
                 }
             };
 
             // If the main command should be passed via stdin,
             // then append the input line instead of the command line
             if shell.command.pass_args_stdin {
-                input_line.push(shell_line);
+                input_line.push(shell_command);
             }
             // Otherwise append as a *single* argument. This typically
             // appears after a "-c" argument (should come from shell)
             else {
-                command_line.push(shell_line);
+                command_line.push(shell_command);
             }
         }
         // Otherwise we have a normal command and arguments
@@ -102,38 +102,49 @@ impl CommandLine {
     }
 
     pub fn get_line(&self, with_shell: bool, with_input: bool) -> String {
-        let mut command = if !with_shell && self.shell {
-            self.command.last().cloned().unwrap_or_else(OsString::new)
+        let mut line = OsString::new();
+
+        if !with_shell
+            && self.shell
+            && let Some(last) = self.command.last()
+        {
+            line.push(last);
         } else {
-            self.command
-                .iter()
-                .map(|arg| arg.as_os_str())
-                .collect::<Vec<_>>()
-                .join(OsStr::new(" "))
-        };
+            for arg in &self.command {
+                if !line.is_empty() {
+                    line.push(" ");
+                }
+
+                line.push(arg);
+
+                if with_shell && self.shell && (arg == "-c" || arg == "-C") {
+                    line.push(" -");
+                }
+            }
+        }
 
         if with_input && !self.input.is_empty() {
             let debug_input = GlobalEnvBag::instance().should_debug_process_input();
             let input = join_args_os(self.input.iter().flat_map(|i| i.to_str().map(|s| s.trim())));
 
-            if command
+            if line
                 .as_os_str()
                 .to_str()
                 .is_some_and(|cmd| cmd.ends_with('-'))
             {
-                command.push(" ");
+                line.push(" ");
             } else {
-                command.push(" - ");
+                line.push(" - ");
             }
 
             if input.len() > 200 && !debug_input {
-                command.push("(truncated input)");
+                line.push("(truncated input)");
             } else {
-                command.push(&input);
+                line.push(&input);
             }
         }
 
-        command.to_string_lossy().trim().replace('\n', " ")
+        line.to_string_lossy().trim().replace('\n', " ")
     }
 
     pub fn format(command: &str, workspace_root: &Path, working_dir: &Path) -> String {

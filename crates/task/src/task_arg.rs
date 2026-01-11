@@ -76,12 +76,14 @@ impl TaskArg {
 
 impl From<TaskArg> for String {
     fn from(arg: TaskArg) -> Self {
-        arg.value
+        // Preserve quotes when serializing
+        arg.get_value().into()
     }
 }
 
 impl From<String> for TaskArg {
     fn from(value: String) -> Self {
+        // Handle quotes when deserializing
         Self::new(value)
     }
 }

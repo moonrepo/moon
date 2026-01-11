@@ -102,7 +102,8 @@ impl<'graph> TokenExpander<'graph> {
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<String> {
         self.scope = TokenScope::Command;
 
-        let mut command = Cow::Owned(task.command.value.clone());
+        // Expand on quoted value if available
+        let mut command = Cow::Owned(task.command.get_value().to_owned());
 
         if self.has_token_function(&command) {
             let result = self.replace_function(task, &command)?;
@@ -161,7 +162,13 @@ impl<'graph> TokenExpander<'graph> {
         self.scope = TokenScope::Args;
 
         let mut args = vec![];
-        let base_args = base_args.unwrap_or_else(|| mem::take(&mut task.args));
+        let base_args = base_args.unwrap_or_else(|| {
+            // Expand on quoted value if available
+            task.args
+                .iter()
+                .map(|arg| arg.get_value().to_owned())
+                .collect()
+        });
 
         for arg in base_args {
             // Token functions

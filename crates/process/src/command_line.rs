@@ -6,6 +6,12 @@ use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display};
 use std::path::Path;
 
+fn should_quote(value: &str) -> bool {
+    value
+        .chars()
+        .any(|ch| ch == ' ' || ch == '\n' || ch == '\t')
+}
+
 #[derive(Debug)]
 pub struct CommandLine {
     pub command: Vec<OsString>,
@@ -19,14 +25,6 @@ impl CommandLine {
         let mut input_line: Vec<OsString> = vec![];
         let mut in_shell = false;
 
-        // Extract the main command, without shell, for other purposes!
-        let mut main_line: Vec<OsString> = vec![];
-        main_line.push(command.exe.as_os_str().to_os_string());
-
-        for arg in &command.args {
-            main_line.push(arg.to_owned());
-        }
-
         // If wrapped in a shell, the shell binary and arguments
         // must be placed at the start of the line.
         if let Some(shell) = &command.shell {
@@ -34,20 +32,42 @@ impl CommandLine {
             command_line.push(shell.bin.as_os_str().to_owned());
             command_line.extend(shell.command.shell_args.clone());
 
+            // Within a shell, the command is a string. For arguments,
+            // use the original quoted value if available!
+            let mut shell_line = command.exe.as_os_str().to_os_string();
+
+            for arg in &command.args {
+                shell_line.push(OsStr::new(" "));
+
+                if let Some(quoted_value) = &arg.quoted_value {
+                    shell_line.push(quoted_value);
+                } else if let Some(str_value) = arg.value.to_str()
+                    && should_quote(str_value)
+                {
+                    shell_line.push(shell.instance.quote(str_value));
+                } else {
+                    shell_line.push(&arg.value);
+                }
+            }
+
             // If the main command should be passed via stdin,
             // then append the input line instead of the command line.
             if shell.command.pass_args_stdin {
-                input_line.extend(main_line);
+                input_line.push(shell_line);
             }
             // Otherwise append as a *single* argument. This typically
-            // appears after a "-" argument (should come from shell).
+            // appears after a "-c" argument (should come from shell).
             else {
-                command_line.push(main_line.join(OsStr::new(" ")));
+                command_line.push(shell_line);
             }
+        }
+        // Otherwise we have a normal command and arguments.
+        else {
+            command_line.push(command.exe.as_os_str().to_os_string());
 
-            // Otherwise we have a normal command and arguments.
-        } else {
-            command_line.extend(main_line);
+            for arg in &command.args {
+                command_line.push(arg.value.clone());
+            }
 
             // That also may have input.
             if !command.input.is_empty() {

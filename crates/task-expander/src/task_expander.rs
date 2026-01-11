@@ -96,11 +96,16 @@ impl<'graph> TaskExpander<'graph> {
 
         trace!(
             task_target = task.target.as_str(),
-            args = ?task.args,
+            args = ?task.args.iter().map(|arg| arg.get_value()).collect::<Vec<_>>(),
             "Expanding tokens and variables in args",
         );
 
-        task.args = self.token.expand_args(task)?;
+        task.args = self
+            .token
+            .expand_args(task)?
+            .into_iter()
+            .map(TaskArg::new)
+            .collect();
 
         Ok(())
     }

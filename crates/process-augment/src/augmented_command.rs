@@ -4,7 +4,7 @@ use moon_pdk_api::{
     ExecCommandInput, Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput,
     ExtendTaskScriptInput, ExtendTaskScriptOutput,
 };
-use moon_process::{Command, EnvBehavior};
+use moon_process::{Command, CommandArg, EnvBehavior};
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{
@@ -63,7 +63,12 @@ impl<'app> AugmentedCommand<'app> {
         if let Some(script) = &task.script {
             builder.set_script(script);
         } else {
-            builder.args(&task.args);
+            for arg in &task.args {
+                builder.args.push_back(CommandArg {
+                    quoted_value: arg.quoted_value.as_ref().map(OsString::from),
+                    value: OsString::from(&arg.value),
+                });
+            }
         }
 
         for (key, value) in &task.env {
@@ -123,7 +128,10 @@ impl<'app> AugmentedCommand<'app> {
             }
             Extend::Prepend(next) => {
                 for arg in next.into_iter().rev() {
-                    self.args.push_front(OsString::from(arg));
+                    self.args.push_front(CommandArg {
+                        quoted_value: None,
+                        value: OsString::from(arg),
+                    });
                 }
             }
             Extend::Replace(next) => {

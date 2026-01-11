@@ -79,7 +79,7 @@ cacheable!(
     #[serde(default)]
     pub struct Task {
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub args: Vec<String>,
+        pub args: Vec<TaskArg>,
 
         pub command: TaskArg,
 
@@ -184,9 +184,17 @@ impl Task {
     /// Return the task command/args/script as a full command line for
     /// use within logs and debugs.
     pub fn get_command_line(&self) -> String {
-        self.script
-            .clone()
-            .unwrap_or_else(|| format!("{} {}", self.command.get_value(), self.args.join(" ")))
+        self.script.clone().unwrap_or_else(|| {
+            format!(
+                "{} {}",
+                self.command.get_value(),
+                self.args
+                    .iter()
+                    .map(|arg| arg.get_value())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            )
+        })
     }
 
     /// Return a list of all workspace-relative input files.

@@ -52,8 +52,16 @@ impl CommandExecutable {
 }
 
 #[derive(Debug)]
+pub struct CommandArg {
+    // In shells: "value"
+    pub quoted_value: Option<OsString>,
+    // Not in shells: value
+    pub value: OsString,
+}
+
+#[derive(Debug)]
 pub struct Command {
-    pub args: VecDeque<OsString>,
+    pub args: VecDeque<CommandArg>,
 
     /// Continuously write to stdin and read from stdout
     pub continuous_pipe: bool,
@@ -111,7 +119,10 @@ impl Command {
     }
 
     pub fn arg<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
-        self.args.push_back(arg.as_ref().to_os_string());
+        self.args.push_back(CommandArg {
+            quoted_value: None,
+            value: arg.as_ref().to_os_string(),
+        });
         self
     }
 
@@ -142,7 +153,9 @@ impl Command {
         A: AsRef<OsStr>,
     {
         let arg = arg.as_ref();
-        self.args.iter().any(|a| a == arg)
+        self.args
+            .iter()
+            .any(|a| a.value == arg || a.quoted_value.as_ref().is_some_and(|aa| aa == arg))
     }
 
     pub fn contains_env<K>(&self, key: K) -> bool
@@ -298,7 +311,7 @@ impl Command {
     pub fn get_args_list(&self) -> Vec<String> {
         self.args
             .iter()
-            .map(|arg| arg.to_string_lossy().to_string())
+            .map(|arg| arg.value.to_string_lossy().to_string())
             .collect()
     }
 
@@ -358,7 +371,7 @@ impl Command {
         };
 
         for arg in &self.args {
-            write(arg);
+            write(&arg.value);
         }
 
         if let Some(cwd) = &self.cwd {

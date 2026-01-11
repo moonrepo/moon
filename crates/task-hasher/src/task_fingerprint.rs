@@ -56,7 +56,7 @@ impl<'task> TaskFingerprint<'task> {
         Self {
             cache_key: task.options.cache_key.as_deref(),
             command: &task.command,
-            args: task.args.iter().map(|a| a.as_str()).collect(),
+            args: task.args.iter().map(|a| a.get_value()).collect(),
             deps: BTreeMap::new(),
             env: task
                 .env

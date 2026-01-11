@@ -122,12 +122,11 @@ impl ToolchainRegistry {
         &self,
         ids: Vec<&Id>,
         command: &String,
-        args: &[String],
     ) -> miette::Result<Vec<Id>> {
         let mut detected = FxHashSet::default();
 
         for toolchain in self.load_many(ids).await? {
-            if toolchain.detect_task_usage(command, args)? {
+            if toolchain.detect_task_usage(command)? {
                 detected.insert(toolchain.id.clone());
             }
         }

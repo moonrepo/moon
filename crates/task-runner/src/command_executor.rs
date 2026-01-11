@@ -319,21 +319,16 @@ impl<'task> CommandExecutor<'task> {
     }
 
     fn get_command_line(&self, context: &ActionContext) -> String {
-        if self.task.script.is_some() {
-            self.task.get_command_line()
-        } else {
-            let mut args = vec![&self.task.command.value];
-            args.extend(&self.task.args);
+        let mut line = self.task.get_command_line();
 
-            if context.should_inherit_args(&self.task.target) {
-                args.extend(&context.passthrough_args);
+        if self.task.script.is_none() && context.should_inherit_args(&self.task.target) {
+            for arg in &context.passthrough_args {
+                line.push(' ');
+                line.push_str(arg);
             }
-
-            args.iter()
-                .map(|arg| arg.as_str())
-                .collect::<Vec<_>>()
-                .join(" ")
         }
+
+        line
     }
 
     // We don't use `Command::print_command` because we need to explicitly

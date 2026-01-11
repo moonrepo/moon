@@ -792,7 +792,6 @@ impl<'proj> TasksBuilder<'proj> {
                     .detect_task_usage(
                         self.context.enabled_toolchains.iter().collect(),
                         &task.command.value,
-                        &task.args,
                     )
                     .await?,
             );
@@ -900,10 +899,10 @@ impl<'proj> TasksBuilder<'proj> {
         &self,
         target: &Target,
         args: &TaskArgs,
-    ) -> miette::Result<Vec<String>> {
+    ) -> miette::Result<Vec<TaskArg>> {
         match args {
             TaskArgs::None => Ok(vec![]),
-            TaskArgs::List(list) => Ok(list.clone()),
+            TaskArgs::List(list) => Ok(list.iter().map(TaskArg::new).collect()),
             TaskArgs::String(cmd) => {
                 use starbase_args::*;
 
@@ -926,13 +925,27 @@ impl<'proj> TasksBuilder<'proj> {
                         Pipeline::Start(commands) => {
                             for sequence in commands.iter() {
                                 if matches!(sequence, Sequence::Passthrough(_)) {
-                                    args.push("--".to_owned());
+                                    args.push(TaskArg::new("--"));
                                 }
 
                                 match sequence {
                                     Sequence::Start(command) | Sequence::Passthrough(command) => {
                                         for arg in command.iter() {
-                                            args.push(arg.to_string());
+                                            if let Argument::Value(value) = arg {
+                                                let inner_value = value.get_quoted();
+
+                                                // If empty, then not a quoted value
+                                                if inner_value.is_empty() {
+                                                    args.push(TaskArg::new(value.to_string()));
+                                                } else {
+                                                    args.push(TaskArg::new_quoted(
+                                                        inner_value.to_string(),
+                                                        value.to_string(),
+                                                    ));
+                                                }
+                                            } else {
+                                                args.push(TaskArg::new(arg.to_string()));
+                                            }
                                         }
                                     }
                                     // If only env vars, allow it, otherwise it's a
@@ -981,7 +994,7 @@ impl<'proj> TasksBuilder<'proj> {
         &self,
         target: &Target,
         config: &TaskConfig,
-    ) -> miette::Result<(Option<String>, Option<Vec<String>>)> {
+    ) -> miette::Result<(Option<TaskArg>, Option<Vec<TaskArg>>)> {
         if config.script.is_some() {
             return Ok((None, None));
         }

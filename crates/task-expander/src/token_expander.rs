@@ -102,7 +102,7 @@ impl<'graph> TokenExpander<'graph> {
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<String> {
         self.scope = TokenScope::Command;
 
-        let mut command = Cow::Owned(task.command.clone());
+        let mut command = Cow::Owned(task.command.value.clone());
 
         if self.has_token_function(&command) {
             let result = self.replace_function(task, &command)?;

@@ -1,3 +1,4 @@
+use crate::task_arg::TaskArg;
 use crate::task_options::TaskOptions;
 use moon_common::{Id, cacheable, path::WorkspaceRelativePathBuf};
 use moon_config::{
@@ -80,7 +81,7 @@ cacheable!(
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub args: Vec<String>,
 
-        pub command: String,
+        pub command: TaskArg,
 
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub deps: Vec<TaskDependencyConfig>,
@@ -185,7 +186,7 @@ impl Task {
     pub fn get_command_line(&self) -> String {
         self.script
             .clone()
-            .unwrap_or_else(|| format!("{} {}", self.command, self.args.join(" ")))
+            .unwrap_or_else(|| format!("{} {}", self.command.get_value(), self.args.join(" ")))
     }
 
     /// Return a list of all workspace-relative input files.
@@ -340,7 +341,7 @@ impl Default for Task {
     fn default() -> Self {
         Self {
             args: vec![],
-            command: String::from("noop"),
+            command: TaskArg::new("noop"),
             deps: vec![],
             description: None,
             env: EnvMap::default(),

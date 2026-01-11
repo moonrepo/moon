@@ -14,7 +14,7 @@ use moon_config::{
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
-use moon_task::{Task, TaskOptionEnvFile, TaskOptions};
+use moon_task::{Task, TaskArg, TaskOptionEnvFile, TaskOptions};
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -298,7 +298,7 @@ impl<'proj> TasksBuilder<'proj> {
             let (command, base_args) = self.get_command_and_args(&target, link.config)?;
 
             if let Some(command) = command {
-                task.command = command;
+                task.command = TaskArg::new(command);
             }
 
             // Add to task later after we have a merge strategy
@@ -458,9 +458,9 @@ impl<'proj> TasksBuilder<'proj> {
             task.args.clear();
 
             if let Some(i) = script.find(' ') {
-                task.command = script[0..i].to_owned();
+                task.command = TaskArg::new(&script[0..i]);
             } else {
-                task.command = script.to_owned();
+                task.command = TaskArg::new(script);
             }
         }
 
@@ -468,7 +468,7 @@ impl<'proj> TasksBuilder<'proj> {
         // all necessary fields and populate/calculate with values.
 
         if task.command.is_empty() {
-            task.command = "noop".into();
+            task.command = TaskArg::new("noop");
         }
 
         if !global_deps.is_empty() {
@@ -540,7 +540,7 @@ impl<'proj> TasksBuilder<'proj> {
                     "Task has been marked for another operating system, disabling command/script",
                 );
 
-                task.command = "noop".into();
+                task.command = TaskArg::new("noop");
                 task.args.clear();
                 task.script = None;
             }
@@ -791,7 +791,7 @@ impl<'proj> TasksBuilder<'proj> {
                     .toolchain_registry
                     .detect_task_usage(
                         self.context.enabled_toolchains.iter().collect(),
-                        &task.command,
+                        &task.command.value,
                         &task.args,
                     )
                     .await?,

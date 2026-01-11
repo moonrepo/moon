@@ -58,7 +58,7 @@ impl<'app> AugmentedCommand<'app> {
     }
 
     pub fn from_task(context: &'app AppContext, bag: &'app GlobalEnvBag, task: &Task) -> Self {
-        let mut builder = Self::new(context, bag, &task.command);
+        let mut builder = Self::new(context, bag, &task.command.value);
 
         if let Some(script) = &task.script {
             builder.set_script(script);

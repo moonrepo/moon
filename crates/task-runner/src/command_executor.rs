@@ -322,7 +322,7 @@ impl<'task> CommandExecutor<'task> {
         if self.task.script.is_some() {
             self.task.get_command_line()
         } else {
-            let mut args = vec![&self.task.command];
+            let mut args = vec![&self.task.command.value];
             args.extend(&self.task.args);
 
             if context.should_inherit_args(&self.task.target) {

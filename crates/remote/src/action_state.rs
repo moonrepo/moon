@@ -59,7 +59,7 @@ impl ActionState<'_> {
         // Since we don't support (or plan to) remote execution,
         // then we can ignore all the working directory logic
         let mut command = Command {
-            arguments: vec![self.task.command.clone()],
+            arguments: vec![self.task.command.value.clone()],
             ..Default::default()
         };
 

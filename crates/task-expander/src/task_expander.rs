@@ -5,7 +5,7 @@ use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
+use moon_task::{Task, TaskArg, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use std::mem;
 use tracing::{debug, instrument, trace, warn};
 
@@ -66,11 +66,11 @@ impl<'graph> TaskExpander<'graph> {
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<()> {
         trace!(
             task_target = task.target.as_str(),
-            command = &task.command,
+            command = &task.command.value,
             "Expanding tokens and variables in command"
         );
 
-        task.command = self.token.expand_command(task)?;
+        task.command = TaskArg::new(self.token.expand_command(task)?);
 
         Ok(())
     }

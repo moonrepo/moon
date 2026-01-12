@@ -119,7 +119,7 @@ tasks:
 
   # Shell syntax
   syntaxVar:
-    command: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
+    script: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
     toolchain: system
     env:
       VAR_NAME: substituted-value

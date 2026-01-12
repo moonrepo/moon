@@ -138,7 +138,7 @@ tasks:
       - '*.ps1'
 
   syntaxVar:
-    command:
+    script:
       'Write-Output $env:VAR_NAME "in $env:VAR_NAME quotes" prefixed-$env:VAR_NAME
       "$env:VAR_NAME-suffixed"'
     env:

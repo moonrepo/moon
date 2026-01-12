@@ -410,6 +410,7 @@ mod tasks_builder {
 
             assert_eq!(task.command, "foo");
             assert_eq!(task.args, ["-a", "--bar", "baz", "qux"]);
+            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -422,6 +423,7 @@ mod tasks_builder {
 
             assert_eq!(task.command, "foo");
             assert_eq!(task.args, ["--", "bar", "-b"]);
+            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -442,6 +444,7 @@ mod tasks_builder {
                     TaskArg::new_quoted("special quote", "$\"special quote\""),
                 ]
             );
+            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -459,6 +462,7 @@ mod tasks_builder {
                     "\"./some/file path/with/spaces.sh\""
                 )
             );
+            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -478,6 +482,7 @@ mod tasks_builder {
                     TaskArg::new_unquoted("${foo:bar}"),
                 ]
             );
+            assert_eq!(task.options.shell, Some(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -496,6 +501,7 @@ mod tasks_builder {
                     TaskArg::new_unquoted("<(echo bar)"),
                 ]
             );
+            assert_eq!(task.options.shell, Some(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -516,6 +522,7 @@ mod tasks_builder {
                     ("BAZ".into(), Some("quoted value".into())),
                 ])
             );
+            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -536,6 +543,7 @@ mod tasks_builder {
                     ("BAZ".into(), Some("quoted value".into())),
                 ])
             );
+            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -549,6 +557,7 @@ mod tasks_builder {
             assert_eq!(task.command, "exit");
             assert_eq!(task.args, ["0"]);
             assert_eq!(task.env, EnvMap::default());
+            assert_eq!(task.options.shell, Some(false));
         }
 
         // We can't place these invalid commands in the fixture,
@@ -2422,7 +2431,7 @@ tasks:
             let tasks = container.build_tasks("scripts").await;
             let task = tasks.get("no-shell").unwrap();
 
-            assert_ne!(task.options.shell, Some(true));
+            assert_eq!(task.options.shell, Some(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]

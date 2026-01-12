@@ -24,6 +24,14 @@ use std::path::Path;
 use std::sync::Arc;
 use tracing::{instrument, trace};
 
+#[derive(Debug, Default)]
+struct CommandLineParseResult {
+    pub command: Option<TaskArg>,
+    pub args: Option<Vec<TaskArg>>,
+    pub env: Option<EnvMap>,
+    pub requires_shell: bool,
+}
+
 struct ConfigChain<'proj> {
     config: &'proj TaskConfig,
     inherited: bool,
@@ -284,6 +292,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut preset = None;
         let mut args_sets = vec![];
         let mut env_sets = vec![];
+        let mut requires_shell = false;
 
         if id == "dev" || id == "serve" || id == "start" {
             preset = Some(TaskPreset::Server);
@@ -296,19 +305,22 @@ impl<'proj> TasksBuilder<'proj> {
                 preset = Some(pre);
             }
 
-            let (command, base_args, base_env) = self.get_command_and_args(&target, link.config)?;
+            if let Some(command_line) = self.get_command_line(&target, link.config)? {
+                if let Some(command) = command_line.command {
+                    task.command = command;
+                }
 
-            if let Some(command) = command {
-                task.command = command;
-            }
+                if let Some(args) = command_line.args {
+                    args_sets.push(args);
+                }
 
-            // Add to task later after we have a merge strategy
-            if let Some(base_args) = base_args {
-                args_sets.push(base_args);
-            }
+                if let Some(env) = command_line.env {
+                    env_sets.push(env);
+                }
 
-            if let Some(base_env) = base_env {
-                env_sets.push(base_env);
+                if command_line.requires_shell {
+                    requires_shell = true;
+                }
             }
         }
 
@@ -463,6 +475,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         // If a script, wipe out inherited arguments, and extract the first command
         if let Some(script) = &task.script {
+            requires_shell = true;
             task.args.clear();
 
             if let Some(i) = script.find(' ') {
@@ -511,11 +524,20 @@ impl<'proj> TasksBuilder<'proj> {
             };
         }
 
-        if task.options.shell.is_none() {
-            // Windows requires a shell for path resolution to work correctly
-            if cfg!(windows) || task.is_system_toolchain() || task.script.is_some() {
-                task.options.shell = Some(true);
-            }
+        // if task.options.shell.is_none() {
+        //     // Windows requires a shell for path resolution to work correctly
+        //     if cfg!(windows) || task.is_system_toolchain() || task.script.is_some() {
+        //         requires_shell = true;
+        //     }
+        // }
+
+        if task.script.is_some() && task.options.shell.is_none() {
+            trace!(
+                task_target = target.as_str(),
+                "Task has defined a shell script, wrapping in a shell as its required",
+            );
+
+            requires_shell = true;
         }
 
         // If an arg contains a glob, we must run in a shell for expansion to work
@@ -525,7 +547,7 @@ impl<'proj> TasksBuilder<'proj> {
                 "Task has a glob-like argument, wrapping in a shell so glob expansion works",
             );
 
-            task.options.shell = Some(true);
+            requires_shell = true;
         }
 
         // If an arg contains an env var, we must run in a shell for substitution to work
@@ -535,6 +557,10 @@ impl<'proj> TasksBuilder<'proj> {
                 "Task references an environment variable, wrapping in a shell so substitution works",
             );
 
+            requires_shell = true;
+        }
+
+        if requires_shell {
             task.options.shell = Some(true);
         }
 
@@ -903,27 +929,44 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(env)
     }
 
-    fn parse_command_and_args(
+    fn parse_command_line(
         &self,
         target: &Target,
         args: &TaskArgs,
-    ) -> miette::Result<(Vec<TaskArg>, EnvMap)> {
-        let mut env = EnvMap::default();
+    ) -> miette::Result<CommandLineParseResult> {
+        let mut res = CommandLineParseResult::default();
 
         match args {
-            TaskArgs::None => Ok((vec![], env)),
-            TaskArgs::List(list) => Ok((list.iter().map(TaskArg::new).collect(), env)),
+            TaskArgs::None => Ok(res),
+            TaskArgs::List(list) => {
+                res.args = Some(list.iter().map(TaskArg::new).collect());
+
+                Ok(res)
+            }
             TaskArgs::String(cmd) => {
                 use starbase_args::*;
 
-                let mut args = vec![];
-
                 if cmd.is_empty() {
-                    return Ok((args, env));
+                    return Ok(res);
                 }
+
+                let mut args = vec![];
+                let mut env = EnvMap::default();
 
                 let mut handle_arg = |arg: &Argument, ignore_env: bool| {
                     if let Argument::Value(value) = arg {
+                        if !res.requires_shell
+                            && matches!(
+                                value,
+                                Value::Expansion(_)
+                                    | Value::Substitution(_)
+                                    | Value::MurexBraceQuoted(_)
+                                    | Value::NuRawQuoted(_)
+                            )
+                        {
+                            res.requires_shell = true;
+                        }
+
                         if value.is_quoted() {
                             args.push(TaskArg::new_quoted(
                                 value.get_quoted_value(),
@@ -1021,53 +1064,61 @@ impl<'proj> TasksBuilder<'proj> {
                     };
                 }
 
-                Ok((args, env))
+                if !args.is_empty() {
+                    res.args = Some(args);
+                }
+
+                if !env.is_empty() {
+                    res.env = Some(env);
+                }
+
+                Ok(res)
             }
         }
     }
 
-    #[allow(clippy::type_complexity)]
-    fn get_command_and_args(
+    fn get_command_line(
         &self,
         target: &Target,
         config: &TaskConfig,
-    ) -> miette::Result<(Option<TaskArg>, Option<Vec<TaskArg>>, Option<EnvMap>)> {
+    ) -> miette::Result<Option<CommandLineParseResult>> {
         if config.script.is_some() {
-            return Ok((None, None, None));
+            return Ok(None);
         }
 
-        let mut command = None;
-        let mut args = None;
-        let mut env = EnvMap::default();
-        let (mut cmd_list, env_map) = self.parse_command_and_args(target, &config.command)?;
+        let parse_result = self.parse_command_line(target, &config.command)?;
+        let mut command_line = CommandLineParseResult::default();
 
-        if !cmd_list.is_empty() {
-            command = Some(cmd_list.remove(0));
-
-            if !cmd_list.is_empty() {
-                args = Some(cmd_list);
-            }
+        if let Some(mut args) = parse_result.args {
+            command_line.command = Some(args.remove(0));
+            command_line.args.get_or_insert_default().extend(args);
         }
 
-        if !env_map.is_empty() {
-            env.extend(env_map);
+        if let Some(env) = parse_result.env {
+            command_line.env.get_or_insert_default().extend(env);
+        }
+
+        if parse_result.requires_shell {
+            command_line.requires_shell = true;
         }
 
         if config.args != TaskArgs::None {
-            let (arg_list, env_map) = self.parse_command_and_args(target, &config.args)?;
+            let parse_result = self.parse_command_line(target, &config.args)?;
 
-            if let Some(inner) = &mut args {
-                inner.extend(arg_list);
-            } else {
-                args = Some(arg_list);
+            if let Some(args) = parse_result.args {
+                command_line.args.get_or_insert_default().extend(args);
             }
 
-            if !env_map.is_empty() {
-                env.extend(env_map);
+            if let Some(env) = parse_result.env {
+                command_line.env.get_or_insert_default().extend(env);
+            }
+
+            if parse_result.requires_shell {
+                command_line.requires_shell = true;
             }
         }
 
-        Ok((command, args, if env.is_empty() { None } else { Some(env) }))
+        Ok(Some(command_line))
     }
 
     fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain<'_>>> {

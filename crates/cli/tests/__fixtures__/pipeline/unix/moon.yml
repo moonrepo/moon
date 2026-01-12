@@ -116,7 +116,7 @@ tasks:
       - '*.sh'
 
   syntaxVar:
-    command: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
+    script: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
     env:
       VAR_NAME: substituted-value
     options:

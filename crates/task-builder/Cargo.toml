@@ -15,7 +15,6 @@ moon_env_var = { path = "../env-var" }
 moon_project = { path = "../project" }
 moon_target = { path = "../target" }
 moon_task = { path = "../task" }
-moon_task_args = { path = "../task-args" }
 moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
 indexmap = { workspace = true }
@@ -23,6 +22,7 @@ miette = { workspace = true }
 rustc-hash = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+starbase_args = { workspace = true }
 
 [dev-dependencies]
 moon_config = { path = "../config", features = ["loader", "proto"] }

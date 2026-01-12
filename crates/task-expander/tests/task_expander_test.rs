@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_config::{
-    EnvMap, Input, Output, TaskArgs, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
+    EnvMap, Input, Output, TaskDependencyConfig, schematic::RegexSetting, test_utils::*,
 };
 use moon_env_var::GlobalEnvBag;
 use moon_task::{Target, TaskFileInput, TaskGlobInput};
@@ -303,7 +303,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::String("a b c".into()),
+                args: vec!["a".into(), "b".into(), "c".into()],
                 target: Target::parse("test").unwrap(),
                 ..TaskDependencyConfig::default()
             });
@@ -316,7 +316,7 @@ mod task_expander {
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig {
-                    args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                    args: vec!["a".into(), "b".into(), "c".into()],
                     target: Target::parse("~:test").unwrap(),
                     ..TaskDependencyConfig::default()
                 }]
@@ -331,7 +331,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::String("$project $language".into()),
+                args: vec!["$project".into(), "$language".into()],
                 target: Target::parse("test").unwrap(),
                 ..TaskDependencyConfig::default()
             });
@@ -344,7 +344,7 @@ mod task_expander {
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig {
-                    args: TaskArgs::List(vec!["project".into(), "unknown".into()]),
+                    args: vec!["project".into(), "unknown".into()],
                     target: Target::parse("~:test").unwrap(),
                     ..TaskDependencyConfig::default()
                 }]
@@ -372,7 +372,7 @@ mod task_expander {
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig {
-                    args: TaskArgs::None,
+                    args: vec![],
                     env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
@@ -401,7 +401,7 @@ mod task_expander {
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig {
-                    args: TaskArgs::None,
+                    args: vec![],
                     env: EnvMap::from_iter([("FOO".into(), Some("project-unknown".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
@@ -417,7 +417,7 @@ mod task_expander {
             let mut task = create_task();
 
             task.deps.push(TaskDependencyConfig {
-                args: TaskArgs::String("a b c".into()),
+                args: vec!["a".into(), "b".into(), "c".into()],
                 env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                 target: Target::parse("test").unwrap(),
                 optional: None,
@@ -431,7 +431,7 @@ mod task_expander {
             assert_eq!(
                 task.deps,
                 vec![TaskDependencyConfig {
-                    args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                    args: vec!["a".into(), "b".into(), "c".into()],
                     env: EnvMap::from_iter([("FOO".into(), Some("bar".into()))]),
                     target: Target::parse("~:test").unwrap(),
                     optional: None,

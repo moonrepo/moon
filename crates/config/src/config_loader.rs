@@ -246,7 +246,7 @@ impl ConfigLoader {
     pub fn load_toolchains_config<P: AsRef<Path>>(
         &self,
         workspace_root: P,
-        proto_config: &proto_core::ProtoConfig,
+        #[cfg(feature = "proto")] proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<ToolchainsConfig> {
         let mut result = self.create_toolchains_loader(workspace_root)?.load()?;
 

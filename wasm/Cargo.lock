@@ -76,9 +76,9 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "clap"
-version = "4.5.53"
+version = "4.5.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9e340e012a1bf4935f5282ed1436d1489548e8f72308207ea5df0e23d2d03f8"
+checksum = "c6e6ff9dcd79cff5cd969a17a545d79e84ab086e444102a591e288a8aa3ce394"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -86,9 +86,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.53"
+version = "4.5.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d76b5d13eaa18c901fd2f7fca939fefe3a0727a953561fefdf3b2922b8569d00"
+checksum = "fa42cf4d2b7a41bc8f663a7cab4031ebafa1bf3875705bfaf8466dc60ab52c00"
 dependencies = [
  "anstyle",
  "clap_lex",
@@ -830,7 +830,7 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "moon_common"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "dirs",
  "miette",
@@ -846,7 +846,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "hcl-rs",
  "indexmap",
@@ -867,14 +867,14 @@ dependencies = [
 
 [[package]]
 name = "moon_feature_flags"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "starbase_utils",
 ]
 
 [[package]]
 name = "moon_file_group"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "common-path",
  "miette",
@@ -888,7 +888,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -903,7 +903,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "0.4.1"
+version = "1.0.0"
 dependencies = [
  "derive_setters",
  "moon_common",
@@ -920,7 +920,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "miette",
  "moon_common",
@@ -933,7 +933,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "compact_str 0.9.0",
  "miette",
@@ -947,7 +947,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "miette",
  "moon_common",
@@ -1092,9 +1092,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.31.3"
+version = "0.31.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd16c495d9b97ad0d098e211719c4977ec785a7e5382c442e22388a021b66d51"
+checksum = "401b3e6a59f26cbdebef4e8f7967e342bf0e442735d7b6e6120f4940dd793d45"
 dependencies = [
  "derive_setters",
  "rustc-hash",
@@ -1250,9 +1250,9 @@ checksum = "28d3b2b1366ec20994f1fd18c3c594f05c5dd4bc44d8bb0c1c632c8d6829481f"
 
 [[package]]
 name = "saa"
-version = "5.3.3"
+version = "5.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4dfac11c0cd0606aaf7eb9ef66f82c119438a96dc487715abb8b57fdf08ad4fe"
+checksum = "77cb23a1da9bcf98289bea29df468b782ddf2993836d1ebd171c403210b86baa"
 
 [[package]]
 name = "same-file"
@@ -1265,9 +1265,9 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "3.4.2"
+version = "3.4.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd714a8af37b350df813d52ae4b2ea19211e40dac10dce189d80fb95e44cc618"
+checksum = "79d533af0a5c0d082eb3f957aaca91e920ad7064a5ebabee3584ed1d90a0bb24"
 dependencies = [
  "saa",
  "sdd",
@@ -1329,9 +1329,9 @@ dependencies = [
 
 [[package]]
 name = "sdd"
-version = "4.3.3"
+version = "4.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e4efd216416190644cfc82b398d603be158c29ffd7ee171fd29773a0b5734a7"
+checksum = "6e63d45f3526312c9c90d717aac28d37010e623fbd7ca6f21503e69784e86f40"
 
 [[package]]
 name = "semver"
@@ -1375,16 +1375,16 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.145"
+version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "402a6f66d8c709116cf22f558eab210f5a50187f702eb4d7e5ef38d9a7f1c79c"
+checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
 dependencies = [
  "indexmap",
  "itoa",
  "memchr",
- "ryu",
  "serde",
  "serde_core",
+ "zmij",
 ]
 
 [[package]]
@@ -1440,9 +1440,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starbase_id"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3588fc35b1dc2086e0bae3085444caa9932571223f4d72ef0d54bbd87b666ef"
+checksum = "512e32c422863774c583b03127bd2a0bf087f34beda8b0fb7cd4c4f92482668d"
 dependencies = [
  "compact_str 0.9.0",
  "miette",
@@ -1454,9 +1454,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_styles"
-version = "0.6.4"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5dc2b90d883da3735a7eb663fdd7091f57a6328e550707bf2fd76efacbfea66b"
+checksum = "fbe90f7d42a3f2d8c3bfa8344be4d182706a986e08d6e833aaf00519c1b57213"
 dependencies = [
  "dirs",
  "owo-colors",
@@ -1466,9 +1466,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.12.2"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab93d7ac10906a8cfe488a58c8744bc6081792938563fc6c24ff6cfd3ea31704"
+checksum = "46289c5e1daf0a1d7f11fcd3a63769f452aa03922a9256cabebd4233686f3460"
 dependencies = [
  "dirs",
  "ec4rs",
@@ -1727,9 +1727,9 @@ checksum = "df8b2b54733674ad286d16267dcfc7a71ed5c776e4ac7aa3c3e2561f7c637bf2"
 
 [[package]]
 name = "tracing"
-version = "0.1.43"
+version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d15d90a0b5c19378952d479dc858407149d7bb45a14de0142f6c534b16fc647"
+checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
 dependencies = [
  "pin-project-lite",
  "tracing-attributes",
@@ -1749,9 +1749,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.35"
+version = "0.1.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a04e24fab5c89c6a36eb8558c9656f30d81de51dfa4d3b45f26b21d61fa0a6c"
+checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
 dependencies = [
  "once_cell",
 ]
@@ -2002,3 +2002,9 @@ dependencies = [
  "quote",
  "syn",
 ]
+
+[[package]]
+name = "zmij"
+version = "1.0.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac93432f5b761b22864c774aac244fa5c0fd877678a4c37ebf6cf42208f9c9ec"

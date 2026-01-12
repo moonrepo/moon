@@ -23,7 +23,7 @@ implicitDeps = [
 	"project:task-c",
 	{
 		target = "project:task-d"
-		args = "--foo --bar"
+		args = ["--foo", "--bar"]
 		env = {
 			KEY = "value"
 		}

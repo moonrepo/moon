@@ -3431,7 +3431,6 @@ dependencies = [
  "moon_project",
  "moon_query",
  "moon_task",
- "moon_task_args",
  "moon_test_utils2",
  "moon_toolchain",
  "moon_workspace_graph",
@@ -3490,7 +3489,6 @@ dependencies = [
  "moon_action",
  "moon_action_context",
  "moon_app_context",
- "moon_args",
  "moon_cache",
  "moon_cache_item",
  "moon_codeowners",
@@ -3664,15 +3662,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "moon_args"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "shell-words",
- "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -4069,7 +4058,6 @@ dependencies = [
  "cached",
  "libc",
  "miette 7.6.0",
- "moon_args",
  "moon_common",
  "moon_console",
  "moon_env_var",
@@ -4260,15 +4248,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_task_args"
-version = "0.0.1"
-dependencies = [
- "miette 7.6.0",
- "moon_args",
- "moon_config",
-]
-
-[[package]]
 name = "moon_task_builder"
 version = "0.0.1"
 dependencies = [
@@ -4280,11 +4259,11 @@ dependencies = [
  "moon_project",
  "moon_target",
  "moon_task",
- "moon_task_args",
  "moon_test_utils2",
  "moon_toolchain",
  "moon_toolchain_plugin",
  "rustc-hash",
+ "starbase_args",
  "starbase_sandbox",
  "thiserror 2.0.17",
  "tokio",
@@ -4298,7 +4277,6 @@ dependencies = [
  "cd_env",
  "ci_env",
  "miette 7.6.0",
- "moon_args",
  "moon_common",
  "moon_config",
  "moon_env_var",
@@ -4306,7 +4284,6 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_task",
- "moon_task_args",
  "moon_time",
  "pathdiff",
  "regex",
@@ -6659,6 +6636,16 @@ dependencies = [
  "tracing",
  "zip",
  "zstd",
+]
+
+[[package]]
+name = "starbase_args"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf128642e0d7f4f232f8c7dac5dd0516561b136b76262610467ea109f90cc553"
+dependencies = [
+ "pest",
+ "pest_derive",
 ]
 
 [[package]]

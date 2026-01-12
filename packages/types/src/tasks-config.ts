@@ -82,12 +82,10 @@ export interface ProjectInput {
 
 export type Input = string | FileInput | FileGroupInput | GlobInput | ProjectInput;
 
-export type TaskArgs = null | string | string[];
-
 /** Expanded information about a task dependency. */
 export interface TaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
-	args: TaskArgs;
+	args: string[];
 	/** A map of environment variables specific to this dependency. */
 	env: Record<string, string | null>;
 	/**
@@ -389,6 +387,8 @@ export interface TaskOptionsConfig {
 	windowsShell: TaskWindowsShell | null;
 }
 
+export type TaskArgs = null | string | string[];
+
 /** A file path output. */
 export interface FileOutput {
 	/** The literal file path. */
@@ -549,12 +549,10 @@ export interface InheritedTasksConfig {
 	tasks: Record<Id, TaskConfig>;
 }
 
-export type PartialTaskArgs = null | string | string[];
-
 /** Expanded information about a task dependency. */
 export interface PartialTaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
-	args?: PartialTaskArgs | null;
+	args?: string[] | null;
 	/** A map of environment variables specific to this dependency. */
 	env?: Record<string, string | null> | null;
 	/**
@@ -823,6 +821,8 @@ export interface PartialTaskOptionsConfig {
 	 */
 	windowsShell?: TaskWindowsShell | null;
 }
+
+export type PartialTaskArgs = null | string | string[];
 
 /** Configures a task to be ran within the action pipeline. */
 export interface PartialTaskConfig {

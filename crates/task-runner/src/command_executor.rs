@@ -4,7 +4,7 @@ use moon_app_context::AppContext;
 use moon_common::is_ci_env;
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{Command, CommandLine, Output, args::join_args};
+use moon_process::{Command, CommandLine, Output};
 use moon_project::Project;
 use moon_task::Task;
 use std::time::Duration;
@@ -319,18 +319,16 @@ impl<'task> CommandExecutor<'task> {
     }
 
     fn get_command_line(&self, context: &ActionContext) -> String {
-        if self.task.script.is_some() {
-            self.task.get_command_line()
-        } else {
-            let mut args = vec![&self.task.command];
-            args.extend(&self.task.args);
+        let mut line = self.task.get_command_line();
 
-            if context.should_inherit_args(&self.task.target) {
-                args.extend(&context.passthrough_args);
+        if self.task.script.is_none() && context.should_inherit_args(&self.task.target) {
+            for arg in &context.passthrough_args {
+                line.push(' ');
+                line.push_str(arg);
             }
-
-            join_args(args)
         }
+
+        line
     }
 
     // We don't use `Command::print_command` because we need to explicitly

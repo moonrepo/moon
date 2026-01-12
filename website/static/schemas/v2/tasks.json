@@ -1045,11 +1045,10 @@
         "args": {
           "title": "args",
           "description": "Additional arguments to pass to this dependency when it's ran.",
-          "allOf": [
-            {
-              "$ref": "#/definitions/TaskArgs"
-            }
-          ]
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "env": {
           "title": "env",

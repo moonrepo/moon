@@ -523,7 +523,7 @@ impl<'task> TaskRunner<'task> {
             return Err(TaskRunnerError::RunFailed {
                 target: self.task.target.clone(),
                 error: Box::new(ProcessError::ExitNonZero {
-                    bin: self.task.command.clone(),
+                    bin: self.task.command.value.clone(),
                     status: last_attempt.get_exec_output_status(),
                 }),
             }

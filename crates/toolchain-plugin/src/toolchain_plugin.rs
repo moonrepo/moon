@@ -237,7 +237,7 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub fn detect_task_usage(&self, command: &String, _args: &[String]) -> miette::Result<bool> {
+    pub fn detect_task_usage(&self, command: &String) -> miette::Result<bool> {
         if self.metadata.exe_names.contains(command) {
             return Ok(true);
         }

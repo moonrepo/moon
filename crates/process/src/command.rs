@@ -30,9 +30,54 @@ impl EnvBehavior {
 }
 
 #[derive(Debug)]
+pub struct CommandArg {
+    // In shells: "value"
+    pub quoted_value: Option<OsString>,
+
+    // Not in shells: value
+    pub value: OsString,
+}
+
+impl From<&str> for CommandArg {
+    fn from(value: &str) -> Self {
+        Self {
+            quoted_value: None,
+            value: OsString::from(value),
+        }
+    }
+}
+
+impl From<&String> for CommandArg {
+    fn from(value: &String) -> Self {
+        Self {
+            quoted_value: None,
+            value: OsString::from(value),
+        }
+    }
+}
+
+impl From<String> for CommandArg {
+    fn from(value: String) -> Self {
+        Self {
+            quoted_value: None,
+            value: OsString::from(value),
+        }
+    }
+}
+
+impl From<OsString> for CommandArg {
+    fn from(value: OsString) -> Self {
+        Self {
+            quoted_value: None,
+            value,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum CommandExecutable {
     /// Single file name: git
-    Binary(OsString),
+    Binary(CommandArg),
 
     /// Full script: git commit --allow-empty
     Script(OsString),
@@ -41,19 +86,15 @@ pub enum CommandExecutable {
 impl CommandExecutable {
     pub fn as_os_str(&self) -> &OsStr {
         match self {
-            Self::Binary(inner) => inner,
+            Self::Binary(inner) => &inner.value,
             Self::Script(inner) => inner,
         }
-    }
-
-    pub fn into_os_string(self) -> OsString {
-        self.as_os_str().into()
     }
 }
 
 #[derive(Debug)]
 pub struct Command {
-    pub args: VecDeque<OsString>,
+    pub args: VecDeque<CommandArg>,
 
     /// Continuously write to stdin and read from stdout
     pub continuous_pipe: bool,
@@ -66,9 +107,6 @@ pub struct Command {
 
     /// Convert non-zero exits to errors
     pub error_on_nonzero: bool,
-
-    /// Escape/quote arguments when joining
-    pub escape_args: bool,
 
     /// Values to pass to stdin
     pub input: Vec<OsString>,
@@ -96,9 +134,11 @@ impl Command {
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
-            exe: CommandExecutable::Binary(bin.as_ref().to_os_string()),
+            exe: CommandExecutable::Binary(CommandArg {
+                quoted_value: None,
+                value: bin.as_ref().to_os_string(),
+            }),
             error_on_nonzero: true,
-            escape_args: true,
             input: vec![],
             paths: VecDeque::new(),
             prefix: None,
@@ -108,21 +148,27 @@ impl Command {
         }
     }
 
-    pub fn new_script<T: AsRef<OsStr>>(script: T) -> Self {
-        let mut command = Self::new(script);
-        command.exe = CommandExecutable::Script(command.exe.into_os_string());
+    pub fn new_bin<T: Into<CommandArg>>(bin: T) -> Self {
+        let mut command = Self::new("");
+        command.exe = CommandExecutable::Binary(bin.into());
         command
     }
 
-    pub fn arg<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
-        self.args.push_back(arg.as_ref().to_os_string());
+    pub fn new_script<T: AsRef<OsStr>>(script: T) -> Self {
+        let mut command = Self::new("");
+        command.exe = CommandExecutable::Script(script.as_ref().to_os_string());
+        command
+    }
+
+    pub fn arg<A: Into<CommandArg>>(&mut self, arg: A) -> &mut Self {
+        self.args.push_back(arg.into());
         self
     }
 
-    pub fn arg_if_missing<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
-        let arg = arg.as_ref();
+    pub fn arg_if_missing<A: Into<CommandArg>>(&mut self, arg: A) -> &mut Self {
+        let arg = arg.into();
 
-        if !self.contains_arg(arg) {
+        if !self.contains_arg(&arg.value) {
             self.arg(arg);
         }
 
@@ -132,7 +178,7 @@ impl Command {
     pub fn args<I, A>(&mut self, args: I) -> &mut Self
     where
         I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
+        A: Into<CommandArg>,
     {
         for arg in args {
             self.arg(arg);
@@ -146,7 +192,9 @@ impl Command {
         A: AsRef<OsStr>,
     {
         let arg = arg.as_ref();
-        self.args.iter().any(|a| a == arg)
+        self.args
+            .iter()
+            .any(|a| a.value == arg || a.quoted_value.as_ref().is_some_and(|aa| aa == arg))
     }
 
     pub fn contains_env<K>(&self, key: K) -> bool
@@ -302,13 +350,13 @@ impl Command {
     pub fn get_args_list(&self) -> Vec<String> {
         self.args
             .iter()
-            .map(|arg| arg.to_string_lossy().to_string())
+            .map(|arg| arg.value.to_string_lossy().to_string())
             .collect()
     }
 
     pub fn get_bin_name(&self) -> String {
         match &self.exe {
-            CommandExecutable::Binary(bin) => bin.to_string_lossy().to_string(),
+            CommandExecutable::Binary(bin) => bin.value.to_string_lossy().to_string(),
             CommandExecutable::Script(script) => {
                 if let Some(inner) = script.to_str() {
                     match inner.find(' ') {
@@ -354,7 +402,7 @@ impl Command {
 
         match &self.exe {
             CommandExecutable::Binary(exe) => {
-                write(exe);
+                write(&exe.value);
             }
             CommandExecutable::Script(exe) => {
                 write(exe);
@@ -362,7 +410,7 @@ impl Command {
         };
 
         for arg in &self.args {
-            write(arg);
+            write(&arg.value);
         }
 
         if let Some(cwd) = &self.cwd {
@@ -392,8 +440,8 @@ impl Command {
         self
     }
 
-    pub fn set_bin<T: AsRef<OsStr>>(&mut self, bin: T) -> &mut Self {
-        self.exe = CommandExecutable::Binary(bin.as_ref().to_os_string());
+    pub fn set_bin<T: Into<CommandArg>>(&mut self, bin: T) -> &mut Self {
+        self.exe = CommandExecutable::Binary(bin.into());
         self
     }
 

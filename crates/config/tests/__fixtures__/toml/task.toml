@@ -7,7 +7,9 @@ args = ["-c", "-b", "arg"]
 deps = [
   "proj:task",
   { target = "^:build", optional = true },
-  { target = "~:build", args = "--minify", env = { DEBUG = "1" } },
+  { target = "~:build", args = [
+    "--minify",
+  ], env = { DEBUG = "1" } },
 ]
 
 env = { ENV = "development" }

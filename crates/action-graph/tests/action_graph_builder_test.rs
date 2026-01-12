@@ -6,7 +6,7 @@ use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements}
 use moon_affected::AffectedBy;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    EnvMap, PipelineActionSwitch, SemVer, TaskArgs, TaskDependencyConfig, TaskOptionRunInCI,
+    EnvMap, PipelineActionSwitch, SemVer, TaskDependencyConfig, TaskOptionRunInCI,
     UnresolvedVersionSpec, Version, VersionSpec,
 };
 use moon_graph_utils::*;
@@ -725,7 +725,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -736,7 +736,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::List(vec!["x".into(), "y".into(), "z".into()]),
+                        args: vec!["x".into(), "y".into(), "z".into()],
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -786,7 +786,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -797,7 +797,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -841,7 +841,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -852,7 +852,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         ..TaskDependencyConfig::default()
                     },
                 )
@@ -1034,7 +1034,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         env: EnvMap::from_iter([("FOO".into(), Some("1".into()))]),
                         ..TaskDependencyConfig::default()
                     },
@@ -1046,7 +1046,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         env: EnvMap::from_iter([("BAR".into(), Some("2".into()))]),
                         ..TaskDependencyConfig::default()
                     },
@@ -1058,7 +1058,7 @@ mod action_graph_builder {
                     &task,
                     &RunRequirements::default(),
                     &TaskDependencyConfig {
-                        args: TaskArgs::String("x y z".into()),
+                        args: vec!["x".into(), "y".into(), "z".into()],
                         env: EnvMap::from_iter([("BAR".into(), Some("2".into()))]),
                         ..TaskDependencyConfig::default()
                     },

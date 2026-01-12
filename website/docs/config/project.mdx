@@ -641,7 +641,7 @@ tasks:
 
 Furthermore, for each dependency target, you can configure additional command line arguments and
 environment variables that'll be passed to the dependent task when it is ran. The `args` field
-supports a string or a list of strings, while `env` is an object of key-value pairs.
+supports a list of strings, while `env` is an object of key-value pairs.
 
 ```yaml title="moon.yml" {4-8}
 tasks:
@@ -649,7 +649,7 @@ tasks:
     command: 'webpack'
     deps:
       - target: 'apiClients:build'
-        args: '--env production'
+        args: ['--env', 'production']
         env:
           NODE_ENV: 'production'
 ```

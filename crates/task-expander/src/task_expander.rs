@@ -1,12 +1,11 @@
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::{EnvMap, TaskArgs};
+use moon_config::EnvMap;
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
-use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
-use moon_task_args::parse_task_args;
+use moon_task::{Task, TaskArg, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use std::mem;
 use tracing::{debug, instrument, trace, warn};
 
@@ -67,11 +66,11 @@ impl<'graph> TaskExpander<'graph> {
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<()> {
         trace!(
             task_target = task.target.as_str(),
-            command = &task.command,
+            command = &task.command.value,
             "Expanding tokens and variables in command"
         );
 
-        task.command = self.token.expand_command(task)?;
+        task.command = TaskArg::new(self.token.expand_command(task)?);
 
         Ok(())
     }
@@ -97,11 +96,16 @@ impl<'graph> TaskExpander<'graph> {
 
         trace!(
             task_target = task.target.as_str(),
-            args = ?task.args,
+            args = ?task.args.iter().map(|arg| &arg.value).collect::<Vec<_>>(),
             "Expanding tokens and variables in args",
         );
 
-        task.args = self.token.expand_args(task)?;
+        task.args = self
+            .token
+            .expand_args(task)?
+            .into_iter()
+            .map(TaskArg::new)
+            .collect();
 
         Ok(())
     }
@@ -123,17 +127,12 @@ impl<'graph> TaskExpander<'graph> {
         for dep in deps.iter_mut() {
             let dep_args = self
                 .token
-                .expand_args_with_task(task, Some(parse_task_args(&dep.args)?))?;
+                .expand_args_with_task(task, Some(mem::take(&mut dep.args)))?;
             let dep_env = self
                 .token
                 .expand_env_with_task(task, Some(mem::take(&mut dep.env)))?;
 
-            dep.args = if dep_args.is_empty() {
-                TaskArgs::None
-            } else {
-                TaskArgs::List(dep_args)
-            };
-
+            dep.args = dep_args;
             dep.env = EnvSubstitutor::default()
                 .with_global_vars(GlobalEnvBag::instance())
                 .with_local_vars(&dep_env)

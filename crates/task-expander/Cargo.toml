@@ -9,7 +9,6 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
-moon_args = { path = "../args" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
@@ -17,7 +16,6 @@ moon_graph_utils = { path = "../graph-utils" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
-moon_task_args = { path = "../task-args" }
 moon_time = { path = "../time" }
 cd_env = { workspace = true }
 ci_env = { workspace = true }

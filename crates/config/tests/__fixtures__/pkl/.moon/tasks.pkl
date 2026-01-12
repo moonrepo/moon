@@ -17,7 +17,7 @@ implicitDeps = new Listing {
 	"project:task-c"
 	new {
 		target = "project:task-d"
-		args = "--foo --bar"
+		args = List("--foo", "--bar")
 		env {
 			["KEY"] = "value"
 		}

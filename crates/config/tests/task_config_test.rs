@@ -166,7 +166,7 @@ deps:
                 r"
 deps:
   - target: task
-  - args: a b c
+  - args: [a, b, c]
     target: project:task
   - env:
       FOO: abc
@@ -190,7 +190,7 @@ deps:
                         Target::parse("task").unwrap()
                     )),
                     TaskDependency::Config(TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         target: Target::parse("project:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
@@ -200,7 +200,7 @@ deps:
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
-                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         env: IndexMap::from_iter([
                             ("FOO".into(), Some("abc".to_owned())),
                             ("BAR".into(), None)
@@ -230,7 +230,7 @@ deps:
             test_parse_config(
                 r"
 deps:
-  - args: a b c
+  - args: [a, b, c]
 ",
                 load_config_from_code,
             );

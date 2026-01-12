@@ -277,6 +277,8 @@ toolchains:
   - `tasks.*.platform` -> `tasks.*.toolchains`
 - Removed setting values:
   - `tasks.*.preset` value `watcher`
+- Changed settings:
+  - `tasks.deps.*.args` no longer supports a string. Use a list of strings instead.
 - Changed option defaults:
   - `tasks.*.options.envFile` now defaults to a list of files, instead of a single file, when
     `true`. Refer to the blog post for more information.

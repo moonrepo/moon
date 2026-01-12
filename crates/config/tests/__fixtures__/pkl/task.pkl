@@ -12,7 +12,7 @@ deps = new Listing {
 	}
 	new {
 		target = "~:build"
-		args = "--minify"
+		args = List("--minify")
 		env {
 			["DEBUG"] = "1"
 		}

@@ -3,6 +3,7 @@ mod utils;
 use moon_common::Id;
 use moon_config::{test_utils::*, *};
 use moon_target::Target;
+use moon_task::TaskArg;
 use starbase_sandbox::create_sandbox;
 use utils::TasksBuilderContainer;
 
@@ -212,7 +213,7 @@ mod tasks_builder {
             let task = tasks.get("no-command").unwrap();
 
             assert_eq!(task.command, "noop");
-            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.args, Vec::<TaskArg>::new());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -224,7 +225,7 @@ mod tasks_builder {
             let task = tasks.get("command-only").unwrap();
 
             assert_eq!(task.command, "bin");
-            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.args, Vec::<TaskArg>::new());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -2105,7 +2106,7 @@ tasks:
             let task = tasks.get("single-command").unwrap();
 
             assert_eq!(task.command, "foo");
-            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.args, Vec::<TaskArg>::new());
             assert_eq!(task.script.as_ref().unwrap(), "foo --bar baz");
         }
 
@@ -2118,13 +2119,13 @@ tasks:
             let task = tasks.get("multi-command").unwrap();
 
             assert_eq!(task.command, "foo");
-            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.args, Vec::<TaskArg>::new());
             assert_eq!(task.script.as_ref().unwrap(), "foo --bar baz && qux -abc");
 
             let task = tasks.get("multi-command-semi").unwrap();
 
             assert_eq!(task.command, "foo");
-            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.args, Vec::<TaskArg>::new());
             assert_eq!(
                 task.script.as_ref().unwrap(),
                 "foo --bar baz; qux -abc; what"
@@ -2140,13 +2141,13 @@ tasks:
             let task = tasks.get("pipe").unwrap();
 
             assert_eq!(task.command, "foo");
-            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.args, Vec::<TaskArg>::new());
             assert_eq!(task.script.as_ref().unwrap(), "foo | bar | baz");
 
             let task = tasks.get("redirect").unwrap();
 
             assert_eq!(task.command, "foo");
-            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.args, Vec::<TaskArg>::new());
             assert_eq!(task.script.as_ref().unwrap(), "foo > bar.txt");
         }
 
@@ -2169,7 +2170,7 @@ tasks:
             let tasks = container.build_tasks("scripts").await;
             let task = tasks.get("with-args").unwrap();
 
-            assert_eq!(task.args, Vec::<String>::new());
+            assert_eq!(task.args, Vec::<TaskArg>::new());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -2210,11 +2211,11 @@ tasks:
 
             if cfg!(target_os = "linux") {
                 assert_eq!(task.command, "execute");
-                assert_eq!(task.args, Vec::<String>::new());
+                assert_eq!(task.args, Vec::<TaskArg>::new());
                 assert_eq!(task.script, Some("execute --nix".to_owned()));
             } else {
                 assert_eq!(task.command, "noop");
-                assert_eq!(task.args, Vec::<String>::new());
+                assert_eq!(task.args, Vec::<TaskArg>::new());
                 assert_eq!(task.script, None);
             }
         }
@@ -2235,7 +2236,7 @@ tasks:
                 assert_eq!(task.script, None);
             } else {
                 assert_eq!(task.command, "noop");
-                assert_eq!(task.args, Vec::<String>::new());
+                assert_eq!(task.args, Vec::<TaskArg>::new());
                 assert_eq!(task.script, None);
             }
         }
@@ -2256,7 +2257,7 @@ tasks:
                 assert_eq!(task.script, None);
             } else {
                 assert_eq!(task.command, "noop");
-                assert_eq!(task.args, Vec::<String>::new());
+                assert_eq!(task.args, Vec::<TaskArg>::new());
                 assert_eq!(task.script, None);
             }
         }

@@ -1,7 +1,6 @@
 use miette::IntoDiagnostic;
 use moon_action::{ActionStatus, Operation};
 use moon_app_context::AppContext;
-use moon_args::join_args;
 use moon_common::{
     Id, color,
     path::{PathExt, WorkspaceRelativePathBuf, encode_component},
@@ -46,7 +45,7 @@ pub fn handle_on_exec(
     let label = command
         .label
         .clone()
-        .unwrap_or_else(|| format!("{} {}", input.command, join_args(&input.args)));
+        .unwrap_or_else(|| format!("{} {}", input.command, input.args.join(" ")));
 
     if attempts.0 > 1 {
         console.print_checkpoint_with_comments(

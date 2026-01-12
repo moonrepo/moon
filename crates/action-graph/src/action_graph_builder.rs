@@ -16,7 +16,6 @@ use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
-use moon_task_args::parse_task_args;
 use moon_toolchain::ToolchainSpec;
 use moon_workspace_graph::projects::ProjectGraphError;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
@@ -815,7 +814,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut env = EnvMap::default();
 
         if let Some(config) = config {
-            args.extend(parse_task_args(&config.args)?);
+            args.extend(config.args.clone());
             env.extend(config.env.clone());
         }
 

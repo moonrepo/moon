@@ -180,13 +180,13 @@ pub fn load_task_config_in_format(format: &str) {
             deps: Some(vec![
                 TaskDependency::Target(Target::parse("proj:task").unwrap()),
                 TaskDependency::Config(TaskDependencyConfig {
-                    args: TaskArgs::None,
+                    args: vec![],
                     env: IndexMap::default(),
                     target: Target::parse("^:build").unwrap(),
                     optional: Some(true)
                 }),
                 TaskDependency::Config(TaskDependencyConfig {
-                    args: TaskArgs::String("--minify".into()),
+                    args: vec!["--minify".into()],
                     env: IndexMap::from_iter([("DEBUG".into(), Some("1".to_owned()))]),
                     target: Target::parse("~:build").unwrap(),
                     optional: None
@@ -257,7 +257,7 @@ pub fn load_tasks_config_in_format(format: &str) {
                 }),
                 TaskDependency::Target(Target::parse("project:task-c").unwrap()),
                 TaskDependency::Config(TaskDependencyConfig {
-                    args: TaskArgs::String("--foo --bar".into()),
+                    args: vec!["--foo".into(), "--bar".into()],
                     env: IndexMap::from_iter([("KEY".into(), Some("value".to_owned()))]),
                     target: Target::parse("project:task-d").unwrap(),
                     ..Default::default()

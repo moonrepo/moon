@@ -323,12 +323,13 @@ async fn clone_and_checkout_git_repository(
     );
 
     async fn run_git(args: &[&str], cwd: &Path) -> miette::Result<Output> {
-        Command::new("git")
-            .args(args)
-            .cwd(cwd)
-            .no_shell()
-            .exec_capture_output()
-            .await
+        let mut cmd = Command::new("git");
+
+        for arg in args {
+            cmd.arg(*arg);
+        }
+
+        cmd.cwd(cwd).no_shell().exec_capture_output().await
     }
 
     // Clone or fetch the repository

@@ -435,7 +435,7 @@ implicitDeps:
                 FILENAME,
                 r"
 implicitDeps:
-  - args: a b c
+  - args: [a, b, c]
 ",
                 |path| load_config_from_file(&path.join(FILENAME)),
             );

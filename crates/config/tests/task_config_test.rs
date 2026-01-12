@@ -230,7 +230,7 @@ deps:
             test_parse_config(
                 r"
 deps:
-  - args: a b c
+  - args: [a, b, c]
 ",
                 load_config_from_code,
             );

@@ -2,7 +2,10 @@ implicitDeps = [
   "project:task-a",
   { target = "project:task-b", optional = true },
   "project:task-c",
-  { target = "project:task-d", args = "--foo --bar", env = { KEY = "value" } },
+  { target = "project:task-d", args = [
+    "--foo",
+    "--bar",
+  ], env = { KEY = "value" } },
 ]
 
 implicitInputs = [

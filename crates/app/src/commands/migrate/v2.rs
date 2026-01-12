@@ -134,6 +134,18 @@ fn upsert_root_setting(root: &mut YamlMapping, root_key: &str, key: &str, value:
 fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
     let task = value.as_mapping_mut().expect("task must be an object");
 
+    if let Some(command) = task.get("command")
+        && let YamlValue::String(command) = command
+    {
+        // Not exhaustive!
+        for pat in ["||", "&&", " | ", "; ", " > ", " >> ", " < "] {
+            if command.contains(pat) {
+                rename_setting(task, "command", "script");
+                break;
+            }
+        }
+    }
+
     rename_setting(task, "platform", "toolchains");
 
     if task.remove("local").is_some() && !task.contains_key("preset") {

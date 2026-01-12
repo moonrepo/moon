@@ -38,6 +38,24 @@ pub struct CommandArg {
     pub value: OsString,
 }
 
+impl From<&str> for CommandArg {
+    fn from(value: &str) -> Self {
+        Self {
+            quoted_value: None,
+            value: OsString::from(value),
+        }
+    }
+}
+
+impl From<&String> for CommandArg {
+    fn from(value: &String) -> Self {
+        Self {
+            quoted_value: None,
+            value: OsString::from(value),
+        }
+    }
+}
+
 impl From<String> for CommandArg {
     fn from(value: String) -> Self {
         Self {
@@ -142,18 +160,15 @@ impl Command {
         command
     }
 
-    pub fn arg<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
-        self.args.push_back(CommandArg {
-            quoted_value: None,
-            value: arg.as_ref().to_os_string(),
-        });
+    pub fn arg<A: Into<CommandArg>>(&mut self, arg: A) -> &mut Self {
+        self.args.push_back(arg.into());
         self
     }
 
-    pub fn arg_if_missing<A: AsRef<OsStr>>(&mut self, arg: A) -> &mut Self {
-        let arg = arg.as_ref();
+    pub fn arg_if_missing<A: Into<CommandArg>>(&mut self, arg: A) -> &mut Self {
+        let arg = arg.into();
 
-        if !self.contains_arg(arg) {
+        if !self.contains_arg(&arg.value) {
             self.arg(arg);
         }
 
@@ -163,7 +178,7 @@ impl Command {
     pub fn args<I, A>(&mut self, args: I) -> &mut Self
     where
         I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
+        A: Into<CommandArg>,
     {
         for arg in args {
             self.arg(arg);

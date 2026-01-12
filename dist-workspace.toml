@@ -17,9 +17,9 @@ targets = [
 ]
 installers = ["shell", "powershell"]
 install-path = ["$MOON_HOME/bin", "~/.moon/bin"]
-# install-success-msg = " "
-allow-dirty = ["ci"]
-# publish-jobs = ["./release-npm"]
+install-success-msg = "Succsess"
+# allow-dirty = ["ci"]
+publish-jobs = ["./release-npm"]
 
 [dist.github-custom-runners]
 x86_64-unknown-linux-gnu = "depot-ubuntu-22.04-8"

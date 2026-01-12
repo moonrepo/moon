@@ -1,8 +1,7 @@
 use moon_common::is_test_env;
-use moon_process::{Command, Output, output_to_string};
+use moon_process::{Command, CommandArg, Output, output_to_string};
 use rustc_hash::FxHashMap;
 use scc::hash_cache::Entry;
-use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -34,7 +33,7 @@ impl ProcessCache {
     pub fn create_command<I, A>(&self, args: I) -> Command
     where
         I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
+        A: Into<CommandArg>,
     {
         let mut command = Command::new(&self.bin);
         command.args(args);
@@ -51,7 +50,7 @@ impl ProcessCache {
     pub fn create_command_in_cwd<I, A>(&self, args: I, dir: &Path) -> Command
     where
         I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
+        A: Into<CommandArg>,
     {
         let mut command = self.create_command(args);
         command.cwd(dir);
@@ -61,7 +60,7 @@ impl ProcessCache {
     pub async fn run<I, A>(&self, args: I, trim: bool) -> miette::Result<Arc<String>>
     where
         I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
+        A: Into<CommandArg>,
     {
         self.run_command(self.create_command(args), trim).await
     }
@@ -74,7 +73,7 @@ impl ProcessCache {
     ) -> miette::Result<Arc<String>>
     where
         I: IntoIterator<Item = A>,
-        A: AsRef<OsStr>,
+        A: Into<CommandArg>,
     {
         self.run_command_with_formatter(self.create_command(args), trim, format)
             .await

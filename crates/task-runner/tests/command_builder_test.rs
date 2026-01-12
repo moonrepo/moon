@@ -25,7 +25,7 @@ fn get_args(command: &Command) -> Vec<&str> {
     command
         .args
         .iter()
-        .map(|arg| arg.to_str().unwrap())
+        .map(|arg| arg.value.to_str().unwrap())
         .collect()
 }
 

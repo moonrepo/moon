@@ -12,7 +12,7 @@ deps = [
 	},
 	{
 		target = "~:build"
-		args = "--minify"
+		args = ["--minify"]
 		env = {
 			DEBUG = "1"
 		}

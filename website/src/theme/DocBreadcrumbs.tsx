@@ -1,6 +1,7 @@
 import { useSidebarBreadcrumbs } from '@docusaurus/plugin-content-docs/client';
 import { useHomePageRoute } from '@docusaurus/theme-common/internal';
 import useBaseUrl from '@docusaurus/useBaseUrl';
+import Admonition from '@theme/Admonition';
 import LangSelector from '../components/LangSelector';
 import Icon from '../ui/iconography/Icon';
 import Link from '../ui/typography/Link';
@@ -117,6 +118,15 @@ export default function DocBreadcrumbs() {
 					))}
 				</ol>
 			</nav>
+
+			<div>
+				<Admonition type="warning">
+					<p>
+						Documentation is currently for <a href="/blog/moon-v2-alpha">moon v2</a>. If you are
+						using v1, some of the examples and settings may differ in syntax and functionality.
+					</p>
+				</Admonition>
+			</div>
 		</>
 	);
 }

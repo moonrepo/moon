@@ -1,5 +1,4 @@
 use crate::token_expander_error::TokenExpanderError;
-use moon_args::join_args;
 use moon_common::path::{self, RelativeFrom, WorkspaceRelativePathBuf};
 use moon_config::{EnvMap, Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
@@ -102,7 +101,8 @@ impl<'graph> TokenExpander<'graph> {
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<String> {
         self.scope = TokenScope::Command;
 
-        let mut command = Cow::Owned(task.command.clone());
+        // Expand on quoted value if available
+        let mut command = Cow::Owned(task.command.get_value().to_owned());
 
         if self.has_token_function(&command) {
             let result = self.replace_function(task, &command)?;
@@ -141,7 +141,7 @@ impl<'graph> TokenExpander<'graph> {
                     items.push(value);
                 }
 
-                script = Cow::Owned(script.replace(&token, &join_args(&items)));
+                script = Cow::Owned(script.replace(&token, &items.join(" ")));
             }
         }
 
@@ -161,7 +161,13 @@ impl<'graph> TokenExpander<'graph> {
         self.scope = TokenScope::Args;
 
         let mut args = vec![];
-        let base_args = base_args.unwrap_or_else(|| mem::take(&mut task.args));
+        let base_args = base_args.unwrap_or_else(|| {
+            // Expand on quoted value if available
+            task.args
+                .iter()
+                .map(|arg| arg.get_value().to_owned())
+                .collect()
+        });
 
         for arg in base_args {
             // Token functions

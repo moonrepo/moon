@@ -817,7 +817,10 @@ mod project_graph {
             let task = graph.get_task_from_project("tasks", "build").unwrap();
 
             assert_eq!(
-                task.args,
+                task.args
+                    .iter()
+                    .map(|arg| arg.to_string())
+                    .collect::<Vec<_>>(),
                 string_vec![
                     "a",
                     if cfg!(windows) {

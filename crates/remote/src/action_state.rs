@@ -59,11 +59,13 @@ impl ActionState<'_> {
         // Since we don't support (or plan to) remote execution,
         // then we can ignore all the working directory logic
         let mut command = Command {
-            arguments: vec![self.task.command.clone()],
+            arguments: vec![self.task.command.get_value().to_owned()],
             ..Default::default()
         };
 
-        command.arguments.extend(self.task.args.clone());
+        for arg in &self.task.args {
+            command.arguments.push(arg.get_value().to_owned());
+        }
 
         for (name, value) in BTreeMap::from_iter(self.task.env.clone()) {
             if let Some(value) = value {

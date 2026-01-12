@@ -68,9 +68,6 @@ impl<'task> CommandBuilder<'task> {
             .inherit_from_plugins(Some(self.project), Some(self.task))
             .await?;
 
-        // Scripts should be used as-is
-        self.command.escape_args = self.task.script.is_none();
-
         // We need to handle non-zero exit code's manually
         self.command.cwd(self.working_dir);
         self.command.set_error_on_nonzero(false);

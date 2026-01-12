@@ -15,9 +15,9 @@ more.
 proto supports 3 locations in which a `.prototools` file can exist. These locations are used
 throughout the command line and proto's own settings.
 
-- `local` -> `./.prototools` (current directory)
-- `global` -> `~/.proto/.prototools`
-- `user` -> `~/.prototools`
+- `local` -> `./.prototools`, `.\.prototools` (current directory)
+- `global` -> `~/.proto/.prototools`, `%USERPROFILE%\.proto\.prototools`
+- `user` -> `~/.prototools`, `%USERPROFILE%\.prototools`
 
 > Local is a bit of a misnomer as a `.prototools` file can theoretically exist in any directory, but
 > when reading/writing to a file, `local` refers to the current working directory.

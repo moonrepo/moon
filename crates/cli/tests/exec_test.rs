@@ -288,7 +288,7 @@ mod exec {
             assert
                 .success()
                 .stdout(predicate::str::contains(if cfg!(windows) {
-                    "substituted-value\nin\nsubstituted-value\nquotes\nprefixed-substituted-value\nsubstituted-value-suffixed"
+                    "substituted-value\nin substituted-value quotes\nprefixed-substituted-value\nsubstituted-value-suffixed"
                 } else {
                     "substituted-value in substituted-value quotes prefixed-substituted-value substituted-value-suffixed"
                 }));

@@ -1,0 +1,4 @@
+tasks:
+  test:
+    # This gets replaced by the test!
+    command: '{{ command }}'

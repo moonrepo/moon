@@ -126,8 +126,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TaskDependencyConfig {
         /// Additional arguments to pass to this dependency when it's ran.
-        #[setting(nested)]
-        pub args: TaskArgs,
+        pub args: Vec<String>,
 
         /// A map of environment variables specific to this dependency.
         pub env: EnvMap,

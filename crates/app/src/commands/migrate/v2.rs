@@ -134,6 +134,18 @@ fn upsert_root_setting(root: &mut YamlMapping, root_key: &str, key: &str, value:
 fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
     let task = value.as_mapping_mut().expect("task must be an object");
 
+    if let Some(command) = task.get("command")
+        && let YamlValue::String(command) = command
+    {
+        // Not exhaustive!
+        for pat in ["||", "&&", " | ", "; ", " > ", " >> ", " < "] {
+            if command.contains(pat) {
+                rename_setting(task, "command", "script");
+                break;
+            }
+        }
+    }
+
     rename_setting(task, "platform", "toolchains");
 
     if task.remove("local").is_some() && !task.contains_key("preset") {
@@ -148,6 +160,25 @@ fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
             node.remove(key);
         }
     });
+
+    if let Some(YamlValue::Sequence(deps)) = task.get_mut("deps") {
+        for dep_shape in deps {
+            if let YamlValue::Mapping(dep) = dep_shape {
+                change_setting(dep, "args", false, |node, key| {
+                    if let Some(YamlValue::String(args)) = node.get(key) {
+                        node.insert(
+                            YamlValue::String(key.into()),
+                            YamlValue::Sequence(
+                                args.split_whitespace()
+                                    .map(|arg| YamlValue::String(arg.to_owned()))
+                                    .collect(),
+                            ),
+                        );
+                    }
+                });
+            }
+        }
+    }
 }
 
 fn migrate_inherited_by_setting(file_name: &str) -> Option<YamlValue> {

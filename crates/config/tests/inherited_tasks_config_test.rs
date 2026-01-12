@@ -370,7 +370,7 @@ implicitDeps:
                 r"
 implicitDeps:
   - target: task
-  - args: a b c
+  - args: [a, b, c]
     target: project:task
   - env:
       FOO: abc
@@ -393,7 +393,7 @@ implicitDeps:
                         Target::parse("task").unwrap()
                     )),
                     TaskDependency::Config(TaskDependencyConfig {
-                        args: TaskArgs::String("a b c".into()),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         target: Target::parse("project:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
@@ -403,7 +403,7 @@ implicitDeps:
                         ..TaskDependencyConfig::default()
                     }),
                     TaskDependency::Config(TaskDependencyConfig {
-                        args: TaskArgs::List(vec!["a".into(), "b".into(), "c".into()]),
+                        args: vec!["a".into(), "b".into(), "c".into()],
                         env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
@@ -435,7 +435,7 @@ implicitDeps:
                 FILENAME,
                 r"
 implicitDeps:
-  - args: a b c
+  - args: [a, b, c]
 ",
                 |path| load_config_from_file(&path.join(FILENAME)),
             );

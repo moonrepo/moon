@@ -308,6 +308,16 @@ stack: 'data'
 
 ## Tasks
 
+### Strict commands
+
+We've reworked the task `command` and `args` parser, when a string is provided, to be more strict
+and accurate. Previously, we used a simple shell-like parser that would split on spaces, but this
+led to issues with quoted strings, escaped characters, and other edge cases.
+
+Related to this change, these fields will now _only support_ simple commands and arguments, and will
+not support complex syntax like pipes, redirects, and conditionals. This is a breaking change, but
+you can use `script` instead for complex commands.
+
 ### Inheritance via configuration
 
 Our task inheritance system is quite powerful, and one of moon's most compelling features. However,

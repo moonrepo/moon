@@ -106,17 +106,17 @@ tasks:
       affectedFiles: 'env'
 
   multiAmpersand:
-    command: 'mkdir foo && mkdir bar'
+    script: 'mkdir foo && mkdir bar'
     inputs:
       - '*.sh'
 
   multiSemicolon:
-    command: 'mkdir foo; mkdir bar'
+    script: 'mkdir foo; mkdir bar'
     inputs:
       - '*.sh'
 
   syntaxVar:
-    command: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
+    script: 'echo $VAR_NAME "in $VAR_NAME quotes" prefixed-$VAR_NAME $VAR_NAME-suffixed'
     env:
       VAR_NAME: substituted-value
     options:

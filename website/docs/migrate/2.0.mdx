@@ -287,6 +287,29 @@ toolchains:
   - `tasks.*.options.unixShell` now defaults to `bash` instead of nothing.
   - `tasks.*.options.windowsShell` now defaults to `pwsh` instead of nothing.
 
+### Simple commands only
+
+We've reworked `command` (and `args`) to only support simple commands. A simple command is an
+executable (binary, file, etc) followed by zero or many arguments.
+
+Complex commands that involve shell features like piping (`|`), redirection (`>`, `<`), chaining
+(`&&`, `||`, `;`), and environment variable assignment (`KEY=value`) are no longer supported
+directly in the `command` setting. Use `script` instead.
+
+```yaml title="moon.yml"
+# Before
+tasks:
+  example:
+    command: 'echo "foo" | grep "f"'
+
+# Before
+tasks:
+  example:
+    script: 'echo "foo" | grep "f"'
+```
+
+> Shell features like expansion, globbing, and substitution is still supported in `command`.
+
 ### Local mode
 
 The `local` task setting has been removed as the name was confusing. Users assumed it meant "only

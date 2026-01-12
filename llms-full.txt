@@ -4782,7 +4782,7 @@ tasks:
 
 Furthermore, for each dependency target, you can configure additional command line arguments and
 environment variables that'll be passed to the dependent task when it is ran. The `args` field
-supports a string or a list of strings, while `env` is an object of key-value pairs.
+supports a list of strings, while `env` is an object of key-value pairs.
 
 ```yaml title="moon.yml" {4-8}
 tasks:
@@ -4790,7 +4790,7 @@ tasks:
     command: 'webpack'
     deps:
       - target: 'apiClients:build'
-        args: '--env production'
+        args: ['--env', 'production']
         env:
           NODE_ENV: 'production'
 ```
@@ -17864,6 +17864,8 @@ toolchains:
   - `tasks.*.platform` -> `tasks.*.toolchains`
 - Removed setting values:
   - `tasks.*.preset` value `watcher`
+- Changed settings:
+  - `tasks.deps.*.args` no longer supports a string. Use a list of strings instead.
 - Changed option defaults:
   - `tasks.*.options.envFile` now defaults to a list of files, instead of a single file, when
     `true`. Refer to the blog post for more information.
@@ -17871,6 +17873,29 @@ toolchains:
   - `tasks.*.options.shell` now defaults to `true` instead of `false`.
   - `tasks.*.options.unixShell` now defaults to `bash` instead of nothing.
   - `tasks.*.options.windowsShell` now defaults to `pwsh` instead of nothing.
+
+### Simple commands only
+
+We've reworked `command` (and `args`) to only support simple commands. A simple command is an
+executable (binary, file, etc) followed by zero or many arguments.
+
+Complex commands that involve shell features like piping (`|`), redirection (`>`, `<`), chaining
+(`&&`, `||`, `;`), and environment variable assignment (`KEY=value`) are no longer supported
+directly in the `command` setting. Use `script` instead.
+
+```yaml title="moon.yml"
+# Before
+tasks:
+  example:
+    command: 'echo "foo" | grep "f"'
+
+# Before
+tasks:
+  example:
+    script: 'echo "foo" | grep "f"'
+```
+
+> Shell features like expansion, globbing, and substitution is still supported in `command`.
 
 ### Local mode
 
@@ -19916,9 +19941,9 @@ more.
 proto supports 3 locations in which a `.prototools` file can exist. These locations are used
 throughout the command line and proto's own settings.
 
-- `local` -> `./.prototools` (current directory)
-- `global` -> `~/.proto/.prototools`
-- `user` -> `~/.prototools`
+- `local` -> `./.prototools`, `.\.prototools` (current directory)
+- `global` -> `~/.proto/.prototools`, `%USERPROFILE%\.proto\.prototools`
+- `user` -> `~/.prototools`, `%USERPROFILE%\.prototools`
 
 > Local is a bit of a misnomer as a `.prototools` file can theoretically exist in any directory, but
 > when reading/writing to a file, `local` refers to the current working directory.
@@ -34569,6 +34594,16 @@ stack: 'data'
 ```
 
 ## Tasks
+
+### Strict commands
+
+We've reworked the task `command` and `args` parser, when a string is provided, to be more strict
+and accurate. Previously, we used a simple shell-like parser that would split on spaces, but this
+led to issues with quoted strings, escaped characters, and other edge cases.
+
+Related to this change, these fields will now _only support_ simple commands and arguments, and will
+not support complex syntax like pipes, redirects, and conditionals. This is a breaking change, but
+you can use `script` instead for complex commands.
 
 ### Inheritance via configuration
 

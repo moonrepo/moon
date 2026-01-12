@@ -4,9 +4,8 @@
 members = ["cargo:."]
 
 [dist]
-cargo-dist-version = "0.30.2"
+cargo-dist-version = "0.30.3"
 ci = "github"
-pr-run-mode = "upload"
 targets = [
 	"aarch64-apple-darwin",
 	"aarch64-unknown-linux-gnu",
@@ -17,9 +16,10 @@ targets = [
 ]
 installers = ["shell", "powershell"]
 install-path = ["$MOON_HOME/bin", "~/.moon/bin"]
-install-success-msg = "Succsess"
-# allow-dirty = ["ci"]
+install-success-msg = "\nSuccessfully installed! Take your repo to the moon!\nNeed help? Join our Discord: https://discord.gg/qCh9MEynv2"
+pr-run-mode = "upload"
 publish-jobs = ["./release-npm"]
+allow-dirty = ["ci"]
 
 [dist.github-custom-runners]
 x86_64-unknown-linux-gnu = "depot-ubuntu-22.04-8"

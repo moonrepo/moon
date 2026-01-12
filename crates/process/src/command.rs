@@ -38,6 +38,24 @@ pub struct CommandArg {
     pub value: OsString,
 }
 
+impl From<String> for CommandArg {
+    fn from(value: String) -> Self {
+        Self {
+            quoted_value: None,
+            value: OsString::from(value),
+        }
+    }
+}
+
+impl From<OsString> for CommandArg {
+    fn from(value: OsString) -> Self {
+        Self {
+            quoted_value: None,
+            value,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum CommandExecutable {
     /// Single file name: git
@@ -45,6 +63,15 @@ pub enum CommandExecutable {
 
     /// Full script: git commit --allow-empty
     Script(OsString),
+}
+
+impl CommandExecutable {
+    pub fn as_os_str(&self) -> &OsStr {
+        match self {
+            Self::Binary(inner) => &inner.value,
+            Self::Script(inner) => inner,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -101,6 +128,12 @@ impl Command {
             shell: Some(Shell::default()),
             console: None,
         }
+    }
+
+    pub fn new_bin<T: Into<CommandArg>>(bin: T) -> Self {
+        let mut command = Self::new("");
+        command.exe = CommandExecutable::Binary(bin.into());
+        command
     }
 
     pub fn new_script<T: AsRef<OsStr>>(script: T) -> Self {
@@ -392,15 +425,8 @@ impl Command {
         self
     }
 
-    pub fn set_bin<T: AsRef<OsStr>>(&mut self, bin: T) -> &mut Self {
-        self.set_bin_arg(CommandArg {
-            quoted_value: None,
-            value: bin.as_ref().to_os_string(),
-        })
-    }
-
-    pub fn set_bin_arg(&mut self, bin: CommandArg) -> &mut Self {
-        self.exe = CommandExecutable::Binary(bin);
+    pub fn set_bin<T: Into<CommandArg>>(&mut self, bin: T) -> &mut Self {
+        self.exe = CommandExecutable::Binary(bin.into());
         self
     }
 

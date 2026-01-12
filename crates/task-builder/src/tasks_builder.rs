@@ -935,7 +935,7 @@ impl<'proj> TasksBuilder<'proj> {
                                             if let Argument::Value(value) = arg {
                                                 if value.is_quoted() {
                                                     args.push(TaskArg::new_quoted(
-                                                        value.get_quoted_value().to_string(),
+                                                        value.get_quoted_value(),
                                                         value.to_string(),
                                                     ));
                                                 } else {

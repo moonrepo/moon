@@ -148,6 +148,25 @@ fn migrate_task_setting(_key: &YamlValue, value: &mut YamlValue) {
             node.remove(key);
         }
     });
+
+    if let Some(YamlValue::Sequence(deps)) = task.get_mut("deps") {
+        for dep_shape in deps {
+            if let YamlValue::Mapping(dep) = dep_shape {
+                change_setting(dep, "args", false, |node, key| {
+                    if let Some(YamlValue::String(args)) = node.get(key) {
+                        node.insert(
+                            YamlValue::String(key.into()),
+                            YamlValue::Sequence(
+                                args.split_whitespace()
+                                    .map(|arg| YamlValue::String(arg.to_owned()))
+                                    .collect(),
+                            ),
+                        );
+                    }
+                });
+            }
+        }
+    }
 }
 
 fn migrate_inherited_by_setting(file_name: &str) -> Option<YamlValue> {

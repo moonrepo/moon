@@ -88,6 +88,13 @@ impl From<String> for TaskArg {
     }
 }
 
+impl From<&str> for TaskArg {
+    fn from(value: &str) -> Self {
+        // Handle quotes when deserializing
+        Self::new(value)
+    }
+}
+
 impl PartialEq<&str> for TaskArg {
     fn eq(&self, other: &&str) -> bool {
         &self.value == other

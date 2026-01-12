@@ -1,5 +1,5 @@
-use std::process::Command;
 use std::env;
+use std::process::Command;
 
 fn main() {
     let (shell, ext) = if cfg!(windows) {
@@ -8,7 +8,6 @@ fn main() {
         ("bash", "sh")
     };
     let script = format!("./crates/process/args.{ext}");
-
 
     let mut paths = env::split_paths(&env::var_os("PATH").unwrap()).collect::<Vec<_>>();
     paths.push(env::current_dir().unwrap());
@@ -38,6 +37,8 @@ fn main() {
         .arg(r#""raw quote""#)
         .env("PATH", &paths)
         .spawn()
+        .unwrap()
+        .wait()
         .unwrap();
 
     // Unix: Quotes are not preserved, and the script receives the inner value without wrapping quotes.
@@ -61,8 +62,12 @@ fn main() {
     // ```
     Command::new(shell)
         .arg("-c")
-        .arg(format!("{script} nospace 'with space' 'single quote' \"double quote\" "))
+        .arg(format!(
+            "{script} nospace 'with space' 'single quote' \"double quote\" "
+        ))
         .env("PATH", &paths)
         .spawn()
+        .unwrap()
+        .wait()
         .unwrap();
 }

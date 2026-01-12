@@ -64,7 +64,7 @@ impl<'app> AugmentedCommand<'app> {
             builder.set_script(script);
         } else {
             if let Some(quoted_command) = &task.command.quoted_value {
-                builder.set_bin_arg(CommandArg {
+                builder.set_bin(CommandArg {
                     quoted_value: Some(OsString::from(quoted_command)),
                     value: OsString::from(&task.command.value),
                 });

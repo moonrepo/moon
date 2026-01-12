@@ -131,6 +131,7 @@ mod test {
     use std::fmt::Debug;
 
     use super::NodeState;
+    use rustc_hash::FxHashMap;
     use serde::{
         Deserialize,
         de::{Deserializer, Error},
@@ -241,7 +242,7 @@ mod test {
 
     #[test]
     fn test_deserialize_loaded_map() {
-        let result: NodeState<std::collections::HashMap<String, i32>> =
+        let result: NodeState<FxHashMap<String, i32>> =
             serde_json::from_str(r#"{"a": 1, "b": 2}"#).unwrap();
         if let NodeState::Loaded(map) = result {
             assert_eq!(map.get("a"), Some(&1));

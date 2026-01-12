@@ -224,8 +224,8 @@ mod test {
 
     #[test]
     fn test_deserialize_loaded_f64() {
-        let result: NodeState<f64> = serde_json::from_str("3.14").unwrap();
-        assert!(matches!(result, NodeState::Loaded(v) if (v - 3.14).abs() < 0.001));
+        let result: NodeState<f64> = serde_json::from_str("3.12").unwrap();
+        assert!(matches!(result, NodeState::Loaded(v) if (v - 3.12).abs() < 0.001));
     }
 
     #[test]

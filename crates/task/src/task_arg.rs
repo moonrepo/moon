@@ -47,10 +47,13 @@ impl TaskArg {
         }
     }
 
-    pub fn new_quoted(value: impl AsRef<str>, quoted_value: impl AsRef<str>) -> Self {
+    pub fn new_quoted(
+        value_without_quotes: impl AsRef<str>,
+        value_with_quotes: impl AsRef<str>,
+    ) -> Self {
         Self {
-            quoted_value: Some(quoted_value.as_ref().into()),
-            value: value.as_ref().into(),
+            quoted_value: Some(value_with_quotes.as_ref().into()),
+            value: value_without_quotes.as_ref().into(),
         }
     }
 

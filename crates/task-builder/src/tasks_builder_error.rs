@@ -93,7 +93,7 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::invalid_command_syntax))]
     #[error(
-        "Failed to parse task {} command {} at position {}. Either this command is too complex to parse, or we do not support this syntax. Instead you can either:\n- Use the {} setting, which supports raw syntax.\n- Rewrite as a list of strings instead of a single string.",
+        "Failed to parse task {} with command {} at position {}. Either this command is too complex to parse, or we do not support this syntax. Instead you can either:\n\n- Use the {} setting, which supports raw shell syntax.\n- Rewrite as a list of strings instead of a single string.",
         .task.style(Style::Label),
         .command.style(Style::Shell),
         .position,
@@ -107,7 +107,7 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::unsupported_command_syntax))]
     #[error(
-        "Unable to build task {}, as the {} and {} settings do not support pipes, redirects, or multiple commands. Instead you can either:\n\n- Use the {} setting, which supports raw shell syntax.\n- Wrap the command in a script file and execute that directly.",
+        "Unable to build task {}, as the {} and {} settings do not support pipes, redirects, multiple commands, or shell specific syntax. Instead you can either:\n\n- Use the {} setting, which supports raw shell syntax.\n- Wrap the command in a script file and execute that directly.",
         .task.style(Style::Label),
         "command".style(Style::Property),
         "args".style(Style::Property),

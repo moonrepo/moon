@@ -5,6 +5,8 @@ use moon_config::{test_utils::*, *};
 use moon_target::Target;
 use moon_task::TaskArg;
 use starbase_sandbox::create_sandbox;
+use std::fs;
+use std::path::PathBuf;
 use utils::TasksBuilderContainer;
 
 mod tasks_builder {
@@ -392,6 +394,245 @@ mod tasks_builder {
 
             assert_eq!(task.args, vec!["arg", "$ARG"]);
             assert_eq!(task.options.shell, Some(true));
+        }
+    }
+
+    mod command_syntax {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn simple() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("simple").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, ["-a", "--bar", "baz", "qux"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn passthrough() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("passthrough").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, ["--", "bar", "-b"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn preserves_quotes() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("quotes").unwrap();
+
+            assert_eq!(task.command, "echo");
+            assert_eq!(
+                task.args,
+                [
+                    TaskArg::new_unquoted("noquotes"),
+                    TaskArg::new_quoted("single quote", "'single quote'"),
+                    TaskArg::new_quoted("double quote", "\"double quote\""),
+                    TaskArg::new_quoted("special quote", "$\"special quote\""),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn preserves_quotes_in_exe() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("quotes-exe").unwrap();
+
+            assert_eq!(
+                task.command,
+                TaskArg::new_quoted(
+                    "./some/file path/with/spaces.sh",
+                    "\"./some/file path/with/spaces.sh\""
+                )
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn allows_expansion() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("expansion").unwrap();
+
+            assert_eq!(task.command, "echo");
+            assert_eq!(
+                task.args,
+                [
+                    TaskArg::new_unquoted("$(( 1+1 ))"),
+                    TaskArg::new_unquoted("file/*.txt"),
+                    TaskArg::new_unquoted("${foo:bar}"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn allows_substitution() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("substitution").unwrap();
+
+            assert_eq!(task.command, "echo");
+            assert_eq!(
+                task.args,
+                [
+                    TaskArg::new_unquoted("$(do something)"),
+                    TaskArg::new_unquoted("<(echo bar)"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn extracts_env_assignments() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("env").unwrap();
+
+            assert_eq!(task.command, "exit");
+            assert_eq!(task.args, ["0"]);
+            assert_eq!(
+                task.env,
+                EnvMap::from_iter([
+                    ("FOO".into(), Some("abc".into())),
+                    ("BAR".into(), Some("123".into())),
+                    ("BAZ".into(), Some("quoted value".into())),
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn extracts_env_assignments_in_separate_statements() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("env-multi").unwrap();
+
+            assert_eq!(task.command, "exit");
+            assert_eq!(task.args, ["0"]);
+            assert_eq!(
+                task.env,
+                EnvMap::from_iter([
+                    ("FOO".into(), Some("abc".into())),
+                    ("BAR".into(), Some("123".into())),
+                    ("BAZ".into(), Some("quoted value".into())),
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn ignores_env_assignments_for_non_values() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("env-ignore").unwrap();
+
+            assert_eq!(task.command, "exit");
+            assert_eq!(task.args, ["0"]);
+            assert_eq!(task.env, EnvMap::default());
+        }
+
+        // We can't place these invalid commands in the fixture,
+        // because they would trigger a failure upon creating
+        // the test container and break other tests!
+        fn update_command(path: PathBuf, command: &str) {
+            let content = fs::read_to_string(&path).unwrap();
+
+            fs::write(path, content.replace("{{ command }}", command)).unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Unable to build task")]
+        async fn errors_for_pipes() {
+            let sandbox = create_sandbox("builder");
+
+            update_command(
+                sandbox.path().join("syntax-error/moon.yml"),
+                "echo foo | grep f",
+            );
+
+            TasksBuilderContainer::new(sandbox.path())
+                .build_tasks("syntax-error")
+                .await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Unable to build task")]
+        async fn errors_for_redirects() {
+            let sandbox = create_sandbox("builder");
+
+            update_command(
+                sandbox.path().join("syntax-error/moon.yml"),
+                "echo foo > file.txt",
+            );
+
+            TasksBuilderContainer::new(sandbox.path())
+                .build_tasks("syntax-error")
+                .await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Unable to build task")]
+        async fn errors_for_and() {
+            let sandbox = create_sandbox("builder");
+
+            update_command(
+                sandbox.path().join("syntax-error/moon.yml"),
+                "echo foo && echo bar",
+            );
+
+            TasksBuilderContainer::new(sandbox.path())
+                .build_tasks("syntax-error")
+                .await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Unable to build task")]
+        async fn errors_for_or() {
+            let sandbox = create_sandbox("builder");
+
+            update_command(
+                sandbox.path().join("syntax-error/moon.yml"),
+                "echo foo || echo bar",
+            );
+
+            TasksBuilderContainer::new(sandbox.path())
+                .build_tasks("syntax-error")
+                .await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Unable to build task")]
+        async fn errors_for_shell_syntax() {
+            let sandbox = create_sandbox("builder");
+
+            update_command(
+                sandbox.path().join("syntax-error/moon.yml"),
+                "if [[ true ]]; echo foo; else; echo bar; fi",
+            );
+
+            TasksBuilderContainer::new(sandbox.path())
+                .build_tasks("syntax-error")
+                .await;
         }
     }
 
@@ -2090,7 +2331,7 @@ tasks:
                     ("VAR3".into(), Some("local-child".into())),
                     ("VAR1".into(), Some("local-parent".into())),
                 ])
-            )
+            );
         }
     }
 

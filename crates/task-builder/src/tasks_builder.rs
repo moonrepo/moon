@@ -283,6 +283,7 @@ impl<'proj> TasksBuilder<'proj> {
         // as we need to figure out if we're running in local mode or not.
         let mut preset = None;
         let mut args_sets = vec![];
+        let mut env_sets = vec![];
 
         if id == "dev" || id == "serve" || id == "start" {
             preset = Some(TaskPreset::Server);
@@ -295,21 +296,26 @@ impl<'proj> TasksBuilder<'proj> {
                 preset = Some(pre);
             }
 
-            let (command, base_args) = self.get_command_and_args(&target, link.config)?;
+            let (command, base_args, base_env) = self.get_command_and_args(&target, link.config)?;
 
             if let Some(command) = command {
-                task.command = TaskArg::new(command);
+                task.command = command;
             }
 
             // Add to task later after we have a merge strategy
             if let Some(base_args) = base_args {
                 args_sets.push(base_args);
             }
+
+            if let Some(base_env) = base_env {
+                env_sets.push(base_env);
+            }
         }
 
         task.preset = preset;
         task.options = self.build_task_options(id, preset)?;
         task.state.root_level = is_root_level_source(self.project_source);
+        task.env = self.inherit_project_env(&target)?;
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
@@ -322,7 +328,9 @@ impl<'proj> TasksBuilder<'proj> {
             task.args = self.merge_vec(task.args, args, task.options.merge_args, index, false);
         }
 
-        task.env = self.inherit_project_env(&target)?;
+        for (index, env) in env_sets.into_iter().enumerate() {
+            task.env = self.merge_index_map(task.env, env, task.options.merge_env, index);
+        }
 
         // Finally build the task itself, while applying our complex merge logic!
         let mut configured_inputs = 0;
@@ -899,72 +907,100 @@ impl<'proj> TasksBuilder<'proj> {
         &self,
         target: &Target,
         args: &TaskArgs,
-    ) -> miette::Result<Vec<TaskArg>> {
+    ) -> miette::Result<(Vec<TaskArg>, EnvMap)> {
+        let mut env = EnvMap::default();
+
         match args {
-            TaskArgs::None => Ok(vec![]),
-            TaskArgs::List(list) => Ok(list.iter().map(TaskArg::new).collect()),
+            TaskArgs::None => Ok((vec![], env)),
+            TaskArgs::List(list) => Ok((list.iter().map(TaskArg::new).collect(), env)),
             TaskArgs::String(cmd) => {
                 use starbase_args::*;
 
                 let mut args = vec![];
-                // TODO bubble up
-                let mut env = EnvMap::default();
 
                 if cmd.is_empty() {
-                    return Ok(args);
+                    return Ok((args, env));
                 }
+
+                let mut handle_arg = |arg: &Argument, ignore_env: bool| {
+                    if let Argument::Value(value) = arg {
+                        if value.is_quoted() {
+                            args.push(TaskArg::new_quoted(
+                                value.get_quoted_value(),
+                                value.to_string(),
+                            ));
+                        } else {
+                            args.push(TaskArg::new_unquoted(value.to_string()));
+                        }
+                    } else if let Argument::EnvVar(key, value, _) = arg {
+                        if !ignore_env
+                            && !matches!(value, Value::Expansion(_) | Value::Substitution(_))
+                        {
+                            env.insert(key.to_owned(), Some(value.as_str().to_owned()));
+                        }
+                    } else {
+                        args.push(TaskArg::new_unquoted(arg.to_string()));
+                    }
+                };
 
                 let command_line =
                     parse(cmd).map_err(|error| TasksBuilderError::InvalidCommandSyntax {
                         task: target.to_owned(),
                         command: cmd.to_owned(),
-                        position: format!("{}:TODO", error.line()),
+                        position: match error.line_col {
+                            LineColLocation::Pos((line, col)) => format!("{line}:{col}"),
+                            LineColLocation::Span((line, col), _) => format!("{line}:{col}"),
+                        },
                     })?;
 
                 for pipeline in command_line.iter() {
                     match pipeline {
                         Pipeline::Start(commands) => {
-                            for sequence in commands.iter() {
-                                if matches!(sequence, Sequence::Passthrough(_)) {
-                                    args.push(TaskArg::new_unquoted("--"));
-                                }
+                            let mut allow_next_sequence = true;
 
+                            for sequence in commands.iter() {
                                 match sequence {
-                                    Sequence::Start(command) | Sequence::Passthrough(command) => {
-                                        for arg in command.iter() {
-                                            if let Argument::Value(value) = arg {
-                                                if value.is_quoted() {
-                                                    args.push(TaskArg::new_quoted(
-                                                        value.get_quoted_value(),
-                                                        value.to_string(),
-                                                    ));
-                                                } else {
-                                                    args.push(TaskArg::new_unquoted(
-                                                        value.to_string(),
-                                                    ));
-                                                }
-                                            } else {
-                                                args.push(TaskArg::new_unquoted(arg.to_string()));
-                                            }
-                                        }
-                                    }
                                     // If only env vars, allow it, otherwise it's a
                                     // multi-command and we shouldn't allow it
-                                    Sequence::Then(command) => {
+                                    Sequence::Start(command) | Sequence::Then(command) => {
+                                        if !allow_next_sequence {
+                                            return Err(
+                                                TasksBuilderError::UnsupportedCommandSyntax {
+                                                    task: target.to_owned(),
+                                                }
+                                                .into(),
+                                            );
+                                        }
+
+                                        allow_next_sequence = command
+                                            .iter()
+                                            .all(|arg| matches!(arg, Argument::EnvVar(_, _, _)));
+
                                         for arg in command.iter() {
-                                            if let Argument::EnvVar(key, value, _) = arg {
-                                                env.insert(
-                                                    key.to_owned(),
-                                                    Some(value.as_str().to_owned()),
-                                                );
-                                            } else {
-                                                return Err(
-                                                    TasksBuilderError::UnsupportedCommandSyntax {
-                                                        task: target.to_owned(),
-                                                    }
-                                                    .into(),
-                                                );
-                                            }
+                                            handle_arg(arg, false);
+                                        }
+                                    }
+                                    // Capture anything after `--`
+                                    Sequence::Passthrough(command) => {
+                                        handle_arg(
+                                            &Argument::Value(Value::Unquoted("--".into())),
+                                            true,
+                                        );
+
+                                        for arg in command.iter() {
+                                            handle_arg(arg, true);
+                                        }
+                                    }
+                                    Sequence::Stop(term) => {
+                                        if term == ";" {
+                                            // Allow
+                                        } else {
+                                            return Err(
+                                                TasksBuilderError::UnsupportedCommandSyntax {
+                                                    task: target.to_owned(),
+                                                }
+                                                .into(),
+                                            );
                                         }
                                     }
                                     _ => {
@@ -985,23 +1021,25 @@ impl<'proj> TasksBuilder<'proj> {
                     };
                 }
 
-                Ok(args)
+                Ok((args, env))
             }
         }
     }
 
+    #[allow(clippy::type_complexity)]
     fn get_command_and_args(
         &self,
         target: &Target,
         config: &TaskConfig,
-    ) -> miette::Result<(Option<TaskArg>, Option<Vec<TaskArg>>)> {
+    ) -> miette::Result<(Option<TaskArg>, Option<Vec<TaskArg>>, Option<EnvMap>)> {
         if config.script.is_some() {
-            return Ok((None, None));
+            return Ok((None, None, None));
         }
 
         let mut command = None;
         let mut args = None;
-        let mut cmd_list = self.parse_command_and_args(target, &config.command)?;
+        let mut env = EnvMap::default();
+        let (mut cmd_list, env_map) = self.parse_command_and_args(target, &config.command)?;
 
         if !cmd_list.is_empty() {
             command = Some(cmd_list.remove(0));
@@ -1011,17 +1049,25 @@ impl<'proj> TasksBuilder<'proj> {
             }
         }
 
+        if !env_map.is_empty() {
+            env.extend(env_map);
+        }
+
         if config.args != TaskArgs::None {
-            let arg_list = self.parse_command_and_args(target, &config.args)?;
+            let (arg_list, env_map) = self.parse_command_and_args(target, &config.args)?;
 
             if let Some(inner) = &mut args {
                 inner.extend(arg_list);
             } else {
                 args = Some(arg_list);
             }
+
+            if !env_map.is_empty() {
+                env.extend(env_map);
+            }
         }
 
-        Ok((command, args))
+        Ok((command, args, if env.is_empty() { None } else { Some(env) }))
     }
 
     fn get_config_inherit_chain(&self, id: &Id) -> miette::Result<Vec<ConfigChain<'_>>> {

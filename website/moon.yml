@@ -38,11 +38,6 @@ tasks:
       - '*.js'
       - 'tsconfig.json'
 
-  quote:
-    command: 'echo nospace ''single quote'' "double quote" $"special quote"'
-    options:
-      cache: false
-
 workspace:
   inheritedTasks:
     exclude:

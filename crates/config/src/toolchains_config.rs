@@ -105,6 +105,16 @@ impl ToolchainsConfig {
             .get(&stable_id)
             .or_else(|| self.plugins.get(&unstable_id))
     }
+
+    pub fn inherit_versions_from_env_vars(&mut self) -> miette::Result<()> {
+        for (id, config) in &mut self.plugins {
+            if let Ok(version) = env::var(format!("MOON_{}_VERSION", id.to_env_var())) {
+                config.version = Some(UnresolvedVersionSpec::parse(version).into_diagnostic()?);
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(feature = "proto")]
@@ -182,16 +192,6 @@ impl ToolchainsConfig {
                 );
 
                 config.version = Some(version.req.to_owned());
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn inherit_versions_from_env_vars(&mut self) -> miette::Result<()> {
-        for (id, config) in &mut self.plugins {
-            if let Ok(version) = env::var(format!("MOON_{}_VERSION", id.to_env_var())) {
-                config.version = Some(UnresolvedVersionSpec::parse(version).into_diagnostic()?);
             }
         }
 

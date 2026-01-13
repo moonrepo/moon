@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+dir=$(dirname "$0")
+
+# Setup npm for publishing
+source "$dir/setupNpm.sh"
+
 # Function to map target triple to core package name
 getCorePackageFromTriple() {
   local triple="$1"
@@ -37,7 +42,9 @@ if [[ -z "${PLAN}" ]]; then
   exit 1
 fi
 
-# Parse the PLAN JSON and process each artifact
+# Parse the PLAN JSON and copy each artifact
+echo "Copying artifacts into packages"
+
 echo "$PLAN" | jq -c '.artifacts[]' | while IFS= read -r artifact; do
   kind=$(echo "$artifact" | jq -r '.kind')
 
@@ -76,8 +83,10 @@ echo "$PLAN" | jq -c '.artifacts[]' | while IFS= read -r artifact; do
 
     if [[ -f "$exePath" ]]; then
       corePackage=$(getCorePackageFromTriple "$triple")
+      exeDistPath="packages/$corePackage/$exeName"
 
-      cp "$exePath" "packages/$corePackage/$exeName"
+      cp "$exePath" "$exeDistPath"
+      echo "  Copied $exeDistPath"
     else
       echo "Missing expected executable at path: $exePath" >&2
       exit 1

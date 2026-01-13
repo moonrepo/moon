@@ -13,34 +13,3 @@ if [[ -d ".yarn/versions" ]]; then
 	yarn version apply --all
 fi
 
-if [[ "$NPM_CHANNEL" == "canary" ]]; then
-	buildMetadata="-canary.$(date +%Y%m%d%H%M)"
-
-	echo "Detected \"canary\" build, appending build metadata to versions"
-	echo "Build: $buildMetadata"
-
-	for package in packages/*; do
-		echo "$package"
-		cd "./$package" || exit
-
-		# For the cli package, replace itself and all dep versions
-		if [[ "$package" == *"cli"* ]]; then
-			# Extract the new version, since it was changed via `yarn version apply`
-			baseVersion=$(jq -r ".version" package.json)
-			version="$baseVersion$buildMetadata"
-
-			pkg=$(cat package.json)
-			echo "${pkg//$baseVersion/$version}" > package.json
-
-		# For core packages, append the preid to the version
-		else
-			pkg=$(jq ".version += \"$buildMetadata\"" package.json)
-			echo "$pkg" > package.json
-		fi
-
-		# Print it out so we can debug it
-		cat package.json
-
-		cd ../..
-	done
-fi

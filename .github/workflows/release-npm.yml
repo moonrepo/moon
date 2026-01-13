@@ -11,6 +11,8 @@ permissions:
   id-token: write # Required for OIDC
   contents: read
 
+# https://docs.npmjs.com/trusted-publishers
+# https://github.com/actions/setup-node/issues/1445
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -19,6 +21,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+      - name: Verify environment
+        run: |
+          node -v
+          npm -v
+          yarn -v
+        shell: bash
       - name: Fetch artifacts
         uses: actions/download-artifact@v4
         with:
@@ -26,7 +37,7 @@ jobs:
           path: artifacts
           merge-multiple: true
       - name: Copy artifacts and release packages
-        run: bash ./scripts/release/release.sh
+        run: unset NODE_AUTH_TOKEN && bash ./scripts/release/release.sh
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

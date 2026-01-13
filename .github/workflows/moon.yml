@@ -31,19 +31,19 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
       - uses: moonrepo/setup-rust@v1
         with:
-          cache-base: '^(master|develop-)'
+          cache-base: "^(master|develop-)"
       - run: cargo run -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
         env:
           DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}
           MOON_DEBUG_REMOTE: true
           MOON_DEBUG_PROCESS_ENV: true
-          RUST_BACKTRACE: '1'
+          RUST_BACKTRACE: "1"
       - uses: moonrepo/run-report-action@v1
         if: success() || failure()
         with:
@@ -58,7 +58,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: depot/setup-action@v1
       - uses: moonrepo/setup-rust@v1
         with:
@@ -68,7 +68,7 @@ jobs:
       # Non-staged
       - run: ./target/debug/moon docker scaffold website --log trace
         env:
-          MOON_SKIP_SETUP_TOOLCHAIN: '*'
+          MOON_SKIP_SETUP_TOOLCHAIN: "*"
       - uses: depot/build-push-action@v1
         with:
           context: .

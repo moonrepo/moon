@@ -31,13 +31,13 @@ jobs:
     name: Build WASM
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just
           cache: false
           targets: wasm32-wasip1
-      - uses: mozilla-actions/sccache-action@v0.0.7
+      - uses: mozilla-actions/sccache-action@v0.0.9
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Building crates
         run: just build-wasm
@@ -45,13 +45,13 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just
           cache: false
           components: rustfmt
-      - uses: mozilla-actions/sccache-action@v0.0.7
+      - uses: mozilla-actions/sccache-action@v0.0.9
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Check formatting
         run: just format-check
@@ -63,13 +63,13 @@ jobs:
         os: [ubuntu-latest, windows-latest]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just
           cache: false
           components: clippy
-      - uses: mozilla-actions/sccache-action@v0.0.7
+      - uses: mozilla-actions/sccache-action@v0.0.9
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       - name: Run linter
         run: just lint
@@ -80,7 +80,7 @@ jobs:
       coverage: ${{ steps.plan.outputs.coverage }}
       os: ${{ steps.plan.outputs.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: plan
         run: bash ./scripts/planTestCi.sh
         env:
@@ -105,7 +105,7 @@ jobs:
       GIT_COMMITTER_NAME: "Sandbox"
       GIT_COMMITTER_EMAIL: "fakeemail@somedomain.dev"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just, cargo-nextest, cargo-llvm-cov
@@ -117,7 +117,7 @@ jobs:
           auto-install: true
           cache: true
           proto-version: "0.54.1" # Keep in sync
-      - uses: mozilla-actions/sccache-action@v0.0.7
+      - uses: mozilla-actions/sccache-action@v0.0.9
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
@@ -133,7 +133,7 @@ jobs:
         if: ${{ env.COVERAGE == 'true' }}
         run: just gen-report
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ env.COVERAGE == 'true' }}
         with:
           name: coverage-${{ runner.os }}
@@ -147,8 +147,8 @@ jobs:
       - test-plan
       - test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v7
         name: Download coverage reports
         with:
           path: coverage

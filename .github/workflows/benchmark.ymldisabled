@@ -21,14 +21,14 @@ jobs:
       - run: echo ${{ github.event.pull_request.head.sha }}
       - name: Get PR SHA
         id: sha
-        uses: actions/github-script@v6
+        uses: actions/github-script@v8
         with:
           result-encoding: string
           script: |
             const response = await github.request(context.payload.issue.pull_request.url);
             return response.data.head.sha;
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: false
           ref: ${{ steps.sha.outputs.result }}
@@ -42,7 +42,7 @@ jobs:
 
       # Run on base branch to get a baseline
       - name: Checkout base branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           clean: false
           ref: ${{ github.event.pull_request.base.sha }}

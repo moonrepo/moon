@@ -86,6 +86,8 @@ echo "$PLAN" | jq -c '.artifacts[]' | while IFS= read -r artifact; do
       exeDistPath="packages/$corePackage/$exeName"
 
       cp "$exePath" "$exeDistPath"
+      chmod +x "$exeDistPath"
+
       echo "  Copied $exeDistPath"
     else
       echo "Missing expected executable at path: $exePath" >&2
@@ -93,3 +95,24 @@ echo "$PLAN" | jq -c '.artifacts[]' | while IFS= read -r artifact; do
     fi
   done
 done
+
+# Bump the versions in each package
+tag="${NPM_CHANNEL:-latest}"
+version=$(echo "$PLAN" | jq -r '.releases[0].app_version')
+prerelease=$(echo "$PLAN" | jq -r '.announcement_is_prerelease')
+
+echo "Bumping package versions"
+echo "Version: $version"
+
+yarn workspaces foreach -tvR --from "@moonrepo/{cli,core-*}" version "$version"
+
+# We only want to publish packages relating to the Rust binary
+echo "Publishing cli and core packages"
+echo "Channel: $tag"
+
+if [[ -z "$GITHUB_TOKEN" ]]; then
+  echo "Skipping publish step (no GITHUB_TOKEN)"
+  exit 0
+fi
+
+yarn workspaces foreach -tvR --from "@moonrepo/{cli,core-*}" npm publish --tag "$tag" --access public

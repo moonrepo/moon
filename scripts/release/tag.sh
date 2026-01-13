@@ -12,8 +12,12 @@ echo "Version: $version"
 
 echo "Bumping npm packages"
 
-# Bump npm versions first so that cargo will commit the changes
 yarn workspaces foreach -tvR --from "@moonrepo/{cli,core-*}" version "$version"
+
+# Cargo release will fail with a "dirty working tree" if we have uncommitted changes,
+# so unfortunately we need another commit here...
+git add --all
+git commit -m "chore: Bump packages"
 
 echo "Bumping cargo crate"
 

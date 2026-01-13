@@ -114,4 +114,16 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
   exit 0
 fi
 
-yarn workspaces foreach -tvR --from "@moonrepo/{cli,core-*}" npm publish --tag "$tag" --access public
+# We must publish with npm instead of yarn for OIDC to work correctly
+for package in packages/cli packages/core-*; do
+	echo "  $package"
+
+	if [[ -z "$GITHUB_TOKEN" ]]; then
+		# Testing locally
+		echo "Not publishing"
+	else
+		cd "./$package" || exit
+		npm publish --tag "$tag" --access public --provenance
+		cd ../..
+	fi
+done

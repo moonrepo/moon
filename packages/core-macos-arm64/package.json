@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/core-macos-arm64",
-  "version": "1.41.8",
+  "version": "2.0.0-alpha.4",
   "description": "macOS ARM64 (Silicon) binary for moon.",
   "keywords": [
     "moon",
@@ -28,5 +28,6 @@
       "moon",
       "moonx"
     ]
-  }
+  },
+  "stableVersion": "1.41.8"
 }

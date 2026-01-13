@@ -1,8 +1,16 @@
 releases:
-  '@moonrepo/report': major
-  '@moonrepo/types': major
-  '@moonrepo/visualizer': minor
+  "@moonrepo/report": major
+  "@moonrepo/types": major
+  "@moonrepo/visualizer": minor
 
 declined:
-  - '@moonrepo/runtime'
+  - "@moonrepo/runtime"
   - website
+
+undecided:
+  - "@moonrepo/core-linux-arm64-gnu"
+  - "@moonrepo/core-linux-arm64-musl"
+  - "@moonrepo/core-linux-x64-gnu"
+  - "@moonrepo/core-linux-x64-musl"
+  - "@moonrepo/core-macos-arm64"
+  - "@moonrepo/core-windows-x64-msvc"

@@ -21,7 +21,7 @@ jobs:
           path: artifacts
           merge-multiple: true
       - name: Copy artifacts and release packages
-        run: bash ./scripts/release/releasePackages.sh
+        run: bash ./scripts/release/release.sh
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

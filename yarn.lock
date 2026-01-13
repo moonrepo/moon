@@ -4126,7 +4126,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@moonrepo/cli@workspace:*, @moonrepo/cli@workspace:packages/cli":
+"@moonrepo/cli@workspace:packages/cli":
   version: 0.0.0-use.local
   resolution: "@moonrepo/cli@workspace:packages/cli"
   dependencies:
@@ -14375,7 +14375,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "moon@workspace:."
   dependencies:
-    "@moonrepo/cli": "workspace:*"
     "@types/node": "npm:^22.13.14"
     babel-preset-moon: "npm:^3.1.0"
     eslint: "npm:^9.23.0"

@@ -37,6 +37,7 @@ getCorePackageFromTriple() {
 }
 
 # Check for PLAN environment variable
+# Shape: cargo dist manifest --output-format=json -a all
 if [[ -z "${PLAN}" ]]; then
   echo "Missing dist-manifest PLAN environment variable" >&2
   exit 1
@@ -96,19 +97,13 @@ echo "$PLAN" | jq -c '.artifacts[]' | while IFS= read -r artifact; do
   done
 done
 
-# Bump the versions in each package
+# We only want to publish packages relating to the Rust binary
 tag="${NPM_CHANNEL:-latest}"
 version=$(echo "$PLAN" | jq -r '.releases[0].app_version')
-# prerelease=$(echo "$PLAN" | jq -r '.announcement_is_prerelease')
 
-echo "Bumping package versions"
-echo "Version: $version"
-
-yarn workspaces foreach -tvR --from "@moonrepo/{cli,core-*}" version "$version"
-
-# We only want to publish packages relating to the Rust binary
 echo "Publishing cli and core packages"
 echo "Channel: $tag"
+echo "Version: $version"
 
 if [[ -z "$GITHUB_TOKEN" ]]; then
   echo "Skipping publish step (no GITHUB_TOKEN)"

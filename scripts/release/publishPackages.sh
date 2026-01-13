@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-dir=$(dirname $0)
+dir=$(dirname "$0")
 tag="${NPM_CHANNEL:-latest}"
 version="$1"
 

@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
 if [[ -z "${NPM_TOKEN}" ]]; then
-	echo "Missing NPM_TOKEN!"
+	echo "Missing NPM_TOKEN!" >&2
 else
 	echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
 	echo "npmAuthToken: $NPM_TOKEN" >> ./.yarnrc.yml
 fi
 
-if [ -d ".yarn/versions" ]; then
+if [[ -d ".yarn/versions" ]]; then
 	echo "Yarn versions detected, applying updates"
 	yarn version apply --all
 fi
 
 if [[ "$NPM_CHANNEL" == "canary" ]]; then
-	buildMetadata="-$NPM_CHANNEL.$(date +%Y%m%d%H%M)"
+	buildMetadata="-canary.$(date +%Y%m%d%H%M)"
 
-	echo "Detected \"$NPM_CHANNEL\" build, appending build metadata to versions"
+	echo "Detected \"canary\" build, appending build metadata to versions"
 	echo "Build: $buildMetadata"
 
 	for package in packages/*; do
@@ -38,7 +39,7 @@ if [[ "$NPM_CHANNEL" == "canary" ]]; then
 		fi
 
 		# Print it out so we can debug it
-		echo $(cat package.json)
+		cat package.json
 
 		cd ../..
 	done

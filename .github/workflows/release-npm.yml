@@ -24,12 +24,6 @@ jobs:
         with:
           node-version: "24"
           registry-url: "https://registry.npmjs.org"
-      - name: Verify environment
-        run: |
-          node -v
-          npm -v
-          yarn -v
-        shell: bash
       - name: Fetch artifacts
         uses: actions/download-artifact@v7
         with:

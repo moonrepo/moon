@@ -14639,7 +14639,7 @@ jobs:
         with:
           fetch-depth: 0
       # Install Node.js
-      - uses: 'actions/setup-node@v4'
+      - uses: 'actions/setup-node@v6'
       # Install dependencies
       - run: 'yarn install --immutable'
       # Run moon and affected tasks

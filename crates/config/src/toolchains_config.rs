@@ -1,11 +1,13 @@
 use crate::patterns::{merge_iter, merge_plugin_partials};
 use crate::toolchain::*;
 use crate::{config_enum, config_struct};
+use miette::IntoDiagnostic;
 use moon_common::{Id, IdExt};
 use rustc_hash::FxHashMap;
 use schematic::{Config, Schematic, validate};
 use serde_json::Value;
 use std::collections::BTreeMap;
+use std::env;
 use version_spec::UnresolvedVersionSpec;
 use warpgate_api::PluginLocator;
 
@@ -180,6 +182,16 @@ impl ToolchainsConfig {
                 );
 
                 config.version = Some(version.req.to_owned());
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn inherit_versions_from_env_vars(&mut self) -> miette::Result<()> {
+        for (id, config) in &mut self.plugins {
+            if let Ok(version) = env::var(format!("MOON_{}_VERSION", id.to_env_var())) {
+                config.version = Some(UnresolvedVersionSpec::parse(version).into_diagnostic()?);
             }
         }
 

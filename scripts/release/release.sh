@@ -101,8 +101,12 @@ done
 tag="${NPM_CHANNEL:-latest}"
 version=$(echo "$PLAN" | jq -r '.releases[0].app_version')
 
+if [[ "$version" == *alpha* || "$version" == *beta* || "$version" == *rc* ]]; then
+  tag="next"
+fi
+
 echo "Publishing cli and core packages"
-echo "Channel: $tag"
+echo "Tag: $tag"
 echo "Version: $version"
 
 if [[ -z "$GITHUB_TOKEN" ]]; then

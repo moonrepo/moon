@@ -243,13 +243,13 @@ impl ConfigLoader {
         Ok(result.config)
     }
 
-    #[cfg(feature = "proto")]
     pub fn load_toolchains_config<P: AsRef<Path>>(
         &self,
         workspace_root: P,
         #[cfg(feature = "proto")] proto_config: &proto_core::ProtoConfig,
     ) -> miette::Result<ToolchainsConfig> {
         let mut result = self.create_toolchains_loader(workspace_root)?.load()?;
+        result.config.inherit_versions_from_env_vars()?;
 
         #[cfg(feature = "proto")]
         {

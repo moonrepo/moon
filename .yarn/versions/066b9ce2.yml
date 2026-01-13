@@ -5,7 +5,6 @@ releases:
   '@moonrepo/core-linux-x64-gnu': major
   '@moonrepo/core-linux-x64-musl': major
   '@moonrepo/core-macos-arm64': major
-  '@moonrepo/core-macos-x64': major
   '@moonrepo/core-windows-x64-msvc': major
   '@moonrepo/report': major
   '@moonrepo/types': major

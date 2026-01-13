@@ -4135,7 +4135,6 @@ __metadata:
     "@moonrepo/core-linux-x64-gnu": "npm:1.41.8"
     "@moonrepo/core-linux-x64-musl": "npm:1.41.8"
     "@moonrepo/core-macos-arm64": "npm:1.41.8"
-    "@moonrepo/core-macos-x64": "npm:1.41.8"
     "@moonrepo/core-windows-x64-msvc": "npm:1.41.8"
     detect-libc: "npm:^2.0.4"
   dependenciesMeta:
@@ -4148,8 +4147,6 @@ __metadata:
     "@moonrepo/core-linux-x64-musl":
       optional: true
     "@moonrepo/core-macos-arm64":
-      optional: true
-    "@moonrepo/core-macos-x64":
       optional: true
     "@moonrepo/core-windows-x64-msvc":
       optional: true
@@ -4186,12 +4183,6 @@ __metadata:
 "@moonrepo/core-macos-arm64@npm:1.41.8, @moonrepo/core-macos-arm64@workspace:packages/core-macos-arm64":
   version: 0.0.0-use.local
   resolution: "@moonrepo/core-macos-arm64@workspace:packages/core-macos-arm64"
-  languageName: unknown
-  linkType: soft
-
-"@moonrepo/core-macos-x64@npm:1.41.8, @moonrepo/core-macos-x64@workspace:packages/core-macos-x64":
-  version: 0.0.0-use.local
-  resolution: "@moonrepo/core-macos-x64@workspace:packages/core-macos-x64"
   languageName: unknown
   linkType: soft
 

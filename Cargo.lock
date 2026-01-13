@@ -4535,6 +4535,7 @@ dependencies = [
  "moon_vcs",
  "moon_workspace_graph",
  "petgraph 0.8.3",
+ "proto_core",
  "rustc-hash",
  "serde",
  "starbase_utils",

@@ -24,6 +24,8 @@ changes and how to easily migrate!
 - **Tasks**
   - Task inheritance now deep merges instead of shallow merges when dealing with extends and
     multi-global.
+  - Task `command` and `args` only support simple commands now. Use `script` for compound commands
+    (pipes, redirects, multiple commands, etc).
   - Removed "watcher" task `preset`.
   - Reworked env var merge order, substitution, and more. Refer to the migration guide for details.
   - Reworked `.env` handling.
@@ -96,11 +98,15 @@ features, improvements, and much more!
   - Updated projects to support multiple aliases (one from each applicable toolchain).
 - **Tasks**
   - Added deep merging support for task inheritance.
+  - Updated `command` and `args` with better syntax parsing and error handling.
+    - Better handling of quotes, escapes, and spaces.
+    - Extracts env vars into the task.
+  - Updated `env` values to support `null`, which would remove an inherited system env var.
+  - Updated `envFile` option to support token/var substitution.
   - Improved `.env` handling:
     - Updated the parser to support more syntax.
     - Updated loading to occur before task execution, instead of creation.
     - Can now reference system/moon/task env vars for substitution.
-  - Updated `env` values to support `null`, which would remove an inherited system env var.
 - **Toolchains**
   - Stabilized the new WASM plugin system.
   - Improved how toolchains extend env vars and paths for commands and scripts.
@@ -147,6 +153,7 @@ features, improvements, and much more!
   files/globs list.
 - Fixed an issue where running a task that triggers a system/moon error wouldn't output the error
   message. This also aborts the action pipeline correctly now.
+- Fixed an issue where errors during project graph building would not be reported correctly.
 
 #### ⚙️ Internal
 

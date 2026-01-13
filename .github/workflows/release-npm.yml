@@ -20,14 +20,10 @@ jobs:
           pattern: artifacts-*
           path: artifacts
           merge-multiple: true
-      - name: Copy artifacts into packages
-        run: bash ./scripts/release/copyArtifacts.sh
+      - name: Copy artifacts and release packages
+        run: bash ./scripts/release/releasePackages.sh
         shell: bash
-      # - name: Publish npm packages
-      #   run: bash ./scripts/release/publishPackages.sh ${{ inputs.plan.dist_version }}
-      #   shell: bash
-      #   env:
-      #     CLI_VERSION: ${{ inputs.plan.dist_version }}
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     NPM_CHANNEL: latest
-      #     NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: latest
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -99,7 +99,7 @@ done
 # Bump the versions in each package
 tag="${NPM_CHANNEL:-latest}"
 version=$(echo "$PLAN" | jq -r '.releases[0].app_version')
-prerelease=$(echo "$PLAN" | jq -r '.announcement_is_prerelease')
+# prerelease=$(echo "$PLAN" | jq -r '.announcement_is_prerelease')
 
 echo "Bumping package versions"
 echo "Version: $version"

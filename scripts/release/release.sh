@@ -123,7 +123,7 @@ for package in packages/cli packages/core-*; do
 		echo "Not publishing"
 	else
 		cd "./$package" || exit
-		npm publish --tag "$tag" --access public --provenance
+		npm publish --tag "$tag" --access public
 		cd ../..
 	fi
 done

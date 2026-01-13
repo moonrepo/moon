@@ -15,7 +15,9 @@
 
 name: Release
 permissions:
-  "contents": "write"
+  contents: write # For GitHub releases
+  id-token: write # For npm OIDC
+  packages: write # For publishing to package registries
 
 # This task will run whenever you push a git tag that looks like a version
 # like "1.0.0", "v0.1.0-prerelease.1", "my-app/0.1.0", "releases/v1.0.0", etc.
@@ -296,9 +298,9 @@ jobs:
     secrets: inherit
     # publish jobs get escalated permissions
     permissions:
-      "id-token": "write"
-      "packages": "write"
-      "contents": "read"
+      contents: read
+      id-token: write
+      packages: write
 
   announce:
     needs:

@@ -8,8 +8,8 @@ on:
         type: string
 
 permissions:
-  id-token: write # Required for OIDC
   contents: read
+  id-token: write # Required for OIDC
 
 # https://docs.npmjs.com/trusted-publishers
 # https://github.com/actions/setup-node/issues/1445

@@ -1,7 +1,7 @@
 {
   "name": "moon",
   "private": true,
-  "packageManager": "yarn@4.8.0",
+  "packageManager": "yarn@4.12.0",
   "scripts": {
     "moon": "target/debug/moon --log trace",
     "type": "target/debug/moon --log trace run :typecheck",

@@ -1,21 +1,29 @@
 name: Release npm
+
 on:
   workflow_call:
     inputs:
       plan:
         required: true
         type: string
+
 jobs:
-  publish-npm:
-    name: Publish npm packages
+  release:
     runs-on: ubuntu-latest
+    env:
+      PLAN: ${{ inputs.plan }}
     steps:
       - uses: actions/checkout@v4
-      - name: Publish npm packages
-        run: bash ./scripts/release/publishPackages.sh ${{ inputs.plan.dist_version }}
+      - name: Fetch artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: artifacts-*
+          path: artifacts
+          merge-multiple: true
+      - name: Copy artifacts and release packages
+        run: bash ./scripts/release/release.sh
         shell: bash
         env:
-          CLI_VERSION: ${{ inputs.plan.dist_version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CHANNEL: latest
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -16,7 +16,6 @@
     "node": ">=22.14.0"
   },
   "devDependencies": {
-    "@moonrepo/cli": "workspace:*",
     "@types/node": "^22.13.14",
     "babel-preset-moon": "^3.1.0",
     "eslint": "^9.23.0",

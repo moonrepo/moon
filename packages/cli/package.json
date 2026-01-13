@@ -26,7 +26,7 @@
     "directory": "packages/cli"
   },
   "dependencies": {
-    "detect-libc": "^2.0.4"
+    "detect-libc": "^2.1.2"
   },
   "optionalDependencies": {
     "@moonrepo/core-linux-arm64-gnu": "1.41.8",
@@ -34,7 +34,6 @@
     "@moonrepo/core-linux-x64-gnu": "1.41.8",
     "@moonrepo/core-linux-x64-musl": "1.41.8",
     "@moonrepo/core-macos-arm64": "1.41.8",
-    "@moonrepo/core-macos-x64": "1.41.8",
     "@moonrepo/core-windows-x64-msvc": "1.41.8"
   }
 }

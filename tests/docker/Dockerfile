@@ -16,7 +16,6 @@ COPY ./packages/core-linux-arm64-musl ./packages/core-linux-arm64-musl
 COPY ./packages/core-linux-x64-gnu ./packages/core-linux-x64-gnu
 COPY ./packages/core-linux-x64-musl ./packages/core-linux-x64-musl
 COPY ./packages/core-macos-arm64 ./packages/core-macos-arm64
-COPY ./packages/core-macos-x64 ./packages/core-macos-x64
 COPY ./packages/core-windows-x64-msvc ./packages/core-windows-x64-msvc
 
 # Install toolchain and dependencies

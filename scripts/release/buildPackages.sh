@@ -12,3 +12,4 @@ yarn packemon build-workspace $args
 
 # Then build the visualizer with vite
 yarn workspace @moonrepo/visualizer run build
+yarn workspace website run build

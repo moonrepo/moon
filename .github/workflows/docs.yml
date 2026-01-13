@@ -14,7 +14,6 @@ jobs:
           cache: yarn
       - run: yarn install --immutable
       - run: bash ./scripts/release/buildPackages.sh
-      - run: yarn workspace website run build
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}

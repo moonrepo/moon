@@ -25,7 +25,8 @@
   "publishConfig": {
     "access": "public",
     "executableFiles": [
-      "moon.exe"
+      "moon.exe",
+      "moonx.exe"
     ]
   }
 }

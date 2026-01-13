@@ -21,5 +21,5 @@ git commit -m "chore: Bump packages"
 
 echo "Bumping cargo crate"
 
-cargo release "$version" --no-publish -p moon_cli
+cargo release "$version" --execute --no-publish -p moon_cli
 

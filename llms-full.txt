@@ -34292,6 +34292,61 @@ some of the things we are currently working on:
 
 ---
 
+## Beta release of moon v2 now available!
+
+About two weeks ago we announced the [alpha release of moon v2](/blog/moon-v2-alpha), and today we
+are excited to share that the beta is now available! With the beta, we've made significant progress
+towards stabilizing the new architecture and features introduced in v2.
+
+<!--truncate-->
+
+## How to use
+
+You can install the beta with proto (>= 0.54.1), or download it directly from the
+[GitHub release page](https://github.com/moonrepo/moon/releases/tag/v2.0.0-beta.0).
+
+```shell
+$ proto install moon 2.0.0-beta.0
+```
+
+Alternatively, you can try using the new experimental shell install scripts. Be warned that these
+haven't been tested thoroughly yet!
+
+```shell
+# Unix
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/moonrepo/moon/releases/download/v2.0.0-beta.0/moon_cli-installer.sh | sh
+
+# Windows
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/moonrepo/moon/releases/download/v2.0.0-beta.0/moon_cli-installer.ps1 | iex"
+```
+
+> The existing shell install script has not been updated for v2 yet.
+
+## What's changed since alpha?
+
+We've been hard at work the past few weeks working on the following:
+
+- The `@moonrepo` npm packages have been updated (and published) to support v2. Additionally, they
+  are now published using OIDC tokens for improved security, and now support provenance.
+- Updated the task `command` and `args` settings with a
+  [new parser](https://github.com/moonrepo/starbase/tree/master/crates/args) that better handles
+  shell syntax, preserves quoting, and much more. We've also made a breaking change where these
+  settings now only allow simple commands, and `script` should be used for compound commands (pipes,
+  redirects, etc).
+- Updated the task `envFile` option to support token/var expansion.
+- Handful of bug fixes and performance improvements.
+
+## What's still in progress?
+
+There are still some features and improvements that are not yet complete. Here are some of the
+things we are still working on:
+
+- Rewriting the [Python toolchain](https://github.com/moonrepo/plugins/pull/101) as a WASM plugin.
+  Because this is incomplete, Python is currently not supported in the v2 alpha.
+- Auditing open issues and PRs to see what else needs to be done before the stable release.
+
+---
+
 ## moon v2.0 - Official "Phobos" release!
 
 TODO: This blog post is a work in progress!

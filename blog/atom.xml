@@ -2,11 +2,60 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-01-01T00:00:00.000Z</updated>
+    <updated>2026-01-13T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[Beta release of moon v2 now available!]]></title>
+        <id>https://moonrepo.dev/blog/moon-v2-beta</id>
+        <link href="https://moonrepo.dev/blog/moon-v2-beta"/>
+        <updated>2026-01-13T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[About two weeks ago we announced the alpha release of moon v2, and today we]]></summary>
+        <content type="html"><![CDATA[<p>About two weeks ago we announced the <a class="" href="https://moonrepo.dev/blog/moon-v2-alpha">alpha release of moon v2</a>, and today we
+are excited to share that the beta is now available! With the beta, we've made significant progress
+towards stabilizing the new architecture and features introduced in v2.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="how-to-use">How to use<a href="https://moonrepo.dev/blog/moon-v2-beta#how-to-use" class="hash-link" aria-label="Direct link to How to use" title="Direct link to How to use" translate="no">​</a></h2>
+<p>You can install the beta with proto (&gt;= 0.54.1), or download it directly from the
+<a href="https://github.com/moonrepo/moon/releases/tag/v2.0.0-beta.0" target="_blank" rel="noopener noreferrer" class="">GitHub release page</a>.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> moon </span><span class="token number" style="color:#94dded">2.0</span><span class="token plain">.0-beta.0</span><br></span></code></pre></div></div>
+<p>Alternatively, you can try using the new experimental shell install scripts. Be warned that these
+haven't been tested thoroughly yet!</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Unix</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token function" style="color:#ff94ff;font-weight:bold">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--proto</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'=https'</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--tlsv1.2</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">-LsSf</span><span class="token plain"> https://github.com/moonrepo/moon/releases/download/v2.0.0-beta.0/moon_cli-installer.sh </span><span class="token operator" style="color:#b7a9f9">|</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">sh</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Windows</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">powershell </span><span class="token parameter variable" style="color:#fef9c3">-ExecutionPolicy</span><span class="token plain"> Bypass </span><span class="token parameter variable" style="color:#fef9c3">-c</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"irm https://github.com/moonrepo/moon/releases/download/v2.0.0-beta.0/moon_cli-installer.ps1 | iex"</span><br></span></code></pre></div></div>
+<blockquote>
+<p>The existing shell install script has not been updated for v2 yet.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="whats-changed-since-alpha">What's changed since alpha?<a href="https://moonrepo.dev/blog/moon-v2-beta#whats-changed-since-alpha" class="hash-link" aria-label="Direct link to What's changed since alpha?" title="Direct link to What's changed since alpha?" translate="no">​</a></h2>
+<p>We've been hard at work the past few weeks working on the following:</p>
+<ul>
+<li class="">The <code>@moonrepo</code> npm packages have been updated (and published) to support v2. Additionally, they
+are now published using OIDC tokens for improved security, and now support provenance.</li>
+<li class="">Updated the task <code>command</code> and <code>args</code> settings with a
+<a href="https://github.com/moonrepo/starbase/tree/master/crates/args" target="_blank" rel="noopener noreferrer" class="">new parser</a> that better handles
+shell syntax, preserves quoting, and much more. We've also made a breaking change where these
+settings now only allow simple commands, and <code>script</code> should be used for compound commands (pipes,
+redirects, etc).</li>
+<li class="">Updated the task <code>envFile</code> option to support token/var expansion.</li>
+<li class="">Handful of bug fixes and performance improvements.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="whats-still-in-progress">What's still in progress?<a href="https://moonrepo.dev/blog/moon-v2-beta#whats-still-in-progress" class="hash-link" aria-label="Direct link to What's still in progress?" title="Direct link to What's still in progress?" translate="no">​</a></h2>
+<p>There are still some features and improvements that are not yet complete. Here are some of the
+things we are still working on:</p>
+<ul>
+<li class="">Rewriting the <a href="https://github.com/moonrepo/plugins/pull/101" target="_blank" rel="noopener noreferrer" class="">Python toolchain</a> as a WASM plugin.
+Because this is incomplete, Python is currently not supported in the v2 alpha.</li>
+<li class="">Auditing open issues and PRs to see what else needs to be done before the stable release.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="beta" term="beta"/>
+        <category label="major" term="major"/>
+        <category label="release" term="release"/>
+        <category label="v2" term="v2"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Alpha release of moon v2 now available!]]></title>
         <id>https://moonrepo.dev/blog/moon-v2-alpha</id>
@@ -1801,63 +1850,5 @@ support a list of files/URLs to extend.</li>
         <category label="remote" term="remote"/>
         <category label="cache" term="cache"/>
         <category label="ci" term="ci"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.44 - New terminal user interface and versions command]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.44</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.44"/>
-        <updated>2024-12-25T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[Merry Christmas and happy holidays 🎄! In this release, we're introducing a new terminal user]]></summary>
-        <content type="html"><![CDATA[<p>Merry Christmas and happy holidays 🎄! In this release, we're introducing a new terminal user
-interface.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-terminal-output">New terminal output<a href="https://moonrepo.dev/blog/proto-v0.44#new-terminal-output" class="hash-link" aria-label="Direct link to New terminal output" title="Direct link to New terminal output" translate="no">​</a></h2>
-<p>We're excited to introduce new terminal outputs, also known as a terminal user interface (TUI), for
-all commands! We stumbled upon the <a href="https://docs.rs/iocraft/latest/iocraft/" target="_blank" rel="noopener noreferrer" class="">iocraft</a> Rust crate,
-which is a library for rendering terminal output using components and JSX-like syntax. As fans of
-<a href="https://react.dev/" target="_blank" rel="noopener noreferrer" class="">React</a> and <a href="https://github.com/vadimdemedes/ink" target="_blank" rel="noopener noreferrer" class="">Ink</a>, this felt like the
-perfect opportunity to revisit all of our commands and implement a new interface unique to proto
-(and moon in the future).</p>
-<p>Here are some examples of this new output. A lot of it is still a work in progress and will be
-tweaked going forward, but we're already impressed with what iocraft can achieve!</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="notices">Notices<a href="https://moonrepo.dev/blog/proto-v0.44#notices" class="hash-link" aria-label="Direct link to Notices" title="Direct link to Notices" translate="no">​</a></h3>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/notice-success-254582753244b00934c95f97dec3a919.png" width="90%" alt="" class="inline-block"></div>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/notice-caution-79cdc2e8db63979fdbb49bbcd67ea59f.png" width="90%" alt="" class="inline-block"></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="information">Information<a href="https://moonrepo.dev/blog/proto-v0.44#information" class="hash-link" aria-label="Direct link to Information" title="Direct link to Information" translate="no">​</a></h3>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/info-env-861de6c24686136db952da1e09efd792.png" width="90%" alt="" class="inline-block"></div>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/info-plugin-435cf590895a9bf7adf9b30a70e21433.png" width="90%" alt="" class="inline-block"></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="tables">Tables<a href="https://moonrepo.dev/blog/proto-v0.44#tables" class="hash-link" aria-label="Direct link to Tables" title="Direct link to Tables" translate="no">​</a></h3>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/table-outdated-2192bf6b51844be592f479137a5c5cb8.png" width="90%" alt="" class="inline-block"></div>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/table-search-49163a166a105c87d96f0f25fbc700cf.png" width="90%" alt="" class="inline-block"></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="prompts">Prompts<a href="https://moonrepo.dev/blog/proto-v0.44#prompts" class="hash-link" aria-label="Direct link to Prompts" title="Direct link to Prompts" translate="no">​</a></h3>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/confirm-ce50d89b46c868773b6da77167a32c0c.png" width="90%" alt="" class="inline-block"></div>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/select-a9dd0acb274c17036b9ecfb7499d31be.png" width="90%" alt="" class="inline-block"></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="progress">Progress<a href="https://moonrepo.dev/blog/proto-v0.44#progress" class="hash-link" aria-label="Direct link to Progress" title="Direct link to Progress" translate="no">​</a></h3>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/progress-7fae1a2f6c3daa0aa4ea2a1d5a7dd52f.png" width="90%" alt="" class="inline-block"></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-proto-versions-command">New <code>proto versions</code> command<a href="https://moonrepo.dev/blog/proto-v0.44#new-proto-versions-command" class="hash-link" aria-label="Direct link to new-proto-versions-command" title="Direct link to new-proto-versions-command" translate="no">​</a></h2>
-<p>After much feedback, we've decided to merge the <code>proto list</code> and <code>proto list-remote</code> commands into a
-new command, <a class="" href="https://moonrepo.dev/docs/proto/commands/versions"><code>proto versions</code></a>. This command will list all versions
-available for the provided tool, while also annotating which of those versions has been installed
-locally.</p>
-<p>This data can now be accessed as JSON by passing the <code>--json</code> flag.</p>
-<div class="language-shel codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shel codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto versions node</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">...</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.0.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.1.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.2.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.3.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.4.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.4.1</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.5.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.5.1</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.6.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.7.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.8.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.9.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.10.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.11.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">22.12.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.0.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.1.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.2.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.3.0</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.4.0 - installed 12/19/24</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">23.5.0 - installed 12/25/24</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.44#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.44.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added a <code>--yes</code> option to <code>proto outdated</code>, that skips confirmation prompts.</li>
-<li class="">Added a <code>--json</code> option to <code>proto clean</code>, to capture the cleaned result as JSON.</li>
-<li class="">Updated <code>proto clean</code> to accept a target in which to clean as the 1st argument. For example,
-<code>proto clean cache</code>.</li>
-<li class="">Moved the <code>--json</code> and <code>--yes</code> options into global options.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="terminal" term="terminal"/>
-        <category label="console" term="console"/>
-        <category label="ui" term="ui"/>
-        <category label="user" term="user"/>
-        <category label="interface" term="interface"/>
     </entry>
 </feed>

@@ -72,7 +72,7 @@ config_struct!(
 
 impl InheritedClauseConfig {
     pub fn matches(&self, values: &[Id]) -> bool {
-        if values.is_empty() || self.not.is_none() && self.and.is_none() && self.or.is_none() {
+        if self.not.is_none() && self.and.is_none() && self.or.is_none() {
             return false;
         }
 

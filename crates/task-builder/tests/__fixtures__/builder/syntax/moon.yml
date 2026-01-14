@@ -41,6 +41,11 @@ tasks:
     options:
       shell: false
 
+  env-inside:
+    command: 'foo --env FOO=abc arg'
+    options:
+      shell: false
+
   env-ignore:
     command: 'FOO=$(exp) BAR=${sub} exit 0'
     options:

@@ -131,6 +131,11 @@ export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles: boolean | 'args' | 'env' | null;
 	/**
+	 * When true, allows affected files from outside the project boundary
+	 * to be included.
+	 */
+	affectedFilesIgnoreProjectBoundary: boolean | null;
+	/**
 	 * When affected and no files are matching, pass the task inputs
 	 * as arguments to the command, instead of `.`.
 	 */
@@ -446,6 +451,11 @@ export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
 	affectedFiles?: boolean | 'args' | 'env' | null;
+	/**
+	 * When true, allows affected files from outside the project boundary
+	 * to be included.
+	 */
+	affectedFilesIgnoreProjectBoundary?: boolean | null;
 	/**
 	 * When affected and no files are matching, pass the task inputs
 	 * as arguments to the command, instead of `.`.

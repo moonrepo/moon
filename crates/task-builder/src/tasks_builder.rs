@@ -580,6 +580,13 @@ impl<'proj> TasksBuilder<'proj> {
                 options.affected_pass_inputs = *affected_pass_inputs;
             }
 
+            if let Some(affected_files_ignore_project_boundary) =
+                &config.affected_files_ignore_project_boundary
+            {
+                options.affected_files_ignore_project_boundary =
+                    *affected_files_ignore_project_boundary;
+            }
+
             if let Some(allow_failure) = &config.allow_failure {
                 options.allow_failure = *allow_failure;
             }

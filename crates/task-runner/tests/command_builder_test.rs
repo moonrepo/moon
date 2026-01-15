@@ -545,6 +545,133 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn includes_external_files_with_boundary_ignored() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.touched_files.insert("project/file.txt".into());
+            context.touched_files.insert("shared/config.json".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files_ignore_project_boundary = true;
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'../shared/config.json'", "'./file.txt'"]
+                } else {
+                    vec!["arg", "--opt", "../shared/config.json", "./file.txt"]
+                }
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_external_files_with_boundary_ignored_in_env() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.touched_files.insert("project/file.txt".into());
+            context.touched_files.insert("shared/config.json".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles::Env);
+                    task.options.affected_files_ignore_project_boundary = true;
+                })
+                .await;
+
+            assert_eq!(
+                get_env(&command, "MOON_AFFECTED_FILES").unwrap(),
+                "../shared/config.json,file.txt"
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn excludes_external_files_without_boundary_ignored() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.touched_files.insert("project/file.txt".into());
+            context.touched_files.insert("shared/config.json".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files_ignore_project_boundary = false;
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./file.txt'"]
+                } else {
+                    vec!["arg", "--opt", "./file.txt"]
+                }
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_external_files_run_from_workspace_root() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.touched_files.insert("project/file.txt".into());
+            context.touched_files.insert("shared/config.json".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files_ignore_project_boundary = true;
+                    task.options.run_from_workspace_root = true;
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./project/file.txt'", "'./shared/config.json'"]
+                } else {
+                    vec!["arg", "--opt", "./project/file.txt", "./shared/config.json"]
+                }
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn includes_only_external_files() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.touched_files.insert("shared/config.json".into());
+            context.touched_files.insert("root-file.txt".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files_ignore_project_boundary = true;
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'../root-file.txt'", "'../shared/config.json'"]
+                } else {
+                    vec!["arg", "--opt", "../root-file.txt", "../shared/config.json"]
+                }
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn quotes_files_with_special_chars() {
             let container = TaskRunnerContainer::new("builder", "base").await;
 

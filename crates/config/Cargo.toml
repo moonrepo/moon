@@ -15,6 +15,7 @@ features = ["loader"]
 moon_common = { version = "1.0.1", path = "../common" }
 moon_target = { version = "1.0.1", path = "../target" }
 hcl-rs = "0.19.4"
+serde-content = "0.1.2"
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
@@ -39,6 +40,7 @@ semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_path_to_error = "0.1.20"
+starbase_utils = { workspace = true, features = ["glob"] }
 version_spec = { workspace = true, features = ["schematic"] }
 warpgate_api = { workspace = true, features = ["schematic"] }
 

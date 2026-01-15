@@ -1,6 +1,7 @@
 use schematic::schema::UnionType;
 use schematic::{Schema, SchemaBuilder, Schematic};
 use serde::de::{self, Deserialize, Deserializer, Visitor};
+use serde_content::ValueVisitor;
 use std::fmt;
 use std::marker::PhantomData;
 
@@ -84,8 +85,33 @@ impl<'de, T: Schematic + Deserialize<'de>> Deserialize<'de> for OneOrMany<T> {
             where
                 A: de::SeqAccess<'de>,
             {
-                Vec::<T>::deserialize(de::value::SeqAccessDeserializer::new(seq))
-                    .map(OneOrMany::Many)
+                // We have to buffer this content to try deserializing it multiple ways
+                //
+                // This is, internally, how the default handler for untagged enums works.
+                // However, we don't have access to the serde::_private module that it uses,
+                // so we have to use serde-content to achieve the same effect.
+                //
+                // See: https://github.com/serde-rs/serde/issues/1947
+                // See also: https://github.com/hasezoey/termusic/commit/f6a8bf4a700c3a132340505ab15b5d7dd762db46 (MIT Licensed)
+                let value_visitor = ValueVisitor;
+                let content = value_visitor.visit_seq(seq)?;
+
+                let deserializer = serde_content::Deserializer::new(content.clone())
+                    .coerce_numbers()
+                    .human_readable();
+                let as_vec_err = match Vec::<T>::deserialize(deserializer) {
+                    Ok(vec) => return Ok(OneOrMany::Many(vec)),
+                    Err(e) => e,
+                };
+
+                let deserializer = serde_content::Deserializer::new(content)
+                    .coerce_numbers()
+                    .human_readable();
+                if let Ok(individual_value) = T::deserialize(deserializer) {
+                    return Ok(OneOrMany::One(individual_value));
+                }
+
+                Err(de::Error::custom(as_vec_err.to_string()))
             }
 
             fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
@@ -270,6 +296,51 @@ mod test {
         } else {
             panic!("Expected One state");
         }
+    }
+
+    #[test]
+    fn test_deserialize_nested_array() {
+        let result: OneOrMany<Vec<String>> =
+            serde_json::from_str(r#"[["a", "b"], ["c", "d"]]"#).unwrap();
+        let expected = vec![
+            vec!["a".to_string(), "b".to_string()],
+            vec!["c".to_string(), "d".to_string()],
+        ];
+        assert!(matches!(result, OneOrMany::Many(ref v) if v == &expected));
+    }
+
+    #[test]
+    fn test_deserialize_recursive_backoff() {
+        #[derive(Deserialize, Debug, PartialEq, Eq)]
+        struct RecursiveTestStruct(OneOrMany<Box<RecursiveTestStruct>>);
+        impl Schematic for RecursiveTestStruct {}
+        let json = r#"
+        [
+            [
+                [
+                    [],
+                    []
+                ]
+            ],
+            [
+                []
+            ]
+        ]"#;
+        let result: OneOrMany<Box<RecursiveTestStruct>> = serde_json::from_str(json).unwrap();
+        assert_eq!(
+            result,
+            OneOrMany::Many(vec![
+                Box::new(RecursiveTestStruct(OneOrMany::Many(vec![Box::new(
+                    RecursiveTestStruct(OneOrMany::Many(vec![
+                        Box::new(RecursiveTestStruct(OneOrMany::Many(vec![]))),
+                        Box::new(RecursiveTestStruct(OneOrMany::Many(vec![]))),
+                    ]))
+                ),]))),
+                Box::new(RecursiveTestStruct(OneOrMany::Many(vec![Box::new(
+                    RecursiveTestStruct(OneOrMany::Many(vec![]))
+                ),]))),
+            ])
+        );
     }
 
     #[test]

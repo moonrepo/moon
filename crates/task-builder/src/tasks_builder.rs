@@ -710,6 +710,10 @@ impl<'proj> TasksBuilder<'proj> {
                 options.run_in_ci = run_in_ci.to_owned();
             }
 
+            if let Some(run_in_sync_phase) = &config.run_in_sync_phase {
+                options.run_in_sync_phase = run_in_sync_phase.to_owned();
+            }
+
             if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
                 options.run_from_workspace_root = *run_from_workspace_root;
             }

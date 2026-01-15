@@ -321,6 +321,9 @@ config_struct!(
         #[setting(rename = "runInCI")]
         pub run_in_ci: Option<TaskOptionRunInCI>,
 
+        /// Runs the task automatically when executing `moon sync`.
+        pub run_in_sync_phase: Option<bool>,
+
         /// Runs the task from the workspace root, instead of the project root.
         pub run_from_workspace_root: Option<bool>,
 

@@ -185,7 +185,6 @@ mod test {
         Deserialize,
         de::{Deserializer, Error},
     };
-    use serde_json;
     use std::fmt::Debug;
 
     pub fn custom_err<'de, D, T>(_deserializer: D) -> Result<T, D::Error>

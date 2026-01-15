@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.e6dcddd9.css">
-<script src="/assets/js/runtime~main.200682f9.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.c5781b45.js" defer="defer"></script>
 <script src="/assets/js/main.95ec48f3.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -71,7 +71,7 @@ merged (by name), <em>not</em> deep merged.</li>
 <p>If configuration looks good, let&#x27;s move on to inspecting the trace logs, which can be a non-trivial
 amount of effort. Run the task to generate the logs, bypass the cache, and include debug
 information:</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token assign-left variable" style="color:#fef9c3">MOON_DEBUG_PROCESS_ENV</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">true </span><span class="token assign-left variable" style="color:#fef9c3">MOON_DEBUG_PROCESS_INPUT</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">true moon run </span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token plain">target</span><span class="token operator" style="color:#b7a9f9">&gt;</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--log</span><span class="token plain"> trace </span><span class="token parameter variable" style="color:#fef9c3">--updateCache</span><br></span></code></pre></div></div>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token assign-left variable" style="color:#fef9c3">MOON_DEBUG_PROCESS_ENV</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">true </span><span class="token assign-left variable" style="color:#fef9c3">MOON_DEBUG_PROCESS_INPUT</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">true moon run </span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token plain">target</span><span class="token operator" style="color:#b7a9f9">&gt;</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--log</span><span class="token plain"> trace </span><span class="token parameter variable" style="color:#fef9c3">--force</span><br></span></code></pre></div></div>
 <p>Once ran, a large amount of information will be logged to the terminal. However, most of it can be
 ignored, as we&#x27;re only interested in the &quot;is this task affected by changes&quot; logs. This breaks down
 as follows:</p>
@@ -89,7 +89,7 @@ command. If you passed the <code>MOON_DEBUG_PROCESS_INPUT</code> environment var
 log entry of all files being hashed. This is what we use to generate moon&#x27;s specific hash.</li>
 </ol>
 <p>If all went well, you should see a log entry that looks like this:</p>
-<div class="language-text codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">Generated hash &lt;hash&gt; for target &lt;target&gt;</span><br></span></code></pre></div></div>
+<div class="language-text codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">moon_task_runner::task_runner  Generated a unique hash  task_target=&quot;&lt;task&gt;&quot; hash=&quot;&lt;hash&gt;&quot;</span><br></span></code></pre></div></div>
 <p>The important piece is the hash, which is a 64-character SHA256 hash, and represents the unique hash
 of this task/target. This is what moon uses to determine a cache hit/miss, and whether or not to
 skip re-running a task.</p>

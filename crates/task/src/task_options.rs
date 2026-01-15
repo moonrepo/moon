@@ -13,6 +13,8 @@ cacheable!(
 
         pub affected_pass_inputs: bool,
 
+        pub affected_files_ignore_project_boundary: bool,
+
         pub allow_failure: bool,
 
         pub cache: TaskOptionCache,
@@ -83,6 +85,7 @@ impl Default for TaskOptions {
         TaskOptions {
             affected_files: None,
             affected_pass_inputs: false,
+            affected_files_ignore_project_boundary: false,
             allow_failure: false,
             cache: TaskOptionCache::Enabled(true),
             cache_key: None,

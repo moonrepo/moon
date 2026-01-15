@@ -1,6 +1,6 @@
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_task::{Task, TaskFileInput, TaskGlobInput};
-use rustc_hash::FxHashMap;
+use moon_task::{Task, TaskFileInput, TaskGlobInput, TaskOptions};
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::create_sandbox;
 
 mod task {
@@ -50,5 +50,61 @@ mod task {
         let files = task.get_input_files(sandbox.path()).unwrap();
 
         assert_eq!(files.len(), 0);
+    }
+
+    #[test]
+    fn filters_affected_files_by_project_boundary() {
+        let sandbox = create_sandbox("files");
+        let mut touched_files = FxHashSet::default();
+        touched_files.insert(WorkspaceRelativePathBuf::from("project/a.js"));
+        touched_files.insert(WorkspaceRelativePathBuf::from("shared/b.js"));
+
+        let task = Task {
+            input_globs: FxHashMap::from_iter([(
+                WorkspaceRelativePathBuf::from("**/*.js"),
+                TaskGlobInput::default(),
+            )]),
+            options: TaskOptions {
+                affected_files_ignore_project_boundary: false,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let files = task
+            .get_affected_files(sandbox.path(), &touched_files, "project")
+            .unwrap();
+
+        assert_eq!(files.len(), 1);
+        assert!(files.contains(&sandbox.path().join("project/a.js")));
+        assert!(!files.contains(&sandbox.path().join("shared/b.js")));
+    }
+
+    #[test]
+    fn includes_files_outside_project_when_boundary_ignored() {
+        let sandbox = create_sandbox("files");
+        let mut touched_files = FxHashSet::default();
+        touched_files.insert(WorkspaceRelativePathBuf::from("project/a.js"));
+        touched_files.insert(WorkspaceRelativePathBuf::from("shared/b.js"));
+
+        let task = Task {
+            input_globs: FxHashMap::from_iter([(
+                WorkspaceRelativePathBuf::from("**/*.js"),
+                TaskGlobInput::default(),
+            )]),
+            options: TaskOptions {
+                affected_files_ignore_project_boundary: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let files = task
+            .get_affected_files(sandbox.path(), &touched_files, "project")
+            .unwrap();
+
+        assert_eq!(files.len(), 2);
+        assert!(files.contains(&sandbox.path().join("project/a.js")));
+        assert!(files.contains(&sandbox.path().join("shared/b.js")));
     }
 }

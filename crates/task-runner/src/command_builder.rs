@@ -333,18 +333,11 @@ impl<'task> CommandBuilder<'task> {
 
         abs_files.sort();
 
-        // Convert to relative paths
+        // Convert to relative paths (always relative to working_dir)
+        // Files outside project will naturally get "../../" paths
         let rel_files = abs_files
             .into_iter()
-            .filter_map(|abs_file| {
-                if self.working_dir == self.app.workspace_root
-                    || abs_file.starts_with(&self.project.root)
-                {
-                    abs_file.relative_to(self.working_dir).ok()
-                } else {
-                    None
-                }
-            })
+            .filter_map(|abs_file| abs_file.relative_to(self.working_dir).ok())
             .collect::<Vec<_>>();
 
         // Set an environment variable

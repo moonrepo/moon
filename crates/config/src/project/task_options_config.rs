@@ -241,6 +241,10 @@ config_struct!(
         /// as arguments to the command, instead of `.`.
         pub affected_pass_inputs: Option<bool>,
 
+        /// When true, allows affected files from outside the project boundary
+        /// to be included.
+        pub affected_files_ignore_project_boundary: Option<bool>,
+
         /// Allows the task to fail without failing the entire pipeline.
         pub allow_failure: Option<bool>,
 

@@ -177,8 +177,10 @@ impl Task {
         let project_source = project_source.as_ref();
 
         for file in touched_files {
-            // Don't run on files outside of the project
-            if file.starts_with(project_source)
+            let is_in_scope = self.options.affected_files_ignore_project_boundary
+                || file.starts_with(project_source);
+
+            if is_in_scope
                 && (self.input_files.contains_key(file) || globset.matches(file.as_str()))
             {
                 files.push(file.to_logical_path(workspace_root));

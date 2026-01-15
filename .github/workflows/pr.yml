@@ -15,18 +15,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       # Unix
-      - run: bash ./website/static/install/moon.sh
+      - run: bash ./website/static/install/moon.sh latest
         if: ${{ runner.os != 'Windows' }}
       - run: bash ./website/static/install/moon.sh 1.20.0
         if: ${{ runner.os != 'Windows' }}
-      - run: bash ./website/static/install/proto.sh
+      - run: bash ./website/static/install/moon.sh 2.0.0-beta.0
+        if: ${{ runner.os != 'Windows' }}
+      - run: bash ./website/static/install/proto.sh latest
         if: ${{ runner.os != 'Windows' }}
       - run: bash ./website/static/install/proto.sh 0.40.0
         if: ${{ runner.os != 'Windows' }}
       # Windows
-      - run: pwsh.exe ./website/static/install/moon.ps1
+      - run: pwsh.exe ./website/static/install/moon.ps1 latest
         if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install/moon.ps1 1.20.0
+        if: ${{ runner.os == 'Windows' }}
+      - run: pwsh.exe ./website/static/install/moon.ps1 2.0.0-beta.0
         if: ${{ runner.os == 'Windows' }}
       - run: pwsh.exe ./website/static/install/proto.ps1
         if: ${{ runner.os == 'Windows' }}

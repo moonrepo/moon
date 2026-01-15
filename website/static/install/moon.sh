@@ -10,6 +10,18 @@ bin="moon"
 arch=$(uname -sm)
 version="${1:-latest}"
 
+# If >= v2, use the cargo-dist installer instead!
+if [[ $version != 0.* && $version != 1.* && $version != "latest" ]]; then
+	if [[ "$version" == "latest" ]]; then
+		script_url="https://github.com/moonrepo/moon/releases/latest/download/moon_cli-installer.sh"
+	else
+		script_url="https://github.com/moonrepo/moon/releases/download/v${version}/moon_cli-installer.sh"
+	fi
+
+	curl --proto '=https' --tlsv1.2 -LsSf "$script_url" | sh
+	exit $?
+fi
+
 if [[ "$OS" == "Windows_NT" ]]; then
 	target="moon-x86_64-pc-windows-msvc.exe"
 	bin="moon.exe"

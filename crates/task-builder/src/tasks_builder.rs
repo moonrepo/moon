@@ -953,7 +953,7 @@ impl<'proj> TasksBuilder<'proj> {
                 let mut args = vec![];
                 let mut env = EnvMap::default();
 
-                let mut handle_arg = |arg: &Argument, ignore_env: bool| {
+                let mut handle_arg = |arg: &Argument, extract_env: bool| {
                     if let Argument::Value(value) = arg {
                         if !res.requires_shell
                             && matches!(
@@ -976,10 +976,12 @@ impl<'proj> TasksBuilder<'proj> {
                             args.push(TaskArg::new_unquoted(value.to_string()));
                         }
                     } else if let Argument::EnvVar(key, value, _) = arg {
-                        if !ignore_env
-                            && !matches!(value, Value::Expansion(_) | Value::Substitution(_))
-                        {
-                            env.insert(key.to_owned(), Some(value.as_str().to_owned()));
+                        if extract_env {
+                            if !matches!(value, Value::Expansion(_) | Value::Substitution(_)) {
+                                env.insert(key.to_owned(), Some(value.as_str().to_owned()));
+                            }
+                        } else {
+                            args.push(TaskArg::new_unquoted(arg.to_string()));
                         }
                     } else {
                         args.push(TaskArg::new_unquoted(arg.to_string()));
@@ -1018,20 +1020,27 @@ impl<'proj> TasksBuilder<'proj> {
                                         allow_next_sequence = command
                                             .iter()
                                             .all(|arg| matches!(arg, Argument::EnvVar(_, _, _)));
+                                        let mut extract_env = true;
 
                                         for arg in command.iter() {
-                                            handle_arg(arg, false);
+                                            handle_arg(arg, extract_env);
+
+                                            if extract_env
+                                                && !matches!(arg, Argument::EnvVar(_, _, _))
+                                            {
+                                                extract_env = false;
+                                            }
                                         }
                                     }
                                     // Capture anything after `--`
                                     Sequence::Passthrough(command) => {
                                         handle_arg(
                                             &Argument::Value(Value::Unquoted("--".into())),
-                                            true,
+                                            false,
                                         );
 
                                         for arg in command.iter() {
-                                            handle_arg(arg, true);
+                                            handle_arg(arg, false);
                                         }
                                     }
                                     Sequence::Stop(term) => {

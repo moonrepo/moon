@@ -13,6 +13,19 @@ if ($Args.Length -eq 1) {
   $Version = $Args.Get(0)
 }
 
+
+# If >= v2, use the cargo-dist installer instead!
+if ($Version -notmatch '^[01]\.' -and $Version -ne "latest") {
+  $ScriptUrl = if ($Version -eq "latest") {
+    "https://github.com/moonrepo/moon/releases/latest/download/moon_cli-installer.ps1"
+  } else {
+    "https://github.com/moonrepo/moon/releases/download/v${Version}/moon_cli-installer.ps1"
+  }
+
+  powershell.exe -ExecutionPolicy Bypass -c "irm ${ScriptUrl} | iex"
+  exit $LASTEXITCODE
+}
+
 $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/moon/releases/latest/download/${Target}"
 } else {

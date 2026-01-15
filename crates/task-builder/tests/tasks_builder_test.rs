@@ -560,6 +560,20 @@ mod tasks_builder {
             assert_eq!(task.options.shell, Some(false));
         }
 
+        #[tokio::test(flavor = "multi_thread")]
+        async fn ignores_env_assignments_when_inside_command() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("env-inside").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, ["--env", "FOO=abc", "arg"]);
+            assert_eq!(task.env, EnvMap::default());
+            assert_eq!(task.options.shell, Some(false));
+        }
+
         // We can't place these invalid commands in the fixture,
         // because they would trigger a failure upon creating
         // the test container and break other tests!

@@ -122,8 +122,9 @@ export default function DocBreadcrumbs() {
 			<div>
 				<Admonition type="warning">
 					<p>
-						Documentation is currently for <a href="/blog/moon-v2-alpha">moon v2</a>. If you are
-						using v1, some of the examples and settings may differ in syntax and functionality.
+						Documentation is currently for <a href="/blog/moon-v2-alpha">moon v2</a> and latest
+						proto. Documentation for moon v1 has been frozen and can be{' '}
+						<a href="https://moonrepo.github.io/website-v1/">found here</a>.
 					</p>
 				</Admonition>
 			</div>

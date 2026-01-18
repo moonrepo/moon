@@ -50,6 +50,9 @@ pub struct ExecArgs {
     #[arg(help = "List of task targets to execute in the action pipeline")]
     pub targets: Vec<TargetLocator>,
 
+    #[arg(help = "Execute the pipeline as if it's a CI environment")]
+    pub ci: Option<bool>,
+
     #[arg(
         long,
         env = "MOON_ON_FAILURE",
@@ -136,7 +139,7 @@ pub struct ExecWorkflow {
 
 impl ExecWorkflow {
     pub fn new(session: MoonSession, args: ExecArgs) -> miette::Result<Self> {
-        let ci_env = is_ci();
+        let ci_env = args.ci.unwrap_or(is_ci());
 
         Ok(Self {
             affected: args

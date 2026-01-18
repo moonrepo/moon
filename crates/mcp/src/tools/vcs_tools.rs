@@ -16,10 +16,14 @@ use serde::{Deserialize, Serialize};
     description = "Get changed files between the current head and base."
 )]
 #[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
-#[serde(default)]
 pub struct GetChangedFiles {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub head: Option<String>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remote: Option<bool>,
 }
 

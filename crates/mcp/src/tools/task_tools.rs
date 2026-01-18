@@ -19,8 +19,8 @@ use std::sync::Arc;
 pub struct GetTaskTool {
     pub target: String,
 
-    #[serde(default)]
-    pub include_dependencies: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub include_dependencies: Option<bool>,
 }
 
 impl GetTaskTool {
@@ -34,7 +34,7 @@ impl GetTaskTool {
             .map_err(map_miette_error)?;
         let mut task_dependencies = vec![];
 
-        if self.include_dependencies {
+        if self.include_dependencies.unwrap_or_default() {
             for dep in &task.deps {
                 task_dependencies.push(
                     workspace_graph
@@ -72,8 +72,8 @@ pub struct GetTaskResponse {
 )]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetTasksTool {
-    #[serde(default)]
-    pub include_internal: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub include_internal: Option<bool>,
 }
 
 impl GetTasksTool {
@@ -81,7 +81,7 @@ impl GetTasksTool {
         &self,
         workspace_graph: &WorkspaceGraph,
     ) -> Result<CallToolResult, CallToolError> {
-        let mut tasks = if self.include_internal {
+        let mut tasks = if self.include_internal.unwrap_or_default() {
             workspace_graph
                 .get_tasks_with_internal()
                 .map_err(map_miette_error)?

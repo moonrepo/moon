@@ -21,14 +21,14 @@ pub struct Generate {
     pub template: String,
     pub to: String,
 
-    #[serde(default)]
-    pub dry_run: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dry_run: Option<bool>,
 
-    #[serde(default)]
-    pub force: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub force: Option<bool>,
 
-    #[serde(default)]
-    pub variables: FxHashMap<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub variables: Option<FxHashMap<String, serde_json::Value>>,
 }
 
 impl Generate {
@@ -43,16 +43,18 @@ impl Generate {
             self.to.clone(),
         ];
 
-        if self.dry_run {
+        if self.dry_run.unwrap_or_default() {
             args.push("--dry-run".into());
-        } else if self.force {
+        } else if self.force.unwrap_or_default() {
             args.push("--force".into());
         }
 
-        if !self.variables.is_empty() {
+        if let Some(vars) = &self.variables
+            && !vars.is_empty()
+        {
             args.push("--".into());
 
-            for (key, value) in &self.variables {
+            for (key, value) in vars {
                 let opt = format!("--{key}");
 
                 match value {

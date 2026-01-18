@@ -18,8 +18,8 @@ use serde::{Deserialize, Serialize};
 pub struct GetProjectTool {
     pub id: String,
 
-    #[serde(default)]
-    pub include_dependencies: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub include_dependencies: Option<bool>,
 }
 
 impl GetProjectTool {
@@ -32,7 +32,7 @@ impl GetProjectTool {
             .map_err(map_miette_error)?;
         let mut project_dependencies = vec![];
 
-        if self.include_dependencies {
+        if self.include_dependencies.unwrap_or_default() {
             for dep in &project.dependencies {
                 project_dependencies.push(
                     workspace_graph

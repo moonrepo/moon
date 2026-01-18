@@ -1,4 +1,5 @@
 use crate::tools::action_tools::{SyncProjectsTool, SyncWorkspaceTool};
+use crate::tools::codegen_tools::Generate;
 use crate::tools::project_tools::{GetProjectTool, GetProjectsTool};
 use crate::tools::task_tools::{GetTaskTool, GetTasksTool};
 use crate::tools::vcs_tools::GetChangedFiles;
@@ -44,6 +45,7 @@ impl ServerHandler for MoonMcpHandler {
             MoonTools::try_from(request.params).map_err(CallToolError::new)?;
 
         match tool_params {
+            MoonTools::Generate(inner) => inner.call_tool(&self.app_context).await,
             MoonTools::GetProjectTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetProjectsTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTaskTool(inner) => inner.call_tool(&self.workspace_graph),
@@ -104,6 +106,7 @@ pub async fn run_mcp(
 tool_box!(
     MoonTools,
     [
+        Generate,
         GetProjectTool,
         GetProjectsTool,
         GetTaskTool,

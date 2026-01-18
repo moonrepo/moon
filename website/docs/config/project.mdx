@@ -1524,6 +1524,20 @@ tasks:
       runInCI: false
 ```
 
+#### `runInSyncPhase`
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runInSyncPhase" />
+
+Whether to run the task automatically during `moon sync`. Defaults to `false`.
+
+```yaml title="moon.yml" {5}
+tasks:
+  generate-schema:
+    # ...
+    options:
+      runInSyncPhase: true
+```
+
 #### `runFromWorkspaceRoot`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runFromWorkspaceRoot" />

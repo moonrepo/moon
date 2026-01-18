@@ -1470,6 +1470,15 @@
           ],
           "markdownDescription": "Runs direct task dependencies (via `deps`) in sequential order. This _does not_ apply to indirect or transient dependencies."
         },
+        "runInSyncPhase": {
+          "title": "runInSyncPhase",
+          "description": "Marks the task to run automatically during repo sync.",
+          "anyOf": [
+            { "type": "boolean" },
+            { "type": "null" }
+          ],
+          "markdownDescription": "Marks the task to run automatically during `moon sync`."
+        },
         "runFromWorkspaceRoot": {
           "title": "runFromWorkspaceRoot",
           "description": "Runs the task from the workspace root, instead of the project root.",

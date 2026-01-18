@@ -45,6 +45,7 @@ export interface TaskOptions {
 	retryCount: number;
 	runDepsInParallel: boolean;
 	runInCI: boolean;
+	runInSyncPhase: boolean;
 	runFromWorkspaceRoot: boolean;
 	shell?: boolean | null;
 	timeout?: number | null;

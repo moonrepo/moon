@@ -7,13 +7,13 @@ use async_trait::async_trait;
 use moon_app_context::AppContext;
 use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::error::SdkResult;
-use rust_mcp_sdk::mcp_server::{ServerHandler, ServerRuntime, server_runtime};
+use rust_mcp_sdk::mcp_server::{McpServerOptions, ServerHandler, server_runtime};
 use rust_mcp_sdk::schema::{
-    CallToolRequest, CallToolResult, Implementation, InitializeResult, LATEST_PROTOCOL_VERSION,
-    ListToolsRequest, ListToolsResult, RpcError, ServerCapabilities, ServerCapabilitiesTools,
-    schema_utils::CallToolError,
+    CallToolRequestParams, CallToolResult, Implementation, InitializeResult,
+    LATEST_PROTOCOL_VERSION, ListToolsResult, PaginatedRequestParams, RpcError, ServerCapabilities,
+    ServerCapabilitiesTools, schema_utils::CallToolError,
 };
-use rust_mcp_sdk::{McpServer, StdioTransport, TransportOptions, tool_box};
+use rust_mcp_sdk::{McpServer, StdioTransport, ToMcpServerHandler, TransportOptions, tool_box};
 use std::env;
 use std::sync::Arc;
 
@@ -26,7 +26,7 @@ pub struct MoonMcpHandler {
 impl ServerHandler for MoonMcpHandler {
     async fn handle_list_tools_request(
         &self,
-        _request: ListToolsRequest,
+        _request: Option<PaginatedRequestParams>,
         _runtime: Arc<dyn McpServer>,
     ) -> Result<ListToolsResult, RpcError> {
         Ok(ListToolsResult {
@@ -38,11 +38,10 @@ impl ServerHandler for MoonMcpHandler {
 
     async fn handle_call_tool_request(
         &self,
-        request: CallToolRequest,
+        request: CallToolRequestParams,
         _runtime: Arc<dyn McpServer>,
     ) -> std::result::Result<CallToolResult, CallToolError> {
-        let tool_params: MoonTools =
-            MoonTools::try_from(request.params).map_err(CallToolError::new)?;
+        let tool_params: MoonTools = MoonTools::try_from(request).map_err(CallToolError::new)?;
 
         match tool_params {
             MoonTools::Generate(inner) => inner.call_tool(&self.app_context).await,
@@ -76,6 +75,9 @@ pub async fn run_mcp(
             version: env::var("MOON_VERSION")
                 .unwrap_or_else(|_| env!("CARGO_PKG_VERSION").to_string()),
             title: Some("moon MCP Server".to_string()),
+            website_url: Some("https://moonrepo.dev".into()),
+            description: None,
+            icons: vec![],
         },
         capabilities: ServerCapabilities {
             tools: Some(ServerCapabilitiesTools { list_changed: None }),
@@ -96,8 +98,13 @@ pub async fn run_mcp(
     };
 
     // STEP 4: Create the MCP runtime
-    let server: Arc<ServerRuntime> =
-        server_runtime::create_server(server_details, transport, handler);
+    let server = server_runtime::create_server(McpServerOptions {
+        transport,
+        handler: handler.to_mcp_server_handler(),
+        server_details,
+        task_store: None,
+        client_task_store: None,
+    });
 
     // STEP 5: Start the server
     server.start().await

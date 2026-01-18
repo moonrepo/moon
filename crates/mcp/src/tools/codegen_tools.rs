@@ -11,7 +11,11 @@ use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-#[mcp_tool(name = "generate", description = "Generate code from a template.")]
+#[mcp_tool(
+    name = "generate",
+    title = "Generate",
+    description = "Generate code or scaffold from a template."
+)]
 #[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
 pub struct Generate {
     pub template: String,

@@ -10,7 +10,11 @@ use rust_mcp_sdk::{
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-#[mcp_tool(name = "get_task", description = "Get a moon task by `target`.")]
+#[mcp_tool(
+    name = "get_task",
+    title = "Get task",
+    description = "Get a moon task by `target`."
+)]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetTaskTool {
     pub target: String,
@@ -61,7 +65,11 @@ pub struct GetTaskResponse {
     pub task_dependencies: Vec<Arc<Task>>,
 }
 
-#[mcp_tool(name = "get_tasks", description = "Get all moon tasks.")]
+#[mcp_tool(
+    name = "get_tasks",
+    title = "Get tasks",
+    description = "Get all moon tasks."
+)]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetTasksTool {
     #[serde(default)]

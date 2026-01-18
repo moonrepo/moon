@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 
 #[mcp_tool(
     name = "get_project",
+    title = "Get project",
     description = "Get a moon project and its tasks by `id`."
 )]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
@@ -62,7 +63,11 @@ pub struct GetProjectResponse {
     pub project_dependencies: Vec<Project>,
 }
 
-#[mcp_tool(name = "get_projects", description = "Get all moon projects.")]
+#[mcp_tool(
+    name = "get_projects",
+    title = "Get projects",
+    description = "Get all moon projects."
+)]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetProjectsTool {}
 

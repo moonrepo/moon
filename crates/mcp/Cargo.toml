@@ -21,11 +21,10 @@ moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-rust-mcp-sdk = { version = "0.7.2", default-features = false, features = [
+rust-mcp-sdk = { version = "0.8.1", default-features = false, features = [
 	"macros",
 	"server",
 	"stdio",
-	"2025_06_18",
 ] }
 serde = { workspace = true }
 serde_json = { workspace = true }

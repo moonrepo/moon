@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 #[mcp_tool(
     name = "get_changed_files",
+    title = "Get changed files",
     description = "Get changed files between the current head and base."
 )]
 #[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]

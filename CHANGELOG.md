@@ -18,6 +18,9 @@ changes and how to easily migrate!
 - **Configuration**
   - Renamed, removed, or changed _many_ settings. Refer to the migration guide for details.
   - Renamed `.moon/toolchain.yml` to `.moon/toolchains.yml` (plural).
+- **MCP**
+  - Updated protocol version to 2025-11-25.
+  - Updated `get_projects` and `get_tasks` to return fragments, to reduce the payload size.
 - **Projects**
   - Reworked how the `language` is detected.
   - Flattened `project` metadata structure.

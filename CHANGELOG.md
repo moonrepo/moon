@@ -95,6 +95,8 @@ features, improvements, and much more!
   - Added support for new plugin APIs: `define_extension_config`, `extend_command`,
     `extend_project_graph`, `extend_task_command`, `extend_task_script`, `sync_project`, and
     `sync_workspace`.
+- **MCP**
+  - Added a `generate` tool for running the code generator.
 - **Projects**
   - Added a default project concept.
   - Added path based IDs instead of dir name IDs.

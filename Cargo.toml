@@ -8,7 +8,7 @@ default-members = ["crates/cli"]
 async-recursion = "1.1.1"
 async-trait = "0.1.89"
 cached = "0.56.0"
-chrono = { version = "0.4.42", features = ["serde"] }
+chrono = { version = "0.4.43", features = ["serde"] }
 cd_env = "0.3.0"
 ci_env = "0.4.0"
 clap = { version = "4.5.54", default-features = false, features = [
@@ -16,7 +16,7 @@ clap = { version = "4.5.54", default-features = false, features = [
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.62"
+clap_complete = "4.5.65"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
 ] }
@@ -24,7 +24,7 @@ convert_case = "0.10.0"
 daggy = { version = "0.9.0", features = ["serde-1"] }
 dirs = "6.0.0"
 futures = "0.3.31"
-indexmap = "2.12.0"
+indexmap = "2.13.0"
 iocraft = "0.7.16"
 md5 = "0.8.0"
 miette = "7.6.0"

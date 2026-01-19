@@ -784,9 +784,9 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
 name = "chrono"
-version = "0.4.42"
+version = "0.4.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "145052bdd345b87320e369255277e3fb5152762ad123a901ef5c262dd38fe8d2"
+checksum = "fac4744fb15ae8337dc853fee7fb3f4e48c0fbaa23d0afe49c447b4fab126118"
 dependencies = [
  "iana-time-zone",
  "js-sys",
@@ -858,9 +858,9 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.5.64"
+version = "4.5.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c0da80818b2d95eca9aa614a30783e42f62bf5fdfee24e68cfb960b071ba8d1"
+checksum = "430b4dc2b5e3861848de79627b2bedc9f3342c7da5173a14eaa5d0f8dc18ae5d"
 dependencies = [
  "clap",
 ]
@@ -2783,9 +2783,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.12.1"
+version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2"
+checksum = "7714e70437a7dc3ac8eb7e6f8df75fd8eb422675fc7678aff7364301092b1017"
 dependencies = [
  "equivalent",
  "hashbrown 0.16.1",
@@ -3948,10 +3948,12 @@ dependencies = [
  "moon_action_pipeline",
  "moon_app_context",
  "moon_common",
+ "moon_process",
  "moon_project",
  "moon_task",
  "moon_workspace_graph",
  "rust-mcp-sdk",
+ "rustc-hash",
  "serde",
  "serde_json",
  "thiserror 2.0.17",
@@ -4678,6 +4680,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91df4bbde75afed763b708b7eee1e8e7651e02d97f6d5dd763e89367e957b23b"
 dependencies = [
  "hermit-abi",
+ "libc",
+]
+
+[[package]]
+name = "num_threads"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c7398b9c8b70908f6371f47ed36737907c87c52af34c268fed0bf0ceb92ead9"
+dependencies = [
  "libc",
 ]
 
@@ -5879,9 +5890,9 @@ dependencies = [
 
 [[package]]
 name = "rust-mcp-macros"
-version = "0.5.3"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cd5071387506c57ba93c1b37de7f394aee72ea1f1de74fa86cb2c319527d109"
+checksum = "3ca08e51769637b29c365e88f67096acb29310c080775af9dd73a936c2b9ccb7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5892,9 +5903,9 @@ dependencies = [
 
 [[package]]
 name = "rust-mcp-schema"
-version = "0.7.5"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba217e6fcb043bba9e194209bff92c35294093187504d1443832ca2051816753"
+checksum = "cc4613aaaca2d63c45786ee28886c870a5bc4fe8a91846e4db632ef4ce2e48cb"
 dependencies = [
  "serde",
  "serde_json",
@@ -5902,9 +5913,9 @@ dependencies = [
 
 [[package]]
 name = "rust-mcp-sdk"
-version = "0.7.4"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d30f48ab3339a8effc1c5af176b87eb3297f013afd353628d9088ba42d26fa59"
+checksum = "cc2e76d83baa6b323baa9cc1a6cbeb8430f1d1dbbe92c54b70244322572bc53d"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
@@ -5916,6 +5927,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.17",
+ "time",
  "tokio",
  "tracing",
  "uuid",
@@ -5923,9 +5935,9 @@ dependencies = [
 
 [[package]]
 name = "rust-mcp-transport"
-version = "0.6.3"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0494ba7f4e6a726e95f4ce45a4dc39285ec0c446bedd1a414f8754f3213f810a"
+checksum = "cc5c1534d052a9ccb136539e4014645d6b3d77d8ab92ef5730cb7448c893d910"
 dependencies = [
  "async-trait",
  "bytes",
@@ -7072,7 +7084,9 @@ checksum = "91e7d9e3bb61134e77bde20dd4825b97c010155709965fedf0f49bb138e52a9d"
 dependencies = [
  "deranged",
  "itoa",
+ "libc",
  "num-conv",
+ "num_threads",
  "powerfmt",
  "serde",
  "time-core",

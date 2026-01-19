@@ -37,7 +37,11 @@ pub struct SyncResponse {
     pub synced: bool,
 }
 
-#[mcp_tool(name = "sync_workspace", description = "Sync the moon workspace.")]
+#[mcp_tool(
+    name = "sync_workspace",
+    title = "Sync workspace",
+    description = "Sync the moon workspace."
+)]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct SyncWorkspaceTool {}
 
@@ -84,6 +88,7 @@ impl SyncWorkspaceTool {
 
 #[mcp_tool(
     name = "sync_projects",
+    title = "Sync projects",
     description = "Sync one, many, or all moon projects by `id`."
 )]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]

@@ -4,7 +4,7 @@ use crate::prompts::select_targets;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
 use ci_env::CiOutput;
-use clap::{Args, ValueEnum};
+use clap::{ArgAction, Args, ValueEnum};
 use iocraft::prelude::element;
 use moon_action::Action;
 use moon_action_context::ActionContext;
@@ -50,7 +50,11 @@ pub struct ExecArgs {
     #[arg(help = "List of task targets to execute in the action pipeline")]
     pub targets: Vec<TargetLocator>,
 
-    #[arg(help = "Execute the pipeline as if it's a CI environment")]
+    #[arg(
+        long,
+        help = "Execute the pipeline as if it's a CI environment",
+        action = ArgAction::SetTrue,
+    )]
     pub ci: Option<bool>,
 
     #[arg(

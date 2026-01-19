@@ -5,16 +5,13 @@ use moon_mcp::{SdkResult, run_mcp};
 use moon_process::ProcessRegistry;
 use starbase::AppResult;
 use tokio::task::JoinHandle;
-use tracing::{info, instrument};
+use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct McpArgs {}
 
 #[instrument(skip(session))]
 pub async fn mcp(session: MoonSession, _args: McpArgs) -> AppResult {
-    info!("MCP integration is currently unstable");
-    info!("Please report any issues to GitHub or Discord");
-
     let app_context = session.get_app_context().await?;
     let workspace_graph = session.get_workspace_graph().await?;
 

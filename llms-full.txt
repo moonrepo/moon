@@ -17653,6 +17653,7 @@ $ moon migrate v2
 
 #### `moon mcp`
 
+- Updated protocol version to 2025-11-25.
 - Updated the `get_projects` tool to no longer have an `includeTasks` option.
 - Updated the `get_projects` tool to return a list of project fragments, instead of the whole
   project object. This was required as the response was too large for MCP.

@@ -34307,7 +34307,7 @@ You can install the beta with proto (>= 0.54.1), or download it directly from th
 [GitHub release page](https://github.com/moonrepo/moon/releases/tag/v2.0.0-beta.0).
 
 ```shell
-$ proto install moon 2.0.0-beta.0
+$ proto install moon 2.0.0-beta.1
 ```
 
 Alternatively, you can try using the new experimental shell install scripts. Be warned that these

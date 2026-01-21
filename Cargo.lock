@@ -1341,16 +1341,6 @@ dependencies = [
 
 [[package]]
 name = "darling"
-version = "0.21.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9cdf337090841a411e2a7f3deb9187445851f91b309c0c0a29e05f74a00a48c0"
-dependencies = [
- "darling_core 0.21.3",
- "darling_macro 0.21.3",
-]
-
-[[package]]
-name = "darling"
 version = "0.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "25ae13da2f202d56bd7f91c25fba009e7717a1e4a1cc98a76d844b65ae912e9d"
@@ -1364,20 +1354,6 @@ name = "darling_core"
 version = "0.20.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d00b9596d185e565c2207a0b01f8bd1a135483d02d9b7b0a54b11da8d53412e"
-dependencies = [
- "fnv",
- "ident_case",
- "proc-macro2",
- "quote",
- "strsim",
- "syn",
-]
-
-[[package]]
-name = "darling_core"
-version = "0.21.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1247195ecd7e3c85f83c8d2a366e4210d588e802133e1e355180a9870b517ea4"
 dependencies = [
  "fnv",
  "ident_case",
@@ -1407,17 +1383,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc34b93ccb385b40dc71c6fceac4b2ad23662c7eeb248cf10d529b7e055b6ead"
 dependencies = [
  "darling_core 0.20.11",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "darling_macro"
-version = "0.21.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d38308df82d1080de0afee5d069fa14b0326a88c14f15c5ccda35b4a6c414c81"
-dependencies = [
- "darling_core 0.21.3",
  "quote",
  "syn",
 ]
@@ -2436,7 +2401,7 @@ dependencies = [
  "http",
  "http-cache",
  "http-cache-semantics",
- "reqwest",
+ "reqwest 0.12.28",
  "reqwest-middleware",
  "serde",
  "url",
@@ -3559,7 +3524,7 @@ dependencies = [
  "moon_env_var",
  "moon_time",
  "proto_core",
- "reqwest",
+ "reqwest 0.12.28",
  "semver",
  "serde",
  "starbase_utils",
@@ -3622,7 +3587,7 @@ dependencies = [
  "petgraph 0.8.3",
  "proto_core",
  "regex",
- "reqwest",
+ "reqwest 0.12.28",
  "rustc-hash",
  "schematic",
  "semver",
@@ -3968,7 +3933,7 @@ dependencies = [
  "moon_common",
  "moon_time",
  "notify-rust",
- "reqwest",
+ "reqwest 0.12.28",
  "serde",
  "starbase_utils",
  "system_env",
@@ -4204,7 +4169,7 @@ dependencies = [
  "moon_feature_flags",
  "moon_process",
  "moon_task",
- "reqwest",
+ "reqwest 0.12.28",
  "rustc-hash",
  "scc 3.4.8",
  "serde",
@@ -4769,7 +4734,7 @@ dependencies = [
  "oci-spec",
  "olpc-cjson",
  "regex",
- "reqwest",
+ "reqwest 0.12.28",
  "serde",
  "serde_json",
  "sha2",
@@ -5329,9 +5294,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.104"
+version = "1.0.105"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9695f8df41bb4f3d222c95a67532365f569318332d03d5f3f67f37b20e6ebdf0"
+checksum = "535d180e0ecab6268a3e718bb9fd44db66bbbc256257165fc699dadf70d16fe7"
 dependencies = [
  "unicode-ident",
 ]
@@ -5406,7 +5371,7 @@ dependencies = [
  "proto_pdk_api",
  "proto_shim",
  "regex",
- "reqwest",
+ "reqwest 0.12.28",
  "rustc-hash",
  "scc 3.4.8",
  "schematic",
@@ -5563,9 +5528,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.42"
+version = "1.0.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a338cc41d27e6cc6dce6cefc13a0729dfbb81c262b1f519331575dd80ef3067f"
+checksum = "dc74d9a594b72ae6656596548f56f667211f8a97b3d4c3d467150794690dc40a"
 dependencies = [
  "proc-macro2",
 ]
@@ -5768,7 +5733,6 @@ dependencies = [
  "base64 0.22.1",
  "bytes",
  "encoding_rs",
- "futures-channel",
  "futures-core",
  "futures-util",
  "h2",
@@ -5810,6 +5774,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "reqwest"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04e9018c9d814e5f30cc16a0f03271aeab3571e609612d9fe78c1aa8d11c2f62"
+dependencies = [
+ "base64 0.22.1",
+ "bytes",
+ "futures-channel",
+ "futures-core",
+ "futures-util",
+ "http",
+ "http-body",
+ "http-body-util",
+ "hyper",
+ "hyper-util",
+ "js-sys",
+ "log",
+ "percent-encoding",
+ "pin-project-lite",
+ "sync_wrapper",
+ "tokio",
+ "tower",
+ "tower-http",
+ "tower-service",
+ "url",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "reqwest-middleware"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5818,7 +5813,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "http",
- "reqwest",
+ "reqwest 0.12.28",
  "serde",
  "thiserror 1.0.69",
  "tower-service",
@@ -5878,9 +5873,9 @@ dependencies = [
 
 [[package]]
 name = "rpkl"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "488081796d482619a215d963ec19eab3d7222ac8968cd0ad812fff69d372f856"
+checksum = "5c58732d31abf3a100d8f2cf0bb30ae66e009b7ddeb01888cff0607b6a02aac4"
 dependencies = [
  "dunce",
  "rmp-serde",
@@ -6155,23 +6150,25 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.19.1"
+version = "0.19.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6075b1be9c7fd404a3989ab567ca659d9bdbedecbdc3696749ce440180ffb3a3"
+checksum = "3d6660ec6d448827a44a3473ab9c4f69d80dd175a52e6a520e3d8c1b11f0c06f"
 dependencies = [
+ "convert_case",
  "garde",
  "indexmap",
  "json-strip-comments",
  "markdown",
  "miette 7.6.0",
  "regex",
- "reqwest",
+ "reqwest 0.13.1",
  "rpkl",
  "schemars",
  "schematic_macros",
  "schematic_types",
  "semver",
  "serde",
+ "serde-content",
  "serde_json",
  "serde_norway",
  "serde_path_to_error",
@@ -6183,12 +6180,12 @@ dependencies = [
 
 [[package]]
 name = "schematic_macros"
-version = "0.19.0"
+version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9522126562d4692460f6a4e392d1433101ead059598747b047dc76eb3aa8c7a6"
+checksum = "2e63bc3e073c17dd19740d43cf833fe73f0fcea42d28a9f039ef7a97c31cac52"
 dependencies = [
  "convert_case",
- "darling 0.21.3",
+ "darling 0.23.0",
  "proc-macro2",
  "quote",
  "syn",
@@ -6196,9 +6193,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.11.0"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c818d205db50c9d56f12bb4ea264967ec01c129edca5bf8a3a848a5c6f9b58f"
+checksum = "da3b746ce015c91141bff236c0b439074e1ac5f9da7560ea8f3fd581e18dbe9d"
 dependencies = [
  "indexmap",
  "regex",
@@ -6286,6 +6283,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-content"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3753ca04f350fa92d00b6146a3555e63c55388c9ef2e11e09bce2ff1c0b509c6"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_core"
 version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6307,9 +6313,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.148"
+version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3084b546a1dd6289475996f182a22aba973866ea8e8b02c51d9f46b1336a22da"
+checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
 dependencies = [
  "indexmap",
  "itoa",
@@ -6745,7 +6751,7 @@ dependencies = [
  "jwalk",
  "miette 7.6.0",
  "regex",
- "reqwest",
+ "reqwest 0.12.28",
  "scc 3.4.8",
  "serde",
  "serde_json",
@@ -6823,9 +6829,9 @@ checksum = "b7401a30af6cb5818bb64852270bb722533397edcfc7344954a38f420819ece2"
 
 [[package]]
 name = "syn"
-version = "2.0.112"
+version = "2.0.114"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21f182278bf2d2bcb3c88b1b08a37df029d71ce3d3ae26168e3c653b213b99d4"
+checksum = "d4d107df263a3013ef9b1879b0df87d706ff80f65a86ea879bd9c31f9b307c2a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -7607,14 +7613,15 @@ dependencies = [
 
 [[package]]
 name = "url"
-version = "2.5.7"
+version = "2.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08bc136a29a3d1758e07a9cca267be308aeebf5cfd5a10f3f67ab2097683ef5b"
+checksum = "ff67a8a4397373c3ef660812acab3268222035010ab8680ec4215f38ba3d0eed"
 dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
  "serde",
+ "serde_derive",
 ]
 
 [[package]]
@@ -7738,7 +7745,7 @@ dependencies = [
  "oci-client",
  "once_cell",
  "regex",
- "reqwest",
+ "reqwest 0.12.28",
  "reqwest-middleware",
  "reqwest-netrc",
  "scc 3.4.8",

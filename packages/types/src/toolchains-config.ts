@@ -26,10 +26,12 @@ export type UnresolvedVersionSpec = string;
 
 export type ToolchainPluginVersionFrom = boolean | string;
 
+export interface ToolchainPluginConfigConfig {
+	[key: string]: Record<string, unknown>;
+}
+
 /** Configures an individual toolchain. */
-export interface ToolchainPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config: Record<string, unknown>;
+export interface ToolchainPluginConfigBase {
 	/** Location of the WASM plugin to use. */
 	plugin: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
@@ -42,6 +44,9 @@ export interface ToolchainPluginConfig {
 	versionFromPrototools: ToolchainPluginVersionFrom;
 }
 
+/** Configures an individual toolchain. */
+export type ToolchainPluginConfig = ToolchainPluginConfigBase & ToolchainPluginConfigConfig;
+
 export type VersionSpec = string;
 
 /** Configures how moon integrates with proto. */
@@ -53,11 +58,15 @@ export interface ProtoConfig {
 	version?: VersionSpec;
 }
 
+export interface ToolchainsConfigPlugins {
+	[key: string]: Record<Id, ToolchainPluginConfig>;
+}
+
 /**
  * Configures all toolchains.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
-export interface ToolchainsConfig {
+export interface ToolchainsConfigBase {
 	/** @default './cache/schemas/toolchains.json' */
 	$schema?: string;
 	/**
@@ -68,14 +77,15 @@ export interface ToolchainsConfig {
 	extends: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon: MoonConfig;
-	/**
-	 * Configures and integrates toolchains into the system using
-	 * a unique identifier.
-	 */
-	plugins: Record<Id, ToolchainPluginConfig>;
 	/** Configures how moon integrates with proto. */
 	proto: ProtoConfig;
 }
+
+/**
+ * Configures all toolchains.
+ * Docs: https://moonrepo.dev/docs/config/toolchain
+ */
+export type ToolchainsConfig = ToolchainsConfigBase & ToolchainsConfigPlugins;
 
 /** Configures how and where moon updates will be received. */
 export interface PartialMoonConfig {
@@ -93,10 +103,12 @@ export interface PartialMoonConfig {
 	manifestUrl?: string | null;
 }
 
+export interface PartialToolchainPluginConfigConfig {
+	[key: string]: Record<string, unknown> | null;
+}
+
 /** Configures an individual toolchain. */
-export interface PartialToolchainPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config?: Record<string, unknown> | null;
+export interface PartialToolchainPluginConfigBase {
 	/** Location of the WASM plugin to use. */
 	plugin?: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
@@ -109,6 +121,10 @@ export interface PartialToolchainPluginConfig {
 	versionFromPrototools?: ToolchainPluginVersionFrom | null;
 }
 
+/** Configures an individual toolchain. */
+export type PartialToolchainPluginConfig = PartialToolchainPluginConfigBase &
+	PartialToolchainPluginConfigConfig;
+
 /** Configures how moon integrates with proto. */
 export interface PartialProtoConfig {
 	/**
@@ -118,11 +134,15 @@ export interface PartialProtoConfig {
 	version?: VersionSpec | null;
 }
 
+export interface PartialToolchainsConfigPlugins {
+	[key: string]: Record<Id, PartialToolchainPluginConfig> | null;
+}
+
 /**
  * Configures all toolchains.
  * Docs: https://moonrepo.dev/docs/config/toolchain
  */
-export interface PartialToolchainsConfig {
+export interface PartialToolchainsConfigBase {
 	/** @default './cache/schemas/toolchains.json' */
 	$schema?: string | null;
 	/**
@@ -133,11 +153,12 @@ export interface PartialToolchainsConfig {
 	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon?: PartialMoonConfig | null;
-	/**
-	 * Configures and integrates toolchains into the system using
-	 * a unique identifier.
-	 */
-	plugins?: Record<Id, PartialToolchainPluginConfig> | null;
 	/** Configures how moon integrates with proto. */
 	proto?: PartialProtoConfig | null;
 }
+
+/**
+ * Configures all toolchains.
+ * Docs: https://moonrepo.dev/docs/config/toolchain
+ */
+export type PartialToolchainsConfig = PartialToolchainsConfigBase & PartialToolchainsConfigPlugins;

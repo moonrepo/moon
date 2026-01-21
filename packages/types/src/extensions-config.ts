@@ -5,16 +5,25 @@
 import type { ExtendsFrom, Id } from './common';
 import type { PluginLocator } from './toolchains-config';
 
+export interface ExtensionPluginConfigConfig {
+	[key: string]: Record<string, unknown>;
+}
+
 /** Configures an individual extension. */
-export interface ExtensionPluginConfig {
-	/** Arbitrary configuration that'll be passed to the WASM plugin. */
-	config: Record<string, unknown>;
+export interface ExtensionPluginConfigBase {
 	/** Location of the WASM plugin to use. */
 	plugin: PluginLocator | null;
 }
 
+/** Configures an individual extension. */
+export type ExtensionPluginConfig = ExtensionPluginConfigBase & ExtensionPluginConfigConfig;
+
+export interface ExtensionsConfigPlugins {
+	[key: string]: Record<Id, ExtensionPluginConfig>;
+}
+
 /** Configures all extensions. */
-export interface ExtensionsConfig {
+export interface ExtensionsConfigBase {
 	/** @default './cache/schemas/extensions.json' */
 	$schema?: string;
 	/**
@@ -23,9 +32,7 @@ export interface ExtensionsConfig {
 	 * @since 2.0.0
 	 */
 	extends: ExtendsFrom | null;
-	/**
-	 * Configures and integrates extensions into the system using
-	 * a unique identifier.
-	 */
-	plugins: Record<Id, ExtensionPluginConfig>;
 }
+
+/** Configures all extensions. */
+export type ExtensionsConfig = ExtensionsConfigBase & ExtensionsConfigPlugins;

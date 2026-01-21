@@ -29,17 +29,6 @@
         }
       ]
     },
-    "plugins": {
-      "title": "plugins",
-      "description": "Configures and integrates toolchains into the system using a unique identifier.",
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/ToolchainPluginConfig"
-      },
-      "propertyNames": {
-        "$ref": "#/definitions/Id"
-      }
-    },
     "proto": {
       "title": "proto",
       "description": "Configures how moon integrates with proto.",
@@ -50,7 +39,15 @@
       ]
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": {
+    "type": "object",
+    "additionalProperties": {
+      "$ref": "#/definitions/ToolchainPluginConfig"
+    },
+    "propertyNames": {
+      "$ref": "#/definitions/Id"
+    }
+  },
   "definitions": {
     "ExtendsFrom": {
       "anyOf": [
@@ -111,24 +108,6 @@
       "description": "Configures an individual toolchain.",
       "type": "object",
       "properties": {
-        "config": {
-          "title": "config",
-          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use.",
@@ -164,7 +143,22 @@
           "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "boolean",
+            "object",
+            "array",
+            "number",
+            "string",
+            "integer"
+          ]
+        },
+        "propertyNames": {
+          "type": "string"
+        }
+      }
     },
     "ToolchainPluginVersionFrom": {
       "description": "The strategy in which to inherit a version from .prototools.",

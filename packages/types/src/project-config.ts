@@ -122,8 +122,12 @@ export interface OwnersConfig {
 	requiredApprovals: number | null;
 }
 
+export interface ProjectMetadataConfigMetadata {
+	[key: string]: Record<string, unknown>;
+}
+
 /** Expanded information about the project. */
-export interface ProjectMetadataConfig {
+export interface ProjectMetadataConfigBase {
 	/**
 	 * The Slack, Discord, IRC, etc, channel to discuss the project.
 	 * Must start with a `#`.
@@ -133,8 +137,6 @@ export interface ProjectMetadataConfig {
 	description: string | null;
 	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers: string[];
-	/** Custom metadata fields. */
-	metadata: Record<string, unknown>;
 	/**
 	 * The owner of the project. Can be an individual, team, or
 	 * organization. The format is unspecified.
@@ -144,13 +146,20 @@ export interface ProjectMetadataConfig {
 	title: string | null;
 }
 
+/** Expanded information about the project. */
+export type ProjectMetadataConfig = ProjectMetadataConfigBase & ProjectMetadataConfigMetadata;
+
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
+export interface ProjectToolchainsConfigPlugins {
+	[key: string]: Record<Id, ProjectToolchainEntry>;
+}
+
 /** Overrides top-level toolchain settings, scoped to this project. */
-export interface ProjectToolchainsConfig {
+export interface ProjectToolchainsConfigBase {
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
 	 * this project and all of its tasks.
@@ -163,9 +172,10 @@ export interface ProjectToolchainsConfig {
 	 * @since 1.31.0
 	 */
 	default: Id | Id[] | null;
-	/** Overrides workspace-level toolchains by their identifier. */
-	plugins: Record<Id, ProjectToolchainEntry>;
 }
+
+/** Overrides top-level toolchain settings, scoped to this project. */
+export type ProjectToolchainsConfig = ProjectToolchainsConfigBase & ProjectToolchainsConfigPlugins;
 
 /** Controls how workspace-level tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {
@@ -336,8 +346,12 @@ export interface PartialOwnersConfig {
 	requiredApprovals?: number | null;
 }
 
+export interface PartialProjectMetadataConfigMetadata {
+	[key: string]: Record<string, unknown> | null;
+}
+
 /** Expanded information about the project. */
-export interface PartialProjectMetadataConfig {
+export interface PartialProjectMetadataConfigBase {
 	/**
 	 * The Slack, Discord, IRC, etc, channel to discuss the project.
 	 * Must start with a `#`.
@@ -347,8 +361,6 @@ export interface PartialProjectMetadataConfig {
 	description?: string | null;
 	/** The individual maintainers of the project. The format is unspecified. */
 	maintainers?: string[] | null;
-	/** Custom metadata fields. */
-	metadata?: Record<string, unknown> | null;
 	/**
 	 * The owner of the project. Can be an individual, team, or
 	 * organization. The format is unspecified.
@@ -358,10 +370,18 @@ export interface PartialProjectMetadataConfig {
 	title?: string | null;
 }
 
+/** Expanded information about the project. */
+export type PartialProjectMetadataConfig = PartialProjectMetadataConfigBase &
+	PartialProjectMetadataConfigMetadata;
+
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
+export interface PartialProjectToolchainsConfigPlugins {
+	[key: string]: Record<Id, PartialProjectToolchainEntry> | null;
+}
+
 /** Overrides top-level toolchain settings, scoped to this project. */
-export interface PartialProjectToolchainsConfig {
+export interface PartialProjectToolchainsConfigBase {
 	/**
 	 * A single toolchain, or list of toolchains, to inherit for
 	 * this project and all of its tasks.
@@ -374,9 +394,11 @@ export interface PartialProjectToolchainsConfig {
 	 * @since 1.31.0
 	 */
 	default?: Id | Id[] | null;
-	/** Overrides workspace-level toolchains by their identifier. */
-	plugins?: Record<Id, PartialProjectToolchainEntry> | null;
 }
+
+/** Overrides top-level toolchain settings, scoped to this project. */
+export type PartialProjectToolchainsConfig = PartialProjectToolchainsConfigBase &
+	PartialProjectToolchainsConfigPlugins;
 
 /** Controls how workspace-level tasks are inherited. */
 export interface PartialProjectWorkspaceInheritedTasksConfig {

@@ -398,7 +398,7 @@ variables:
             assert_eq!(
                 *config.variables.get("strum").unwrap(),
                 TemplateVariable::Enum(TemplateVariableEnumSetting {
-                    default: TemplateVariableEnumDefault::Vec(vec!["a".into(), "c".into()]),
+                    default: TemplateVariableEnumDefault::List(vec!["a".into(), "c".into()]),
                     internal: false,
                     multiple: Some(true),
                     order: None,

@@ -127,14 +127,14 @@ pub fn load_project_config_in_format(format: &str) {
                 plugins: FxHashMap::from_iter([
                     (
                         Id::raw("deno"),
-                        ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                        ProjectToolchainEntry::Object(ToolchainPluginConfig {
                             version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
                             ..Default::default()
                         })
                     ),
                     (
                         Id::raw("typescript"),
-                        ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                        ProjectToolchainEntry::Object(ToolchainPluginConfig {
                             config: BTreeMap::from_iter([(
                                 "includeSharedTypes".into(),
                                 serde_json::Value::Bool(true)
@@ -179,13 +179,13 @@ pub fn load_task_config_in_format(format: &str) {
             args: TaskArgs::List(vec!["-c".into(), "-b".into(), "arg".into()]),
             deps: Some(vec![
                 TaskDependency::Target(Target::parse("proj:task").unwrap()),
-                TaskDependency::Config(TaskDependencyConfig {
+                TaskDependency::Object(TaskDependencyConfig {
                     args: vec![],
                     env: IndexMap::default(),
                     target: Target::parse("^:build").unwrap(),
                     optional: Some(true)
                 }),
-                TaskDependency::Config(TaskDependencyConfig {
+                TaskDependency::Object(TaskDependencyConfig {
                     args: vec!["--minify".into()],
                     env: IndexMap::from_iter([("DEBUG".into(), Some("1".to_owned()))]),
                     target: Target::parse("~:build").unwrap(),
@@ -250,13 +250,13 @@ pub fn load_tasks_config_in_format(format: &str) {
             ]),
             implicit_deps: vec![
                 TaskDependency::Target(Target::parse("project:task-a").unwrap()),
-                TaskDependency::Config(TaskDependencyConfig {
+                TaskDependency::Object(TaskDependencyConfig {
                     target: Target::parse("project:task-b").unwrap(),
                     optional: Some(true),
                     ..Default::default()
                 }),
                 TaskDependency::Target(Target::parse("project:task-c").unwrap()),
-                TaskDependency::Config(TaskDependencyConfig {
+                TaskDependency::Object(TaskDependencyConfig {
                     args: vec!["--foo".into(), "--bar".into()],
                     env: IndexMap::from_iter([("KEY".into(), Some("value".to_owned()))]),
                     target: Target::parse("project:task-d").unwrap(),

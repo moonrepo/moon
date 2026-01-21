@@ -30,7 +30,7 @@ config_enum!(
 
         /// Expanded configuration for the binary to install.
         #[setting(nested)]
-        Config(BinConfig),
+        Object(BinConfig),
     }
 );
 
@@ -38,7 +38,7 @@ impl BinEntry {
     pub fn get_name(&self) -> &str {
         match self {
             BinEntry::Name(name) => name,
-            BinEntry::Config(cfg) => &cfg.bin,
+            BinEntry::Object(cfg) => &cfg.bin,
         }
     }
 }

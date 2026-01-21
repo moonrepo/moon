@@ -66,7 +66,7 @@ config_enum!(
     pub enum TemplateVariableEnumDefault {
         String(String),
         #[setting(default)]
-        Vec(Vec<String>),
+        List(Vec<String>),
     }
 );
 
@@ -74,7 +74,7 @@ impl TemplateVariableEnumDefault {
     pub fn to_vec(&self) -> Vec<&String> {
         match self {
             Self::String(value) => vec![value],
-            Self::Vec(list) => list.iter().collect(),
+            Self::List(list) => list.iter().collect(),
         }
     }
 }
@@ -86,7 +86,7 @@ fn validate_enum_default<C>(
     _finalize: bool,
 ) -> Result<(), ValidateError> {
     if let Some(values) = &partial.values {
-        if let PartialTemplateVariableEnumDefault::Vec(list) = default_value {
+        if let PartialTemplateVariableEnumDefault::List(list) = default_value {
             // Vector is the default value, so check if not-empty
             if !partial.multiple.is_some_and(|m| m) && !list.is_empty() {
                 return Err(ValidateError::new(
@@ -105,7 +105,7 @@ fn validate_enum_default<C>(
 
         let matches = match default_value {
             PartialTemplateVariableEnumDefault::String(inner) => values.contains(&inner),
-            PartialTemplateVariableEnumDefault::Vec(list) => {
+            PartialTemplateVariableEnumDefault::List(list) => {
                 list.iter().all(|v| values.contains(&v))
             }
         };

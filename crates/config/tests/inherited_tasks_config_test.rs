@@ -389,20 +389,20 @@ implicitDeps:
             assert_eq!(
                 config.implicit_deps,
                 vec![
-                    TaskDependency::Config(TaskDependencyConfig::new(
+                    TaskDependency::Object(TaskDependencyConfig::new(
                         Target::parse("task").unwrap()
                     )),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
                         target: Target::parse("project:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("^:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
                         env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("~:task").unwrap(),

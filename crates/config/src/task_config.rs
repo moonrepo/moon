@@ -43,7 +43,7 @@ pub(crate) fn validate_deps<D, C>(
         let scope;
 
         match dep {
-            PartialTaskDependency::Config(cfg) => {
+            PartialTaskDependency::Object(cfg) => {
                 if let Some(target) = &cfg.target {
                     scope = &target.scope;
                 } else {
@@ -172,14 +172,14 @@ config_enum!(
 
         /// A task referenced by target, with additional parameters to pass through.
         #[setting(nested)]
-        Config(TaskDependencyConfig),
+        Object(TaskDependencyConfig),
     }
 );
 
 impl TaskDependency {
     pub fn into_config(self) -> TaskDependencyConfig {
         match self {
-            Self::Config(config) => config,
+            Self::Object(config) => config,
             Self::Target(target) => TaskDependencyConfig::new(target),
         }
     }

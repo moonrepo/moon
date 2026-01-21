@@ -26,9 +26,7 @@ export type UnresolvedVersionSpec = string;
 
 export type ToolchainPluginVersionFrom = boolean | string;
 
-export interface ToolchainPluginConfigConfig {
-	[key: string]: Record<string, unknown>;
-}
+export type ToolchainPluginConfigConfig = Record<string, unknown>;
 
 /** Configures an individual toolchain. */
 export interface ToolchainPluginConfigBase {
@@ -58,9 +56,7 @@ export interface ProtoConfig {
 	version?: VersionSpec;
 }
 
-export interface ToolchainsConfigPlugins {
-	[key: string]: Record<Id, ToolchainPluginConfig>;
-}
+export type ToolchainsConfigPlugins = Record<Id, ToolchainPluginConfig>;
 
 /**
  * Configures all toolchains.
@@ -103,9 +99,7 @@ export interface PartialMoonConfig {
 	manifestUrl?: string | null;
 }
 
-export interface PartialToolchainPluginConfigConfig {
-	[key: string]: Record<string, unknown> | null;
-}
+export type PartialToolchainPluginConfigConfig = Record<string, unknown>;
 
 /** Configures an individual toolchain. */
 export interface PartialToolchainPluginConfigBase {
@@ -134,9 +128,7 @@ export interface PartialProtoConfig {
 	version?: VersionSpec | null;
 }
 
-export interface PartialToolchainsConfigPlugins {
-	[key: string]: Record<Id, PartialToolchainPluginConfig> | null;
-}
+export type PartialToolchainsConfigPlugins = Record<Id, PartialToolchainPluginConfig>;
 
 /**
  * Configures all toolchains.

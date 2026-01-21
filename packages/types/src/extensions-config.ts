@@ -5,9 +5,7 @@
 import type { ExtendsFrom, Id } from './common';
 import type { PluginLocator } from './toolchains-config';
 
-export interface ExtensionPluginConfigConfig {
-	[key: string]: Record<string, unknown>;
-}
+export type ExtensionPluginConfigConfig = Record<string, unknown>;
 
 /** Configures an individual extension. */
 export interface ExtensionPluginConfigBase {
@@ -18,9 +16,7 @@ export interface ExtensionPluginConfigBase {
 /** Configures an individual extension. */
 export type ExtensionPluginConfig = ExtensionPluginConfigBase & ExtensionPluginConfigConfig;
 
-export interface ExtensionsConfigPlugins {
-	[key: string]: Record<Id, ExtensionPluginConfig>;
-}
+export type ExtensionsConfigPlugins = Record<Id, ExtensionPluginConfig>;
 
 /** Configures all extensions. */
 export interface ExtensionsConfigBase {

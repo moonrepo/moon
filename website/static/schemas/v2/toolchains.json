@@ -40,13 +40,7 @@
     }
   },
   "additionalProperties": {
-    "type": "object",
-    "additionalProperties": {
-      "$ref": "#/definitions/ToolchainPluginConfig"
-    },
-    "propertyNames": {
-      "$ref": "#/definitions/Id"
-    }
+    "$ref": "#/definitions/ToolchainPluginConfig"
   },
   "definitions": {
     "ExtendsFrom": {
@@ -144,20 +138,14 @@
         }
       },
       "additionalProperties": {
-        "type": "object",
-        "additionalProperties": {
-          "type": [
-            "boolean",
-            "object",
-            "array",
-            "number",
-            "string",
-            "integer"
-          ]
-        },
-        "propertyNames": {
-          "type": "string"
-        }
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
       }
     },
     "ToolchainPluginVersionFrom": {

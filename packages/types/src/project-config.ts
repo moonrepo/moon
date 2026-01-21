@@ -122,9 +122,7 @@ export interface OwnersConfig {
 	requiredApprovals: number | null;
 }
 
-export interface ProjectMetadataConfigMetadata {
-	[key: string]: Record<string, unknown>;
-}
+export type ProjectMetadataConfigMetadata = Record<string, unknown>;
 
 /** Expanded information about the project. */
 export interface ProjectMetadataConfigBase {
@@ -154,9 +152,7 @@ export type StackType = 'backend' | 'data' | 'frontend' | 'infrastructure' | 'sy
 
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
-export interface ProjectToolchainsConfigPlugins {
-	[key: string]: Record<Id, ProjectToolchainEntry>;
-}
+export type ProjectToolchainsConfigPlugins = Record<Id, ProjectToolchainEntry>;
 
 /** Overrides top-level toolchain settings, scoped to this project. */
 export interface ProjectToolchainsConfigBase {
@@ -346,9 +342,7 @@ export interface PartialOwnersConfig {
 	requiredApprovals?: number | null;
 }
 
-export interface PartialProjectMetadataConfigMetadata {
-	[key: string]: Record<string, unknown> | null;
-}
+export type PartialProjectMetadataConfigMetadata = Record<string, unknown>;
 
 /** Expanded information about the project. */
 export interface PartialProjectMetadataConfigBase {
@@ -376,9 +370,7 @@ export type PartialProjectMetadataConfig = PartialProjectMetadataConfigBase &
 
 export type PartialProjectToolchainEntry = null | boolean | PartialToolchainPluginConfig;
 
-export interface PartialProjectToolchainsConfigPlugins {
-	[key: string]: Record<Id, PartialProjectToolchainEntry> | null;
-}
+export type PartialProjectToolchainsConfigPlugins = Record<Id, PartialProjectToolchainEntry>;
 
 /** Overrides top-level toolchain settings, scoped to this project. */
 export interface PartialProjectToolchainsConfigBase {

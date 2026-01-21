@@ -22,13 +22,7 @@
     }
   },
   "additionalProperties": {
-    "type": "object",
-    "additionalProperties": {
-      "$ref": "#/definitions/ExtensionPluginConfig"
-    },
-    "propertyNames": {
-      "$ref": "#/definitions/Id"
-    }
+    "$ref": "#/definitions/ExtensionPluginConfig"
   },
   "definitions": {
     "ExtendsFrom": {
@@ -62,20 +56,14 @@
         }
       },
       "additionalProperties": {
-        "type": "object",
-        "additionalProperties": {
-          "type": [
-            "boolean",
-            "object",
-            "array",
-            "number",
-            "string",
-            "integer"
-          ]
-        },
-        "propertyNames": {
-          "type": "string"
-        }
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
       }
     },
     "Id": {

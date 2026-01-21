@@ -855,20 +855,14 @@
         }
       },
       "additionalProperties": {
-        "type": "object",
-        "additionalProperties": {
-          "type": [
-            "boolean",
-            "object",
-            "array",
-            "number",
-            "string",
-            "integer"
-          ]
-        },
-        "propertyNames": {
-          "type": "string"
-        }
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
       }
     },
     "ProjectToolchainEntry": {
@@ -936,13 +930,7 @@
         }
       },
       "additionalProperties": {
-        "type": "object",
-        "additionalProperties": {
-          "$ref": "#/definitions/ProjectToolchainEntry"
-        },
-        "propertyNames": {
-          "$ref": "#/definitions/Id"
-        }
+        "$ref": "#/definitions/ProjectToolchainEntry"
       },
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
@@ -1900,20 +1888,14 @@
         }
       },
       "additionalProperties": {
-        "type": "object",
-        "additionalProperties": {
-          "type": [
-            "boolean",
-            "object",
-            "array",
-            "number",
-            "string",
-            "integer"
-          ]
-        },
-        "propertyNames": {
-          "type": "string"
-        }
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
       }
     },
     "ToolchainPluginVersionFrom": {

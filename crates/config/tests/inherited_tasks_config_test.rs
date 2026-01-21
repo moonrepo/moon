@@ -413,7 +413,7 @@ implicitDeps:
         }
 
         #[test]
-        #[should_panic(expected = "expected a valid target or dependency config object")]
+        #[should_panic(expected = "failed to parse as any variant of PartialTaskDependency")]
         fn errors_on_invalid_format() {
             test_load_config(FILENAME, "implicitDeps: ['bad target']", |path| {
                 load_config_from_file(&path.join(FILENAME))

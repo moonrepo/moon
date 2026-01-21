@@ -49,10 +49,7 @@ config_struct!(
 
 config_enum!(
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a value string or value object with label"
-    )]
+    #[serde(untagged)]
     pub enum TemplateVariableEnumValue {
         String(String),
         #[setting(nested)]

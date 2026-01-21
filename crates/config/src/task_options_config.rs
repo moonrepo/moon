@@ -93,7 +93,7 @@ impl Schematic for TaskOptionEnvFile {
 
 config_enum!(
     /// The pattern in which to run the task automatically in CI.
-    #[serde(expecting = "expected `always`, `affected`, or a boolean")]
+    #[serde(expecting = "expected `always`, `affected`, `only`, `skip`, or a boolean")]
     pub enum TaskOptionRunInCI {
         /// Always run, regardless of affected status.
         Always,

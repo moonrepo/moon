@@ -6,7 +6,7 @@ use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_affected::Affected;
 use moon_common::is_ci;
-use moon_config::TaskOptionAffectedFiles;
+use moon_config::TaskOptionAffectedFilesPattern;
 use moon_env_var::GlobalEnvBag;
 use moon_process::{Command, EnvBehavior};
 use moon_task::{Target, TargetLocator};
@@ -771,7 +771,7 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
                 })
                 .await;
 
@@ -795,7 +795,7 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
                     task.options.run_from_workspace_root = true;
                 })
                 .await;
@@ -820,7 +820,7 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
                 })
                 .await;
 
@@ -837,7 +837,7 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFiles::Env);
+                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Env);
                 })
                 .await;
 
@@ -857,7 +857,7 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFiles::Env);
+                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Env);
                 })
                 .await;
 
@@ -869,7 +869,7 @@ mod command_builder {
             let container = TaskRunnerContainer::new("builder", "base").await;
             let command = container
                 .create_command_with_config(ActionContext::default(), |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
                     task.options.affected_pass_inputs = true;
                 })
                 .await;
@@ -904,7 +904,7 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFiles::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
                 })
                 .await;
 

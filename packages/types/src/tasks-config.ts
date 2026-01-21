@@ -188,6 +188,19 @@ export interface InheritedByConfig {
 	toolchains: InheritedConditionConfig | null;
 }
 
+/** Expanded information about affected files handling. */
+export interface TaskOptionAffectedFilesConfig {
+	/** The pattern in which affected files will be passed to the affected task. */
+	pass: boolean | 'args' | 'env';
+	/**
+	 * When no affected files are matching, pass the task's inputs
+	 * as arguments to the command, instead of `.`.
+	 */
+	passInputsWhenNoMatch: boolean | null;
+}
+
+export type TaskOptionAffectedFilesEntry = boolean | 'args' | 'env' | TaskOptionAffectedFilesConfig;
+
 export type TaskOptionEnvFile = boolean | string | string[];
 
 /** The strategy in which to merge a specific task option. */
@@ -223,12 +236,7 @@ export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pw
 /** Options to control task inheritance, execution, and more. */
 export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles: boolean | 'args' | 'env' | null;
-	/**
-	 * When affected and no files are matching, pass the task's inputs
-	 * as arguments to the command, instead of `.`.
-	 */
-	affectedPassInputs: boolean | null;
+	affectedFiles: TaskOptionAffectedFilesEntry | null;
 	/**
 	 * Allow the task to fail without failing the entire action pipeline.
 	 * @since 1.13.0
@@ -655,15 +663,21 @@ export interface PartialInheritedByConfig {
 	toolchains?: PartialInheritedConditionConfig | null;
 }
 
+/** Expanded information about affected files handling. */
+export interface PartialTaskOptionAffectedFilesConfig {
+	/** The pattern in which affected files will be passed to the affected task. */
+	pass?: boolean | 'args' | 'env' | null;
+	/**
+	 * When no affected files are matching, pass the task's inputs
+	 * as arguments to the command, instead of `.`.
+	 */
+	passInputsWhenNoMatch?: boolean | null;
+}
+
 /** Options to control task inheritance, execution, and more. */
 export interface PartialTaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles?: boolean | 'args' | 'env' | null;
-	/**
-	 * When affected and no files are matching, pass the task's inputs
-	 * as arguments to the command, instead of `.`.
-	 */
-	affectedPassInputs?: boolean | null;
+	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
 	 * Allow the task to fail without failing the entire action pipeline.
 	 * @since 1.13.0

@@ -888,28 +888,28 @@ tasks:
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Enabled(true))
+                Some(TaskOptionAffectedFilesPattern::Enabled(true))
             );
 
             let task = tasks.get("not-affected").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Enabled(false))
+                Some(TaskOptionAffectedFilesPattern::Enabled(false))
             );
 
             let task = tasks.get("affected-args").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Args)
+                Some(TaskOptionAffectedFilesPattern::Args)
             );
 
             let task = tasks.get("affected-env").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Env)
+                Some(TaskOptionAffectedFilesPattern::Env)
             );
         }
 

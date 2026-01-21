@@ -614,7 +614,7 @@ options:
 
         mod affected_files {
             use super::*;
-            use moon_config::TaskOptionAffectedFiles;
+            use moon_config::TaskOptionAffectedFilesPattern;
 
             #[test]
             fn can_use_true() {
@@ -628,7 +628,7 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Enabled(true))
+                    Some(TaskOptionAffectedFilesPattern::Enabled(true))
                 );
             }
 
@@ -644,7 +644,7 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Enabled(false))
+                    Some(TaskOptionAffectedFilesPattern::Enabled(false))
                 );
             }
 
@@ -660,7 +660,7 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Args)
+                    Some(TaskOptionAffectedFilesPattern::Args)
                 );
             }
 
@@ -676,7 +676,7 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Env)
+                    Some(TaskOptionAffectedFilesPattern::Env)
                 );
             }
 

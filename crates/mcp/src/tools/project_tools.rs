@@ -11,14 +11,15 @@ use serde::{Deserialize, Serialize};
 
 #[mcp_tool(
     name = "get_project",
+    title = "Get project",
     description = "Get a moon project and its tasks by `id`."
 )]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetProjectTool {
     pub id: String,
 
-    #[serde(default)]
-    pub include_dependencies: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub include_dependencies: Option<bool>,
 }
 
 impl GetProjectTool {
@@ -31,7 +32,7 @@ impl GetProjectTool {
             .map_err(map_miette_error)?;
         let mut project_dependencies = vec![];
 
-        if self.include_dependencies {
+        if self.include_dependencies.unwrap_or_default() {
             for dep in &project.dependencies {
                 project_dependencies.push(
                     workspace_graph
@@ -62,7 +63,11 @@ pub struct GetProjectResponse {
     pub project_dependencies: Vec<Project>,
 }
 
-#[mcp_tool(name = "get_projects", description = "Get all moon projects.")]
+#[mcp_tool(
+    name = "get_projects",
+    title = "Get projects",
+    description = "Get all moon projects."
+)]
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]
 pub struct GetProjectsTool {}
 

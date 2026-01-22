@@ -35,10 +35,6 @@ tailwind.config.d.ts
 # moon
 .moon/cache
 .moon/docker
-packages/*/moon
-packages/*/moon.exe
-/moon
-/moon.exe
 
 # moon tests/fixtures
 tests/fixtures/*/.moon/cache

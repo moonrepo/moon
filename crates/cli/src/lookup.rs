@@ -1,7 +1,37 @@
-use moon_app::EXE_NAME;
+use moon_app::commands::upgrade::is_musl;
+use starbase_utils::fs;
 use std::env;
-use std::fs;
+use std::env::consts::{ARCH, OS};
 use std::path::{Path, PathBuf};
+
+fn get_core_package_triple() -> String {
+    let mut name = String::from("core");
+    name.push('-');
+    name.push_str(OS);
+
+    name.push('-');
+    name.push_str(match ARCH {
+        "x86_64" => "x64",
+        "aarch64" => "arm64",
+        arch => arch,
+    });
+
+    match OS {
+        "linux" => {
+            if is_musl() {
+                name.push_str("-musl");
+            } else {
+                name.push_str("-gnu");
+            }
+        }
+        "windows" => {
+            name.push_str("-msvc");
+        }
+        _ => {}
+    };
+
+    name
+}
 
 #[cfg(unix)]
 fn get_global_lookups(home_dir: &Path) -> Vec<PathBuf> {
@@ -51,79 +81,109 @@ pub fn is_globally_installed(home_dir: &Path) -> bool {
 }
 
 pub fn has_locally_installed(home_dir: &Path, current_dir: &Path) -> Option<PathBuf> {
-    let mut current_dir = Some(current_dir);
-
-    // Helper to scan a directory for the core package
-    let scan_for_core = |start_dir: &Path| -> Option<PathBuf> {
-        if let Ok(entries) = fs::read_dir(start_dir) {
-            for entry in entries.flatten() {
-                let name = entry.file_name().to_string_lossy().to_string();
-
-                // Check for standard "core-*" or pnpm's "+core-*" naming
-                if name.starts_with("core-")
-                    || name.starts_with("+core-")
-                    || name.starts_with("@moonrepo+core-")
-                {
-                    let bin_path = entry.path().join(EXE_NAME);
-
-                    if bin_path.exists() {
-                        return Some(bin_path);
-                    }
-                }
-            }
-        }
-        None
+    let Ok(exe_path) = env::current_exe() else {
+        return None;
     };
 
+    let exe_name = fs::file_name(exe_path);
+    let mut current_dir = Some(current_dir);
+
     while let Some(dir) = current_dir {
-        if dir.join(".moon").exists() || dir.join(".config").join("moon").exists() {
-            let cli_dir = dir.join("node_modules").join("@moonrepo").join("cli");
+        let cli_dir = dir.join("node_modules").join("@moonrepo").join("cli");
 
-            if cli_dir.exists() {
-                let mut search_paths = vec![];
+        if cli_dir.exists() {
+            let core_dir = cli_dir.parent().unwrap().join(get_core_package_triple());
 
-                // 1. Original Symlink Path (npm, Bun, Yarn)
-                // The core package might be hoisted to the root node_modules,
-                // making it a sibling of the @moonrepo/cli symlink location.
-                if let Some(parent) = cli_dir.parent() {
-                    search_paths.push(parent.to_path_buf()); // @moonrepo/
-                    if let Some(grandparent) = parent.parent() {
-                        search_paths.push(grandparent.to_path_buf()); // node_modules/
-                    }
-                }
+            if core_dir.exists() {
+                let core_exe = core_dir.join(&exe_name);
 
-                // 2. Real Path (pnpm, Bun, Yarn Berry)
-                // If it's a symlink, resolve it to find the real location in the store or cache.
-                if let Some(real_path) = fs::canonicalize(&cli_dir).ok().filter(|p| p != &cli_dir) {
-                    search_paths.push(real_path.clone()); // Inside the package itself
-                    if let Some(parent) = real_path.parent() {
-                        search_paths.push(parent.to_path_buf()); // Sibling in store
-                    }
-                    if let Some(grandparent) = real_path.parent().and_then(|p| p.parent()) {
-                        search_paths.push(grandparent.to_path_buf()); // Parent of scope
-                    }
-                    // Check for dependencies inside the package (unhoisted)
-                    search_paths.push(real_path.join("node_modules").join("@moonrepo"));
-                }
-
-                // Scan all potential locations
-                for search_path in search_paths {
-                    if !search_path.exists() {
-                        continue;
-                    }
-                    if let Some(bin) = scan_for_core(&search_path) {
-                        return Some(bin);
-                    }
+                if core_exe.exists() {
+                    return Some(core_exe);
                 }
             }
         }
 
-        if dir == home_dir {
+        if dir.join(".moon").exists()
+            || dir.join(".config").join("moon").exists()
+            || dir == home_dir
+        {
             break;
-        } else {
-            current_dir = dir.parent();
         }
+
+        current_dir = dir.parent();
     }
+
+    // Helper to scan a directory for the core package
+    // let scan_for_core = |start_dir: &Path| -> Option<PathBuf> {
+    //     if let Ok(entries) = fs::read_dir(start_dir) {
+    //         for entry in entries.flatten() {
+    //             let name = entry.file_name().to_string_lossy().to_string();
+
+    //             // Check for standard "core-*" or pnpm's "+core-*" naming
+    //             if name.starts_with("core-")
+    //                 || name.starts_with("+core-")
+    //                 || name.starts_with("@moonrepo+core-")
+    //             {
+    //                 let bin_path = entry.path().join(EXE_NAME);
+
+    //                 if bin_path.exists() {
+    //                     return Some(bin_path);
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     None
+    // };
+
+    // while let Some(dir) = current_dir {
+    //     if dir.join(".moon").exists() || dir.join(".config").join("moon").exists() {
+    //         let cli_dir = dir.join("node_modules").join("@moonrepo").join("cli");
+
+    //         if cli_dir.exists() {
+    //             let mut search_paths = vec![];
+
+    //             // 1. Original Symlink Path (npm, Bun, Yarn)
+    //             // The core package might be hoisted to the root node_modules,
+    //             // making it a sibling of the @moonrepo/cli symlink location.
+    //             if let Some(parent) = cli_dir.parent() {
+    //                 search_paths.push(parent.to_path_buf()); // @moonrepo/
+    //                 if let Some(grandparent) = parent.parent() {
+    //                     search_paths.push(grandparent.to_path_buf()); // node_modules/
+    //                 }
+    //             }
+
+    //             // 2. Real Path (pnpm, Bun, Yarn Berry)
+    //             // If it's a symlink, resolve it to find the real location in the store or cache.
+    //             if let Some(real_path) = fs::canonicalize(&cli_dir).ok().filter(|p| p != &cli_dir) {
+    //                 search_paths.push(real_path.clone()); // Inside the package itself
+    //                 if let Some(parent) = real_path.parent() {
+    //                     search_paths.push(parent.to_path_buf()); // Sibling in store
+    //                 }
+    //                 if let Some(grandparent) = real_path.parent().and_then(|p| p.parent()) {
+    //                     search_paths.push(grandparent.to_path_buf()); // Parent of scope
+    //                 }
+    //                 // Check for dependencies inside the package (unhoisted)
+    //                 search_paths.push(real_path.join("node_modules").join("@moonrepo"));
+    //             }
+
+    //             // Scan all potential locations
+    //             for search_path in search_paths {
+    //                 if !search_path.exists() {
+    //                     continue;
+    //                 }
+    //                 if let Some(bin) = scan_for_core(&search_path) {
+    //                     return Some(bin);
+    //                 }
+    //             }
+    //         }
+    //     }
+
+    //     if dir == home_dir {
+    //         break;
+    //     } else {
+    //         current_dir = dir.parent();
+    //     }
+    // }
 
     None
 }

@@ -35,6 +35,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
         exec.targets = targets;
         exec.on_failure = OnFailure::Continue;
         exec.only_ci_tasks = true;
+        exec.ci = Some(true);
 
         // Show full output in CI
         if exec.summary.is_none() {

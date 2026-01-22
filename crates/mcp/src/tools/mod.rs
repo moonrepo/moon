@@ -1,4 +1,5 @@
 pub mod action_tools;
+pub mod codegen_tools;
 pub mod project_tools;
 pub mod task_tools;
 pub mod vcs_tools;

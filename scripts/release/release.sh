@@ -72,7 +72,10 @@ echo "$PLAN" | jq -c '.artifacts[]' | while IFS= read -r artifact; do
   fi
 
   # Copy executables to their core package directories
-  for exe in moon moonx; do
+  corePackage=$(getCorePackageFromTriple "$triple")
+  exes=("moon" "moonx")
+
+  for exe in "${exes[@]}"; do
     exeName="$exe"
 
     # Add .exe extension for Windows
@@ -83,7 +86,6 @@ echo "$PLAN" | jq -c '.artifacts[]' | while IFS= read -r artifact; do
     exePath="$outputDir/$exeName"
 
     if [[ -f "$exePath" ]]; then
-      corePackage=$(getCorePackageFromTriple "$triple")
       exeDistPath="packages/$corePackage/$exeName"
 
       cp "$exePath" "$exeDistPath"

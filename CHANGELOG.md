@@ -18,6 +18,9 @@ changes and how to easily migrate!
 - **Configuration**
   - Renamed, removed, or changed _many_ settings. Refer to the migration guide for details.
   - Renamed `.moon/toolchain.yml` to `.moon/toolchains.yml` (plural).
+- **MCP**
+  - Updated protocol version to 2025-11-25.
+  - Updated `get_projects` and `get_tasks` to return fragments, to reduce the payload size.
 - **Projects**
   - Reworked how the `language` is detected.
   - Flattened `project` metadata structure.
@@ -92,6 +95,8 @@ features, improvements, and much more!
   - Added support for new plugin APIs: `define_extension_config`, `extend_command`,
     `extend_project_graph`, `extend_task_command`, `extend_task_script`, `sync_project`, and
     `sync_workspace`.
+- **MCP**
+  - Added a `generate` tool for running the code generator.
 - **Projects**
   - Added a default project concept.
   - Added path based IDs instead of dir name IDs.

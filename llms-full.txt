@@ -20845,6 +20845,12 @@ then open an interactive prompt to complete the installation.
 bash <(curl -fsSL https://moonrepo.dev/install/proto.sh)
 ```
 
+For Fish shell, use process substitution with `psub` to execute the installer.
+
+```shell
+bash (curl -fsSL https://moonrepo.dev/install/proto.sh | psub)
+```
+
 Furthermore, the version of proto to install can be passed as an argument to the install script. We
 also accept `--no-profile` to avoid modifying your shell profile, and `--yes` to avoid interactive
 prompts.

@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.e6dcddd9.css">
-<script src="/assets/js/runtime~main.2155195d.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.d97feb77.js" defer="defer"></script>
 <script src="/assets/js/main.95ec48f3.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -39,6 +39,8 @@ the default location is <code>~/.proto</code>.</p></div></div>
 <p>In a terminal that supports Bash, run the following command. This will download and install proto,
 then open an interactive prompt to complete the installation.</p>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token function" style="color:#ff94ff;font-weight:bold">bash</span><span class="token plain"> </span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token function" style="color:#ff94ff;font-weight:bold">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">-fsSL</span><span class="token plain"> https://moonrepo.dev/install/proto.sh</span><span class="token punctuation" style="color:#cad4e2">)</span><br></span></code></pre></div></div>
+<p>For Fish shell, use process substitution with <code>psub</code> to execute the installer.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token function" style="color:#ff94ff;font-weight:bold">bash</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">curl </span><span class="token parameter variable" style="color:#fef9c3">-fsSL</span><span class="token plain"> https://moonrepo.dev/install/proto.sh </span><span class="token operator" style="color:#b7a9f9">|</span><span class="token plain"> psub</span><span class="token punctuation" style="color:#cad4e2">)</span><br></span></code></pre></div></div>
 <p>Furthermore, the version of proto to install can be passed as an argument to the install script. We
 also accept <code>--no-profile</code> to avoid modifying your shell profile, and <code>--yes</code> to avoid interactive
 prompts.</p>

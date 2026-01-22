@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.e6dcddd9.css">
-<script src="/assets/js/runtime~main.d97feb77.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.c966505c.js" defer="defer"></script>
 <script src="/assets/js/main.95ec48f3.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -289,6 +289,7 @@ at the root of the <code>project</code> setting.</p>
 <ul>
 <li class=""><a href="#local-mode" class=""><code>tasks.*.local</code></a> -&gt; <code>tasks.*.preset</code> using <code>server</code> value</li>
 <li class=""><code>tasks.*.platform</code> -&gt; <code>tasks.*.toolchains</code></li>
+<li class=""><code>tasks.*.options.affectedPassInputs</code> -&gt; <code>tasks.*.options.affectedFiles.passInputsWhenNoMatch</code></li>
 </ul>
 </li>
 <li class="">Removed setting values:<!-- -->
@@ -299,6 +300,7 @@ at the root of the <code>project</code> setting.</p>
 <li class="">Changed settings:<!-- -->
 <ul>
 <li class=""><code>tasks.deps.*.args</code> no longer supports a string. Use a list of strings instead.</li>
+<li class=""><code>tasks.*.options.affectedFiles</code> now supports an object for more granular control.</li>
 </ul>
 </li>
 <li class="">Changed option defaults:<!-- -->

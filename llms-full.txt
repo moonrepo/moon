@@ -5242,26 +5242,23 @@ list of files being passed as arguments.
 
 :::
 
-#### `affectedPassInputs`<VersionLabel version="1.22.0" />
+This setting also supports an object format with additional parameters. The `pass` field is
+required, which accepts a value described above.
 
-<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#affectedPassInputs" />
-
-When [`affectedFiles`](#affectedfiles) is enabled, and no affected files are found, moon will pass
-`.` as an argument. For the most part, this works, but if you'd like to _not_ pass the entire
-directory (and everything in it), and only pass the configured [`inputs`](#inputs) instead, then you
-can enable this setting.
-
-When enabled, moon will resolve all input globs to literal file paths, and pass them as relative
-arguments.
-
-```yaml title="moon.yml" {5,6}
+```yaml title="moon.yml" {5,7,9}
 tasks:
   lint:
     command: 'eslint'
     options:
-      affectedFiles: true
-      affectedPassInputs: true
+      affectedFiles:
+        pass: 'args'
 ```
+
+The following additional parameters are supported:
+
+- `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, and `pass` includes
+  `args`, will pass all configured [`inputs`](#inputs) as relative file paths instead of `.`.
+  Defaults to `false`.
 
 #### `allowFailure`<VersionLabel version="1.13.0" />
 
@@ -17863,10 +17860,12 @@ toolchains:
 - Renamed settings:
   - [`tasks.*.local`](#local-mode) -> `tasks.*.preset` using `server` value
   - `tasks.*.platform` -> `tasks.*.toolchains`
+  - `tasks.*.options.affectedPassInputs` -> `tasks.*.options.affectedFiles.passInputsWhenNoMatch`
 - Removed setting values:
   - `tasks.*.preset` value `watcher`
 - Changed settings:
   - `tasks.deps.*.args` no longer supports a string. Use a list of strings instead.
+  - `tasks.*.options.affectedFiles` now supports an object for more granular control.
 - Changed option defaults:
   - `tasks.*.options.envFile` now defaults to a list of files, instead of a single file, when
     `true`. Refer to the blog post for more information.

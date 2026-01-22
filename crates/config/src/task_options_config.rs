@@ -56,7 +56,10 @@ config_struct!(
 
 config_enum!(
     #[derive(Config)]
-    #[serde(untagged)]
+    #[serde(
+        untagged,
+        expecting = "expected `args`, `env`, a boolean, or an object"
+    )]
     pub enum TaskOptionAffectedFilesEntry {
         Pattern(TaskOptionAffectedFilesPattern),
 

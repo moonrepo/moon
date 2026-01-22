@@ -9,7 +9,7 @@ use moon_common::is_ci;
 use moon_config::TaskOptionAffectedFilesPattern;
 use moon_env_var::GlobalEnvBag;
 use moon_process::{Command, EnvBehavior};
-use moon_task::{Target, TargetLocator};
+use moon_task::{Target, TargetLocator, TaskOptionAffectedFiles};
 use std::env;
 use std::ffi::OsString;
 use utils::*;
@@ -771,7 +771,10 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        ..Default::default()
+                    });
                 })
                 .await;
 
@@ -795,7 +798,10 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        ..Default::default()
+                    });
                     task.options.run_from_workspace_root = true;
                 })
                 .await;
@@ -820,7 +826,10 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        ..Default::default()
+                    });
                 })
                 .await;
 
@@ -837,7 +846,10 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Env);
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Env,
+                        ..Default::default()
+                    });
                 })
                 .await;
 
@@ -857,7 +869,10 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Env);
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Env,
+                        ..Default::default()
+                    });
                 })
                 .await;
 
@@ -869,8 +884,10 @@ mod command_builder {
             let container = TaskRunnerContainer::new("builder", "base").await;
             let command = container
                 .create_command_with_config(ActionContext::default(), |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
-                    task.options.affected_pass_inputs = true;
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        pass_inputs_when_no_match: true,
+                    });
                 })
                 .await;
 
@@ -904,7 +921,10 @@ mod command_builder {
 
             let command = container
                 .create_command_with_config(context, |task, _| {
-                    task.options.affected_files = Some(TaskOptionAffectedFilesPattern::Args);
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        ..Default::default()
+                    });
                 })
                 .await;
 

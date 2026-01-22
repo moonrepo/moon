@@ -680,9 +680,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.12.1"
+version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2"
+checksum = "7714e70437a7dc3ac8eb7e6f8df75fd8eb422675fc7678aff7364301092b1017"
 dependencies = [
  "equivalent",
  "hashbrown",
@@ -830,7 +830,7 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "moon_common"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "dirs",
  "miette",
@@ -846,7 +846,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "hcl-rs",
  "indexmap",
@@ -867,14 +867,14 @@ dependencies = [
 
 [[package]]
 name = "moon_feature_flags"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "starbase_utils",
 ]
 
 [[package]]
 name = "moon_file_group"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "common-path",
  "miette",
@@ -888,7 +888,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -903,7 +903,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "derive_setters",
  "moon_common",
@@ -920,7 +920,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "miette",
  "moon_common",
@@ -933,7 +933,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "compact_str 0.9.0",
  "miette",
@@ -947,7 +947,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "miette",
  "moon_common",

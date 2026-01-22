@@ -12,20 +12,40 @@ mod inherited_by {
         use super::*;
 
         #[test]
-        fn doesnt_match_when_empty() {
+        fn empty_clause_doesnt_match_value() {
             let clause = InheritedClauseConfig::default();
 
             assert!(!clause.matches(&[Id::raw("a")]));
         }
 
         #[test]
-        fn doesnt_match_when_no_values() {
+        fn or_doesnt_match_when_no_values() {
             let clause = InheritedClauseConfig {
                 or: Some(OneOrMany::One(Id::raw("a"))),
                 ..Default::default()
             };
 
             assert!(!clause.matches(&[]));
+        }
+
+        #[test]
+        fn and_doesnt_match_when_no_values() {
+            let clause = InheritedClauseConfig {
+                and: Some(OneOrMany::One(Id::raw("a"))),
+                ..Default::default()
+            };
+
+            assert!(!clause.matches(&[]));
+        }
+
+        #[test]
+        fn not_matches_when_no_values() {
+            let clause = InheritedClauseConfig {
+                not: Some(OneOrMany::One(Id::raw("a"))),
+                ..Default::default()
+            };
+
+            assert!(clause.matches(&[]));
         }
 
         #[test]

@@ -4,7 +4,7 @@ use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::is_ci;
 use moon_common::path::PathExt;
-use moon_config::{Input, TaskOptionAffectedFiles};
+use moon_config::{Input, TaskOptionAffectedFilesPattern};
 use moon_env_var::{DotEnv, GlobalEnvBag};
 use moon_process::{Command, Shell, ShellType};
 use moon_process_augment::AugmentedCommand;
@@ -295,7 +295,7 @@ impl<'task> CommandBuilder<'task> {
 
     #[instrument(skip_all)]
     fn inherit_affected(&mut self, context: &ActionContext) -> miette::Result<()> {
-        let Some(check_affected) = &self.task.options.affected_files else {
+        let Some(affected_options) = &self.task.options.affected_files else {
             return Ok(());
         };
 
@@ -311,7 +311,7 @@ impl<'task> CommandBuilder<'task> {
         };
 
         // If we have no files, use the task's inputs instead
-        if abs_files.is_empty() && self.task.options.affected_pass_inputs {
+        if abs_files.is_empty() && affected_options.pass_inputs_when_no_match {
             abs_files = self.task.get_input_files(&self.app.workspace_root)?;
         }
 
@@ -333,8 +333,8 @@ impl<'task> CommandBuilder<'task> {
 
         // Set an environment variable
         if matches!(
-            check_affected,
-            TaskOptionAffectedFiles::Env | TaskOptionAffectedFiles::Enabled(true)
+            affected_options.pass,
+            TaskOptionAffectedFilesPattern::Env | TaskOptionAffectedFilesPattern::Enabled(true)
         ) {
             self.command.env(
                 "MOON_AFFECTED_FILES",
@@ -354,8 +354,8 @@ impl<'task> CommandBuilder<'task> {
 
         // Pass an argument
         if matches!(
-            check_affected,
-            TaskOptionAffectedFiles::Args | TaskOptionAffectedFiles::Enabled(true)
+            affected_options.pass,
+            TaskOptionAffectedFilesPattern::Args | TaskOptionAffectedFilesPattern::Enabled(true)
         ) {
             if rel_files.is_empty() {
                 self.command.arg_if_missing(".");

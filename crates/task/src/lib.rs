@@ -3,8 +3,10 @@ mod task_arg;
 mod task_options;
 
 pub use moon_config::{
-    TaskConfig, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptionRunInCI, TaskOptionsConfig,
-    TaskType,
+    TaskConfig, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesConfig,
+    TaskOptionAffectedFilesEntry, TaskOptionAffectedFilesPattern, TaskOptionCache,
+    TaskOptionEnvFile, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPriority,
+    TaskType, TaskUnixShell, TaskWindowsShell,
 };
 pub use moon_target::*;
 pub use task::*;

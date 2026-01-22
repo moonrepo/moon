@@ -7,10 +7,12 @@ tasks:
       affectedFiles: args
   affected-env:
     options:
-      affectedFiles: env
+      affectedFiles:
+        pass: env
   not-affected:
     options:
-      affectedFiles: false
+      affectedFiles:
+        pass: false
 
   env-file:
     options:

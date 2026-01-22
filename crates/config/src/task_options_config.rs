@@ -22,7 +22,7 @@ fn validate_interactive<C>(
 config_enum!(
     /// The pattern in which affected files will be passed to the affected task.
     #[serde(expecting = "expected `args`, `env`, or a boolean")]
-    pub enum TaskOptionAffectedFiles {
+    pub enum TaskOptionAffectedFilesPattern {
         /// Passed as command line arguments.
         Args,
         /// Passed as environment variables.
@@ -33,7 +33,40 @@ config_enum!(
     }
 );
 
-generate_switch!(TaskOptionAffectedFiles, ["args", "env"]);
+generate_switch!(TaskOptionAffectedFilesPattern, ["args", "env"]);
+
+impl Default for TaskOptionAffectedFilesPattern {
+    fn default() -> Self {
+        Self::Enabled(true)
+    }
+}
+
+config_struct!(
+    /// Expanded information about affected files handling.
+    #[derive(Config)]
+    pub struct TaskOptionAffectedFilesConfig {
+        /// The pattern in which affected files will be passed to the affected task.
+        pub pass: TaskOptionAffectedFilesPattern,
+
+        /// When no affected files are matching, pass the task's inputs
+        /// as arguments to the command, instead of `.`.
+        pub pass_inputs_when_no_match: Option<bool>,
+    }
+);
+
+config_enum!(
+    #[derive(Config)]
+    #[serde(
+        untagged,
+        expecting = "expected `args`, `env`, a boolean, or an object"
+    )]
+    pub enum TaskOptionAffectedFilesEntry {
+        Pattern(TaskOptionAffectedFilesPattern),
+
+        #[setting(nested)]
+        Object(TaskOptionAffectedFilesConfig),
+    }
+);
 
 config_enum!(
     /// The environment in which to apply task caching.
@@ -220,11 +253,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TaskOptionsConfig {
         /// The pattern in which affected files will be passed to the task.
-        pub affected_files: Option<TaskOptionAffectedFiles>,
-
-        /// When affected and no files are matching, pass the task's inputs
-        /// as arguments to the command, instead of `.`.
-        pub affected_pass_inputs: Option<bool>,
+        pub affected_files: Option<TaskOptionAffectedFilesEntry>,
 
         /// Allow the task to fail without failing the entire action pipeline.
         /// @since 1.13.0

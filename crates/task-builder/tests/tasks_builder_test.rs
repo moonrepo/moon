@@ -3,7 +3,7 @@ mod utils;
 use moon_common::Id;
 use moon_config::{test_utils::*, *};
 use moon_target::Target;
-use moon_task::TaskArg;
+use moon_task::{TaskArg, TaskOptionAffectedFiles};
 use starbase_sandbox::create_sandbox;
 use std::fs;
 use std::path::PathBuf;
@@ -888,28 +888,40 @@ tasks:
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Enabled(true))
+                Some(TaskOptionAffectedFiles {
+                    pass: TaskOptionAffectedFilesPattern::Enabled(true),
+                    ..Default::default()
+                })
             );
 
             let task = tasks.get("not-affected").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Enabled(false))
+                Some(TaskOptionAffectedFiles {
+                    pass: TaskOptionAffectedFilesPattern::Enabled(false),
+                    ..Default::default()
+                })
             );
 
             let task = tasks.get("affected-args").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Args)
+                Some(TaskOptionAffectedFiles {
+                    pass: TaskOptionAffectedFilesPattern::Args,
+                    ..Default::default()
+                })
             );
 
             let task = tasks.get("affected-env").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Env)
+                Some(TaskOptionAffectedFiles {
+                    pass: TaskOptionAffectedFilesPattern::Env,
+                    ..Default::default()
+                })
             );
         }
 

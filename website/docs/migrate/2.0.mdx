@@ -276,10 +276,12 @@ toolchains:
 - Renamed settings:
   - [`tasks.*.local`](#local-mode) -> `tasks.*.preset` using `server` value
   - `tasks.*.platform` -> `tasks.*.toolchains`
+  - `tasks.*.options.affectedPassInputs` -> `tasks.*.options.affectedFiles.passInputsWhenNoMatch`
 - Removed setting values:
   - `tasks.*.preset` value `watcher`
 - Changed settings:
   - `tasks.deps.*.args` no longer supports a string. Use a list of strings instead.
+  - `tasks.*.options.affectedFiles` now supports an object for more granular control.
 - Changed option defaults:
   - `tasks.*.options.envFile` now defaults to a list of files, instead of a single file, when
     `true`. Refer to the blog post for more information.

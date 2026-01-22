@@ -9,12 +9,13 @@ use moon_common::{
 use moon_config::{
     ConfigLoader, EnvMap, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
-    TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig, is_glob_like,
+    TaskDependencyConfig, TaskMergeStrategy, TaskOptionAffectedFilesEntry, TaskOptionCache,
+    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
+    ToolchainsConfig, is_glob_like,
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
-use moon_task::{Task, TaskArg, TaskOptionEnvFile, TaskOptions};
+use moon_task::{Task, TaskArg, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptions};
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -606,11 +607,20 @@ impl<'proj> TasksBuilder<'proj> {
 
         for config in chain {
             if let Some(affected_files) = &config.affected_files {
-                options.affected_files = Some(affected_files.to_owned());
-            }
+                let mut option = TaskOptionAffectedFiles::default();
 
-            if let Some(affected_pass_inputs) = &config.affected_pass_inputs {
-                options.affected_pass_inputs = *affected_pass_inputs;
+                match affected_files {
+                    TaskOptionAffectedFilesEntry::Pattern(pat) => {
+                        option.pass = pat.to_owned();
+                    }
+                    TaskOptionAffectedFilesEntry::Object(opt) => {
+                        option.pass = opt.pass.clone();
+                        option.pass_inputs_when_no_match =
+                            opt.pass_inputs_when_no_match.unwrap_or_default();
+                    }
+                };
+
+                options.affected_files = Some(option);
             }
 
             if let Some(allow_failure) = &config.allow_failure {

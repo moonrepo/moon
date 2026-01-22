@@ -272,8 +272,12 @@ pub fn load_tasks_config_in_format(format: &str) {
                 Input::Glob(stub_glob_input("/file.*")),
             ],
             task_options: Some(TaskOptionsConfig {
-                affected_files: Some(TaskOptionAffectedFiles::Args),
-                affected_pass_inputs: Some(true),
+                affected_files: Some(TaskOptionAffectedFilesEntry::Object(
+                    TaskOptionAffectedFilesConfig {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        pass_inputs_when_no_match: Some(true)
+                    }
+                )),
                 allow_failure: Some(true),
                 cache: Some(TaskOptionCache::Enabled(false)),
                 cache_key: None,

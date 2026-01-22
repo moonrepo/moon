@@ -94,8 +94,9 @@ tasks:
     command: bash ./affectedFiles.sh
     toolchain: system
     options:
-      affectedFiles: true
-      affectedPassInputs: true
+      affectedFiles:
+        pass: true
+        passInputsWhenNoMatch: true
   affectedFilesArgs:
     command: bash ./affectedFiles.sh
     toolchain: system

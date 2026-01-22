@@ -40,8 +40,10 @@ implicitInputs = [
 ]
 
 taskOptions {
-	affectedFiles = "args"
-	affectedPassInputs = true
+	affectedFiles = {
+		pass = "args"
+		passInputsWhenNoMatch = true
+	}
 	allowFailure = true
 	cache = false
 	envFile = ".env"

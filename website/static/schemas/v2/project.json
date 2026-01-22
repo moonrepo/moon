@@ -1346,6 +1346,63 @@
         "windows"
       ]
     },
+    "TaskOptionAffectedFilesConfig": {
+      "description": "Expanded information about affected files handling.",
+      "type": "object",
+      "properties": {
+        "pass": {
+          "title": "pass",
+          "description": "The pattern in which affected files will be passed to the affected task.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "args",
+                "env"
+              ]
+            }
+          ]
+        },
+        "passInputsWhenNoMatch": {
+          "title": "passInputsWhenNoMatch",
+          "description": "When no affected files are matching, pass the task's inputs as arguments to the command, instead of ..",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "When no affected files are matching, pass the task's inputs as arguments to the command, instead of `.`."
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskOptionAffectedFilesEntry": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "args",
+                "env"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/TaskOptionAffectedFilesConfig"
+        }
+      ]
+    },
     "TaskOptionEnvFile": {
       "anyOf": [
         {
@@ -1371,36 +1428,12 @@
           "description": "The pattern in which affected files will be passed to the task.",
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "enum": [
-                    "args",
-                    "env"
-                  ]
-                }
-              ]
+              "$ref": "#/definitions/TaskOptionAffectedFilesEntry"
             },
             {
               "type": "null"
             }
           ]
-        },
-        "affectedPassInputs": {
-          "title": "affectedPassInputs",
-          "description": "When affected and no files are matching, pass the task's inputs as arguments to the command, instead of ..",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "When affected and no files are matching, pass the task's inputs as arguments to the command, instead of `.`."
         },
         "allowFailure": {
           "title": "allowFailure",

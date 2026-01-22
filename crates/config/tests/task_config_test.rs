@@ -614,7 +614,10 @@ options:
 
         mod affected_files {
             use super::*;
-            use moon_config::TaskOptionAffectedFiles;
+            use moon_config::{
+                TaskOptionAffectedFilesConfig, TaskOptionAffectedFilesEntry,
+                TaskOptionAffectedFilesPattern,
+            };
 
             #[test]
             fn can_use_true() {
@@ -628,7 +631,31 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Enabled(true))
+                    Some(TaskOptionAffectedFilesEntry::Pattern(
+                        TaskOptionAffectedFilesPattern::Enabled(true)
+                    ))
+                );
+            }
+
+            #[test]
+            fn can_use_true_object() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: true
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Enabled(true),
+                            ..Default::default()
+                        }
+                    ))
                 );
             }
 
@@ -644,7 +671,31 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Enabled(false))
+                    Some(TaskOptionAffectedFilesEntry::Pattern(
+                        TaskOptionAffectedFilesPattern::Enabled(false)
+                    ))
+                );
+            }
+
+            #[test]
+            fn can_use_false_object() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: false
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Enabled(false),
+                            ..Default::default()
+                        }
+                    ))
                 );
             }
 
@@ -660,7 +711,31 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Args)
+                    Some(TaskOptionAffectedFilesEntry::Pattern(
+                        TaskOptionAffectedFilesPattern::Args
+                    ))
+                );
+            }
+
+            #[test]
+            fn can_set_args_object() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: args
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Args,
+                            ..Default::default()
+                        }
+                    ))
                 );
             }
 
@@ -676,12 +751,59 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Env)
+                    Some(TaskOptionAffectedFilesEntry::Pattern(
+                        TaskOptionAffectedFilesPattern::Env
+                    ))
                 );
             }
 
             #[test]
-            #[should_panic(expected = "expected `args`, `env`, or a boolean")]
+            fn can_set_env_object() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: env
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Env,
+                            ..Default::default()
+                        }
+                    ))
+                );
+            }
+
+            #[test]
+            fn can_set_object_fields() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: args
+    passInputsWhenNoMatch: true
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Args,
+                            pass_inputs_when_no_match: Some(true),
+                        }
+                    ))
+                );
+            }
+
+            #[test]
+            #[should_panic(expected = "expected `args`, `env`, a boolean, or an object")]
             fn errors_on_invalid_variant() {
                 test_parse_config(
                     r"

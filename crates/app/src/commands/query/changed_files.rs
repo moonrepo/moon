@@ -1,6 +1,6 @@
 use crate::queries::changed_files::*;
 use crate::session::MoonSession;
-use clap::{ArgAction, Args};
+use clap::Args;
 use moon_common::is_ci;
 use moon_vcs::ChangedStatus;
 use starbase::AppResult;
@@ -15,7 +15,8 @@ pub struct QueryChangedFilesArgs {
     #[arg(
         long,
         help = "When on the default branch, compare against the previous revision",
-        action = ArgAction::SetTrue
+        default_missing_value = "true",
+        num_args=0..=1
     )]
     default_branch: Option<bool>,
 
@@ -25,18 +26,16 @@ pub struct QueryChangedFilesArgs {
     #[arg(
         long,
         help = "Gather files from your local state instead of the remote",
-        action = ArgAction::SetTrue,
-        group = "local-remote",
+        group = "local-remote"
     )]
-    local: Option<bool>,
+    local: bool,
 
     #[arg(
         long,
         help = "Gather files from the remote state instead of your local",
-        action = ArgAction::SetTrue,
-        group = "local-remote",
+        group = "local-remote"
     )]
-    remote: Option<bool>,
+    remote: bool,
 
     #[arg(long, help = "Filter files based on a changed status")]
     status: Vec<ChangedStatus>,
@@ -54,8 +53,8 @@ pub async fn changed_files(session: MoonSession, args: QueryChangedFilesArgs) ->
             default_branch: args.default_branch.unwrap_or(ci),
             head: args.head,
             local: match (args.local, args.remote) {
-                (Some(local), None) => local,
-                (None, Some(remote)) => !remote,
+                (true, false) => true,
+                (false, true) => false,
                 _ => !ci,
             },
             status: args.status,

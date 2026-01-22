@@ -4,7 +4,7 @@ use crate::prompts::select_targets;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
 use ci_env::CiOutput;
-use clap::{ArgAction, Args, ValueEnum};
+use clap::{Args, ValueEnum};
 use iocraft::prelude::element;
 use moon_action::Action;
 use moon_action_context::ActionContext;
@@ -53,7 +53,8 @@ pub struct ExecArgs {
     #[arg(
         long,
         help = "Execute the pipeline as if it's a CI environment",
-        action = ArgAction::SetTrue,
+        default_missing_value = "true",
+        num_args=0..=1
     )]
     pub ci: Option<bool>,
 
@@ -143,15 +144,13 @@ pub struct ExecWorkflow {
 
 impl ExecWorkflow {
     pub fn new(session: MoonSession, args: ExecArgs) -> miette::Result<Self> {
-        let ci_env = args.ci.unwrap_or(is_ci());
-
         Ok(Self {
             affected: args
                 .affected
                 .as_ref()
                 .is_some_and(|affected| match affected {
                     Some(inner) => inner.is_enabled(),
-                    None => true, // no arg value
+                    None => true, // No arg value
                 }),
             summary: args
                 .summary
@@ -160,7 +159,7 @@ impl ExecWorkflow {
                 .unwrap_or_default()
                 .to_level(),
             ci_check: args.only_ci_tasks,
-            ci_env,
+            ci_env: args.ci.unwrap_or(is_ci()),
             console: session.get_console()?,
             session,
             step: 0,

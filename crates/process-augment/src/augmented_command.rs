@@ -292,20 +292,42 @@ impl<'app> AugmentedCommand<'app> {
             }
         }
 
-        self.inherit_from_toolchains(toolchain_ids).await?;
+        self.inherit_from_toolchains(toolchain_ids, project).await?;
 
         Ok(())
     }
 
-    async fn inherit_from_toolchains(&mut self, toolchain_ids: Vec<&Id>) -> miette::Result<()> {
+    async fn inherit_from_toolchains(
+        &mut self,
+        toolchain_ids: Vec<&Id>,
+        project: Option<&Project>,
+    ) -> miette::Result<()> {
         let mut map = FxHashMap::default();
 
+        // First pass, gather workspace-level
         for (id, config) in &self.context.toolchains_config.plugins {
             if let Some(version) = &config.version
                 && toolchain_ids.contains(&id)
                 && !is_using_global_toolchain(self.bag, id)
             {
                 map.insert(id, version);
+            }
+        }
+
+        // Second pass, gather project-level (because of overrides)
+        if let Some(project_config) = project.as_ref().map(|p| &p.config) {
+            for (id, config) in &project_config.toolchains.plugins {
+                if !config.is_enabled() {
+                    map.remove(id);
+                    continue;
+                }
+
+                if let Some(version) = config.get_version()
+                    && toolchain_ids.contains(&id)
+                    && !is_using_global_toolchain(self.bag, id)
+                {
+                    map.insert(id, version);
+                }
             }
         }
 

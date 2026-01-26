@@ -58,6 +58,8 @@ mod query_changed_files {
             ]);
         });
 
+        assert.debug();
+
         let json: QueryChangedFilesResult = serde_json::from_str(assert.stdout().trim()).unwrap();
 
         assert_eq!(

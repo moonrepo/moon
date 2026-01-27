@@ -103,15 +103,13 @@ shorthand syntax that previously existed with `moon <target>`.
 
 ```shell
 # Before
+$ moon run app:build
 $ moon exec app:build
 $ moon app:build
 
 # After
 $ moonx app:build
 ```
-
-> The `moonx` binary is only available when moon is installed via the official installers, and is
-> not available through the `@moonrepo/cli` npm package.
 
 ### Support for `.config`
 
@@ -468,7 +466,7 @@ We've rewritten our Git hooks system to be compatible with Git worktrees, and to
 `core.hooksPath` Git configuration. Previously hooks were written to `.git/hooks` at the repository
 root, but we now don't write to `.git` at all, and entirely rely on `.moon/hooks` in each tree.
 
-> You may need to enable the `extensions.worktreeConfig` Git setting for this to work properly:
+> You may need to enable the `extensions.worktreeConfig` Git setting for this to work properly.
 
 ## Other changes
 

@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use moon_common::Id;
+use moon_config::is_glob_like;
 use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
@@ -8,7 +9,7 @@ use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
-use starbase_utils::glob::{self, GlobSet, GlobWalkOptions};
+use starbase_utils::glob::{self, GlobSet};
 use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -226,12 +227,19 @@ impl ToolchainPlugin {
             return Ok(false);
         }
 
-        // Oh no, heavy lookup... but at least it's cached
-        let results = glob::walk_fast_with_options(
-            dir,
-            &self.metadata.config_file_globs,
-            GlobWalkOptions::default().cache(),
-        )?;
+        // Before we glob, extract non-globs from the list
+        let mut globs = vec![];
+
+        for glob in &self.metadata.config_file_globs {
+            if is_glob_like(glob) {
+                globs.push(glob);
+            } else if dir.join(glob).exists() {
+                return Ok(true);
+            }
+        }
+
+        // Oh no, heavy lookup...
+        let results = glob::walk_fast(dir, globs)?;
 
         Ok(!results.is_empty())
     }

@@ -150,7 +150,7 @@ dependsOn:
         }
 
         #[test]
-        #[should_panic(expected = "expected a project identifier or dependency config object")]
+        #[should_panic(expected = "failed to parse as any variant of PartialProjectDependsOn")]
         fn errors_on_invalid_object_scope() {
             test_load_config(
                 "moon.yml",
@@ -555,7 +555,7 @@ toolchains:
             assert!(config.toolchains.plugins.contains_key("node"));
             assert!(config.toolchains.plugins.contains_key("typescript"));
 
-            if let ProjectToolchainEntry::Config(node) =
+            if let ProjectToolchainEntry::Object(node) =
                 config.toolchains.plugins.get("node").unwrap()
             {
                 assert_eq!(
@@ -564,7 +564,7 @@ toolchains:
                 );
             }
 
-            if let ProjectToolchainEntry::Config(ts) =
+            if let ProjectToolchainEntry::Object(ts) =
                 config.toolchains.plugins.get("typescript").unwrap()
             {
                 assert_eq!(
@@ -640,7 +640,7 @@ toolchains:
 
             assert_eq!(
                 config.toolchains.plugins.get("example").unwrap(),
-                &ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                &ProjectToolchainEntry::Object(ToolchainPluginConfig {
                     version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
                     config: BTreeMap::from_iter([("custom".into(), serde_json::Value::Bool(true))]),
                     ..Default::default()

@@ -398,7 +398,7 @@ variables:
             assert_eq!(
                 *config.variables.get("strum").unwrap(),
                 TemplateVariable::Enum(TemplateVariableEnumSetting {
-                    default: TemplateVariableEnumDefault::Vec(vec!["a".into(), "c".into()]),
+                    default: TemplateVariableEnumDefault::List(vec!["a".into(), "c".into()]),
                     internal: false,
                     multiple: Some(true),
                     order: None,
@@ -416,7 +416,9 @@ variables:
         }
 
         #[test]
-        #[should_panic(expected = "expected a value string or value object with label")]
+        #[should_panic(
+            expected = "failed to parse as any variant of PartialTemplateVariableEnumValue"
+        )]
         fn invalid_string_enum() {
             test_load_config(
                 "template.yml",

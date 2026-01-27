@@ -15,7 +15,7 @@ config_enum!(
         Disabled, // null
         Enabled(bool),
         #[setting(nested)]
-        Config(ToolchainPluginConfig),
+        Object(ToolchainPluginConfig),
     }
 );
 
@@ -24,13 +24,13 @@ impl ProjectToolchainEntry {
         match self {
             Self::Disabled => false,
             Self::Enabled(state) => *state,
-            Self::Config(_) => true,
+            Self::Object(_) => true,
         }
     }
 
     pub fn get_version(&self) -> Option<&UnresolvedVersionSpec> {
         match self {
-            Self::Config(config) => config.version.as_ref(),
+            Self::Object(config) => config.version.as_ref(),
             _ => None,
         }
     }

@@ -43,7 +43,7 @@ pub(crate) fn validate_deps<D, C>(
         let scope;
 
         match dep {
-            PartialTaskDependency::Config(cfg) => {
+            PartialTaskDependency::Object(cfg) => {
                 if let Some(target) = &cfg.target {
                     scope = &target.scope;
                 } else {
@@ -98,7 +98,7 @@ config_unit_enum!(
 config_enum!(
     /// Configures a command and its arguments to execute.
     #[derive(Config)]
-    #[serde(untagged, expecting = "expected a string or a list of strings")]
+    #[serde(untagged)]
     pub enum TaskArgs {
         /// No value defined.
         #[setting(default, null)]
@@ -162,24 +162,21 @@ impl TaskDependencyConfig {
 config_enum!(
     /// Configures another task that this task depends on.
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a valid target or dependency config object"
-    )]
+    #[serde(untagged)]
     pub enum TaskDependency {
         /// A task referenced by target.
         Target(Target),
 
         /// A task referenced by target, with additional parameters to pass through.
         #[setting(nested)]
-        Config(TaskDependencyConfig),
+        Object(TaskDependencyConfig),
     }
 );
 
 impl TaskDependency {
     pub fn into_config(self) -> TaskDependencyConfig {
         match self {
-            Self::Config(config) => config,
+            Self::Object(config) => config,
             Self::Target(target) => TaskDependencyConfig::new(target),
         }
     }

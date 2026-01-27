@@ -7,10 +7,7 @@ use schematic::{Config, PathSegment, ValidateError};
 config_enum!(
     /// A mapping of file paths and file globs to owners.
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a list of paths, or a map of paths to owners"
-    )]
+    #[serde(untagged)]
     pub enum OwnersPaths {
         /// A list of file paths and glob patterns. The owner of these
         /// is the project-level `defaultOwner`.

@@ -49,7 +49,7 @@ mod task_config {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "expected a string or a list of strings")]
+        #[should_panic(expected = "failed to parse as any variant of PartialTaskArgs")]
         fn errors_on_invalid_type() {
             test_parse_config("command: 123", load_config_from_code);
         }
@@ -186,20 +186,20 @@ deps:
             assert_eq!(
                 config.deps,
                 Some(vec![
-                    TaskDependency::Config(TaskDependencyConfig::new(
+                    TaskDependency::Object(TaskDependencyConfig::new(
                         Target::parse("task").unwrap()
                     )),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
                         target: Target::parse("project:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("^:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
                         env: IndexMap::from_iter([
                             ("FOO".into(), Some("abc".to_owned())),
@@ -213,7 +213,7 @@ deps:
         }
 
         #[test]
-        #[should_panic(expected = "expected a valid target or dependency config object")]
+        #[should_panic(expected = "failed to parse as any variant of PartialTaskDependency")]
         fn errors_on_invalid_format() {
             test_parse_config("deps: ['bad target']", load_config_from_code);
         }

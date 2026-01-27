@@ -34353,6 +34353,73 @@ things we are still working on:
 
 ---
 
+## Release Candidate of moon v2 now available!
+
+About two weeks ago we announced the [beta release of moon v2](/blog/moon-v2-alpha), and today we
+are excited to share that the first release candidate is now available! With this RC, we're one step
+closer to an official v2 release.
+
+<!--truncate-->
+
+## How to use
+
+You can install the beta with proto (>= 0.54.1), or download it directly from the
+[GitHub release page](https://github.com/moonrepo/moon/releases/tag/v2.0.0-beta.0).
+
+```shell
+$ proto install moon 2.0.0-rc.0
+```
+
+Alternatively, you can try using the new shell install scripts.
+
+```shell
+# Unix
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/moonrepo/moon/releases/download/v2.0.0-rc.0/moon_cli-installer.sh | sh
+
+# Windows
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/moonrepo/moon/releases/download/v2.0.0-rc.0/moon_cli-installer.ps1 | iex"
+```
+
+## What's changed since beta?
+
+Besides a handful of bug fixes and performance improvements (thanks to all for testing), the biggest
+change this release is [Python toolchain](https://github.com/moonrepo/plugins/pull/101) support.
+
+Unlike other toolchains, the Python toolchain will be marked as unstable for a little while longer
+as we work through some final issues (as we are not Python experts). However, you can now use Python
+projects in moon v2!
+
+```yaml title=".moon/toolchains.yml"
+unstable_python:
+  packageManager: 'pip' # or 'uv'
+
+unstable_pip: {}
+# unstable_uv: {}
+```
+
+When using the Python toolchain, please note the following conventions (subject to change):
+
+- A `pyproject.toml` is preferred, but not a requirement. However, we haven't tested without one.
+- Use either `pip` or `uv` as the package manager.
+- When using `pip`, a `requirements.txt` is considered a lockfile, while `requirements.in` is a
+  manifest.
+- Virtual environments are supported, but are created in the package root (uv workspace root, pip
+  package) by default. We know this is not ideal for all workflows, and are looking into options to
+  improve this.
+
+> As mentioned above, we are not Python experts, and don't have the requisite knowledge to implement
+> Python developer workflows. We'd appreciate any help from the community to improve this toolchain!
+
+## What's next?
+
+Now that Python has landed, we are focused on wrapping up any remaining issues and PRs before the
+stable release, which we are aiming for next week, February 2nd! We don't plan to introduce any new
+breaking changes, only bug fixes, polish, and performance improvements.
+
+We'd appreciate any help testing this release candidate before then!
+
+---
+
 ## moon v2.0 - Official "Phobos" release!
 
 TODO: This blog post is a work in progress!
@@ -34451,15 +34518,13 @@ shorthand syntax that previously existed with `moon <target>`.
 
 ```shell
 # Before
+$ moon run app:build
 $ moon exec app:build
 $ moon app:build
 
 # After
 $ moonx app:build
 ```
-
-> The `moonx` binary is only available when moon is installed via the official installers, and is
-> not available through the `@moonrepo/cli` npm package.
 
 ### Support for `.config`
 
@@ -34816,7 +34881,7 @@ We've rewritten our Git hooks system to be compatible with Git worktrees, and to
 `core.hooksPath` Git configuration. Previously hooks were written to `.git/hooks` at the repository
 root, but we now don't write to `.git` at all, and entirely rely on `.moon/hooks` in each tree.
 
-> You may need to enable the `extensions.worktreeConfig` Git setting for this to work properly:
+> You may need to enable the `extensions.worktreeConfig` Git setting for this to work properly.
 
 ## Other changes
 

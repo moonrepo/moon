@@ -271,4 +271,5 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [moon v1.41 - Deno WASM toolchain and task input/output improvements](https://moonrepo.dev/blog/2025-09-28_moon-v1.41): With this release, we're introducing the final piece of the JavaScript ecosystem puzzle, Deno!
 - [Alpha release of moon v2 now available!](https://moonrepo.dev/blog/2026-01-01_moon-v2-alpha): After months of hard work, we are excited to announce the alpha release of moon v2! This major
 - [Beta release of moon v2 now available!](https://moonrepo.dev/blog/2026-01-13_moon-v2-beta): About two weeks ago we announced the [alpha release of moon v2](/blog/moon-v2-alpha), and today we
+- [Release Candidate of moon v2 now available!](https://moonrepo.dev/blog/2026-01-26_moon-v2-rc): About two weeks ago we announced the [beta release of moon v2](/blog/moon-v2-alpha), and today we
 - [moon v2.0 - Official "Phobos" release!](https://moonrepo.dev/blog/2026-02-01_moon-v2.0): TODO: This blog post is a work in progress!

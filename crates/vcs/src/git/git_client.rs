@@ -92,7 +92,7 @@ impl Git {
             Ok(repo) => {
                 repository_root = get_repository_root(repo.common_dir());
 
-                worktree.work_dir = repo.workdir().unwrap_or(repo.git_dir()).into();
+                worktree.work_dir = clean_components(repo.workdir().unwrap_or(repo.git_dir()));
                 worktree.git_dir = clean_components(repo.git_dir());
 
                 match repo.kind() {
@@ -143,11 +143,11 @@ impl Git {
                             && let Ok(rel_path) = sub.path()
                         {
                             submodules.push(GitTree {
-                                work_dir: if work_dir.is_absolute() {
+                                work_dir: clean_components(if work_dir.is_absolute() {
                                     work_dir
                                 } else {
                                     repository_root.join(work_dir)
-                                },
+                                }),
                                 git_dir: clean_components(sub.git_dir()),
                                 type_of: GitTreeType::Submodule,
                                 path: RelativePathBuf::from(rel_path.to_string()),

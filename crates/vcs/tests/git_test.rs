@@ -1,6 +1,7 @@
 use moon_common::path::{RelativePath, RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_vcs::{ChangedFiles, ChangedStatus, Vcs, git::*};
 use rustc_hash::FxHashMap;
+use soft_canonicalize::soft_canonicalize;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fs;
@@ -138,22 +139,14 @@ mod git {
                 git.submodules,
                 vec![
                     GitTree {
-                        git_dir: sandbox
-                            .path()
-                            .join(".git/modules/submodules/mono")
-                            .canonicalize()
-                            .unwrap(),
+                        git_dir: sandbox.path().join(".git/modules/submodules/mono"),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("submodules/mono"),
                         ..Default::default()
                     },
                     GitTree {
-                        git_dir: sandbox
-                            .path()
-                            .join(".git/modules/submodules/poly")
-                            .canonicalize()
-                            .unwrap(),
+                        git_dir: sandbox.path().join(".git/modules/submodules/poly"),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("submodules/poly"),
@@ -173,7 +166,25 @@ mod git {
             assert_eq!(git.worktree.work_dir, sandbox.path());
             assert_eq!(git.worktree.path.as_str(), "");
             assert_eq!(git.worktree.type_of, GitTreeType::Root);
-            assert_eq!(git.submodules, vec![])
+            assert_eq!(
+                git.submodules,
+                vec![
+                    GitTree {
+                        git_dir: sandbox.path().join("modules/submodules/mono"),
+                        path: "submodules/mono".into(),
+                        type_of: GitTreeType::Submodule,
+                        work_dir: sandbox.path().join("submodules/mono"),
+                        ..Default::default()
+                    },
+                    GitTree {
+                        git_dir: sandbox.path().join("modules/submodules/poly"),
+                        path: "submodules/poly".into(),
+                        type_of: GitTreeType::Submodule,
+                        work_dir: sandbox.path().join("submodules/poly"),
+                        ..Default::default()
+                    }
+                ]
+            )
         }
 
         #[tokio::test]
@@ -319,15 +330,14 @@ mod git {
         fn loads_trees() {
             let (sandbox, git) = create_worktree_sandbox(false);
 
-            assert_eq!(git.repository_root, sandbox.path());
+            assert_eq!(
+                git.repository_root,
+                soft_canonicalize(sandbox.path()).unwrap()
+            );
             assert_eq!(git.workspace_root, sandbox.path().join("trees/one"));
             assert_eq!(
                 git.worktree.git_dir,
-                sandbox
-                    .path()
-                    .join(".git/worktrees/one")
-                    .canonicalize()
-                    .unwrap()
+                soft_canonicalize(sandbox.path().join(".git/worktrees/one")).unwrap()
             );
             assert_eq!(git.worktree.work_dir, sandbox.path().join("trees/one"));
             assert_eq!(git.worktree.path.as_str(), "");
@@ -336,22 +346,24 @@ mod git {
                 git.submodules,
                 vec![
                     GitTree {
-                        git_dir: sandbox
-                            .path()
-                            .join(".git/worktrees/one/modules/submodules/mono")
-                            .canonicalize()
-                            .unwrap(),
+                        git_dir: soft_canonicalize(
+                            sandbox
+                                .path()
+                                .join(".git/worktrees/one/../../modules/submodules/mono")
+                        )
+                        .unwrap(),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/mono"),
                         ..Default::default()
                     },
                     GitTree {
-                        git_dir: sandbox
-                            .path()
-                            .join(".git/worktrees/one/modules/submodules/poly")
-                            .canonicalize()
-                            .unwrap(),
+                        git_dir: soft_canonicalize(
+                            sandbox
+                                .path()
+                                .join(".git/worktrees/one/../../modules/submodules/poly")
+                        )
+                        .unwrap(),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/poly"),
@@ -365,11 +377,14 @@ mod git {
         fn loads_trees_when_bare() {
             let (sandbox, git) = create_worktree_sandbox(true);
 
-            assert_eq!(git.repository_root, sandbox.path());
+            assert_eq!(
+                git.repository_root,
+                soft_canonicalize(sandbox.path()).unwrap()
+            );
             assert_eq!(git.workspace_root, sandbox.path().join("trees/one"));
             assert_eq!(
                 git.worktree.git_dir,
-                sandbox.path().join("worktrees/one").canonicalize().unwrap()
+                soft_canonicalize(sandbox.path().join("worktrees/one")).unwrap()
             );
             assert_eq!(git.worktree.work_dir, sandbox.path().join("trees/one"));
             assert_eq!(git.worktree.path.as_str(), "");
@@ -378,10 +393,7 @@ mod git {
                 git.submodules,
                 vec![
                     GitTree {
-                        git_dir: sandbox
-                            .path()
-                            .join("worktrees/one/modules/submodules/mono")
-                            .canonicalize()
+                        git_dir: soft_canonicalize(sandbox.path().join("modules/submodules/mono"))
                             .unwrap(),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
@@ -389,10 +401,7 @@ mod git {
                         ..Default::default()
                     },
                     GitTree {
-                        git_dir: sandbox
-                            .path()
-                            .join("worktrees/one/modules/submodules/poly")
-                            .canonicalize()
+                        git_dir: soft_canonicalize(sandbox.path().join("modules/submodules/poly"))
                             .unwrap(),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
@@ -421,7 +430,10 @@ mod git {
                 git.get_repository_slug().await.unwrap().as_str(),
                 "moonrepo/git-test"
             );
-            assert_eq!(git.get_repository_root().await.unwrap(), sandbox.path());
+            assert_eq!(
+                git.get_repository_root().await.unwrap(),
+                soft_canonicalize(sandbox.path()).unwrap()
+            );
             assert_eq!(
                 git.get_working_root().await.unwrap(),
                 sandbox.path().join("trees/one")
@@ -554,7 +566,7 @@ mod git {
 
             let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
-            assert!(git.submodules.is_empty());
+            assert!(!git.submodules.is_empty());
         }
     }
 
@@ -586,6 +598,7 @@ mod git {
         #[tokio::test]
         async fn different_dirs() {
             let sandbox = create_sandbox("vcs");
+            sandbox.create_file("nested/moon/file", "");
             sandbox.enable_git();
 
             let git = Git::load(

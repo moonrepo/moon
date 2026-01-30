@@ -31,7 +31,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
-soft-canonicalize = "0.5.4"
+soft-canonicalize = { version = "0.5.4", features = ["dunce"] }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 

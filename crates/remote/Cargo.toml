@@ -13,10 +13,10 @@ moon_feature_flags = { path = "../feature-flags" }
 moon_process = { path = "../process" }
 moon_task = { path = "../task" }
 async-trait = { workspace = true }
-bazel-remote-apis = { version = "0.21.0", features = ["serde"] }
+bazel-remote-apis = { version = "0.23.0", features = ["serde"] }
 chrono = { workspace = true }
 miette = { workspace = true }
-reqwest = { workspace = true, features = ["json", "rustls-tls"] }
+reqwest = { workspace = true, features = ["json"] }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
 serde = { workspace = true }
@@ -32,14 +32,14 @@ zstd = "0.13.3"
 # gRPC
 async-stream = "0.3.6"
 http = "1.4.0"
-tonic = { version = "0.14.2", default-features = false, features = [
+tonic = { version = "0.14.3", default-features = false, features = [
     "channel",
     "codegen",
     "gzip",
     "tls-aws-lc",
     "tls-native-roots",
 ] }
-tower = { version = "0.5.2", features = ["retry", "timeout"] }
+tower = { version = "0.5.3", features = ["retry", "timeout"] }
 
 [lints]
 workspace = true

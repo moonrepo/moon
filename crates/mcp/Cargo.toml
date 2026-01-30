@@ -13,15 +13,15 @@ moon_action = { path = "../action" }
 moon_action_graph = { path = "../action-graph" }
 moon_action_pipeline = { path = "../action-pipeline" }
 moon_app_context = { path = "../app-context" }
-moon_common = { version = "1.0.1", path = "../common" }
+moon_common = { version = "2.0.0", path = "../common" }
 moon_process = { path = "../process" }
-moon_project = { version = "1.0.1", path = "../project" }
-moon_task = { version = "1.0.1", path = "../task" }
+moon_project = { version = "2.0.0", path = "../project" }
+moon_task = { version = "2.0.0", path = "../task" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-rust-mcp-sdk = { version = "0.8.1", default-features = false, features = [
+rust-mcp-sdk = { version = "0.8.2", default-features = false, features = [
 	"macros",
 	"server",
 	"stdio",

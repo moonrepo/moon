@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_unwrap)]
+
 use crate::app_error::AppError;
 use crate::prompts::select_identifier;
 use crate::session::MoonSession;

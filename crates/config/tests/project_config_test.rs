@@ -150,7 +150,7 @@ dependsOn:
         }
 
         #[test]
-        #[should_panic(expected = "expected a project identifier or dependency config object")]
+        #[should_panic(expected = "failed to parse as any variant of PartialProjectDependsOn")]
         fn errors_on_invalid_object_scope() {
             test_load_config(
                 "moon.yml",

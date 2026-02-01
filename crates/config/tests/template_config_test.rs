@@ -416,7 +416,9 @@ variables:
         }
 
         #[test]
-        #[should_panic(expected = "expected a value string or value object with label")]
+        #[should_panic(
+            expected = "failed to parse as any variant of PartialTemplateVariableEnumValue"
+        )]
         fn invalid_string_enum() {
             test_load_config(
                 "template.yml",

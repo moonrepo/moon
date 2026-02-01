@@ -789,9 +789,6 @@
       "description": "Configures a command and its arguments to execute.",
       "anyOf": [
         {
-          "type": "null"
-        },
-        {
           "type": "string"
         },
         {

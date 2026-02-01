@@ -53,7 +53,7 @@ impl ToolchainRegistry {
     pub fn create_merged_config(&self, id: &str, project_config: &ProjectConfig) -> JsonValue {
         let mut data = self.create_config(id);
 
-        if let Some(ProjectToolchainEntry::Config(leaf_config)) =
+        if let Some(ProjectToolchainEntry::Object(leaf_config)) =
             project_config.toolchains.get_plugin_config(id)
         {
             let next = leaf_config.to_json();

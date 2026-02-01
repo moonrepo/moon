@@ -348,7 +348,7 @@ fn load_toolchain_config_by_id(
                 .toolchains
                 .get_plugin_config(&toolchain_id)
                 .and_then(|entry| match entry {
-                    ProjectToolchainEntry::Config(cfg) => Some(cfg),
+                    ProjectToolchainEntry::Object(cfg) => Some(cfg),
                     _ => None,
                 })
                 .unwrap_or(&default_config);

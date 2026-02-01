@@ -13,11 +13,11 @@ be used when attempting to [detect a version](../detection).
 $ proto pin go 1.20
 $ proto pin python 3.14 --to=global
 $ proto pin node lts --resolve
-$ proto pin npm latest --resolve --devEngines.packageManager
+$ proto pin npm latest --resolve --tool-native
 ```
 
 By default this will update the local [`./.prototools`](../config) file. Pass `--to` to customize
-the location, or use the `--devEngines.x` options below to store in the `package.json` for
+the location, or use the `--tool-native` option to store it in a tool specific location, like the `devEngines` field in the `package.json` for JavaScript tools like Node and npm.
 JS projects.
 
 ### Arguments
@@ -31,7 +31,7 @@ JS projects.
 - `--to` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
   and `user`.
   <VersionLabel version="0.41.0" />
-- `--devEngines.runtime` and `--devEngines.packageManager` - Pins the value in the local
+- `--tool-native` - Pins the value in the local
   `package.json`'s `devEngines` field, rather than any `.prototools` file. This is exclusively for
   JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc).
   <VersionLabel version="0.54.3">

@@ -15,3 +15,7 @@ yarn:
 typescript:
   routeOutDirToCache: true
   syncProjectReferences: true
+# unstable_python:
+#   packageManager: pip
+
+# unstable_pip: {}

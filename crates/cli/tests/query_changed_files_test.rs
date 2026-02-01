@@ -52,6 +52,8 @@ mod query_changed_files {
     fn can_supply_multi_status() {
         let sandbox = create_query_sandbox();
 
+        change_branch(&sandbox, "branch");
+
         let assert = sandbox.run_bin(|cmd| {
             cmd.arg("query").arg("changed-files").args([
                 "--status", "deleted", "--status", "added", "--status", "modified",

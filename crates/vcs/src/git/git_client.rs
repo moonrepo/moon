@@ -6,8 +6,13 @@ use crate::process_cache::ProcessCache;
 use crate::vcs::{Vcs, VcsHookEnvironment};
 use async_trait::async_trait;
 use git_url_parse::types::provider::GenericProvider;
+use gix::{
+    discover::Error as RepoError, discover::upwards::Error as UpwardsError, repository::Kind,
+};
 use miette::IntoDiagnostic;
-use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf};
+use moon_common::path::{
+    PathExt, RelativePathBuf, WorkspaceRelativePath, WorkspaceRelativePathBuf, clean_components,
+};
 use moon_process::find_command_on_path;
 use semver::Version;
 use std::collections::BTreeMap;
@@ -15,6 +20,19 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::debug;
+
+fn get_repository_root(common_dir: &Path) -> PathBuf {
+    // Worktrees trail with "../.." so we need to remove them
+    let dir = clean_components(common_dir);
+
+    // We also want to repository root, not the `.git` directory,
+    // so remove it and return the parent
+    if dir.ends_with(".git") {
+        return dir.parent().unwrap().into();
+    }
+
+    dir
+}
 
 enum GitConfigAction {
     Get(String),
@@ -24,9 +42,6 @@ enum GitConfigAction {
 
 #[derive(Debug)]
 pub struct Git {
-    /// Is this a bare repository.
-    pub bare: bool,
-
     /// Default branch name.
     pub default_branch: Arc<String>,
 
@@ -69,67 +84,103 @@ impl Git {
         );
 
         // Find the repository root and work tree
-        let mut bare = false;
-        let mut current_dir = workspace_root;
-        let mut worktree_root = None;
-        let repository_root;
+        let mut worktree = GitTree::default();
+        let mut submodules = vec![];
+        let mut repository_root = workspace_root.to_path_buf();
 
-        loop {
-            let git_check = current_dir.join(".git");
+        match gix::discover(workspace_root) {
+            Ok(repo) => {
+                repository_root = get_repository_root(repo.common_dir());
 
-            if git_check.exists() {
-                if git_check.is_file() {
+                worktree.work_dir = clean_components(repo.workdir().unwrap_or(repo.git_dir()));
+                worktree.git_dir = clean_components(repo.git_dir());
+
+                match repo.kind() {
+                    Kind::Bare => {
+                        debug!(
+                            git = ?worktree.work_dir,
+                            "Found a bare repository (things may not work correctly)"
+                        );
+                    }
+                    Kind::Submodule => {
+                        debug!(
+                            git = ?worktree.work_dir,
+                            "Found a .git file (submodule root)"
+                        );
+
+                        worktree.type_of = GitTreeType::Submodule;
+                    }
+                    Kind::WorkTree { is_linked } => {
+                        if is_linked {
+                            debug!(
+                                git = ?worktree.work_dir,
+                                "Found a .git file (worktree root)"
+                            );
+
+                            worktree.type_of = GitTreeType::Worktree;
+                        } else {
+                            debug!(
+                                git = ?worktree.work_dir,
+                                "Found a .git directory (repository root)"
+                            );
+                        };
+                    }
+                };
+
+                if let Some(subs) =
+                    repo.submodules()
+                        .map_err(|error| GitError::SubmodulesLoadFailed {
+                            error: Box::new(error),
+                        })?
+                {
                     debug!(
-                        git = ?git_check,
-                        "Found a .git file (submodule or worktree root)"
+                        modules_file = ?worktree.work_dir.join(".gitmodules"),
+                        "Loading submodules from .gitmodules",
                     );
 
-                    worktree_root = Some(current_dir.to_path_buf());
-                    // Don't break and continue searching for the actual root
-                } else {
-                    debug!(
-                        git = ?git_check,
-                        "Found a .git directory (repository root)"
-                    );
-
-                    repository_root = current_dir.to_path_buf();
-                    break;
+                    for sub in subs {
+                        if let Ok(work_dir) = sub.work_dir()
+                            && let Ok(rel_path) = sub.path()
+                        {
+                            submodules.push(GitTree {
+                                work_dir: clean_components(if work_dir.is_absolute() {
+                                    work_dir
+                                } else {
+                                    repository_root.join(work_dir)
+                                }),
+                                git_dir: clean_components(sub.git_dir()),
+                                type_of: GitTreeType::Submodule,
+                                path: RelativePathBuf::from(rel_path.to_string()),
+                                ..Default::default()
+                            });
+                        }
+                    }
                 }
             }
-            // Possible bare repository
-            else if current_dir.join("HEAD").exists() {
-                debug!(
-                    root = ?current_dir,
-                    "Found a potential bare repository root"
-                );
-
-                bare = true;
-                repository_root = current_dir.to_path_buf();
-                break;
-            }
-
-            match current_dir.parent() {
-                Some(parent) => current_dir = parent,
-                None => {
+            Err(error) => {
+                if let RepoError::Discover(inner) = &error
+                    && matches!(
+                        inner,
+                        UpwardsError::NoGitRepository { .. }
+                            | UpwardsError::NoGitRepositoryWithinCeiling { .. }
+                            | UpwardsError::NoGitRepositoryWithinFs { .. }
+                    )
+                {
                     debug!("Unable to find .git, falling back to workspace root");
 
-                    repository_root = workspace_root.to_path_buf();
-                    break;
+                    worktree.git_dir = workspace_root.join(".git");
+                    worktree.work_dir = workspace_root.into();
+                } else {
+                    return Err(GitError::RepositoryLoadFailed {
+                        error: Box::new(error),
+                    }
+                    .into());
                 }
-            };
-        }
-
-        // Load the main worktree and submodule trees
-        let worktree = match worktree_root {
-            Some(root) => GitTree::load_worktree(&root)?,
-            None => GitTree::load(&repository_root, bare)?,
+            }
         };
-
-        let submodules = GitTree::load_submodules(&worktree.work_dir)?;
 
         // Create the instance and load ignore files
         let mut git = Git {
-            bare,
             default_branch: Arc::new(default_branch.as_ref().to_owned()),
             remote_candidates: remote_candidates.to_owned(),
             repository_root,

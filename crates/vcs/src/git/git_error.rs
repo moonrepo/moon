@@ -12,7 +12,7 @@ pub enum GitError {
         error: Box<semver::Error>,
     },
 
-    #[diagnostic(code(git::ignore::load_invalid))]
+    #[diagnostic(code(git::ignore::load_failed))]
     #[error("Failed to load and parse {}.", .path.style(Style::Path))]
     IgnoreLoadFailed {
         path: PathBuf,
@@ -34,5 +34,19 @@ pub enum GitError {
         path: PathBuf,
         #[source]
         error: Box<std::io::Error>,
+    },
+
+    #[diagnostic(code(git::repository_failed))]
+    #[error("Failed to load Git repository.")]
+    RepositoryLoadFailed {
+        #[source]
+        error: Box<gix::discover::Error>,
+    },
+
+    #[diagnostic(code(git::submodules::load_failed))]
+    #[error("Failed to load Git submodules.")]
+    SubmodulesLoadFailed {
+        #[source]
+        error: Box<gix::submodule::modules::Error>,
     },
 }

@@ -372,6 +372,30 @@ fn migrate_toolchain_node_setting(root: &mut YamlMapping, setting: &YamlValue) {
     }
 }
 
+fn migrate_toolchain_python_setting(root: &mut YamlMapping, setting: &YamlValue) {
+    for (base_key, value) in setting.as_mapping().expect("`python` must be an object") {
+        let key = base_key.as_str().unwrap_or_default();
+
+        match key {
+            // Remove
+            "rootRequirementsOnly" | "rootVenvOnly" => {}
+            // Keep in toolchain
+            "plugin" | "version" | "venvName" => {
+                upsert_root_setting(root, "unstable_python", key, value);
+            }
+            // Move to own toolchain
+            "pip" | "uv" => {
+                root.entry(YamlValue::String(format!("unstable_{key}")))
+                    .or_insert_with(|| YamlValue::Mapping(Default::default()))
+                    .as_mapping_mut()
+                    .expect("must be an object")
+                    .extend(value.as_mapping().unwrap().to_owned());
+            }
+            _ => {}
+        }
+    }
+}
+
 fn migrate_toolchain_config_file(session: &MoonSession) -> miette::Result<()> {
     if session.config_dir.join("toolchain.pkl").exists() {
         warn_pkl_config_files();
@@ -406,7 +430,7 @@ fn migrate_toolchain_config_file(session: &MoonSession) -> miette::Result<()> {
                 }
 
                 "python" => {
-                    // TODO
+                    migrate_toolchain_python_setting(&mut new_data, setting);
                 }
 
                 _ => {

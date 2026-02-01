@@ -162,7 +162,8 @@ features, improvements, and much more!
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.54.1](https://github.com/moonrepo/proto/releases/tag/v0.54.0) (from 0.53.2).
+- Updated proto to [v0.55](https://github.com/moonrepo/proto/releases/tag/v0.55.0) from 0.53.2 (view
+  [v0.54](https://github.com/moonrepo/proto/releases/tag/v0.54.0) changes).
 - Updated wasmtime to v37.
 - Updated Rust to v1.93.0.
 - Updated dependencies.

@@ -17,8 +17,7 @@ $ proto pin npm latest --resolve --tool-native
 ```
 
 By default this will update the local [`./.prototools`](../config) file. Pass `--to` to customize
-the location, or use the `--tool-native` option to store it in a tool specific location, like the `devEngines` field in the `package.json` for JavaScript tools like Node and npm.
-JS projects.
+the location, or use the `--tool-native` 
 
 ### Arguments
 
@@ -31,7 +30,7 @@ JS projects.
 - `--to` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
   and `user`.
   <VersionLabel version="0.41.0" />
-- `--tool-native` - Pins the value in the local
-  `package.json`'s `devEngines` field, rather than any `.prototools` file. This is exclusively for
-  JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc).
-  <VersionLabel version="0.54.3">
+- `--tool-native` - Pins the version in a tool specific location. Examples:
+  - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc)
+    - Pins version in the `devEngines` field in the `package.json` file.
+  - <VersionLabel version="0.55.0">

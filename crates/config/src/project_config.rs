@@ -81,10 +81,7 @@ config_struct!(
 config_enum!(
     /// Expanded information about a project dependency.
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a project identifier or dependency config object"
-    )]
+    #[serde(untagged)]
     pub enum ProjectDependsOn {
         /// A project referenced by identifier.
         String(Id),

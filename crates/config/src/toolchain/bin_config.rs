@@ -23,7 +23,7 @@ config_struct!(
 config_enum!(
     /// Configures to a tool-specific global binary to install.
     #[derive(Config)]
-    #[serde(untagged, expecting = "expecting a bin name, or bin config object")]
+    #[serde(untagged)]
     pub enum BinEntry {
         /// Name of the binary to install.
         Name(String),

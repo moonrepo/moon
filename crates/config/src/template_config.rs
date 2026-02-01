@@ -49,10 +49,7 @@ config_struct!(
 
 config_enum!(
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a value string or value object with label"
-    )]
+    #[serde(untagged)]
     pub enum TemplateVariableEnumValue {
         String(String),
         #[setting(nested)]
@@ -174,7 +171,7 @@ impl TemplateVariableEnumSetting {
 config_enum!(
     /// Each type of template variable.
     #[derive(Config)]
-    #[serde(tag = "type", expecting = "expected a supported value type")]
+    #[serde(tag = "type")]
     pub enum TemplateVariable {
         /// An array variable.
         #[setting(nested)]

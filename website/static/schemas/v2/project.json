@@ -828,24 +828,6 @@
             "type": "string"
           }
         },
-        "metadata": {
-          "title": "metadata",
-          "description": "Custom metadata fields.",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
         "owner": {
           "title": "owner",
           "description": "The owner of the project. Can be an individual, team, or organization. The format is unspecified.",
@@ -872,7 +854,16 @@
           "markdownDescription": "A human-readable title of the project."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
+      }
     },
     "ProjectToolchainEntry": {
       "description": "Variants a project-level toolchain can be configured.",
@@ -936,21 +927,11 @@
               "type": "null"
             }
           ]
-        },
-        "plugins": {
-          "title": "plugins",
-          "description": "Overrides workspace-level toolchains by their identifier.",
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ProjectToolchainEntry"
-          },
-          "propertyNames": {
-            "$ref": "#/definitions/Id"
-          },
-          "markdownDescription": "Overrides workspace-level toolchains by their identifier."
         }
       },
-      "additionalProperties": false,
+      "additionalProperties": {
+        "$ref": "#/definitions/ProjectToolchainEntry"
+      },
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
     "ProjectWorkspaceConfig": {
@@ -1904,24 +1885,6 @@
       "description": "Configures an individual toolchain.",
       "type": "object",
       "properties": {
-        "config": {
-          "title": "config",
-          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use.",
@@ -1957,7 +1920,16 @@
           "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
+      }
     },
     "ToolchainPluginVersionFrom": {
       "description": "The strategy in which to inherit a version from .prototools.",

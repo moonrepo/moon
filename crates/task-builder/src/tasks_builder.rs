@@ -947,7 +947,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut res = CommandLineParseResult::default();
 
         match args {
-            TaskArgs::None => Ok(res),
+            TaskArgs::Noop => Ok(res),
             TaskArgs::List(list) => {
                 res.args = Some(list.iter().map(TaskArg::new).collect());
 
@@ -1121,7 +1121,7 @@ impl<'proj> TasksBuilder<'proj> {
             command_line.requires_shell = true;
         }
 
-        if config.args != TaskArgs::None {
+        if config.args != TaskArgs::Noop {
             let parse_result = self.parse_command_line(target, &config.args)?;
 
             if let Some(args) = parse_result.args {

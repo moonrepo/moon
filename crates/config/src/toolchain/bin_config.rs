@@ -23,22 +23,22 @@ config_struct!(
 config_enum!(
     /// Configures to a tool-specific global binary to install.
     #[derive(Config)]
-    #[serde(untagged, expecting = "expecting a bin name, or bin config object")]
+    #[serde(untagged)]
     pub enum BinEntry {
         /// Name of the binary to install.
-        Name(String),
+        String(String),
 
         /// Expanded configuration for the binary to install.
         #[setting(nested)]
-        Config(BinConfig),
+        Object(BinConfig),
     }
 );
 
 impl BinEntry {
     pub fn get_name(&self) -> &str {
         match self {
-            BinEntry::Name(name) => name,
-            BinEntry::Config(cfg) => &cfg.bin,
+            BinEntry::String(name) => name,
+            BinEntry::Object(cfg) => &cfg.bin,
         }
     }
 }

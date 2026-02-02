@@ -96,10 +96,7 @@ config_struct!(
 config_enum!(
     /// Configures projects in the workspace.
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a list of globs, a map of projects, or both"
-    )]
+    #[serde(untagged)]
     pub enum WorkspaceProjects {
         /// Using both glob patterns and file source paths.
         #[setting(nested)]

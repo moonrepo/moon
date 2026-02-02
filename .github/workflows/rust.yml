@@ -116,7 +116,9 @@ jobs:
         with:
           auto-install: true
           cache: true
-          proto-version: "0.54.1" # Keep in sync
+          proto-version: "0.55.1" # Keep in sync
+        env:
+          PROTO_LOG: trace
       - uses: mozilla-actions/sccache-action@v0.0.9
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       # Fixes issues where proto can't find a version because nothing is pinned globally

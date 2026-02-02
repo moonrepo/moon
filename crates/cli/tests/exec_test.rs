@@ -700,7 +700,7 @@ mod exec {
             });
 
             assert.failure().stderr(predicate::str::contains(
-                "projects: expected a list of globs, a map of projects, or both",
+                "projects: failed to parse as any variant",
             ));
         }
 

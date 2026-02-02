@@ -64,7 +64,7 @@ starbase_id = { version = "0.3.2", features = ["miette", "schematic"] }
 starbase_sandbox = "0.10.4"
 starbase_shell = "0.10.7"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.12.5", default-features = false, features = [
+starbase_utils = { version = "0.12.6", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",
@@ -89,12 +89,12 @@ uuid = { version = "1.20.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.13.0"
 extism-pdk = "1.4.1"
-proto_core = "0.55.1"
+proto_core = "0.55.2"
 proto_pdk_api = "0.31.6"
-proto_pdk_test_utils = "0.43.3"
+proto_pdk_test_utils = "0.43.4"
 system_env = "0.9.0"
 version_spec = "0.10.2"
-warpgate = "0.29.0"
+warpgate = "0.29.1"
 warpgate_api = "0.17.2"
 warpgate_pdk = "0.16.2"
 

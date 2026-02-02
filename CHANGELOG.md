@@ -73,6 +73,7 @@ features, improvements, and much more!
     overflow issues.
 - **Configuration**
   - Added support for more formats: JSON, TOML, and HCL.
+  - Improved error messages for union based settings.
   - `.moon/extensions.*`
     - New file for configuring extensions (formerly in `workspace.extensions`).
   - `.moon/tasks.*`
@@ -162,8 +163,8 @@ features, improvements, and much more!
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.55](https://github.com/moonrepo/proto/releases/tag/v0.55.0) from 0.53.2 (view
-  [v0.54](https://github.com/moonrepo/proto/releases/tag/v0.54.0) changes).
+- Updated proto to [v0.55.01](https://github.com/moonrepo/proto/releases/tag/v0.55.0) from 0.53.2
+  (view [v0.54](https://github.com/moonrepo/proto/releases/tag/v0.54.0) changes).
 - Updated wasmtime to v37.
 - Updated Rust to v1.93.0.
 - Updated dependencies.

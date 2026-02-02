@@ -3581,15 +3581,6 @@ checksum = "a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695"
 
 [[package]]
 name = "itertools"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
@@ -5706,7 +5697,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af22d08a625a2213a78dbb0ffa253318c5c79ce3133d32d296655a7bdfb02095"
 dependencies = [
  "heck",
- "itertools 0.14.0",
+ "itertools",
  "prost",
  "prost-types",
 ]
@@ -6091,7 +6082,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "343d3bd7056eda839b03204e68deff7d1b13aba7af2b2fd16890697274262ee7"
 dependencies = [
  "heck",
- "itertools 0.14.0",
+ "itertools",
  "log",
  "multimap",
  "petgraph",
@@ -6110,7 +6101,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "27c6023962132f4b30eb4c172c91ce92d933da334c59c23cddee82358ddafb0b"
 dependencies = [
  "anyhow",
- "itertools 0.14.0",
+ "itertools",
  "proc-macro2",
  "quote",
  "syn",
@@ -6127,9 +6118,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.55.1"
+version = "0.55.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b909da791f4d38ebae69027628eda9f5b740c5c38ec4ccea0175a3fdd4020aba"
+checksum = "562e3ce7fbba2a2ccc425a5a998c58efd274a74cf022ac984e11ef5fcf706e36"
 dependencies = [
  "convert_case",
  "docker_credential",
@@ -6188,9 +6179,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_test_utils"
-version = "0.43.3"
+version = "0.43.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae36cac85184d2f21e5d4d252ee817949a54acf1340b54f7c89e06544012ab6b"
+checksum = "87e4615c3fe8a7f1b2dda261a6c3ac9814b2998687e921dfc31355ce37c3b294"
 dependencies = [
  "extism",
  "proto_core",
@@ -7502,9 +7493,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.12.5"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "437d3792ebbbc69d987f040828fc7a740d7254f3bbf8d432ed4f03fa2ccf8854"
+checksum = "5ff32ea225eeb9288d1874ca2cdbc406eb2c6ca7b18d1b1c260236c7cd0eca45"
 dependencies = [
  "async-trait",
  "dirs",
@@ -8485,9 +8476,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.29.0"
+version = "0.29.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ab0c57c3410957c2f4ca791d4deb1007a76ca485e89d8743cd4dba51a6ab2b6"
+checksum = "7db607b3f35fcdb24d380c05b29836e715d3df2677cc33d1ed980c63ada20623"
 dependencies = [
  "async-trait",
  "compact_str 0.9.0",
@@ -8859,7 +8850,7 @@ dependencies = [
  "cranelift-frontend",
  "cranelift-native",
  "gimli",
- "itertools 0.14.0",
+ "itertools",
  "log",
  "object",
  "pulley-interpreter",
@@ -9016,16 +9007,16 @@ dependencies = [
 
 [[package]]
 name = "wax"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8d12a78aa0bab22d2f26ed1a96df7ab58e8a93506a3e20adb47c51a93b4e1357"
+checksum = "1f8cbf8125142b9b30321ac8721f54c52fbcd6659f76cf863d5e2e38c07a3d7b"
 dependencies = [
  "const_format",
- "itertools 0.11.0",
+ "itertools",
  "nom 7.1.3",
  "pori",
  "regex",
- "thiserror 1.0.69",
+ "thiserror 2.0.18",
  "walkdir",
 ]
 

@@ -1067,7 +1067,9 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "expected a single value, or a list of values")]
+            #[should_panic(
+                expected = "failed to parse as a single value, or a list of multiple values"
+            )]
             fn errors_for_unknown() {
                 test_parse_config(
                     r"

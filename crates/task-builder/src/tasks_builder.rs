@@ -947,10 +947,9 @@ impl<'proj> TasksBuilder<'proj> {
         let mut res = CommandLineParseResult::default();
 
         match args {
+            TaskArgs::None => Ok(res),
             TaskArgs::List(list) => {
-                if !list.is_empty() {
-                    res.args = Some(list.iter().map(TaskArg::new).collect());
-                }
+                res.args = Some(list.iter().map(TaskArg::new).collect());
 
                 Ok(res)
             }
@@ -1106,7 +1105,6 @@ impl<'proj> TasksBuilder<'proj> {
             return Ok(None);
         }
 
-        // Command
         let parse_result = self.parse_command_line(target, &config.command)?;
         let mut command_line = CommandLineParseResult::default();
 
@@ -1123,19 +1121,20 @@ impl<'proj> TasksBuilder<'proj> {
             command_line.requires_shell = true;
         }
 
-        // Args
-        let parse_result = self.parse_command_line(target, &config.args)?;
+        if config.args != TaskArgs::None {
+            let parse_result = self.parse_command_line(target, &config.args)?;
 
-        if let Some(args) = parse_result.args {
-            command_line.args.get_or_insert_default().extend(args);
-        }
+            if let Some(args) = parse_result.args {
+                command_line.args.get_or_insert_default().extend(args);
+            }
 
-        if let Some(env) = parse_result.env {
-            command_line.env.get_or_insert_default().extend(env);
-        }
+            if let Some(env) = parse_result.env {
+                command_line.env.get_or_insert_default().extend(env);
+            }
 
-        if parse_result.requires_shell {
-            command_line.requires_shell = true;
+            if parse_result.requires_shell {
+                command_line.requires_shell = true;
+            }
         }
 
         Ok(Some(command_line))

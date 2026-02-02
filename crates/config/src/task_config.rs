@@ -15,6 +15,7 @@ fn validate_command<C>(
     _finalize: bool,
 ) -> Result<(), ValidateError> {
     let invalid = match command {
+        PartialTaskArgs::None => false,
         PartialTaskArgs::String(args) => {
             let mut parts = args.split(' ');
             let cmd = parts.next();
@@ -99,10 +100,11 @@ config_enum!(
     #[derive(Config)]
     #[serde(untagged)]
     pub enum TaskArgs {
+        /// No value defined.
+        #[setting(default, null)]
+        None,
         /// A command and arguments as a string. Will be parsed into a list.
         String(String),
-
-        #[setting(default)]
         /// A command and arguments as a list of individual values.
         List(Vec<String>),
     }

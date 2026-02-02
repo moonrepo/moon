@@ -395,7 +395,7 @@ export interface TaskOptionsConfig {
 	windowsShell: TaskWindowsShell | null;
 }
 
-export type TaskArgs = string | string[];
+export type TaskArgs = null | string | string[];
 
 /** A file path output. */
 export interface FileOutput {
@@ -836,7 +836,7 @@ export interface PartialTaskOptionsConfig {
 	windowsShell?: TaskWindowsShell | null;
 }
 
-export type PartialTaskArgs = string | string[];
+export type PartialTaskArgs = null | string | string[];
 
 /** Configures a task to be ran within the action pipeline. */
 export interface PartialTaskConfig {

@@ -59,7 +59,7 @@ tasks:
         let build = config.tasks.get("build").unwrap();
 
         assert_eq!(build.command, TaskArgs::String("webpack".to_owned()));
-        assert_eq!(build.args, TaskArgs::List(vec![]));
+        assert_eq!(build.args, TaskArgs::None);
         assert_eq!(
             build.inputs,
             Some(vec![Input::Glob(stub_glob_input("src/**/*"))])

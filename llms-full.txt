@@ -19339,10 +19339,13 @@ be used when attempting to [detect a version](../detection).
 
 ```shell
 $ proto pin go 1.20
+$ proto pin python 3.14 --to=global
+$ proto pin node lts --resolve
+$ proto pin npm latest --resolve --tool-native
 ```
 
 By default this will update the local [`./.prototools`](../config) file. Pass `--to` to customize
-the location.
+the location, or use the `--tool-native` option to use a location unique to the tool.
 
 ### Arguments
 
@@ -19355,6 +19358,10 @@ the location.
 - `--to` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
   and `user`.
   <VersionLabel version="0.41.0" />
+- `--tool-native` - Pins the version in a tool specific location. Examples:
+  - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc)
+    - Pins version in the `devEngines` field in the `package.json` file.
+  - <VersionLabel version="0.55.0" />
 
 ---
 
@@ -19807,6 +19814,7 @@ The `proto unpin <tool>` command will unpin a version of a tool.
 
 ```shell
 $ proto unpin go
+$ proto unpin node --tool-native
 ```
 
 By default this will update the local [`./.prototools`](../config) file. Pass `--from` to customize
@@ -19821,6 +19829,9 @@ the location.
 - `--from` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
   and `user`.
   <VersionLabel version="0.41.0" />
+- `--tool-native` - Use a tool specific location, like the `devEngines` field in the `package.json`
+  for JavaScript tools.
+  <VersionLabel version="0.55.0" />
 
 ---
 
@@ -20547,14 +20558,14 @@ When detecting a version, the following steps are checked, in the order as liste
 
 #### 1. Version is explicitly passed as a command line argument
 
-```
-$ proto run node 18.0.0
+``` shell
+$ proto run node 24.0.0
 ```
 
 #### 2. Version is provided with the `PROTO_*_VERSION` environment variable
 
-```
-$ PROTO_NODE_VERSION=18.0.0 proto run node
+``` shell
+$ PROTO_NODE_VERSION=24.0.0 proto run node
 ```
 
 #### 3. Version is located by traversing the file system
@@ -20569,7 +20580,7 @@ A `.prototools` file was found and a version entry exists for the current tool. 
 as a "local version" and can be created with [`proto pin`](./commands/pin).
 
 ```toml title=".prototools"
-node = "18.0.0"
+node = "24.0.0"
 ```
 
 ##### 3.2. Version is defined in the tool's ecosystem
@@ -20579,14 +20590,29 @@ This includes version manager configs (`.nvmrc`, etc), manifest files (`package.
 more.
 
 ```text title=".nvmrc"
-18.0.0
+24.0.0
+```
+
+```json title="package.json"
+{
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.0.0"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": "11.0.0"
+    }
+  }
+}
 ```
 
 #### 4. Version is defined globally
 
 As the last check, we look for a "global version" that was pinned with
 [`proto pin --global`](./commands/pin) or [`proto install --pin`](./commands/install). This version
-is stored at `~/.proto/.prototools`.
+is stored at `~/.proto/.prototools` (`%USERPROFILE%\.proto\.prototools` on Windows).
 
 #### 5. Version _could not_ be detected
 

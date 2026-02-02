@@ -19,20 +19,11 @@
           "type": "null"
         }
       ]
-    },
-    "plugins": {
-      "title": "plugins",
-      "description": "Configures and integrates extensions into the system using a unique identifier.",
-      "type": "object",
-      "additionalProperties": {
-        "$ref": "#/definitions/ExtensionPluginConfig"
-      },
-      "propertyNames": {
-        "$ref": "#/definitions/Id"
-      }
     }
   },
-  "additionalProperties": false,
+  "additionalProperties": {
+    "$ref": "#/definitions/ExtensionPluginConfig"
+  },
   "definitions": {
     "ExtendsFrom": {
       "anyOf": [
@@ -51,24 +42,6 @@
       "description": "Configures an individual extension.",
       "type": "object",
       "properties": {
-        "config": {
-          "title": "config",
-          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use.",
@@ -82,7 +55,16 @@
           ]
         }
       },
-      "additionalProperties": false
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
+      }
     },
     "Id": {
       "type": "string"

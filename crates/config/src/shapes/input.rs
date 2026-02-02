@@ -3,6 +3,7 @@ use super::*;
 use crate::{
     config_struct, config_unit_enum, generate_io_file_methods, generate_io_glob_methods, patterns,
 };
+use deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError;
 use moon_common::Id;
 use moon_common::path::{
     RelativeFrom, WorkspaceRelativePathBuf, expand_to_workspace_relative, standardize_separators,
@@ -275,7 +276,7 @@ impl ProjectInput {
 
 /// The different patterns a task input can be defined as.
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-#[serde(try_from = "InputBase")]
+#[serde(try_from = "InputShape")]
 pub enum Input {
     EnvVar(String),
     EnvVarGlob(String),
@@ -401,13 +402,9 @@ impl Serialize for Input {
     }
 }
 
-#[derive(Deserialize)]
-#[serde(
-    untagged,
-    expecting = "expected a file path, glob pattern, URI string, or object"
-)]
-enum InputBase {
-    Raw(String),
+#[derive(DeserializeUntaggedVerboseError)]
+enum InputShape {
+    String(String),
     // From most complex to least
     Project(ProjectInput),
     FileGroup(FileGroupInput),
@@ -415,16 +412,16 @@ enum InputBase {
     Glob(GlobInput),
 }
 
-impl TryFrom<InputBase> for Input {
+impl TryFrom<InputShape> for Input {
     type Error = ParseError;
 
-    fn try_from(base: InputBase) -> Result<Self, Self::Error> {
+    fn try_from(base: InputShape) -> Result<Self, Self::Error> {
         match base {
-            InputBase::Raw(input) => Self::parse(input),
-            InputBase::File(input) => Ok(Self::File(input)),
-            InputBase::FileGroup(input) => Ok(Self::FileGroup(input)),
-            InputBase::Glob(input) => Ok(Self::Glob(input)),
-            InputBase::Project(input) => Ok(Self::Project(input)),
+            InputShape::String(input) => Self::parse(input),
+            InputShape::File(input) => Ok(Self::File(input)),
+            InputShape::FileGroup(input) => Ok(Self::FileGroup(input)),
+            InputShape::Glob(input) => Ok(Self::Glob(input)),
+            InputShape::Project(input) => Ok(Self::Project(input)),
         }
     }
 }

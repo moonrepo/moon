@@ -17,6 +17,21 @@ macro_rules! config_enum {
 }
 
 #[macro_export]
+macro_rules! config_untagged_enum {
+    ($impl:item) => {
+        #[derive(
+            Clone,
+            Debug,
+            Eq,
+            PartialEq,
+            deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError,
+            serde::Serialize,
+        )]
+        $impl
+    };
+}
+
+#[macro_export]
 macro_rules! config_unit_enum {
     ($impl:item) => {
         $crate::config_enum!(

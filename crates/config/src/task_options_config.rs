@@ -1,5 +1,5 @@
 use crate::shapes::{FilePath, OneOrMany};
-use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
+use crate::{config_enum, config_struct, config_unit_enum, config_untagged_enum, generate_switch};
 use schematic::schema::{StringType, UnionType};
 use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
 use std::env::consts;
@@ -54,12 +54,8 @@ config_struct!(
     }
 );
 
-config_enum!(
+config_untagged_enum!(
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected `args`, `env`, a boolean, or an object"
-    )]
     pub enum TaskOptionAffectedFilesEntry {
         Pattern(TaskOptionAffectedFilesPattern),
 
@@ -94,12 +90,8 @@ impl TaskOptionCache {
     }
 }
 
-config_enum!(
+config_untagged_enum!(
     /// The pattern in which a task is dependent on a `.env` file.
-    #[serde(
-        untagged,
-        expecting = "expected a boolean, a file path, or a list of file paths"
-    )]
     pub enum TaskOptionEnvFile {
         /// Uses an `.env` file in the project root.
         Enabled(bool),

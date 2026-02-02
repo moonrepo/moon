@@ -515,6 +515,30 @@ inputs:
                 ]
             );
         }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum InputShape")]
+        fn errors_for_invalid_type() {
+            test_parse_config(
+                r"
+inputs:
+  - 123
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum InputShape")]
+        fn errors_for_invalid_object_field() {
+            test_parse_config(
+                r"
+inputs:
+  - unknown: '*'
+",
+                load_config_from_code,
+            );
+        }
     }
 
     mod outputs {
@@ -556,6 +580,30 @@ outputs:
 outputs:
   - $FOO_BAR
   - file/path
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum OutputShape")]
+        fn errors_for_invalid_type() {
+            test_parse_config(
+                r"
+outputs:
+  - 123
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum OutputShape")]
+        fn errors_for_invalid_object_field() {
+            test_parse_config(
+                r"
+outputs:
+  - unknown: '*'
 ",
                 load_config_from_code,
             );
@@ -804,7 +852,9 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "expected `args`, `env`, a boolean, or an object")]
+            #[should_panic(
+                expected = "Failed to deserialize the untagged enum TaskOptionAffectedFilesEntry"
+            )]
             fn errors_on_invalid_variant() {
                 test_parse_config(
                     r"
@@ -936,7 +986,7 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "expected a boolean, a file path, or a list of file paths")]
+            #[should_panic(expected = "Failed to deserialize the untagged enum TaskOptionEnvFile")]
             fn errors_on_glob() {
                 test_parse_config(
                     r"

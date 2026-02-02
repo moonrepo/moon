@@ -9,8 +9,8 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
-moon_common = { version = "2.0.0", path = "../common" }
-moon_config = { version = "2.0.0", path = "../config" }
+moon_common = { version = "2.0.1", path = "../common" }
+moon_config = { version = "2.0.1", path = "../config" }
 moon_project = { version = "2.0.0", path = "../project" }
 moon_task = { version = "2.0.0", path = "../task" }
 derive_setters = "0.1.9"

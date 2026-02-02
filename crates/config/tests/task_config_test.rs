@@ -33,8 +33,8 @@ mod task_config {
     fn loads_defaults() {
         let config = test_parse_config("{}", load_config_from_code);
 
-        assert_eq!(config.command, TaskArgs::None);
-        assert_eq!(config.args, TaskArgs::None);
+        assert_eq!(config.command, TaskArgs::Noop);
+        assert_eq!(config.args, TaskArgs::Noop);
         assert_eq!(config.type_of, None);
     }
 

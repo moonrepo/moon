@@ -10,3 +10,7 @@ tasks:
   c:
     command: 'c'
     inputs: ['c.txt']
+    deps: ['d']
+  d:
+    command: 'd'
+    inputs: ['d.txt']

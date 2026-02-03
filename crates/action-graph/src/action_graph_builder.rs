@@ -50,21 +50,43 @@ macro_rules! insert_node_or_exit {
     }};
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct RunRequirements {
-    pub ci: bool,                 // Are we in a CI environment
-    pub ci_check: bool,           // Check the `runInCI` option
-    pub dependents: bool,         // Run dependent tasks as well
-    pub interactive: bool,        // Entire pipeline is interactive
-    pub job: Option<usize>,       // Current job index
-    pub job_total: Option<usize>, // Total amount of jobs
-    pub skip_affected: bool,      // Skip all affected checks
+    pub ci: bool,                    // Are we in a CI environment
+    pub ci_check: bool,              // Check the `runInCI` option
+    pub dependencies: UpstreamScope, // Run dependency tasks
+    pub dependents: DownstreamScope, // Run dependent tasks
+    pub interactive: bool,           // Entire pipeline is interactive
+    pub job: Option<usize>,          // Current job index
+    pub job_total: Option<usize>,    // Total amount of jobs
+    pub skip_affected: bool,         // Skip all affected checks
+}
+
+impl Default for RunRequirements {
+    fn default() -> Self {
+        Self {
+            ci: false,
+            ci_check: false,
+            dependencies: UpstreamScope::Deep,
+            dependents: DownstreamScope::None,
+            interactive: false,
+            job: None,
+            job_total: None,
+            skip_affected: false,
+        }
+    }
 }
 
 #[derive(Debug, Default)]
 pub struct RunPartition {
     pub targets: FxHashMap<NodeIndex, Target>,
     pub size: Option<usize>,
+}
+
+#[derive(Debug, Default)]
+pub struct RunTaskState {
+    pub down_depth: u8,
+    pub up_depth: u8,
 }
 
 pub struct ActionGraphBuilderOptions {
@@ -377,7 +399,9 @@ impl<'query> ActionGraphBuilder<'query> {
         task: &Task,
         reqs: &RunRequirements,
     ) -> miette::Result<Option<NodeIndex>> {
-        if let Some(index) = Box::pin(self.internal_run_task(task, reqs, None)).await? {
+        if let Some(index) =
+            Box::pin(self.internal_run_task(task, reqs, None, &mut RunTaskState::default())).await?
+        {
             // Only track primary targets at the top-level run methods,
             // as these are explicitly called by pipeline consumers!
             self.primary_targets.insert(task.target.clone());
@@ -395,7 +419,8 @@ impl<'query> ActionGraphBuilder<'query> {
         reqs: &RunRequirements,
         config: &TaskDependencyConfig,
     ) -> miette::Result<Option<NodeIndex>> {
-        Box::pin(self.internal_run_task(task, reqs, Some(config))).await
+        Box::pin(self.internal_run_task(task, reqs, Some(config), &mut RunTaskState::default()))
+            .await
     }
 
     #[instrument(skip(self))]
@@ -511,7 +536,10 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         task: &Task,
         reqs: &RunRequirements,
+        state: &mut RunTaskState,
     ) -> miette::Result<Vec<Option<NodeIndex>>> {
+        state.up_depth += 1;
+
         let parallel = task.options.run_deps_in_parallel;
         let mut indexes: Vec<Option<NodeIndex>> = vec![];
         let mut previous_target_index: Option<NodeIndex> = None;
@@ -522,7 +550,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 .await?
             {
                 if let Some(dep_index) =
-                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep))).await?
+                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), state)).await?
                 {
                     // When parallel, parent depends on child
                     if parallel {
@@ -550,7 +578,10 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         task: &Task,
         reqs: &RunRequirements,
+        state: &mut RunTaskState,
     ) -> miette::Result<Vec<Option<NodeIndex>>> {
+        state.down_depth += 1;
+
         let mut indexes = vec![];
 
         for dep_target in self.workspace_graph.tasks.dependents_of(task) {
@@ -558,7 +589,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 .internal_resolve_tasks_from_target(&dep_target, true)
                 .await?
             {
-                indexes.push(Box::pin(self.internal_run_task(&dep_task, reqs, None)).await?);
+                indexes.push(Box::pin(self.internal_run_task(&dep_task, reqs, None, state)).await?);
             }
         }
 
@@ -754,20 +785,12 @@ impl<'query> ActionGraphBuilder<'query> {
         task: &Task,
         reqs: &RunRequirements,
         config: Option<&TaskDependencyConfig>,
+        state: &mut RunTaskState,
     ) -> miette::Result<Option<NodeIndex>> {
         let project = self
             .workspace_graph
             .get_project(task.target.get_project_id()?)?;
-
-        let mut child_reqs = RunRequirements {
-            ci: reqs.ci,
-            ci_check: reqs.ci_check,
-            dependents: false,
-            interactive: reqs.interactive,
-            job: None,
-            job_total: None,
-            skip_affected: false,
-        };
+        let mut child_reqs = reqs.clone();
 
         // Abort early if not affected
         if let Some(affected) = &mut self.affected
@@ -802,8 +825,10 @@ impl<'query> ActionGraphBuilder<'query> {
             );
 
             // Dependents may still want to run though!
-            if reqs.dependents {
-                Box::pin(self.run_task_dependents(task, &child_reqs)).await?;
+            if reqs.dependents.is_in_scope(state.down_depth) {
+                child_reqs.skip_affected = false;
+
+                Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
             }
 
             return Ok(None);
@@ -849,17 +874,19 @@ impl<'query> ActionGraphBuilder<'query> {
         // Insert and then link edges
         let index = self.insert_node(node);
 
-        if !task.deps.is_empty() {
+        if !task.deps.is_empty() && reqs.dependencies.is_in_scope(state.up_depth) {
             child_reqs.skip_affected = true;
-            edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs)).await?);
+
+            edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?);
         }
 
         self.link_optional_requirements(index, edges)?;
 
         // And possibly dependents
-        if reqs.dependents {
+        if reqs.dependents.is_in_scope(state.down_depth) {
             child_reqs.skip_affected = false;
-            Box::pin(self.run_task_dependents(task, &child_reqs)).await?;
+
+            Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
         }
 
         Ok(Some(index))
@@ -1152,7 +1179,14 @@ impl<'query> ActionGraphBuilder<'query> {
 
 #[cfg(debug_assertions)]
 impl ActionGraphBuilder<'_> {
-    pub fn mock_affected(&mut self, mut op: impl FnMut(&mut AffectedTracker)) {
+    pub fn mock_affected(
+        &mut self,
+        changed_files: FxHashSet<WorkspaceRelativePathBuf>,
+        mut op: impl FnMut(&mut AffectedTracker),
+    ) {
+        self.set_changed_files(changed_files).unwrap();
+        self.set_affected().unwrap();
+
         if let Some(affected) = self.affected.as_mut() {
             op(affected);
         }

@@ -93,7 +93,7 @@ impl<'de, T: Deserialize<'de> + Schematic> Deserialize<'de> for OneOrMany<T> {
 
         // All variants failed, build the combined error message
         let mut error_msg =
-            format!("failed to parse as a single value, or a list of multiple values:");
+            "failed to parse as a single value, or a list of multiple values:".to_owned();
 
         for (variant_name, error) in &errors {
             error_msg.push_str(&format!("\n- {}: {}", variant_name, error));

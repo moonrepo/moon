@@ -3,7 +3,7 @@ mod utils;
 use moon_action::*;
 use moon_action_context::TargetState;
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
-use moon_affected::AffectedBy;
+use moon_affected::{AffectedBy, DownstreamScope, UpstreamScope};
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
     EnvMap, PipelineActionSwitch, SemVer, TaskDependencyConfig, TaskOptionRunInCI,
@@ -1150,10 +1150,7 @@ mod action_graph_builder {
                 task.input_files
                     .insert(file.clone(), TaskFileInput::default());
 
-                let changed_files = FxHashSet::from_iter([file]);
-                builder.set_changed_files(changed_files).unwrap();
-                builder.set_affected().unwrap();
-                builder.mock_affected(|affected| {
+                builder.mock_affected(FxHashSet::from_iter([file]), |affected| {
                     affected
                         .mark_task_affected(&task, AffectedBy::AlwaysAffected)
                         .unwrap();
@@ -1179,21 +1176,21 @@ mod action_graph_builder {
 
                 let task = wg.get_task_from_project("deps-affected", "b").unwrap();
 
-                let changed_files =
-                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]);
-                builder.set_changed_files(changed_files).unwrap();
-                builder.set_affected().unwrap();
-                builder.mock_affected(|affected| {
-                    affected
-                        .mark_task_affected(&task, AffectedBy::AlwaysAffected)
-                        .unwrap();
-                });
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]),
+                    |affected| {
+                        affected.with_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                        affected
+                            .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                    },
+                );
 
                 builder
                     .run_task(
                         &task,
                         &RunRequirements {
-                            dependents: true,
+                            dependents: DownstreamScope::Deep,
                             ..Default::default()
                         },
                     )
@@ -1210,10 +1207,16 @@ mod action_graph_builder {
                             project_id: Id::raw("deps-affected"),
                         }),
                         ActionNode::run_task(RunTaskNode::new(
+                            Target::parse("deps-affected:d").unwrap(),
+                        )),
+                        ActionNode::run_task(RunTaskNode::new(
                             Target::parse("deps-affected:c").unwrap(),
                         )),
                         ActionNode::run_task(RunTaskNode::new(
                             Target::parse("deps-affected:b").unwrap(),
+                        )),
+                        ActionNode::run_task(RunTaskNode::new(
+                            Target::parse("deps-affected:a").unwrap(),
                         )),
                     ]
                 );
@@ -1268,7 +1271,7 @@ mod action_graph_builder {
                         &RunRequirements {
                             ci: true,
                             ci_check: true,
-                            dependents: true,
+                            dependents: DownstreamScope::Deep,
                             ..RunRequirements::default()
                         },
                     )
@@ -1296,7 +1299,7 @@ mod action_graph_builder {
                         &RunRequirements {
                             ci: true,
                             ci_check: true,
-                            dependents: true,
+                            dependents: DownstreamScope::Deep,
                             ..RunRequirements::default()
                         },
                     )
@@ -1458,7 +1461,7 @@ mod action_graph_builder {
                         &RunRequirements {
                             ci: true,
                             ci_check: true,
-                            dependents: true,
+                            dependents: DownstreamScope::Deep,
                             ..RunRequirements::default()
                         },
                     )
@@ -1486,7 +1489,7 @@ mod action_graph_builder {
                         &RunRequirements {
                             ci: true,
                             ci_check: true,
-                            dependents: true,
+                            dependents: DownstreamScope::Deep,
                             ..RunRequirements::default()
                         },
                     )
@@ -1509,6 +1512,398 @@ mod action_graph_builder {
                 container
                     .create_builder(container.create_workspace_graph().await)
                     .await;
+            }
+        }
+
+        mod dependencies {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_none_depth() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_none_depth_affected() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps-affected", "b").unwrap();
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]),
+                    |affected| {
+                        affected.with_scopes(UpstreamScope::None, DownstreamScope::None);
+                        affected
+                            .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                    },
+                );
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_direct_depth() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Direct,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_direct_depth_affected() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps-affected", "b").unwrap();
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]),
+                    |affected| {
+                        affected.with_scopes(UpstreamScope::Direct, DownstreamScope::None);
+                        affected
+                            .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                    },
+                );
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Direct,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_deep_depth() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_deep_depth_affected() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps-affected", "b").unwrap();
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]),
+                    |affected| {
+                        affected.with_scopes(UpstreamScope::Deep, DownstreamScope::None);
+                        affected
+                            .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                    },
+                );
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+        }
+
+        mod dependents {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_none_depth() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_none_depth_affected() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps-affected", "c").unwrap();
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/c.txt")]),
+                    |affected| {
+                        affected.with_scopes(UpstreamScope::None, DownstreamScope::None);
+                        affected
+                            .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                    },
+                );
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_direct_depth() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::Direct,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_direct_depth_affected() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps-affected", "c").unwrap();
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/c.txt")]),
+                    |affected| {
+                        affected.with_scopes(UpstreamScope::None, DownstreamScope::Direct);
+                        affected
+                            .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                    },
+                );
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::Direct,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_deep_depth() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::Deep,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_set_deep_depth_affected() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps-affected", "c").unwrap();
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/c.txt")]),
+                    |affected| {
+                        affected.with_scopes(UpstreamScope::None, DownstreamScope::Deep);
+                        affected
+                            .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                    },
+                );
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::Deep,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
             }
         }
     }
@@ -1626,7 +2021,7 @@ mod action_graph_builder {
                 .run_task(
                     &task,
                     &RunRequirements {
-                        dependents: true,
+                        dependents: DownstreamScope::Deep,
                         ..RunRequirements::default()
                     },
                 )
@@ -1658,7 +2053,7 @@ mod action_graph_builder {
                     &RunRequirements {
                         ci: true,
                         ci_check: true,
-                        dependents: true,
+                        dependents: DownstreamScope::Deep,
                         ..RunRequirements::default()
                     },
                 )

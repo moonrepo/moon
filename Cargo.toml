@@ -11,7 +11,7 @@ cached = "0.56.0"
 chrono = { version = "0.4.43", features = ["serde"] }
 cd_env = "0.3.1"
 ci_env = "0.4.1"
-clap = { version = "4.5.56", default-features = false, features = [
+clap = { version = "4.5.57", default-features = false, features = [
     "derive",
     "std",
     "error-context",
@@ -33,7 +33,7 @@ petgraph = { version = "0.8.3", default-features = false, features = [
     "serde-1",
 ] }
 relative-path = { version = "2.0.1" }
-regex = { version = "1.12.2", default-features = false, features = [
+regex = { version = "1.12.3", default-features = false, features = [
     "std",
     "perf",
 ] }
@@ -43,7 +43,7 @@ reqwest = { version = "0.13.1", default-features = false, features = [
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
-scc = "3.5.4"
+scc = "3.5.5"
 schematic = { version = "0.19.4", default-features = false, features = [
     "schema",
 ] }
@@ -58,7 +58,7 @@ starbase_archive = { version = "0.12.3", default-features = false, features = [
     "tar-all",
     "zip-all",
 ] }
-starbase_args = { version = "0.1.5" }
+starbase_args = { version = "0.1.6" }
 starbase_console = { version = "0.6.22", features = ["miette"] }
 starbase_id = { version = "0.3.2", features = ["miette", "schematic"] }
 starbase_sandbox = "0.10.4"

@@ -13,6 +13,7 @@ config_enum!(
         /// is the project-level `defaultOwner`.
         #[setting(default)]
         List(Vec<GlobPath>),
+
         /// A map of file paths and glob patterns to owners.
         Map(IndexMap<GlobPath, Vec<String>>),
     }

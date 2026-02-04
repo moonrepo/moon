@@ -1,6 +1,7 @@
 use crate::shell::Shell;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
+use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::collections::VecDeque;
 use std::ffi::{OsStr, OsString};
@@ -285,10 +286,17 @@ impl Command {
     }
 
     pub fn inherit_colors(&mut self) -> &mut Self {
+        let bag = GlobalEnvBag::instance();
+
         // Don't show colors in our own tests, as it disrupts snapshots,
         // and only inherit colors if the current command hasn't
         // explicitly configured these variables
-        if !is_test_env() && !self.contains_env("NO_COLOR") && !self.contains_env("FORCE_COLOR") {
+        if !is_test_env()
+            && !self.contains_env("NO_COLOR")
+            && !self.contains_env("FORCE_COLOR")
+            && !bag.has("NO_COLOR")
+            && !bag.has("FORCE_COLOR")
+        {
             let level = color::supports_color().to_string();
 
             self.env_remove("NO_COLOR");

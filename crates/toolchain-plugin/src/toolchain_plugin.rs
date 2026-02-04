@@ -142,11 +142,9 @@ impl ToolchainPlugin {
             let tool = tool.read().await;
             let mut spec = ToolSpec::new(version.to_owned());
 
-            Resolver::new(&tool)
-                .resolve_version(&mut spec, false)
-                .await?;
+            Resolver::resolve(&tool, &mut spec, false).await?;
 
-            let locations = Locator::new(&tool, &spec).locate().await?;
+            let locations = Locator::locate(&tool, &spec).await?;
 
             if let Some(dir) = locations.exe_file.parent() {
                 paths.insert(dir.to_path_buf());
@@ -407,9 +405,7 @@ impl ToolchainPlugin {
             let tool = tool.read().await;
             let mut spec = ToolSpec::new(spec.to_owned());
 
-            Resolver::new(&tool)
-                .resolve_version(&mut spec, false)
-                .await?;
+            Resolver::resolve(&tool, &mut spec, false).await?;
 
             return Ok(tool.is_installed(&spec));
         }
@@ -515,11 +511,7 @@ impl ToolchainPlugin {
                 let mut spec = ToolSpec::new(version.to_owned());
 
                 // Resolve the version first so that it is available
-                input.version = Some(
-                    Resolver::new(&tool)
-                        .resolve_version(&mut spec, false)
-                        .await?,
-                );
+                input.version = Some(Resolver::resolve(&tool, &mut spec, false).await?);
 
                 // Only setup if not already been
                 if !tool.is_installed(&spec) {
@@ -591,11 +583,7 @@ impl ToolchainPlugin {
             let mut tool = tool.write().await;
             let mut spec = ToolSpec::new(version.to_owned());
 
-            input.version = Some(
-                Resolver::new(&tool)
-                    .resolve_version(&mut spec, false)
-                    .await?,
-            );
+            input.version = Some(Resolver::resolve(&tool, &mut spec, false).await?);
 
             Manager::new(&mut tool).uninstall(&mut spec).await?;
         }

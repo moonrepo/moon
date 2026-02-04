@@ -116,7 +116,7 @@ jobs:
         with:
           auto-install: true
           cache: true
-          proto-version: "0.55.1" # Keep in sync
+          proto-version: "0.55.2" # Keep in sync
         env:
           PROTO_LOG: trace
       - uses: mozilla-actions/sccache-action@v0.0.9

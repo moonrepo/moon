@@ -2,6 +2,7 @@ use crate::commands::graph::{action_graph_repr, run_server};
 use crate::session::MoonSession;
 use clap::Args;
 use moon_action_graph::{GraphToDot, GraphToJson, RunRequirements};
+use moon_affected::DownstreamScope;
 use moon_task::Target;
 use starbase::AppResult;
 use tracing::instrument;
@@ -43,7 +44,11 @@ pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> AppRes
     let mut action_graph_builder = session.build_action_graph().await?;
 
     let requirements = RunRequirements {
-        dependents: args.dependents,
+        dependents: if args.dependents {
+            DownstreamScope::Deep
+        } else {
+            DownstreamScope::None
+        },
         ..Default::default()
     };
 

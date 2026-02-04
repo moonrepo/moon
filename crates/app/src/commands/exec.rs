@@ -413,10 +413,8 @@ impl ExecWorkflow {
                 RunRequirements {
                     ci: self.ci_env,
                     ci_check: self.ci_check,
-                    dependents: self
-                        .args
-                        .downstream
-                        .is_some_and(|down| down != DownstreamScope::None),
+                    dependencies: self.args.upstream.unwrap_or(UpstreamScope::Deep),
+                    dependents: self.args.downstream.unwrap_or(DownstreamScope::None),
                     interactive: self.args.interactive,
                     job: self.args.job,
                     job_total: self.args.job_total,

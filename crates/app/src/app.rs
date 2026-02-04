@@ -351,6 +351,28 @@ pub struct Cli {
 }
 
 impl Cli {
+    pub fn get_reporter_config(&self) -> moon_console::MoonReporterConfig {
+        // The way the reporter is designed makes this awkward introspection
+        // into the CLI args necessary.
+        //
+        // The traditional approach would be to configure the MoonReporter with
+        // the individual commands directly, but because the reporter is aware of
+        // task execution, and is created as shared immutable before we start
+        // subcommand execution, we have to introspect into the CLI args to extract
+        // the MoonReporter's config from the CLI args.
+        let hide_cached = match &self.command {
+            Commands::Check(args) => args.hide_cached,
+            Commands::Ci(args) => args.hide_cached,
+            Commands::Exec(args) => args.hide_cached,
+            Commands::Run(args) => args.hide_cached,
+            _ => false,
+        };
+
+        moon_console::MoonReporterConfig {
+            hide_cached: !hide_cached,
+        }
+    }
+
     pub fn setup_env_vars(&self) {
         bootstrap::setup_colors(self.color);
 

@@ -134,13 +134,13 @@ impl ToolchainsConfig {
 
         match id.as_str() {
             "bun" => Some(locate("bun_toolchain", "1.0.1")),
-            "deno" => Some(locate("deno_toolchain", "1.0.1")),
-            "go" => Some(locate("go_toolchain", "1.0.1")),
-            "javascript" => Some(locate("javascript_toolchain", "1.0.2")),
+            "deno" => Some(locate("deno_toolchain", "1.0.2")),
+            "go" => Some(locate("go_toolchain", "1.0.2")),
+            "javascript" => Some(locate("javascript_toolchain", "1.0.3")),
             "node" => Some(locate("node_toolchain", "1.0.1")),
             "npm" => Some(locate("node_depman_toolchain", "1.0.1")),
             "pnpm" => Some(locate("node_depman_toolchain", "1.0.1")),
-            "rust" => Some(locate("rust_toolchain", "1.0.2")),
+            "rust" => Some(locate("rust_toolchain", "1.0.3")),
             "system" => Some(locate("system_toolchain", "1.0.1")),
             "typescript" => Some(locate("typescript_toolchain", "1.0.1")),
             "unstable_python" => Some(locate("python_toolchain", "0.1.1")),

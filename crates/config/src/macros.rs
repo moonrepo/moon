@@ -27,6 +27,7 @@ macro_rules! config_untagged_enum {
             deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError,
             serde::Serialize,
         )]
+        #[serde(untagged)]
         $impl
     };
 }

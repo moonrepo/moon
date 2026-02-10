@@ -395,6 +395,50 @@ mod tasks_builder {
             assert_eq!(task.args, vec!["arg", "$ARG"]);
             assert_eq!(task.options.shell, Some(true));
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_token_funcs() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("tokens").await;
+            let task = tasks.get("funcs-string").unwrap();
+
+            assert_eq!(task.command, "bin");
+            assert_eq!(
+                task.args,
+                vec![
+                    TaskArg::new_unquoted("@group(storybook)"),
+                    TaskArg::new_quoted("@root(sources)", "\"@root(sources)\""),
+                    TaskArg::new_unquoted("@in(0)"),
+                    TaskArg::new_unquoted("@out(0)"),
+                    TaskArg::new_unquoted("@meta(title)"),
+                    TaskArg::new_unquoted("@meta(index)"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_token_vars() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("tokens").await;
+            let task = tasks.get("vars-string").unwrap();
+
+            assert_eq!(task.command, "bin");
+            assert_eq!(
+                task.args,
+                vec![
+                    TaskArg::new_unquoted("arg"),
+                    TaskArg::new_quoted("$workspaceRoot", "\"$workspaceRoot\""),
+                    TaskArg::new_unquoted("$os"),
+                    TaskArg::new_quoted("$projectTitle", "'$projectTitle'"),
+                    TaskArg::new_unquoted("$projectRoot/in/path.txt"),
+                    TaskArg::new_unquoted("./in/$target/path.txt"),
+                ]
+            );
+        }
     }
 
     mod command_syntax {

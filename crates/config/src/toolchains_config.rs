@@ -142,7 +142,7 @@ impl ToolchainsConfig {
             "pnpm" => Some(locate("node_depman_toolchain", "1.0.1")),
             "rust" => Some(locate("rust_toolchain", "1.0.3")),
             "system" => Some(locate("system_toolchain", "1.0.1")),
-            "typescript" => Some(locate("typescript_toolchain", "1.0.1")),
+            "typescript" => Some(locate("typescript_toolchain", "1.0.2")),
             "unstable_python" => Some(locate("python_toolchain", "0.1.1")),
             "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.1")),
             "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.1")),

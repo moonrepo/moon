@@ -1,0 +1,11 @@
+project:
+  index: 1
+
+tasks:
+  funcs-string:
+    command: 'bin'
+    args: '@group(storybook) "@root(sources)" @in(0) @out(0) @meta(title) @meta(index)'
+  vars-string:
+    command: 'bin'
+    args:
+      'arg "$workspaceRoot" $os ''$projectTitle'' $projectRoot/in/path.txt ./in/$target/path.txt'

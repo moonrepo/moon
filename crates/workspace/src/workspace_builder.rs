@@ -708,7 +708,10 @@ impl<'app> WorkspaceBuilder<'app> {
         // Gather all project sources
         let mut add_sources = |map: &FxHashMap<Id, String>| {
             for (id, source) in map {
-                sources.push((id.to_owned(), WorkspaceRelativePathBuf::from(source)));
+                sources.push((
+                    id.to_owned(),
+                    WorkspaceRelativePathBuf::from(source.trim_start_matches("./")),
+                ));
             }
         };
 

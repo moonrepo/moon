@@ -37,13 +37,13 @@ regex = { version = "1.12.3", default-features = false, features = [
     "std",
     "perf",
 ] }
-reqwest = { version = "0.13.1", default-features = false, features = [
+reqwest = { version = "0.13.2", default-features = false, features = [
     "rustls",
     # We don't use openssl but its required for musl builds
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
-scc = "3.5.5"
+scc = "3.5.6"
 schematic = { version = "0.19.4", default-features = false, features = [
     "schema",
 ] }

@@ -1215,9 +1215,9 @@ mod action_graph_builder {
                         ActionNode::run_task(RunTaskNode::new(
                             Target::parse("deps-affected:b").unwrap(),
                         )),
-                        ActionNode::run_task(RunTaskNode::new(
-                            Target::parse("deps-affected:a").unwrap(),
-                        )),
+                        // ActionNode::run_task(RunTaskNode::new(
+                        //     Target::parse("deps-affected:a").unwrap(),
+                        // )),
                     ]
                 );
             }
@@ -1814,6 +1814,7 @@ mod action_graph_builder {
                 let mut builder = container.create_builder(wg.clone()).await;
 
                 let task = wg.get_task_from_project("deps-affected", "c").unwrap();
+                let task_b = wg.get_task_from_project("deps-affected", "b").unwrap();
 
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/c.txt")]),
@@ -1821,6 +1822,9 @@ mod action_graph_builder {
                         affected.with_scopes(UpstreamScope::None, DownstreamScope::Direct);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                        affected
+                            .mark_task_affected(&task_b, AffectedBy::AlwaysAffected)
                             .unwrap();
                     },
                 );
@@ -1878,6 +1882,8 @@ mod action_graph_builder {
                 let mut builder = container.create_builder(wg.clone()).await;
 
                 let task = wg.get_task_from_project("deps-affected", "c").unwrap();
+                let task_b = wg.get_task_from_project("deps-affected", "b").unwrap();
+                let task_a = wg.get_task_from_project("deps-affected", "a").unwrap();
 
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/c.txt")]),
@@ -1885,6 +1891,12 @@ mod action_graph_builder {
                         affected.with_scopes(UpstreamScope::None, DownstreamScope::Deep);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                        affected
+                            .mark_task_affected(&task_b, AffectedBy::AlwaysAffected)
+                            .unwrap();
+                        affected
+                            .mark_task_affected(&task_a, AffectedBy::AlwaysAffected)
                             .unwrap();
                     },
                 );

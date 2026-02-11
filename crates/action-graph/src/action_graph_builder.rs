@@ -83,7 +83,7 @@ pub struct RunPartition {
     pub size: Option<usize>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct RunTaskState {
     pub down_depth: u8,
     pub up_depth: u8,
@@ -481,21 +481,19 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
-        // If we are going to parallelize, then we need to filter the
-        // tasks list based on affected state before partitioning!
-        if reqs.job.is_some()
-            && reqs.job_total.is_some()
-            && !reqs.skip_affected
-            && let Some(affected) = &self.affected
-        {
-            tasks.retain(|task| affected.is_task_marked(task));
-        }
-
         // Now partition the tasks list based on the job information
         if let Some(job_index) = reqs.job
             && let Some(job_total) = reqs.job_total
             && job_total > 0
         {
+            // If we are going to parallelize, then we need to filter the
+            // tasks list based on affected state before partitioning!
+            if !reqs.skip_affected
+                && let Some(affected) = &self.affected
+            {
+                tasks.retain(|task| affected.is_task_marked_ignoring_relations(task));
+            }
+
             let size = tasks.len().div_ceil(job_total);
             let (start, stop) =
                 // beginning
@@ -550,7 +548,8 @@ impl<'query> ActionGraphBuilder<'query> {
                 .await?
             {
                 if let Some(dep_index) =
-                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), state)).await?
+                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &mut state.clone()))
+                        .await?
                 {
                     // When parallel, parent depends on child
                     if parallel {
@@ -589,7 +588,10 @@ impl<'query> ActionGraphBuilder<'query> {
                 .internal_resolve_tasks_from_target(&dep_target, true)
                 .await?
             {
-                indexes.push(Box::pin(self.internal_run_task(&dep_task, reqs, None, state)).await?);
+                indexes.push(
+                    Box::pin(self.internal_run_task(&dep_task, reqs, None, &mut state.clone()))
+                        .await?,
+                );
             }
         }
 
@@ -795,7 +797,7 @@ impl<'query> ActionGraphBuilder<'query> {
         // Abort early if not affected
         if let Some(affected) = &mut self.affected
             && !reqs.skip_affected
-            && !affected.is_task_marked(task)
+            && !affected.is_task_marked_ignoring_relations(task)
         {
             return Ok(None);
         }

@@ -11,12 +11,12 @@ cached = "0.56.0"
 chrono = { version = "0.4.43", features = ["serde"] }
 cd_env = "0.3.1"
 ci_env = "0.4.1"
-clap = { version = "4.5.57", default-features = false, features = [
+clap = { version = "4.5.58", default-features = false, features = [
     "derive",
     "std",
     "error-context",
 ] }
-clap_complete = "4.5.65"
+clap_complete = "4.5.66"
 compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
 ] }

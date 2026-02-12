@@ -3710,20 +3710,19 @@ The top-level fields (like `name` and `description`) will be used as-is (no quot
 is not defined, it will default to nothing or an empty string. For lists of values, they will be
 joined with `,`.
 
-Custom metadata defined in [`project.metadata`](../config/project#metadata-1) can also be accessed
-by key, but will return a JSON stringified value. For example, a custom string value of `example`
-will be stringified to `"example"` (with quotes).
+Custom metadata defined in [`project`](../config/project#project) can also be accessed by key, but
+will return a JSON stringified value. For example, a custom string value of `example` will be
+stringified to `"example"` (with quotes).
 
 ```yaml
 project:
-  name: 'example'
-  metadata:
-    index: 123
+  title: 'example'
+  index: 123
 
 # Configured as
 tasks:
   build:
-    script: 'build --name @meta(name) --index @meta(index)'
+    script: 'build --name @meta(title) --index @meta(index)'
 
 # Resolves to
 tasks:
@@ -22482,6 +22481,9 @@ javascript:
 bun: {}
 ```
   ```yaml title=".moon/toolchains.yml"
+javascript:
+  packageManager: 'deno'
+
 deno: {}
 ```
   ```yaml title=".moon/toolchains.yml"
@@ -22502,8 +22504,10 @@ the default system platform.
 
 :::
   ```yaml title=".moon/toolchains.yml"
-python:
-  pip: {}
+unstable_python:
+  packageManager: 'pip'
+
+unstable_pip: {}
 ```
   :::warning
 
@@ -22544,6 +22548,9 @@ bun:
   version: '1.0.0'
 ```
   ```yaml title=".moon/toolchains.yml"
+javascript:
+  packageManager: 'deno'
+
 deno:
   version: '1.40.0'
 ```
@@ -22568,10 +22575,11 @@ PHP does not implement tier 3 tool support. The required `php` and related binar
 
 :::
   ```yaml title=".moon/toolchains.yml"
-python:
+unstable_python:
+  packageManager: 'pip'
   version: '3.11.10'
-  pip:
-    version: 'latest'
+
+unstable_pip: {}
 ```
   :::warning
 

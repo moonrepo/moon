@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/cli",
-  "version": "2.0.0-rc.2",
+  "version": "2.0.0-rc.3",
   "type": "commonjs",
   "description": "moon command line and core system.",
   "keywords": [
@@ -29,12 +29,12 @@
     "detect-libc": "^2.1.2"
   },
   "optionalDependencies": {
-    "@moonrepo/core-linux-arm64-gnu": "2.0.0-rc.2",
-    "@moonrepo/core-linux-arm64-musl": "2.0.0-rc.2",
-    "@moonrepo/core-linux-x64-gnu": "2.0.0-rc.2",
-    "@moonrepo/core-linux-x64-musl": "2.0.0-rc.2",
-    "@moonrepo/core-macos-arm64": "2.0.0-rc.2",
-    "@moonrepo/core-windows-x64-msvc": "2.0.0-rc.2"
+    "@moonrepo/core-linux-arm64-gnu": "2.0.0-rc.3",
+    "@moonrepo/core-linux-arm64-musl": "2.0.0-rc.3",
+    "@moonrepo/core-linux-x64-gnu": "2.0.0-rc.3",
+    "@moonrepo/core-linux-x64-musl": "2.0.0-rc.3",
+    "@moonrepo/core-macos-arm64": "2.0.0-rc.3",
+    "@moonrepo/core-windows-x64-msvc": "2.0.0-rc.3"
   },
   "stableVersion": "1.41.8"
 }

@@ -118,7 +118,11 @@ mod token_expander {
 
             assert_eq!(
                 result.globs,
-                ["project/source/*.md", "project/source/**/*.json"]
+                [
+                    "project/source/*.md",
+                    "project/source/**/*.json",
+                    "!project/source/node_modules/**/*"
+                ]
             );
         }
 
@@ -152,7 +156,11 @@ mod token_expander {
 
             assert_eq!(
                 result.globs,
-                ["project/source/*.md", "project/source/**/*.json"]
+                [
+                    "project/source/*.md",
+                    "project/source/**/*.json",
+                    "!project/source/node_modules/**/*"
+                ]
             );
         }
 
@@ -727,7 +735,13 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_args(&mut task).unwrap(),
-                vec!["./config.yml", "./dir/subdir", "./*.md", "./**/*.json"]
+                vec![
+                    "config.yml",
+                    "dir/subdir",
+                    "*.md",
+                    "**/*.json",
+                    "!node_modules/**/*"
+                ]
             );
             assert_eq!(
                 task.input_files,
@@ -741,6 +755,10 @@ mod token_expander {
                 FxHashMap::from_iter([
                     ("project/source/**/*.json".into(), TaskGlobInput::default()),
                     ("project/source/*.md".into(), TaskGlobInput::default()),
+                    (
+                        "!project/source/node_modules/**/*".into(),
+                        TaskGlobInput::default()
+                    ),
                 ])
             );
         }
@@ -760,7 +778,13 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_args(&mut task).unwrap(),
-                vec!["./config.yml", "./dir/subdir", "./*.md", "./**/*.json"]
+                vec![
+                    "config.yml",
+                    "dir/subdir",
+                    "*.md",
+                    "**/*.json",
+                    "!node_modules/**/*"
+                ]
             );
             assert!(task.input_files.is_empty());
             assert!(task.input_globs.is_empty());
@@ -861,7 +885,7 @@ mod token_expander {
                 expander.expand_env(&mut task).unwrap(),
                 EnvMap::from_iter([(
                     "GROUP".into(),
-                    Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
+                    Some("config.yml,dir/subdir,*.md,**/*.json,!node_modules/**/*".into())
                 )])
             );
             assert_eq!(
@@ -876,6 +900,10 @@ mod token_expander {
                 FxHashMap::from_iter([
                     ("project/source/**/*.json".into(), TaskGlobInput::default()),
                     ("project/source/*.md".into(), TaskGlobInput::default()),
+                    (
+                        "!project/source/node_modules/**/*".into(),
+                        TaskGlobInput::default()
+                    ),
                 ])
             );
         }
@@ -897,7 +925,7 @@ mod token_expander {
                 expander.expand_env(&mut task).unwrap(),
                 EnvMap::from_iter([(
                     "GROUP".into(),
-                    Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
+                    Some("config.yml,dir/subdir,*.md,**/*.json,!node_modules/**/*".into())
                 )])
             );
             assert!(task.input_files.is_empty());
@@ -920,7 +948,7 @@ mod token_expander {
                 expander.expand_env(&mut task).unwrap(),
                 EnvMap::from_iter([(
                     "GROUP".into(),
-                    Some("./config.yml,./dir/subdir,./*.md,./**/*.json".into())
+                    Some("config.yml,dir/subdir,*.md,**/*.json,!node_modules/**/*".into())
                 )])
             );
         }
@@ -939,7 +967,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                EnvMap::from_iter([("DIRS".into(), Some("./dir/subdir,./other".into()))])
+                EnvMap::from_iter([("DIRS".into(), Some("dir/subdir,other".into()))])
             );
         }
 
@@ -959,9 +987,7 @@ mod token_expander {
                 expander.expand_env(&mut task).unwrap(),
                 EnvMap::from_iter([(
                     "FILES".into(),
-                    Some(
-                        "./config.yml,./dir/subdir/nested.json,./docs.md,./other/file.json".into()
-                    )
+                    Some("config.yml,dir/subdir/nested.json,docs.md,other/file.json".into())
                 )])
             );
         }
@@ -980,7 +1006,10 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                EnvMap::from_iter([("GLOBS".into(), Some("./*.md,./**/*.json".into()))])
+                EnvMap::from_iter([(
+                    "GLOBS".into(),
+                    Some("*.md,**/*.json,!node_modules/**/*".into())
+                )])
             );
         }
 
@@ -998,7 +1027,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_env(&mut task).unwrap(),
-                EnvMap::from_iter([("ROOT".into(), Some("./dir/subdir".into()))])
+                EnvMap::from_iter([("ROOT".into(), Some("dir/subdir".into()))])
             );
         }
 
@@ -1163,6 +1192,7 @@ mod token_expander {
                     globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1194,6 +1224,7 @@ mod token_expander {
                     globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1329,6 +1360,7 @@ mod token_expander {
                     globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1357,6 +1389,7 @@ mod token_expander {
                     globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1572,6 +1605,7 @@ mod token_expander {
                     globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1649,6 +1683,7 @@ mod token_expander {
                     globs: vec![
                         WorkspaceRelativePathBuf::from("project/source/*.md"),
                         WorkspaceRelativePathBuf::from("project/source/**/*.json"),
+                        WorkspaceRelativePathBuf::from("!project/source/node_modules/**/*"),
                     ],
                     ..ExpandedResult::default()
                 }
@@ -1925,7 +1960,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_script(&mut task).unwrap(),
-                "bin ./config.yml ./dir/subdir ./*.md ./**/*.json"
+                "bin config.yml dir/subdir *.md **/*.json !node_modules/**/*"
             );
             assert_eq!(
                 task.input_files,
@@ -1939,6 +1974,10 @@ mod token_expander {
                 FxHashMap::from_iter([
                     ("project/source/**/*.json".into(), TaskGlobInput::default()),
                     ("project/source/*.md".into(), TaskGlobInput::default()),
+                    (
+                        "!project/source/node_modules/**/*".into(),
+                        TaskGlobInput::default()
+                    ),
                 ])
             );
         }
@@ -1958,7 +1997,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_script(&mut task).unwrap(),
-                "bin ./config.yml ./dir/subdir ./*.md ./**/*.json"
+                "bin config.yml dir/subdir *.md **/*.json !node_modules/**/*"
             );
             assert!(task.input_files.is_empty());
             assert!(task.input_globs.is_empty());
@@ -1979,7 +2018,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_script(&mut task).unwrap(),
-                "bin --foo -az ./**/*.json"
+                "bin --foo -az **/*.json"
             );
         }
 
@@ -2001,7 +2040,7 @@ mod token_expander {
 
             assert_eq!(
                 expander.expand_script(&mut task).unwrap(),
-                "bin --foo -az ./docs.md ./other/file.json"
+                "bin --foo -az docs.md other/file.json"
             );
         }
 

@@ -776,19 +776,30 @@ impl<'graph> TokenExpander<'graph> {
         task: &Task,
         path: WorkspaceRelativePathBuf,
     ) -> miette::Result<String> {
+        // Handle negated globs
+        let (path, negated) = match path.as_str().strip_prefix("!") {
+            Some(inner) => (WorkspaceRelativePathBuf::from(inner), "!"),
+            None => (path, ""),
+        };
+
         // From workspace root to any file
         if task.options.run_from_workspace_root {
-            Ok(format!("./{path}"))
+            Ok(format!("{negated}{path}"))
 
             // From project root to project file
         } else if let Ok(proj_path) = path.strip_prefix(&self.project.source) {
-            Ok(format!("./{proj_path}"))
+            Ok(format!("{negated}{proj_path}"))
 
             // From project root to non-project file
         } else {
             let abs_path = path.to_logical_path(&self.context.workspace_root);
 
-            self.stringify_path(&diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path))
+            Ok(format!(
+                "{negated}{}",
+                self.stringify_path(
+                    &diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path)
+                )?
+            ))
         }
     }
 

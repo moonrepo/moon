@@ -163,6 +163,8 @@ features, improvements, and much more!
 - Fixed an issue where running a task that triggers a system/moon error wouldn't output the error
   message. This also aborts the action pipeline correctly now.
 - Fixed an issue where errors during project graph building would not be reported correctly.
+- Fixed an issue where a negated glob in a file group would not expand properly when used as an
+  argument.
 
 #### ⚙️ Internal
 

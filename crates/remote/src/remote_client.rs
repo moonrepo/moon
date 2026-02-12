@@ -29,12 +29,15 @@ pub trait RemoteClient: Send + Sync {
                 let token = GlobalEnvBag::instance().get(token_name).unwrap_or_default();
 
                 if token.is_empty() {
-                    warn!(
-                        "Auth token {} does not exist, unable to authorize for remote service",
-                        moon_common::color::property(token_name)
-                    );
+                    // Allow unauthed locally!
+                    if !config.cache.local_read_only {
+                        warn!(
+                            "Auth token {} does not exist, unable to authorize for remote service",
+                            moon_common::color::property(token_name)
+                        );
 
-                    return Ok(None);
+                        return Ok(None);
+                    }
                 } else {
                     let mut value =
                         HeaderValue::from_str(&format!("Bearer {token}")).into_diagnostic()?;

@@ -64,8 +64,8 @@ impl ExtensionsConfig {
 
         match id.as_str() {
             "download" => Some(locate("download_extension", "1.0.1")),
-            "migrate-nx" => Some(locate("migrate_nx_extension", "1.0.1")),
-            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "1.0.1")),
+            "migrate-nx" => Some(locate("migrate_nx_extension", "1.0.2")),
+            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "1.0.2")),
             "unpack" => Some(locate("unpack_extension", "1.0.1")),
             _ => None,
         }

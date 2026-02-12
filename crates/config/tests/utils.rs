@@ -5,7 +5,7 @@ use moon_common::Id;
 pub use moon_config::test_utils::*;
 use moon_config::*;
 use moon_target::Target;
-use proto_core::PluginLocator;
+use proto_core::{FileLocator, PluginLocator};
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigError, ConfigLoader as BaseLoader};
 use serde_json::Value;
@@ -468,7 +468,8 @@ pub fn load_template_config_in_format(format: &str) {
 pub fn load_toolchains_config_in_format(format: &str) {
     use starbase_sandbox::pretty_assertions::assert_eq;
 
-    let config = test_config(locate_fixture(format), |path| {
+    let fixture = locate_fixture(format);
+    let config = test_config(&fixture, |path| {
         let proto = proto_core::ProtoConfig::default();
         ConfigLoader::new(path.join(".moon")).load_toolchains_config(path, &proto)
     });
@@ -500,7 +501,10 @@ pub fn load_toolchains_config_in_format(format: &str) {
     assert_eq!(
         config.plugins.get("node").unwrap(),
         &ToolchainPluginConfig {
-            plugin: Some(PluginLocator::from_str("file://node.wasm").unwrap()),
+            plugin: Some(PluginLocator::File(Box::new(FileLocator {
+                file: "file://node.wasm".into(),
+                path: Some(fixture.join(".moon").join("node.wasm")),
+            }))),
             version: Some(UnresolvedVersionSpec::parse("20").unwrap()),
             ..Default::default()
         }
@@ -512,14 +516,18 @@ pub fn load_toolchains_config_in_format(format: &str) {
 pub fn load_extensions_config_in_format(format: &str) {
     use starbase_sandbox::pretty_assertions::assert_eq;
 
-    let config = test_config(locate_fixture(format), |path| {
+    let fixture = locate_fixture(format);
+    let config = test_config(&fixture, |path| {
         ConfigLoader::new(path.join(".moon")).load_extensions_config(path)
     });
 
     assert_eq!(
         config.plugins.get("custom").unwrap(),
         &ExtensionPluginConfig {
-            plugin: Some(PluginLocator::from_str("file://node.wasm").unwrap()),
+            plugin: Some(PluginLocator::File(Box::new(FileLocator {
+                file: "file://node.wasm".into(),
+                path: Some(fixture.join(".moon").join("node.wasm")),
+            }))),
             config: FxHashMap::from_iter([("key".into(), Value::String("value".into()))]),
         }
     );

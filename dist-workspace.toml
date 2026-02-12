@@ -15,7 +15,7 @@ targets = [
 	"x86_64-pc-windows-msvc",
 ]
 installers = ["shell", "powershell"]
-install-path = ["$MOON_HOME/bin", "~/.moon/bin"]
+install-path = ["$MOON_INSTALL_DIR/", "$MOON_HOME/bin", "~/.moon/bin"]
 install-success-msg = "\nSuccessfully installed! Take your repo to the moon!\nNeed help? Join our Discord: https://discord.gg/qCh9MEynv2\n"
 pr-run-mode = "upload"
 publish-jobs = ["./release-npm"]

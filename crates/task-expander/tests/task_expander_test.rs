@@ -185,10 +185,10 @@ mod task_expander {
                 task.args,
                 [
                     "a",
-                    "./config.yml",
-                    "./dir/subdir/nested.json",
-                    "./docs.md",
-                    "./other/file.json",
+                    "config.yml",
+                    "dir/subdir/nested.json",
+                    "docs.md",
+                    "other/file.json",
                     "b"
                 ]
             );
@@ -213,10 +213,10 @@ mod task_expander {
                 task.args,
                 [
                     "a",
-                    "./project/source/config.yml",
-                    "./project/source/dir/subdir/nested.json",
-                    "./project/source/docs.md",
-                    "./project/source/other/file.json",
+                    "project/source/config.yml",
+                    "project/source/dir/subdir/nested.json",
+                    "project/source/docs.md",
+                    "project/source/other/file.json",
                     "b"
                 ]
             );
@@ -494,7 +494,10 @@ mod task_expander {
             assert_eq!(
                 task.env,
                 EnvMap::from_iter([
-                    ("KEY1".into(), Some("./*.md,./**/*.json".into())),
+                    (
+                        "KEY1".into(),
+                        Some("*.md,**/*.json,!node_modules/**/*".into())
+                    ),
                     ("KEY2".into(), Some("project-task".into())),
                 ])
             );
@@ -523,7 +526,7 @@ mod task_expander {
                 EnvMap::from_iter([
                     (
                         "KEY1".into(),
-                        Some("./project/source/*.md,./project/source/**/*.json".into())
+                        Some("project/source/*.md,project/source/**/*.json,!project/source/node_modules/**/*".into())
                     ),
                     ("KEY2".into(), Some("project-task".into())),
                 ])
@@ -871,7 +874,11 @@ mod task_expander {
 
             assert_eq!(
                 task.input_globs,
-                create_glob_input_map(vec!["project/source/*.md", "project/source/**/*.json"])
+                create_glob_input_map(vec![
+                    "!project/source/node_modules/**/*",
+                    "project/source/*.md",
+                    "project/source/**/*.json"
+                ])
             );
             assert_eq!(
                 task.input_files,
@@ -960,7 +967,11 @@ mod task_expander {
 
             assert_eq!(
                 task.output_globs,
-                create_glob_output_map(vec!["project/source/*.md", "project/source/**/*.json"])
+                create_glob_output_map(vec![
+                    "!project/source/node_modules/**/*",
+                    "project/source/*.md",
+                    "project/source/**/*.json"
+                ])
             );
             assert_eq!(
                 task.output_files,

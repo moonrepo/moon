@@ -83,10 +83,9 @@ pub struct RunPartition {
     pub size: Option<usize>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct RunTaskState {
-    pub down_depth: u8,
-    pub up_depth: u8,
+    pub depth: u8,
 }
 
 pub struct ActionGraphBuilderOptions {
@@ -481,21 +480,19 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
-        // If we are going to parallelize, then we need to filter the
-        // tasks list based on affected state before partitioning!
-        if reqs.job.is_some()
-            && reqs.job_total.is_some()
-            && !reqs.skip_affected
-            && let Some(affected) = &self.affected
-        {
-            tasks.retain(|task| affected.is_task_marked(task));
-        }
-
         // Now partition the tasks list based on the job information
         if let Some(job_index) = reqs.job
             && let Some(job_total) = reqs.job_total
             && job_total > 0
         {
+            // If we are going to parallelize, then we need to filter the
+            // tasks list based on affected state before partitioning!
+            if !reqs.skip_affected
+                && let Some(affected) = &self.affected
+            {
+                tasks.retain(|task| affected.is_task_marked_ignoring_relations(task));
+            }
+
             let size = tasks.len().div_ceil(job_total);
             let (start, stop) =
                 // beginning
@@ -536,10 +533,8 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         task: &Task,
         reqs: &RunRequirements,
-        state: &mut RunTaskState,
+        state: &RunTaskState,
     ) -> miette::Result<Vec<Option<NodeIndex>>> {
-        state.up_depth += 1;
-
         let parallel = task.options.run_deps_in_parallel;
         let mut indexes: Vec<Option<NodeIndex>> = vec![];
         let mut previous_target_index: Option<NodeIndex> = None;
@@ -550,7 +545,8 @@ impl<'query> ActionGraphBuilder<'query> {
                 .await?
             {
                 if let Some(dep_index) =
-                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), state)).await?
+                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &mut state.clone()))
+                        .await?
                 {
                     // When parallel, parent depends on child
                     if parallel {
@@ -578,10 +574,8 @@ impl<'query> ActionGraphBuilder<'query> {
         &mut self,
         task: &Task,
         reqs: &RunRequirements,
-        state: &mut RunTaskState,
+        state: &RunTaskState,
     ) -> miette::Result<Vec<Option<NodeIndex>>> {
-        state.down_depth += 1;
-
         let mut indexes = vec![];
 
         for dep_target in self.workspace_graph.tasks.dependents_of(task) {
@@ -589,7 +583,10 @@ impl<'query> ActionGraphBuilder<'query> {
                 .internal_resolve_tasks_from_target(&dep_target, true)
                 .await?
             {
-                indexes.push(Box::pin(self.internal_run_task(&dep_task, reqs, None, state)).await?);
+                indexes.push(
+                    Box::pin(self.internal_run_task(&dep_task, reqs, None, &mut state.clone()))
+                        .await?,
+                );
             }
         }
 
@@ -795,7 +792,7 @@ impl<'query> ActionGraphBuilder<'query> {
         // Abort early if not affected
         if let Some(affected) = &mut self.affected
             && !reqs.skip_affected
-            && !affected.is_task_marked(task)
+            && !affected.is_task_marked_ignoring_relations(task)
         {
             return Ok(None);
         }
@@ -811,6 +808,11 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
+        // Track depth information before proceeding
+        let should_run_dependencies = reqs.dependencies.is_in_scope(state.depth);
+        let should_run_dependents = reqs.dependents.is_in_scope(state.depth);
+        state.depth += 1;
+
         // Only apply checks when requested. This applies to `moon ci`,
         // but not `moon run`, since the latter should be able to
         // manually run local tasks in CI (deploys, etc).
@@ -825,7 +827,7 @@ impl<'query> ActionGraphBuilder<'query> {
             );
 
             // Dependents may still want to run though!
-            if reqs.dependents.is_in_scope(state.down_depth) {
+            if should_run_dependents {
                 child_reqs.skip_affected = false;
 
                 Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
@@ -874,7 +876,7 @@ impl<'query> ActionGraphBuilder<'query> {
         // Insert and then link edges
         let index = self.insert_node(node);
 
-        if !task.deps.is_empty() && reqs.dependencies.is_in_scope(state.up_depth) {
+        if !task.deps.is_empty() && should_run_dependencies {
             child_reqs.skip_affected = true;
 
             edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?);
@@ -883,7 +885,7 @@ impl<'query> ActionGraphBuilder<'query> {
         self.link_optional_requirements(index, edges)?;
 
         // And possibly dependents
-        if reqs.dependents.is_in_scope(state.down_depth) {
+        if should_run_dependents {
             child_reqs.skip_affected = false;
 
             Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;

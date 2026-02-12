@@ -102,6 +102,9 @@ features, improvements, and much more!
   - Added a default project concept.
   - Added path based IDs instead of dir name IDs.
   - Updated projects to support multiple aliases (one from each applicable toolchain).
+- **Remote cache**
+  - Stabilized all settings.
+  - Enabled gzip/zstd compression for HTTP requests.
 - **Tasks**
   - Added deep merging support for task inheritance.
   - Updated `command` and `args` with better syntax parsing and error handling.
@@ -160,6 +163,8 @@ features, improvements, and much more!
 - Fixed an issue where running a task that triggers a system/moon error wouldn't output the error
   message. This also aborts the action pipeline correctly now.
 - Fixed an issue where errors during project graph building would not be reported correctly.
+- Fixed an issue where a negated glob in a file group would not expand properly when used as an
+  argument.
 
 #### ⚙️ Internal
 

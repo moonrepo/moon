@@ -32,7 +32,10 @@ fn infer_project_id_and_source(
         WorkspaceProjectGlobFormat::SourcePath => (path, path),
     };
 
-    Ok((Id::clean(id)?, WorkspaceRelativePathBuf::from(source)))
+    Ok((
+        Id::clean(id)?,
+        WorkspaceRelativePathBuf::from(source.trim_start_matches("./")),
+    ))
 }
 
 /// For each pattern in the globs list, glob the file system

@@ -223,6 +223,7 @@ impl<'task> TaskRunner<'task> {
 
         let is_cache_stale = || {
             if let Some(duration) = cache_lifetime
+                && self.cache.data.last_run_time > 0
                 && is_stale(self.cache.data.last_run_time, duration)
             {
                 debug!(

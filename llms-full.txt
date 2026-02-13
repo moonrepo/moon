@@ -9156,6 +9156,7 @@ The following GitHub actions are provided by the community:
 
 - [`appthrust/moon-ci-retrospect`](https://github.com/appthrust/moon-ci-retrospect) - Displays the
   results of a `moon ci` run in a more readable fashion.
+- [`kymckay/moon-ci-booster`](https://github.com/kymckay/moon-ci-booster) - Displays failing `moon ci` tasks as comments with error logs directly on your pull request.
 
 ---
 

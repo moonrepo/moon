@@ -292,7 +292,7 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                 )
                 Entry(
                     name: "Runs in CI",
-                    content: if task.should_run_in_ci() {
+                    content: if task.should_run(true) {
                         "Yes"
                     } else {
                         "No"

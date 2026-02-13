@@ -173,7 +173,7 @@ mod tasks_builder {
 
             assert_eq!(task.type_of, TaskType::Test);
             assert!(task.is_test_type());
-            assert!(task.should_run_in_ci());
+            assert!(task.should_run(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -186,7 +186,7 @@ mod tasks_builder {
 
             assert_eq!(task.type_of, TaskType::Run);
             assert!(task.is_run_type());
-            assert!(!task.should_run_in_ci());
+            assert!(!task.should_run(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -199,7 +199,7 @@ mod tasks_builder {
 
             assert_eq!(task.type_of, TaskType::Build);
             assert!(task.is_build_type());
-            assert!(task.should_run_in_ci());
+            assert!(task.should_run(true));
         }
     }
 

@@ -813,15 +813,13 @@ impl<'query> ActionGraphBuilder<'query> {
         let should_run_dependents = reqs.dependents.is_in_scope(state.depth);
         state.depth += 1;
 
-        // Only apply checks when requested. This applies to `moon ci`,
-        // but not `moon run`, since the latter should be able to
-        // manually run local tasks in CI (deploys, etc).
-        if reqs.ci && reqs.ci_check && !task.should_run_in_ci() {
+        // Only apply CI checks when requested
+        if reqs.ci_check && !task.should_run(reqs.ci) {
             self.passthrough_targets.insert(task.target.clone());
 
             debug!(
                 task_target = task.target.as_str(),
-                "Not running task {} in CI because {} has been configured not to",
+                "Not running task {} because {} has been configured not to",
                 color::id(&task.target.id),
                 color::property("runInCI"),
             );

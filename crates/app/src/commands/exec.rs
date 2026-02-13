@@ -60,19 +60,19 @@ pub struct ExecArgs {
 
     #[arg(
         long,
+        help = "Ignore \"run in CI\" task checks",
+        help_heading = super::HEADING_WORKFLOW,
+    )]
+    pub ignore_ci_checks: bool,
+
+    #[arg(
+        long,
         env = "MOON_ON_FAILURE",
         help = "When a task fails, either bail the pipeline, or continue executing",
         help_heading = super::HEADING_WORKFLOW,
         default_value_t,
     )]
     pub on_failure: OnFailure,
-
-    #[arg(
-        long,
-        help = "Filter tasks to those that only run in CI",
-        help_heading = super::HEADING_WORKFLOW,
-    )]
-    pub only_ci_tasks: bool,
 
     #[arg(
         long,
@@ -158,7 +158,7 @@ impl ExecWorkflow {
                 .map(|sum| sum.unwrap_or_default())
                 .unwrap_or_default()
                 .to_level(),
-            ci_check: args.only_ci_tasks,
+            ci_check: !args.ignore_ci_checks,
             ci_env: args.ci.unwrap_or(is_ci()),
             console: session.get_console()?,
             session,
@@ -397,7 +397,7 @@ impl ExecWorkflow {
             action_graph_builder.track_affected(
                 self.args.upstream.unwrap_or(UpstreamScope::Deep),
                 self.args.downstream.unwrap_or(DownstreamScope::None),
-                self.ci_check,
+                self.ci_env && self.ci_check,
             )?;
         }
 
@@ -476,31 +476,31 @@ impl ExecWorkflow {
         for (target, state) in &affected.tasks {
             if !state.env.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> affected by environment variable <property>{}</property>",
+                    "\t<id>{target}</id> affected by environment variable <property>{}</property>",
                     state.env.iter().next().unwrap()
                 ))?;
             } else if !state.files.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> affected by file <file>{}</file>",
+                    "\t<id>{target}</id> affected by file <file>{}</file>",
                     state.files.iter().next().unwrap()
                 ))?;
             } else if !state.projects.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> affected by project <id>{}</id>",
+                    "\t<id>{target}</id> affected by project <id>{}</id>",
                     state.projects.iter().next().unwrap()
                 ))?;
             } else if !state.upstream.is_empty() {
-                self.print(format!(
-                    "<id>{target}</id> affected by dependency task <label>{}</label>",
-                    state.upstream.iter().next().unwrap()
-                ))?;
+                // self.print(format!(
+                //     "\t<id>{target}</id> affected by dependency task <label>{}</label>",
+                //     state.upstream.iter().next().unwrap()
+                // ))?;
             } else if !state.downstream.is_empty() {
-                self.print(format!(
-                    "<id>{target}</id> affected by dependent task <label>{}</label>",
-                    state.downstream.iter().next().unwrap()
-                ))?;
+                // self.print(format!(
+                //     "\t<id>{target}</id> affected by dependent task <label>{}</label>",
+                //     state.downstream.iter().next().unwrap()
+                // ))?;
             } else {
-                self.print(format!("<id>{target}</id> affected"))?;
+                self.print(format!("\t<id>{target}</id> affected"))?;
             }
         }
 

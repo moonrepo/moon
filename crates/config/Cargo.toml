@@ -15,7 +15,7 @@ features = ["loader"]
 moon_common = { version = "2.0.1", path = "../common" }
 moon_target = { version = "2.0.0", path = "../target" }
 deserialize_untagged_verbose_error = "0.1.5"
-hcl-rs = "0.19.4"
+hcl-rs = "0.19.5"
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
@@ -49,7 +49,7 @@ tracing = { workspace = true, optional = true }
 
 [dev-dependencies]
 moon_config = { path = ".", features = ["proto", "tracing"] }
-httpmock = "0.8.2"
+httpmock = "0.8.3"
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 

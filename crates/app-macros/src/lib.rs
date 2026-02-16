@@ -233,6 +233,7 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
             quote! {
                 #[arg(
                     long,
+                    short = 'g',
                     help = "Include graph relations for affected checks, instead of just changed files",
                     help_heading = super::HEADING_AFFECTED,
                     requires = "affected-args",

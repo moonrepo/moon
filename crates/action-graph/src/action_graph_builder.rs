@@ -56,6 +56,7 @@ pub struct RunRequirements {
     pub ci_check: bool,              // Check the `runInCI` option
     pub dependencies: UpstreamScope, // Run dependency tasks
     pub dependents: DownstreamScope, // Run dependent tasks
+    pub include_relations: bool,     // Include graph relations for affected
     pub interactive: bool,           // Entire pipeline is interactive
     pub job: Option<usize>,          // Current job index
     pub job_total: Option<usize>,    // Total amount of jobs
@@ -69,6 +70,7 @@ impl Default for RunRequirements {
             ci_check: false,
             dependencies: UpstreamScope::Deep,
             dependents: DownstreamScope::None,
+            include_relations: false,
             interactive: false,
             job: None,
             job_total: None,
@@ -487,11 +489,7 @@ impl<'query> ActionGraphBuilder<'query> {
         {
             // If we are going to parallelize, then we need to filter the
             // tasks list based on affected state before partitioning!
-            if !reqs.skip_affected
-                && let Some(affected) = &self.affected
-            {
-                tasks.retain(|task| affected.is_task_marked_ignoring_relations(task));
-            }
+            tasks.retain(|task| self.is_task_affected(task, &reqs));
 
             let size = tasks.len().div_ceil(job_total);
             let (start, stop) =
@@ -790,10 +788,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut child_reqs = reqs.clone();
 
         // Abort early if not affected
-        if let Some(affected) = &mut self.affected
-            && !reqs.skip_affected
-            && !affected.is_task_marked_ignoring_relations(task)
-        {
+        if !self.is_task_affected(task, reqs) {
             return Ok(None);
         }
 
@@ -1046,7 +1041,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         // Return early if not affected
-        if let Some(affected) = &mut self.affected
+        if let Some(affected) = &self.affected
             && !affected.is_project_marked(project)
         {
             return Ok(None);
@@ -1174,6 +1169,21 @@ impl<'query> ActionGraphBuilder<'query> {
         );
 
         index
+    }
+
+    fn is_task_affected(&self, task: &Task, reqs: &RunRequirements) -> bool {
+        if let Some(affected) = &self.affected
+            && !reqs.skip_affected
+        {
+            return if reqs.include_relations {
+                affected.is_task_marked(task)
+            } else {
+                affected.is_task_marked_ignoring_relations(task)
+            };
+        }
+
+        // Always affected
+        true
     }
 }
 

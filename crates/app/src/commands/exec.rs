@@ -415,6 +415,7 @@ impl ExecWorkflow {
                     ci_check: self.ci_check,
                     dependencies: self.args.upstream.unwrap_or(UpstreamScope::Deep),
                     dependents: self.args.downstream.unwrap_or(DownstreamScope::None),
+                    include_relations: self.args.include_relations,
                     interactive: self.args.interactive,
                     job: self.args.job,
                     job_total: self.args.job_total,

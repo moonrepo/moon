@@ -111,7 +111,7 @@ impl Default for TaskOptions {
             retry_count: 0,
             run_deps_in_parallel: true,
             run_from_workspace_root: false,
-            run_in_ci: TaskOptionRunInCI::Affected,
+            run_in_ci: TaskOptionRunInCI::Enabled(true),
             shell: Some(true),
             timeout: None,
             unix_shell: TaskUnixShell::Bash,

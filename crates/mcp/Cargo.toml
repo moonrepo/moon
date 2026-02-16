@@ -21,7 +21,7 @@ moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-rust-mcp-sdk = { version = "0.8.2", default-features = false, features = [
+rust-mcp-sdk = { version = "0.8.3", default-features = false, features = [
 	"macros",
 	"server",
 	"stdio",

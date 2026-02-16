@@ -326,14 +326,26 @@ impl Task {
         self.options.persistent
     }
 
-    /// Return true if the task should run in a CI environment.
-    pub fn should_run_in_ci(&self) -> bool {
-        if !self.options.run_in_ci.is_enabled() || self.options.run_in_ci == TaskOptionRunInCI::Skip
-        {
-            return false;
+    /// Return true if the task should run, whether in a CI environment or not.
+    pub fn should_run(&self, in_ci: bool) -> bool {
+        if in_ci {
+            let is_runnable = self.is_build_type() || self.is_test_type();
+
+            return match self.options.run_in_ci {
+                TaskOptionRunInCI::Affected | TaskOptionRunInCI::Only => is_runnable,
+                TaskOptionRunInCI::Always => true,
+                TaskOptionRunInCI::Skip => false,
+                TaskOptionRunInCI::Enabled(state) => {
+                    if state {
+                        is_runnable
+                    } else {
+                        false
+                    }
+                }
+            };
         }
 
-        self.is_build_type() || self.is_test_type()
+        !matches!(self.options.run_in_ci, TaskOptionRunInCI::Only)
     }
 
     /// Convert the task into a fragment.

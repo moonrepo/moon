@@ -491,15 +491,19 @@ impl ExecWorkflow {
                     state.projects.iter().next().unwrap()
                 ))?;
             } else if !state.upstream.is_empty() {
-                // self.print(format!(
-                //     "\t<id>{target}</id> affected by dependency task <label>{}</label>",
-                //     state.upstream.iter().next().unwrap()
-                // ))?;
+                if self.args.include_relations {
+                    self.print(format!(
+                        "\t<id>{target}</id> affected by dependency task <label>{}</label>",
+                        state.upstream.iter().next().unwrap()
+                    ))?;
+                }
             } else if !state.downstream.is_empty() {
-                // self.print(format!(
-                //     "\t<id>{target}</id> affected by dependent task <label>{}</label>",
-                //     state.downstream.iter().next().unwrap()
-                // ))?;
+                if self.args.include_relations {
+                    self.print(format!(
+                        "\t<id>{target}</id> affected by dependent task <label>{}</label>",
+                        state.downstream.iter().next().unwrap()
+                    ))?;
+                }
             } else {
                 self.print(format!("\t<id>{target}</id> affected"))?;
             }

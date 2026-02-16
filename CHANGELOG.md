@@ -8,7 +8,9 @@ View the [migration guide](https://moonrepo.dev/docs/migrate/2.0) for a full lis
 changes and how to easily migrate!
 
 - Renamed "touched files" to "changed files".
+
 - **CLI**
+  - Removed canary and nightly releases.
   - Removed commands: `moon node`, `moon migrate from-package-json`, `moon query hash`,
     `moon query hash-diff`
   - Renamed all options and flags to kebab-case instead of camelCase.

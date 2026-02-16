@@ -9,7 +9,7 @@ files, assets, resources, and more. A project must exist and be configured withi
 ## IDs
 
 A project identifier (or name) is a unique resource for locating a project. The ID is explicitly
-configured within [`.moon/workspace.yml`](../config/workspace), as a key within the
+configured within [`.moon/workspace.*`](../config/workspace), as a key within the
 [`projects`](../config/workspace#projects) setting, and can be written in camel/kebab/snake case.
 IDs support alphabetic unicode characters, `0-9`, `_`, `-`, `/`, `.`, and must start with a
 character.
@@ -41,7 +41,7 @@ Projects can depend on other projects within the [workspace](./workspace) to bui
 [tasks](./task). Project dependencies are divided into 2 categories:
 
 - **Explicit dependencies** - These are dependencies that are explicitly defined in a project's
-  [`moon.yml`](../config/project) config file, using the [`dependsOn`](../config/project#dependson)
+  [`moon.*`](../config/project) config file, using the [`dependsOn`](../config/project#dependson)
   setting.
 - **Implicit dependencies** - These are dependencies that are implicitly discovered by moon when
   scanning the repository. How an implicit dependency is discovered is based on the project's
@@ -49,5 +49,5 @@ Projects can depend on other projects within the [workspace](./workspace) to bui
 
 ## Configuration
 
-Projects can be configured with an optional [`moon.yml`](../config/project) in the project root, or
-through the optional workspace-level [`.moon/tasks/all.yml`](../config/tasks).
+Projects can be configured with an optional [`moon.*`](../config/project) in the project root, or
+through the optional workspace-level [`.moon/tasks/**/*`](../config/tasks).

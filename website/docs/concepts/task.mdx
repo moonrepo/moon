@@ -23,7 +23,7 @@ Tasks are grouped into 1 of the following types based on their configured parame
 - **Build** - Task generates one or many artifacts, and is derived from the
   [`outputs`](../config/project#outputs) setting.
 - **Run** - Task runs a one-off, long-running, or never-ending process, and is derived from the
-  [`local`](../config/project#local) setting.
+  [`options.persistent`](../config/project#persistent) setting.
 - **Test** - Task asserts code is correct and behaves as expected. This includes linting,
   typechecking, unit tests, and any other form of testing. Is the default.
 
@@ -32,14 +32,14 @@ Tasks are grouped into 1 of the following types based on their configured parame
 Alongside types, tasks can also grouped into a special mode that provides unique handling within the
 action graph and pipelines.
 
-### Local only
+### Local server
 
 Tasks either run locally, in CI (continuous integration pipelines), or both. For tasks that should
-_only_ be ran locally, for example, development servers and watchers, we provide a mechanism for
-marking a task as local only. When enabled, caching is turned off, the task will not run in CI,
-terminal output is not captured, and the task is marked as [persistent](#persistent).
+_only_ be ran locally, for example, development servers, we provide a mechanism for marking a task
+as local only server. When enabled, caching is turned off, the task will not run in CI, terminal
+output is not captured, and the task is marked as [persistent](#persistent).
 
-To mark a task as local only, enable the [`local`](../config/project#local) setting.
+To mark a task as local only, enable the [`preset`](../config/project#preset) setting.
 
 ```yaml title="moon.yml"
 tasks:
@@ -50,10 +50,9 @@ tasks:
 
 ### Internal only<VersionLabel version="1.23.0" />
 
-Internal tasks are tasks that are not meant to be ran explicitly by the user (via
-[`moon check`](../commands/check) or [`moon run`](../commands/run)), but are used internally as
-dependencies of other tasks. Additionally, internal tasks are not displayed in a project's tasks
-list, but can be inspected with [`moon task`](../commands/task).
+Internal tasks are tasks that are not meant to be ran explicitly by the user (via the command line),
+but are used internally as dependencies of other tasks. Additionally, internal tasks are not
+displayed in a project's tasks list, but can be inspected with [`moon task`](../commands/task).
 
 To mark a task as internal, enable the [`options.internal`](../config/project#internal) setting.
 
@@ -96,23 +95,23 @@ run them _last as a batch_. This is perfect for a few reasons:
 - Running both the backend API and frontend webapp in parallel is a breeze.
 - Dependencies of persistent tasks are guaranteed to have ran and completed.
 
-To mark a task as persistent, enable the [`local`](../config/project#local) or
-[`options.persistent`](../config/project#persistent) settings.
+To mark a task as persistent, enable the [`options.persistent`](../config/project#persistent)
+setting.
 
 ```yaml title="moon.yml"
 tasks:
   dev:
     command: 'start-dev-server'
-    preset: 'server'
-    # OR
     options:
       persistent: true
+    # OR
+    preset: 'server'
 ```
 
 ## Configuration
 
-Tasks can be configured per project through [`moon.yml`](../config/project), or for many projects
-through [`.moon/tasks/all.yml`](../config/tasks).
+Tasks can be configured per project through [`moon.*`](../config/project), or for many projects
+through [`.moon/tasks/**/*`](../config/tasks).
 
 ### Commands vs Scripts
 

@@ -30,7 +30,7 @@ These scopes are available for both running targets and configuring them.
 ### By project
 
 The most common scope is the project scope, which requires the name of a project, as defined in
-[`.moon/workspace.yml`](../config/workspace). When paired with a task name, it will run a specific
+[`.moon/workspace.*`](../config/workspace). When paired with a task name, it will run a specific
 task from that project.
 
 ```shell
@@ -76,8 +76,15 @@ closest project (traversing upwards), the `~` scope can be used.
 
 ```shell
 # Run `lint` in the closest project
-$ moon run ~:lint
+$ moon run '~:lint'
 ```
+
+:::caution
+
+Because `~` is a special character in the terminal (tilde expansion), you'll need to wrap the target
+in quotes, or escape it like so `\~`.
+
+:::
 
 ## Config scopes
 
@@ -110,12 +117,12 @@ tasks:
       - 'designSystem:build'
 ```
 
-### Self `~`
+### Owning project `~`
 
 When referring to another task within the current project, you can utilize the `~` scope, or omit
 the `~:` prefix altogether, which will be expanded to the current project's name. This is useful for
 situations where the name is unknown, for example, when configuring
-[`.moon/tasks/all.yml`](../config/tasks), or if you just want a shortcut!
+[`.moon/tasks/**/*`](../config/tasks), or if you just want a shortcut!
 
 ```yaml title=".moon/tasks/all.yml"
 # Configured as

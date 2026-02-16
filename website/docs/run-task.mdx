@@ -35,11 +35,11 @@ primary target, as their outputs may be required for the primary target to funct
 
 However, if you're working on a project that is shared and consumed by other projects, you may want
 to verify that downstream dependents have not been indirectly broken by any changes. This can be
-achieved by passing the `--dependents` option, which will run dependent targets _after_ the primary
-target.
+achieved by passing the `--downstream` option (aliased as `--dependents`), which will run dependent
+targets _after_ the primary target.
 
 ```shell
-$ moon run app:build --dependents
+$ moon run app:build --downstream direct
 ```
 
 ## Running based on affected files only
@@ -53,18 +53,18 @@ target if files have changed, pass the `--affected` flag.
 $ moon run app:build --affected
 ```
 
-Under the hood, we extract locally touched (created, modified, staged, etc) files from your
+Under the hood, we extract locally changed (created, modified, staged, etc) files from your
 configured [VCS](./config/workspace#vcs), and exit early if no files intersect with the task's
 [inputs](./config/project#inputs).
 
 ### Using remote changes
 
 If you'd like to determine affected files based on remote changes instead of local changes, pass the
-`--remote` flag. This will extract touched files by comparing the current `HEAD` against the
+`remote` value. This will extract changed files by comparing the current `HEAD` against the
 [`vcs.defaultBranch`](./config/workspace#defaultbranch).
 
 ```shell
-$ moon run app:build --affected --remote
+$ moon run app:build --affected remote
 ```
 
 ### Filtering based on change status

@@ -44,7 +44,6 @@ const sidebars: SidebarsConfig = {
 				'setup-toolchain',
 				'create-task',
 				'run-task',
-				'migrate-to-moon',
 			],
 		},
 		{
@@ -219,7 +218,7 @@ const sidebars: SidebarsConfig = {
 			items: ['migrate/2.0'],
 		},
 		'cheat-sheet',
-		'comparison',
+		// 'comparison',
 		'terminology',
 		'faq',
 		{

@@ -5,16 +5,9 @@ title: Languages
 import LangGraph from '@site/src/components/Docs/LangGraph';
 
 Although moon is currently focusing on the JavaScript ecosystem, our long-term vision is to be a
-multi-language task runner and monorepo management tool. To that end, we've designed our languages
-to work like plugins, where their functionality is implemented in isolation, and is _opt-in_.
-
-<LangGraph />
-
-:::info
-
-We do not support third-party language plugins at this time, but are working towards it!
-
-:::
+multi-language task runner and monorepo management tool. To that end, our languages (known as
+toolchains) are implemented as WASM plugins, where their functionality is implemented in isolation,
+and is _opt-in_.
 
 ## Enabling a language
 
@@ -26,18 +19,16 @@ To enable a supported language, simply define a configuration block with the lan
 [`.moon/toolchains.yml`](../config/toolchain). Even an empty block will enable the language.
 
 ```yaml title=".moon/toolchains.yml"
-# Enable Node.js
-node: {}
+# Enable JavaScript
+javascript: {}
 
-# Enable Node.js with custom settings
-node:
+# Enable JavaScript with custom settings
+javascript:
   packageManager: 'pnpm'
 
-# Enable Deno
-deno: {}
+# Enable TypeScript
+typescript: {}
 ```
-
-> For unsupported languages, use the system toolchain. Continue reading to learn more!
 
 ## System language and toolchain
 
@@ -66,8 +57,6 @@ As mentioned in our introduction,
 [language support is divided up into tiers](../#supported-languages), where each tier introduces
 more internal integrations and automations, but requires more work to properly implement.
 
-Internally each tier maps to a Rust crate, as demonstrated by the graph at the top of the article.
-
 ### Tier 0 = Unsupported
 
 The zero tier represents all languages _not directly_ supported by moon. This tier merely exists as
@@ -90,16 +79,15 @@ in charge of:
 - Declaring metadata about the language. For example, the name of the binary, supported file
   extensions, available dependency/package/version managers, names of config/manifest/lock files,
   etc.
-- Helpers for parsing lockfiles and manifest files, and interacting with the language's ecosystem
-  (for example, Node.js module resolution).
 - Mechanisms for detecting the language of a project based on config files and other criteria.
 - Maps to a project's [`language`](../config/project#language) setting.
+- Supports a configuration block by name in [`.moon/toolchains.yml`](../config/toolchain).
 
 ```yaml title="moon.yml"
 language: 'javascript'
 ```
 
-### Tier 2 = Platform
+### Tier 2 = Ecosystem
 
 The second tier requires the language functionality from tier 1, and eventually the toolchain
 functionality from tier 3, and provides interoperability with moon's internals. This is the most
@@ -109,11 +97,12 @@ complex of all tiers, and the tier is in charge of:
 - Loading project aliases and inferring implicit relationships between projects.
 - Syncing a project and ensuring a healthy project state.
 - Hashing efficiently for dependency installs and target runs.
+- Helpers for parsing lockfiles and manifest files, and interacting with the language's ecosystem
+  (for example, Node.js module resolution).
 - Prepending `PATH` with appropriate lookups to execute a task.
 - Running a target's command with proper arguments, environment variables, and flags.
-- Maps to a project's [`toolchain.default`](../config/project#toolchain-1) or task's
-  [`toolchain`](../config/project#toolchain) setting.
-- Supports a configuration block by name in [`.moon/toolchains.yml`](../config/toolchain).
+- Maps to a project's [`toolchains.default`](../config/project#toolchain-1) or task's
+  [`toolchains`](../config/project#toolchain) setting.
 
 ```yaml title="moon.yml"
 tasks:
@@ -123,6 +112,7 @@ tasks:
 ```
 
 ```yaml title=".moon/toolchains.yml"
+javascript: {}
 node: {}
 ```
 

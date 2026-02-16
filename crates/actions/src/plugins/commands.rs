@@ -3,7 +3,7 @@ use moon_action::{ActionStatus, Operation};
 use moon_app_context::AppContext;
 use moon_common::{
     Id, color,
-    path::{PathExt, WorkspaceRelativePathBuf, encode_component},
+    path::{PathExt, WorkspaceRelativePathBuf, encode_component, hash_component},
 };
 use moon_console::{Checkpoint, Console};
 use moon_env_var::GlobalEnvBag;
@@ -41,20 +41,14 @@ pub fn handle_on_exec(
     command: &ExecCommand,
     attempts: (u8, u8),
 ) -> miette::Result<()> {
-    let input = &command.command;
-    let label = command
-        .label
-        .clone()
-        .unwrap_or_else(|| format!("{} {}", input.command, input.args.join(" ")));
-
     if attempts.0 > 1 {
         console.print_checkpoint_with_comments(
             Checkpoint::Setup,
-            label,
+            command.get_label(),
             [format!("attempt {} of {}", attempts.0, attempts.1)],
         )
     } else {
-        console.print_checkpoint(Checkpoint::Setup, label)
+        console.print_checkpoint(Checkpoint::Setup, command.get_label())
     }
 }
 
@@ -73,6 +67,14 @@ async fn internal_exec_plugin_command(
     attempts: (u8, u8),
 ) -> miette::Result<Output> {
     let input = &command.command;
+
+    // Create a lock so that commands that clobber the same state (rustup, cargo, etc),
+    // do not run at the same time and collide
+    let _lock = app_context.cache_engine.create_lock(format!(
+        "{}-{}",
+        options.prefix,
+        hash_component(command.get_label())
+    ))?;
 
     let mut cmd = AugmentedCommand::from_input(&app_context, GlobalEnvBag::instance(), input);
     cmd.inherit_from_plugins(options.project.as_deref(), None)
@@ -199,7 +201,7 @@ pub async fn exec_plugin_command(
 
         debug!(
             "Failed to execute {} command, retrying...",
-            color::shell(command.label.as_ref().unwrap_or(&command.command.command)),
+            color::shell(command.get_label()),
         );
     }
 

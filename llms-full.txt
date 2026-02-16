@@ -17633,6 +17633,8 @@ $ moon migrate v2
 #### `moon ci`
 
 - Now runs `moon exec` under the hood, with some arguments/options pre-filled.
+- No longer includes graph relations when determining affected state, and solely relies on changed
+  files/env vars. Pass `--include-relations` to include them.
 - Renamed options:
   - `--update-cache, -u` -> `--force, -f`
 
@@ -17665,6 +17667,8 @@ $ moon migrate v2
 #### `moon run`
 
 - Now runs `moon exec` under the hood, with some arguments/options pre-filled.
+- No longer includes graph relations when determining affected state, and solely relies on changed
+  files/env vars. Pass `--include-relations` to include them.
 - Updated options:
   - `--dependents` now requires a value, either `deep` or `direct`
 - Renamed options:
@@ -17711,7 +17715,8 @@ $ moon migrate v2
 
 - This file was renamed to `.moon/toolchains.*` (plural) to reflect that multiple toolchains are
   configured. This also aligns with the new `.moon/extensions.*` file.
-- All toolchains have been stabilized, so the `unstable_` prefix must be removed from identifiers.
+- All toolchains have been stabilized (excluding Python), so the `unstable_` prefix must be removed
+  from identifiers.
 
 #### JavaScript
 
@@ -17772,6 +17777,35 @@ yarn:
   version: '4.8.0'
 ```
 
+#### Python
+
+All the Python toolchains are still unstable, and still require the `unstable_` prefix. We're not
+Python experts, so we would love help from the community to test and improve the implementation. If
+you're interested in helping out, please reach out in our Discord server.
+
+- Moved settings:
+  - `python.pip` -> `unstable_pip`
+  - `python.uv` -> `unstable_uv`
+- Removed settings:
+  - `python.rootVenvOnly`
+
+```yaml title=".moon/toolchains.yml"
+# Before
+python:
+  version: '3.12.0'
+  packageManager: 'uv'
+  uv:
+    version: '0.10.2'
+
+# After
+unstable_python:
+  version: '3.12.0'
+  packageManager: 'uv'
+
+unstable_uv:
+  version: '0.10.2'
+```
+
 ## Extensions
 
 ### Configuration: `.moon/extensions.*`
@@ -17788,6 +17822,39 @@ download: {}
 
 migrate-nx: {}
 ```
+
+## Pipeline
+
+### Affected graph relations
+
+In v1 when determining the affected state of a task (via `--affected`), the graph relations
+(dependencies and dependents) were always included in the calculation. This meant that tasks were
+affected, even if there were no changed files or environment variables, just because they were
+related to other affected tasks. This was sometimes confusing to users, as it seemed like the
+pipeline was over-zealously running tasks that it shouldn't (even though it was correct).
+
+In v2 and later, the graph relations are no longer included by default, and only changed files and
+environment variables are taken into account. To include graph relations in the affected
+calculation, you can pass the `--include-relations` (`-g`) flag.
+
+### Better CI handling
+
+Tasks have an option called `runInCI` that indicates whether the task should be run in CI or not,
+and can be configured with more granulary conditions. However, in v1 this option was only taken into
+account in the `moon ci` command, and not in `moon run`. There was no way to force this option to be
+respected in `moon run`, which meant that users had to be careful to not accidentally run CI-only
+tasks locally.
+
+In v2, we've improved the implementation of this option, and how we detect CI environments. The
+following changes have been made.
+
+- `moon ci`, `moon check`, `moon run`, and `moon exec` now all respect the `runInCI` option.
+- `moon ci` is always forced in CI mode. The other commands are dependent on the `CI` environment
+  variable.
+  - To force CI mode, set the `CI` environment variable to `true`, or pass the `--ci` flag.
+- The `runInCI` option will be applied when in an CI environment. The exception to this is the
+  "only" condition, which also applies locally.
+- The `runInCI` option can be disabled entirely with `moon exec --ignore-ci-checks`.
 
 ## Project
 
@@ -34399,20 +34466,20 @@ closer to an official v2 release.
 ## How to use
 
 You can install the beta with proto (>= 0.54.1), or download it directly from the
-[GitHub release page](https://github.com/moonrepo/moon/releases/tag/v2.0.0-rc.3).
+[GitHub release page](https://github.com/moonrepo/moon/releases/tag/v2.0.0-rc.4).
 
 ```shell
-$ proto install moon 2.0.0-rc.3
+$ proto install moon 2.0.0-rc.4
 ```
 
 Alternatively, you can try using the new shell install scripts.
 
 ```shell
 # Unix
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/moonrepo/moon/releases/download/v2.0.0-rc.3/moon_cli-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/moonrepo/moon/releases/download/v2.0.0-rc.4/moon_cli-installer.sh | sh
 
 # Windows
-powershell -ExecutionPolicy Bypass -c "irm https://github.com/moonrepo/moon/releases/download/v2.0.0-rc.3/moon_cli-installer.ps1 | iex"
+powershell -ExecutionPolicy Bypass -c "irm https://github.com/moonrepo/moon/releases/download/v2.0.0-rc.4/moon_cli-installer.ps1 | iex"
 ```
 
 ## What's changed since beta?

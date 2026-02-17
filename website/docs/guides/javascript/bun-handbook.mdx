@@ -25,20 +25,18 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable JavaScript support via Bun, define the [`bun`](../../config/toolchain#bun) setting in
-[`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
+[`.moon/toolchains.*`](../../config/toolchain), even if an empty object. The
+[`javascript`](../../config/toolchain#javascript) toolchain must also be enabled, and configured to
+use Bun as the package manager.
 
 ```yaml title=".moon/toolchains.yml"
+# Enable JavaScript
+javascript:
+  packageManager: 'bun'
+
 # Enable Bun
 bun: {}
 ```
-
-:::info
-
-In moon v1.40+, use `javascript` and `bun` instead of `bun` to enable the new WASM powered Bun
-toolchain, which is far more accurate and efficient. The non-WASM toolchain will be deprecated in
-the future.
-
-:::
 
 Or by pinning a `bun` version in [`.prototools`](../../proto/config) in the workspace root.
 
@@ -46,7 +44,8 @@ Or by pinning a `bun` version in [`.prototools`](../../proto/config) in the work
 bun = "1.0.0"
 ```
 
-This will enable the Bun toolchain and provide the following automations around its ecosystem:
+This will enable the JavaScript and Bun toolchains and provide the following automations around its
+ecosystem:
 
 - Node modules will automatically be installed if dependencies in `package.json` have changed, or
   the lockfile has changed, since the last time a task has ran.
@@ -87,28 +86,28 @@ To work around this, you can set `toolchain` to "bun" at the task-level or proje
 
 ```yaml title="moon.yml"
 # For all tasks in the project
-toolchain:
-  default: 'bun'
+toolchains:
+  default: ['javascript', 'bun']
 
 tasks:
   build:
     command: 'webpack'
     # For this specific task
-    toolchain: 'bun'
+    toolchains: ['javascript', 'bun']
 ```
 
-> The task-level `toolchain.default` only needs to be set if executing a `node_modules` binary! The
+> The task-level `toolchains.default` only needs to be set if executing a `node_modules` binary! The
 > `bun` binary automatically sets the toolchain to Bun.
 
 ### Using `package.json` scripts
 
 If you're looking to prototype moon, or reduce the migration effort to moon tasks, you can configure
 moon to inherit `package.json` scripts, and internally convert them to moon tasks. This can be
-achieved with the [`bun.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
+achieved with the [`javascript.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
 setting.
 
 ```yaml title=".moon/toolchains.yml"
-bun:
+javascript:
   inferTasksFromScripts: true
 ```
 

@@ -29,6 +29,8 @@ impl ConfigCache {
             ".json"
         } else if url.contains(".toml") {
             ".toml"
+        } else if url.contains(".hcl") {
+            ".hcl"
         } else {
             ""
         };

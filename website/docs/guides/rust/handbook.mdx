@@ -26,7 +26,7 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable Rust, define the [`rust`](../../config/toolchain#rust) setting in
-[`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
+[`.moon/toolchains.*`](../../config/toolchain), even if an empty object.
 
 ```yaml title=".moon/toolchains.yml"
 # Enable Rust
@@ -40,7 +40,7 @@ rust:
 Or by pinning a `rust` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"
-rust = "1.69.0"
+rust = "1.93.0"
 ```
 
 This will enable the Rust toolchain and provide the following automations around its ecosystem:
@@ -76,8 +76,8 @@ rust:
 :::caution
 
 moon requires `rustup` to exist in the environment, and will use this to install the necessary Rust
-toolchains. This requires Rust to be manually installed on the machine, as moon does not
-auto-install the language, just the toolchains.
+toolchains. moon will attempt to auto-install `rustup` if it's not found, but this may fail in some
+environments.
 
 :::
 
@@ -88,10 +88,9 @@ crates with many `Cargo.toml`s using
 [Cargo workspaces](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). The latter is
 highly preferred as it enables Cargo incremental caching.
 
-Regardless of which flavor your repository uses, in moon, both flavors are a single
-[moon project](../../concepts/project). This means that all Rust crates are grouped together into a
-single moon project, and the [`moon.yml`](../../config/project) file is located at the root relative
-to `Cargo.lock` and the `target` folder.
+With moon, you can place [`moon.*`](../../config/project) in each crate, or once relative to
+`Cargo.lock`. The choice is yours! But be aware, if you do per-crate, Cargo itself will "wait for
+build lock" when multiple processes are running.
 
 An example of this layout is demonstrated below:
 
@@ -100,6 +99,7 @@ An example of this layout is demonstrated below:
   defaultValue="workspaces"
   values={[
     { label: 'Workspaces', value: 'workspaces' },
+    { label: 'Workspaces (per-crate)', value: 'workspaces-many' },
     { label: 'Non-workspaces', value: 'project' },
   ]}
 >
@@ -125,6 +125,30 @@ An example of this layout is demonstrated below:
 ```
 
 </TabItem>
+<TabItem value="workspaces-many">
+
+```
+/
+├── .moon/
+├── crates/
+│   ├── client/
+|   │   ├── ...
+|   │   ├── moon.yml
+│   │   └── Cargo.toml
+│   ├── server/
+|   │   ├── ...
+|   │   ├── moon.yml
+│   │   └── Cargo.toml
+│   └── utils/
+|       ├── ...
+|   │   ├── moon.yml
+│       └── Cargo.toml
+├── target/
+├── Cargo.lock
+└── Cargo.toml
+```
+
+</TabItem>
 <TabItem value="project">
 
 ```
@@ -143,7 +167,7 @@ An example of this layout is demonstrated below:
 </TabItem>
 </Tabs>
 
-### Example `moon.yml`
+### Example `moon.*`
 
 The following configuration represents a base that covers most Rust projects.
 
@@ -152,7 +176,7 @@ The following configuration represents a base that covers most Rust projects.
   defaultValue="workspaces"
   values={[
     { label: 'Workspaces', value: 'workspaces' },
-    { label: 'Non-workspaces', value: 'project' },
+    { label: 'Workspaces (per-crate) / Non-workspaces', value: 'project' },
   ]}
 >
 <TabItem value="workspaces">
@@ -304,7 +328,7 @@ following automations when a target is being ran:
 
 ### Should we cache the `target` directory as an output?
 
-No, we don't believe so. Both moon and Cargo support incremental caching, but they're not entirely
+No, definitely not! Both moon and Cargo support incremental caching, but they're not entirely
 compatible, and will most likely cause problems when used together.
 
 The biggest factor is that moon's caching and hydration uses a tarball strategy, where each task

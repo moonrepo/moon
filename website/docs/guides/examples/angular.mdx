@@ -24,7 +24,7 @@ cd apps && npx -p @angular/cli@latest ng new angular-app
 ## Setup
 
 Since Angular is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 ```yaml title="<project>/moon.yml"
 fileGroups:
@@ -141,7 +141,7 @@ ignored, but the `@angular-eslint` rules will still be used.
 <TabItem value="angular">
 
 If you'd prefer to use the `ng lint` command, add it as a task to the project's
-[`moon.yml`](../../config/project).
+[`moon.*`](../../config/project).
 
 ```yaml title="<project>/moon.yml"
 tasks:
@@ -159,7 +159,7 @@ workspace:
     exclude: ['lint']
 ```
 
-In addition to configuring `moon.yml`, you also need to add a lint target in the `angular.json` file
+In addition to configuring `moon.*`, you also need to add a lint target in the `angular.json` file
 for linting to work properly. The lint target specifies which builder to use for linting, as well as
 the file patterns that should be linted.
 

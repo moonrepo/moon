@@ -86,6 +86,7 @@ export interface DockerFileConfig {
 	/**
 	 * A custom template file, relative from the workspace root, to use when
 	 * rendering the `Dockerfile`. Powered by Tera.
+	 * @since 2.0.0
 	 */
 	template: string | null;
 }
@@ -119,12 +120,14 @@ export interface DockerScaffoldConfig {
 	 * List of glob patterns in which to include/exclude files in
 	 * the "configs" skeleton. Applies to both project and
 	 * workspace level scaffolding.
+	 * @since 2.0.0
 	 */
 	configsPhaseGlobs: string[];
 	/**
 	 * List of glob patterns in which to include/exclude files in
 	 * the "sources" skeleton. Applies to both project and
 	 * workspace level scaffolding.
+	 * @since 2.0.0
 	 */
 	sourcesPhaseGlobs: string[];
 }
@@ -685,6 +688,7 @@ export interface PartialDockerFileConfig {
 	/**
 	 * A custom template file, relative from the workspace root, to use when
 	 * rendering the `Dockerfile`. Powered by Tera.
+	 * @since 2.0.0
 	 */
 	template?: string | null;
 }
@@ -718,12 +722,14 @@ export interface PartialDockerScaffoldConfig {
 	 * List of glob patterns in which to include/exclude files in
 	 * the "configs" skeleton. Applies to both project and
 	 * workspace level scaffolding.
+	 * @since 2.0.0
 	 */
 	configsPhaseGlobs?: string[] | null;
 	/**
 	 * List of glob patterns in which to include/exclude files in
 	 * the "sources" skeleton. Applies to both project and
 	 * workspace level scaffolding.
+	 * @since 2.0.0
 	 */
 	sourcesPhaseGlobs?: string[] | null;
 }

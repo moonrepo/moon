@@ -42,6 +42,7 @@ config_struct!(
         pub source: DependencySource,
 
         /// Metadata about the source.
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub via: Option<String>,
     }
 );

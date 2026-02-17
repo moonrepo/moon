@@ -1,4 +1,4 @@
-use crate::{config_enum, config_struct};
+use crate::{config_enum, config_struct, is_false};
 use moon_common::Id;
 use schematic::Config;
 
@@ -44,6 +44,7 @@ config_struct!(
         /// Automatically clean the cache after every task run.
         /// @since 1.24.0
         #[setting(default = true)]
+        #[serde(skip_serializing_if = "is_false")]
         pub auto_clean_cache: bool,
 
         /// The lifetime in which task outputs will be cached.
@@ -52,6 +53,7 @@ config_struct!(
 
         /// Automatically inherit color settings for all tasks being ran.
         #[setting(default = true)]
+        #[serde(skip_serializing_if = "is_false")]
         pub inherit_colors_for_piped_tasks: bool,
 
         /// Run the `InstallDependencies` actions for each running task
@@ -67,6 +69,7 @@ config_struct!(
         pub kill_process_threshold: u32,
 
         /// Logs the task's command and arguments when running the task.
+        #[serde(skip_serializing_if = "is_false")]
         pub log_running_command: bool,
 
         /// Run the `SyncProject` actions in the pipeline for each owning project
@@ -79,11 +82,13 @@ config_struct!(
         /// action for each project dependency, and link them as a relationship.
         /// @since 1.34.0
         #[setting(default = true)]
+        #[serde(skip_serializing_if = "is_false")]
         pub sync_project_dependencies: bool,
 
         /// Run the `SyncWorkspace` action before all actions in the pipeline.
         /// @since 1.34.0
         #[setting(default = true)]
+        #[serde(skip_serializing_if = "is_false")]
         pub sync_workspace: bool,
     }
 );

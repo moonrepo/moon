@@ -10,15 +10,15 @@ config_struct!(
         pub bin: String,
 
         /// Force install the binary if it already exists.
-        #[serde(skip_serializing_if = "is_false")]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub force: bool,
 
         /// Only install the binary locally, and not within CI.
-        #[serde(skip_serializing_if = "is_false")]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub local: bool,
 
         /// For supported tools, a custom name to use.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
     }
 );

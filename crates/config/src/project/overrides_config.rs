@@ -45,7 +45,7 @@ config_struct!(
         /// this project and all of its tasks.
         /// @since 1.31.0
         #[setting(alias = "defaults")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub default: Option<OneOrMany<Id>>,
 
         /// Overrides workspace-level toolchains by their identifier.
@@ -69,18 +69,18 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectWorkspaceInheritedTasksConfig {
         /// Excludes inheriting tasks by their identifier.
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub exclude: Vec<Id>,
 
         /// Only inherits tasks with the provided identifiers,
         /// and ignores the rest. When not defined, inherits
         /// all matching tasks. When an empty list, inherits no tasks.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub include: Option<Vec<Id>>,
 
         /// Renames inherited tasks by mapping their existing
         /// identifier to a new identifier, scoped to this project.
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub rename: FxHashMap<Id, Id>,
     }
 );

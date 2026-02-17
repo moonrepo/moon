@@ -1,10 +1,10 @@
-use crate::config_struct;
 use crate::patterns::{merge_iter, merge_tasks_partials};
 use crate::project::LanguageType;
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::{FilePath, Input, OneOrMany};
 use crate::task_config::{TaskConfig, TaskDependency, validate_deps};
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
+use crate::{config_enum, config_struct};
 use moon_common::{Id, cacheable};
 use rustc_hash::FxHashMap;
 use schematic::schema::indexmap::IndexMap;
@@ -60,15 +60,15 @@ config_struct!(
     #[derive(Config)]
     pub struct InheritedClauseConfig {
         /// Require all values to match, using an AND operator.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub and: Option<OneOrMany<Id>>,
 
         /// Require any values to match, using an OR operator.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub or: Option<OneOrMany<Id>>,
 
         /// Require no values to match, using a NOT operator.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub not: Option<OneOrMany<Id>>,
     }
 );
@@ -101,7 +101,7 @@ impl InheritedClauseConfig {
     }
 }
 
-config_struct!(
+config_enum!(
     /// Patterns in which a condition can be configured as.
     #[derive(Config)]
     #[serde(untagged)]
@@ -135,6 +135,7 @@ config_struct!(
     /// for inheritance to occur. If no conditions are defined, then tasks will
     /// be inherited by all projects.
     #[derive(Config)]
+    #[serde(default)]
     pub struct InheritedByConfig {
         /// The order in which this configuration is inherited by a project.
         /// Lower is inherited first, while higher is last.
@@ -283,6 +284,7 @@ config_struct!(
     /// matching projects.
     /// Docs: https://moonrepo.dev/docs/config/tasks
     #[derive(Config)]
+    #[serde(default)]
     pub struct InheritedTasksConfig {
         #[setting(default = "../cache/schemas/tasks.json", rename = "$schema")]
         pub schema: String,

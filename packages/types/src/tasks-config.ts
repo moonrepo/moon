@@ -92,7 +92,7 @@ export interface TaskDependencyConfig {
 	 * Marks the dependency as optional when being inherited from the top-level.
 	 * @since 1.20.0
 	 */
-	optional: boolean | null;
+	optional?: boolean | null;
 	/** The target of the depended on task. */
 	target: string;
 }
@@ -105,11 +105,11 @@ export type TaskDependency = string | TaskDependencyConfig;
  */
 export interface InheritedClauseConfig {
 	/** Require all values to match, using an AND operator. */
-	and: Id | Id[] | null;
+	and?: Id | Id[] | null;
 	/** Require no values to match, using a NOT operator. */
-	not: Id | Id[] | null;
+	not?: Id | Id[] | null;
 	/** Require any values to match, using an OR operator. */
-	or: Id | Id[] | null;
+	or?: Id | Id[] | null;
 }
 
 export type InheritedConditionConfig = Id | Id[] | InheritedClauseConfig;
@@ -130,7 +130,7 @@ export interface InheritedByConfig {
 	 * Condition that matches against literal files within a project.
 	 * If multiple values are provided, at least 1 file needs to exist.
 	 */
-	files: string | string[] | null;
+	files?: string | string[] | null;
 	/**
 	 * Condition that matches against a project's `language`.
 	 * If multiple values are provided, it matches using an OR operator.
@@ -144,7 +144,7 @@ export interface InheritedByConfig {
 	 *
 	 * @default 'unknown'
 	 */
-	languages: LanguageType | LanguageType[] | null;
+	languages?: LanguageType | LanguageType[] | null;
 	/**
 	 * Condition that matches against a project's `layer`.
 	 * If multiple values are provided, it matches using an OR operator.
@@ -158,12 +158,12 @@ export interface InheritedByConfig {
 	 *
 	 * @default 'unknown'
 	 */
-	layers: LayerType | LayerType[] | null;
+	layers?: LayerType | LayerType[] | null;
 	/**
 	 * The order in which this configuration is inherited by a project.
 	 * Lower is inherited first, while higher is last.
 	 */
-	order: number | null;
+	order?: number | null;
 	/**
 	 * Condition that matches against a project's `stack`.
 	 * If multiple values are provided, it matches using an OR operator.
@@ -177,15 +177,15 @@ export interface InheritedByConfig {
 	 *
 	 * @default 'unknown'
 	 */
-	stacks: StackType | StackType[] | null;
+	stacks?: StackType | StackType[] | null;
 	/** Condition that matches against a tag within the project. */
 	tag?: InheritedConditionConfig | null;
 	/** Condition that matches against a tag within the project. */
-	tags: InheritedConditionConfig | null;
+	tags?: InheritedConditionConfig | null;
 	/** Condition that matches against a toolchain detected for a project. */
 	toolchain?: InheritedConditionConfig | null;
 	/** Condition that matches against a toolchain detected for a project. */
-	toolchains: InheritedConditionConfig | null;
+	toolchains?: InheritedConditionConfig | null;
 }
 
 /** Expanded information about affected files handling. */
@@ -196,7 +196,7 @@ export interface TaskOptionAffectedFilesConfig {
 	 * When no affected files are matching, pass the task's inputs
 	 * as arguments to the command, instead of `.`.
 	 */
-	passInputsWhenNoMatch: boolean | null;
+	passInputsWhenNoMatch?: boolean | null;
 }
 
 export type TaskOptionAffectedFilesEntry = boolean | 'args' | 'env' | TaskOptionAffectedFilesConfig;
@@ -236,51 +236,51 @@ export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pw
 /** Options to control task inheritance, execution, and more. */
 export interface TaskOptionsConfig {
 	/** The pattern in which affected files will be passed to the task. */
-	affectedFiles: TaskOptionAffectedFilesEntry | null;
+	affectedFiles?: TaskOptionAffectedFilesEntry | null;
 	/**
 	 * Allow the task to fail without failing the entire action pipeline.
 	 * @since 1.13.0
 	 */
-	allowFailure: boolean | null;
+	allowFailure?: boolean | null;
 	/**
 	 * Cache the `outputs` of the task for incremental builds.
 	 * Defaults to `true` if outputs are configured for the task.
 	 */
-	cache: boolean | 'local' | 'remote' | null;
+	cache?: boolean | 'local' | 'remote' | null;
 	/**
 	 * A custom key to include in the cache hashing process. Can be
 	 * used to invalidate local and remote caches.
 	 */
-	cacheKey: string | null;
+	cacheKey?: string | null;
 	/**
 	 * Lifetime to cache the task itself, in the format of "1h", "30m", etc.
 	 * If not defined, caches live forever, or until inputs change.
 	 * @since 1.29.0
 	 */
-	cacheLifetime: string | null;
+	cacheLifetime?: string | null;
 	/**
 	 * Loads and sets environment variables from the `.env` file(s) when
 	 * running the task.
 	 */
-	envFile: TaskOptionEnvFile | null;
+	envFile?: TaskOptionEnvFile | null;
 	/**
 	 * Automatically infer inputs from file groups or environment variables
 	 * that were utilized within `command`, `script`, `args`, and `env`.
 	 * @since 1.31.0
 	 */
-	inferInputs: boolean | null;
+	inferInputs?: boolean | null;
 	/**
 	 * Marks the task as interactive, so that it will run in isolation,
 	 * and have direct access to stdin.
 	 * @since 1.12.0
 	 */
-	interactive: boolean | null;
+	interactive?: boolean | null;
 	/**
 	 * Marks the task as internal, which disables it from being ran
 	 * from the command line, but can still be depended on by other tasks.
 	 * @since 1.23.0
 	 */
-	internal: boolean | null;
+	internal?: boolean | null;
 	/**
 	 * The default strategy to use when merging `args`, `deps`, `env`,
 	 * `inputs`, or `outputs` with an inherited task. Can be overridden
@@ -288,111 +288,111 @@ export interface TaskOptionsConfig {
 	 *
 	 * @default 'append'
 	 */
-	merge: TaskMergeStrategy | null;
+	merge?: TaskMergeStrategy | null;
 	/**
 	 * The strategy to use when merging `args` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeArgs: TaskMergeStrategy | null;
+	mergeArgs?: TaskMergeStrategy | null;
 	/**
 	 * The strategy to use when merging `deps` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeDeps: TaskMergeStrategy | null;
+	mergeDeps?: TaskMergeStrategy | null;
 	/**
 	 * The strategy to use when merging `env` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeEnv: TaskMergeStrategy | null;
+	mergeEnv?: TaskMergeStrategy | null;
 	/**
 	 * The strategy to use when merging `inputs` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeInputs: TaskMergeStrategy | null;
+	mergeInputs?: TaskMergeStrategy | null;
 	/**
 	 * The strategy to use when merging `outputs` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeOutputs: TaskMergeStrategy | null;
+	mergeOutputs?: TaskMergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 * @since 2.0.0
 	 *
 	 * @default 'append'
 	 */
-	mergeToolchains: TaskMergeStrategy | null;
+	mergeToolchains?: TaskMergeStrategy | null;
 	/**
 	 * Creates an exclusive lock on a virtual resource, preventing other
 	 * tasks using the same resource from running concurrently.
 	 * @since 1.24.0
 	 */
-	mutex: string | null;
+	mutex?: string | null;
 	/** The operating system in which to only run this task on. */
-	os: TaskOperatingSystem | TaskOperatingSystem[] | null;
+	os?: TaskOperatingSystem | TaskOperatingSystem[] | null;
 	/**
 	 * The style in which task output will be printed to the console.
 	 *
 	 * @default 'buffer'
 	 * @env MOON_OUTPUT_STYLE
 	 */
-	outputStyle: TaskOutputStyle | null;
+	outputStyle?: TaskOutputStyle | null;
 	/**
 	 * Marks the task as persistent (continuously running). This is ideal
 	 * for watchers, servers, or never-ending processes.
 	 * @since 1.6.0
 	 */
-	persistent: boolean | null;
+	persistent?: boolean | null;
 	/**
 	 * Marks the task with a certain priority, which determines the order
 	 * in which it is ran within the action pipeline.
 	 *
 	 * @default 'normal'
 	 */
-	priority: TaskPriority | null;
+	priority?: TaskPriority | null;
 	/**
 	 * The number of times a failing task will be retried to succeed.
 	 *
 	 * @env MOON_RETRY_COUNT
 	 */
-	retryCount: number | null;
+	retryCount?: number | null;
 	/**
 	 * Runs direct task dependencies (via `deps`) in sequential order.
 	 * This _does not_ apply to indirect or transient dependencies.
 	 */
-	runDepsInParallel: boolean | null;
+	runDepsInParallel?: boolean | null;
 	/** Runs the task from the workspace root, instead of the project root. */
-	runFromWorkspaceRoot: boolean | null;
+	runFromWorkspaceRoot?: boolean | null;
 	/**
 	 * Whether to run the task in CI or not, when executing `moon ci`,
 	 * `moon check`, or `moon run`.
 	 */
-	runInCI: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
+	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on native `PATH` resolution.
 	 */
-	shell: boolean | null;
+	shell?: boolean | null;
 	/** The maximum time in seconds that a task can run before being cancelled. */
-	timeout: number | null;
+	timeout?: number | null;
 	/**
 	 * The shell to run the task in when on a Unix-based machine.
 	 * @since 1.21.0
 	 *
 	 * @default 'bash'
 	 */
-	unixShell: TaskUnixShell | null;
+	unixShell?: TaskUnixShell | null;
 	/**
 	 * The shell to run the task in when on a Windows machine.
 	 * @since 1.21.0
 	 *
 	 * @default 'pwsh'
 	 */
-	windowsShell: TaskWindowsShell | null;
+	windowsShell?: TaskWindowsShell | null;
 }
 
 export type TaskArgs = null | string | string[];
@@ -451,19 +451,19 @@ export interface TaskConfig {
 	 * before this task is ran. Can depend on sibling tasks, or tasks in
 	 * other projects, using targets.
 	 */
-	deps: TaskDependency[] | null;
+	deps?: TaskDependency[] | null;
 	/**
 	 * A human-readable description about the task.
 	 * @since 1.22.0
 	 */
-	description: string | null;
+	description?: string | null;
 	/**
 	 * A map of environment variables that will be set in the child
 	 * process when the task is ran.
 	 */
-	env: Record<string, string | null> | null;
+	env?: Record<string, string | null> | null;
 	/** Extends settings from a sibling task by identifier. */
-	extends: Id | null;
+	extends?: Id | null;
 	/**
 	 * A list of inputs that will be hashing and compared against changed files
 	 * to determine affected status. If affected, the task will run, otherwise
@@ -474,23 +474,23 @@ export interface TaskConfig {
 	 * When an empty list, no files are considered. Otherwise, an
 	 * explicit list of inputs are considered.
 	 */
-	inputs: Input[] | null;
+	inputs?: Input[] | null;
 	/** Options to control task inheritance, execution, and more. */
 	options: TaskOptionsConfig;
 	/**
 	 * A list of outputs that will be created when the task has successfully ran.
 	 * An output can be a literal file path, or a glob pattern.
 	 */
-	outputs: Output[] | null;
+	outputs?: Output[] | null;
 	/** The preset to apply for the task. Will inherit default options. */
-	preset: TaskPreset | null;
+	preset?: TaskPreset | null;
 	/**
 	 * A script to run within a shell. A script is anything from a single command,
 	 * to multiple commands, or shell specific syntax. Does not support
 	 * arguments, merging, or inheritance. This overrides `command` and `args`.
 	 * @since 1.27.0
 	 */
-	script: string | null;
+	script?: string | null;
 	/**
 	 * A toolchain, or list of toolchains, in which the task will inherit
 	 * functionality from.
@@ -500,14 +500,14 @@ export interface TaskConfig {
 	 * A toolchain, or list of toolchains, in which the task will inherit
 	 * functionality from.
 	 */
-	toolchains: Id | Id[] | null;
+	toolchains?: Id | Id[] | null;
 	/**
 	 * The type of task, primarily used for categorical reasons. When not provided,
 	 * will be automatically determined based on configured outputs.
 	 *
 	 * @default 'test'
 	 */
-	type: TaskType | null;
+	type?: TaskType | null;
 }
 
 /**
@@ -523,38 +523,38 @@ export interface InheritedTasksConfig {
 	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
 	 */
-	extends: ExtendsFrom | null;
+	extends?: ExtendsFrom | null;
 	/**
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups: Record<Id, Input[]>;
+	fileGroups?: Record<Id, Input[]>;
 	/**
 	 * Task dependencies (`deps`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitDeps: TaskDependency[];
+	implicitDeps?: TaskDependency[];
 	/**
 	 * Task inputs (`inputs`) that will be automatically injected into every
 	 * task that inherits this configuration.
 	 */
-	implicitInputs: Input[];
+	implicitInputs?: Input[];
 	/**
 	 * A map of conditions that define which projects will inherit these
 	 * tasks and configuration. If not defined, will be inherited by all projects.
 	 * @since 2.0.0
 	 */
-	inheritedBy: InheritedByConfig | null;
+	inheritedBy?: InheritedByConfig | null;
 	/**
 	 * Default task options for all inherited tasks.
 	 * @since 1.20.0
 	 */
-	taskOptions: TaskOptionsConfig | null;
+	taskOptions?: TaskOptionsConfig | null;
 	/**
 	 * A map of identifiers to task objects. Tasks represent the work-unit
 	 * of a project, and can be ran in the action pipeline.
 	 */
-	tasks: Record<Id, TaskConfig>;
+	tasks?: Record<Id, TaskConfig>;
 }
 
 /** Expanded information about a task dependency. */

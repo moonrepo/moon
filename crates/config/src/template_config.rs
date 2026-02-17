@@ -130,19 +130,19 @@ config_struct!(
         pub default: TemplateVariableEnumDefault,
 
         /// Marks the variable as internal, and won't be overwritten via CLI arguments.
-        #[serde(skip_serializing_if = "is_false")]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub internal: bool,
 
         /// Allows multiple values to be selected.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub multiple: Option<bool>,
 
         /// The order in which variables should be prompted for.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub order: Option<usize>,
 
         /// Prompt the user for a value when the generator is running.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub prompt: Option<String>,
 
         /// List of acceptable values for this variable.
@@ -278,15 +278,15 @@ config_struct!(
 
         /// A pre-populated destination to scaffold to, relative from the
         /// workspace root when leading with `/`, otherwise the working directory.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub destination: Option<String>,
 
         /// Extends one or many other templates.
-        #[serde(skip_serializing_if = "OneOrMany::is_empty")]
+        #[serde(default, skip_serializing_if = "OneOrMany::is_empty")]
         pub extends: OneOrMany<Id>,
 
         /// Overrides the identifier of the template, instead of using the folder name.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub id: Option<Id>,
 
         /// A human-readable title for the template.
@@ -296,7 +296,7 @@ config_struct!(
         /// A map of variables that'll be interpolated within each template file.
         /// Variables can also be populated by passing command line arguments.
         #[setting(nested)]
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
+        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub variables: FxHashMap<String, TemplateVariable>,
     }
 );

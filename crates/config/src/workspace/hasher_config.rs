@@ -1,5 +1,5 @@
 use crate::shapes::GlobPath;
-use crate::{config_struct, config_unit_enum, is_false};
+use crate::{config_struct, config_unit_enum};
 use schematic::{Config, ConfigEnum};
 
 config_unit_enum!(
@@ -34,13 +34,13 @@ config_struct!(
         /// when a hash is being generated. Patterns are workspace relative,
         /// so prefixing with `**` is recommended.
         /// @since 1.10.0
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub ignore_patterns: Vec<GlobPath>,
 
         /// When `warnOnMissingInputs` is enabled, filters missing file
         /// paths from logging a warning.
         /// @since 1.10.0
-        #[serde(skip_serializing_if = "Vec::is_empty")]
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub ignore_missing_patterns: Vec<GlobPath>,
 
         /// The optimization to use when hashing.
@@ -52,7 +52,6 @@ config_struct!(
         /// Logs a warning when a task has configured an explicit file path
         /// input, and that file does not exist when hashing.
         #[setting(default = true)]
-        #[serde(skip_serializing_if = "is_false")]
         pub warn_on_missing_inputs: bool,
     }
 );

@@ -31,9 +31,9 @@ export type ToolchainPluginConfigConfig = Record<string, unknown>;
 /** Configures an individual toolchain. */
 export interface ToolchainPluginConfigBase {
 	/** Location of the WASM plugin to use. */
-	plugin: PluginLocator | null;
+	plugin?: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
-	version: UnresolvedVersionSpec | null;
+	version?: UnresolvedVersionSpec | null;
 	/**
 	 * Inherit the version from the root `.prototools`.
 	 * When true, matches using the same identifier, otherwise a
@@ -70,7 +70,7 @@ export interface ToolchainsConfigBase {
 	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
 	 */
-	extends: ExtendsFrom | null;
+	extends?: ExtendsFrom | null;
 	/** Configures moon itself. */
 	moon: MoonConfig;
 	/** Configures how moon integrates with proto. */

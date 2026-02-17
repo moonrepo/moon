@@ -12,7 +12,7 @@ config_struct!(
     #[config(allow_unknown_fields)]
     pub struct ExtensionPluginConfig {
         /// Location of the WASM plugin to use.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub plugin: Option<PluginLocator>,
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.
@@ -43,7 +43,7 @@ config_struct!(
         /// Supports a relative file path or a secure URL.
         /// @since 2.0.0
         #[setting(extend, validate = validate::extends_from)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
 
         /// Configures and integrates extensions into the system using

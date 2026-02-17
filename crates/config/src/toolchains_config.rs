@@ -33,11 +33,11 @@ config_struct!(
     #[config(allow_unknown_fields)]
     pub struct ToolchainPluginConfig {
         /// Location of the WASM plugin to use.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub plugin: Option<PluginLocator>,
 
         /// The version of the toolchain to download and install.
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub version: Option<UnresolvedVersionSpec>,
 
         /// Inherit the version from the root `.prototools`.
@@ -76,7 +76,7 @@ config_struct!(
         /// Supports a relative file path or a secure URL.
         /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
 
         /// Configures moon itself.

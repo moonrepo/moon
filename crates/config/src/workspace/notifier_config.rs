@@ -29,17 +29,17 @@ config_struct!(
     pub struct NotifierConfig {
         /// Display an OS notification for certain action pipeline events.
         /// @since 1.38.0
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub terminal_notifications: Option<NotifierEventType>,
 
         /// A secure URL in which to send webhooks to.
         #[setting(validate = validate::url_secure)]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub webhook_url: Option<String>,
 
         /// Whether webhook requests require acknowledgment (2xx response).
         /// @since 1.38.0
-        #[serde(skip_serializing_if = "is_false")]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub webhook_acknowledge: bool,
     }
 );

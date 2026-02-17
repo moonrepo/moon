@@ -50,6 +50,7 @@ config_struct!(
 
         /// When no affected files are matching, pass the task's inputs
         /// as arguments to the command, instead of `.`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub pass_inputs_when_no_match: Option<bool>,
     }
 );
@@ -243,6 +244,7 @@ config_unit_enum!(
 config_struct!(
     /// Options to control task inheritance, execution, and more.
     #[derive(Config)]
+    #[serde(default)]
     pub struct TaskOptionsConfig {
         /// The pattern in which affected files will be passed to the task.
         #[serde(skip_serializing_if = "Option::is_none")]

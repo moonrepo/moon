@@ -13,7 +13,7 @@ export interface CodeownersConfig {
 	 * A map of global file paths and glob patterns to a list of owners.
 	 * Can be relative from the workspace root, or a wildcard match for any depth.
 	 */
-	globalPaths: Record<string, string[]>;
+	globalPaths?: Record<string, string[]>;
 	/**
 	 * How to order ownership rules within the generated file.
 	 *
@@ -26,12 +26,12 @@ export interface CodeownersConfig {
 	 * request to be satisfied. This will be applied to all paths.
 	 * @since 1.28.0
 	 */
-	requiredApprovals: number | null;
+	requiredApprovals?: number | null;
 	/**
 	 * Automatically generate a `CODEOWNERS` file during a sync operation,
 	 * after aggregating all ownership rules from each project in the workspace.
 	 */
-	sync: boolean;
+	sync?: boolean;
 }
 
 /** Configures boundaries and constraints between projects. */
@@ -47,7 +47,7 @@ export interface ConstraintsConfig {
 	 * Enforces relationships between projects based on each project's
 	 * `tags` setting. Requires a mapping of tags, to acceptable tags.
 	 */
-	tagRelationships: Record<Id, Id[]>;
+	tagRelationships?: Record<Id, Id[]>;
 }
 
 /**
@@ -59,36 +59,36 @@ export interface DockerFileConfig {
 	 * A task identifier within the current project for building the project.
 	 * If not defined, will skip the build step.
 	 */
-	buildTask: Id | null;
+	buildTask?: Id | null;
 	/**
 	 * The base Docker image to use. If not defined, will use the provided image
 	 * from the first matching toolchain, otherwise defaults to "scratch".
 	 */
-	image: string | null;
+	image?: string | null;
 	/**
 	 * Run the `moon docker prune` command after building the
 	 * project, but before starting it.
 	 * @since 2.0.0
 	 */
-	runPrune: boolean | null;
+	runPrune?: boolean | null;
 	/**
 	 * Run the `moon docker setup` command after scaffolding,
 	 * but before building the project.
 	 * @since 2.0.0
 	 */
-	runSetup: boolean | null;
+	runSetup?: boolean | null;
 	/**
 	 * A task identifier within the current project for starting the project
 	 * within the `CMD` instruction. If not defined, will skip the start step
 	 * and not include the `CMD` instruction.
 	 */
-	startTask: Id | null;
+	startTask?: Id | null;
 	/**
 	 * A custom template file, relative from the workspace root, to use when
 	 * rendering the `Dockerfile`. Powered by Tera.
 	 * @since 2.0.0
 	 */
-	template: string | null;
+	template?: string | null;
 }
 
 /** Configures aspects of the Docker pruning process. */
@@ -122,14 +122,14 @@ export interface DockerScaffoldConfig {
 	 * workspace level scaffolding.
 	 * @since 2.0.0
 	 */
-	configsPhaseGlobs: string[];
+	configsPhaseGlobs?: string[];
 	/**
 	 * List of glob patterns in which to include/exclude files in
 	 * the "sources" skeleton. Applies to both project and
 	 * workspace level scaffolding.
 	 * @since 2.0.0
 	 */
-	sourcesPhaseGlobs: string[];
+	sourcesPhaseGlobs?: string[];
 }
 
 /** Configures our Docker integration. */
@@ -170,14 +170,14 @@ export interface HasherConfig {
 	 * paths from logging a warning.
 	 * @since 1.10.0
 	 */
-	ignoreMissingPatterns: string[];
+	ignoreMissingPatterns?: string[];
 	/**
 	 * Filters file paths that match a configured glob pattern
 	 * when a hash is being generated. Patterns are workspace relative,
 	 * so prefixing with `**` is recommended.
 	 * @since 1.10.0
 	 */
-	ignorePatterns: string[];
+	ignorePatterns?: string[];
 	/**
 	 * The optimization to use when hashing.
 	 *
@@ -212,14 +212,14 @@ export interface NotifierConfig {
 	 *
 	 * @default 'never'
 	 */
-	terminalNotifications: NotifierEventType | null;
+	terminalNotifications?: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
 	 * @since 1.38.0
 	 */
-	webhookAcknowledge: boolean;
+	webhookAcknowledge?: boolean;
 	/** A secure URL in which to send webhooks to. */
-	webhookUrl: string | null;
+	webhookUrl?: string | null;
 }
 
 export type PipelineActionSwitch = null | boolean | Id[];
@@ -260,7 +260,7 @@ export interface PipelineConfig {
 	 */
 	killProcessThreshold?: number;
 	/** Logs the task's command and arguments when running the task. */
-	logRunningCommand: boolean;
+	logRunningCommand?: boolean;
 	/**
 	 * When creating `SyncProject` actions, recursively create a `SyncProject`
 	 * action for each project dependency, and link them as a relationship.
@@ -320,13 +320,13 @@ export type RemoteApi = 'grpc' | 'http';
  */
 export interface RemoteAuthConfig {
 	/** A map of HTTP headers to inject into every request. */
-	headers: Record<string, string>;
+	headers?: Record<string, string>;
 	/**
 	 * The name of an environment variable to use as a bearer token.
 	 *
 	 * @env MOON_REMOTE_AUTH_TOKEN
 	 */
-	token: string | null;
+	token?: string | null;
 }
 
 /**
@@ -363,7 +363,7 @@ export interface RemoteCacheConfig {
 	 *
 	 * @env MOON_REMOTE_CACHE_LOCAL_READ_ONLY
 	 */
-	localReadOnly: boolean;
+	localReadOnly?: boolean;
 	/**
 	 * When downloading blobs, verify the digests/hashes in the response
 	 * match the associated blob contents. This will reduce performance
@@ -372,7 +372,7 @@ export interface RemoteCacheConfig {
 	 *
 	 * @env MOON_REMOTE_CACHE_VERIFY_INTEGRITY
 	 */
-	verifyIntegrity: boolean;
+	verifyIntegrity?: boolean;
 }
 
 /**
@@ -386,7 +386,7 @@ export interface RemoteMtlsConfig {
 	 *
 	 * @env MOON_REMOTE_MTLS_HTTP
 	 */
-	assumeHttp2: boolean;
+	assumeHttp2?: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
@@ -413,7 +413,7 @@ export interface RemoteMtlsConfig {
 	 *
 	 * @env MOON_REMOTE_MTLS_DOMAIN
 	 */
-	domain: string | null;
+	domain?: string | null;
 }
 
 /**
@@ -427,7 +427,7 @@ export interface RemoteTlsConfig {
 	 *
 	 * @env MOON_REMOTE_TLS_HTTP2
 	 */
-	assumeHttp2: boolean;
+	assumeHttp2?: boolean;
 	/**
 	 * A file path, relative from the workspace root, to the
 	 * certificate authority PEM encoded X509 certificate.
@@ -440,7 +440,7 @@ export interface RemoteTlsConfig {
 	 *
 	 * @env MOON_REMOTE_TLS_DOMAIN
 	 */
-	domain: string | null;
+	domain?: string | null;
 }
 
 /**
@@ -461,7 +461,7 @@ export interface RemoteConfig {
 	 * Connect to the host using basic HTTP authentication.
 	 * @since 1.32.0
 	 */
-	auth: RemoteAuthConfig | null;
+	auth?: RemoteAuthConfig | null;
 	/** Configures the action cache (AC) and content addressable cache (CAS). */
 	cache: RemoteCacheConfig;
 	/**
@@ -470,14 +470,14 @@ export interface RemoteConfig {
 	 *
 	 * @env MOON_REMOTE_HOST
 	 */
-	host: string | null;
+	host?: string | null;
 	/**
 	 * Connect to the host using server and client authentication with mTLS.
 	 * This takes precedence over normal TLS.
 	 */
-	mtls: RemoteMtlsConfig | null;
+	mtls?: RemoteMtlsConfig | null;
 	/** Connect to the host using server-only authentication with TLS. */
-	tls: RemoteTlsConfig | null;
+	tls?: RemoteTlsConfig | null;
 }
 
 /** The VCS being utilized by the repository. */
@@ -522,7 +522,7 @@ export interface VcsConfig {
 	 * A map of hooks to a list of commands to run when the hook is triggered.
 	 * @since 1.9.0
 	 */
-	hooks: Record<string, string[]>;
+	hooks?: Record<string, string[]>;
 	/**
 	 * The upstream version control provider, where the repository
 	 * source code is stored.
@@ -539,7 +539,7 @@ export interface VcsConfig {
 	 * based on the `hooks` setting.
 	 * @since 1.9.0
 	 */
-	sync: boolean;
+	sync?: boolean;
 }
 
 /**
@@ -561,7 +561,7 @@ export interface WorkspaceConfig {
 	 * ran without a project, the default will be used.
 	 * @since 2.0.0
 	 */
-	defaultProject: Id | null;
+	defaultProject?: Id | null;
 	/**
 	 * Configures Docker integration for the workspace.
 	 * @since 1.27.0
@@ -577,7 +577,7 @@ export interface WorkspaceConfig {
 	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
 	 */
-	extends: ExtendsFrom | null;
+	extends?: ExtendsFrom | null;
 	/** Configures the generator for scaffolding from templates. */
 	generator: GeneratorConfig;
 	/** Configures aspects of the content hashing engine. */
@@ -607,7 +607,7 @@ export interface WorkspaceConfig {
 	 */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
-	versionConstraint: string | null;
+	versionConstraint?: string | null;
 }
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */

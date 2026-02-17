@@ -40,7 +40,7 @@ export interface ProjectDependencyConfig {
 	 */
 	source: DependencySource;
 	/** Metadata about the source. */
-	via: string | null;
+	via?: string | null;
 }
 
 export type ProjectDependsOn = Id | ProjectDependencyConfig;
@@ -103,11 +103,11 @@ export interface OwnersConfig {
 	 * Bitbucket only. A map of custom groups (prefixed with `@@@`),
 	 * to a list of user and normal groups.
 	 */
-	customGroups: Record<string, string[]>;
+	customGroups?: Record<string, string[]>;
 	/** The default owner for `paths`. */
-	defaultOwner: string | null;
+	defaultOwner?: string | null;
 	/** GitLab only. Marks the code owners section as optional. */
-	optional: boolean;
+	optional?: boolean;
 	/**
 	 * A list or map of file paths and glob patterns to owners.
 	 * When a list, the `defaultOwner` is the owner, and each item is a path.
@@ -119,7 +119,7 @@ export interface OwnersConfig {
 	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
 	 * For GitLab, marks the code owners section as required.
 	 */
-	requiredApprovals: number | null;
+	requiredApprovals?: number | null;
 }
 
 export type ProjectMetadataConfigMetadata = Record<string, unknown>;
@@ -130,18 +130,18 @@ export interface ProjectMetadataConfigBase {
 	 * The Slack, Discord, IRC, etc, channel to discuss the project.
 	 * Must start with a `#`.
 	 */
-	channel: string | null;
+	channel?: string | null;
 	/** A description on what the project does and why it exists. */
-	description: string | null;
+	description?: string | null;
 	/** The individual maintainers of the project. The format is unspecified. */
-	maintainers: string[];
+	maintainers?: string[];
 	/**
 	 * The owner of the project. Can be an individual, team, or
 	 * organization. The format is unspecified.
 	 */
-	owner: string | null;
+	owner?: string | null;
 	/** A human-readable title of the project. */
-	title: string | null;
+	title?: string | null;
 }
 
 /** Expanded information about the project. */
@@ -167,7 +167,7 @@ export interface ProjectToolchainsConfigBase {
 	 * this project and all of its tasks.
 	 * @since 1.31.0
 	 */
-	default: Id | Id[] | null;
+	default?: Id | Id[] | null;
 }
 
 /** Overrides top-level toolchain settings, scoped to this project. */
@@ -176,18 +176,18 @@ export type ProjectToolchainsConfig = ProjectToolchainsConfigBase & ProjectToolc
 /** Controls how workspace-level tasks are inherited. */
 export interface ProjectWorkspaceInheritedTasksConfig {
 	/** Excludes inheriting tasks by their identifier. */
-	exclude: Id[];
+	exclude?: Id[];
 	/**
 	 * Only inherits tasks with the provided identifiers,
 	 * and ignores the rest. When not defined, inherits
 	 * all matching tasks. When an empty list, inherits no tasks.
 	 */
-	include: Id[] | null;
+	include?: Id[] | null;
 	/**
 	 * Renames inherited tasks by mapping their existing
 	 * identifier to a new identifier, scoped to this project.
 	 */
-	rename: Record<Id, Id>;
+	rename?: Record<Id, Id>;
 }
 
 /** Overrides workspace settings, scoped to this project. */
@@ -205,7 +205,7 @@ export interface ProjectConfig {
 	/** Other projects that this project depends on. */
 	deps?: ProjectDependsOn[];
 	/** Other projects that this project depends on. */
-	dependsOn: ProjectDependsOn[];
+	dependsOn?: ProjectDependsOn[];
 	/**
 	 * Configures Docker integration for this project.
 	 * @since 1.27.0
@@ -215,18 +215,18 @@ export interface ProjectConfig {
 	 * A map of environment variables that will be inherited by
 	 * all tasks within the project.
 	 */
-	env: Record<string, string | null>;
+	env?: Record<string, string | null>;
 	/**
 	 * A map of group identifiers to a list of file paths, globs, and
 	 * environment variables, that can be referenced from tasks.
 	 */
-	fileGroups: Record<Id, Input[]>;
+	fileGroups?: Record<Id, Input[]>;
 	/**
 	 * Overrides the identifier within the project graph, as defined in
 	 * the workspace `projects` setting.
 	 * @since 1.18.0
 	 */
-	id: Id | null;
+	id?: Id | null;
 	/**
 	 * The primary programming language of the project.
 	 *
@@ -248,7 +248,7 @@ export interface ProjectConfig {
 	 */
 	owners: OwnersConfig;
 	/** Expanded information about the project. */
-	project: ProjectMetadataConfig | null;
+	project?: ProjectMetadataConfig | null;
 	/**
 	 * The technology stack of the project, for categorizing.
 	 * @since 1.22.0
@@ -261,12 +261,12 @@ export interface ProjectConfig {
 	 * A list of tags that this project belongs to, for categorizing,
 	 * boundary enforcement, and task inheritance.
 	 */
-	tags: Id[];
+	tags?: Id[];
 	/**
 	 * A map of identifiers to task objects. Tasks represent the work-unit
 	 * of a project, and can be ran in the action pipeline.
 	 */
-	tasks: Record<Id, TaskConfig>;
+	tasks?: Record<Id, TaskConfig>;
 	/** Overrides top-level toolchain settings, scoped to this project. */
 	toolchains: ProjectToolchainsConfig;
 	/** Overrides top-level workspace settings, scoped to this project. */

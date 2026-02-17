@@ -38,13 +38,7 @@ const sidebars: SidebarsConfig = {
 			label: 'Getting started',
 			collapsed: false,
 			collapsible: true,
-			items: [
-				'setup-workspace',
-				'create-project',
-				'setup-toolchain',
-				'create-task',
-				'run-task',
-			],
+			items: ['setup-workspace', 'create-project', 'setup-toolchain', 'create-task', 'run-task'],
 		},
 		{
 			type: 'category',
@@ -238,7 +232,6 @@ const sidebars: SidebarsConfig = {
 		'guides/mcp',
 		'guides/offline-mode',
 		'guides/open-source',
-		'guides/pkl-config',
 		'guides/remote-cache',
 		'guides/root-project',
 		'guides/sharing-config',

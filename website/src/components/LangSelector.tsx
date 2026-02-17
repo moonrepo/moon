@@ -8,7 +8,6 @@ const STARTED_ROUTES = [
 	'/docs/create-project',
 	'/docs/create-task',
 	'/docs/run-task',
-	'/docs/migrate-to-moon',
 ];
 
 function hasLocalStorage() {

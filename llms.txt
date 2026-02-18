@@ -11,7 +11,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [bin](https://moonrepo.dev/docs/commands/bin): The `moon bin <toolchain>` command will return an absolute path to a tool's binary within the
 - [check](https://moonrepo.dev/docs/commands/check): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [ci](https://moonrepo.dev/docs/commands/ci): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [clean](https://moonrepo.dev/docs/commands/clean): The `moon clean` command will clean the current workspace by deleting stale cache. For the most
+- [clean](https://moonrepo.dev/docs/commands/clean): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [completions](https://moonrepo.dev/docs/commands/completions): import Tabs from '@theme/Tabs';
 - [docker file](https://moonrepo.dev/docs/commands/docker/file): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [docker prune](https://moonrepo.dev/docs/commands/docker/prune): The `moon docker prune` command will reduce the overall filesize of the Docker environment by
@@ -49,6 +49,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [toolchain info](https://moonrepo.dev/docs/commands/toolchain/info): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [upgrade](https://moonrepo.dev/docs/commands/upgrade): The `moon upgrade` command can be used to upgrade your current moon binary (if installed globally)
 - [Feature comparison](https://moonrepo.dev/docs/comparison): import {
+- [Affected](https://moonrepo.dev/docs/concepts/affected): Affected is a term to describe when a project or task is _affected by a change_ in the environment
 - [Cache](https://moonrepo.dev/docs/concepts/cache): moon's able to achieve high performance and blazing speeds by implementing a cache that's powered by
 - [File groups](https://moonrepo.dev/docs/concepts/file-group): File groups are a mechanism for grouping similar types of files and environment variables within a
 - [File patterns](https://moonrepo.dev/docs/concepts/file-pattern): Globs in moon are [Rust-based globs](https://github.com/olson-sean-k/wax), _not_ JavaScript-based.
@@ -97,13 +98,11 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Bun handbook](https://moonrepo.dev/docs/guides/javascript/bun-handbook): import Tabs from '@theme/Tabs';
 - [Deno handbook](https://moonrepo.dev/docs/guides/javascript/deno-handbook): import Tabs from '@theme/Tabs';
 - [Node.js handbook](https://moonrepo.dev/docs/guides/javascript/node-handbook): import Tabs from '@theme/Tabs';
-- [Typescript Eslint](https://moonrepo.dev/docs/guides/javascript/typescript-eslint): A handful of ESLint rules are not compatible with the TypeScript plugin, or they cause serious
 - [TypeScript project references](https://moonrepo.dev/docs/guides/javascript/typescript-project-refs): import Tabs from '@theme/Tabs';
 - [MCP integration](https://moonrepo.dev/docs/guides/mcp): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Terminal notifications](https://moonrepo.dev/docs/guides/notifications): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Offline mode](https://moonrepo.dev/docs/guides/offline-mode): moon assumes that an internet connection is always available, as we download and install tools into
 - [Open source usage](https://moonrepo.dev/docs/guides/open-source): import Image from '@site/src/components/Image';
-- [Pkl configuration](https://moonrepo.dev/docs/guides/pkl-config): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Task profiling](https://moonrepo.dev/docs/guides/profile): import Image from '@site/src/components/Docs/Image';
 - [Remote caching](https://moonrepo.dev/docs/guides/remote-cache): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Root-level project](https://moonrepo.dev/docs/guides/root-project): Coming from other repositories or task runner, you may be familiar with tasks available at the
@@ -111,7 +110,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Sharing workspace configuration](https://moonrepo.dev/docs/guides/sharing-config): For large companies, open source maintainers, and those that love reusability, more often than not
 - [VCS hooks](https://moonrepo.dev/docs/guides/vcs-hooks): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [WASM plugins](https://moonrepo.dev/docs/guides/wasm-plugins): [moon](/moon) and [proto](/proto) plugins can be written in
-- [Webhooks (experimental)](https://moonrepo.dev/docs/guides/webhooks): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
+- [Webhooks](https://moonrepo.dev/docs/guides/webhooks): import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 - [Action graph](https://moonrepo.dev/docs/how-it-works/action-graph): import ActionGraph from '@site/src/components/Docs/ActionGraph';
 - [Languages](https://moonrepo.dev/docs/how-it-works/languages): import LangGraph from '@site/src/components/Docs/LangGraph';
 - [Project graph](https://moonrepo.dev/docs/how-it-works/project-graph): import ProjectGraph from '@site/src/components/Docs/ProjectGraph';
@@ -119,7 +118,6 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Install moon](https://moonrepo.dev/docs/install): import Tabs from '@theme/Tabs';
 - [Introduction](https://moonrepo.dev/docs/intro): import FeatureStatus from '@site/src/components/FeatureStatus';
 - [Migrate to moon v2.0](https://moonrepo.dev/docs/migrate/2.0): To ease the migration process from moon v1 to v2, we've compiled a list of all breaking changes and
-- [Migrate to moon](https://moonrepo.dev/docs/migrate-to-moon): import NextSteps from '@site/src/components/NextSteps';
 - [activate](https://moonrepo.dev/docs/proto/commands/activate): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [alias](https://moonrepo.dev/docs/proto/commands/alias): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [bin](https://moonrepo.dev/docs/proto/commands/bin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -272,4 +270,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Alpha release of moon v2 now available!](https://moonrepo.dev/blog/2026-01-01_moon-v2-alpha): After months of hard work, we are excited to announce the alpha release of moon v2! This major
 - [Beta release of moon v2 now available!](https://moonrepo.dev/blog/2026-01-13_moon-v2-beta): About two weeks ago we announced the [alpha release of moon v2](/blog/moon-v2-alpha), and today we
 - [Release Candidate of moon v2 now available!](https://moonrepo.dev/blog/2026-01-26_moon-v2-rc): About two weeks ago we announced the [beta release of moon v2](/blog/moon-v2-alpha), and today we
-- [moon v2.0 - Official "Phobos" release!](https://moonrepo.dev/blog/2026-02-01_moon-v2.0): TODO: This blog post is a work in progress!
+- [moon v2.0 - Official "Phobos" release!](https://moonrepo.dev/blog/2026-02-18_moon-v2.0): We're very excited to announce the release of moon v2.0, codenamed "Phobos", after one of Mars'

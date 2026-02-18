@@ -2,11 +2,330 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-01-26T00:00:00.000Z</updated>
+    <updated>2026-02-18T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v2.0 - Official "Phobos" release!]]></title>
+        <id>https://moonrepo.dev/blog/moon-v2.0</id>
+        <link href="https://moonrepo.dev/blog/moon-v2.0"/>
+        <updated>2026-02-18T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[We're very excited to announce the release of moon v2.0, codenamed "Phobos", after one of Mars']]></summary>
+        <content type="html"><![CDATA[<p>We're very excited to announce the release of moon v2.0, codenamed "Phobos", after one of Mars'
+moons! This is our biggest release yet, with a ton of new features, improvements, and breaking
+changes.</p>
+<p>We've been working on this release for years, and we're thrilled to finally share it with the world.
+We also want to thank everyone in the community who has contributed to this release, whether it's
+through code, documentation, testing, or just providing feedback and support. We couldn't have done
+this without you!</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="breaking-changes">Breaking changes<a href="https://moonrepo.dev/blog/moon-v2.0#breaking-changes" class="hash-link" aria-label="Direct link to Breaking changes" title="Direct link to Breaking changes" translate="no">​</a></h2>
+<p>Since this is our first major release after v1, there are quite a few breaking changes, far too many
+to list here! Please refer to the <a class="" href="https://moonrepo.dev/docs/migrate/2.0">official migration guide</a> and
+<a href="https://github.com/moonrepo/moon/blob/master/CHANGELOG.md" target="_blank" rel="noopener noreferrer" class="">changelog</a> for a comprehensive list of
+breaking changes and how to address them.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="cli">CLI<a href="https://moonrepo.dev/blog/moon-v2.0#cli" class="hash-link" aria-label="Direct link to CLI" title="Direct link to CLI" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-and-improved-commands">New and improved commands<a href="https://moonrepo.dev/blog/moon-v2.0#new-and-improved-commands" class="hash-link" aria-label="Direct link to New and improved commands" title="Direct link to New and improved commands" translate="no">​</a></h3>
+<p>As part of this release, we went through every CLI command and made improvements to their usability,
+functionality, and rendered output. On top of this, we're also introducing a handful of new commands
+to fill some missing gaps. Here are some highlights:</p>
+<ul>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a> - Low-level command for running tasks. Read more below!</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/extension"><code>moon extension</code></a> - Top-level command to
+<a href="https://moonrepo.dev/blog/moon-v2.0#management-commands" class="">manage extensions</a> in the workspace.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/hash"><code>moon hash</code></a> - Inspect a hash, or diff two hashes.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/projects"><code>moon projects</code></a> - Display a table of all projects.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/query/affected"><code>moon query affected</code></a> - Query affected status for projects and
+tasks.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/tasks"><code>moon tasks</code></a> - Display a table of all tasks or for a specific project.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/template"><code>moon template</code></a> - Display information about a template.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-exec-command">New <code>exec</code> command<a href="https://moonrepo.dev/blog/moon-v2.0#new-exec-command" class="hash-link" aria-label="Direct link to new-exec-command" title="Direct link to new-exec-command" translate="no">​</a></h3>
+<p>To simplify running tasks and improve consistency across commands, we've introduced a new low-level
+<a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a> command. This command is now used under the hood by
+<a class="" href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a>, <a class="" href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a>, and
+<a class="" href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a>, with some arguments/options pre-filled. This allows us to have a
+single command that is responsible for executing tasks, while still providing higher-level commands
+for specific use cases.</p>
+<p>This paves the way for future commands that can leverage <a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a>, such as
+a potential <code>moon deploy</code> or <code>moon watch</code> command.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">exec</span><span class="token plain"> app:build </span><span class="token parameter variable" style="color:#fef9c3">--dependents</span><span class="token plain"> direct</span><br></span></code></pre></div></div>
+<p>Additionally, it allows these other commands to inherit functionality they didn't support
+previously, like job parallelization, affected filtering, and more.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="updated-ci-check-and-run-commands">Updated <code>ci</code>, <code>check</code>, and <code>run</code> commands<a href="https://moonrepo.dev/blog/moon-v2.0#updated-ci-check-and-run-commands" class="hash-link" aria-label="Direct link to updated-ci-check-and-run-commands" title="Direct link to updated-ci-check-and-run-commands" translate="no">​</a></h3>
+<p>As mentioned previously, all of these commands have been reworked to use
+<a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a> under the hood. This means that they now share the same core
+functionality and behavior, while still providing their own unique features and options.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon ci</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon check app</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run app:dev </span><span class="token parameter variable" style="color:#fef9c3">--affected</span><br></span></code></pre></div></div>
+<p>These commands will now pre-fill certain <a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a> options for a curated
+experience. These options cannot be overridden, but the <a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a> command
+can be used directly for more control.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="dynamic-identifier--target-selection">Dynamic identifier &amp; target selection<a href="https://moonrepo.dev/blog/moon-v2.0#dynamic-identifier--target-selection" class="hash-link" aria-label="Direct link to Dynamic identifier &amp; target selection" title="Direct link to Dynamic identifier &amp; target selection" translate="no">​</a></h3>
+<p>For some commands that require a project, task, or template identifier/target, we've added an
+interactive selection prompt if no value is provided. This makes it easier to explore and use the
+CLI without needing to know specific identifiers ahead of time. The following commands now support
+this:</p>
+<ul>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/check"><code>moon check</code></a></li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/ci"><code>moon ci</code></a></li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a></li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/generate"><code>moon generate</code></a></li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/project"><code>moon project</code></a></li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a></li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/task"><code>moon task</code></a></li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/template"><code>moon template</code></a></li>
+</ul>
+<p>To demonstrate this, here we are running <a class="" href="https://moonrepo.dev/docs/commands/project"><code>moon project</code></a> without an
+identifier:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon project</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│ Which project to view?</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│ ❯ report</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│   runtime</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│   types</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│   visualizer</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│   website - A static website.</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">│ ⎵ </span><span class="token keyword" style="color:#b7a9f9">select</span><span class="token plain"> ⁃ ↕ cycle ⁃ ↵ submit</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="stabilized-moonx">Stabilized <code>moonx</code><a href="https://moonrepo.dev/blog/moon-v2.0#stabilized-moonx" class="hash-link" aria-label="Direct link to stabilized-moonx" title="Direct link to stabilized-moonx" translate="no">​</a></h3>
+<p>The <code>moonx</code> executable, sibling to <code>moon</code>, has been stabilized, and is no longer a shim, but a
+proper standalone binary. This executable is simply a shorthand for
+<a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a>, and <em>replaces</em> the shorthand syntax that previously existed with
+<code>moon &lt;target&gt;</code>.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Before</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run app:build</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">exec</span><span class="token plain"> app:build</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon app:build</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># After</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moonx app:build</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="support-for-config">Support for <code>.config</code><a href="https://moonrepo.dev/blog/moon-v2.0#support-for-config" class="hash-link" aria-label="Direct link to support-for-config" title="Direct link to support-for-config" translate="no">​</a></h3>
+<p>The <code>.moon</code> directory denotes the root of the workspace, but if you don't like clutter, this may
+feel overwhelming. To help with this, we've introduced support for the
+<a href="https://dot-config.github.io/" target="_blank" rel="noopener noreferrer" class=""><code>.config</code> directory pattern</a>, allowing you to define your workspace
+configuration in a more organized manner.</p>
+<p>Simply use <code>.config/moon</code> instead of <code>.moon</code>! The workspace root will now be the directory that
+contains the <code>.config</code> directory.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="configuration">Configuration<a href="https://moonrepo.dev/blog/moon-v2.0#configuration" class="hash-link" aria-label="Direct link to Configuration" title="Direct link to Configuration" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-file-formats">New file formats<a href="https://moonrepo.dev/blog/moon-v2.0#new-file-formats" class="hash-link" aria-label="Direct link to New file formats" title="Direct link to New file formats" translate="no">​</a></h3>
+<p>We've been pretty strict about only supporting YAML based configuration for quite some time, but we
+understand that people have different preferences (many of you hate YAML, which is fair). We've
+experimented in the past a bit by adding support for <a href="https://pkl-lang.org/" target="_blank" rel="noopener noreferrer" class="">Pkl</a>, which is a
+programmable configuration, but it required a learning curve.</p>
+<p>Over time, we've come to loosen our stance on YAML, and are now introducing support for not just
+one, but many additional formats! The following file formats are now supported for all moon
+configuration files:</p>
+<ul>
+<li class="">JSON (<code>.json</code>)</li>
+<li class="">JSON with comments (<code>.jsonc</code>)</li>
+<li class=""><a href="https://github.com/hashicorp/hcl" target="_blank" rel="noopener noreferrer" class="">HCL</a> (<code>.hcl</code>)</li>
+<li class=""><a href="https://pkl-lang.org/" target="_blank" rel="noopener noreferrer" class="">Pkl</a> (<code>.pkl</code>)</li>
+<li class=""><a href="https://toml.io/en/" target="_blank" rel="noopener noreferrer" class="">TOML</a> (<code>.toml</code>)</li>
+<li class="">YAML (<code>.yml</code>, <code>.yaml</code>)</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="toolchains">Toolchains<a href="https://moonrepo.dev/blog/moon-v2.0#toolchains" class="hash-link" aria-label="Direct link to Toolchains" title="Direct link to Toolchains" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="plugin-based-system">Plugin based system<a href="https://moonrepo.dev/blog/moon-v2.0#plugin-based-system" class="hash-link" aria-label="Direct link to Plugin based system" title="Direct link to Plugin based system" translate="no">​</a></h3>
+<p>The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.
+Toolchains are now powered by WASM plugins, instead of being hard-coded in core, allowing for more
+flexibility, extensibility, and the ability for the community to create their own toolchains!</p>
+<p>Moving to a plugin based system enables us to support more languages, more features, deeper
+integration, as well as more complex workflows. For example, in the future we can now easily support
+release workflows (changelogs, versioning, publishing) as part of a toolchain.</p>
+<p>Just to demonstrate how powerful the plugin system is, it currently supports all the following
+features:</p>
+<ul>
+<li class="">Extending the project graph with project dependencies and aliases</li>
+<li class="">Extending task commands and scripts before they're executed</li>
+<li class="">Integrates with our Docker flow for pruning and scaffolding</li>
+<li class="">Runs operations during the project/workspace sync processes</li>
+<li class="">Locates a root dependencies directory for package manager workspaces</li>
+<li class="">Parses manifest and lock files to extract dependencies and metadata</li>
+<li class="">Sets up the environment and auto-installs dependencies</li>
+<li class="">Hook into the task hashing process</li>
+<li class="">Manages downloading and installing tools (via proto)</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="improved-path-handling">Improved <code>PATH</code> handling<a href="https://moonrepo.dev/blog/moon-v2.0#improved-path-handling" class="hash-link" aria-label="Direct link to improved-path-handling" title="Direct link to improved-path-handling" translate="no">​</a></h3>
+<p>Toolchain (and extension) plugins have the ability to modify the <code>PATH</code> environment variable for
+most child processes that occur during task execution, but the way we handled this has been improved
+significantly. Previously, there were some inconsistencies around when and how the <code>PATH</code> was
+modified, leading to unexpected behavior in certain scenarios. Going forward, we inherit paths using
+a strict order of operations:</p>
+<ul>
+<li class="">Inherit for all commands using <code>extend_command</code> extension and toolchain calls</li>
+<li class="">Inherit for task commands using <code>extend_task_command</code> or <code>extend_task_script</code> toolchain calls</li>
+<li class="">Inherit toolchain executable directories</li>
+<li class="">Inherit proto shims and bins directories</li>
+<li class="">Inherit proto and moon store directories</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="extensions">Extensions<a href="https://moonrepo.dev/blog/moon-v2.0#extensions" class="hash-link" aria-label="Direct link to Extensions" title="Direct link to Extensions" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="stand-alone-configuration">Stand-alone configuration<a href="https://moonrepo.dev/blog/moon-v2.0#stand-alone-configuration" class="hash-link" aria-label="Direct link to Stand-alone configuration" title="Direct link to Stand-alone configuration" translate="no">​</a></h3>
+<p>Extensions are a WASM plugin based system that has existed for some time now, but they only
+supported a single functionality: custom execution through the <a class="" href="https://moonrepo.dev/docs/commands/ext"><code>moon ext</code></a>
+command. With the introduction of toolchain plugins, we wanted to expand the extension system to
+allow for more flexibility and use cases.</p>
+<p>To start, we're intoducing a new <a class="" href="https://moonrepo.dev/docs/config/extensions"><code>.moon/extensions.*</code></a> configuration file,
+that will contain all extensions, similar to how toolchains are configured in
+<a class="" href="https://moonrepo.dev/docs/config/toolchain"><code>.moon/toolchains.*</code></a>. Because of this change, the <code>extensions</code> setting has
+been removed from the workspace configuration.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-plugin-apis">New plugin APIs<a href="https://moonrepo.dev/blog/moon-v2.0#new-plugin-apis" class="hash-link" aria-label="Direct link to New plugin APIs" title="Direct link to New plugin APIs" translate="no">​</a></h3>
+<p>With extensions now being first-class citizens in moon, we've expanded the PDK API to allow for more
+functionality. Extensions can now utilize the following API functions, similar to toolchains:</p>
+<ul>
+<li class=""><code>define_extension_config</code> - Define the configuration schema for the extension.</li>
+<li class=""><code>initialize_extension</code> - Initialize the extension with user prompts.</li>
+<li class=""><code>extend_project_graph</code> - Extend projects with aliases, dependencies, and tasks.</li>
+<li class=""><code>extend_task_command</code> - Extend the task command before it's executed.</li>
+<li class=""><code>extend_task_script</code> - Extend the task script before it's executed.</li>
+<li class=""><code>sync_project</code> - Run operations during the project sync process.</li>
+<li class=""><code>sync_workspace</code> - Run operations during the workspace sync process.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="management-commands">Management commands<a href="https://moonrepo.dev/blog/moon-v2.0#management-commands" class="hash-link" aria-label="Direct link to Management commands" title="Direct link to Management commands" translate="no">​</a></h3>
+<p>To easily manage extensions, we've added new commands under the
+<a class="" href="https://moonrepo.dev/docs/commands/extension"><code>moon extension</code></a> namespace:</p>
+<ul>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/extension/add"><code>moon extension add</code></a> - Add a new extension to the workspace.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/commands/extension/info"><code>moon extension info</code></a> - Display information about an extension.</li>
+</ul>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon extension info migrate-nx</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">Extension ─────────────────────────────────────────────────────────────────</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Migrate an Nx repository to moon by converting all nx.json and</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  project.json files into moon configuration files.</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  ID: migrate-nx</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Title: Migrate Nx</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  Version: </span><span class="token number" style="color:#94dded">0.0</span><span class="token plain">.11</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">APIs ──────────────────────────────────────────────────────────────────────</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  🟢 register_extension </span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">required</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  ⚫️ define_extension_config</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  ⚫️ initialize_extension</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  🟢 execute_extension</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  ⚫️ sync_project</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  ⚫️ sync_workspace</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  ⚫️ extend_project_graph</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  ⚫️ extend_task_command</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  ⚫️ extend_task_script</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="projects">Projects<a href="https://moonrepo.dev/blog/moon-v2.0#projects" class="hash-link" aria-label="Direct link to Projects" title="Direct link to Projects" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="default-project">Default project<a href="https://moonrepo.dev/blog/moon-v2.0#default-project" class="hash-link" aria-label="Direct link to Default project" title="Direct link to Default project" translate="no">​</a></h3>
+<p>By request from the community, we've added a new
+<a class="" href="https://moonrepo.dev/docs/config/workspace#defaultproject"><code>defaultProject</code></a> setting to the workspace configuration.
+This setting allows you to specify a default project that will be used when running tasks that
+require a project identifier, but none was provided. This is especially useful for workspaces with a
+single project, or when you have a primary project that you work on most of the time.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">defaultProject</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'app'</span><br></span></code></pre></div></div>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Before</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run app:build</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># After</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run build</span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moonx build</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="path-based-ids">Path based IDs<a href="https://moonrepo.dev/blog/moon-v2.0#path-based-ids" class="hash-link" aria-label="Direct link to Path based IDs" title="Direct link to Path based IDs" translate="no">​</a></h3>
+<p>When locating projects with globs via the <a class="" href="https://moonrepo.dev/docs/config/workspace#projects"><code>projects</code></a> workspace
+configuration, we would historically use the directory name as the project ID. While this works in
+most cases, it can lead to issues when the directory name collides with another project, or is not
+descriptive enough. For example, <code>packages/server/utils</code> would become <code>utils</code>. What if you also had
+<code>packages/client/utils</code>?</p>
+<p>To solve this, we've introduced a new
+<a class="" href="https://moonrepo.dev/docs/config/workspace#using-a-map-and-globs"><code>projects.globFormat</code></a> setting, which can be
+configured as <code>source-path</code> and will use the full relative source path as the project ID.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">projects</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">globFormat</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'source-path'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">globs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'packages/**/moon.yml'</span><br></span></code></pre></div></div>
+<p>Using the examples above, the resulting project IDs would now be <code>packages/server/utils</code> and
+<code>packages/client/utils</code>, respectively.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="multiple-aliases">Multiple aliases<a href="https://moonrepo.dev/blog/moon-v2.0#multiple-aliases" class="hash-link" aria-label="Direct link to Multiple aliases" title="Direct link to Multiple aliases" translate="no">​</a></h3>
+<p>In addition to identifiers, projects also support aliases, which are toolchain specific names
+derived from manifest files, for example, the <code>name</code> field in <code>package.json</code> or <code>Cargo.toml</code>. This
+allows you to refer to projects by their native names on the command line, in configuration, and
+more.</p>
+<p>Previously, projects only supported a single alias, but now they support multiple aliases, one from
+each applicable toolchain. In addition, we have added a new <code>$projectAliases</code> token, which is a
+comma-separated list of all aliases. The existing <code>$projectAlias</code> token now returns the first alias,
+if it exists.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-data-stack">New <code>data</code> stack<a href="https://moonrepo.dev/blog/moon-v2.0#new-data-stack" class="hash-link" aria-label="Direct link to new-data-stack" title="Direct link to new-data-stack" translate="no">​</a></h3>
+<p>Our stack system represents all aspects of a development stack, except one, the database/data layer!
+To give you more control around categorization, we've added a new <code>data</code> stack type, which can be
+used to represent projects that are primarily focused on data storage. This includes databases, ETL
+pipelines, and other data-centric use cases.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">stack</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'data'</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="tasks">Tasks<a href="https://moonrepo.dev/blog/moon-v2.0#tasks" class="hash-link" aria-label="Direct link to Tasks" title="Direct link to Tasks" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="strict-commands">Strict commands<a href="https://moonrepo.dev/blog/moon-v2.0#strict-commands" class="hash-link" aria-label="Direct link to Strict commands" title="Direct link to Strict commands" translate="no">​</a></h3>
+<p>We've reworked the task <a class="" href="https://moonrepo.dev/docs/config/project#command"><code>command</code></a> and
+<a class="" href="https://moonrepo.dev/docs/config/project#args"><code>args</code></a> parser, when a string is provided, to be more strict and
+accurate. Previously, we used a simple shell-like parser that would split on spaces, but this led to
+issues with quoted strings, escaped characters, and other edge cases.</p>
+<p>Related to this change, these fields will now <em>only support</em> simple commands and arguments, and will
+<em>not</em> support complex syntax like pipes, redirects, and conditionals. This is a breaking change, but
+you can use <a class="" href="https://moonrepo.dev/docs/config/project#script"><code>script</code></a> instead for complex commands.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="inheritance-via-configuration">Inheritance via configuration<a href="https://moonrepo.dev/blog/moon-v2.0#inheritance-via-configuration" class="hash-link" aria-label="Direct link to Inheritance via configuration" title="Direct link to Inheritance via configuration" translate="no">​</a></h3>
+<p>Our task inheritance system is quite powerful, and one of moon's most compelling features. However,
+it can be rather restrictive as inheritance is based entirely on file naming conventions. To provide
+more flexibility, we've reworked task inheritance to be configuration based, by introducing a new
+<a class="" href="https://moonrepo.dev/docs/config/tasks#inheritedby"><code>inheritedBy</code></a> setting for all
+<a class="" href="https://moonrepo.dev/docs/config/tasks"><code>.moon/tasks/**/*</code></a> files.</p>
+<p>For example, if you had a tasks file named <code>.moon/tasks/node-frontend-library.yml</code>, it would now be
+configured like so:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/tasks/node-frontend-library.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">inheritedBy</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'node'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">stack</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'frontend'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">layer</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'library'</span><br></span></code></pre></div></div>
+<p>This new system is very powerful, as you can now mix-and-match different criteria to control how
+tasks are inherited. The following conditions are supported out of the box, providing granular
+control:</p>
+<ul>
+<li class=""><code>files</code> (NEW) - Inherit for projects that contain specific files (no glob support).</li>
+<li class=""><code>languages</code> (NEW) - Inherit for projects that belong to specific
+<a class="" href="https://moonrepo.dev/docs/config/project#language"><code>language</code></a>s.</li>
+<li class=""><code>layers</code> - Inherit for projects that belong to specific <a class="" href="https://moonrepo.dev/docs/config/project#layer"><code>layer</code></a>s.</li>
+<li class=""><code>stacks</code> - Inherit for projects that belong to specific <a class="" href="https://moonrepo.dev/docs/config/project#stack"><code>stack</code></a>s.</li>
+<li class=""><code>tags</code> - Inherit for projects that have specific <a class="" href="https://moonrepo.dev/docs/config/project#tags"><code>tags</code></a>.</li>
+<li class=""><code>toolchains</code> - Inherit for projects that belong to specific toolchains.</li>
+</ul>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">inheritedBy</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token comment" style="color:#97a1af;font-style:italic"># Project belongs to either javascript or typescript toolchain, but not the ruby toolchain</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">toolchains</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">or</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'javascript'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'typescript'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">not</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'ruby'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token comment" style="color:#97a1af;font-style:italic"># And project is either a frontend or backend stack</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">stacks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'frontend'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'backend'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token comment" style="color:#97a1af;font-style:italic"># And project is either a library or tool layer</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">layers</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'library'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'tool'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="toolchain-merging">Toolchain merging<a href="https://moonrepo.dev/blog/moon-v2.0#toolchain-merging" class="hash-link" aria-label="Direct link to Toolchain merging" title="Direct link to Toolchain merging" translate="no">​</a></h3>
+<p>A task can now be associated with multiple toolchains (javascript, node, npm), unlike the previous
+platform system which only allowed for 1 platform (node). This change allows for more flexibility
+but also requires more granular control over how toolchains are inherited. To accommodate this,
+we've added a <a class="" href="https://moonrepo.dev/docs/config/project#mergetoolchains"><code>mergeToolchains</code></a> task option:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">toolchains</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'javascript'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">mergeToolchains</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'replace'</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="robust-env-files">Robust env files<a href="https://moonrepo.dev/blog/moon-v2.0#robust-env-files" class="hash-link" aria-label="Direct link to Robust env files" title="Direct link to Robust env files" translate="no">​</a></h3>
+<p>Tasks have supported <code>.env</code> files for a while now, but the implementation has been somewhat limited.
+We only supported the <code>.env</code> file with the ability for you to customize with an explicit list of
+files. This was cumbersome and didn't allow for much flexibility.</p>
+<p>Going forward, when using <code>envFile: true</code>, moon will now automatically look for the following files
+in order, and load them if they exist:</p>
+<ul>
+<li class=""><code>/.env</code></li>
+<li class=""><code>/.env.local</code></li>
+<li class=""><code>.env</code></li>
+<li class=""><code>.env.local</code></li>
+<li class=""><code>.env.&lt;task_id&gt;</code></li>
+<li class=""><code>.env.&lt;task_id&gt;.local</code></li>
+</ul>
+<p>Additionally, the following changes and improvements have been made.</p>
+<ul>
+<li class="">Added support for <code>*.local</code> files, which will only be loaded locally and not in CI environments.</li>
+<li class="">Deferred loading of env files until task execution time, instead of during task creation (breaking
+change).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-utility-preset">New <code>utility</code> preset<a href="https://moonrepo.dev/blog/moon-v2.0#new-utility-preset" class="hash-link" aria-label="Direct link to new-utility-preset" title="Direct link to new-utility-preset" translate="no">​</a></h3>
+<p>Task presets are helpful as the provide a set of default options and behaviors for common task
+types. However, we haven't fully utilized (pun intended) this feature yet, so are adding a new
+preset called <code>utility</code>. This preset is designed for simple one-off tasks that primarily run
+locally, like running a migration, or validating data.</p>
+<p>This preset configures the following options:</p>
+<ul>
+<li class=""><a class="" href="https://moonrepo.dev/docs/config/project#cache"><code>cache</code></a> disabled</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/config/project#interactive"><code>interactive</code></a> enabled</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/config/project#persistent"><code>persistent</code></a> disabled</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/config/project#outputstyle"><code>outputStyle</code></a> as <code>stream</code></li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/config/project#runinci"><code>runInCI</code></a> as <code>skip</code></li>
+</ul>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">validate-schema</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">preset</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'utility'</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="docker">Docker<a href="https://moonrepo.dev/blog/moon-v2.0#docker" class="hash-link" aria-label="Direct link to Docker" title="Direct link to Docker" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="defaults-with-overrides">Defaults with overrides<a href="https://moonrepo.dev/blog/moon-v2.0#defaults-with-overrides" class="hash-link" aria-label="Direct link to Defaults with overrides" title="Direct link to Defaults with overrides" translate="no">​</a></h3>
+<p>To improve customizability of <code>Dockerfile</code> generation, and to allow for more flexibility during the
+scaffolding process, we've updated the <a class="" href="https://moonrepo.dev/docs/config/workspace#docker"><code>docker</code></a> settings in
+<a class="" href="https://moonrepo.dev/docs/config/workspace"><code>.moon/workspace.*</code></a> to act as defaults, and the
+<a class="" href="https://moonrepo.dev/docs/config/project#docker"><code>docker</code></a> settings in <a class="" href="https://moonrepo.dev/docs/config/project"><code>moon.*</code></a> to act as
+overrides on a per-project basis. Because of this, we've also updated <code>docker.file</code> and
+<code>docker.scaffold</code> settings to be the same across both files.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Inherited by all projects</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">docker</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">file</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">buildTask</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'build'</span><br></span></code></pre></div></div>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Overridden per project</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">docker</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">file</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">buildTask</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'compile'</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="dockerfile-templates">Dockerfile templates<a href="https://moonrepo.dev/blog/moon-v2.0#dockerfile-templates" class="hash-link" aria-label="Direct link to Dockerfile templates" title="Direct link to Dockerfile templates" translate="no">​</a></h3>
+<p>To further expand the customizability of <code>Dockerfile</code> generation, we've added support for custom
+templates to be used during the rendering process. The template can be provided with the
+<code>--template</code> option when running <a class="" href="https://moonrepo.dev/docs/commands/docker/file"><code>moon docker file</code></a>, or configured
+with the new <code>docker.file.template</code> setting. Template rendering is powered by
+<a href="https://keats.github.io/tera/" target="_blank" rel="noopener noreferrer" class="">Tera</a>.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon </span><span class="token function" style="color:#ff94ff;font-weight:bold">docker</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">file</span><span class="token plain"> app </span><span class="token parameter variable" style="color:#fef9c3">--template</span><span class="token plain"> ./Dockerfile.tera</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="vcs">VCS<a href="https://moonrepo.dev/blog/moon-v2.0#vcs" class="hash-link" aria-label="Direct link to VCS" title="Direct link to VCS" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-implementation">New implementation<a href="https://moonrepo.dev/blog/moon-v2.0#new-implementation" class="hash-link" aria-label="Direct link to New implementation" title="Direct link to New implementation" translate="no">​</a></h3>
+<p>In moon v1 we were running an experiment that utilizes a new Git implementation, which we dubbed Git
+v2. We've made this the default implementation and removed the legacy implementation. This new
+implementation is faster, more reliable, and has better support for complex repositories (worktrees,
+submodules, etc). The <code>experiments.gitV2</code> setting should now be removed.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="worktree-compatible-hooks">Worktree compatible hooks<a href="https://moonrepo.dev/blog/moon-v2.0#worktree-compatible-hooks" class="hash-link" aria-label="Direct link to Worktree compatible hooks" title="Direct link to Worktree compatible hooks" translate="no">​</a></h3>
+<p>We've rewritten our Git hooks system to be compatible with Git worktrees, and to better handle the
+<code>core.hooksPath</code> Git configuration. Previously hooks were written to <code>.git/hooks</code> at the repository
+root, but we now don't write to <code>.git</code> at all, and entirely rely on <code>.moon/hooks</code> in each tree.</p>
+<blockquote>
+<p>You may need to enable the <code>extensions.worktreeConfig</code> Git setting for this to work properly.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v2.0#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v2.0.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list of
+changes.</p>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="release" term="release"/>
+        <category label="major" term="major"/>
+        <category label="wasm" term="wasm"/>
+        <category label="plugins" term="plugins"/>
+        <category label="toolchains" term="toolchains"/>
+        <category label="extensions" term="extensions"/>
+        <category label="breaking" term="breaking"/>
+        <category label="changes" term="changes"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Release Candidate of moon v2 now available!]]></title>
         <id>https://moonrepo.dev/blog/moon-v2-rc</id>
@@ -1668,8 +1987,8 @@ the Cargo workspace.</li>
 alternative to YAML (<code>.yml</code>), but it was hidden behind an experimental flag. Going forward, you can
 now use Pkl without having to enable the experimental flag, and can remove any references to
 <code>--experimentPklConfig</code> or <code>MOON_EXPERIMENT_PKL_CONFIG</code>.</p>
-<p>Additionally, we now have <a class="" href="https://moonrepo.dev/docs/guides/pkl-config">official documentation on what Pkl is</a>, how to
-use it, and some examples of what it looks like. Check it out!</p>
+<p>Additionally, we now have official documentation on what Pkl is, how to use it, and some examples of
+what it looks like. Check it out!</p>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Based on feedback from the community, and our current thoughts on the configuration problem, at this
 point in time, we plan to support multiple configuration formats instead of choosing one, and will
 most likely include support for JSON/JSONC in v2. We're also open to other formats that may work
@@ -1697,77 +2016,5 @@ like to reference these values, add them as an explicit inputs.</li>
         <category label="cache" term="cache"/>
         <category label="pkl" term="pkl"/>
         <category label="config" term="config"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.45 - New built-in tools and build from source]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.45</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.45"/>
-        <updated>2025-01-22T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're very excited to introduce building tools from source, a feature that's been]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're very excited to introduce building tools from source, a feature that's been
-in development for over a year.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-built-in-tools">New built-in tools<a href="https://moonrepo.dev/blog/proto-v0.45#new-built-in-tools" class="hash-link" aria-label="Direct link to New built-in tools" title="Direct link to New built-in tools" translate="no">​</a></h2>
-<p>It's been quite some time since we've introduced a new official built-in tool, so in this release,
-we have 3!</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="moon"><code>moon</code><a href="https://moonrepo.dev/blog/proto-v0.45#moon" class="hash-link" aria-label="Direct link to moon" title="Direct link to moon" translate="no">​</a></h3>
-<p>This was a no-brainer, and honestly, we probably should have done it much sooner. We were quite
-surprised to see that moon is the 3rd most installed tool in proto, right behind pnpm and node
-respectively. We felt that it was now time to make it official.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> moon</span><br></span></code></pre></div></div>
-<p>If you were using the moon TOML plugin before (below), you can now remove this entry from your
-<code>.prototools</code>.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">plugins</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">moon</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://raw.githubusercontent.com/moonrepo/moon/master/proto-plugin.toml"</span><br></span></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="uv"><code>uv</code><a href="https://moonrepo.dev/blog/proto-v0.45#uv" class="hash-link" aria-label="Direct link to uv" title="Direct link to uv" translate="no">​</a></h3>
-<p>Additionally, Python interest has grown over recent months, especially with the introduction of
-<a class="" href="https://moonrepo.dev/blog/moon-v1.30">Python support in moon</a>, so we felt it was time to support the new hotness,
-<a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer" class="">uv</a>! We plan to bring uv integration into moon in the near future.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> uv</span><br></span></code></pre></div></div>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Although uv can also manage Python installations, we suggest using proto to keep everything
-streamlined and isolated.</p></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="ruby"><code>ruby</code><a href="https://moonrepo.dev/blog/proto-v0.45#ruby" class="hash-link" aria-label="Direct link to ruby" title="Direct link to ruby" translate="no">​</a></h3>
-<p>And lastly, we now support <a href="https://www.ruby-lang.org/en/" target="_blank" rel="noopener noreferrer" class="">Ruby</a>, a popular general purpose
-programming language. Ruby was extremely difficult to support, primarily because Ruby does <em>not</em>
-support the concept of pre-builts, and <em>must</em> be compiled from source files.</p>
-<p>But thanks to our new build from source install strategy (below), Ruby support is now possible.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> ruby</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="build-from-source-unstable">Build from source (unstable)<a href="https://moonrepo.dev/blog/proto-v0.45#build-from-source-unstable" class="hash-link" aria-label="Direct link to Build from source (unstable)" title="Direct link to Build from source (unstable)" translate="no">​</a></h2>
-<p>Up until now, tools could only be installed if they supported pre-built binaries, which was
-typically more than enough. However, there are many languages that do not support pre-builts and
-must be built from source, such as Ruby, PHP, and up until recently, Python. Building binaries from
-source code is actually quite complicated, as the instructions for doing so is different across
-operating systems, architectures, and even system package managers.</p>
-<p>Regardless, we've spent the past year slowly working on a solution and have finally managed to
-implement something usable, all through a powerful WASM API. And with that, the following tools now
-support build from source.</p>
-<ul>
-<li class=""><code>deno</code></li>
-<li class=""><code>go</code></li>
-<li class=""><code>moon</code></li>
-<li class=""><code>node</code></li>
-<li class=""><code>python</code> (via <code>python-build</code>)</li>
-<li class=""><code>ruby</code> (via <code>ruby-build</code>)</li>
-</ul>
-<p>To actually build from source instead of downloading a prebuilt, simply pass <code>--build</code> to
-<a class="" href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install</code></a>. For tools that only support build (like Ruby), the
-<code>--build</code> flag is optional.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> python </span><span class="token parameter variable" style="color:#fef9c3">--build</span><br></span></code></pre></div></div>
-<p>To demonstrate how this works, here's Go being built from source. We start by grouping operations
-into steps, with the first step being the installation of system dependencies (via Homebrew or
-something similar). We then check that certain requirements are met, or abort if unmet. Up next, we
-need to acquire the source code, either by downloading an archive, or cloning a Git repository. And
-lastly, running through and executing the build instructions/commands.</p>
-<div style="margin-bottom:1rem;margin-top:1rem;text-align:center"><img src="https://moonrepo.dev/assets/images/go-build-de7f9a0ccd072826c49d285e780f1a9d.png" width="90%" alt="" class="inline-block"></div>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>While this feature is very exciting, it is extremely unstable, so please report any issues, and
-provide any and all feedback!</p></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.45#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.45.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="tool" term="tool"/>
-        <category label="build" term="build"/>
-        <category label="source" term="source"/>
     </entry>
 </feed>

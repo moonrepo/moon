@@ -26,12 +26,6 @@ moon check --all
 moon check project
 ```
 
-#### Run all build and test tasks for closest project based on working directory
-
-```shell
-moon check
-```
-
 #### Run a task in all projects
 
 ```shell
@@ -166,7 +160,7 @@ tasks:
     preset: 'server'
 ```
 
-> The `local` or `persistent` settings are required for this to work.
+> The `persistent` setting is required for this to work.
 
 ## Languages
 
@@ -261,9 +255,9 @@ $ moon action-graph --dot > graph.dot
 
 ### Configuration
 
-- [`runner`](../config/workspace#runner) in `.moon/workspace.yml`
-- [`tasks`](../config/tasks#tasks) in `.moon/tasks/all.yml`
-- [`tasks`](../config/project#tasks) in `moon.yml`
+- [`pipeline`](../config/workspace#pipeline) in `.moon/workspace.*`
+- [`tasks`](../config/tasks#tasks) in `.moon/tasks/*`
+- [`tasks`](../config/project#tasks) in `moon.*`
 
 ## Example output
 
@@ -321,7 +315,7 @@ $ moon check app
 # Check multiple projects by name
 $ moon check client server
 
-# Check project at current working directory
+# Check closest project from current working directory
 $ moon check --closest
 
 # Check ALL projects (may be costly)
@@ -335,16 +329,17 @@ $ moon check --all
 
 ### Options
 
-Inherits all options from [`moon exec`](./exec) except for `--on-failure`.
+Inherits all options from [`moon exec`](./exec), and pre-fills with: `--on-failure=bail`,
+`--upstream=deep`.
 
 - `--all` - Run check for all projects in the workspace.
 - `--closest` - Run check for the closest project starting from the current working directory.
 
 ### Configuration
 
-- [`projects`](../config/workspace#projects) in `.moon/workspace.yml`
-- [`tasks`](../config/tasks#tasks) in `.moon/tasks/all.yml`
-- [`tasks`](../config/project#tasks) in `moon.yml`
+- [`projects`](../config/workspace#projects) in `.moon/workspace.*`
+- [`tasks`](../config/tasks#tasks) in `.moon/tasks/*`
+- [`tasks`](../config/project#tasks) in `moon.*`
 
 ---
 
@@ -355,7 +350,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 The `moon ci` command is a special command that should be ran in a continuous integration (CI)
 environment, as it does all the heavy lifting necessary for effectively running tasks.
 
-By default this will run all tasks that are affected by touched files and have the
+By default this will run all tasks that are affected by changed files and have the
 [`runInCI`](../config/project#runinci) task option enabled.
 
 ```shell
@@ -369,27 +364,33 @@ by `runInCI`.
 $ moon ci :build :lint
 ```
 
-> View the official [continuous integration guide](../guides/ci) for a more in-depth example of how
-> to utilize this command.
+:::info
+
+View the official [continuous integration guide](../guides/ci) for a more in-depth example of how to
+utilize this command.
+
+:::
 
 ### Arguments
 
-- `...[target]` - [Targets](../concepts/target) to run.
+- `...[target]` - [Task targets](../concepts/target) to run.
 
 ### Options
 
-Inherits all options from [`moon exec`](./exec) except for `--affected`, `--on-failure`, and
-`--only-ci-tasks`.
+Inherits most options from [`moon exec`](./exec) and pre-fills with: `--affected`, `--ci`,
+`--on-failure=continue`, `--summary=detailed`, `--upstream=deep`, `--downstream=direct`.
 
 ### Configuration
 
-- [`tasks`](../config/tasks#tasks) in `.moon/tasks/all.yml`
-- [`tasks`](../config/project#tasks) in `moon.yml`
-- [`tasks.*.options.runInCI`](../config/project#runinci) in `moon.yml`
+- [`tasks`](../config/tasks#tasks) in `.moon/tasks/*`
+- [`tasks`](../config/project#tasks) in `moon.*`
+- [`tasks.*.options.runInCI`](../config/project#runinci) in `moon.*`
 
 ---
 
 ## clean
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `moon clean` command will clean the current workspace by deleting stale cache. For the most
 part, the action pipeline will clean automatically, but this command can be used to reset the
@@ -404,6 +405,7 @@ $ moon clean --lifetime '24 hours'
 
 ### Options
 
+- `--all` - Clean all cached items and reset state. <VersionLabel version="2.0.0" />
 - `--lifetime` - The maximum lifetime of cached artifacts before being marked as stale. Defaults to
   "7 days".
 
@@ -519,8 +521,7 @@ utilize this command.
 
 ### Arguments
 
-- `<name>` - Name or alias of a project, as defined in
-  [`projects`](../../config/workspace#projects).
+- `<id>` - Name or alias of a project, as defined in [`projects`](../../config/workspace#projects).
 - `[dest]` - Destination to write the file, relative from the project root. Defaults to
   `Dockerfile`.
 
@@ -531,14 +532,17 @@ utilize this command.
   [`docker.file.buildTask`](../../config/project#buildtask) setting, or prompts in the terminal.
 - `--image` - Base Docker image to use. Defaults to an image derived from the toolchain, or prompts
   in the terminal.
-- `--no-prune` - Do not prune the workspace in the build stage.
+- `--no-prune` - Do not prune dependencies in the build stage.
+- `--no-setup` - Do not setup dependencies in the build stage. <VersionLabel version="2.0.0" />
 - `--no-toolchain` - Do not use the toolchain and instead use system binaries.
 - `--start-task` - Name of a task to start the project. Defaults to the
   [`docker.file.startTask`](../../config/project#starttask) setting, or prompts in the terminal.
+- `--template` - Template path, relative from the workspace root, to render the Dockerfile with.
+  <VersionLabel version="2.0.0" />
 
 ### Configuration
 
-- [`docker.file`](../../config/project#file) in `moon.yml`
+- [`docker.file`](../../config/project#file) in `moon.*`
 
 ---
 
@@ -568,7 +572,7 @@ This command _must be_ ran after [`moon docker scaffold`](./scaffold) and is typ
 
 ### Configuration
 
-- [`docker.prune`](../../config/workspace#prune) in `.moon/workspace.yml`
+- [`docker.prune`](../../config/workspace#prune) in `.moon/workspace.*`
 
 ---
 
@@ -592,31 +596,30 @@ utilize this command.
 
 ### Arguments
 
-- `<...projects>` - List of project names or aliases to scaffold sources for, as defined in
+- `<...ids>` - List of project IDs or aliases to scaffold sources for, as defined in
   [`projects`][graph].
 
 ### Configuration
 
-- [`docker.scaffold`](../../config/workspace#scaffold) in `.moon/workspace.yml` (entire workspace)
-- [`docker.scaffold`](../../config/project#scaffold) in `moon.yml` (per project)
+- [`docker.scaffold`](../../config/workspace#scaffold) in `.moon/workspace.*` (entire workspace)
+- [`docker.scaffold`](../../config/project#scaffold) in `moon.*` (per project)
 
 ## How it works
 
 This command may seem like magic, but it's relative simple thanks to moon's infrastructure and its
 project graph. When the command is ran, we generate 2 skeleton structures in `.moon/docker` (be sure
-to gitignore this). One for the workspace, and the other for sources.
+to gitignore this). One for configs, and the other for sources.
 
 :::warning
 
-Because scaffolding uses the project graph, it requires all projects with a `package.json` to be
-[configured in moon][graph]. Otherwise, moon will fail to copy all required files and builds may
-fail.
+Because scaffolding uses the project graph, it requires all projects to be [configured in
+moon][graph]. Otherwise, moon will fail to copy all required files and builds may fail.
 
 :::
 
-### Workspace
+### Configs
 
-The workspace skeleton mirrors the project folder structure of the repository 1:1, and only copies
+The configs skeleton mirrors the project folder structure of the repository 1:1, and only copies
 files required for dependencies to install. This is typically manifests (`package.json`), lockfiles
 (`yarn.lock`, etc), other critical configs, and `.moon` itself. This is necessary for package
 managers to install dependencies (otherwise they will fail), and for dependencies to be layer cached
@@ -625,7 +628,7 @@ in Docker.
 An example of this skeleton using Yarn may look like the following:
 
 ```
-.moon/docker/workspace/
+.moon/docker/configs/
 ├── .moon/
 ├── .yarn/
 ├── apps/
@@ -687,8 +690,8 @@ Using our example workspace above, our sources skeleton would look like the foll
 ## docker setup
 
 The `moon docker setup` command will efficiently install dependencies for focused projects. This is
-an all-in-one command for tool and dependency installations, and should replace `npm install` and
-other commands.
+an all-in-one command for toolchain and dependency installations, and should replace `npm install`
+and other commands.
 
 ```shell
 $ moon docker setup
@@ -710,7 +713,7 @@ This command _must be_ ran after [`moon docker scaffold`](./scaffold) and is typ
 
 ### Configuration
 
-- [`*`](../../config/toolchain) in `.moon/toolchains.yml`
+- [`*`](../../config/toolchain) in `.moon/toolchains.*`
 
 ---
 
@@ -754,20 +757,21 @@ $ moon exec :build --query "language=javascript && projectLayer=library"
 
 ## Arguments
 
-- `...<target>` - [Targets](../concepts/target) or project relative tasks to run.
+- `...<target>` - [Task targets](../concepts/target) or project relative tasks to run.
 - `[-- <args>]` - Additional arguments to
   [pass to the underlying command](../run-task#passing-arguments-to-the-underlying-command).
 
 ## Options
 
+- `--ci` - Force enable CI mode.
 - `-f`, `--force` - Force run and bypass cache, ignore changed files, and skip affected checks.
 - `-i`, `--interactive` - Run the pipeline and tasks interactively.
 - `-s`, `--summary [LEVEL]` - Print a summary of all actions that were ran in the pipeline.
 
 ### Workflow
 
+- `--ignore-ci-checks` - Ignore "run in CI" task checks.
 - `--on-failure <ON>` - When a task fails, either bail the pipeline, or continue executing.
-- `--only-ci-tasks` - Filter tasks to those that only run in CI.
 - `--query <QUERY>` - Filter tasks based on the result of a query.
 - `--no-actions` - Run the pipeline without sync and setup related actions.
 
@@ -777,13 +781,17 @@ $ moon exec :build --query "language=javascript && projectLayer=library"
   "remote".
 - `--base <BASE>` - Base branch, commit, or revision to compare against.
 - `--head <HEAD>` - Current branch, commit, or revision to compare with.
+- `-g`, `--include-relations` - Include graph relations for affected checks, instead of just changed
+  files.
 - `--status <STATUS>` - Filter changed files based on a changed status.
 - `--stdin` - Accept changed files from stdin for affected checks.
 
 ### Graph
 
 - `--downstream <DEPTH>`, `--dependents <DEPTH>` - Control the depth of downstream dependents.
+  Supports "none" (default), "direct", "deep".
 - `--upstream <DEPTH>`, `--dependencies <DEPTH>` - Control the depth of upstream dependencies.
+  Supports "none", "direct", "deep" (default).
 
 ### Parallelism
 
@@ -798,9 +806,9 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.20.0" header />
 
-The `moon ext <id>` command will execute an extension (a WASM plugin) that has been configured with
-the [`extensions`](../config/workspace#extensions) setting in [`.moon/workspace.yml`](../config).
-View our official [extensions guide](../guides/extensions) for more information.
+The `moon ext <id>` command will execute an extension (a WASM plugin) that has been configured in
+[`.moon/extensions.*`](../config). View our official [extensions guide](../guides/extensions) for
+more information.
 
 ```shell
 $ moon ext download -- --url https://github.com/moonrepo/moon/archive/refs/tags/v1.19.3.zip
@@ -823,7 +831,7 @@ a URL, and it hasn't been cached locally.
 
 ### Configuration
 
-- [`extensions`](../config/workspace#extensions) in `.moon/workspace.yml`
+- [`*`](../config/workspace#extensions) in `.moon/extensions.*`
 
 ---
 
@@ -834,7 +842,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="2.0.0" header />
 
 The `moon extension add <id> [plugin]` command will add a extension to the workspace by injecting a
-configuration block into `.moon/extensions.yml`. To do this, the command will download the WASM
+configuration block into `.moon/extensions.*`. To do this, the command will download the WASM
 plugin, extract information, and call initialize functions.
 
 For built-in extensions, the [plugin locator][locator] argument is optional, and will be derived
@@ -960,7 +968,7 @@ $ moon generate react-app --template
 
 ### Configuration
 
-- [`generator`](../config/workspace#generator) in `.moon/workspace.yml`
+- [`generator`](../config/workspace#generator) in `.moon/workspace.*`
 
 ---
 
@@ -1047,7 +1055,7 @@ following structure:
 
 ### Configuration
 
-- [`hasher`](../config/workspace#hasher) in `.moon/workspace.yml`
+- [`hasher`](../config/workspace#hasher) in `.moon/workspace.*`
 
 ---
 
@@ -1269,10 +1277,10 @@ $ moon project-graph
 
 # Export to DOT format
 $ moon project-graph --dot > graph.dot
-```
 
-> A project name can be passed to focus the graph to only that project and its dependencies. For
-> example, `moon project-graph app`.
+# Focus a specific project
+$ moon project-graph app
+```
 
 ### Arguments
 
@@ -1289,7 +1297,7 @@ $ moon project-graph --dot > graph.dot
 
 ### Configuration
 
-- [`projects`](../config/workspace#projects) in `.moon/workspace.yml`
+- [`projects`](../config/workspace#projects) in `.moon/workspace.*`
 
 ## Example output
 
@@ -1379,8 +1387,8 @@ tests:
 
 ### Configuration
 
-- [`projects`](../config/workspace#projects) in `.moon/workspace.yml`
-- [`project`](../config/project#project) in `moon.yml`
+- [`projects`](../config/workspace#projects) in `.moon/workspace.*`
+- [`project`](../config/project#project) in `moon.*`
 
 ---
 
@@ -1443,7 +1451,7 @@ This will output a map of projects and tasks as JSON. The output has the followi
 ### Options
 
 - `--downstream` - Include downstream dependents. Supports "none" (default), "direct", "deep".
-- `--upstream` - Include upstream dependencies. Supports "none", "direct", "deep" (default).
+- `--upstream` - Include upstream dependencies. Supports "none" (default), "direct", "deep".
 
 ---
 
@@ -1451,9 +1459,9 @@ This will output a map of projects and tasks as JSON. The output has the followi
 
 Use the `moon query changed-files` sub-command to query for a list of changed files (added,
 modified, deleted, etc) using the current VCS state. These are the same queries that
-[`moon ci`](../ci) and [`moon run`](../run) use under the hood.
+[`moon exec`](../exec) use under the hood.
 
-Touches files are determined using the following logic:
+Changed files are determined using the following logic:
 
 - If `--defaultBranch` is provided, and the current branch is the
   [`vcs.defaultBranch`](../../config/workspace#defaultbranch), then compare against the previous
@@ -1495,7 +1503,7 @@ This will output a list of workspace relative files as JSON. The output has the 
 
 ### Configuration
 
-- [`vcs`](../../config/workspace#vcs) in `.moon/workspace.yml`
+- [`vcs`](../../config/workspace#vcs) in `.moon/workspace.*`
 
 ---
 
@@ -1551,12 +1559,12 @@ $ moon query changed-files | moon query projects --affected
 
 #### Affected
 
-- `--affected` - Filter projects that have been affected by touched files.
+- `--affected` - Filter projects that have been affected by changed files.
 - `--downstream` - Include downstream dependents of queried projects. Supports "none" (default),
   "direct", "deep".
   <VersionLabel version="1.29.0" />
-- `--upstream` - Include upstream dependencies of queried projects. Supports "none", "direct",
-  "deep" (default).
+- `--upstream` - Include upstream dependencies of queried projects. Supports "none" (default),
+  "direct", "deep".
   <VersionLabel version="1.29.0" />
 
 #### Filters
@@ -1574,7 +1582,7 @@ All option values are case-insensitive regex patterns.
 
 ### Configuration
 
-- [`projects`](../../config/workspace#projects) in `.moon/workspace.yml`
+- [`projects`](../../config/workspace#projects) in `.moon/workspace.*`
 
 ---
 
@@ -1613,7 +1621,7 @@ This will output a list of projects as JSON. The output has the following struct
 
 #### Affected
 
-- `--affected` - Filter tasks that have been affected by touched files.
+- `--affected` - Filter tasks that have been affected by changed files.
 - `--downstream` - Include downstream dependents of queried tasks. Supports "none" (default),
   "direct", "deep".
   <VersionLabel version="1.30.0" />
@@ -1634,8 +1642,8 @@ All option values are case-insensitive regex patterns.
 
 ### Configuration
 
-- [`projects`](../../config/workspace#projects) in `.moon/workspace.yml`
-- [`tasks`](../../config/project#tasks) in `moon.yml`
+- [`projects`](../../config/workspace#projects) in `.moon/workspace.*`
+- [`tasks`](../../config/project#tasks) in `moon.*`
 
 ---
 
@@ -1684,20 +1692,23 @@ behavior.
 
 ### Options
 
-Inherits all options from [`moon exec`](./exec) except for `--on-failure`.
+Inherits all options from [`moon exec`](./exec) and pre-fills with: `--on-failure=bail`,
+`--upstream=deep`.
+
+- `query` - Filter tasks based on the result of a query.
 
 ### Configuration
 
-- [`projects`](../config/workspace#projects) in `.moon/workspace.yml`
-- [`tasks`](../config/tasks#tasks) in `.moon/tasks/all.yml`
-- [`tasks`](../config/project#tasks) in `moon.yml`
+- [`projects`](../config/workspace#projects) in `.moon/workspace.*`
+- [`tasks`](../config/tasks#tasks) in `.moon/tasks/*`
+- [`tasks`](../config/project#tasks) in `moon.*`
 
 ---
 
 ## setup
 
 The `moon setup` command can be used to setup the developer and pipeline environments. It achieves
-this by downloading and installing all configured tools into the toolchain.
+this by downloading and installing all configured toolchains.
 
 ```shell
 $ moon setup
@@ -1712,7 +1723,7 @@ commands, like detecting affected projects, running a task, or generating a buil
 
 ### Configuration
 
-- [`*`](../config/toolchain) in `.moon/toolchains.yml`
+- [`*`](../config/toolchain) in `.moon/toolchains.*`
 
 ---
 
@@ -1737,8 +1748,8 @@ $ moon sync code-owners
 
 ### Configuration
 
-- [`codeowners`](../../config/workspace#codeowners) in `.moon/workspace.yml`
-- [`owners`](../../config/project#owners) in `moon.yml`
+- [`codeowners`](../../config/workspace#codeowners) in `.moon/workspace.*`
+- [`owners`](../../config/project#owners) in `moon.*`
 
 ---
 
@@ -1768,13 +1779,11 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="1.8.0" header />
 
 The `moon sync projects` command will force sync _all_ projects in the workspace to help achieve a
-[healthy repository state](../../faq#what-should-be-considered-the-source-of-truth). This applies
-the following:
+healthy repository state. This applies the following:
 
 - Ensures cross-project dependencies are linked based on
   [`dependsOn`](../../config/project#dependson).
-- Ensures language specific configuration files are present and accurate (`package.json`,
-  `tsconfig.json`, etc).
+- Ensures language specific configuration files are present and accurate.
 - Ensures root configuration and project configuration are in sync.
 - Any additional language specific semantics that may be required.
 
@@ -1787,7 +1796,7 @@ $ moon sync projects
 
 ### Configuration
 
-- [`projects`](../../config/workspace#projects) in `.moon/workspace.yml`
+- [`projects`](../../config/workspace#projects) in `.moon/workspace.*`
 
 ---
 
@@ -1813,7 +1822,7 @@ $ moon sync vcs-hooks
 
 ### Configuration
 
-- [`vcs.hooks`](../../config/workspace#hooks) in `.moon/workspace.yml`
+- [`vcs.hooks`](../../config/workspace#hooks) in `.moon/workspace.*`
 
 ---
 
@@ -1937,8 +1946,8 @@ OUTPUTS
 
 ### Configuration
 
-- [`tasks`](../config/tasks#tasks) in `.moon/tasks/all.yml`
-- [`tasks`](../config/project#tasks) in `moon.yml`
+- [`tasks`](../config/tasks#tasks) in `.moon/tasks/*`
+- [`tasks`](../config/project#tasks) in `moon.*`
 
 ---
 
@@ -1986,7 +1995,7 @@ Use [`moon query tasks`](./query/tasks) for advanced querying and filtering of t
 The `moon teardown` command, as its name infers, will teardown and clean the current environment,
 opposite the [`setup`](./setup) command. It achieves this by doing the following:
 
-- Uninstalling all configured tools in the toolchain.
+- Uninstalling all configured toolchains.
 - Removing any download or temporary files/folders.
 
 ```shell
@@ -1995,7 +2004,7 @@ $ moon teardown
 
 ### Configuration
 
-- [`*`](../config/toolchain) in `.moon/toolchains.yml`
+- [`*`](../config/toolchain) in `.moon/toolchains.*`
 
 ---
 
@@ -2059,7 +2068,7 @@ $ moon templates
 
 ### Configuration
 
-- [`generator`](../config/workspace#generator) in `.moon/workspace.yml`
+- [`generator`](../config/workspace#generator) in `.moon/workspace.*`
 
 ---
 
@@ -2070,7 +2079,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="1.38.0" header />
 
 The `moon toolchain add <id> [plugin]` command will add a toolchain to the workspace by injecting a
-configuration block into `.moon/toolchains.yml`. To do this, the command will download the WASM
+configuration block into `.moon/toolchains.*`. To do this, the command will download the WASM
 plugin, extract information, and call initialize functions.
 
 For built-in toolchains, the [plugin locator][locator] argument is optional, and will be derived
@@ -2237,7 +2246,7 @@ $ moon upgrade
 :::caution
 
 This command will only work if moon was installed in the `~/.moon` directory, using our official
-[installation script](../install). If installed through Node.js, you'll need to upgrade manually.
+[installation script](../install). If installed another way, you'll need to upgrade manually.
 
 :::
 
@@ -2350,7 +2359,7 @@ projects.
 right={
   <>
 
-moon requires projects to be defined in `.moon/workspace.yml`, and supports any programming
+moon requires projects to be defined in `.moon/workspace.*`, and supports any programming
 language<sup>2</sup>.
 
   </>
@@ -2489,6 +2498,76 @@ quite some time, and has recently fallen under the Nx umbrella. Lerna is basical
 
 ---
 
+## Affected
+
+Affected is a term to describe when a project or task is _affected by a change_ in the environment
+(workspace). This is a core concept in moon, and is the basis for many of our features, such as task
+running, incremental builds, and more.
+
+## Change types
+
+To start, there are 3 types of "sources" that can trigger an affected state: files, environment
+variables, and graph relations.
+
+### Files
+
+A file is considered changed if it has been added, modified, deleted, renamed, moved, copied, so on
+and so forth. This state is determined by the version control system (VCS) in use, such as Git,
+Mercurial, or Subversion. For Git, this is determined by the `git status` command.
+
+For a project, any changed file that is within the project folder (starts with the project source),
+triggers affected.
+
+For a task, any changed file that is configured within the task's
+[`inputs`](../config/project#inputs) triggers affected.
+
+### Environment variables
+
+An environment variable is considered changed if it exists and is non-empty. This is determined by
+the presence of the variable in the environment, and its value.
+
+For projects, they are _not_ affected by environment variables.
+
+For a task, any changed environment variable that is configured within the task's
+[`inputs`](../config/project#inputs) triggers affected.
+
+### Graph relations
+
+A relation is considered changed if a project or task that is depended on, or depends on, is
+affected by a changed file or environment variable. This is determined by the project and task
+graph, which is built from the workspace configuration.
+
+For a project, affected dependency/dependent projects of the project (via
+[`dependsOn`](../config/project#dependson)), or affected tasks within the project, triggers
+affected.
+
+For a task, affected dependency/dependent tasks of the task (via [`deps`](../config/project#deps))
+triggers affected.
+
+:::info
+
+This check is conditionally enabled. For [`moon query`](../commands/query), it is always enabled.
+For exec-based commands, it is not enabled by default and the `--include-relations` flag must be
+passed.
+
+:::
+
+## Graph depth
+
+When determining affected state based on graph relations, the depth of traversal can be configured
+with the `--upstream` (`--dependencies`) and `--downstream` (`--dependents`) options. These options
+can be set to one of the following values:
+
+- `none` - Do not include any relations.
+- `direct` - Include only direct relations.
+- `deep` - Include all relations.
+
+For exec-based commands, the default is `--upstream=deep` and `--downstream=none`, meaning all
+dependencies are included, but no dependents are included. For query and other commands, the default
+is `none` for both.
+
+---
+
 ## Cache
 
 moon's able to achieve high performance and blazing speeds by implementing a cache that's powered by
@@ -2555,9 +2634,17 @@ The following diagram outlines our cache folder structure and why each piece exi
 		# Contents includes all sources used to generate the hash.
 		<hash>.json
 
+	# File system locks for parallel processes.
+	locks/
+		<file>.lock
+
 	# Stores `tar.gz` archives of a task's outputs based on its generated hash.
 	outputs/
 		<hash>.tar.gz
+
+	# JSON schemas for validating configuration files.
+	schemas/
+		<schema>.json
 
 	# State information about anything and everything within moon. Toolchain,
 	# dependencies, projects, running targets, etc.
@@ -2592,8 +2679,8 @@ change, deterministic builds, and more.
 
 ## Configuration
 
-File groups can be configured per project through [`moon.yml`](../config/project), or for many
-projects through [`.moon/tasks/all.yml`](../config/tasks).
+File groups can be configured per project through [`moon.*`](../config/project), or for many
+projects through [`.moon/tasks/**/*`](../config/tasks).
 
 ### Token functions
 
@@ -2720,7 +2807,7 @@ files, assets, resources, and more. A project must exist and be configured withi
 ## IDs
 
 A project identifier (or name) is a unique resource for locating a project. The ID is explicitly
-configured within [`.moon/workspace.yml`](../config/workspace), as a key within the
+configured within [`.moon/workspace.*`](../config/workspace), as a key within the
 [`projects`](../config/workspace#projects) setting, and can be written in camel/kebab/snake case.
 IDs support alphabetic unicode characters, `0-9`, `_`, `-`, `/`, `.`, and must start with a
 character.
@@ -2738,9 +2825,8 @@ standard names. What this means is that an alias can also be used when configuri
 defining [targets](./target).
 
 However, the difference between aliases and names is that aliases _can not_ be explicit configured
-in moon. Instead, they are specific to a project's primary programming language, and are inferred
-based on that context (when enabled in settings). For example, a JavaScript or TypeScript project
-will use the `name` field from its `package.json` as the alias.
+in moon. Instead, they are derived from toolchain's that have been detected for the project. For
+example, a JavaScript project will use the `name` field from its `package.json` as the alias.
 
 Because of this, a project can either be referenced by its name or alias, or both. Choose the
 pattern that makes the most sense for your company or team!
@@ -2752,7 +2838,7 @@ Projects can depend on other projects within the [workspace](./workspace) to bui
 [tasks](./task). Project dependencies are divided into 2 categories:
 
 - **Explicit dependencies** - These are dependencies that are explicitly defined in a project's
-  [`moon.yml`](../config/project) config file, using the [`dependsOn`](../config/project#dependson)
+  [`moon.*`](../config/project) config file, using the [`dependsOn`](../config/project#dependson)
   setting.
 - **Implicit dependencies** - These are dependencies that are implicitly discovered by moon when
   scanning the repository. How an implicit dependency is discovered is based on the project's
@@ -2760,8 +2846,8 @@ Projects can depend on other projects within the [workspace](./workspace) to bui
 
 ## Configuration
 
-Projects can be configured with an optional [`moon.yml`](../config/project) in the project root, or
-through the optional workspace-level [`.moon/tasks/all.yml`](../config/tasks).
+Projects can be configured with an optional [`moon.*`](../config/project) in the project root, or
+through the optional workspace-level [`.moon/tasks/**/*`](../config/tasks).
 
 ---
 
@@ -2843,7 +2929,7 @@ The following fields can be used as criteria, and are related to [task tokens](.
 ### `language`
 
 Programming language the project is written in, as defined in
-[`moon.yml`](../config/project#language).
+[`moon.*`](../config/project#language).
 
 ```
 language=rust
@@ -2867,7 +2953,7 @@ projectAlias~@scope/*
 
 ### `projectLayer`<VersionLabel version="1.39.0" />
 
-The project layer, as defined in [`moon.yml`](../config/project#layer).
+The project layer, as defined in [`moon.*`](../config/project#layer).
 
 ```
 projectLayer=application
@@ -2875,8 +2961,8 @@ projectLayer=application
 
 ### `projectId`
 
-Name of the project, as defined in [`.moon/workspace.yml`](../config/workspace), or `id` in
-[`moon.yml`](../config/project#id).
+Name of the project, as defined in [`.moon/workspace.*`](../config/workspace), or `id` in
+[`moon.*`](../config/project#id).
 
 ```
 projectId=server
@@ -2885,7 +2971,7 @@ projectId=server
 ### `projectSource`
 
 Relative file path from the workspace root to the project root, as defined in
-[`.moon/workspace.yml`](../config/workspace).
+[`.moon/workspace.*`](../config/workspace).
 
 ```
 projectSource~packages/*
@@ -2893,7 +2979,7 @@ projectSource~packages/*
 
 ### `projectStack`<VersionLabel version="1.22.0" />
 
-The project stack, as defined in [`moon.yml`](../config/project#stack).
+The project stack, as defined in [`moon.*`](../config/project#stack).
 
 ```
 projectStack=frontend
@@ -2901,7 +2987,7 @@ projectStack=frontend
 
 ### `tag`
 
-A tag within the project, as defined in [`moon.yml`](../config/project#tags).
+A tag within the project, as defined in [`moon.*`](../config/project#tags).
 
 ```
 tag~react-*
@@ -2917,7 +3003,7 @@ task=[build,test]
 
 ### `taskToolchain`<VersionLabel version="1.31.0" />
 
-The toolchain a task will run against, as defined in [`moon.yml`](../config/project).
+The toolchain a task will run against, as defined in [`moon.*`](../config/project).
 
 ```
 taskToolchain=node
@@ -2963,7 +3049,7 @@ These scopes are available for both running targets and configuring them.
 ### By project
 
 The most common scope is the project scope, which requires the name of a project, as defined in
-[`.moon/workspace.yml`](../config/workspace). When paired with a task name, it will run a specific
+[`.moon/workspace.*`](../config/workspace). When paired with a task name, it will run a specific
 task from that project.
 
 ```shell
@@ -3009,8 +3095,15 @@ closest project (traversing upwards), the `~` scope can be used.
 
 ```shell
 # Run `lint` in the closest project
-$ moon run ~:lint
+$ moon run '~:lint'
 ```
+
+:::caution
+
+Because `~` is a special character in the terminal (tilde expansion), you'll need to wrap the target
+in quotes, or escape it like so `\~`.
+
+:::
 
 ## Config scopes
 
@@ -3043,12 +3136,12 @@ tasks:
       - 'designSystem:build'
 ```
 
-### Self `~`
+### Owning project `~`
 
 When referring to another task within the current project, you can utilize the `~` scope, or omit
 the `~:` prefix altogether, which will be expanded to the current project's name. This is useful for
 situations where the name is unknown, for example, when configuring
-[`.moon/tasks/all.yml`](../config/tasks), or if you just want a shortcut!
+[`.moon/tasks/**/*`](../config/tasks), or if you just want a shortcut!
 
 ```yaml title=".moon/tasks/all.yml"
 # Configured as
@@ -3082,10 +3175,10 @@ Unlike other task runners that require the same tasks to be repeatedly defined f
 moon uses an inheritance model where tasks can be defined once at the workspace-level, and are then
 inherited by _many or all_ projects.
 
-Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks/**/*.yml`][tasks],
-and are inherited by based on conditions. However, projects are able to include, exclude, or rename
+Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks/**/*`][tasks], and
+are inherited by based on conditions. However, projects are able to include, exclude, or rename
 inherited tasks using the [`workspace.inheritedTasks`](../config/project#inheritedtasks) in
-[`moon.yml`](../config/project).
+[`moon.*`](../config/project).
 
 ## Conditional inheritance
 
@@ -3096,7 +3189,7 @@ are defined, the configuration is inherited by _all_ projects.
 
 The following conditions are supported:
 
-- `file`, `files` - Inherit for projects that contain specific files.
+- `file`, `files` - Inherit for projects that contain specific files (does not support globs).
 - `language`, `languages` - Inherit for projects that belong to specific
   [`language`](../config/project#language)s.
 - `layer`, `layers` - Inherit for projects that belong to specific
@@ -3253,7 +3346,7 @@ Tasks are grouped into 1 of the following types based on their configured parame
 - **Build** - Task generates one or many artifacts, and is derived from the
   [`outputs`](../config/project#outputs) setting.
 - **Run** - Task runs a one-off, long-running, or never-ending process, and is derived from the
-  [`local`](../config/project#local) setting.
+  [`options.persistent`](../config/project#persistent) setting.
 - **Test** - Task asserts code is correct and behaves as expected. This includes linting,
   typechecking, unit tests, and any other form of testing. Is the default.
 
@@ -3262,14 +3355,14 @@ Tasks are grouped into 1 of the following types based on their configured parame
 Alongside types, tasks can also grouped into a special mode that provides unique handling within the
 action graph and pipelines.
 
-### Local only
+### Local server
 
 Tasks either run locally, in CI (continuous integration pipelines), or both. For tasks that should
-_only_ be ran locally, for example, development servers and watchers, we provide a mechanism for
-marking a task as local only. When enabled, caching is turned off, the task will not run in CI,
-terminal output is not captured, and the task is marked as [persistent](#persistent).
+_only_ be ran locally, for example, development servers, we provide a mechanism for marking a task
+as local only server. When enabled, caching is turned off, the task will not run in CI, terminal
+output is not captured, and the task is marked as [persistent](#persistent).
 
-To mark a task as local only, enable the [`local`](../config/project#local) setting.
+To mark a task as local only, enable the [`preset`](../config/project#preset) setting.
 
 ```yaml title="moon.yml"
 tasks:
@@ -3280,10 +3373,9 @@ tasks:
 
 ### Internal only<VersionLabel version="1.23.0" />
 
-Internal tasks are tasks that are not meant to be ran explicitly by the user (via
-[`moon check`](../commands/check) or [`moon run`](../commands/run)), but are used internally as
-dependencies of other tasks. Additionally, internal tasks are not displayed in a project's tasks
-list, but can be inspected with [`moon task`](../commands/task).
+Internal tasks are tasks that are not meant to be ran explicitly by the user (via the command line),
+but are used internally as dependencies of other tasks. Additionally, internal tasks are not
+displayed in a project's tasks list, but can be inspected with [`moon task`](../commands/task).
 
 To mark a task as internal, enable the [`options.internal`](../config/project#internal) setting.
 
@@ -3326,23 +3418,23 @@ run them _last as a batch_. This is perfect for a few reasons:
 - Running both the backend API and frontend webapp in parallel is a breeze.
 - Dependencies of persistent tasks are guaranteed to have ran and completed.
 
-To mark a task as persistent, enable the [`local`](../config/project#local) or
-[`options.persistent`](../config/project#persistent) settings.
+To mark a task as persistent, enable the [`options.persistent`](../config/project#persistent)
+setting.
 
 ```yaml title="moon.yml"
 tasks:
   dev:
     command: 'start-dev-server'
-    preset: 'server'
-    # OR
     options:
       persistent: true
+    # OR
+    preset: 'server'
 ```
 
 ## Configuration
 
-Tasks can be configured per project through [`moon.yml`](../config/project), or for many projects
-through [`.moon/tasks/all.yml`](../config/tasks).
+Tasks can be configured per project through [`moon.*`](../config/project), or for many projects
+through [`.moon/tasks/**/*`](../config/tasks).
 
 ### Commands vs Scripts
 
@@ -3704,7 +3796,7 @@ tasks:
 > Usable in `command`, `script`, `args`, `env`, `inputs`, and `outputs` only.
 
 The `@meta(key)` token can be used to access project metadata and will be replaced with a value
-derived from [`project`](../config/project#project) in [`moon.yml`](../config/project).
+derived from [`project`](../config/project#project) in [`moon.*`](../config/project).
 
 The top-level fields (like `name` and `description`) will be used as-is (no quotes). If the setting
 is not defined, it will default to nothing or an empty string. For lists of values, they will be
@@ -3784,14 +3876,14 @@ tasks:
 
 ### Project
 
-Most values are derived from settings in [`moon.yml`](../config/project). When a setting is not
+Most values are derived from settings in [`moon.*`](../config/project). When a setting is not
 defined, or does not have a config, the variable defaults to "unknown" (for enums) or an empty
 string.
 
 - `$language` Programming language the project is written in, as defined with
   [`language`](../config/project#language).
 - `$project` - ID of the project that owns the currently running task, as defined in
-  [`.moon/workspace.yml`](../config/workspace).
+  [`.moon/workspace.*`](../config/workspace).
 - `$projectAlias` - Alias of the project that owns the currently running task.
 - `$projectChannel` - The discussion channel for the project, as defined with
   [`project.channel`](../config/project#channel).
@@ -3806,7 +3898,7 @@ string.
   <VersionLabel version="1.28.0" />
 - `$projectRoot` - Absolute file path to the project root.
 - `$projectSource` - Relative file path from the workspace root to the project root, as defined in
-  [`.moon/workspace.yml`](../config/workspace).
+  [`.moon/workspace.*`](../config/workspace).
 - `$projectStack` - The stack of the project, as defined with [`stack`](../config/project#stack).
   <VersionLabel version="1.22.0" />
 
@@ -3830,7 +3922,7 @@ tasks:
 - `$target` - Fully-qualified target that is currently running.
 - `$task` - ID of the task that is currently running. Does not include the project ID.
 - `$taskToolchain` - The toolchain that task will run against, as defined in
-  [`moon.yml`](../config/project). <VersionLabel version="1.31.0" />
+  [`moon.*`](../config/project). <VersionLabel version="1.31.0" />
 - `$taskType` - The [type of task](./task#types), based on its configured settings.
 
 ```yaml
@@ -3932,14 +4024,14 @@ MOON_TOOLCHAIN_FORCE_GLOBALS=node,yarn
 ## Configuration
 
 The tools that are managed by the toolchain are configured through the
-[`.moon/toolchains.yml`](../config/toolchain) file, but can be overridden in each project with
-[`moon.yml`](../config/project#toolchain).
+[`.moon/toolchains.*`](../config/toolchain) file, but can be overridden in each project with
+[`moon.*`](../config/project#toolchain).
 
 ### Version specification
 
 As mentioned above, tools within the toolchain are managed _by version_ for consistency across
 machines. These versions are configured on a per-tool basis in
-[`.moon/toolchains.yml`](../config/toolchain). So what kinds of versions are allowed?
+[`.moon/toolchains.*`](../config/toolchain). So what kinds of versions are allowed?
 
 - **Full versions** - A full version is a semantic version that is fully specified, such as `1.2.3`
   or `2.0.0-rc.1`. This is the most common way to specify a version, and is preferred to avoid
@@ -3977,7 +4069,7 @@ By default moon has been designed for monorepos, but can also be used for polyre
 ## Configuration
 
 Configuration that's applied to the entire workspace is defined in
-[`.moon/workspace.yml`](../config/workspace).
+[`.moon/workspace.*`](../config/workspace).
 
 ---
 
@@ -3991,16 +4083,16 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="2.0.0" header />
 
-The `.moon/extensions.yml` file configures extensions that can hook into pipeline events, or be
+The `.moon/extensions.*` file configures extensions that can hook into pipeline events, or be
 executed directly. This file is _optional_.
 
 ## `extends`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#extends" />
 
-Defines one or many external `.moon/extensions.yml`'s to extend and inherit settings from. Perfect
-for reusability and sharing configuration across repositories and projects. When defined, this
-setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/extensions.*`'s to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
 ```yaml title=".moon/extensions.yml" {1}
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/extensions.yml'
@@ -4139,6 +4231,101 @@ references to point to the local schema files in `.moon/cache/schemas`.
 
 :::
 
+## Setup & usage
+
+### Pkl
+
+Pkl utilizes a client-server architecture, which means that the `pkl` binary must exist in the
+environment for parsing and evaluating `.pkl` files. Jump over to the
+[official documentation for instructions on how to install Pkl](https://pkl-lang.org/main/current/pkl-cli/index.html#installation).
+
+If you are using [proto](/proto), you can install Pkl with the following commands.
+
+```shell
+proto plugin add pkl https://raw.githubusercontent.com/milesj/proto-plugins/refs/heads/master/pkl.toml
+proto install pkl --pin
+```
+
+To start using Pkl in moon, simply:
+
+- Install [Pkl](#installing-pkl) and the
+  [VS Code extension](https://pkl-lang.org/vscode/current/index.html).
+- Create configs with the `.pkl` extension.
+
+:::info
+
+We highly suggest reading the Pkl
+[language reference](https://pkl-lang.org/main/current/language-reference/index.html) and the
+[standard library](https://pkl-lang.org/main/current/standard-library.html).
+
+:::
+
+#### Caveats and restrictions
+
+Since this is an entirely new configuration format that is quite dynamic compared to YAML, there are
+some key differences to be aware of!
+
+- Only files are supported. Cannot use or extend from URLs.
+
+- Each `.pkl` file is evaluated in isolation (loops are processed, variables assigned, etc). This
+  means that task inheritance and file merging cannot extend or infer this native functionality.
+
+- `default` is a
+  [special feature](https://pkl-lang.org/main/current/language-reference/index.html#default-element)
+  in Pkl and cannot be used as a setting name. This only applies to
+  [`template.pkl`](../config/template#default), but can be worked around by using `defaultValue`
+  instead.
+
+```pkl title="template.pkl"
+variables {
+  ["age"] {
+    type = "number"
+    prompt = "Age?"
+    defaultValue = 0
+}
+```
+
+#### Example functionality
+
+Loops and conditionals:
+
+```pkl
+tasks {
+  for (_os in List("linux", "macos", "windows")) {
+    ["build-\(_os)"] {
+      command = "cargo"
+      args = List(
+        "--target",
+        if (_os == "linux") "x86_64-unknown-linux-gnu"
+          else if (_os == "macos") "x86_64-apple-darwin"
+          else "i686-pc-windows-msvc",
+        "--verbose"
+      )
+      options {
+        os = _os
+      }
+    }
+  }
+}
+```
+
+Local variables:
+
+```pkl
+local _sharedInputs = List("src/**/*")
+
+tasks {
+  ["test"] {
+    // ...
+    inputs = List("tests/**/*") + _sharedInputs
+  }
+  ["lint"] {
+    // ...
+    inputs = List("**/*.graphql") + _sharedInputs
+  }
+}
+```
+
 ---
 
 ## moon
@@ -4147,9 +4334,9 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `moon.yml` configuration file _is not required_ but can be used to define additional metadata
-for a project, override inherited tasks, and more at the project-level. When used, this file must
-exist in a project's root, as configured in [`projects`](./workspace#projects).
+The `moon.*` configuration file _is not required_ but can be used to define additional metadata for
+a project, override inherited tasks, and more at the project-level. When used, this file must exist
+in a project's root, as configured in [`projects`](./workspace#projects).
 
 ## `dependsOn`
 
@@ -4186,7 +4373,7 @@ dependsOn:
 <HeadingApiLink to="/api/types/interface/ProjectConfig#id" />
 
 Overrides the name (identifier) of the project, which was configured in or derived from the
-[`projects`](./workspace#projects) setting in [`.moon/workspace.yml`](./workspace). This setting is
+[`projects`](./workspace#projects) setting in [`.moon/workspace.*`](./workspace). This setting is
 useful when using glob based project location, and want to avoid using the folder name as the
 project name.
 
@@ -4500,20 +4687,39 @@ docker:
 
 <HeadingApiLink to="/api/types/interface/ProjectDockerFileConfig#image" />
 
-The Docker image to use in the base stage. Defaults to an image based on the project's toolchain, as
-outlined below.
-
-- `oven/bun:latest` for Bun
-- `denoland/deno:latest` for Deno
-- `node:latest` for Node.js
-- `python:latest` for Python
-- `rust:latest` for Rust
-- `scratch` for everything else
+The Docker image to use in the base stage. Defaults to an image based on the first detected
+toolchain.
 
 ```yaml title="moon.yml" {3}
 docker:
   file:
     image: 'node:latest'
+```
+
+#### `runPrune`<VersionLabel version="2.0.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectDockerFileConfig#runPrune" />
+
+Run the `moon docker prune` command after building the project, but before starting it. Defaults to
+`true`.
+
+```yaml title="moon.yml" {3}
+docker:
+  file:
+    runPrune: false
+```
+
+#### `runSetup`<VersionLabel version="2.0.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectDockerFileConfig#runSetup" />
+
+Run the `moon docker setup` command after scaffolding, but before building the project. Defaults to
+`true`.
+
+```yaml title="moon.yml" {3}
+docker:
+  file:
+    runSetup: false
 ```
 
 #### `startTask`
@@ -4529,6 +4735,19 @@ docker:
     startTask: 'start'
 ```
 
+#### `template`<VersionLabel version="2.0.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectDockerFileConfig#template" />
+
+A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`.
+Powered by Tera.
+
+```yaml title="moon.yml" {3}
+docker:
+  file:
+    template: 'templates/Dockerfile.tera'
+```
+
 ### `scaffold`
 
 <HeadingApiLink to="/api/types/interface/ProjectDockerConfig#scaffold" />
@@ -4537,12 +4756,26 @@ Configures aspects of the Docker scaffolding process when
 [`moon docker scaffold`](../commands/docker/scaffold) is executed. Only applies to the
 [sources skeleton](../commands/docker/scaffold#sources).
 
+#### `configsPhaseGlobs`
+
+<HeadingApiLink to="/api/types/interface/ProjectDockerScaffoldConfig#configsPhaseGlobs" />
+
+List of globs in which to copy project-relative files into the `.moon/docker/configs` skeleton. When
+not defined, defaults to `**/*`. Applies to both project and workspace level scaffolding.
+
+```yaml title="moon.yml" {3,4}
+docker:
+  scaffold:
+    configsPhaseGlobs:
+      - '*.json'
+```
+
 #### `sourcesPhaseGlobs`
 
 <HeadingApiLink to="/api/types/interface/ProjectDockerScaffoldConfig#sourcesPhaseGlobs" />
 
 List of globs in which to copy project-relative files into the `.moon/docker/sources` skeleton. When
-not defined, defaults to `**/*`.
+not defined, defaults to `**/*`. Applies to both project and workspace level scaffolding.
 
 ```yaml title="moon.yml" {3,4}
 docker:
@@ -4575,7 +4808,7 @@ Defines [file groups](../concepts/file-group) to be used by local tasks. By defa
 _is not required_ for the following reasons:
 
 - File groups are an optional feature, and are designed for advanced use cases.
-- File groups defined in [`.moon/tasks/all.yml`](./tasks) will be inherited by all projects.
+- File groups defined in [`.moon/tasks/**/*`](./tasks) will be inherited by all projects.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
 list of [globs or file paths](../concepts/file-pattern), or environment variables. Globs and paths
@@ -4701,21 +4934,6 @@ If you need to support pipes, redirects, or multiple commands, use [`script`](#s
 Learn more about [commands vs scripts](../concepts/task#commands-vs-scripts).
 
 :::
-
-#### Special commands
-
-For interoperability reasons, the following command names have special handling.
-
-- `noop`, `no-op`, `nop` - Marks the task as a "no operation". Will not execute a command in the
-  action pipeline but can define dependencies.
-- When `toolchain` is "bun":
-  - `bun`, `bunx` - Uses the binaries from the toolchain.
-- When `toolchain` is "deno":
-  - Will execute with `deno` binary.
-- When `toolchain` is "node":
-  - `node`, `npm`, `pnpm`, `yarn` - Uses the binaries from the toolchain.
-- When `toolchain` is "rust":
-  - Will execute with `cargo` binary.
 
 ### `args`
 
@@ -5174,7 +5392,7 @@ more about [commands vs scripts](../concepts/task#commands-vs-scripts).
 
 The `toolchain` field defines additional [toolchain(s)](../concepts/toolchain) the command runs on,
 where to locate its executable, and more. By default, moon will set to a value based on the
-project's [`language`](#language), default [`toolchain.default`](#toolchain-1), or via detection.
+project's [`language`](#language), default [`toolchains.default`](#toolchain-1), or via detection.
 
 ```yaml title="moon.yml" {4}
 tasks:
@@ -5643,12 +5861,12 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runInCI" />
 
 Whether to run the task automatically in a CI (continuous integration) environment when affected by
-touched files using the [`moon ci`](../commands/ci) command. Supports the following values:
+changed files using the [`moon ci`](../commands/ci) command. Supports the following values:
 
 - `always` - Always run in CI, regardless if affected or not. <VersionLabel version="1.31.0" />
-- `affected`, `true` (default) - Only run in CI if affected by touched files.
+- `affected`, `true` (default) - Only run in CI if affected by changed files.
 - `false` - Never run in CI.
-- `only` - Only run in CI, and not locally, if affected by touched files.
+- `only` - Only run in CI, and not locally, if affected by changed files.
   <VersionLabel version="1.41.0" />
 - `skip` - Skip running in CI but run locally and allow task relationships to be valid.
   <VersionLabel version="1.41.0" />
@@ -5770,164 +5988,24 @@ toolchains:
   default: 'node'
 ```
 
-### `bun`
+### `*`<VersionLabel version="2.0.0" />
 
-<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#bun" />
+Configures and overrides [workspace-level settings](./toolchain) for specific toolchains. The key is
+the name of the toolchain, and the value is an object of settings to override.
 
-Configures Bun for this project and overrides the top-level [`bun`](./toolchain#bun) setting.
-
-#### `version`
-
-Defines the explicit Bun [version specification](../concepts/toolchain#version-specification) to use
-when _running tasks_ for this project.
-
-```yaml title="moon.yml" {2,3}
-toolchains:
-  bun:
-    version: '1.0.0'
-```
-
-### `deno`
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#deno" />
-
-Configures Deno for this project and overrides the top-level [`deno`](./toolchain#deno) setting.
-
-#### `version`
-
-Defines the explicit Deno [version specification](../concepts/toolchain#version-specification) to
-use when _running tasks_ for this project.
-
-```yaml title="moon.yml" {2,3}
-toolchains:
-  deno:
-    version: '1.40.0'
-```
-
-### `node`
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#node" />
-
-Configures Node.js for this project and overrides the top-level [`node`](./toolchain#node) setting.
-Currently, only the Node.js version can be overridden per-project, not the package manager.
-
-#### `version`
-
-Defines the explicit Node.js [version specification](../concepts/toolchain#version-specification) to
-use when _running tasks_ for this project.
-
-```yaml title="moon.yml" {2,3}
-toolchains:
-  node:
-    version: '12.12.0'
-```
-
-### `python`
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#python" />
-
-Configures Python for this project and overrides the top-level [`python`](./toolchain#python)
-setting.
-
-#### `version`
-
-Defines the explicit Python
-[version/channel specification](../concepts/toolchain#version-specification) to use when _running
-tasks_ for this project.
-
-```yaml title="moon.yml" {2,3}
-toolchains:
-  python:
-    version: '3.12.0'
-```
-
-### `rust`
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#rust" />
-
-Configures Rust for this project and overrides the top-level [`rust`](./toolchain#rust) setting.
-
-#### `version`
-
-Defines the explicit Rust
-[version/channel specification](../concepts/toolchain#version-specification) to use when _running
-tasks_ for this project.
-
-```yaml title="moon.yml" {2,3}
-toolchains:
-  rust:
-    version: '1.68.0'
-```
-
-### `typescript`
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainConfig#typescript" />
-
-#### `includeProjectReferenceSources`<VersionLabel version="1.17.0" />
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#includeProjectReferenceSources" />
-
-Overrides the workspace-level
-[`includeProjectReferenceSources`](./toolchain#includeprojectreferencesources) setting. Defaults to
-undefined.
-
-```yaml title="moon.yml" {3}
+```yaml title="moon.yml" {2-4}
 toolchains:
   typescript:
-    includeProjectReferenceSources: false
-```
-
-#### `includeSharedTypes`<VersionLabel version="1.17.0" />
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#includeSharedTypes" />
-
-Overrides the workspace-level [`includeSharedTypes`](./toolchain#includesharedtypes) setting.
-Defaults to undefined.
-
-```yaml title="moon.yml" {3}
-toolchains:
-  typescript:
-    includeSharedTypes: false
-```
-
-#### `routeOutDirToCache`
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#routeOutDirToCache" />
-
-Overrides the workspace-level [`routeOutDirToCache`](./toolchain#routeoutdirtocache) setting.
-Defaults to undefined.
-
-```yaml title="moon.yml" {3}
-toolchains:
-  typescript:
-    routeOutDirToCache: false
-```
-
-#### `syncProjectReferences`
-
-<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#syncProjectReferences" />
-
-Overrides the workspace-level [`syncProjectReferences`](./toolchain#syncprojectreferences) setting.
-Defaults to undefined.
-
-```yaml title="moon.yml" {3}
-toolchains:
-  typescript:
+    # Disable refs for this project
     syncProjectReferences: false
 ```
 
-#### `syncProjectReferencesToPaths`
+Alternatively, if you want to _disable_ a toolchain for a project, you can set the value to `false`
+or `null`, which will prevent the toolchain from being auto-detected and used within the project.
 
-<HeadingApiLink to="/api/types/interface/ProjectToolchainTypeScriptConfig#syncProjectReferencesToPaths" />
-
-Overrides the workspace-level
-[`syncProjectReferencesToPaths`](./toolchain#syncprojectreferencestopaths) setting. Defaults to
-undefined.
-
-```yaml title="moon.yml" {3}
+```yaml title="moon.yml" {2,3}
 toolchains:
-  typescript:
-    syncProjectReferencesToPaths: false
+  typescript: false
 ```
 
 ## `workspace`
@@ -5938,7 +6016,7 @@ toolchains:
 
 <HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#inheritedTasks" />
 
-Provides a layer of control when inheriting tasks from [`.moon/tasks/all.yml`](./tasks).
+Provides a layer of control when inheriting tasks from [`.moon/tasks/**/*`](./tasks).
 
 #### `exclude`
 
@@ -6002,19 +6080,19 @@ workspace:
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/tasks/**/*` files configures file groups and tasks that are inherited by _every_ project
-in the workspace based on inheritance conditions.
+The `.moon/tasks/**/*` files configures file groups and tasks that are inherited by _every matching_
+project in the workspace based on inheritance conditions.
 [Learn more about task inheritance!](../concepts/task-inheritance)
 
-Projects can override or merge with these settings within their respective [`moon.yml`](./project).
+Projects can override or merge with these settings within their respective [`moon.*`](./project).
 
 ## `extends`
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#extends" />
 
-Defines one or many external `.moon/tasks/all.yml`'s to extend and inherit settings from. Perfect
-for reusability and sharing configuration across repositories and projects. When defined, this
-setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/tasks/**/*`'s to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
 ```yaml title=".moon/tasks/all.yml" {1}
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/tasks/all.yml'
@@ -6033,7 +6111,7 @@ values _are not_ deep merged!
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#fileGroups" />
 
 > For more information on file group configuration, refer to the
-> [`fileGroups`](./project#filegroups) section in the [`moon.yml`](./project) doc.
+> [`fileGroups`](./project#filegroups) section in the [`moon.*`](./project) doc.
 
 Defines [file groups](../concepts/file-group) that will be inherited by projects, and also enables
 enforcement of organizational patterns and file locations. For example, encourage projects to place
@@ -6139,7 +6217,7 @@ View the [official task inheritance guide](../concepts/task-inheritance) for mor
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#tasks" />
 
 > For more information on task configuration, refer to the [`tasks`](./project#tasks) section in the
-> [`moon.yml`](./project) doc.
+> [`moon.*`](./project) doc.
 
 As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
 context of a project, and commonly wrap a command. For most workspaces, every project _should_ have
@@ -6165,7 +6243,7 @@ tasks:
 :::info
 
 Relative file paths and globs used within a task are relative from the inherited project's root, and
-not the workspace root.
+not the workspace root, or the location of the `.moon/tasks/*` file.
 
 :::
 
@@ -6174,7 +6252,7 @@ not the workspace root.
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#taskOptions" />
 
 > For more information on task options, refer to the [`options`](./project#options) section in the
-> [`moon.yml`](./project) doc.
+> [`moon.*`](./project) doc.
 
 Like [tasks](#tasks), this setting allows you to define task options that will be inherited by _all
 tasks_ within the configured file, and by all project-level inherited tasks. This setting is the 1st
@@ -6205,7 +6283,7 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `template.yml` file configures metadata and variables for a template,
+The `template.*` file configures metadata and variables for a template,
 [used by the generator](../guides/codegen), and must exist at the root of a named template folder.
 
 ## `id`<VersionLabel version="1.23.0" />
@@ -6309,7 +6387,7 @@ arguments.
 <HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#order" />
 
 The order in which the variable will be prompted to the user. By default, variables are prompted in
-the order they are defined in the `template.yml` file.
+the order they are defined in the `template.*` file.
 
 ### Primitives & collections
 
@@ -6483,8 +6561,8 @@ variables:
 
 ## Frontmatter
 
-The following settings _are not_ available in `template.yml`, but can be defined as frontmatter at
-the top of a template file. View the [code generation guide](../guides/codegen#frontmatter) for more
+The following settings _are not_ available in `template.*`, but can be defined as frontmatter at the
+top of a template file. View the [code generation guide](../guides/codegen#frontmatter) for more
 information.
 
 ### `force`
@@ -6547,7 +6625,7 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/toolchains.yml` file configures the toolchain and the workspace development environment.
+The `.moon/toolchains.*` file configures the toolchain and the workspace development environment.
 This file is _optional_.
 
 Managing tool version's within the toolchain ensures a deterministic environment across any machine
@@ -6557,9 +6635,9 @@ Managing tool version's within the toolchain ensures a deterministic environment
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#extends" />
 
-Defines one or many external `.moon/toolchains.yml`'s to extend and inherit settings from. Perfect
-for reusability and sharing configuration across repositories and projects. When defined, this
-setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/toolchains.*`'s to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
 ```yaml title=".moon/toolchains.yml" {1}
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/toolchains.yml'
@@ -6623,17 +6701,17 @@ proto:
 
 ## Go
 
-## `go`<VersionLabel version="1.38.0" />
+## `go`
 
 Run `moon toolchain info go` for all available settings.
 
 ## JavaScript
 
-## `javascript`<VersionLabel version="1.40.0" />
+## `javascript`
 
 Run `moon toolchain info javascript` for all available settings.
 
-## `bun`<VersionLabel version="1.40.0" />
+## `bun`
 
 Run `moon toolchain info bun` for all available settings.
 
@@ -6643,7 +6721,7 @@ This toolchain requires the [`javascript`](#javascript) toolchain to also be ena
 
 :::
 
-## `deno`<VersionLabel version="1.41.0" />
+## `deno`
 
 Run `moon toolchain info deno` for all available settings.
 
@@ -6653,7 +6731,7 @@ This toolchain requires the [`javascript`](#javascript) toolchain to also be ena
 
 :::
 
-## `node`<VersionLabel version="1.40.0" />
+## `node`
 
 Run `moon toolchain info node` for all available settings.
 
@@ -6663,7 +6741,7 @@ This toolchain requires the [`javascript`](#javascript) toolchain to also be ena
 
 :::
 
-## `npm`<VersionLabel version="1.40.0" />
+## `npm`
 
 Run `moon toolchain info npm` for all available settings.
 
@@ -6673,7 +6751,7 @@ This toolchain requires the [`node`](#node) toolchain to also be enabled.
 
 :::
 
-## `pnpm`<VersionLabel version="1.40.0" />
+## `pnpm`
 
 Run `moon toolchain info pnpm` for all available settings.
 
@@ -6683,7 +6761,7 @@ This toolchain requires the [`node`](#node) toolchain to also be enabled.
 
 :::
 
-## `yarn`<VersionLabel version="1.40.0" />
+## `yarn`
 
 Run `moon toolchain info yarn` for all available settings.
 
@@ -6697,21 +6775,35 @@ This toolchain requires the [`node`](#node) toolchain to also be enabled.
 
 Run `moon toolchain info typescript` for all available settings.
 
-## Python<VersionLabel version="1.30.0" />
+## Python
 
-:::caution
+## `unstable_python`
 
-Python support is currently a work in progress for v2!
+Run `moon toolchain info unstable_python` for all available settings.
+
+## `unstable_pip`
+
+Run `moon toolchain info unstable_pip` for all available settings.
+
+:::info
+
+This toolchain requires the [`unstable_python`](#unstable_python) toolchain to also be enabled.
 
 :::
 
-## `python`
+## `unstable_uv`
 
-Run `moon toolchain info python` for all available settings.
+Run `moon toolchain info unstable_uv` for all available settings.
+
+:::info
+
+This toolchain requires the [`unstable_python`](#unstable_python) toolchain to also be enabled.
+
+:::
 
 ## Rust
 
-## `rust`<VersionLabel version="1.37.0" />
+## `rust`
 
 Run `moon toolchain info rust` for all available settings.
 
@@ -6725,16 +6817,16 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/workspace.yml` file configures projects and services in the workspace. This file is
+The `.moon/workspace.*` file configures projects and services in the workspace. This file is
 _required_.
 
 ## `extends`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#extends" />
 
-Defines one or many external `.moon/workspace.yml`'s to extend and inherit settings from. Perfect
-for reusability and sharing configuration across repositories and projects. When defined, this
-setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/workspace.*`'s to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
 ```yaml title=".moon/workspace.yml" {1}
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/workspace.yml'
@@ -6788,9 +6880,9 @@ the workspace root.
 
 When using this approach, the project name is derived from the project folder name, and is cleaned
 to our [supported characters](../concepts/project#names), but can be customized with the
-[`id`](./project#id) setting in [`moon.yml`](./project). Furthermore, globbing **does risk the
-chance of collision**, and when that happens, we log a warning and skip the conflicting project from
-being configured in the project graph.
+[`id`](./project#id) setting in [`moon.*`](./project). Furthermore, globbing **does risk the chance
+of collision**, and when that happens, we log a warning and skip the conflicting project from being
+configured in the project graph.
 
 ```yaml title=".moon/workspace.yml"
 projects:
@@ -6944,7 +7036,7 @@ constraints:
     next: ['react']
 ```
 
-On the project side, we would configure [`moon.yml`](./project#tags) like so:
+On the project side, we would configure [`moon.*`](./project#tags) like so:
 
 ```yaml title="app/moon.yml"
 tags: ['next']
@@ -7732,15 +7824,15 @@ import LangPartials from '@site/src/components/LangPartials';
 <HeaderLabel text="3 min" />
 
 With a [workspace](./setup-workspace), we can now house one or many [projects](./concepts/project),
-with a project being an application, library, or tool. In the end, each project will have its own
+with a project being an application, library, or more. In the end, each project will have its own
 build layer, personal tasks, and custom configuration.
 
 ## Declaring a project in the workspace
 
 Although a project may exist in your repository, it's not accessible from moon until it's been
 mapped in the [`projects`](./config/workspace#projects) setting found in
-[`.moon/workspace.yml`](./config/workspace). When mapping a project, we require a unique name for
-the project, and a project source location (path relative from the workspace root).
+[`.moon/workspace.*`](./config/workspace). When mapping a project, we require a unique name for the
+project, and a project source location (path relative from the workspace root).
 
 Let's say we have a frontend web application called "client", and a backend application called
 "server", our `projects` setting would look like the following.
@@ -7766,11 +7858,11 @@ to not manually curate the projects list!
 
 A project can be configured in 1 of 2 ways:
 
-- Through the [`.moon/tasks/all.yml`](./config/tasks) config file, which defines file groups and
-  tasks that are inherited by _all_ projects within the workspace. Perfect for standardizing common
+- Through the [`.moon/tasks/**/*`](./config/tasks) config files, which defines file groups and tasks
+  that are inherited by _matching_ projects within the workspace. Perfect for standardizing common
   tasks like linting, typechecking, and code formatting.
-- Through the [`moon.yml`](./config/project) config file, found at the root of each project, which
-  defines files groups, tasks, dependencies, and more that are unique to that project.
+- Through the [`<project>/moon.*`](./config/project) config file, found at the root of each project,
+  which defines files groups, tasks, dependencies, and more that are unique to that project.
 
 Both config files are optional, and can be used separately or together, the choice is yours!
 
@@ -7834,8 +7926,7 @@ tasks:
 
 When utilizing moon in a large monorepo or organization, ownership becomes very important, but also
 difficult to maintain. To combat this problem, moon supports the
-[`project`](./config/project#project) field within a project's [`moon.yml`](./config/project)
-config.
+[`project`](./config/project#project) field within a project's [`moon.*`](./config/project) config.
 
 This field is _optional_ by default, but when defined it provides metadata about the project,
 specifically around team ownership, which developers maintain the project, where to discuss it, and
@@ -7866,7 +7957,7 @@ project:
       icon: 'workspace-config',
       label: (
         
-          Configure <code>.moon/workspace.yml</code> further
+          Configure <code>.moon/workspace.*</code> further
         
       ),
       url: './config/workspace',
@@ -7875,7 +7966,7 @@ project:
       icon: 'project-config-global',
       label: (
         
-          Configure <code>.moon/tasks/all.yml</code> further
+          Configure <code>.moon/tasks/**/*</code> further
         
       ),
       url: './config/tasks',
@@ -7884,7 +7975,7 @@ project:
       icon: 'project-config',
       label: (
         
-          Configure <code>moon.yml</code> further
+          Configure <code>moon.*</code> further
         
       ),
       url: './config/project',
@@ -7906,9 +7997,8 @@ import LangPartials from '@site/src/components/LangPartials';
 The primary focus of moon is a task runner, and for it to operate in any capacity, it requires tasks
 to run. In moon, a task is a binary or system command that is ran as a child process within the
 context of a project (is the current working directory). Tasks are defined per project with
-[`moon.yml`](./config/project), or inherited by many projects with
-[`.moon/tasks/all.yml`](./config/tasks), but can also be inferred from a language's ecosystem
-([we'll talk about this later](./migrate-to-moon)).
+[`moon.*`](./config/project), or inherited by many projects with
+[`.moon/tasks/**/*`](./config/tasks), but can also be inferred from a language's ecosystem.
 
 :::tip
 
@@ -7920,9 +8010,9 @@ Change the language dropdown at the top right to switch the examples!
 
 Most — if not all projects — utilize the same core tasks: linting, testing, code formatting,
 typechecking, and _building_. Because these are so universal, let's implement the build task within
-a project using [`moon.yml`](./config/project).
+a project using [`moon.*`](./config/project).
 
-Begin by creating the `moon.yml` file at the root of a project and add `build` to the
+Begin by creating the `moon.*` file at the root of a project and add `build` to the
 [`tasks`](./config/project#tasks) field, with a [`command`](./config/project#command) parameter.
 
 <LangPartials>
@@ -8509,7 +8599,7 @@ encourage certain file structures for consuming projects!
       icon: 'project-config-global',
       label: (
         
-          Configure <code>.moon/tasks/all.yml</code> further
+          Configure <code>.moon/tasks/**/*</code> further
         
       ),
       url: './config/tasks',
@@ -8518,7 +8608,7 @@ encourage certain file structures for consuming projects!
       icon: 'project-config',
       label: (
         
-          Configure <code>moon.yml</code> further
+          Configure <code>moon.*</code> further
         
       ),
       url: './config/project',
@@ -8654,46 +8744,6 @@ Yes! We plan to integrate CD with the current build and CI system, but we are fo
 2 for the time being. Why not start using moon today so that you can easily adopt CD when it's
 ready?
 
-### What should be considered the "source of truth"?
-
-If you're a frontend developer, you'll assume that a `package.json` is the source of truth for a
-project, as it defines scripts, dependencies, and repo-local relations. While true, this breaks down
-with additional tooling, like TypeScript project references, as now you must maintain
-`tsconfig.json` as well as `package.json`. The risk of these falling out of sync is high.
-
-This problem is further exacerbated by more tooling, or additional programming languages. What if
-your frontend project is dependent on a backend project? This isn't easily modeled in
-`package.json`. What if the backend project needs to be built and ran before running the frontend
-project? Again, while not impossible, it's quite cumbersome to model in `package.json` scripts. So
-on and so forth.
-
-moon aims to solve this with a different approach, by standardizing all projects in the workspace on
-[`moon.yml`](./config/project). With this, the `moon.yml` is the source of truth for each project,
-and provides us with the following:
-
-- The configuration is language agnostic. All projects are configured in a similar manner.
-- Tasks can reference other tasks easily. For example, npm scripts referencing rake tasks, and vice
-  verse, is a non-ideal experience.
-- Dependencies defined with [`dependsOn`](./config/project#dependson) use moon project names, and
-  not language specific semantics. This field also easily populates the dependency/project graphs.
-- For JavaScript projects:
-  - `package.json` dependencies (via `dependsOn`) are kept in sync when
-    [`node.syncProjectWorkspaceDependencies`](./config/toolchain#syncprojectworkspacedependencies)
-    is enabled.
-  - `tsconfig.json` project references (via `dependsOn`) are kept in sync when
-    [`typescript.syncProjectReferences`](./config/toolchain#syncprojectreferences) is enabled.
-
-By using moon as the source of truth, we can ensure a healthy repository, by accurately keeping
-everything in sync, and modifying project/language configuration to operate effectively.
-
-:::info
-
-With all that being said, moon supports
-[implicit dependency scanning](./concepts/project#dependencies), if you'd prefer to continue
-utilizing language specific functionality, instead of migrating entirely to moon.
-
-:::
-
 ### How to stop moon formatting JSON and YAML files?
 
 To ensure a healthy repository state, moon constantly modifies JSON and YAML files, specifically
@@ -8804,13 +8854,10 @@ receive the benefits of the toolchain. Some of which are:
 
 ### Can we use `package.json` scripts?
 
-We encourage everyone to define tasks in a [`moon.yml`](./config/project#tasks) file, as it allows
-for additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like to
-keep using `package.json` scripts, enable the
+We encourage everyone to define tasks in a [`moon.*`](./config/project#tasks) file, as it allows for
+additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like to keep
+using `package.json` scripts, enable the
 [`node.inferTasksFromScripts`](./config/toolchain#infertasksfromscripts) setting.
-
-View the [official documentation](./migrate-to-moon) for more information on this approach,
-including risks, disadvantages, and caveats.
 
 ### Can moon version/publish packages?
 
@@ -8831,7 +8878,7 @@ issues), it can mean 1 of 2 things:
 
 - If you are using package workspaces, then one of the projects triggering the install is not listed
   within the `workspaces` field in the root `package.json` (for npm and yarn), or in
-  `pnpm-workspace.yml` (for pnpm).
+  `pnpm-workspace.*` (for pnpm).
 - If the install is triggering in a non-JavaScript related project, then this project is incorrectly
   listed as a package workspace.
 - If you don't want a package included in the workspace, but do want to install its dependencies,
@@ -8876,11 +8923,11 @@ support it as a first-class feature within moon, and we do just that with the
 The `ci` command does all the heavy lifting necessary for effectively running jobs. It achieves this
 by automatically running the following steps:
 
-- Determines touched files by comparing the current HEAD against a base.
-- Determines all [targets](../concepts/target) that need to run based on touched files.
+- Determines changed files by comparing the current HEAD against a base.
+- Determines all [targets](../concepts/target) that need to run based on changed files.
 - Additionally runs affected [targets](../concepts/target) dependencies _and_ dependents.
 - Generates an action and dependency graph.
-- Installs the toolchain, Node.js, and npm dependencies.
+- Installs the toolchain and applicable dependencies.
 - Runs all actions within the graph using a thread pool.
 - Displays stats about all passing, failed, and invalid actions.
 
@@ -8888,7 +8935,7 @@ by automatically running the following steps:
 
 By default, _all tasks_ run in CI, as you should always be building, linting, typechecking, testing,
 so on and so forth. However, this isn't always true, so this can be disabled on a per-task basis
-through the [`runInCI`](../config/project#runinci) or [`local`](../config/project#local) options.
+through the [`runInCI`](../config/project#runinci) option.
 
 ```yaml
 tasks:
@@ -8896,15 +8943,13 @@ tasks:
     command: 'webpack server'
     options:
       runInCI: false
-    # Or
-    preset: 'server'
 ```
 
 :::caution
 
 This option _must_ be set to false for tasks that spawn a long-running or never-ending process, like
 HTTP or development servers. To help mitigate this, tasks named `dev`, `start`, or `serve` are false
-by default. This can be easily controlled with the [`local`](../config/project#local) setting.
+by default.
 
 :::
 
@@ -8944,7 +8989,6 @@ jobs:
 steps:
   - label: 'CI'
     commands:
-      - 'yarn install --immutable'
       - 'moon ci'
 ```
 
@@ -8953,20 +8997,12 @@ steps:
 
 ```yaml title=".circleci/config.yml"
 version: 2.1
-orbs:
-  node: 'circleci/node@5.0.2'
 jobs:
   ci:
     docker:
       - image: 'cimg/base:stable'
     steps:
-      - checkout
-      - node/install:
-          install-yarn: true
-          node-version: '16.13'
-      - node/install-packages:
-          check-cache: 'always'
-          pkg-manager: 'yarn-berry'
+      - 'checkout'
       - run: 'moon ci'
 workflows:
   pipeline:
@@ -8978,10 +9014,7 @@ workflows:
 <TabItem value="travisci" label="TravisCI">
 
 ```yaml title=".travis.yml"
-language: node_js
-node_js:
-  - 16
-cache: yarn
+language: 'node_js'
 script: 'moon ci'
 ```
 
@@ -8990,13 +9023,13 @@ script: 'moon ci'
 
 ## Choosing targets<VersionLabel version="1.14.0" />
 
-By default `moon ci` will run _all_ tasks from _all_ projects that are affected by touched files and
+By default `moon ci` will run _all_ tasks from _all_ projects that are affected by changed files and
 have the [`runInCI`](../config/project#runinci) task option enabled. This is a great catch-all
 solution, but may not vibe with your workflow or requirements.
 
 If you'd prefer more control, you can pass a list of targets to `moon ci`, instead of moon
 attempting to detect them. When providing targets, `moon ci` will still only run them if affected by
-touched files, but will still filter with the `runInCI` option.
+changed files, but will still filter with the `runInCI` option.
 
 ```shell
 # Run all builds
@@ -9026,7 +9059,7 @@ $ MOON_BASE=<BRANCH> MOON_HEAD=<SHA> moon ci
 ## Parallelizing tasks
 
 If your CI environment supports sharding across multiple jobs, then you can utilize moon's built in
-parallelism by passing `--jobTotal` and `--job` options. The `--jobTotal` option is an integer of
+parallelism by passing `--job-total` and `--job` options. The `--job-total` option is an integer of
 the total number of jobs available, and `--job` is the current index (0 based) amongst the total.
 
 When these options are passed, moon will only run affected [targets](../concepts/target) based on
@@ -9047,7 +9080,7 @@ jobs:
         index: [0, 1]
     steps:
       # ...
-      - run: 'moon ci --job ${{ matrix.index }} --jobTotal 2'
+      - run: 'moon ci --job ${{ matrix.index }} --job-total 2'
 ```
 
 - [Documentation](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs)
@@ -9062,7 +9095,7 @@ steps:
     parallelism: 10
     commands:
       # ...
-      - 'moon ci --job $$BUILDKITE_PARALLEL_JOB --jobTotal $$BUILDKITE_PARALLEL_JOB_COUNT'
+      - 'moon ci --job $$BUILDKITE_PARALLEL_JOB --job-total $$BUILDKITE_PARALLEL_JOB_COUNT'
 ```
 
 - [Documentation](https://buildkite.com/docs/tutorials/parallel-builds#parallel-jobs)
@@ -9078,7 +9111,7 @@ jobs:
     parallelism: 10
     steps:
       # ...
-      - run: 'moon ci --job $CIRCLE_NODE_INDEX --jobTotal $CIRCLE_NODE_TOTAL'
+      - run: 'moon ci --job $CIRCLE_NODE_INDEX --job-total $CIRCLE_NODE_TOTAL'
 ```
 
 - [Documentation](https://circleci.com/docs/2.0/parallelism-faster-jobs/)
@@ -9096,7 +9129,7 @@ env:
   jobs:
     - TRAVIS_JOB_INDEX=0
     - TRAVIS_JOB_INDEX=1
-script: 'moon ci --job $TRAVIS_JOB_INDEX --jobTotal $TRAVIS_JOB_TOTAL'
+script: 'moon ci --job $TRAVIS_JOB_INDEX --job-total $TRAVIS_JOB_TOTAL'
 ```
 
 - [Documentation](https://docs.travis-ci.com/user/speeding-up-the-build/)
@@ -9156,7 +9189,8 @@ The following GitHub actions are provided by the community:
 
 - [`appthrust/moon-ci-retrospect`](https://github.com/appthrust/moon-ci-retrospect) - Displays the
   results of a `moon ci` run in a more readable fashion.
-- [`kymckay/moon-ci-booster`](https://github.com/kymckay/moon-ci-booster) - Displays failing `moon ci` tasks as comments with error logs directly on your pull request.
+- [`kymckay/moon-ci-booster`](https://github.com/kymckay/moon-ci-booster) - Displays failing
+  `moon ci` tasks as comments with error logs directly on your pull request.
 
 ---
 
@@ -9175,16 +9209,16 @@ files to a destination.
 ## Creating a new template
 
 To create a new template, run [`moon generate`][command] while passing the `--template` option. This
-will create a template directory and [`template.yml`][config] file in the 1st file-based template
+will create a template directory and [`template.*`][config] file in the 1st file-based template
 location defined in [`generator.templates`][gen-templates].
 
 ```shell
 $ moon generate <name> --template
 ```
 
-### Configuring `template.yml`
+### Configuring `template.*`
 
-Every template requires a [`template.yml`][config] file in the template's directory root. This file
+Every template requires a [`template.*`][config] file in the template's directory root. This file
 acts as a schema and declares metadata and variables required by the generator.
 
 ```yaml title="template.yml"
@@ -9385,7 +9419,7 @@ Once a template has been created and configured, you can generate files based on
 
 This command requires the name of a template as the 1st argument. The template name is the folder
 name on the file system that houses all the template files, or the [`id`](../config/template#id)
-setting configured in [`template.yml`](../config/template).
+setting configured in [`template.*`](../config/template).
 
 ```shell
 $ moon generate npm-package
@@ -9393,11 +9427,11 @@ $ moon generate npm-package
 
 An optional destination path, relative from the current working directory, can be provided as the
 2nd argument. If not provided, the [`destination`](../config/template#destination) setting
-configured in [`template.yml`](../config/template) will be used, or you'll be prompted during
+configured in [`template.*`](../config/template) will be used, or you'll be prompted during
 generation to provide one.
 
 ```shell
-$ moon generate npm-package ./packages/example
+$ moon generate npm-package --to ./packages/example
 ```
 
 > This command is extremely interactive, as we'll prompt you for the destination path, variable
@@ -9439,7 +9473,7 @@ generator:
 
 If you'd prefer more control over literal file paths (above), you can instead use glob paths or the
 `glob://` protocol. Globs are relative from the workspace root, and will only match directories, or
-patterns that end in `template.yml`.
+patterns that end in `template.*`.
 
 ```yaml title=".moon/workspace.yml"
 generator:
@@ -9489,7 +9523,7 @@ names.
 Using the package template example above, we could pre-fill the `name` variable like so:
 
 ```shell
-$ moon generate npm-package ./packages/example -- --name '@company/example' --private
+$ moon generate npm-package --to ./packages/example -- --name '@company/example' --private
 ```
 
 :::info
@@ -9536,8 +9570,8 @@ the layout of those projects must follow these guidelines:
 
 - A project must support multiple templates
 - A template is denoted by a folder in the root of the project
-- Each template must have a [`template.yml`][config] file
-- Template names are derived from the folder name, or the `id` field in [`template.yml`][config]
+- Each template must have a [`template.*`][config] file
+- Template names are derived from the folder name, or the `id` field in [`template.*`][config]
 
 An example of this layout structure may look something like the following:
 
@@ -9578,7 +9612,7 @@ upon the popular `CODEOWNERS` integration in VCS providers, like GitHub, GitLab,
 ## Defining owners
 
 With moon, you _do not_ modify a `CODEOWNERS` file directly. Instead you define owners _per project_
-with [`moon.yml`](../config/project), or globally with [`.moon/workspace.yml`](../config/workspace).
+with [`moon.*`](../config/project), or globally with [`.moon/workspace.*`](../config/workspace).
 These owners are then aggregated and automatically
 [synced to a `CODEOWNERS` file](#generating-codeowners).
 
@@ -9592,7 +9626,7 @@ documentation for the correct format in which to define owners.
 ### Project-level
 
 For projects, we support an [`owners`](../config/project#owners) setting in
-[`moon.yml`](../config/project) that accepts file patterns/paths and their owners (contributors
+[`moon.*`](../config/project) that accepts file patterns/paths and their owners (contributors
 required to review), as well as operational settings for minimum required approvals, custom groups,
 and more.
 
@@ -9657,7 +9691,7 @@ The configuration above would generate the following:
 Project scoped owners are great but sometimes you need to define owners for files that span across
 all projects, or files at any depth within the repository. With the
 [`codeowners.globalPaths`](../config/workspace#globalpaths) setting in
-[`.moon/workspace.yml`](../config/workspace), you can do just that.
+[`.moon/workspace.*`](../config/workspace), you can do just that.
 
 Paths configured here are used as-is, allowing for full control of what ownership is applied.
 
@@ -9728,13 +9762,13 @@ $ moon sync codeowners
 While this works, it is a manual process, and can easily be forgotten, resulting in an out-of-date
 file.
 
-An alternative solution is the [`codeowners.syncOnRun`](../config/workspace#synconrun) setting in
-[`.moon/workspace.yml`](../config/workspace#codeowners), that when enabled, moon will automatically
+An alternative solution is the [`codeowners.sync`](../config/workspace#sync) setting in
+[`.moon/workspace.*`](../config/workspace#codeowners), that when enabled, moon will automatically
 generate a `CODEOWNERS` file when a [target](../concepts/target) is ran.
 
 ```yaml title=".moon/workspace.yml"
 codeowners:
-  syncOnRun: true
+  sync: true
 ```
 
 > The format and location of the `CODEOWNERS` file is based on the
@@ -9761,7 +9795,7 @@ The location of the file is dependent on the configured provider.
 - GitLab -> `.gitlab/CODEOWNERS`
 - Everything else -> `CODEOWNERS`
 
-### Why are owners defined in `moon.yml` and not an alternative like `OWNERS`?
+### Why are owners defined in `moon.*` and not an alternative like `OWNERS`?
 
 A very popular pattern for defining owners is through an `OWNERS` file, which can appear in any
 folder, at any depth, within the repository. All of these files are then aggregated into a single
@@ -9769,7 +9803,7 @@ folder, at any depth, within the repository. All of these files are then aggrega
 
 While this is useful for viewing ownership of a folder at a glance, it incurs a massive performance
 hit as we'd have to constantly glob the _entire_ repository to find all `OWNERS` files. We found it
-best to define owners in `moon.yml` instead for the following reasons:
+best to define owners in `moon.*` instead for the following reasons:
 
 - No performance hit, as we're already loading and parsing these config files.
 - Co-locates owners with the rest of moon's configuration.
@@ -9788,7 +9822,7 @@ this endeavor.
 
 Before we dive into the internals of moon, we should first verify that the task is actually
 configured correctly. Our configuration layer is very strict, but it can't catch everything, so jump
-to the [`moon.yml`](../config/project#tasks) documentation for more information.
+to the [`moon.*`](../config/project#tasks) documentation for more information.
 
 To start, moon will create a snapshot of the project and its tasks, with all [tokens][token]
 resolved, and paths expanded. This snapshot is located at
@@ -9801,9 +9835,9 @@ Some issues to look out for:
 - Have [tokens][token] resolved correctly? If not, verify syntax or try another token type.
 - Have `inputFiles`, `inputGlobs`, and `inputVars` expanded correctly from [`inputs`][inputs]?
 - Have `outputFiles` and `outputGlobs` expanded correctly from [`outputs`][outputs]?
-- Is the `toolchain` (formerly `platform`) correct for the command? If incorrect, explicitly set the
+- Is the `toolchains` correct for the command? If incorrect, explicitly set the
   [`toolchain`][toolchain].
-- Are `options` and `flags` correct?
+- Are `options` and `state` correct?
 
 :::info
 
@@ -9818,22 +9852,9 @@ If the configuration from the previous step looks correct, you can skip this ste
 verify that the inherited configuration is also correct. In the `snapshot.json` file, inspect the
 root `inherited` object, which is structured as follows:
 
-- `order` - The order in which configuration files from `.moon` are loaded, from lowest to highest
-  priority, and the order files are merged. The `*` entry is `.moon/tasks/all.yml`, while other
-  entries map to `.moon/tasks/**/*.yml`.
-- `layers` - A mapping of configuration files that were loaded, derived from the `order`. Each layer
-  represents a partial object (not expanded or resolved). Only files that exist will be mapped here.
-- `config` - A partial configuration object representing the state of all merged layers. This is
-  what is merged with the project's `moon.yml` file.
-
-Some issues to look out for:
-
-- Is the order correct? If not, verify the project's [`language`](../config/project#language) and
-  the task's [`toolchain`][toolchain].
-- Does `config` correctly represent the merged state of all `layers`? Do note that tasks are shallow
-  merged (by name), _not_ deep merged.
-- Have the root `tasks` properly inherited [`implicitDeps`][implicitDeps],
-  [`implicitInputs`][implicitInputs], and `fileGroups`?
+- `config` - A mapping of configuration files that were loaded, in order. Each config represents a
+  partial object (not expanded or resolved). Only files that exist will be mapped here.
+- `layers` - A mapping of task IDs to configuration files that have been inherited.
 
 ## Inspect trace logs
 
@@ -9849,14 +9870,12 @@ Once ran, a large amount of information will be logged to the terminal. However,
 ignored, as we're only interested in the "is this task affected by changes" logs. This breaks down
 as follows:
 
-1. First, we gather touched files from the local checkout, which is typically
-   `git status --porcelain --untracked-files` (from the `moon_process::command_inspector` module).
-   The logs do not output the list of files that are touched, but you can run this command locally
-   to verify the output.
+1. First, we gather changed files from the local checkout, which is typically
+   `git status --porcelain --untracked-files` (from the `moon_process` module).
 2. Secondly, we gather all files from the project directory, using the
    `git ls-files --full-name --cached --modified --others --exclude-standard <path> --deduplicate`
-   command (also from the `moon_process::command_inspector` module). This command can also be ran
-   locally to verify the output.
+   command (also from the `moon_process` module). This command can also be ran locally to verify the
+   output.
 3. Lastly, all files from the previous 2 commands will be hashed using the `git hash-object`
    command. If you passed the `MOON_DEBUG_PROCESS_INPUT` environment variable, you'll see a massive
    log entry of all files being hashed. This is what we use to generate moon's specific hash.
@@ -9889,7 +9908,7 @@ information is an array, and breaks down as follows:
   and `inputs`.
   - Dependencies are other tasks (and their hash) that this task depends on.
   - Inputs are all the files (and their hash from `git hash-object`) this task requires to run.
-- The remaining items are toolchain/language specific, some examples are:
+- The remaining array items are toolchain/language specific, some examples are:
   - **Node.js** - The current Node.js version and the resolved versions/hashes of all `package.json`
     dependencies.
   - **Rust** - The current Rust version and the resolved versions/hashes of all `Cargo.toml`
@@ -10192,8 +10211,8 @@ RUN moon run <project>:<task>
 :::info
 
 If you need to copy additional files for your commands to run successfully, you can configure the
-`docker.scaffold.include` setting in [`.moon/workspace.yaml`](../config/workspace#scaffold) (entire
-workspace) or [`moon.yml`](../config/project#scaffold) (per project).
+`docker.scaffold` settings in [`.moon/workspace.yaml`](../config/workspace#scaffold) (entire
+workspace) or [`moon.*`](../config/project#scaffold) (per project).
 
 :::
 
@@ -10363,7 +10382,7 @@ cd apps && npx -p @angular/cli@latest ng new angular-app
 ## Setup
 
 Since Angular is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 ```yaml title="<project>/moon.yml"
 fileGroups:
@@ -10480,7 +10499,7 @@ ignored, but the `@angular-eslint` rules will still be used.
 <TabItem value="angular">
 
 If you'd prefer to use the `ng lint` command, add it as a task to the project's
-[`moon.yml`](../../config/project).
+[`moon.*`](../../config/project).
 
 ```yaml title="<project>/moon.yml"
 tasks:
@@ -10498,7 +10517,7 @@ workspace:
     exclude: ['lint']
 ```
 
-In addition to configuring `moon.yml`, you also need to add a lint target in the `angular.json` file
+In addition to configuring `moon.*`, you also need to add a lint target in the `angular.json` file
 for linting to work properly. The lint target specifies which builder to use for linting, as well as
 the file patterns that should be linted.
 
@@ -10583,7 +10602,7 @@ cd apps && npm create astro@latest
 ## Setup
 
 Since Astro is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 :::tip
 
@@ -10598,7 +10617,7 @@ We suggest inheriting Astro tasks from the
 tags: ['astro']
 
 # Disable project references
-toolchain:
+toolchains:
   typescript:
     syncProjectReferences: false
 ```
@@ -10708,10 +10727,10 @@ the entire repository.
 
 ## Setup
 
-Since linting is a universal workflow, add a `lint` task to
-[`.moon/tasks/node.yml`](../../config/tasks) with the following parameters.
+Since linting is a universal workflow, add a `lint` task to [`.moon/tasks/**/*`](../../config/tasks)
+with the following parameters.
 
-```yaml title=".moon/tasks/node.yml"
+```yaml title=".moon/tasks/eslint.yml"
 tasks:
   lint:
     command:
@@ -10933,10 +10952,10 @@ repository.
 
 ## Setup
 
-Since testing is a universal workflow, add a `test` task to
-[`.moon/tasks/node.yml`](../../config/tasks) with the following parameters.
+Since testing is a universal workflow, add a `test` task to [`.moon/tasks/**/*`](../../config/tasks)
+with the following parameters.
 
-```yaml title=".moon/tasks/node.yml"
+```yaml title=".moon/tasks/jest.yml"
 tasks:
   test:
     command:
@@ -11051,7 +11070,7 @@ npx @nestjs/cli@latest new nestjs-app --skip-git
 ## Setup
 
 Since NestJS is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 ```yaml title="<project>/moon.yml"
 layer: 'application'
@@ -11134,7 +11153,7 @@ cd apps && npx create-next-app <project> --typescript
 ## Setup
 
 Since Next.js is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 :::tip
 
@@ -11209,7 +11228,7 @@ module.exports = {
 <TabItem value="nextjs">
 
 If you'd prefer to use the `next lint` command, add it as a task to the project's
-[`moon.yml`](../../config/project).
+[`moon.*`](../../config/project).
 
 ```yaml title="<project>/moon.yml"
 tasks:
@@ -11297,7 +11316,7 @@ cd apps && npx nuxi init <project>
 ## Setup
 
 Since Nuxt is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 ```yaml title="<project>/moon.yml"
 fileGroups:
@@ -11415,7 +11434,7 @@ repository.
 ## Setup
 
 Since Packemon is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 :::tip
 
@@ -11493,9 +11512,9 @@ repository.
 ## Setup
 
 Since code formatting is a universal workflow, add a `format` task to
-[`.moon/tasks/node.yml`](../../config/tasks) with the following parameters.
+[`.moon/tasks/**/*`](../../config/tasks) with the following parameters.
 
-```yaml title=".moon/tasks/node.yml"
+```yaml title=".moon/tasks/prettier.yml"
 tasks:
   format:
     command:
@@ -11619,7 +11638,7 @@ root via package workspaces!
 ## Setup
 
 Since Remix is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 :::tip
 
@@ -11790,7 +11809,7 @@ cd <project> && npx storybook init
 
 This section assumes Storybook is being used with Vite, and is integrated on a per-project basis.
 
-After setting up Storybook, ensure [`moon.yml`](../../config/project) has the following tasks:
+After setting up Storybook, ensure [`moon.*`](../../config/project) has the following tasks:
 
 ```yaml title="<project>/moon.yml"
 fileGroups:
@@ -11949,7 +11968,7 @@ and Vitest among other options. moon supports and has guides for many of these t
 ## Setup
 
 Since SvelteKit is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 :::tip
 
@@ -12098,9 +12117,9 @@ using the same version across the entire repository.
 ## Setup
 
 Since typechecking is a universal workflow, add a `typecheck` task to
-[`.moon/tasks/node.yml`](../../config/tasks) with the following parameters.
+[`.moon/tasks/**/*`](../../config/tasks) with the following parameters.
 
-```yaml title=".moon/tasks/node.yml"
+```yaml title=".moon/tasks/typescript.yml"
 tasks:
   typecheck:
     command:
@@ -12264,7 +12283,7 @@ otherwise skip to the setup section.
 ## Setup
 
 Since Vite is per-project, the associated moon tasks should be defined in each project's
-[`moon.yml`](../../config/project) file.
+[`moon.*`](../../config/project) file.
 
 :::tip
 
@@ -12418,13 +12437,12 @@ built into moon's core. It also enables the community to build and share their o
 ## Using extensions
 
 Before an extension can be executed with the [`moon ext`](../commands/ext) command, it must be
-configured with the [`extensions`](../config/workspace#extensions) setting in
-[`.moon/workspace.yml`](../config/workspace) (excluding [built-in's](#built-in-extensions)).
+configured with [`.moon/extensions.*`](../config/extensions) (excluding
+[built-in's](#built-in-extensions)).
 
-```yaml title=".moon/workspace.yml"
-extensions:
-  example:
-    plugin: 'https://example.com/path/to/example.wasm'
+```yaml title=".moon/extensions.yml"
+example:
+  plugin: 'https://example.com/path/to/example.wasm'
 ```
 
 Once configured, it can be executed with [`moon ext`](../commands/ext) by name. Arguments unique to
@@ -12520,7 +12538,7 @@ repository. The following changes are made:
 
 - Migrates `pipeline` (v1) and `tasks` (v2) global tasks to
   [`.moon/tasks/node.yml`](../config/tasks#tasks) (or `bun.yml`) and project scoped tasks to
-  [`moon.yml`](../config/project#tasks). Task commands will execute `package.json` scripts through a
+  [`moon.*`](../config/project#tasks). Task commands will execute `package.json` scripts through a
   package manager.
 - Migrates root `global*` settings to [`.moon/tasks/node.yml`](../config/tasks#implicitinputs) (or
   `bun.yml`) as `implicitInputs`.
@@ -12557,7 +12575,7 @@ understanding, you may continue this specific guide.
 
 :::note
 
-Refer to our [moonrepo/moon-extensions][repo] repository for in-depth examples.
+Refer to our [moonrepo/plugins][repo] repository for in-depth examples.
 
 :::
 
@@ -12589,10 +12607,9 @@ used to generate outputs such as JSON schemas, or TypeScript types.
 
 ```rust
 #[plugin_fn]
-pub fn register_extension(_: ()) -> FnResult<Json<ExtensionMetadataOutput>> {
-    Ok(Json(ExtensionMetadataOutput {
-        // ...
-        config_schema: Some(schematic::SchemaBuilder::generate::<NodeConfig>()),
+pub fn define_extension_config() -> FnResult<Json<DefineExtensionConfigOutput>> {
+    Ok(Json(DefineExtensionConfigOutput {
+        schema: schematic::SchemaBuilder::build_root::<ExampleExtensionConfig>(),
     }))
 }
 ```
@@ -12661,15 +12678,14 @@ pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<(
 ### Supporting configuration
 
 Users can configure [extensions](../config/workspace#extensions) with additional settings in
-[`.moon/workspace.yml`](../config/workspace). Do note that settings should be in camelCase for them
+[`.moon/extensions.*`](../config/extensions). Do note that settings should be in camelCase for them
 to be parsed correctly!
 
-```yaml title=".moon/workspace.yml"
-extensions:
-  example:
-    plugin: 'file://./path/to/example.wasm'
-    someSetting: 'abc'
-    anotherSetting: 123
+```yaml title=".moon/extensions.yml"
+example:
+  plugin: 'file://./path/to/example.wasm'
+  someSetting: 'abc'
+  anotherSetting: 123
 ```
 
 In the plugin, we can map these settings (excluding `plugin`) into a struct. The `Default` trait
@@ -12700,7 +12716,7 @@ pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<(
 }
 ```
 
-[repo]: https://github.com/moonrepo/moon-extensions
+[repo]: https://github.com/moonrepo/plugins
 
 ---
 
@@ -12728,20 +12744,18 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable JavaScript support via Bun, define the [`bun`](../../config/toolchain#bun) setting in
-[`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
+[`.moon/toolchains.*`](../../config/toolchain), even if an empty object. The
+[`javascript`](../../config/toolchain#javascript) toolchain must also be enabled, and configured to
+use Bun as the package manager.
 
 ```yaml title=".moon/toolchains.yml"
+# Enable JavaScript
+javascript:
+  packageManager: 'bun'
+
 # Enable Bun
 bun: {}
 ```
-
-:::info
-
-In moon v1.40+, use `javascript` and `bun` instead of `bun` to enable the new WASM powered Bun
-toolchain, which is far more accurate and efficient. The non-WASM toolchain will be deprecated in
-the future.
-
-:::
 
 Or by pinning a `bun` version in [`.prototools`](../../proto/config) in the workspace root.
 
@@ -12749,7 +12763,8 @@ Or by pinning a `bun` version in [`.prototools`](../../proto/config) in the work
 bun = "1.0.0"
 ```
 
-This will enable the Bun toolchain and provide the following automations around its ecosystem:
+This will enable the JavaScript and Bun toolchains and provide the following automations around its
+ecosystem:
 
 - Node modules will automatically be installed if dependencies in `package.json` have changed, or
   the lockfile has changed, since the last time a task has ran.
@@ -12790,28 +12805,28 @@ To work around this, you can set `toolchain` to "bun" at the task-level or proje
 
 ```yaml title="moon.yml"
 # For all tasks in the project
-toolchain:
-  default: 'bun'
+toolchains:
+  default: ['javascript', 'bun']
 
 tasks:
   build:
     command: 'webpack'
     # For this specific task
-    toolchain: 'bun'
+    toolchains: ['javascript', 'bun']
 ```
 
-> The task-level `toolchain.default` only needs to be set if executing a `node_modules` binary! The
+> The task-level `toolchains.default` only needs to be set if executing a `node_modules` binary! The
 > `bun` binary automatically sets the toolchain to Bun.
 
 ### Using `package.json` scripts
 
 If you're looking to prototype moon, or reduce the migration effort to moon tasks, you can configure
 moon to inherit `package.json` scripts, and internally convert them to moon tasks. This can be
-achieved with the [`bun.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
+achieved with the [`javascript.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
 setting.
 
 ```yaml title=".moon/toolchains.yml"
-bun:
+javascript:
   inferTasksFromScripts: true
 ```
 
@@ -12858,21 +12873,23 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable TypeScript support via Deno, define the [`deno`](../../config/toolchain#deno) setting in
-[`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
+[`.moon/toolchains.*`](../../config/toolchain), even if an empty object. The
+[`javascript`](../../config/toolchain#javascript) toolchain must also be enabled, and configured to
+use Bun as the package manager.
 
 ```yaml title=".moon/toolchains.yml"
+# Enable JavaScript
+javascript:
+  packageManager: 'deno'
+
 # Enable Deno
 deno: {}
-
-# Enable Deno and override default settings
-deno:
-  lockfile: true
 ```
 
 Or by pinning a `deno` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"
-deno = "1.31.0"
+deno = "2.0.0"
 ```
 
 This will enable the Deno toolchain and provide the following automations around its ecosystem:
@@ -12881,19 +12898,6 @@ This will enable the Deno toolchain and provide the following automations around
 - Relationships between projects will automatically be discovered based on `imports`, `importMap`,
   and `deps.ts` (currently experimental).
 - And more to come!
-
-### Work in progress
-
-:::caution
-
-Deno support is currently experimental while we finalize the implementation.
-
-:::
-
-The following features are not supported:
-
-- `deno.jsonc` files (use `deno.json` instead).
-- `files.exclude` are currently considered an input. These will be filtered in a future release.
 
 ## Coming soon!
 
@@ -12925,29 +12929,24 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable JavaScript support via Node.js, define the [`node`](../../config/toolchain#node) setting
-in [`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
+in [`.moon/toolchains.*`](../../config/toolchain), even if an empty object. The
+[`javascript`](../../config/toolchain#javascript) toolchain must also be enabled, and configured to
+use Bun as the package manager.
 
 ```yaml title=".moon/toolchains.yml"
-# Enable Node.js
-node: {}
-
-# Enable Node.js and override default settings
-node:
+# Enable JavaScript
+javascript:
   packageManager: 'pnpm'
+
+# Enable Node.js and pnpm
+node: {}
+pnpm: {}
 ```
-
-:::info
-
-In moon v1.40+, use `javascript` and `node` instead of `node` to enable the new WASM powered Node.js
-toolchain, which is far more accurate and efficient. The non-WASM toolchain will be deprecated in
-the future.
-
-:::
 
 Or by pinning a `node` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"
-node = "18.0.0"
+node = "24.0.0"
 pnpm = "7.29.0"
 ```
 
@@ -12990,11 +12989,11 @@ node:
 
 If you're looking to prototype moon, or reduce the migration effort to moon tasks, you can configure
 moon to inherit `package.json` scripts, and internally convert them to moon tasks. This can be
-achieved with the [`node.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
+achieved with the [`javascript.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
 setting.
 
 ```yaml title=".moon/toolchains.yml"
-node:
+javascript:
   inferTasksFromScripts: true
 ```
 
@@ -13061,7 +13060,7 @@ and its own encapsulated code. They represent the whole, while packages are the 
 can import and depend on packages, but they _must not_ import and depend on other applications.
 
 In moon, you can denote a project as an application using the [`layer`](../../config/project#layer)
-setting in [`moon.yml`](../../config/project).
+setting in [`moon.*`](../../config/project).
 
 ```yaml title="moon.yml"
 layer: 'application'
@@ -13074,7 +13073,7 @@ suggested pattern for [code sharing](#code-sharing). Packages can import and dep
 packages, but they _must not_ import and depend on applications!
 
 In moon, you can denote a project as a library using the [`layer`](../../config/project#layer)
-setting in [`moon.yml`](../../config/project).
+setting in [`moon.*`](../../config/project).
 
 ```yaml title="moon.yml"
 layer: 'library'
@@ -13182,7 +13181,7 @@ packages:
 </TabItem>
 </Tabs>
 
-:::caution
+:::info
 
 Package workspaces are not a requirement for monorepos, but they do solve an array of problems
 around module resolution, avoiding duplicate packages in bundles, and general interoperability.
@@ -13515,84 +13514,6 @@ deviating from the ecosystem.
 
 We suggest using TypeScript project references. Luckily, we have an
 [in-depth guide on how to properly and efficiently integrate them](./typescript-project-refs)!
-
----
-
-## Typescript Eslint
-
-## ESLint integration
-
-### Disabling problematic rules
-
-A handful of ESLint rules are not compatible with the TypeScript plugin, or they cause serious
-performance degradation, and should be disabled entirely. According to the
-[official typescript-eslint.io documentation](https://typescript-eslint.io/docs/linting/troubleshooting#eslint-plugin-import),
-most of these rules come from the `eslint-plugin-import` plugin.
-
-```js title=".eslintrc.js"
-module.exports = {
-  // ...
-  rules: {
-    'import/default': 'off',
-    'import/named': 'off',
-    'import/namespace': 'off',
-    'import/no-cycle': 'off',
-    'import/no-deprecated': 'off',
-    'import/no-named-as-default': 'off',
-    'import/no-named-as-default-member': 'off',
-    'import/no-unused-modules': 'off',
-  },
-};
-```
-
-### Running from the command line
-
-### Running within editors
-
-#### ESLint
-
-Use the
-[dbaeumer.vscode-eslint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-extension. Too avoid poor performance, _do not_ use ESLint for formatting code (via the
-`eslint-plugin-prettier` plugin or something similar), and _only_ use it for linting. The difference
-in speed is comparable to 100ms vs 2000ms.
-
-```json title=".vscode/settings.json"
-{
-  // Automatically run all linting fixes on save as a concurrent code action,
-  // and avoid formatting with ESLint. Use another formatter, like Prettier.
-  "editor.codeActionsOnSave": ["source.fixAll.eslint"],
-  "eslint.format.enable": false,
-
-  // If linting is *too slow* while typing, uncomment the following line to
-  // only run the linter on save only.
-  // "editor.run": "onSave",
-
-  // Your package manager of choice.
-  "eslint.packageManager": "yarn",
-
-  // Use the newer and more performant `ESLint` class implementation.
-  "eslint.useESLintClass": true,
-
-  // List of directories that that linter should operate on.
-  "eslint.workingDirectories": [{ "pattern": "apps/*" }, { "pattern": "packages/*" }]
-}
-```
-
-#### Prettier
-
-Use the
-[esbenp.prettier-vscode](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-extension.
-
-```json title=".vscode/settings.json"
-{
-  // Use Prettier as the default formatter for all file types. Types not
-  // supported by Prettier can be overridden using bracket syntax, or ignore files.
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.formatOnSave": true
-}
-```
 
 ---
 
@@ -14492,7 +14413,7 @@ mode.
 - `get_projects` - Get all projects.
 - `get_task` - Get a task by `target`.
 - `get_tasks` - Get all tasks.
-- `get_touched_files` - Gets touched files between base and head revisions.
+- `get_changed_files` - Gets changed files between base and head revisions.
   <VersionLabel version="1.38.0" />
 - `sync_projects` - Runs the `SyncProject` action for one or many projects by `id`.
   <VersionLabel version="1.38.0" />
@@ -14613,7 +14534,7 @@ especially when coupled with our [built-in continuous integration support](./ci)
 However, a pain point with moon is that it has an explicitly configured version for each tool in the
 [toolchain](../concepts/toolchain), but open source projects typically need to run checks against
 multiple versions! To mitigate this problem, you can set the matrix value as an environment
-variable, in the format of `MOON_<TOOL>_VERSION`.
+variable, in the format of `MOON_<TOOLCHAIN>_VERSION`.
 
 ```yaml title=".github/workflows/ci.yml"
 name: 'Pipeline'
@@ -14629,7 +14550,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest', 'windows-latest']
-        node-version: [16, 18, 20]
+        node-version: [20, 22, 24]
     steps:
       # Checkout repository
       - uses: 'actions/checkout@v4'
@@ -14677,198 +14598,6 @@ jobs:
 The report looks something like the following:
 
 <Image src={require('../../static/img/github/run-report.png')} width="60%" />
-
----
-
-## Pkl configuration
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
-<VersionLabel version="1.32.0" header />
-
-While YAML is our official configuration format, we want to support dynamic formats, and as such,
-have added support for Pkl. What is Pkl? If you haven't heard of Pkl yet,
-[Pkl is a programmable configuration format by Apple](https://pkl-lang.org/). We like Pkl, as it
-meets the following requirements:
-
-- Is easy to read and write.
-- Is dynamic and programmable (loops, variables, etc).
-- Has type-safety / built-in schema support.
-- Has Rust serde integration.
-
-The primary requirement that we are hoping to achieve is supporting a configuration format that is
-_programmable_. We want something that has native support for variables, loops, conditions, and
-more, so that you could curate and compose your configuration very easily. Hacking this
-functionality into YAML is a terrible user experience in our opinion!
-
-## Installing Pkl
-
-Pkl utilizes a client-server architecture, which means that the `pkl` binary must exist in the
-environment for parsing and evaluating `.pkl` files. Jump over to the
-[official documentation for instructions on how to install Pkl](https://pkl-lang.org/main/current/pkl-cli/index.html#installation).
-
-If you are using [proto](/proto), you can install Pkl with the following commands.
-
-```shell
-proto plugin add pkl https://raw.githubusercontent.com/milesj/proto-plugins/refs/heads/master/pkl.toml
-proto install pkl --pin
-```
-
-## Using Pkl
-
-To start using Pkl in moon, simply:
-
-- Install [Pkl](#installing-pkl) and the
-  [VS Code extension](https://pkl-lang.org/vscode/current/index.html)
-- Create configs with the `.pkl` extension instead of `.yml`
-
-:::info
-
-We highly suggest reading the Pkl
-[language reference](https://pkl-lang.org/main/current/language-reference/index.html), the
-[standard library](https://pkl-lang.org/main/current/standard-library.html), or looking at our
-[example configurations](#example-configs) when using Pkl.
-
-:::
-
-### Caveats and restrictions
-
-Since this is an entirely new configuration format that is quite dynamic compared to YAML, there are
-some key differences to be aware of!
-
-- Only files are supported. Cannot use or extend from URLs.
-
-- Each `.pkl` file is evaluated in isolation (loops are processed, variables assigned, etc). This
-  means that task inheritance and file merging cannot extend or infer this native functionality.
-
-- `default` is a
-  [special feature](https://pkl-lang.org/main/current/language-reference/index.html#default-element)
-  in Pkl and cannot be used as a setting name. This only applies to
-  [`template.pkl`](../config/template#default), but can be worked around by using `defaultValue`
-  instead.
-
-```pkl title="template.pkl"
-variables {
-  ["age"] {
-    type = "number"
-    prompt = "Age?"
-    defaultValue = 0
-}
-```
-
-- `local` is also a reserved word in Pkl. It can be worked around by escaping it with backticks, or
-  you can simply use the [`preset` setting](../config/project#preset) instead.
-
-```pkl
-tasks {
-  ["example"] {
-    `local` = true
-    # Or
-    preset = "server"
-  }
-}
-```
-
-## Example configs
-
-### `.moon/workspace.pkl`
-
-```pkl
-projects {
-  globs = List("apps/*", "packages/*")
-  sources {
-    ["root"] = "."
-  }
-}
-
-vcs {
-  defaultBranch = "master"
-}
-```
-
-### `.moon/toolchain.pkl`
-
-```pkl
-node {
-  version = "20.15.0"
-  packageManager = "yarn"
-  yarn {
-    version = "4.3.1"
-  }
-  addEnginesConstraint = false
-  inferTasksFromScripts = false
-}
-```
-
-### `moon.pkl`
-
-```pkl
-type = "application"
-language = "typescript"
-dependsOn = List("client", "ui")
-
-tasks {
-  ["build"] {
-    command = "docusaurus build"
-    deps = List("^:build")
-    outputs = List("build")
-    options {
-      interactive = true
-      retryCount = 3
-    }
-  }
-  ["typecheck"] {
-    command = "tsc --build"
-    inputs = new Listing {
-      "@globs(sources)"
-      "@globs(tests)"
-      "tsconfig.json"
-      "/tsconfig.options.json"
-    }
-  }
-}
-```
-
-## Example functionality
-
-### Loops and conditionals
-
-```pkl
-tasks {
-  for (_os in List("linux", "macos", "windows")) {
-    ["build-\(_os)"] {
-      command = "cargo"
-      args = List(
-        "--target",
-        if (_os == "linux") "x86_64-unknown-linux-gnu"
-          else if (_os == "macos") "x86_64-apple-darwin"
-          else "i686-pc-windows-msvc",
-        "--verbose"
-      )
-      options {
-        os = _os
-      }
-    }
-  }
-}
-```
-
-### Local variables
-
-```pkl
-local _sharedInputs = List("src/**/*")
-
-tasks {
-  ["test"] {
-    // ...
-    inputs = List("tests/**/*") + _sharedInputs
-  }
-  ["lint"] {
-    // ...
-    inputs = List("**/*.graphql") + _sharedInputs
-  }
-}
-```
 
 ---
 
@@ -15034,18 +14763,10 @@ following RE API features must be enabled:
 - SHA256 digest hashing
 - gRPC requests
 
-:::warning
-
-This feature and its implementation is currently unstable, and its documentation is incomplete.
-Please report any issues on GitHub or through Discord!
-
-:::
-
 ### Host your service
 
-When you have chosen (or built) a compatible service, host it and make it available through gRPC (we
-do not support HTTP at this time). For example, if you plan to use `bazel-remote`, you can do
-something like the following:
+When you have chosen (or built) a compatible service, host it and make it available through gRPC or
+HTTPS. For example, if you plan to use `bazel-remote`, you can do something like the following:
 
 ```bash
 bazel-remote --dir /path/to/moon-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092
@@ -15069,13 +14790,25 @@ proxies, and more.
 ### Configure remote caching
 
 Once your service is running, you can enable remote caching by configuring the
-[`remote`](../config/workspace#remote) settings in [`.moon/workspace.yml`](../config/workspace). At
+[`remote`](../config/workspace#remote) settings in [`.moon/workspace.*`](../config/workspace). At
 minimum, the only setting that is required is `host`.
 
 ```yaml title=".moon/workspace.yml"
+# gRPC
 remote:
   host: 'grpc://your-host.com:9092'
+
+# HTTPS
+remote:
+  api: 'http'
+  host: 'https://your-host.com:8080'
 ```
+
+:::info
+
+Remote caching can be conditionally enabled by setting the `MOON_REMOTE_HOST` environment variable.
+
+:::
 
 #### TLS and mTLS
 
@@ -15102,7 +14835,9 @@ remote:
     domain: 'your-host.com'
 ```
 
-## Cloud-hosted: Depot<VersionLabel version="1.32.0" />
+## Cloud-hosted
+
+### Depot<VersionLabel version="1.32.0" />
 
 If you'd prefer not to host your own solution, you could use
 [Depot Cache](https://depot.dev/products/cache), a cloud-based caching solution. To make use of
@@ -15181,8 +14916,8 @@ projects:
 > When using globs, the root project's name will be inferred from the repository folder name. Be
 > wary of this as it can change based on what a developer has checked out as.
 
-Once added, create a [`moon.yml`](../config/project) in the root of the repository. From here you
-can define tasks that can be ran using this new root-level project name, for example,
+Once added, create a [`moon.*`](../config/project) in the root of the repository. From here you can
+define tasks that can be ran using this new root-level project name, for example,
 `moon run root:<task>`.
 
 ```yaml title="moon.yml"
@@ -15221,7 +14956,7 @@ tasks:
 ### Inherited tasks
 
 Because a root project is still a project in the workspace, it will inherit all tasks defined in
-[`.moon/tasks/all.yml`](../config/tasks), which may be unexpected. To mitigate this, you can exclude
+[`.moon/tasks/**/*`](../config/tasks), which may be unexpected. To mitigate this, you can exclude
 some or all of these tasks in the root config with
 [`workspace.inheritedTasks`](../config/project#inheritedtasks).
 
@@ -15257,7 +14992,7 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable Rust, define the [`rust`](../../config/toolchain#rust) setting in
-[`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
+[`.moon/toolchains.*`](../../config/toolchain), even if an empty object.
 
 ```yaml title=".moon/toolchains.yml"
 # Enable Rust
@@ -15271,7 +15006,7 @@ rust:
 Or by pinning a `rust` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"
-rust = "1.69.0"
+rust = "1.93.0"
 ```
 
 This will enable the Rust toolchain and provide the following automations around its ecosystem:
@@ -15307,8 +15042,8 @@ rust:
 :::caution
 
 moon requires `rustup` to exist in the environment, and will use this to install the necessary Rust
-toolchains. This requires Rust to be manually installed on the machine, as moon does not
-auto-install the language, just the toolchains.
+toolchains. moon will attempt to auto-install `rustup` if it's not found, but this may fail in some
+environments.
 
 :::
 
@@ -15319,10 +15054,9 @@ crates with many `Cargo.toml`s using
 [Cargo workspaces](https://doc.rust-lang.org/book/ch14-03-cargo-workspaces.html). The latter is
 highly preferred as it enables Cargo incremental caching.
 
-Regardless of which flavor your repository uses, in moon, both flavors are a single
-[moon project](../../concepts/project). This means that all Rust crates are grouped together into a
-single moon project, and the [`moon.yml`](../../config/project) file is located at the root relative
-to `Cargo.lock` and the `target` folder.
+With moon, you can place [`moon.*`](../../config/project) in each crate, or once relative to
+`Cargo.lock`. The choice is yours! But be aware, if you do per-crate, Cargo itself will "wait for
+build lock" when multiple processes are running.
 
 An example of this layout is demonstrated below:
 
@@ -15331,6 +15065,7 @@ An example of this layout is demonstrated below:
   defaultValue="workspaces"
   values={[
     { label: 'Workspaces', value: 'workspaces' },
+    { label: 'Workspaces (per-crate)', value: 'workspaces-many' },
     { label: 'Non-workspaces', value: 'project' },
   ]}
 >
@@ -15356,6 +15091,30 @@ An example of this layout is demonstrated below:
 ```
 
 </TabItem>
+<TabItem value="workspaces-many">
+
+```
+/
+├── .moon/
+├── crates/
+│   ├── client/
+|   │   ├── ...
+|   │   ├── moon.yml
+│   │   └── Cargo.toml
+│   ├── server/
+|   │   ├── ...
+|   │   ├── moon.yml
+│   │   └── Cargo.toml
+│   └── utils/
+|       ├── ...
+|   │   ├── moon.yml
+│       └── Cargo.toml
+├── target/
+├── Cargo.lock
+└── Cargo.toml
+```
+
+</TabItem>
 <TabItem value="project">
 
 ```
@@ -15374,7 +15133,7 @@ An example of this layout is demonstrated below:
 </TabItem>
 </Tabs>
 
-### Example `moon.yml`
+### Example `moon.*`
 
 The following configuration represents a base that covers most Rust projects.
 
@@ -15383,7 +15142,7 @@ The following configuration represents a base that covers most Rust projects.
   defaultValue="workspaces"
   values={[
     { label: 'Workspaces', value: 'workspaces' },
-    { label: 'Non-workspaces', value: 'project' },
+    { label: 'Workspaces (per-crate) / Non-workspaces', value: 'project' },
   ]}
 >
 <TabItem value="workspaces">
@@ -15535,7 +15294,7 @@ following automations when a target is being ran:
 
 ### Should we cache the `target` directory as an output?
 
-No, we don't believe so. Both moon and Cargo support incremental caching, but they're not entirely
+No, definitely not! Both moon and Cargo support incremental caching, but they're not entirely
 compatible, and will most likely cause problems when used together.
 
 The biggest factor is that moon's caching and hydration uses a tarball strategy, where each task
@@ -15575,10 +15334,11 @@ you'll want to use the same configuration across all repositories for consistenc
 the maintenance burden while ensuring a similar developer experience.
 
 To help streamline this process, moon provides an `extends` setting in both
-[`.moon/workspace.yml`](../config/workspace#extends),
-[`.moon/toolchains.yml`](../config/toolchain#extends), and
-[`.moon/tasks/all.yml`](../config/tasks#extends). This setting requires a HTTPS URL _or_ relative
-file system path that points to a valid YAML document for the configuration in question.
+[`.moon/workspace.*`](../config/workspace#extends),
+[`.moon/toolchains.*`](../config/toolchain#extends),
+[`.moon/extensions.*`](../config/extensions#extends), and
+[`.moon/tasks/**/*`](../config/tasks#extends). This setting requires a HTTPS URL _or_ relative file
+system path that points to a valid YAML document for the configuration in question.
 
 A great way to share configuration is by using GitHub's "raw file view", as demonstrated below using
 our very own [examples repository](https://github.com/moonrepo/examples).
@@ -15633,9 +15393,9 @@ and syncing them across developers and machines.
 ## Defining hooks
 
 Hooks can be configured with the [`vcs.hooks`](../config/workspace#hooks) setting in
-[`.moon/workspace.yml`](../config/workspace). This setting requires a map of hook names (in the
-format required by your VCS), to a list of arbitrary commands to run within the hook script.
-Commands are used as-is and are not formatted or interpolated in any way.
+[`.moon/workspace.*`](../config/workspace). This setting requires a map of hook names (in the format
+required by your VCS), to a list of arbitrary commands to run within the hook script. Commands are
+used as-is and are not formatted or interpolated in any way.
 
 To demonstrate this, let's configure a `pre-commit` hook that runs a moon `lint` task for affected
 projects, and also verifies that the commit message abides by a specified format (using
@@ -15676,31 +15436,24 @@ Hooks are a divisive subject, as some developers love them, and others hate them
 solution for everyone can be difficult, so with moon, we opted to support 2 distinct options, but
 only 1 can be used at a time. Choose the option that works best for your project, team, or company!
 
-:::caution
-
-If you have existing VCS hooks, back them up as moon's implementation will overwrite them! To
-migrate your existing hooks, [configure them as commands to run](#defining-hooks).
-
-:::
-
 ### Automatically for everyone
 
 If you'd like hooks to be enforced for every contributor of the repository, then simply enable the
-[`vcs.syncHooks`](../config/workspace#synchooks) setting in
-[`.moon/workspace.yml`](../config/workspace). This will automatically generate hook scripts and link
-them with the local VCS checkout, everytime a [target](../concepts/target) is ran.
+[`vcs.sync`](../config/workspace#sync) setting in [`.moon/workspace.*`](../config/workspace). This
+will automatically generate hook scripts and link them with the local VCS checkout, everytime a
+[task](../concepts/target) is ran.
 
 ```yaml title=".moon/workspace.yml"
 vcs:
   hooks: [...]
-  syncHooks: true
+  sync: true
 ```
 
 :::caution
 
 Automatically activating hooks on everyone's computer is considered a sensitive action, because it
 enables the execution of arbitrary code on the computers of the team members. Be careful about the
-hook commands you define in the [`.moon/workspace.yml`](../config/workspace) file.
+hook commands you define in the [`.moon/workspace.*`](../config/workspace) file.
 
 :::
 
@@ -15717,11 +15470,11 @@ $ moon sync hooks
 ## Disabling hooks
 
 If you choose to stop using hooks, you'll need to cleanup the previously generated hook scripts, and
-reset the VCS checkout. To start, disable the `vcs.syncHooks` setting.
+reset the VCS checkout. To start, disable the `vcs.sync` setting.
 
 ```yaml title=".moon/workspace.yml"
 vcs:
-  syncHooks: false
+  sync: false
 ```
 
 And then run the following command, which will delete files from your local filesystem. Every
@@ -15740,9 +15493,9 @@ When hooks are [enabled](#enabling-hooks), the following processes will take pla
    They are written to the `.moon` directory so that they can be reviewed, audited, and easily
    tested, but _are required_.
 
-2. We then sync these generated hook scripts with the current VCS. For Git, we create `.git/hooks`
-   files that execute our generated scripts, using repository relative commands. Any existing VCS
-   hooks _will be overwritten_.
+2. We then sync these generated hook scripts with the current VCS. For Git, we set `core.hooksPath`
+   to point to the `.moon/hooks` directory, which tells Git to look for hook scripts in that
+   directory instead of the default `.git/hooks` directory.
 
 :::info
 
@@ -15750,18 +15503,6 @@ The `.moon/hooks` scripts are generated as Bash scripts (use a `.sh` file extens
 PowerShell scripts (use a `.ps1` file extension) on Windows.
 
 :::
-
-### Git
-
-On Unix based operating systems (Linux, macOS, etc), the `.moon/hooks` scripts are executed from
-`.git/hooks` Bash files. Because of this, `bash` should be available on the system (which is
-typically the case).
-
-On Windows, things get tricky. Since Git has a requirement that `.git/hooks` files _must be_
-extensionless, and older versions of PowerShell require an extension, we have to use a workaround.
-To handle this, the `.git/hooks` files are Bash-like scripts (that should work on most machines)
-that execute `.moon/hooks` using the `powershell.exe` (or `pwsh.exe`) executables. Because of this,
-PowerShell must be available on the system.
 
 ## Examples
 
@@ -16308,7 +16049,7 @@ git push --tags
 
 ---
 
-## Webhooks (experimental)
+## Webhooks
 
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -16694,57 +16435,6 @@ Synced projects can be scoped with the `SyncProject(...)` labels.
 }
 ```
 
-### `tool.installing`
-
-<HeadingApiLink to="/api/types#PayloadToolInstalling" />
-
-Triggered when a tool within the toolchain has started downloading and installing.
-
-This event is _always_ triggered, regardless of whether the tool has already been installed or not.
-For an accurate state, use the [`action.finished`](#actionfinished) event. If the `status` is
-"skipped", then the tool was already installed.
-
-```json
-{
-  "type": "tool.installing",
-  "createdAt": "...",
-  "environment": "...",
-  "event": {
-    "runtime": {
-      "toolchain": "Node",
-      "version": "18.0.0"
-    }
-  },
-  "uuid": "..."
-}
-```
-
-### `tool.installed`
-
-<HeadingApiLink to="/api/types#PayloadToolInstalled" />
-
-Triggered when a tool within the toolchain has finished installing. If the install failed, the
-`error` field will be set with the error message.
-
-For more information about the action, refer to the [`action.finished`](#actionfinished) event.
-Tools can be scoped with the `SetupToolchain(...)` labels.
-
-```json
-{
-  "type": "tool.installed",
-  "createdAt": "...",
-  "environment": "...",
-  "event": {
-    "error": null,
-    "runtime": {
-      "toolchain": "Node",
-      "version": "18.0.0"
-    }
-  },
-  "uuid": "..."
-}
-```
-
 ### `toolchain.installing`
 
 <HeadingApiLink to="/api/types#PayloadToolchainInstalling" />
@@ -17007,16 +16697,9 @@ run tasks in parallel, in the correct order, and to ensure a reliable outcome.
 import LangGraph from '@site/src/components/Docs/LangGraph';
 
 Although moon is currently focusing on the JavaScript ecosystem, our long-term vision is to be a
-multi-language task runner and monorepo management tool. To that end, we've designed our languages
-to work like plugins, where their functionality is implemented in isolation, and is _opt-in_.
-
-<LangGraph />
-
-:::info
-
-We do not support third-party language plugins at this time, but are working towards it!
-
-:::
+multi-language task runner and monorepo management tool. To that end, our languages (known as
+toolchains) are implemented as WASM plugins, where their functionality is implemented in isolation,
+and is _opt-in_.
 
 ## Enabling a language
 
@@ -17025,21 +16708,19 @@ chose this pattern to avoid unnecessary overhead, especially for the future when
 built-in languages.
 
 To enable a supported language, simply define a configuration block with the language's name in
-[`.moon/toolchains.yml`](../config/toolchain). Even an empty block will enable the language.
+[`.moon/toolchains.*`](../config/toolchain). Even an empty block will enable the language.
 
 ```yaml title=".moon/toolchains.yml"
-# Enable Node.js
-node: {}
+# Enable JavaScript
+javascript: {}
 
-# Enable Node.js with custom settings
-node:
+# Enable JavaScript with custom settings
+javascript:
   packageManager: 'pnpm'
 
-# Enable Deno
-deno: {}
+# Enable TypeScript
+typescript: {}
 ```
-
-> For unsupported languages, use the system toolchain. Continue reading to learn more!
 
 ## System language and toolchain
 
@@ -17068,8 +16749,6 @@ As mentioned in our introduction,
 [language support is divided up into tiers](../#supported-languages), where each tier introduces
 more internal integrations and automations, but requires more work to properly implement.
 
-Internally each tier maps to a Rust crate, as demonstrated by the graph at the top of the article.
-
 ### Tier 0 = Unsupported
 
 The zero tier represents all languages _not directly_ supported by moon. This tier merely exists as
@@ -17092,16 +16771,15 @@ in charge of:
 - Declaring metadata about the language. For example, the name of the binary, supported file
   extensions, available dependency/package/version managers, names of config/manifest/lock files,
   etc.
-- Helpers for parsing lockfiles and manifest files, and interacting with the language's ecosystem
-  (for example, Node.js module resolution).
 - Mechanisms for detecting the language of a project based on config files and other criteria.
 - Maps to a project's [`language`](../config/project#language) setting.
+- Supports a configuration block by name in [`.moon/toolchains.*`](../config/toolchain).
 
 ```yaml title="moon.yml"
 language: 'javascript'
 ```
 
-### Tier 2 = Platform
+### Tier 2 = Ecosystem
 
 The second tier requires the language functionality from tier 1, and eventually the toolchain
 functionality from tier 3, and provides interoperability with moon's internals. This is the most
@@ -17111,11 +16789,12 @@ complex of all tiers, and the tier is in charge of:
 - Loading project aliases and inferring implicit relationships between projects.
 - Syncing a project and ensuring a healthy project state.
 - Hashing efficiently for dependency installs and target runs.
+- Helpers for parsing lockfiles and manifest files, and interacting with the language's ecosystem
+  (for example, Node.js module resolution).
 - Prepending `PATH` with appropriate lookups to execute a task.
 - Running a target's command with proper arguments, environment variables, and flags.
-- Maps to a project's [`toolchain.default`](../config/project#toolchain-1) or task's
-  [`toolchain`](../config/project#toolchain) setting.
-- Supports a configuration block by name in [`.moon/toolchains.yml`](../config/toolchain).
+- Maps to a project's [`toolchains.default`](../config/project#toolchain-1) or task's
+  [`toolchains`](../config/project#toolchain) setting.
 
 ```yaml title="moon.yml"
 tasks:
@@ -17125,6 +16804,7 @@ tasks:
 ```
 
 ```yaml title=".moon/toolchains.yml"
+javascript: {}
 node: {}
 ```
 
@@ -17139,7 +16819,7 @@ tier. This tier handles:
 - Detecting appropriate versions of tools to use.
 - Determining which binary to use and execute targets with.
 - Supports a `version` field in the named configuration block in
-  [`.moon/toolchains.yml`](../config/toolchain).
+  [`.moon/toolchains.*`](../config/toolchain).
 
 ```yaml title=".moon/toolchains.yml"
 node:
@@ -17175,7 +16855,7 @@ and fall into 1 of 2 categories:
 
 ### Explicit
 
-These are dependencies that are explicitly defined in a project's [`moon.yml`](../config/project)
+These are dependencies that are explicitly defined in a project's [`moon.*`](../config/project)
 config file, using the [`dependsOn`](../config/project#dependson) setting.
 
 ```yaml title="moon.yml"
@@ -17314,7 +16994,7 @@ Furthermore, the version of moon can be pinned on a per-project basis using the
 [`.prototools` config file](/docs/proto/config).
 
 ```toml title=".prototools"
-moon = "1.31.0"
+moon = "2.0.0"
 ```
 
 :::info
@@ -17401,29 +17081,6 @@ moon upgrade
 Otherwise, you can re-run the installers above and it will download, install, and overwrite with the
 latest version.
 
-## Canary releases
-
-moon supports canary releases, which are built and published for every commit to our development
-branches. These releases will include features and functionality that have not yet landed on master.
-When using a canary release, you'll need to download and execute the binaries manually:
-
-- Using our npm package
-  [`@moonrepo/cli`](https://www.npmjs.com/package/@moonrepo/cli?activeTab=versions) under the
-  `canary` tag. Releases are versioned by date.
-- From a [GitHub prerelease](https://github.com/moonrepo/moon/releases/tag/canary) using the
-  `canary` tag. This tag always represents the latest development release.
-
-## Nightly releases
-
-moon supports nightly releases, which are built and published once a day from the latest commit on
-master. When using a nightly release, you'll need to download and execute the binaries manually.
-
-- Using our npm package
-  [`@moonrepo/cli`](https://www.npmjs.com/package/@moonrepo/cli?activeTab=versions) under the
-  `nightly` tag. Releases are versioned by date.
-- From a [GitHub prerelease](https://github.com/moonrepo/moon/releases/tag/nightly) using the
-  `nightly` tag. This tag always represents the latest stable release.
-
 ## Next steps
 
 <NextSteps
@@ -17494,15 +17151,14 @@ incrementally integrate and improve them over time. The 4 tiers are as follows:
   ["system" task toolchain](/docs/faq#can-we-run-other-languages), which expects the tool to exist
   in the current environment.
 - &nbsp;<Label text="Tier 1" variant="warning" /> &nbsp; **Project categorization** - Projects can
-  configure their primary [language in `moon.yml`](/docs/config/project#language), and have a
+  configure their primary [language in `moon.*`](/docs/config/project#language), and have a
   dedicated Rust crate for metadata.
 - &nbsp;<Label text="Tier 2" variant="info" /> &nbsp; **Ecosystem platformization** - moon deeply
   integrates with the language's ecosystem by parsing manifests, lockfiles, and other semantic files
   to infer dependencies, tasks, and other necessary information.
 - &nbsp;<Label text="Tier 3" variant="success" /> &nbsp; **Toolchain integration** - Language is
-  directly supported in the toolchain, configured in
-  [`.moon/toolchains.yml`](/docs/config/toolchain), and will automatically be downloaded and
-  installed.
+  directly supported in the toolchain, configured in [`.moon/toolchains.*`](/docs/config/toolchain),
+  and will automatically be downloaded and installed.
 
 |                               | Tier 0 | Tier 1 | Tier 2 | Tier 3 |
 | :---------------------------- | :----: | :----: | :----: | :----: |
@@ -17533,7 +17189,6 @@ currently:
 
 | Operating system | Architecture | Target                       |
 | :--------------- | :----------- | :--------------------------- |
-| macOS 64-bit     | Intel        | `x86_64-apple-darwin`        |
 | macOS 64-bit     | ARM          | `aarch64-apple-darwin`       |
 | Linux 64-bit     | Intel GNU    | `x86_64-unknown-linux-gnu`   |
 | Linux 64-bit     | Intel musl   | `x86_64-unknown-linux-musl`  |
@@ -17603,6 +17258,7 @@ $ moon migrate v2
 
 - Removed `x86_64-apple-darwin` (Apple Intel) as a supported operating system. Only
   `aarch64-apple-darwin` (Apple Silicon) is now supported.
+- Removed canary and nightly releases.
 
 ### Commands
 
@@ -17718,7 +17374,7 @@ $ moon migrate v2
 - All toolchains have been stabilized (excluding Python), so the `unstable_` prefix must be removed
   from identifiers.
 
-#### JavaScript
+### JavaScript
 
 The `bun`, `deno`, and `node` toolchains now require the `javascript` toolchain to be defined as
 well. All shared settings have been moved to the `javascript` toolchain.
@@ -17777,7 +17433,7 @@ yarn:
   version: '4.8.0'
 ```
 
-#### Python
+### Python
 
 All the Python toolchains are still unstable, and still require the `unstable_` prefix. We're not
 Python experts, so we would love help from the community to test and improve the implementation. If
@@ -18024,8 +17680,8 @@ tokens (`$VAR`) and `?` flag tokens (`$VAR?`) swapped functionality. Refer to th
 | `${VAR!}`                               | Don't substitute and keep variable syntax (`$VAR`)         | ~                                                             |
 | `${VAR?}`                               | Substitute with empty string if variable empty             | 💥 Substitute with variable syntax (`$VAR`) if variable empty |
 | `${VAR:default}`                        | Use default value if variable empty                        | ~                                                             |
-| `${VAR:-default}`, `${VAR-default}`     | ⛔️ Not supported                                          | Use default value if variable empty                           |
-| `${VAR:+alternate}`, `${VAR+alternate}` | ⛔️ Not supported                                          | Use alternate value if variable non-empty                     |
+| `${VAR:-default}`, `${VAR-default}`     | ⛔️ Not supported                                           | Use default value if variable empty                           |
+| `${VAR:+alternate}`, `${VAR+alternate}` | ⛔️ Not supported                                           | Use alternate value if variable non-empty                     |
 
 Legend:
 
@@ -18219,515 +17875,6 @@ projectLayer=application && taskToolchain=node
 
 - Removed the `tool.*` events. Use `toolchain.*` events instead.
 - Removed the `runtime` field from `dependencies.*` events. Use the `toolchain` field instead.
-
----
-
-## Migrate to moon
-
-import NextSteps from '@site/src/components/NextSteps';
-import LangPartials from '@site/src/components/LangPartials';
-
-Now that we've talked about the workspace, projects, tasks, and more, we must talk about something
-important... Should you embrace moon tasks? Or keep using language/ecosystem specific scripts? Or
-both (incremental adoption)?
-
-## Migrate to moon tasks
-
-We suggest using moon tasks (of course), as they provide far more granular control and configurable
-options than scripts, and a `moon.yml` is a better
-[source of truth](./faq#what-should-be-considered-the-source-of-truth). Scripts aren't powerful
-enough to scale for large codebases.
-
-An example of what this may look like can be found below. This _may_ look like a lot, but it pays
-dividends in the long run.
-
-<LangPartials>
-  ```yaml title="<project>/moon.yml"
-language: 'typescript'
-
-toolchain:
-  default: 'bun'
-
-fileGroups:
-  sources:
-    - 'src/**/*'
-    - '*.ts'
-    - 'bunfig.toml'
-  tests:
-    - 'tests/**/*'
-
-tasks:
-  dev:
-    command: 'bun run dev'
-    inputs:
-      - '@globs(sources)'
-    preset: 'server'
-  format:
-    command: 'bun run format'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-  lint:
-    command: 'bun run lint'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-  test:
-    command: 'bun test --bail'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-  typecheck:
-    command: 'bun run typecheck'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'tsconfig.json'
-      - '/tsconfig.json'
-```
-  ```yaml title="<project>/moon.yml"
-language: 'typescript'
-
-fileGroups:
-  sources:
-    - 'src/**/*'
-    - 'deno.*'
-  tests:
-    - 'tests/**/*'
-
-tasks:
-  dev:
-    command: 'deno task dev'
-    inputs:
-      - '@globs(sources)'
-    preset: 'server'
-  format:
-    command: 'deno fmt --check'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-  lint:
-    command: 'deno lint'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-  test:
-    command: 'deno test --parallel'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-  typecheck:
-    command: 'deno check'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'tsconfig.json'
-      - '/tsconfig.json'
-```
-  ```yaml title="<project>/moon.yml"
-language: 'go'
-
-fileGroups:
-  sources:
-    - 'cmd/**/*'
-    - 'include/**/*'
-    - 'pkg/**/*'
-
-tasks:
-  build:
-    command: 'go build -o @out(0)'
-    inputs:
-      - '@globs(sources)'
-    outputs:
-      - 'bin'
-  dev:
-    command: 'go run'
-    inputs:
-      - '@globs(sources)'
-    preset: 'server'
-  format:
-    command: 'go fmt'
-    inputs:
-      - '@globs(sources)'
-  lint:
-    command: 'staticcheck'
-    inputs:
-      - '@globs(sources)'
-      - 'staticcheck.conf'
-  test:
-    command: 'go test'
-    inputs:
-      - '@globs(sources)'
-  vet:
-    command: 'go vet'
-    inputs:
-      - '@globs(sources)'
-```
-  ```yaml title="<project>/moon.yml"
-language: 'javascript'
-
-fileGroups:
-  sources:
-    - 'src/**/*'
-  tests:
-    - 'tests/**/*'
-
-tasks:
-  build:
-    command: 'webpack build --output-path @out(0)'
-    inputs:
-      - '@globs(sources)'
-      - 'webpack.config.js'
-    outputs:
-      - 'build'
-  dev:
-    command: 'webpack server'
-    inputs:
-      - '@globs(sources)'
-      - 'webpack.config.js'
-    preset: 'server'
-  format:
-    command: 'prettier --check .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '/prettier.config.js'
-  lint:
-    command: 'eslint .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '.eslintignore'
-      - '.eslintrc.js'
-      - '/.eslintrc.js'
-  test:
-    command: 'jest .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'jest.config.js'
-  typecheck:
-    command: 'tsc --build'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'tsconfig.json'
-      - '/tsconfig.json'
-```
-  ```yaml title="<project>/moon.yml"
-language: 'php'
-
-fileGroups:
-  sources:
-    - 'app/**/*'
-  tests:
-    - 'tests/**/*'
-
-tasks:
-  dev:
-    command: 'php artisan serve'
-    inputs:
-      - '@globs(sources)'
-    preset: 'server'
-  format:
-    command: './vendor/bin/phpcbf .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '.phpcs.xml'
-  lint:
-    command: './vendor/bin/phpstan analyse'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'phpstan.neon'
-  test:
-    command: './vendor/bin/phpunit .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'phpunit.xml'
-```
-  ```yaml title="<project>/moon.yml"
-language: 'python'
-
-fileGroups:
-  sources:
-    - 'flaskr/**/*'
-    - 'setup.py'
-  tests:
-    - 'tests/**/*'
-
-tasks:
-  dev:
-    command: 'flask run'
-    inputs:
-      - '@globs(sources)'
-    preset: 'server'
-  format:
-    command: 'black --check .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'pyproject.toml'
-  lint:
-    command: 'pylint .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'pyproject.toml'
-      - '.pylintrc'
-  test:
-    command: 'python -m unittest'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'pyproject.toml'
-  typecheck:
-    command: 'mypy .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'mypy.ini'
-      - 'pyproject.toml'
-```
-  ```yaml title="<project>/moon.yml"
-language: 'ruby'
-
-fileGroups:
-  sources:
-    - 'lib/**/*'
-    - 'view/**/*'
-  tests:
-    - 'spec/**/*'
-
-tasks:
-  dev:
-    command: './bin/rails server'
-    preset: 'server'
-  format:
-    command: 'rubocop -x'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '.rubocop.yml'
-  lint:
-    command: 'rubocop -l'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '.rubocop.yml'
-  test:
-    command: 'rspec'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '.rspec'
-  typecheck:
-    command: 'srb tc'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'sorbet/config'
-```
-  ```yaml title="<project>/moon.yml"
-language: 'rust'
-
-fileGroups:
-  sources:
-    - 'src/**/*'
-  tests:
-    - 'benches/**/*'
-    - 'tests/**/*'
-
-tasks:
-  build:
-    command: 'cargo build'
-    inputs:
-      - '@globs(sources)'
-      - 'Cargo.toml'
-  dev:
-    command: 'cargo run'
-    inputs:
-      - '@globs(sources)'
-      - 'Cargo.toml'
-    preset: 'server'
-  format:
-    command: 'cargo fmt --all --check'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'Cargo.toml'
-  lint:
-    command: 'cargo clippy --workspace --all-targets'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'Cargo.toml'
-  test:
-    command: 'cargo test --workspace'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'Cargo.toml'
-  typecheck:
-    command: 'cargo check --workspace'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'Cargo.toml'
-```
-</LangPartials>
-
-## Continue using scripts
-
-<LangPartials>
-  Bun provides a built-in script runner through the [`bun run` command](https://bun.sh/docs/cli/run).
-While Bun scripts are great, they're not as efficient as moon. They _do not_ support granular
-inputs, smart hashing, incremental caching, and all the other performance benefits that moon
-provides.
-
-With that being said, you _do not_ have to migrate away from Bun scripts. Instead, you can simply
-run them from within moon tasks. This gives you the best of both worlds.
-
-```yaml title="<project>/moon.yml"
-language: 'typescript'
-
-tasks:
-  analyze:
-    command: 'bun run analyze'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-```
-
-> When Bun scripts are ran through moon tasks, the current working directory is set to the project
-> root.
-  Deno provides a built-in task runner through the
-[`deno task` command](https://deno.land/manual@v1.31.1/tools/task_runner). While Deno tasks are
-great, they're not as efficient as moon. They _do not_ support granular inputs, smart hashing,
-incremental caching, and all the other performance benefits that moon provides.
-
-With that being said, you _do not_ have to migrate away from Deno tasks. Instead, you can simply run
-them from within moon tasks. This gives you the best of both worlds.
-
-```yaml title="<project>/moon.yml"
-language: 'typescript'
-
-tasks:
-  analyze:
-    command: 'deno task analyze'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'Rakefile'
-```
-
-> When Deno tasks are ran through moon tasks, the current working directory is set to the project
-> root.
-  Go provides no mechanism for declaring reusable scripts. Because of this, there's no alternative to
-moon tasks.
-  As a frontend developer you're already familiar with the Node.js ecosystem, specifically around
-defining and using `package.json` scripts, and you may not want to deviate from this. Don't worry,
-simply enable the [`node.inferTasksFromScripts`](./config/toolchain#infertasksfromscripts) setting
-to automatically create moon tasks from a project's scripts! These can then be ran with
-[`moon run`](./commands/run).
-
-This implementation is a simple abstraction that runs `npm run <script>` (or pnpm/yarn) in the
-project directory as a child process. While this works, relying on `package.json` scripts incurs the
-following risks and disadvantages:
-
-- [Inputs](./config/project#inputs) default to `**/*`:
-  - A change to every project relative file will mark the task as affected, even those not necessary
-    for the task. Granular input control is lost.
-  - A change to workspace relative files _will not_ mark the task as affected. For example, a change
-    to `/prettier.config.js` would not be detected for a `npm run format` script.
-- [Outputs](./config/project#outputs) default to an empty list unless:
-  - moon will attempt to extract outputs from arguments, by looking for variations of `--out`,
-    `--outFile`, `--dist-dir`, etc.
-  - If no output could be determined, builds will not be cached and hydrated.
-- Tasks will always [run in CI](./config/project#runinci) unless:
-  - moon will attempt to determine invalid CI tasks by looking for popular command usage, for
-    example: `webpack serve`, `next dev`, `--watch` usage, and more. This _is not_ an exhaustive
-    check.
-  - The script name contains variations of `dev`, `start`, or `serve`.
-  The PHP ecosystem has standardized (somewhat) around
-[Composer scripts](https://getcomposer.org/doc/articles/scripts.md#writing-custom-commands) for
-reusability. While these work, they're not as efficient as moon. They _do not_ support granular
-inputs, smart hashing, incremental caching, and all the other performance benefits that moon
-provides.
-
-With that being said, you _do not_ have to migrate away from Composer. Instead, you can simply run
-these scripts from within moon tasks. This gives you the best of both worlds.
-
-```yaml title="<project>/moon.yml"
-language: 'php'
-
-tasks:
-  test:
-    command: 'php composer.phar run-script test'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'composer.json'
-```
-
-In the future, we aim to infer these scripts automatically, and provide migration scripts.
-  The Python ecosystem has support for many task runners such as [doit](https://pydoit.org/) and
-[pypyr](https://pypyr.io/). While these are great, they're not as efficient as moon. They _do not_
-support granular inputs, smart hashing, incremental caching, and all the other performance benefits
-that moon provides.
-
-With that being said, you _do not_ have to migrate away from these tools. Instead, you can simply
-run their commands from within moon tasks. This gives you the best of both worlds.
-
-```yaml title="<project>/moon.yml"
-language: 'python'
-
-tasks:
-  test:
-    command: 'doit test'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'pyproject.toml'
-```
-  The Ruby ecosystem has standardized around the task runner [Rake](https://ruby.github.io/rake/),
-which is a Makefile like system written in Ruby. While Rake is great and it accomplishes everything
-it set out to do, it's not as efficient as moon. It _does not_ support granular inputs, smart
-hashing, incremental caching, and all the other performance benefits that moon provides.
-
-With that being said, you _do not_ have to migrate away from Rake. Instead, you can simply run Rake
-commands from within moon tasks. This gives you the best of both worlds.
-
-```yaml title="<project>/moon.yml"
-language: 'ruby'
-
-tasks:
-  test:
-    command: 'rake test'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - 'Rakefile'
-```
-  Rust, and more specifically Cargo, provides no mechanism for declaring reusable scripts in
-`Cargo.toml`. Because of this, there's no alternative to moon tasks. In the future, we may parse
-third-party libraries like `cargo-make` for this information.
-</LangPartials>
-
-## Next steps
-
-By this point, you should have a better understanding behind moon's fundamentals! Why not adopt
-incrementally next? Jump into [guides](./guides/ci) for advanced use cases or [concepts](./concepts)
-for a deeper understanding.
-
-<NextSteps
-  links={[
-    { icon: 'discord', label: 'Community help & support', url: 'https://discord.gg/qCh9MEynv2' },
-    { icon: 'twitter', label: 'Releases & updates', url: 'https://twitter.com/tothemoonrepo' },
-  ]}
-/>
 
 ---
 
@@ -20625,13 +19772,13 @@ When detecting a version, the following steps are checked, in the order as liste
 
 #### 1. Version is explicitly passed as a command line argument
 
-``` shell
+```shell
 $ proto run node 24.0.0
 ```
 
 #### 2. Version is provided with the `PROTO_*_VERSION` environment variable
 
-``` shell
+```shell
 $ PROTO_NODE_VERSION=24.0.0 proto run node
 ```
 
@@ -22396,11 +21543,11 @@ primary target, as their outputs may be required for the primary target to funct
 
 However, if you're working on a project that is shared and consumed by other projects, you may want
 to verify that downstream dependents have not been indirectly broken by any changes. This can be
-achieved by passing the `--dependents` option, which will run dependent targets _after_ the primary
-target.
+achieved by passing the `--downstream` option (aliased as `--dependents`), which will run dependent
+targets _after_ the primary target.
 
 ```shell
-$ moon run app:build --dependents
+$ moon run app:build --downstream direct
 ```
 
 ## Running based on affected files only
@@ -22414,18 +21561,18 @@ target if files have changed, pass the `--affected` flag.
 $ moon run app:build --affected
 ```
 
-Under the hood, we extract locally touched (created, modified, staged, etc) files from your
+Under the hood, we extract locally changed (created, modified, staged, etc) files from your
 configured [VCS](./config/workspace#vcs), and exit early if no files intersect with the task's
 [inputs](./config/project#inputs).
 
 ### Using remote changes
 
 If you'd like to determine affected files based on remote changes instead of local changes, pass the
-`--remote` flag. This will extract touched files by comparing the current `HEAD` against the
+`remote` value. This will extract changed files by comparing the current `HEAD` against the
 [`vcs.defaultBranch`](./config/workspace#defaultbranch).
 
 ```shell
-$ moon run app:build --affected --remote
+$ moon run app:build --affected remote
 ```
 
 ### Filtering based on change status
@@ -22478,7 +21625,6 @@ Jump to the official [`moon run` documentation](./commands/run) for more example
 
 <NextSteps
   links={[
-    { icon: 'moon', label: 'Migrate to moon', url: './migrate-to-moon' },
     { icon: 'task', label: 'Learn about tasks', url: './concepts/task' },
     {
       icon: 'run-task',
@@ -22507,7 +21653,7 @@ manages, downloads, and installs Node.js and other languages behind the scenes u
 [proto](/proto). It also enables [advanced functionality](./how-it-works/languages#tier-2--platform)
 for task running based on the platform (language and environment combination) it runs in.
 
-The toolchain is configured with [`.moon/toolchains.yml`](./config/toolchain).
+The toolchain is configured with [`.moon/toolchains.*`](./config/toolchain).
 
 :::tip
 
@@ -22534,7 +21680,7 @@ By default all tasks run through the
 [system toolchain](./how-it-works/languages#system-language-and-toolchain) and inherit _no_ special
 functionality. If you want to take advantage of this functionality, like dependency hashing, package
 shorthand execution, and lockfile management, you'll need to enable the toolchain in
-[`.moon/toolchains.yml`](./config/toolchain). Otherwise, you can skip to the
+[`.moon/toolchains.*`](./config/toolchain). Otherwise, you can skip to the
 [create a task](./create-task) guide.
 
 Begin by declaring the necessary configuration block, even if an empty object! This configuration
@@ -22693,8 +21839,8 @@ import NextSteps from '@site/src/components/NextSteps';
 <HeaderLabel text="2 min" />
 
 Once moon has been [installed](./install), we must setup the [workspace](./concepts/workspace),
-which is denoted by the `.moon` folder — this is known as the workspace root. The workspace is in
-charge of:
+which is denoted by the `.moon` folder (or `.config/moon`) — this is known as the workspace root.
+The workspace is in charge of:
 
 - Integrating with a version control system.
 - Defining configuration that applies to its entire tree.
@@ -22712,7 +21858,7 @@ $ moon init
 
 When executed, the following operations will be applied.
 
-- Creates a `.moon` folder with a [`.moon/workspace.yml`](./config/workspace) configuration file.
+- Creates a `.moon` folder with a [`.moon/workspace.*`](./config/workspace) configuration file.
 - Appends necessary ignore patterns to the relative `.gitignore`.
 - Infers the version control system from the environment.
 
@@ -22741,7 +21887,7 @@ hashing, and revision comparison. The VCS and its default branch can be configur
 
 ```yaml title=".moon/workspace.yml"
 vcs:
-  manager: 'git'
+  client: 'git'
   defaultBranch: 'master'
 ```
 
@@ -22756,7 +21902,7 @@ vcs:
       icon: 'workspace-config',
       label: (
         
-          Configure <code>.moon/workspace.yml</code> further
+          Configure <code>.moon/workspace.*</code> further
         
       ),
       url: './config/workspace',
@@ -32462,8 +31608,8 @@ alternative to YAML (`.yml`), but it was hidden behind an experimental flag. Goi
 now use Pkl without having to enable the experimental flag, and can remove any references to
 `--experimentPklConfig` or `MOON_EXPERIMENT_PKL_CONFIG`.
 
-Additionally, we now have [official documentation on what Pkl is](/docs/guides/pkl-config), how to
-use it, and some examples of what it looks like. Check it out!
+Additionally, we now have official documentation on what Pkl is, how to use it, and some examples of
+what it looks like. Check it out!
 
 :::info
 
@@ -34524,15 +33670,23 @@ We'd appreciate any help testing this release candidate before then!
 
 ## moon v2.0 - Official "Phobos" release!
 
-TODO: This blog post is a work in progress!
+We're very excited to announce the release of moon v2.0, codenamed "Phobos", after one of Mars'
+moons! This is our biggest release yet, with a ton of new features, improvements, and breaking
+changes.
+
+We've been working on this release for years, and we're thrilled to finally share it with the world.
+We also want to thank everyone in the community who has contributed to this release, whether it's
+through code, documentation, testing, or just providing feedback and support. We couldn't have done
+this without you!
 
 <!--truncate-->
 
 ## Breaking changes
 
 Since this is our first major release after v1, there are quite a few breaking changes, far too many
-to list here! Please refer to the [official migration guide](/docs/migrate/2.0) for a comprehensive
-list of breaking changes and how to address them.
+to list here! Please refer to the [official migration guide](/docs/migrate/2.0) and
+[changelog](https://github.com/moonrepo/moon/blob/master/CHANGELOG.md) for a comprehensive list of
+breaking changes and how to address them.
 
 ## CLI
 
@@ -34542,24 +33696,27 @@ As part of this release, we went through every CLI command and made improvements
 functionality, and rendered output. On top of this, we're also introducing a handful of new commands
 to fill some missing gaps. Here are some highlights:
 
-- `moon exec` - Low-level command for running tasks. Read more below!
-- `moon extension` - Top-level command to [manage extensions](#management-commands) in the
-  workspace.
-- `moon hash` - Inspect a hash, or diff two hashes.
-- `moon projects` - Display a table of all projects.
-- `moon query affected` - Query affected status for projects and tasks.
-- `moon tasks` - Display a table of all tasks or for a specific project.
-- `moon template` - Display information about a template.
+- [`moon exec`](/docs/commands/exec) - Low-level command for running tasks. Read more below!
+- [`moon extension`](/docs/commands/extension) - Top-level command to
+  [manage extensions](#management-commands) in the workspace.
+- [`moon hash`](/docs/commands/hash) - Inspect a hash, or diff two hashes.
+- [`moon projects`](/docs/commands/projects) - Display a table of all projects.
+- [`moon query affected`](/docs/commands/query/affected) - Query affected status for projects and
+  tasks.
+- [`moon tasks`](/docs/commands/tasks) - Display a table of all tasks or for a specific project.
+- [`moon template`](/docs/commands/template) - Display information about a template.
 
 ### New `exec` command
 
 To simplify running tasks and improve consistency across commands, we've introduced a new low-level
-`moon exec` command. This command is now used under the hood by `moon check`, `moon ci`, and
-`moon run`, with some arguments/options pre-filled. This allows us to have a single command that is
-responsible for executing tasks, while still providing higher-level commands for specific use cases.
+[`moon exec`](/docs/commands/exec) command. This command is now used under the hood by
+[`moon check`](/docs/commands/check), [`moon ci`](/docs/commands/ci), and
+[`moon run`](/docs/commands/run), with some arguments/options pre-filled. This allows us to have a
+single command that is responsible for executing tasks, while still providing higher-level commands
+for specific use cases.
 
-This paves the way for future commands that can leverage `moon exec`, such as a potential
-`moon deploy` or `moon watch` command.
+This paves the way for future commands that can leverage [`moon exec`](/docs/commands/exec), such as
+a potential `moon deploy` or `moon watch` command.
 
 ```shell
 $ moon exec app:build --dependents direct
@@ -34570,15 +33727,19 @@ previously, like job parallelization, affected filtering, and more.
 
 ### Updated `ci`, `check`, and `run` commands
 
-As mentioned previously, all of these commands have been reworked to use `moon exec` under the hood.
-This means that they now share the same core functionality and behavior, while still providing their
-own unique features and options.
+As mentioned previously, all of these commands have been reworked to use
+[`moon exec`](/docs/commands/exec) under the hood. This means that they now share the same core
+functionality and behavior, while still providing their own unique features and options.
 
 ```shell
 $ moon ci
 $ moon check app
 $ moon run app:dev --affected
 ```
+
+These commands will now pre-fill certain [`moon exec`](/docs/commands/exec) options for a curated
+experience. These options cannot be overridden, but the [`moon exec`](/docs/commands/exec) command
+can be used directly for more control.
 
 ### Dynamic identifier & target selection
 
@@ -34587,16 +33748,17 @@ interactive selection prompt if no value is provided. This makes it easier to ex
 CLI without needing to know specific identifiers ahead of time. The following commands now support
 this:
 
-- `moon check`
-- `moon ci`
-- `moon exec`
-- `moon generate`
-- `moon project`
-- `moon run`
-- `moon task`
-- `moon template`
+- [`moon check`](/docs/commands/check)
+- [`moon ci`](/docs/commands/ci)
+- [`moon exec`](/docs/commands/exec)
+- [`moon generate`](/docs/commands/generate)
+- [`moon project`](/docs/commands/project)
+- [`moon run`](/docs/commands/run)
+- [`moon task`](/docs/commands/task)
+- [`moon template`](/docs/commands/template)
 
-To demonstrate this, here we are running `moon project` without an identifier:
+To demonstrate this, here we are running [`moon project`](/docs/commands/project) without an
+identifier:
 
 ```shell
 $ moon project
@@ -34615,8 +33777,9 @@ $ moon project
 ### Stabilized `moonx`
 
 The `moonx` executable, sibling to `moon`, has been stabilized, and is no longer a shim, but a
-proper standalone binary. This executable is simply a shorthand for `moon exec`, and _replaces_ the
-shorthand syntax that previously existed with `moon <target>`.
+proper standalone binary. This executable is simply a shorthand for
+[`moon exec`](/docs/commands/exec), and _replaces_ the shorthand syntax that previously existed with
+`moon <target>`.
 
 ```shell
 # Before
@@ -34663,7 +33826,7 @@ configuration files:
 ### Plugin based system
 
 The new toolchain system replaces the legacy platform system and is the biggest change in moon v2.
-Toolchains are now powered by WASM plugins, instead of hard-coded in core, allowing for more
+Toolchains are now powered by WASM plugins, instead of being hard-coded in core, allowing for more
 flexibility, extensibility, and the ability for the community to create their own toolchains!
 
 Moving to a plugin based system enables us to support more languages, more features, deeper
@@ -34706,9 +33869,10 @@ supported a single functionality: custom execution through the [`moon ext`](/doc
 command. With the introduction of toolchain plugins, we wanted to expand the extension system to
 allow for more flexibility and use cases.
 
-To start, we're intoducing a new `.moon/extensions.*` configuration file, that will contain all
-extensions, similar to how toolchains are configured in `.moon/toolchains.*`. Because of this
-change, the `extensions` setting has been removed from the workspace configuration.
+To start, we're intoducing a new [`.moon/extensions.*`](/docs/config/extensions) configuration file,
+that will contain all extensions, similar to how toolchains are configured in
+[`.moon/toolchains.*`](/docs/config/toolchain). Because of this change, the `extensions` setting has
+been removed from the workspace configuration.
 
 ### New plugin APIs
 
@@ -34725,10 +33889,11 @@ functionality. Extensions can now utilize the following API functions, similar t
 
 ### Management commands
 
-To easily manage extensions, we've added new commands under the `moon extension` namespace:
+To easily manage extensions, we've added new commands under the
+[`moon extension`](/docs/commands/extension) namespace:
 
-- `moon extension add` - Add a new extension to the workspace.
-- `moon extension info` - Display information about an extension.
+- [`moon extension add`](/docs/commands/extension/add) - Add a new extension to the workspace.
+- [`moon extension info`](/docs/commands/extension/info) - Display information about an extension.
 
 ```shell
 $ moon extension info migrate-nx
@@ -34759,11 +33924,11 @@ APIs ─────────────────────────
 
 ### Default project
 
-By request from the community, we've added a new `defaultProject` setting to the workspace
-configuration. This setting allows you to specify a default project that will be used when running
-tasks that require a project identifier, but none was provided. This is especially useful for
-workspaces with a single project, or when you have a primary project that you work on most of the
-time.
+By request from the community, we've added a new
+[`defaultProject`](/docs/config/workspace#defaultproject) setting to the workspace configuration.
+This setting allows you to specify a default project that will be used when running tasks that
+require a project identifier, but none was provided. This is especially useful for workspaces with a
+single project, or when you have a primary project that you work on most of the time.
 
 ```yaml title=".moon/workspace.yml"
 defaultProject: 'app'
@@ -34780,13 +33945,15 @@ $ moonx build
 
 ### Path based IDs
 
-When locating projects with globs via the `projects` workspace configuration, we would historically
-use the directory name as the project ID. While this works in most cases, it can lead to issues when
-the directory name collides with another project, or is not descriptive enough. For example,
-`packages/server/utils` would become `utils`. What if you also had `packages/client/utils`?
+When locating projects with globs via the [`projects`](/docs/config/workspace#projects) workspace
+configuration, we would historically use the directory name as the project ID. While this works in
+most cases, it can lead to issues when the directory name collides with another project, or is not
+descriptive enough. For example, `packages/server/utils` would become `utils`. What if you also had
+`packages/client/utils`?
 
-To solve this, we've introduced a new `projects.globFormat` setting, which can be configured as
-`source-path` and will use the full relative source path as the project ID.
+To solve this, we've introduced a new
+[`projects.globFormat`](/docs/config/workspace#using-a-map-and-globs) setting, which can be
+configured as `source-path` and will use the full relative source path as the project ID.
 
 ```yaml title=".moon/workspace.yml"
 projects:
@@ -34825,20 +33992,22 @@ stack: 'data'
 
 ### Strict commands
 
-We've reworked the task `command` and `args` parser, when a string is provided, to be more strict
-and accurate. Previously, we used a simple shell-like parser that would split on spaces, but this
-led to issues with quoted strings, escaped characters, and other edge cases.
+We've reworked the task [`command`](/docs/config/project#command) and
+[`args`](/docs/config/project#args) parser, when a string is provided, to be more strict and
+accurate. Previously, we used a simple shell-like parser that would split on spaces, but this led to
+issues with quoted strings, escaped characters, and other edge cases.
 
 Related to this change, these fields will now _only support_ simple commands and arguments, and will
-not support complex syntax like pipes, redirects, and conditionals. This is a breaking change, but
-you can use `script` instead for complex commands.
+_not_ support complex syntax like pipes, redirects, and conditionals. This is a breaking change, but
+you can use [`script`](/docs/config/project#script) instead for complex commands.
 
 ### Inheritance via configuration
 
 Our task inheritance system is quite powerful, and one of moon's most compelling features. However,
 it can be rather restrictive as inheritance is based entirely on file naming conventions. To provide
 more flexibility, we've reworked task inheritance to be configuration based, by introducing a new
-`inheritedBy` setting for all `.moon/tasks/**/*` files.
+[`inheritedBy`](/docs/config/tasks#inheritedby) setting for all
+[`.moon/tasks/**/*`](/docs/config/tasks) files.
 
 For example, if you had a tasks file named `.moon/tasks/node-frontend-library.yml`, it would now be
 configured like so:
@@ -34854,11 +34023,12 @@ This new system is very powerful, as you can now mix-and-match different criteri
 tasks are inherited. The following conditions are supported out of the box, providing granular
 control:
 
-- `files` (NEW) - Inherit for projects that contain specific files.
-- `languages` (NEW) - Inherit for projects that belong to specific `language`s.
-- `layers` - Inherit for projects that belong to specific `layer`s.
-- `stacks` - Inherit for projects that belong to specific `stack`s.
-- `tags` - Inherit for projects that have specific `tags`.
+- `files` (NEW) - Inherit for projects that contain specific files (no glob support).
+- `languages` (NEW) - Inherit for projects that belong to specific
+  [`language`](/docs/config/project#language)s.
+- `layers` - Inherit for projects that belong to specific [`layer`](/docs/config/project#layer)s.
+- `stacks` - Inherit for projects that belong to specific [`stack`](/docs/config/project#stack)s.
+- `tags` - Inherit for projects that have specific [`tags`](/docs/config/project#tags).
 - `toolchains` - Inherit for projects that belong to specific toolchains.
 
 ```yaml
@@ -34878,7 +34048,7 @@ inheritedBy:
 A task can now be associated with multiple toolchains (javascript, node, npm), unlike the previous
 platform system which only allowed for 1 platform (node). This change allows for more flexibility
 but also requires more granular control over how toolchains are inherited. To accommodate this,
-we've added a `mergeToolchains` task option:
+we've added a [`mergeToolchains`](/docs/config/project#mergetoolchains) task option:
 
 ```yaml title="moon.yml"
 tasks:
@@ -34920,11 +34090,11 @@ locally, like running a migration, or validating data.
 
 This preset configures the following options:
 
-- `cache` disabled
-- `interactive` enabled
-- `persistent` disabled
-- `outputStyle` as `stream`
-- `runInCI` as `skip`
+- [`cache`](/docs/config/project#cache) disabled
+- [`interactive`](/docs/config/project#interactive) enabled
+- [`persistent`](/docs/config/project#persistent) disabled
+- [`outputStyle`](/docs/config/project#outputstyle) as `stream`
+- [`runInCI`](/docs/config/project#runinci) as `skip`
 
 ```yaml title="moon.yml"
 tasks:
@@ -34938,9 +34108,11 @@ tasks:
 ### Defaults with overrides
 
 To improve customizability of `Dockerfile` generation, and to allow for more flexibility during the
-scaffolding process, we've updated the `docker` settings in `.moon/workspace.*` to act as defaults,
-and the `docker` settings in `moon.*` to act as overrides on a per-project basis. Because of this,
-we've also updated `docker.file` and `docker.scaffold` settings to be the same across both files.
+scaffolding process, we've updated the [`docker`](/docs/config/workspace#docker) settings in
+[`.moon/workspace.*`](/docs/config/workspace) to act as defaults, and the
+[`docker`](/docs/config/project#docker) settings in [`moon.*`](/docs/config/project) to act as
+overrides on a per-project basis. Because of this, we've also updated `docker.file` and
+`docker.scaffold` settings to be the same across both files.
 
 ```yaml title=".moon/workspace.yml"
 # Inherited by all projects
@@ -34960,8 +34132,8 @@ docker:
 
 To further expand the customizability of `Dockerfile` generation, we've added support for custom
 templates to be used during the rendering process. The template can be provided with the
-`--template` option when running `moon docker file`, or configured with the new
-`docker.file.template` setting. Template rendering is powered by
+`--template` option when running [`moon docker file`](/docs/commands/docker/file), or configured
+with the new `docker.file.template` setting. Template rendering is powered by
 [Tera](https://keats.github.io/tera/).
 
 ```shell

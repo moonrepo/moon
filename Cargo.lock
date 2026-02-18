@@ -4570,7 +4570,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "2.0.3"
+version = "2.0.4"
 dependencies = [
  "deserialize_untagged_verbose_error",
  "hcl-rs",

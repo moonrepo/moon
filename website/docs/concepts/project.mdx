@@ -27,9 +27,8 @@ standard names. What this means is that an alias can also be used when configuri
 defining [targets](./target).
 
 However, the difference between aliases and names is that aliases _can not_ be explicit configured
-in moon. Instead, they are specific to a project's primary programming language, and are inferred
-based on that context (when enabled in settings). For example, a JavaScript or TypeScript project
-will use the `name` field from its `package.json` as the alias.
+in moon. Instead, they are derived from toolchain's that have been detected for the project. For
+example, a JavaScript project will use the `name` field from its `package.json` as the alias.
 
 Because of this, a project can either be referenced by its name or alias, or both. Choose the
 pattern that makes the most sense for your company or team!

@@ -144,9 +144,9 @@ receive the benefits of the toolchain. Some of which are:
 
 ### Can we use `package.json` scripts?
 
-We encourage everyone to define tasks in a [`moon.yml`](./config/project#tasks) file, as it allows
-for additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like to
-keep using `package.json` scripts, enable the
+We encourage everyone to define tasks in a [`moon.*`](./config/project#tasks) file, as it allows for
+additional metadata like `inputs`, `outputs`, `options`, and more. However, if you'd like to keep
+using `package.json` scripts, enable the
 [`node.inferTasksFromScripts`](./config/toolchain#infertasksfromscripts) setting.
 
 ### Can moon version/publish packages?
@@ -168,7 +168,7 @@ issues), it can mean 1 of 2 things:
 
 - If you are using package workspaces, then one of the projects triggering the install is not listed
   within the `workspaces` field in the root `package.json` (for npm and yarn), or in
-  `pnpm-workspace.yml` (for pnpm).
+  `pnpm-workspace.*` (for pnpm).
 - If the install is triggering in a non-JavaScript related project, then this project is incorrectly
   listed as a package workspace.
 - If you don't want a package included in the workspace, but do want to install its dependencies,

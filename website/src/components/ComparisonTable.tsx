@@ -33,7 +33,7 @@ const workspaceRows: Comparison[] = [
 	{
 		feature: 'Workspace configured with',
 		support: {
-			moon: '`.moon/workspace.yml`',
+			moon: '`.moon/workspace.*`',
 			nx: '`nx.json`',
 			turborepo: '`turbo.json`',
 		},
@@ -41,7 +41,7 @@ const workspaceRows: Comparison[] = [
 	{
 		feature: 'Project list configured in',
 		support: {
-			moon: '`.moon/workspace.yml`',
+			moon: '`.moon/workspace.*`',
 			nx: '`workspace.json` / `package.json` workspaces',
 			turborepo: '`package.json` workspaces',
 		},
@@ -149,7 +149,7 @@ const projectsRows: Comparison[] = [
 	{
 		feature: 'Dependencies on other projects',
 		support: {
-			moon: [SUPPORTED, 'implicit from `package.json` or explicit in `moon.yml`'],
+			moon: [SUPPORTED, 'implicit from `package.json` or explicit in `moon.*`'],
 			nx: [
 				SUPPORTED,
 				'implicit from `package.json` or explicit in `project.json` and code imports/exports',
@@ -218,7 +218,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Defines tasks in',
 		support: {
-			moon: '`moon.yml` or `package.json` scripts',
+			moon: '`moon.*` or `package.json` scripts',
 			nx: '`nx.json`, `project.json` or `package.json` scripts',
 			turborepo: '`package.json` scripts',
 		},
@@ -249,7 +249,7 @@ const tasksRows: Comparison[] = [
 	{
 		feature: 'Can define tasks globally',
 		support: {
-			moon: [SUPPORTED, 'with `.moon/tasks/all.yml`'],
+			moon: [SUPPORTED, 'with `.moon/tasks/all.*`'],
 			nx: [PARTIALLY_SUPPORTED, 'with `targetDefaults`'],
 		},
 	},
@@ -501,7 +501,7 @@ const generatorRows: Comparison[] = [
 	{
 		feature: 'Templates are configured with a schema',
 		support: {
-			moon: [SUPPORTED, 'via `template.yml`'],
+			moon: [SUPPORTED, 'via `template.*`'],
 			nx: SUPPORTED,
 		},
 	},

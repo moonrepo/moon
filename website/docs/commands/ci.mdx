@@ -21,20 +21,24 @@ by `runInCI`.
 $ moon ci :build :lint
 ```
 
-> View the official [continuous integration guide](../guides/ci) for a more in-depth example of how
-> to utilize this command.
+:::info
+
+View the official [continuous integration guide](../guides/ci) for a more in-depth example of how to
+utilize this command.
+
+:::
 
 ### Arguments
 
-- `...[target]` - [Targets](../concepts/target) to run.
+- `...[target]` - [Task targets](../concepts/target) to run.
 
 ### Options
 
-Inherits all options from [`moon exec`](./exec) except for `--affected`, `--on-failure`, and
-`--only-ci-tasks`.
+Inherits most options from [`moon exec`](./exec) and pre-fills with: `--affected`, `--ci`,
+`--on-failure=continue`, `--summary=detailed`, `--downstream=direct`.
 
 ### Configuration
 
-- [`tasks`](../config/tasks#tasks) in `.moon/tasks/all.yml`
-- [`tasks`](../config/project#tasks) in `moon.yml`
-- [`tasks.*.options.runInCI`](../config/project#runinci) in `moon.yml`
+- [`tasks`](../config/tasks#tasks) in `.moon/tasks/*`
+- [`tasks`](../config/project#tasks) in `moon.*`
+- [`tasks.*.options.runInCI`](../config/project#runinci) in `moon.*`

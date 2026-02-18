@@ -14,10 +14,10 @@ $ moon project-graph
 
 # Export to DOT format
 $ moon project-graph --dot > graph.dot
-```
 
-> A project name can be passed to focus the graph to only that project and its dependencies. For
-> example, `moon project-graph app`.
+# Focus a specific project
+$ moon project-graph app
+```
 
 ### Arguments
 
@@ -34,7 +34,7 @@ $ moon project-graph --dot > graph.dot
 
 ### Configuration
 
-- [`projects`](../config/workspace#projects) in `.moon/workspace.yml`
+- [`projects`](../config/workspace#projects) in `.moon/workspace.*`
 
 ## Example output
 

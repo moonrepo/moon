@@ -16,7 +16,7 @@ chose this pattern to avoid unnecessary overhead, especially for the future when
 built-in languages.
 
 To enable a supported language, simply define a configuration block with the language's name in
-[`.moon/toolchains.yml`](../config/toolchain). Even an empty block will enable the language.
+[`.moon/toolchains.*`](../config/toolchain). Even an empty block will enable the language.
 
 ```yaml title=".moon/toolchains.yml"
 # Enable JavaScript
@@ -81,7 +81,7 @@ in charge of:
   etc.
 - Mechanisms for detecting the language of a project based on config files and other criteria.
 - Maps to a project's [`language`](../config/project#language) setting.
-- Supports a configuration block by name in [`.moon/toolchains.yml`](../config/toolchain).
+- Supports a configuration block by name in [`.moon/toolchains.*`](../config/toolchain).
 
 ```yaml title="moon.yml"
 language: 'javascript'
@@ -127,7 +127,7 @@ tier. This tier handles:
 - Detecting appropriate versions of tools to use.
 - Determining which binary to use and execute targets with.
 - Supports a `version` field in the named configuration block in
-  [`.moon/toolchains.yml`](../config/toolchain).
+  [`.moon/toolchains.*`](../config/toolchain).
 
 ```yaml title=".moon/toolchains.yml"
 node:

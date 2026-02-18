@@ -12,7 +12,7 @@ echo "Version: $version"
 
 echo "Bumping npm packages"
 
-yarn workspaces foreach -tR --from "@moonrepo/{cli,core-*,types}" version "$version"
+yarn workspaces foreach -tR --from "@moonrepo/{cli,core-*}" version "$version"
 
 # Cargo release will fail with a "dirty working tree" if we have uncommitted changes,
 # so unfortunately we need another commit here...

@@ -71,6 +71,8 @@ cacheable!(
         #[serde(rename = "runInCI")]
         pub run_in_ci: TaskOptionRunInCI,
 
+        pub run_in_sync_phase: bool,
+
         pub run_from_workspace_root: bool,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -110,6 +112,7 @@ impl Default for TaskOptions {
             priority: TaskPriority::Normal,
             retry_count: 0,
             run_deps_in_parallel: true,
+            run_in_sync_phase: false,
             run_from_workspace_root: false,
             run_in_ci: TaskOptionRunInCI::Enabled(true),
             shell: Some(true),

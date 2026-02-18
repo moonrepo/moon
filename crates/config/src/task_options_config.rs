@@ -368,6 +368,9 @@ config_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub run_in_ci: Option<TaskOptionRunInCI>,
 
+        /// Runs the task automatically when executing `moon sync`.
+        pub run_in_sync_phase: Option<bool>,
+
         /// Runs the task from the workspace root, instead of the project root.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub run_from_workspace_root: Option<bool>,

@@ -1061,6 +1061,13 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
+        for task in self.workspace_graph.get_tasks_from_project(&project.id)? {
+            if task.options.run_in_sync_phase {
+                self.internal_run_task(task.as_ref(), &RunRequirements::default(), None)
+                    .await?;
+            }
+        }
+
         // We should also depend on other projects
         if self.options.sync_project_dependencies {
             cycle.insert(project.id.clone());

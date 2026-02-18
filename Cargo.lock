@@ -4498,6 +4498,7 @@ dependencies = [
  "moon_test_utils2",
  "moon_vcs",
  "proto_core",
+ "proto_shim",
  "rustc-hash",
  "serial_test",
  "sigpipe",

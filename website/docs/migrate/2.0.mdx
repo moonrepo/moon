@@ -135,7 +135,7 @@ $ moon migrate v2
 - All toolchains have been stabilized (excluding Python), so the `unstable_` prefix must be removed
   from identifiers.
 
-#### JavaScript
+### JavaScript
 
 The `bun`, `deno`, and `node` toolchains now require the `javascript` toolchain to be defined as
 well. All shared settings have been moved to the `javascript` toolchain.
@@ -194,7 +194,7 @@ yarn:
   version: '4.8.0'
 ```
 
-#### Python
+### Python
 
 All the Python toolchains are still unstable, and still require the `unstable_` prefix. We're not
 Python experts, so we would love help from the community to test and improve the implementation. If
@@ -441,8 +441,8 @@ tokens (`$VAR`) and `?` flag tokens (`$VAR?`) swapped functionality. Refer to th
 | `${VAR!}`                               | Don't substitute and keep variable syntax (`$VAR`)         | ~                                                             |
 | `${VAR?}`                               | Substitute with empty string if variable empty             | 💥 Substitute with variable syntax (`$VAR`) if variable empty |
 | `${VAR:default}`                        | Use default value if variable empty                        | ~                                                             |
-| `${VAR:-default}`, `${VAR-default}`     | ⛔️ Not supported                                          | Use default value if variable empty                           |
-| `${VAR:+alternate}`, `${VAR+alternate}` | ⛔️ Not supported                                          | Use alternate value if variable non-empty                     |
+| `${VAR:-default}`, `${VAR-default}`     | ⛔️ Not supported                                           | Use default value if variable empty                           |
+| `${VAR:+alternate}`, `${VAR+alternate}` | ⛔️ Not supported                                           | Use alternate value if variable non-empty                     |
 
 Legend:
 

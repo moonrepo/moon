@@ -22,14 +22,18 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
-          registry-url: "https://registry.npmjs.org"
+          node-version: 24
+          registry-url: https://registry.npmjs.org
       - name: Fetch artifacts
         uses: actions/download-artifact@v7
         with:
           pattern: artifacts-*
           path: artifacts
           merge-multiple: true
+      - name: Install dependencies
+        run: yarn install
+      - name: Build packages
+        run: yarn run build:types
       - name: Copy artifacts and release packages
         run: unset NODE_AUTH_TOKEN && bash ./scripts/release/release.sh
         shell: bash

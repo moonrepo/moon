@@ -107,7 +107,7 @@ if [[ "$version" == *alpha* || "$version" == *beta* || "$version" == *rc* ]]; th
   tag="next"
 fi
 
-echo "Publishing cli and core packages"
+echo "Publishing cli, core, and types packages"
 echo "Tag: $tag"
 echo "Version: $version"
 
@@ -117,7 +117,7 @@ if [[ -z "$GITHUB_TOKEN" ]]; then
 fi
 
 # We must publish with npm instead of yarn for OIDC to work correctly
-for package in packages/cli packages/core-*; do
+for package in packages/cli packages/core-* packages/types; do
 	echo "  $package"
 
 	if [[ -z "$GITHUB_TOKEN" ]]; then

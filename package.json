@@ -5,7 +5,8 @@
   "scripts": {
     "moon": "target/debug/moon --log trace",
     "type": "target/debug/moon --log trace run :typecheck",
-    "clean": "rm -rf packages/*/{cjs,dist,dts,.eslintcache,tsconfig.*.tsbuildinfo}"
+    "clean": "rm -rf packages/*/{cjs,dist,dts,.eslintcache,tsconfig.*.tsbuildinfo}",
+    "build:types": "cd packages/types && NODE_ENV=production packemon build --addFiles --addExports --declaration"
   },
   "workspaces": [
     "packages/*",

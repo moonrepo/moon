@@ -34,7 +34,6 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
 
         exec.targets = targets;
         exec.on_failure = OnFailure::Continue;
-        exec.include_relations = true;
         exec.ignore_ci_checks = false;
         exec.ci = Some(true);
 

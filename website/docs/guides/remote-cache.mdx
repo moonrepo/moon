@@ -28,18 +28,10 @@ following RE API features must be enabled:
 - SHA256 digest hashing
 - gRPC requests
 
-:::warning
-
-This feature and its implementation is currently unstable, and its documentation is incomplete.
-Please report any issues on GitHub or through Discord!
-
-:::
-
 ### Host your service
 
-When you have chosen (or built) a compatible service, host it and make it available through gRPC (we
-do not support HTTP at this time). For example, if you plan to use `bazel-remote`, you can do
-something like the following:
+When you have chosen (or built) a compatible service, host it and make it available through gRPC or
+HTTPS. For example, if you plan to use `bazel-remote`, you can do something like the following:
 
 ```bash
 bazel-remote --dir /path/to/moon-cache --max_size 10 --storage_mode uncompressed --grpc_address 0.0.0.0:9092
@@ -63,13 +55,25 @@ proxies, and more.
 ### Configure remote caching
 
 Once your service is running, you can enable remote caching by configuring the
-[`remote`](../config/workspace#remote) settings in [`.moon/workspace.yml`](../config/workspace). At
+[`remote`](../config/workspace#remote) settings in [`.moon/workspace.*`](../config/workspace). At
 minimum, the only setting that is required is `host`.
 
 ```yaml title=".moon/workspace.yml"
+# gRPC
 remote:
   host: 'grpc://your-host.com:9092'
+
+# HTTPS
+remote:
+  api: 'http'
+  host: 'https://your-host.com:8080'
 ```
+
+:::info
+
+Remote caching can be conditionally enabled by setting the `MOON_REMOTE_HOST` environment variable.
+
+:::
 
 #### TLS and mTLS
 
@@ -96,7 +100,9 @@ remote:
     domain: 'your-host.com'
 ```
 
-## Cloud-hosted: Depot<VersionLabel version="1.32.0" />
+## Cloud-hosted
+
+### Depot<VersionLabel version="1.32.0" />
 
 If you'd prefer not to host your own solution, you could use
 [Depot Cache](https://depot.dev/products/cache), a cloud-based caching solution. To make use of

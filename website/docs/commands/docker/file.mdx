@@ -37,8 +37,7 @@ utilize this command.
 
 ### Arguments
 
-- `<name>` - Name or alias of a project, as defined in
-  [`projects`](../../config/workspace#projects).
+- `<id>` - Name or alias of a project, as defined in [`projects`](../../config/workspace#projects).
 - `[dest]` - Destination to write the file, relative from the project root. Defaults to
   `Dockerfile`.
 
@@ -49,11 +48,14 @@ utilize this command.
   [`docker.file.buildTask`](../../config/project#buildtask) setting, or prompts in the terminal.
 - `--image` - Base Docker image to use. Defaults to an image derived from the toolchain, or prompts
   in the terminal.
-- `--no-prune` - Do not prune the workspace in the build stage.
+- `--no-prune` - Do not prune dependencies in the build stage.
+- `--no-setup` - Do not setup dependencies in the build stage. <VersionLabel version="2.0.0" />
 - `--no-toolchain` - Do not use the toolchain and instead use system binaries.
 - `--start-task` - Name of a task to start the project. Defaults to the
   [`docker.file.startTask`](../../config/project#starttask) setting, or prompts in the terminal.
+- `--template` - Template path, relative from the workspace root, to render the Dockerfile with.
+  <VersionLabel version="2.0.0" />
 
 ### Configuration
 
-- [`docker.file`](../../config/project#file) in `moon.yml`
+- [`docker.file`](../../config/project#file) in `moon.*`

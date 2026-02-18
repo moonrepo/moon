@@ -24,21 +24,23 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable TypeScript support via Deno, define the [`deno`](../../config/toolchain#deno) setting in
-[`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
+[`.moon/toolchains.*`](../../config/toolchain), even if an empty object. The
+[`javascript`](../../config/toolchain#javascript) toolchain must also be enabled, and configured to
+use Bun as the package manager.
 
 ```yaml title=".moon/toolchains.yml"
+# Enable JavaScript
+javascript:
+  packageManager: 'deno'
+
 # Enable Deno
 deno: {}
-
-# Enable Deno and override default settings
-deno:
-  lockfile: true
 ```
 
 Or by pinning a `deno` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"
-deno = "1.31.0"
+deno = "2.0.0"
 ```
 
 This will enable the Deno toolchain and provide the following automations around its ecosystem:
@@ -47,19 +49,6 @@ This will enable the Deno toolchain and provide the following automations around
 - Relationships between projects will automatically be discovered based on `imports`, `importMap`,
   and `deps.ts` (currently experimental).
 - And more to come!
-
-### Work in progress
-
-:::caution
-
-Deno support is currently experimental while we finalize the implementation.
-
-:::
-
-The following features are not supported:
-
-- `deno.jsonc` files (use `deno.json` instead).
-- `files.exclude` are currently considered an input. These will be filtered in a future release.
 
 ## Coming soon!
 

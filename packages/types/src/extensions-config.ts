@@ -10,7 +10,7 @@ export type ExtensionPluginConfigConfig = Record<string, unknown>;
 /** Configures an individual extension. */
 export interface ExtensionPluginConfigBase {
 	/** Location of the WASM plugin to use. */
-	plugin: PluginLocator | null;
+	plugin?: PluginLocator | null;
 }
 
 /** Configures an individual extension. */
@@ -27,7 +27,7 @@ export interface ExtensionsConfigBase {
 	 * Supports a relative file path or a secure URL.
 	 * @since 2.0.0
 	 */
-	extends: ExtendsFrom | null;
+	extends?: ExtendsFrom | null;
 }
 
 /** Configures all extensions. */

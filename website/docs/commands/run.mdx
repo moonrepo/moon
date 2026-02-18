@@ -45,10 +45,13 @@ behavior.
 
 ### Options
 
-Inherits all options from [`moon exec`](./exec) except for `--on-failure`.
+Inherits all options from [`moon exec`](./exec) and pre-fills with: `--on-failure=bail`,
+`--upstream=deep`.
+
+- `query` - Filter tasks based on the result of a query.
 
 ### Configuration
 
-- [`projects`](../config/workspace#projects) in `.moon/workspace.yml`
-- [`tasks`](../config/tasks#tasks) in `.moon/tasks/all.yml`
-- [`tasks`](../config/project#tasks) in `moon.yml`
+- [`projects`](../config/workspace#projects) in `.moon/workspace.*`
+- [`tasks`](../config/tasks#tasks) in `.moon/tasks/*`
+- [`tasks`](../config/project#tasks) in `moon.*`

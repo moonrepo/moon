@@ -8,8 +8,8 @@ import NextSteps from '@site/src/components/NextSteps';
 <HeaderLabel text="2 min" />
 
 Once moon has been [installed](./install), we must setup the [workspace](./concepts/workspace),
-which is denoted by the `.moon` folder — this is known as the workspace root. The workspace is in
-charge of:
+which is denoted by the `.moon` folder (or `.config/moon`) — this is known as the workspace root.
+The workspace is in charge of:
 
 - Integrating with a version control system.
 - Defining configuration that applies to its entire tree.
@@ -27,7 +27,7 @@ $ moon init
 
 When executed, the following operations will be applied.
 
-- Creates a `.moon` folder with a [`.moon/workspace.yml`](./config/workspace) configuration file.
+- Creates a `.moon` folder with a [`.moon/workspace.*`](./config/workspace) configuration file.
 - Appends necessary ignore patterns to the relative `.gitignore`.
 - Infers the version control system from the environment.
 
@@ -56,7 +56,7 @@ hashing, and revision comparison. The VCS and its default branch can be configur
 
 ```yaml title=".moon/workspace.yml"
 vcs:
-  manager: 'git'
+  client: 'git'
   defaultBranch: 'master'
 ```
 
@@ -71,7 +71,7 @@ vcs:
       icon: 'workspace-config',
       label: (
         <span>
-          Configure <code>.moon/workspace.yml</code> further
+          Configure <code>.moon/workspace.*</code> further
         </span>
       ),
       url: './config/workspace',

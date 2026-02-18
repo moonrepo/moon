@@ -9,7 +9,7 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `template.yml` file configures metadata and variables for a template,
+The `template.*` file configures metadata and variables for a template,
 [used by the generator](../guides/codegen), and must exist at the root of a named template folder.
 
 ## `id`<VersionLabel version="1.23.0" />
@@ -113,7 +113,7 @@ arguments.
 <HeadingApiLink to="/api/types/interface/TemplateVariableStringSetting#order" />
 
 The order in which the variable will be prompted to the user. By default, variables are prompted in
-the order they are defined in the `template.yml` file.
+the order they are defined in the `template.*` file.
 
 ### Primitives & collections
 
@@ -287,8 +287,8 @@ variables:
 
 ## Frontmatter
 
-The following settings _are not_ available in `template.yml`, but can be defined as frontmatter at
-the top of a template file. View the [code generation guide](../guides/codegen#frontmatter) for more
+The following settings _are not_ available in `template.*`, but can be defined as frontmatter at the
+top of a template file. View the [code generation guide](../guides/codegen#frontmatter) for more
 information.
 
 ### `force`

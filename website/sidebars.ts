@@ -38,19 +38,13 @@ const sidebars: SidebarsConfig = {
 			label: 'Getting started',
 			collapsed: false,
 			collapsible: true,
-			items: [
-				'setup-workspace',
-				'create-project',
-				'setup-toolchain',
-				'create-task',
-				'run-task',
-				'migrate-to-moon',
-			],
+			items: ['setup-workspace', 'create-project', 'setup-toolchain', 'create-task', 'run-task'],
 		},
 		{
 			type: 'category',
 			label: 'Concepts',
 			items: [
+				'concepts/affected',
 				'concepts/cache',
 				'concepts/file-group',
 				'concepts/file-pattern',
@@ -219,7 +213,7 @@ const sidebars: SidebarsConfig = {
 			items: ['migrate/2.0'],
 		},
 		'cheat-sheet',
-		'comparison',
+		// 'comparison',
 		'terminology',
 		'faq',
 		{
@@ -239,7 +233,6 @@ const sidebars: SidebarsConfig = {
 		'guides/mcp',
 		'guides/offline-mode',
 		'guides/open-source',
-		'guides/pkl-config',
 		'guides/remote-cache',
 		'guides/root-project',
 		'guides/sharing-config',

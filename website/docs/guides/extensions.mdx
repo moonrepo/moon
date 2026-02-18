@@ -16,13 +16,12 @@ built into moon's core. It also enables the community to build and share their o
 ## Using extensions
 
 Before an extension can be executed with the [`moon ext`](../commands/ext) command, it must be
-configured with the [`extensions`](../config/workspace#extensions) setting in
-[`.moon/workspace.yml`](../config/workspace) (excluding [built-in's](#built-in-extensions)).
+configured with [`.moon/extensions.*`](../config/extensions) (excluding
+[built-in's](#built-in-extensions)).
 
-```yaml title=".moon/workspace.yml"
-extensions:
-  example:
-    plugin: 'https://example.com/path/to/example.wasm'
+```yaml title=".moon/extensions.yml"
+example:
+  plugin: 'https://example.com/path/to/example.wasm'
 ```
 
 Once configured, it can be executed with [`moon ext`](../commands/ext) by name. Arguments unique to
@@ -118,7 +117,7 @@ repository. The following changes are made:
 
 - Migrates `pipeline` (v1) and `tasks` (v2) global tasks to
   [`.moon/tasks/node.yml`](../config/tasks#tasks) (or `bun.yml`) and project scoped tasks to
-  [`moon.yml`](../config/project#tasks). Task commands will execute `package.json` scripts through a
+  [`moon.*`](../config/project#tasks). Task commands will execute `package.json` scripts through a
   package manager.
 - Migrates root `global*` settings to [`.moon/tasks/node.yml`](../config/tasks#implicitinputs) (or
   `bun.yml`) as `implicitInputs`.
@@ -155,7 +154,7 @@ understanding, you may continue this specific guide.
 
 :::note
 
-Refer to our [moonrepo/moon-extensions][repo] repository for in-depth examples.
+Refer to our [moonrepo/plugins][repo] repository for in-depth examples.
 
 :::
 
@@ -187,10 +186,9 @@ used to generate outputs such as JSON schemas, or TypeScript types.
 
 ```rust
 #[plugin_fn]
-pub fn register_extension(_: ()) -> FnResult<Json<ExtensionMetadataOutput>> {
-    Ok(Json(ExtensionMetadataOutput {
-        // ...
-        config_schema: Some(schematic::SchemaBuilder::generate::<NodeConfig>()),
+pub fn define_extension_config() -> FnResult<Json<DefineExtensionConfigOutput>> {
+    Ok(Json(DefineExtensionConfigOutput {
+        schema: schematic::SchemaBuilder::build_root::<ExampleExtensionConfig>(),
     }))
 }
 ```
@@ -259,15 +257,14 @@ pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<(
 ### Supporting configuration
 
 Users can configure [extensions](../config/workspace#extensions) with additional settings in
-[`.moon/workspace.yml`](../config/workspace). Do note that settings should be in camelCase for them
+[`.moon/extensions.*`](../config/extensions). Do note that settings should be in camelCase for them
 to be parsed correctly!
 
-```yaml title=".moon/workspace.yml"
-extensions:
-  example:
-    plugin: 'file://./path/to/example.wasm'
-    someSetting: 'abc'
-    anotherSetting: 123
+```yaml title=".moon/extensions.yml"
+example:
+  plugin: 'file://./path/to/example.wasm'
+  someSetting: 'abc'
+  anotherSetting: 123
 ```
 
 In the plugin, we can map these settings (excluding `plugin`) into a struct. The `Default` trait
@@ -298,4 +295,4 @@ pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<(
 }
 ```
 
-[repo]: https://github.com/moonrepo/moon-extensions
+[repo]: https://github.com/moonrepo/plugins

@@ -5,19 +5,19 @@ title: .moon/tasks
 import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/tasks/**/*` files configures file groups and tasks that are inherited by _every_ project
-in the workspace based on inheritance conditions.
+The `.moon/tasks/**/*` files configures file groups and tasks that are inherited by _every matching_
+project in the workspace based on inheritance conditions.
 [Learn more about task inheritance!](../concepts/task-inheritance)
 
-Projects can override or merge with these settings within their respective [`moon.yml`](./project).
+Projects can override or merge with these settings within their respective [`moon.*`](./project).
 
 ## `extends`
 
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#extends" />
 
-Defines one or many external `.moon/tasks/all.yml`'s to extend and inherit settings from. Perfect
-for reusability and sharing configuration across repositories and projects. When defined, this
-setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/tasks/**/*`'s to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
 ```yaml title=".moon/tasks/all.yml" {1}
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/tasks/all.yml'
@@ -36,7 +36,7 @@ values _are not_ deep merged!
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#fileGroups" />
 
 > For more information on file group configuration, refer to the
-> [`fileGroups`](./project#filegroups) section in the [`moon.yml`](./project) doc.
+> [`fileGroups`](./project#filegroups) section in the [`moon.*`](./project) doc.
 
 Defines [file groups](../concepts/file-group) that will be inherited by projects, and also enables
 enforcement of organizational patterns and file locations. For example, encourage projects to place
@@ -142,7 +142,7 @@ View the [official task inheritance guide](../concepts/task-inheritance) for mor
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#tasks" />
 
 > For more information on task configuration, refer to the [`tasks`](./project#tasks) section in the
-> [`moon.yml`](./project) doc.
+> [`moon.*`](./project) doc.
 
 As mentioned in the link above, [tasks](../concepts/task) are actions that are ran within the
 context of a project, and commonly wrap a command. For most workspaces, every project _should_ have
@@ -168,7 +168,7 @@ tasks:
 :::info
 
 Relative file paths and globs used within a task are relative from the inherited project's root, and
-not the workspace root.
+not the workspace root, or the location of the `.moon/tasks/*` file.
 
 :::
 
@@ -177,7 +177,7 @@ not the workspace root.
 <HeadingApiLink to="/api/types/interface/InheritedTasksConfig#taskOptions" />
 
 > For more information on task options, refer to the [`options`](./project#options) section in the
-> [`moon.yml`](./project) doc.
+> [`moon.*`](./project) doc.
 
 Like [tasks](#tasks), this setting allows you to define task options that will be inherited by _all
 tasks_ within the configured file, and by all project-level inherited tasks. This setting is the 1st

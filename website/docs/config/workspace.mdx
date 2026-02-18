@@ -9,16 +9,16 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/workspace.yml` file configures projects and services in the workspace. This file is
+The `.moon/workspace.*` file configures projects and services in the workspace. This file is
 _required_.
 
 ## `extends`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#extends" />
 
-Defines one or many external `.moon/workspace.yml`'s to extend and inherit settings from. Perfect
-for reusability and sharing configuration across repositories and projects. When defined, this
-setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/workspace.*`'s to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
 ```yaml title=".moon/workspace.yml" {1}
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/workspace.yml'
@@ -72,9 +72,9 @@ the workspace root.
 
 When using this approach, the project name is derived from the project folder name, and is cleaned
 to our [supported characters](../concepts/project#names), but can be customized with the
-[`id`](./project#id) setting in [`moon.yml`](./project). Furthermore, globbing **does risk the
-chance of collision**, and when that happens, we log a warning and skip the conflicting project from
-being configured in the project graph.
+[`id`](./project#id) setting in [`moon.*`](./project). Furthermore, globbing **does risk the chance
+of collision**, and when that happens, we log a warning and skip the conflicting project from being
+configured in the project graph.
 
 ```yaml title=".moon/workspace.yml"
 projects:
@@ -228,7 +228,7 @@ constraints:
     next: ['react']
 ```
 
-On the project side, we would configure [`moon.yml`](./project#tags) like so:
+On the project side, we would configure [`moon.*`](./project#tags) like so:
 
 ```yaml title="app/moon.yml"
 tags: ['next']

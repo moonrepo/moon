@@ -9,7 +9,7 @@ import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
-The `.moon/toolchains.yml` file configures the toolchain and the workspace development environment.
+The `.moon/toolchains.*` file configures the toolchain and the workspace development environment.
 This file is _optional_.
 
 Managing tool version's within the toolchain ensures a deterministic environment across any machine
@@ -19,9 +19,9 @@ Managing tool version's within the toolchain ensures a deterministic environment
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#extends" />
 
-Defines one or many external `.moon/toolchains.yml`'s to extend and inherit settings from. Perfect
-for reusability and sharing configuration across repositories and projects. When defined, this
-setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/toolchains.*`'s to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
 ```yaml title=".moon/toolchains.yml" {1}
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/toolchains.yml'
@@ -85,17 +85,17 @@ proto:
 
 ## Go
 
-## `go`<VersionLabel version="1.38.0" />
+## `go`
 
 Run `moon toolchain info go` for all available settings.
 
 ## JavaScript
 
-## `javascript`<VersionLabel version="1.40.0" />
+## `javascript`
 
 Run `moon toolchain info javascript` for all available settings.
 
-## `bun`<VersionLabel version="1.40.0" />
+## `bun`
 
 Run `moon toolchain info bun` for all available settings.
 
@@ -105,7 +105,7 @@ This toolchain requires the [`javascript`](#javascript) toolchain to also be ena
 
 :::
 
-## `deno`<VersionLabel version="1.41.0" />
+## `deno`
 
 Run `moon toolchain info deno` for all available settings.
 
@@ -115,7 +115,7 @@ This toolchain requires the [`javascript`](#javascript) toolchain to also be ena
 
 :::
 
-## `node`<VersionLabel version="1.40.0" />
+## `node`
 
 Run `moon toolchain info node` for all available settings.
 
@@ -125,7 +125,7 @@ This toolchain requires the [`javascript`](#javascript) toolchain to also be ena
 
 :::
 
-## `npm`<VersionLabel version="1.40.0" />
+## `npm`
 
 Run `moon toolchain info npm` for all available settings.
 
@@ -135,7 +135,7 @@ This toolchain requires the [`node`](#node) toolchain to also be enabled.
 
 :::
 
-## `pnpm`<VersionLabel version="1.40.0" />
+## `pnpm`
 
 Run `moon toolchain info pnpm` for all available settings.
 
@@ -145,7 +145,7 @@ This toolchain requires the [`node`](#node) toolchain to also be enabled.
 
 :::
 
-## `yarn`<VersionLabel version="1.40.0" />
+## `yarn`
 
 Run `moon toolchain info yarn` for all available settings.
 
@@ -159,20 +159,34 @@ This toolchain requires the [`node`](#node) toolchain to also be enabled.
 
 Run `moon toolchain info typescript` for all available settings.
 
-## Python<VersionLabel version="1.30.0" />
+## Python
 
-:::caution
+## `unstable_python`
 
-Python support is currently a work in progress for v2!
+Run `moon toolchain info unstable_python` for all available settings.
+
+## `unstable_pip`
+
+Run `moon toolchain info unstable_pip` for all available settings.
+
+:::info
+
+This toolchain requires the [`unstable_python`](#unstable_python) toolchain to also be enabled.
 
 :::
 
-## `python`
+## `unstable_uv`
 
-Run `moon toolchain info python` for all available settings.
+Run `moon toolchain info unstable_uv` for all available settings.
+
+:::info
+
+This toolchain requires the [`unstable_python`](#unstable_python) toolchain to also be enabled.
+
+:::
 
 ## Rust
 
-## `rust`<VersionLabel version="1.37.0" />
+## `rust`
 
 Run `moon toolchain info rust` for all available settings.

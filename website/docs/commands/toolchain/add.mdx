@@ -8,7 +8,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="1.38.0" header />
 
 The `moon toolchain add <id> [plugin]` command will add a toolchain to the workspace by injecting a
-configuration block into `.moon/toolchains.yml`. To do this, the command will download the WASM
+configuration block into `.moon/toolchains.*`. To do this, the command will download the WASM
 plugin, extract information, and call initialize functions.
 
 For built-in toolchains, the [plugin locator][locator] argument is optional, and will be derived

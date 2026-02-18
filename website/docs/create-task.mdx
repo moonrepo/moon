@@ -11,9 +11,8 @@ import LangPartials from '@site/src/components/LangPartials';
 The primary focus of moon is a task runner, and for it to operate in any capacity, it requires tasks
 to run. In moon, a task is a binary or system command that is ran as a child process within the
 context of a project (is the current working directory). Tasks are defined per project with
-[`moon.yml`](./config/project), or inherited by many projects with
-[`.moon/tasks/all.yml`](./config/tasks), but can also be inferred from a language's ecosystem
-([we'll talk about this later](./migrate-to-moon)).
+[`moon.*`](./config/project), or inherited by many projects with
+[`.moon/tasks/**/*`](./config/tasks), but can also be inferred from a language's ecosystem.
 
 :::tip
 
@@ -25,9 +24,9 @@ Change the language dropdown at the top right to switch the examples!
 
 Most — if not all projects — utilize the same core tasks: linting, testing, code formatting,
 typechecking, and _building_. Because these are so universal, let's implement the build task within
-a project using [`moon.yml`](./config/project).
+a project using [`moon.*`](./config/project).
 
-Begin by creating the `moon.yml` file at the root of a project and add `build` to the
+Begin by creating the `moon.*` file at the root of a project and add `build` to the
 [`tasks`](./config/project#tasks) field, with a [`command`](./config/project#command) parameter.
 
 import BaseBun from './__partials__/create-task/bun/base.mdx';
@@ -240,7 +239,7 @@ encourage certain file structures for consuming projects!
       icon: 'project-config-global',
       label: (
         <span>
-          Configure <code>.moon/tasks/all.yml</code> further
+          Configure <code>.moon/tasks/**/*</code> further
         </span>
       ),
       url: './config/tasks',
@@ -249,7 +248,7 @@ encourage certain file structures for consuming projects!
       icon: 'project-config',
       label: (
         <span>
-          Configure <code>moon.yml</code> further
+          Configure <code>moon.*</code> further
         </span>
       ),
       url: './config/project',

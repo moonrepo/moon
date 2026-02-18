@@ -5,9 +5,9 @@ sidebar_label: changed-files
 
 Use the `moon query changed-files` sub-command to query for a list of changed files (added,
 modified, deleted, etc) using the current VCS state. These are the same queries that
-[`moon ci`](../ci) and [`moon run`](../run) use under the hood.
+[`moon exec`](../exec) use under the hood.
 
-Touches files are determined using the following logic:
+Changed files are determined using the following logic:
 
 - If `--defaultBranch` is provided, and the current branch is the
   [`vcs.defaultBranch`](../../config/workspace#defaultbranch), then compare against the previous
@@ -49,4 +49,4 @@ This will output a list of workspace relative files as JSON. The output has the 
 
 ### Configuration
 
-- [`vcs`](../../config/workspace#vcs) in `.moon/workspace.yml`
+- [`vcs`](../../config/workspace#vcs) in `.moon/workspace.*`

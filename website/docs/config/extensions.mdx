@@ -11,16 +11,16 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="2.0.0" header />
 
-The `.moon/extensions.yml` file configures extensions that can hook into pipeline events, or be
+The `.moon/extensions.*` file configures extensions that can hook into pipeline events, or be
 executed directly. This file is _optional_.
 
 ## `extends`
 
 <HeadingApiLink to="/api/types/interface/ToolchainConfig#extends" />
 
-Defines one or many external `.moon/extensions.yml`'s to extend and inherit settings from. Perfect
-for reusability and sharing configuration across repositories and projects. When defined, this
-setting must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
+Defines one or many external `.moon/extensions.*`'s to extend and inherit settings from. Perfect for
+reusability and sharing configuration across repositories and projects. When defined, this setting
+must be an HTTPS URL _or_ relative file system path that points to a valid YAML document!
 
 ```yaml title=".moon/extensions.yml" {1}
 extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon/extensions.yml'

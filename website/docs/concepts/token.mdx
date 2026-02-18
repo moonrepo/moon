@@ -331,7 +331,7 @@ tasks:
 > Usable in `command`, `script`, `args`, `env`, `inputs`, and `outputs` only.
 
 The `@meta(key)` token can be used to access project metadata and will be replaced with a value
-derived from [`project`](../config/project#project) in [`moon.yml`](../config/project).
+derived from [`project`](../config/project#project) in [`moon.*`](../config/project).
 
 The top-level fields (like `name` and `description`) will be used as-is (no quotes). If the setting
 is not defined, it will default to nothing or an empty string. For lists of values, they will be
@@ -411,14 +411,14 @@ tasks:
 
 ### Project
 
-Most values are derived from settings in [`moon.yml`](../config/project). When a setting is not
+Most values are derived from settings in [`moon.*`](../config/project). When a setting is not
 defined, or does not have a config, the variable defaults to "unknown" (for enums) or an empty
 string.
 
 - `$language` Programming language the project is written in, as defined with
   [`language`](../config/project#language).
 - `$project` - ID of the project that owns the currently running task, as defined in
-  [`.moon/workspace.yml`](../config/workspace).
+  [`.moon/workspace.*`](../config/workspace).
 - `$projectAlias` - Alias of the project that owns the currently running task.
 - `$projectChannel` - The discussion channel for the project, as defined with
   [`project.channel`](../config/project#channel).
@@ -433,7 +433,7 @@ string.
   <VersionLabel version="1.28.0" />
 - `$projectRoot` - Absolute file path to the project root.
 - `$projectSource` - Relative file path from the workspace root to the project root, as defined in
-  [`.moon/workspace.yml`](../config/workspace).
+  [`.moon/workspace.*`](../config/workspace).
 - `$projectStack` - The stack of the project, as defined with [`stack`](../config/project#stack).
   <VersionLabel version="1.22.0" />
 
@@ -457,7 +457,7 @@ tasks:
 - `$target` - Fully-qualified target that is currently running.
 - `$task` - ID of the task that is currently running. Does not include the project ID.
 - `$taskToolchain` - The toolchain that task will run against, as defined in
-  [`moon.yml`](../config/project). <VersionLabel version="1.31.0" />
+  [`moon.*`](../config/project). <VersionLabel version="1.31.0" />
 - `$taskType` - The [type of task](./task#types), based on its configured settings.
 
 ```yaml

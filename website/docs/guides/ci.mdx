@@ -17,11 +17,11 @@ support it as a first-class feature within moon, and we do just that with the
 The `ci` command does all the heavy lifting necessary for effectively running jobs. It achieves this
 by automatically running the following steps:
 
-- Determines touched files by comparing the current HEAD against a base.
-- Determines all [targets](../concepts/target) that need to run based on touched files.
+- Determines changed files by comparing the current HEAD against a base.
+- Determines all [targets](../concepts/target) that need to run based on changed files.
 - Additionally runs affected [targets](../concepts/target) dependencies _and_ dependents.
 - Generates an action and dependency graph.
-- Installs the toolchain, Node.js, and npm dependencies.
+- Installs the toolchain and applicable dependencies.
 - Runs all actions within the graph using a thread pool.
 - Displays stats about all passing, failed, and invalid actions.
 
@@ -29,7 +29,7 @@ by automatically running the following steps:
 
 By default, _all tasks_ run in CI, as you should always be building, linting, typechecking, testing,
 so on and so forth. However, this isn't always true, so this can be disabled on a per-task basis
-through the [`runInCI`](../config/project#runinci) or [`local`](../config/project#local) options.
+through the [`runInCI`](../config/project#runinci) option.
 
 ```yaml
 tasks:
@@ -37,15 +37,13 @@ tasks:
     command: 'webpack server'
     options:
       runInCI: false
-    # Or
-    preset: 'server'
 ```
 
 :::caution
 
 This option _must_ be set to false for tasks that spawn a long-running or never-ending process, like
 HTTP or development servers. To help mitigate this, tasks named `dev`, `start`, or `serve` are false
-by default. This can be easily controlled with the [`local`](../config/project#local) setting.
+by default.
 
 :::
 
@@ -85,7 +83,6 @@ jobs:
 steps:
   - label: 'CI'
     commands:
-      - 'yarn install --immutable'
       - 'moon ci'
 ```
 
@@ -94,20 +91,12 @@ steps:
 
 ```yaml title=".circleci/config.yml"
 version: 2.1
-orbs:
-  node: 'circleci/node@5.0.2'
 jobs:
   ci:
     docker:
       - image: 'cimg/base:stable'
     steps:
-      - checkout
-      - node/install:
-          install-yarn: true
-          node-version: '16.13'
-      - node/install-packages:
-          check-cache: 'always'
-          pkg-manager: 'yarn-berry'
+      - 'checkout'
       - run: 'moon ci'
 workflows:
   pipeline:
@@ -119,10 +108,7 @@ workflows:
 <TabItem value="travisci" label="TravisCI">
 
 ```yaml title=".travis.yml"
-language: node_js
-node_js:
-  - 16
-cache: yarn
+language: 'node_js'
 script: 'moon ci'
 ```
 
@@ -131,13 +117,13 @@ script: 'moon ci'
 
 ## Choosing targets<VersionLabel version="1.14.0" />
 
-By default `moon ci` will run _all_ tasks from _all_ projects that are affected by touched files and
+By default `moon ci` will run _all_ tasks from _all_ projects that are affected by changed files and
 have the [`runInCI`](../config/project#runinci) task option enabled. This is a great catch-all
 solution, but may not vibe with your workflow or requirements.
 
 If you'd prefer more control, you can pass a list of targets to `moon ci`, instead of moon
 attempting to detect them. When providing targets, `moon ci` will still only run them if affected by
-touched files, but will still filter with the `runInCI` option.
+changed files, but will still filter with the `runInCI` option.
 
 ```shell
 # Run all builds
@@ -167,7 +153,7 @@ $ MOON_BASE=<BRANCH> MOON_HEAD=<SHA> moon ci
 ## Parallelizing tasks
 
 If your CI environment supports sharding across multiple jobs, then you can utilize moon's built in
-parallelism by passing `--jobTotal` and `--job` options. The `--jobTotal` option is an integer of
+parallelism by passing `--job-total` and `--job` options. The `--job-total` option is an integer of
 the total number of jobs available, and `--job` is the current index (0 based) amongst the total.
 
 When these options are passed, moon will only run affected [targets](../concepts/target) based on
@@ -188,7 +174,7 @@ jobs:
         index: [0, 1]
     steps:
       # ...
-      - run: 'moon ci --job ${{ matrix.index }} --jobTotal 2'
+      - run: 'moon ci --job ${{ matrix.index }} --job-total 2'
 ```
 
 - [Documentation](https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs)
@@ -203,7 +189,7 @@ steps:
     parallelism: 10
     commands:
       # ...
-      - 'moon ci --job $$BUILDKITE_PARALLEL_JOB --jobTotal $$BUILDKITE_PARALLEL_JOB_COUNT'
+      - 'moon ci --job $$BUILDKITE_PARALLEL_JOB --job-total $$BUILDKITE_PARALLEL_JOB_COUNT'
 ```
 
 - [Documentation](https://buildkite.com/docs/tutorials/parallel-builds#parallel-jobs)
@@ -219,7 +205,7 @@ jobs:
     parallelism: 10
     steps:
       # ...
-      - run: 'moon ci --job $CIRCLE_NODE_INDEX --jobTotal $CIRCLE_NODE_TOTAL'
+      - run: 'moon ci --job $CIRCLE_NODE_INDEX --job-total $CIRCLE_NODE_TOTAL'
 ```
 
 - [Documentation](https://circleci.com/docs/2.0/parallelism-faster-jobs/)
@@ -237,7 +223,7 @@ env:
   jobs:
     - TRAVIS_JOB_INDEX=0
     - TRAVIS_JOB_INDEX=1
-script: 'moon ci --job $TRAVIS_JOB_INDEX --jobTotal $TRAVIS_JOB_TOTAL'
+script: 'moon ci --job $TRAVIS_JOB_INDEX --job-total $TRAVIS_JOB_TOTAL'
 ```
 
 - [Documentation](https://docs.travis-ci.com/user/speeding-up-the-build/)
@@ -297,4 +283,5 @@ The following GitHub actions are provided by the community:
 
 - [`appthrust/moon-ci-retrospect`](https://github.com/appthrust/moon-ci-retrospect) - Displays the
   results of a `moon ci` run in a more readable fashion.
-- [`kymckay/moon-ci-booster`](https://github.com/kymckay/moon-ci-booster) - Displays failing `moon ci` tasks as comments with error logs directly on your pull request.
+- [`kymckay/moon-ci-booster`](https://github.com/kymckay/moon-ci-booster) - Displays failing
+  `moon ci` tasks as comments with error logs directly on your pull request.

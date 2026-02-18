@@ -63,15 +63,14 @@ incrementally integrate and improve them over time. The 4 tiers are as follows:
   ["system" task toolchain](/docs/faq#can-we-run-other-languages), which expects the tool to exist
   in the current environment.
 - &nbsp;<Label text="Tier 1" variant="warning" /> &nbsp; **Project categorization** - Projects can
-  configure their primary [language in `moon.yml`](/docs/config/project#language), and have a
+  configure their primary [language in `moon.*`](/docs/config/project#language), and have a
   dedicated Rust crate for metadata.
 - &nbsp;<Label text="Tier 2" variant="info" /> &nbsp; **Ecosystem platformization** - moon deeply
   integrates with the language's ecosystem by parsing manifests, lockfiles, and other semantic files
   to infer dependencies, tasks, and other necessary information.
 - &nbsp;<Label text="Tier 3" variant="success" /> &nbsp; **Toolchain integration** - Language is
-  directly supported in the toolchain, configured in
-  [`.moon/toolchains.yml`](/docs/config/toolchain), and will automatically be downloaded and
-  installed.
+  directly supported in the toolchain, configured in [`.moon/toolchains.*`](/docs/config/toolchain),
+  and will automatically be downloaded and installed.
 
 |                               | Tier 0 | Tier 1 | Tier 2 | Tier 3 |
 | :---------------------------- | :----: | :----: | :----: | :----: |
@@ -102,7 +101,6 @@ currently:
 
 | Operating system | Architecture | Target                       |
 | :--------------- | :----------- | :--------------------------- |
-| macOS 64-bit     | Intel        | `x86_64-apple-darwin`        |
 | macOS 64-bit     | ARM          | `aarch64-apple-darwin`       |
 | Linux 64-bit     | Intel GNU    | `x86_64-unknown-linux-gnu`   |
 | Linux 64-bit     | Intel musl   | `x86_64-unknown-linux-musl`  |

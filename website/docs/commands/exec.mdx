@@ -40,20 +40,21 @@ $ moon exec :build --query "language=javascript && projectLayer=library"
 
 ## Arguments
 
-- `...<target>` - [Targets](../concepts/target) or project relative tasks to run.
+- `...<target>` - [Task targets](../concepts/target) or project relative tasks to run.
 - `[-- <args>]` - Additional arguments to
   [pass to the underlying command](../run-task#passing-arguments-to-the-underlying-command).
 
 ## Options
 
+- `--ci` - Force enable CI mode.
 - `-f`, `--force` - Force run and bypass cache, ignore changed files, and skip affected checks.
 - `-i`, `--interactive` - Run the pipeline and tasks interactively.
 - `-s`, `--summary [LEVEL]` - Print a summary of all actions that were ran in the pipeline.
 
 ### Workflow
 
+- `--ignore-ci-checks` - Ignore "run in CI" task checks.
 - `--on-failure <ON>` - When a task fails, either bail the pipeline, or continue executing.
-- `--only-ci-tasks` - Filter tasks to those that only run in CI.
 - `--query <QUERY>` - Filter tasks based on the result of a query.
 - `--no-actions` - Run the pipeline without sync and setup related actions.
 
@@ -63,13 +64,17 @@ $ moon exec :build --query "language=javascript && projectLayer=library"
   "remote".
 - `--base <BASE>` - Base branch, commit, or revision to compare against.
 - `--head <HEAD>` - Current branch, commit, or revision to compare with.
+- `-g`, `--include-relations` - Include graph relations for affected checks, instead of just changed
+  files.
 - `--status <STATUS>` - Filter changed files based on a changed status.
 - `--stdin` - Accept changed files from stdin for affected checks.
 
 ### Graph
 
 - `--downstream <DEPTH>`, `--dependents <DEPTH>` - Control the depth of downstream dependents.
+  Supports "none" (default), "direct", "deep".
 - `--upstream <DEPTH>`, `--dependencies <DEPTH>` - Control the depth of upstream dependencies.
+  Supports "none", "direct", "deep" (default).
 
 ### Parallelism
 

@@ -80,7 +80,7 @@ The following fields can be used as criteria, and are related to [task tokens](.
 ### `language`
 
 Programming language the project is written in, as defined in
-[`moon.yml`](../config/project#language).
+[`moon.*`](../config/project#language).
 
 ```
 language=rust
@@ -104,7 +104,7 @@ projectAlias~@scope/*
 
 ### `projectLayer`<VersionLabel version="1.39.0" />
 
-The project layer, as defined in [`moon.yml`](../config/project#layer).
+The project layer, as defined in [`moon.*`](../config/project#layer).
 
 ```
 projectLayer=application
@@ -112,8 +112,8 @@ projectLayer=application
 
 ### `projectId`
 
-Name of the project, as defined in [`.moon/workspace.yml`](../config/workspace), or `id` in
-[`moon.yml`](../config/project#id).
+Name of the project, as defined in [`.moon/workspace.*`](../config/workspace), or `id` in
+[`moon.*`](../config/project#id).
 
 ```
 projectId=server
@@ -122,7 +122,7 @@ projectId=server
 ### `projectSource`
 
 Relative file path from the workspace root to the project root, as defined in
-[`.moon/workspace.yml`](../config/workspace).
+[`.moon/workspace.*`](../config/workspace).
 
 ```
 projectSource~packages/*
@@ -130,7 +130,7 @@ projectSource~packages/*
 
 ### `projectStack`<VersionLabel version="1.22.0" />
 
-The project stack, as defined in [`moon.yml`](../config/project#stack).
+The project stack, as defined in [`moon.*`](../config/project#stack).
 
 ```
 projectStack=frontend
@@ -138,7 +138,7 @@ projectStack=frontend
 
 ### `tag`
 
-A tag within the project, as defined in [`moon.yml`](../config/project#tags).
+A tag within the project, as defined in [`moon.*`](../config/project#tags).
 
 ```
 tag~react-*
@@ -154,7 +154,7 @@ task=[build,test]
 
 ### `taskToolchain`<VersionLabel version="1.31.0" />
 
-The toolchain a task will run against, as defined in [`moon.yml`](../config/project).
+The toolchain a task will run against, as defined in [`moon.*`](../config/project).
 
 ```
 taskToolchain=node

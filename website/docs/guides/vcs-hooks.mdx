@@ -17,9 +17,9 @@ and syncing them across developers and machines.
 ## Defining hooks
 
 Hooks can be configured with the [`vcs.hooks`](../config/workspace#hooks) setting in
-[`.moon/workspace.yml`](../config/workspace). This setting requires a map of hook names (in the
-format required by your VCS), to a list of arbitrary commands to run within the hook script.
-Commands are used as-is and are not formatted or interpolated in any way.
+[`.moon/workspace.*`](../config/workspace). This setting requires a map of hook names (in the format
+required by your VCS), to a list of arbitrary commands to run within the hook script. Commands are
+used as-is and are not formatted or interpolated in any way.
 
 To demonstrate this, let's configure a `pre-commit` hook that runs a moon `lint` task for affected
 projects, and also verifies that the commit message abides by a specified format (using
@@ -60,31 +60,24 @@ Hooks are a divisive subject, as some developers love them, and others hate them
 solution for everyone can be difficult, so with moon, we opted to support 2 distinct options, but
 only 1 can be used at a time. Choose the option that works best for your project, team, or company!
 
-:::caution
-
-If you have existing VCS hooks, back them up as moon's implementation will overwrite them! To
-migrate your existing hooks, [configure them as commands to run](#defining-hooks).
-
-:::
-
 ### Automatically for everyone
 
 If you'd like hooks to be enforced for every contributor of the repository, then simply enable the
-[`vcs.syncHooks`](../config/workspace#synchooks) setting in
-[`.moon/workspace.yml`](../config/workspace). This will automatically generate hook scripts and link
-them with the local VCS checkout, everytime a [target](../concepts/target) is ran.
+[`vcs.sync`](../config/workspace#sync) setting in [`.moon/workspace.*`](../config/workspace). This
+will automatically generate hook scripts and link them with the local VCS checkout, everytime a
+[task](../concepts/target) is ran.
 
 ```yaml title=".moon/workspace.yml"
 vcs:
   hooks: [...]
-  syncHooks: true
+  sync: true
 ```
 
 :::caution
 
 Automatically activating hooks on everyone's computer is considered a sensitive action, because it
 enables the execution of arbitrary code on the computers of the team members. Be careful about the
-hook commands you define in the [`.moon/workspace.yml`](../config/workspace) file.
+hook commands you define in the [`.moon/workspace.*`](../config/workspace) file.
 
 :::
 
@@ -101,11 +94,11 @@ $ moon sync hooks
 ## Disabling hooks
 
 If you choose to stop using hooks, you'll need to cleanup the previously generated hook scripts, and
-reset the VCS checkout. To start, disable the `vcs.syncHooks` setting.
+reset the VCS checkout. To start, disable the `vcs.sync` setting.
 
 ```yaml title=".moon/workspace.yml"
 vcs:
-  syncHooks: false
+  sync: false
 ```
 
 And then run the following command, which will delete files from your local filesystem. Every
@@ -124,9 +117,9 @@ When hooks are [enabled](#enabling-hooks), the following processes will take pla
    They are written to the `.moon` directory so that they can be reviewed, audited, and easily
    tested, but _are required_.
 
-2. We then sync these generated hook scripts with the current VCS. For Git, we create `.git/hooks`
-   files that execute our generated scripts, using repository relative commands. Any existing VCS
-   hooks _will be overwritten_.
+2. We then sync these generated hook scripts with the current VCS. For Git, we set `core.hooksPath`
+   to point to the `.moon/hooks` directory, which tells Git to look for hook scripts in that
+   directory instead of the default `.git/hooks` directory.
 
 :::info
 
@@ -134,18 +127,6 @@ The `.moon/hooks` scripts are generated as Bash scripts (use a `.sh` file extens
 PowerShell scripts (use a `.ps1` file extension) on Windows.
 
 :::
-
-### Git
-
-On Unix based operating systems (Linux, macOS, etc), the `.moon/hooks` scripts are executed from
-`.git/hooks` Bash files. Because of this, `bash` should be available on the system (which is
-typically the case).
-
-On Windows, things get tricky. Since Git has a requirement that `.git/hooks` files _must be_
-extensionless, and older versions of PowerShell require an extension, we have to use a workaround.
-To handle this, the `.git/hooks` files are Bash-like scripts (that should work on most machines)
-that execute `.moon/hooks` using the `powershell.exe` (or `pwsh.exe`) executables. Because of this,
-PowerShell must be available on the system.
 
 ## Examples
 

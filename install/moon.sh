@@ -11,7 +11,7 @@ arch=$(uname -sm)
 version="${1:-latest}"
 
 # If >= v2, use the cargo-dist installer instead!
-if [[ $version != 0.* && $version != 1.* && $version != "latest" ]]; then
+if [[ $version != 0.* && $version != 1.* ]]; then
 	if [[ "$version" == "latest" ]]; then
 		script_url="https://github.com/moonrepo/moon/releases/latest/download/moon_cli-installer.sh"
 	else

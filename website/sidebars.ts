@@ -44,6 +44,7 @@ const sidebars: SidebarsConfig = {
 			type: 'category',
 			label: 'Concepts',
 			items: [
+				'concepts/affected',
 				'concepts/cache',
 				'concepts/file-group',
 				'concepts/file-pattern',

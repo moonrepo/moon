@@ -1,0 +1,44 @@
+---
+title: Affected
+---
+
+Affected is a term to describe when a project or task is _affected by a change_ in the environment
+(workspace). This is a core concept in moon, and is the basis for many of our features, such as task
+running, incremental builds, and more.
+
+## Change types
+
+To start, there are 3 types of "sources" that can trigger an affected state: files, environment
+variables, and graph relations.
+
+### Files
+
+For a project, any changed file that is within the project folder (starts with the project source),
+triggers affected.
+
+For a task, any changed file that is configured within the task's
+[`inputs`](../config/project#inputs) triggers affected.
+
+### Environment variables
+
+For projects, they are _not_ affected by environment variables.
+
+For a task, any non-empty environment variable that is configured within the task's
+[`inputs`](../config/project#inputs) triggers affected.
+
+### Graph relations
+
+For a project, affected dependency/dependent projects of the project (via
+[`dependsOn`](../config/project#dependson)), or affected tasks within the project, triggers
+affected.
+
+For a task, affected dependency/dependent tasks of the task (via [`deps`](../config/project#deps))
+triggers affected.
+
+:::info
+
+This check is conditionally enabled. For [`moon ci`](../commands/ci) and
+[`moon query`](../commands/query), it is always enabled. For exec-based commands, the
+`--include-relations` flag must be passed.
+
+:::

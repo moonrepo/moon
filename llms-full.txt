@@ -17739,6 +17739,39 @@ the process.
 
 :::
 
+### Toolchain detection
+
+How toolchains work and get detected for projects and tasks has been heavily reworked in v2.
+Ideally, you should _never_ configure the `toolchains` setting for a task directly. This can cause
+unintended consequences, and instead you should rely on the toolchain detection system itself.
+
+For example, in moon v1, the `platform: node` setting represented Node.js, the configured package
+manager (npm, pnpm, yarn), and JavaScript itself. That's 3 different layers of functionality in 1
+implementation. In v2, these layers are now split into separate toolchains (plugins), and act
+independently.
+
+So if you had the following configuration in v2:
+
+```yaml
+tasks:
+  build:
+    # ...
+    toolchains: 'node'
+```
+
+This would _only_ apply the Node.js toolchain, and NOT the JavaScript toolchain, NOR the package
+manager toolchain. This may cause unexpected issues. The correct configuration should be:
+
+```yaml
+tasks:
+  build:
+    # ...
+    toolchains: ['node', 'javascript', 'npm']
+```
+
+But adding all those toolchains is cumbersome, so we suggest omitting `toolchains` entirely and let
+the detection do its thing.
+
 ### Other changes
 
 - When `options.affectedFiles` is enabled, the list of files will be joined with the OS path
@@ -33680,6 +33713,26 @@ through code, documentation, testing, or just providing feedback and support. We
 this without you!
 
 <!--truncate-->
+
+To start using moon v2, you can install it with one of the following commands!
+
+```shell
+# proto
+proto install moon 2.0.0
+
+# Unix
+bash <(curl -fsSL https://moonrepo.dev/install/moon.sh)
+
+# Windows
+irm https://moonrepo.dev/install/moon.ps1 | iex
+```
+
+:::info
+
+If you are moon v1, the `moon upgrade` command _will not work_, as the distribution format has
+changed significantly. Instead, please use one of the installation methods above.
+
+:::
 
 ## Breaking changes
 

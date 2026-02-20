@@ -7,13 +7,12 @@ use moon_api::Launchpad;
 use moon_common::path;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
+use moon_process::Command;
 use starbase::AppResult;
 use starbase_archive::Archiver;
 use starbase_utils::{fs, net};
-use std::{
-    env::{self, consts},
-    path::{Component, PathBuf},
-};
+use std::env::{self, consts};
+use std::path::PathBuf;
 use tracing::{debug, instrument};
 
 pub fn is_musl() -> bool {
@@ -80,11 +79,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     let versioned_bin_dir = bin_dir.join(session.cli_version.to_string());
 
     // We can only upgrade moon if it's installed under .moon
-    let upgradeable = current_bin_path
-        .components()
-        .any(|comp| comp == Component::Normal(".moon".as_ref()));
-
-    if !upgradeable {
+    if !current_bin_path.starts_with(&session.moon_env.store_root) {
         session.console.render_err(element! {
             Container {
                 Notice(variant: Variant::Caution) {
@@ -95,6 +90,16 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         })?;
 
         return Ok(Some(1));
+    }
+
+    // Except when installed via proto
+    if current_bin_path.starts_with(&session.proto_env.store.dir) {
+        Command::new("proto")
+            .args(["install", "moon", "latest", "--pin", "local"])
+            .exec_stream_output()
+            .await?;
+
+        return Ok(None);
     }
 
     let progress = create_progress_loader(

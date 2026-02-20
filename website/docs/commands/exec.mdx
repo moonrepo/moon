@@ -26,6 +26,10 @@ $ moonx client:dev server:dev
 $ moon exec :test
 $ moonx :test
 
+# Run `test` in the closest project, relative to the current working directory
+$ moon exec '~:test'
+$ moonx '~:test'
+
 # Run `test` in all projects with tag `frontend`
 $ moon exec '#frontend:test'
 $ moonx '#frontend:test'

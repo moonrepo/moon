@@ -72,6 +72,7 @@ schematic = { workspace = true, features = [
 semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }
+starbase_archive = { workspace = true }
 starbase_shell = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true, features = [

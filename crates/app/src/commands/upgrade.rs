@@ -1,19 +1,17 @@
-use crate::app::EXE_NAME;
 use crate::app_error::AppError;
 use crate::helpers::create_progress_loader;
 use crate::session::MoonSession;
-use bytes::Buf;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_api::Launchpad;
+use moon_common::path;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
 use starbase::AppResult;
-use starbase_utils::fs;
+use starbase_archive::Archiver;
+use starbase_utils::{fs, net};
 use std::{
     env::{self, consts},
-    fs::File,
-    io::copy,
     path::{Component, PathBuf},
 };
 use tracing::{debug, instrument};
@@ -56,13 +54,22 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     let target = match (consts::OS, consts::ARCH) {
         ("linux", arch) => {
             format!(
-                "moon-{arch}-unknown-linux-{}",
+                "{arch}-unknown-linux-{}",
                 if is_musl() { "musl" } else { "gnu" }
             )
         }
-        ("macos", arch) => format!("moon-{arch}-apple-darwin"),
-        ("windows", "x86_64") => "moon-x86_64-pc-windows-msvc.exe".to_owned(),
-        (_, arch) => return Err(miette::miette!("Unsupported architecture: {arch}")),
+        ("macos", arch) => format!("{arch}-apple-darwin"),
+        ("windows", arch) => format!("{arch}-pc-windows-msvc"),
+        (os, arch) => {
+            return Err(miette::miette!(
+                "Unsupported os ({os}) + architecture ({arch})"
+            ));
+        }
+    };
+    let filename = if consts::OS == "windows" {
+        format!("moon_cli-{target}.zip")
+    } else {
+        format!("moon_cli-{target}.tar.xz")
     };
 
     let current_bin_path = env::current_exe().into_diagnostic()?;
@@ -70,6 +77,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         Some(dir) => PathBuf::from(dir),
         None => session.moon_env.store_root.join("bin"),
     };
+    let versioned_bin_dir = bin_dir.join(session.cli_version.to_string());
 
     // We can only upgrade moon if it's installed under .moon
     let upgradeable = current_bin_path
@@ -81,7 +89,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
             Container {
                 Notice(variant: Variant::Caution) {
                     StyledText(content: "moon can only upgrade itself when installed in the <path>~/.moon</path> directory.")
-                    StyledText(content: format!("moon is currently installed at <path>{}</path>", current_bin_path.display()))
+                    StyledText(content: format!("moon is currently installed at <path>{}</path>!", current_bin_path.display()))
                 }
             }
         })?;
@@ -95,43 +103,59 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     )
     .await;
 
-    // Move the old binary to a versioned path
-    let versioned_bin_path = bin_dir.join(session.cli_version.to_string()).join(EXE_NAME);
+    // Move the old executable to a versioned path
+    let exe_names = vec![path::exe_name("moon"), path::exe_name("moonx")];
+    let current_bin_dir = current_bin_path.parent().unwrap();
 
-    fs::create_dir_all(versioned_bin_path.parent().unwrap())?;
-    fs::rename(&current_bin_path, versioned_bin_path)?;
+    fs::create_dir_all(&versioned_bin_dir)?;
 
-    // Download the new binary
-    let bin_path = bin_dir.join(EXE_NAME);
-    let mut file = File::create(bin_path).into_diagnostic()?;
+    for exe_name in &exe_names {
+        let exe_path = current_bin_dir.join(exe_name);
 
-    #[cfg(target_family = "unix")]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mut perms = file.metadata().into_diagnostic()?.permissions();
-        perms.set_mode(0o755);
-        file.set_permissions(perms).into_diagnostic()?;
+        if exe_path.exists() {
+            fs::rename(exe_path, versioned_bin_dir.join(exe_name))?;
+        }
     }
 
-    let download_url = &session.toolchains_config.moon.download_url;
+    // Download the archive
+    let download_url = session
+        .toolchains_config
+        .moon
+        .download_url
+        .replace("{file}", &filename);
+    let archive_file = session.moon_env.temp_dir.join(&filename);
 
     debug!(
-        download_url = &download_url,
+        source_url = &download_url,
+        dest_file = ?archive_file,
         target = target,
-        "Download new version of moon"
+        "Download archive"
     );
 
-    let new_bin = reqwest::get(format!(
-        "{download_url}{}{target}",
-        if download_url.ends_with('/') { "" } else { "/" }
-    ))
-    .await
-    .into_diagnostic()?
-    .bytes()
-    .await
-    .into_diagnostic()?;
+    net::download_from_url(&download_url, &archive_file).await?;
 
-    copy(&mut new_bin.reader(), &mut file).into_diagnostic()?;
+    // Unpack the archive
+    let unpacked_dir = session.moon_env.temp_dir.join(&target);
+
+    debug!(
+        archive_file = ?archive_file,
+        unpacked_dir = ?unpacked_dir,
+        target = target,
+        "Unpacking archive"
+    );
+
+    Archiver::new(&unpacked_dir, &archive_file).unpack_from_ext()?;
+
+    // Move executables
+    for exe_name in exe_names {
+        let input_path = unpacked_dir.join(&exe_name);
+        let output_path = bin_dir.join(exe_name);
+
+        if input_path.exists() {
+            fs::copy_file(&input_path, &output_path)?;
+            fs::update_perms(&output_path, None)?;
+        }
+    }
 
     progress.stop().await?;
 

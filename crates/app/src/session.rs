@@ -279,7 +279,8 @@ impl MoonSession {
 impl AppSession for MoonSession {
     /// Setup initial state for the session. Order is very important!!!
     async fn startup(&mut self) -> AppResult {
-        self.console.set_reporter(MoonReporter::default());
+        self.console
+            .set_reporter(MoonReporter::new(self.cli.get_reporter_config()));
         self.console.set_theme(create_console_theme());
 
         // Determine paths

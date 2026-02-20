@@ -11,7 +11,7 @@ cached = "0.56.0"
 chrono = { version = "0.4.43", features = ["serde"] }
 cd_env = "0.3.1"
 ci_env = "0.4.1"
-clap = { version = "4.5.58", default-features = false, features = [
+clap = { version = "4.5.60", default-features = false, features = [
     "derive",
     "std",
     "error-context",
@@ -25,7 +25,7 @@ daggy = { version = "0.9.0", features = ["serde-1"] }
 dirs = "6.0.0"
 futures = "0.3.31"
 indexmap = "2.13.0"
-iocraft = "0.7.17"
+iocraft = "0.7.18"
 md5 = "0.8.0"
 miette = "7.6.0"
 pathdiff = "0.2.3"
@@ -89,12 +89,12 @@ uuid = { version = "1.20.0", features = ["v4"] }
 # proto/plugin related
 extism = "=1.13.0"
 extism-pdk = "1.4.1"
-proto_core = "0.55.3"
+proto_core = "0.55.4"
 proto_pdk_api = "0.31.6"
 proto_pdk_test_utils = "0.43.5"
 system_env = "0.9.0"
 version_spec = "0.10.2"
-warpgate = "0.29.1"
+warpgate = "0.29.2"
 warpgate_api = "0.17.2"
 warpgate_pdk = "0.16.2"
 

@@ -54,12 +54,12 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     let target = match (consts::OS, consts::ARCH) {
         ("linux", arch) => {
             format!(
-                "{arch}-unknown-linux-{}",
+                "moon_cli-{arch}-unknown-linux-{}",
                 if is_musl() { "musl" } else { "gnu" }
             )
         }
-        ("macos", arch) => format!("{arch}-apple-darwin"),
-        ("windows", arch) => format!("{arch}-pc-windows-msvc"),
+        ("macos", arch) => format!("moon_cli-{arch}-apple-darwin"),
+        ("windows", arch) => format!("moon_cli-{arch}-pc-windows-msvc"),
         (os, arch) => {
             return Err(miette::miette!(
                 "Unsupported os ({os}) + architecture ({arch})"
@@ -67,9 +67,9 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         }
     };
     let filename = if consts::OS == "windows" {
-        format!("moon_cli-{target}.zip")
+        format!("{target}.zip")
     } else {
-        format!("moon_cli-{target}.tar.xz")
+        format!("{target}.tar.xz")
     };
 
     let current_bin_path = env::current_exe().into_diagnostic()?;
@@ -144,7 +144,9 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         "Unpacking archive"
     );
 
-    Archiver::new(&unpacked_dir, &archive_file).unpack_from_ext()?;
+    let mut archiver = Archiver::new(&unpacked_dir, &archive_file);
+    archiver.set_prefix(&target);
+    archiver.unpack_from_ext()?;
 
     // Move executables
     for exe_name in exe_names {
@@ -156,6 +158,10 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
             fs::update_perms(&output_path, None)?;
         }
     }
+
+    // Cleanup
+    fs::remove(&unpacked_dir)?;
+    fs::remove(&archive_file)?;
 
     progress.stop().await?;
 

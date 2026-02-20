@@ -95,7 +95,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     // Except when installed via proto
     if current_bin_path.starts_with(&session.proto_env.store.dir) {
         Command::new("proto")
-            .args(["install", "moon", "latest", "--pin", "local"])
+            .args(["install", "moon", "latest", "--pin", "global"])
             .exec_stream_output()
             .await?;
 
@@ -127,7 +127,8 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         .toolchains_config
         .moon
         .download_url
-        .replace("{file}", &filename);
+        .replace("{file}", &filename)
+        .replace("{version}", &remote_version.to_string());
     let archive_file = session.moon_env.temp_dir.join(&filename);
 
     debug!(

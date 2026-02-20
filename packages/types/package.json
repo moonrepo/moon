@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/types",
-  "version": "2.0.0-rc.5",
+  "version": "2.0.1",
   "type": "commonjs",
   "description": "TypeScript types for moon and related packages.",
   "keywords": [
@@ -37,6 +37,5 @@
       "import": "./cjs/index-wrapper.mjs",
       "default": "./cjs/index.cjs"
     }
-  },
-  "stableVersion": "2.0.0"
+  }
 }

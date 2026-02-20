@@ -10,7 +10,7 @@ config_struct!(
         pub manifest_url: String,
 
         /// A secure URL for downloading the moon binary itself.
-        #[setting(validate = validate::url_secure, default = "https://github.com/moonrepo/moon/releases/latest/download")]
+        #[setting(validate = validate::url_secure, default = "https://github.com/moonrepo/moon/releases/latest/download/{file}")]
         pub download_url: String,
     }
 );

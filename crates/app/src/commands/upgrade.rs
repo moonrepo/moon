@@ -1,21 +1,19 @@
-use crate::app::EXE_NAME;
 use crate::app_error::AppError;
 use crate::helpers::create_progress_loader;
 use crate::session::MoonSession;
-use bytes::Buf;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_api::Launchpad;
+use moon_common::path;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
+use moon_process::Command;
 use starbase::AppResult;
-use starbase_utils::fs;
-use std::{
-    env::{self, consts},
-    fs::File,
-    io::copy,
-    path::{Component, PathBuf},
-};
+use starbase_archive::Archiver;
+use starbase_utils::fs::FsError;
+use starbase_utils::{fs, net};
+use std::env::{self, consts};
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument};
 
 pub fn is_musl() -> bool {
@@ -56,32 +54,47 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     let target = match (consts::OS, consts::ARCH) {
         ("linux", arch) => {
             format!(
-                "moon-{arch}-unknown-linux-{}",
+                "moon_cli-{arch}-unknown-linux-{}",
                 if is_musl() { "musl" } else { "gnu" }
             )
         }
-        ("macos", arch) => format!("moon-{arch}-apple-darwin"),
-        ("windows", "x86_64") => "moon-x86_64-pc-windows-msvc.exe".to_owned(),
-        (_, arch) => return Err(miette::miette!("Unsupported architecture: {arch}")),
+        ("macos", arch) => format!("moon_cli-{arch}-apple-darwin"),
+        ("windows", arch) => format!("moon_cli-{arch}-pc-windows-msvc"),
+        (os, arch) => {
+            return Err(miette::miette!(
+                "Unsupported os ({os}) + architecture ({arch})"
+            ));
+        }
+    };
+    let filename = if consts::OS == "windows" {
+        format!("{target}.zip")
+    } else {
+        format!("{target}.tar.xz")
     };
 
-    let current_bin_path = env::current_exe().into_diagnostic()?;
+    let current_exe_path = env::current_exe().into_diagnostic()?;
     let bin_dir = match GlobalEnvBag::instance().get("MOON_INSTALL_DIR") {
         Some(dir) => PathBuf::from(dir),
         None => session.moon_env.store_root.join("bin"),
     };
 
-    // We can only upgrade moon if it's installed under .moon
-    let upgradeable = current_bin_path
-        .components()
-        .any(|comp| comp == Component::Normal(".moon".as_ref()));
+    // Special case to install with proto
+    if current_exe_path.starts_with(&session.proto_env.store.dir) {
+        Command::new("proto")
+            .args(["install", "moon", "latest", "--pin", "global"])
+            .exec_stream_output()
+            .await?;
 
-    if !upgradeable {
+        return Ok(None);
+    }
+
+    // We can only upgrade moon if it's installed under .moon
+    if !current_exe_path.starts_with(&session.moon_env.store_root) {
         session.console.render_err(element! {
             Container {
                 Notice(variant: Variant::Caution) {
                     StyledText(content: "moon can only upgrade itself when installed in the <path>~/.moon</path> directory.")
-                    StyledText(content: format!("moon is currently installed at <path>{}</path>", current_bin_path.display()))
+                    StyledText(content: format!("moon is currently installed at <path>{}</path>!", current_exe_path.display()))
                 }
             }
         })?;
@@ -95,43 +108,55 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     )
     .await;
 
-    // Move the old binary to a versioned path
-    let versioned_bin_path = bin_dir.join(session.cli_version.to_string()).join(EXE_NAME);
-
-    fs::create_dir_all(versioned_bin_path.parent().unwrap())?;
-    fs::rename(&current_bin_path, versioned_bin_path)?;
-
-    // Download the new binary
-    let bin_path = bin_dir.join(EXE_NAME);
-    let mut file = File::create(bin_path).into_diagnostic()?;
-
-    #[cfg(target_family = "unix")]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mut perms = file.metadata().into_diagnostic()?.permissions();
-        perms.set_mode(0o755);
-        file.set_permissions(perms).into_diagnostic()?;
-    }
-
-    let download_url = &session.toolchains_config.moon.download_url;
+    // Download the archive
+    let download_url = session
+        .toolchains_config
+        .moon
+        .download_url
+        .replace("{file}", &filename)
+        .replace("{version}", &remote_version.to_string());
+    let archive_file = session.moon_env.temp_dir.join(&filename);
 
     debug!(
-        download_url = &download_url,
+        source_url = &download_url,
+        dest_file = ?archive_file,
         target = target,
-        "Download new version of moon"
+        "Download archive"
     );
 
-    let new_bin = reqwest::get(format!(
-        "{download_url}{}{target}",
-        if download_url.ends_with('/') { "" } else { "/" }
-    ))
-    .await
-    .into_diagnostic()?
-    .bytes()
-    .await
-    .into_diagnostic()?;
+    net::download_from_url(&download_url, &archive_file).await?;
 
-    copy(&mut new_bin.reader(), &mut file).into_diagnostic()?;
+    // Unpack the archive
+    let unpacked_dir = session.moon_env.temp_dir.join(&target);
+
+    debug!(
+        archive_file = ?archive_file,
+        unpacked_dir = ?unpacked_dir,
+        target = target,
+        "Unpacking archive"
+    );
+
+    let mut archiver = Archiver::new(&unpacked_dir, &archive_file);
+    archiver.set_prefix(&target);
+    archiver.unpack_from_ext()?;
+
+    // Move executables
+    for exe_name in [path::exe_name("moon"), path::exe_name("moonx")] {
+        let input_path = unpacked_dir.join(&exe_name);
+        let output_path = bin_dir.join(&exe_name);
+        let relocate_path = bin_dir.join(format!("{exe_name}.backup"));
+
+        if output_path.exists() {
+            self_replace(&output_path, &input_path, &relocate_path)?;
+        } else {
+            fs::copy_file(&input_path, &output_path)?;
+            fs::update_perms(&output_path, None)?;
+        }
+    }
+
+    // Cleanup
+    fs::remove(&unpacked_dir)?;
+    fs::remove(&archive_file)?;
 
     progress.stop().await?;
 
@@ -144,4 +169,64 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
     })?;
 
     Ok(None)
+}
+
+#[cfg(unix)]
+fn self_replace(
+    current_exe: &Path,
+    replace_with: &Path,
+    relocate_to: &Path,
+) -> Result<(), FsError> {
+    use std::os::unix::fs::PermissionsExt;
+
+    // If we're a symlink, we need to find the real location and operate on
+    // that instead of the link.
+    let exe = current_exe.canonicalize().map_err(|error| FsError::Read {
+        path: current_exe.to_path_buf(),
+        error: Box::new(error),
+    })?;
+    let perms = fs::metadata(&exe)?.permissions();
+
+    // Relocate the current executable. We do a rename/move as it keeps the
+    // same inode's, just changes the literal path. This allows the binary
+    // to keep executing without failure. A copy will *not* work!
+    fs::rename(exe, relocate_to)?;
+
+    // We then copy the replacement executable to the original location,
+    // and attempt to persist the original permissions.
+    fs::copy_file(replace_with, current_exe)?;
+    fs::update_perms(current_exe, Some(perms.mode()))?;
+
+    Ok(())
+}
+
+#[cfg(windows)]
+fn self_replace(
+    current_exe: &Path,
+    replace_with: &Path,
+    relocate_to: &Path,
+) -> Result<(), FsError> {
+    // If we're a symlink, we need to find the real location and operate on
+    // that instead of the link.
+    let exe = current_exe.canonicalize().map_err(|error| FsError::Read {
+        path: current_exe.to_path_buf(),
+        error: Box::new(error),
+    })?;
+
+    // Relocate the current executable. We do a rename/move as it keeps the
+    // same ID/handle, just changes the literal path. This allows the binary
+    // to keep executing without failure. A copy will *not* work!
+    fs::rename(exe, relocate_to)?;
+
+    // We then copy the replacement executable to a temporary location.
+    let mut temp_exe = current_exe.to_path_buf();
+    temp_exe.set_extension("temp.exe");
+
+    fs::copy_file(replace_with, &temp_exe)?;
+
+    // And lastly, we move the temporary to the original location. This avoids
+    // writing/copying data to the original, and instead does a rename/move.
+    fs::rename(temp_exe, current_exe)?;
+
+    Ok(())
 }

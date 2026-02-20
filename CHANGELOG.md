@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `moon upgrade` to upgrade via proto if we detect that moon is managed by proto. This will
+  run `proto install moon latest`.
+
+#### 🐞 Fixes
+
+- Fixed the `moon upgrade` command not handling the new v2 distribution format correctly. If you are
+  on moon v2.0.0, the upgrade command will still be broken until you upgrade to this patch.
+
 ## 2.0.0
 
 #### 💥 Breaking

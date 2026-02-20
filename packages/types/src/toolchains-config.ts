@@ -9,7 +9,7 @@ export interface MoonConfig {
 	/**
 	 * A secure URL for downloading the moon binary itself.
 	 *
-	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
+	 * @default 'https://github.com/moonrepo/moon/releases/latest/download/{file}'
 	 */
 	downloadUrl?: string;
 	/**
@@ -88,7 +88,7 @@ export interface PartialMoonConfig {
 	/**
 	 * A secure URL for downloading the moon binary itself.
 	 *
-	 * @default 'https://github.com/moonrepo/moon/releases/latest/download'
+	 * @default 'https://github.com/moonrepo/moon/releases/latest/download/{file}'
 	 */
 	downloadUrl?: string | null;
 	/**

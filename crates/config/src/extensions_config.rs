@@ -65,10 +65,10 @@ impl ExtensionsConfig {
         use proto_core::warpgate::find_debug_locator_with_url_fallback as locate;
 
         match id.as_str() {
-            "download" => Some(locate("download_extension", "1.0.1")),
-            "migrate-nx" => Some(locate("migrate_nx_extension", "1.0.2")),
-            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "1.0.2")),
-            "unpack" => Some(locate("unpack_extension", "1.0.1")),
+            "download" => Some(locate("download_extension", "1.0.2")),
+            "migrate-nx" => Some(locate("migrate_nx_extension", "1.0.3")),
+            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "1.0.3")),
+            "unpack" => Some(locate("unpack_extension", "1.0.2")),
             _ => None,
         }
     }

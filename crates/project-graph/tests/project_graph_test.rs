@@ -1058,12 +1058,18 @@ mod project_graph {
         }
 
         async fn build_aliases_graph_for_fixture(fixture: &str) -> WorkspaceGraph {
-            let sandbox = create_sandbox(fixture);
-            let mock = create_workspace_mocker(sandbox.path())
-                .with_default_projects()
-                .with_all_toolchains();
+            build_aliases_graph_with_mocker(fixture)
+                .await
+                .mock_workspace_graph()
+                .await
+        }
 
-            mock.mock_workspace_graph().await
+        async fn build_aliases_graph_with_mocker(fixture: &str) -> WorkspaceMocker {
+            let sandbox = create_sandbox(fixture);
+
+            create_workspace_mocker(sandbox.path())
+                .with_default_projects()
+                .with_all_toolchains()
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1100,6 +1106,27 @@ mod project_graph {
                         plugin: Id::raw("javascript"),
                     },
                 ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_disable_aliases_per_toolchain() {
+            let mut mocker = build_aliases_graph_with_mocker("aliases").await;
+
+            mocker = mocker.update_toolchains_config(|cfg| {
+                if let Some(inner) = cfg.plugins.get_mut("rust") {
+                    inner.inherit_aliases = false;
+                }
+            });
+
+            let graph = mocker.mock_workspace_graph().await;
+
+            assert_eq!(
+                graph.get_project("multiple").unwrap().aliases,
+                [ProjectAlias {
+                    alias: "js-toolchain".into(),
+                    plugin: Id::raw("javascript"),
+                },]
             );
         }
 
@@ -1219,12 +1246,6 @@ mod project_graph {
                 ]
             );
         }
-
-        // #[tokio::test(flavor = "multi_thread")]
-        // #[should_panic(expected = "Project one is already using the alias test")]
-        // async fn errors_duplicate_aliases() {
-        //     build_aliases_graph_for_fixture("aliases-conflict").await;
-        // }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_duplicate_aliases_if_ids_match() {

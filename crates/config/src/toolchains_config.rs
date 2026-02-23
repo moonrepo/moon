@@ -32,6 +32,18 @@ config_struct!(
     #[derive(Config)]
     #[config(allow_unknown_fields)]
     pub struct ToolchainPluginConfig {
+        /// Inherit aliases (name derived from a manifest) for all
+        /// projects associated with this toolchain.
+        /// @since 2.1.0
+        #[setting(default = true)]
+        pub inherit_aliases: bool,
+
+        /// Run the `InstallDependencies` actions for each running task
+        /// when changes to lockfiles and manifests are detected.
+        /// @since 2.1.0
+        #[setting(default = true)]
+        pub install_dependencies: bool,
+
         /// Location of the WASM plugin to use.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub plugin: Option<PluginLocator>,

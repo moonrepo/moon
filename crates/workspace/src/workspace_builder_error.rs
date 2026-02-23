@@ -4,19 +4,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum WorkspaceBuilderError {
-    #[diagnostic(code(project_graph::duplicate_alias))]
-    #[error(
-        "Project {} is already using the alias {}, unable to use the alias for project {}.\nTry changing the alias to something unique to move forward.",
-        .old_id.style(Style::Id),
-        .alias.style(Style::Label),
-        .new_id.style(Style::Id),
-    )]
-    DuplicateProjectAlias {
-        alias: String,
-        old_id: String,
-        new_id: String,
-    },
-
     #[diagnostic(code(project_graph::duplicate_id))]
     #[error(
         "A project already exists with the identifier {} (existing source {}, new source {}).\nTry renaming the project folder to make it unique, or configure the {} setting in {}.",

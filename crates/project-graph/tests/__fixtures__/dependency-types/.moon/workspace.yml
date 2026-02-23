@@ -1,0 +1,5 @@
+projects:
+  globs:
+    - '*'
+  sources:
+    root: '.'

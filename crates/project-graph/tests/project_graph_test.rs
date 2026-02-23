@@ -7,11 +7,13 @@ use moon_project::{FileGroup, Project, ProjectAlias};
 use moon_project_graph::*;
 use moon_query::build_query;
 use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
-use moon_test_utils2::{WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker};
+use moon_test_utils2::{
+    MoonSandbox, WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker, create_moon_sandbox,
+};
 use moon_workspace::WorkspaceProjectsCacheState;
 use petgraph::prelude::*;
 use rustc_hash::FxHashMap;
-use starbase_sandbox::{Sandbox, assert_snapshot, create_sandbox, locate_fixture};
+use starbase_sandbox::assert_snapshot;
 use starbase_utils::{fs, json, string_vec};
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -56,8 +58,11 @@ pub async fn build_graph(root: &Path) -> WorkspaceGraph {
     create_workspace_mocker(root).mock_workspace_graph().await
 }
 
-pub async fn build_graph_from_fixture(fixture: &str) -> WorkspaceGraph {
-    build_graph(&locate_fixture(fixture)).await
+pub async fn build_graph_from_fixture(fixture: &str) -> (MoonSandbox, WorkspaceGraph) {
+    let sandbox = create_moon_sandbox(fixture);
+    let graph = build_graph(sandbox.path()).await;
+
+    (sandbox, graph)
 }
 
 mod project_graph {
@@ -65,7 +70,7 @@ mod project_graph {
 
     #[tokio::test(flavor = "multi_thread")]
     async fn gets_by_id() {
-        let graph = build_graph_from_fixture("dependencies").await;
+        let (_sandbox, graph) = build_graph_from_fixture("dependencies").await;
 
         assert!(graph.get_project("a").is_ok());
     }
@@ -73,15 +78,14 @@ mod project_graph {
     #[tokio::test(flavor = "multi_thread")]
     #[should_panic(expected = "No project has been configured with the identifier or alias z")]
     async fn errors_unknown_id() {
-        let graph = build_graph_from_fixture("dependencies").await;
+        let (_sandbox, graph) = build_graph_from_fixture("dependencies").await;
 
         graph.get_project("z").unwrap();
     }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn gets_by_path() {
-        let sandbox = create_sandbox("dependencies");
-        let graph = build_graph(sandbox.path()).await;
+        let (sandbox, graph) = build_graph_from_fixture("dependencies").await;
 
         assert_eq!(
             graph
@@ -95,8 +99,7 @@ mod project_graph {
     #[tokio::test(flavor = "multi_thread")]
     #[should_panic(expected = "No project could be located starting from path z/moon.yml")]
     async fn errors_non_matching_path() {
-        let sandbox = create_sandbox("dependencies");
-        let graph = build_graph(sandbox.path()).await;
+        let (sandbox, graph) = build_graph_from_fixture("dependencies").await;
 
         graph
             .get_project_from_path(Some(&sandbox.path().join("z/moon.yml")))
@@ -114,7 +117,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn globs() {
-            let graph = build_graph_from_fixture("dependencies").await;
+            let (_sandbox, graph) = build_graph_from_fixture("dependencies").await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -124,7 +127,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn globs_with_root() {
-            let sandbox = create_sandbox("dependencies");
+            let sandbox = create_moon_sandbox("dependencies");
             let root = sandbox.path().join("dir");
 
             // Move files so that we can infer a compatible root project name
@@ -145,7 +148,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn globs_with_config() {
-            let sandbox = create_sandbox("locate-configs");
+            let sandbox = create_moon_sandbox("locate-configs");
 
             let graph = create_workspace_mocker(sandbox.path())
                 .update_workspace_config(|config| {
@@ -162,7 +165,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn globs_with_config_and_root() {
-            let sandbox = create_sandbox("locate-configs");
+            let sandbox = create_moon_sandbox("locate-configs");
             sandbox.create_file("moon.yml", "");
 
             let graph = create_workspace_mocker(sandbox.path())
@@ -183,7 +186,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn paths() {
-            let sandbox = create_sandbox("dependencies");
+            let sandbox = create_moon_sandbox("dependencies");
 
             let graph = create_workspace_mocker(sandbox.path())
                 .update_workspace_config(|config| {
@@ -203,7 +206,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn paths_and_globs() {
-            let sandbox = create_sandbox("dependencies");
+            let sandbox = create_moon_sandbox("dependencies");
 
             let graph = create_workspace_mocker(sandbox.path())
                 .update_workspace_config(|config| {
@@ -227,7 +230,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_git_moon_folders() {
-            let sandbox = create_sandbox("dependencies");
+            let sandbox = create_moon_sandbox("dependencies");
 
             sandbox.create_file(".moon/workspace.yml", "projects: ['*']");
             sandbox.enable_git();
@@ -242,7 +245,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn filters_dot_folders() {
-            let sandbox = create_sandbox("dependencies");
+            let sandbox = create_moon_sandbox("dependencies");
             sandbox.create_file(".foo/moon.yml", "");
 
             let graph = build_graph(sandbox.path()).await;
@@ -255,7 +258,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn filters_using_gitignore() {
-            let sandbox = create_sandbox("layer-constraints");
+            let sandbox = create_moon_sandbox("layer-constraints");
 
             sandbox.create_file(".gitignore", "*-other");
             sandbox.enable_git();
@@ -270,7 +273,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn supports_different_id_casings() {
-            let graph = build_graph_from_fixture("ids").await;
+            let (_sandbox, graph) = build_graph_from_fixture("ids").await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -287,7 +290,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn supports_id_dir_name_format() {
-            let sandbox = create_sandbox("id-formats");
+            let sandbox = create_moon_sandbox("id-formats");
 
             let graph = create_workspace_mocker(sandbox.path())
                 .update_workspace_config(|config| {
@@ -308,7 +311,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn supports_id_source_path_format() {
-            let sandbox = create_sandbox("id-formats");
+            let sandbox = create_moon_sandbox("id-formats");
 
             let graph = create_workspace_mocker(sandbox.path())
                 .update_workspace_config(|config| {
@@ -350,8 +353,10 @@ mod project_graph {
             .await
         }
 
-        async fn build_cached_graph(func: impl FnOnce(&Sandbox)) -> (Sandbox, WorkspaceGraph) {
-            let sandbox = create_sandbox("dependencies");
+        async fn build_cached_graph(
+            func: impl FnOnce(&MoonSandbox),
+        ) -> (MoonSandbox, WorkspaceGraph) {
+            let sandbox = create_moon_sandbox("dependencies");
 
             func(&sandbox);
 
@@ -451,7 +456,7 @@ mod project_graph {
         mod invalidation {
             use super::*;
 
-            async fn test_invalidate(func: impl FnOnce(&Sandbox)) {
+            async fn test_invalidate(func: impl FnOnce(&MoonSandbox)) {
                 let (sandbox, _graph) = build_cached_graph(|sandbox| {
                     sandbox.enable_git();
                 })
@@ -521,7 +526,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_generate_with_cycles() {
-            let graph = build_graph_from_fixture("cycle").await;
+            let (_sandbox, graph) = build_graph_from_fixture("cycle").await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -561,7 +566,7 @@ mod project_graph {
         use super::*;
 
         async fn build_inheritance_graph(fixture: &str) -> WorkspaceGraph {
-            let sandbox = create_sandbox(fixture);
+            let sandbox = create_moon_sandbox(fixture);
 
             create_workspace_mocker(sandbox.path())
                 .load_inherited_tasks_from(".moon")
@@ -789,7 +794,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn expands_project() {
-            let graph = build_graph_from_fixture("expansion").await;
+            let (_sandbox, graph) = build_graph_from_fixture("expansion").await;
             let project = graph.get_project("project").unwrap();
 
             assert_eq!(
@@ -813,7 +818,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn expands_tasks() {
-            let graph = build_graph_from_fixture("expansion").await;
+            let (_sandbox, graph) = build_graph_from_fixture("expansion").await;
             let task = graph.get_task_from_project("tasks", "build").unwrap();
 
             assert_eq!(
@@ -880,7 +885,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn expands_tag_deps_in_task() {
-            let graph = build_graph_from_fixture("expansion").await;
+            let (_sandbox, graph) = build_graph_from_fixture("expansion").await;
             let task = graph.get_task_from_project("tasks", "test-tags").unwrap();
 
             assert_eq!(
@@ -898,7 +903,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn lists_ids_of_dependencies() {
-            let graph = build_graph_from_fixture("dependencies").await;
+            let (_sandbox, graph) = build_graph_from_fixture("dependencies").await;
 
             assert_eq!(
                 map_ids(
@@ -936,7 +941,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn lists_ids_of_dependents() {
-            let graph = build_graph_from_fixture("dependencies").await;
+            let (_sandbox, graph) = build_graph_from_fixture("dependencies").await;
 
             assert_eq!(
                 map_ids(
@@ -977,7 +982,7 @@ mod project_graph {
 
             #[tokio::test(flavor = "multi_thread")]
             async fn no_depends_on() {
-                let sandbox = create_sandbox("dependency-types");
+                let sandbox = create_moon_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
 
                 let graph = mock.mock_workspace_graph_for(&["no-depends-on"]).await;
@@ -987,7 +992,7 @@ mod project_graph {
 
             #[tokio::test(flavor = "multi_thread")]
             async fn some_depends_on() {
-                let sandbox = create_sandbox("dependency-types");
+                let sandbox = create_moon_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
 
                 let graph = mock.mock_workspace_graph_for(&["some-depends-on"]).await;
@@ -1000,7 +1005,7 @@ mod project_graph {
 
             #[tokio::test(flavor = "multi_thread")]
             async fn from_task_deps() {
-                let sandbox = create_sandbox("dependency-types");
+                let sandbox = create_moon_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
 
                 let graph = mock.mock_workspace_graph_for(&["from-task-deps"]).await;
@@ -1018,7 +1023,7 @@ mod project_graph {
 
             #[tokio::test(flavor = "multi_thread")]
             async fn from_root_task_deps() {
-                let sandbox = create_sandbox("dependency-types");
+                let sandbox = create_moon_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
 
                 let graph = mock
@@ -1040,7 +1045,7 @@ mod project_graph {
 
             #[tokio::test(flavor = "multi_thread")]
             async fn self_task_deps() {
-                let sandbox = create_sandbox("dependency-types");
+                let sandbox = create_moon_sandbox("dependency-types");
                 let mock = create_workspace_mocker(sandbox.path());
 
                 let graph = mock.mock_workspace_graph_for(&["self-task-deps"]).await;
@@ -1065,7 +1070,7 @@ mod project_graph {
         }
 
         async fn build_aliases_graph_with_mocker(fixture: &str) -> WorkspaceMocker {
-            let sandbox = create_sandbox(fixture);
+            let sandbox = create_moon_sandbox(fixture);
 
             create_workspace_mocker(sandbox.path())
                 .with_default_projects()
@@ -1249,7 +1254,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn ignores_duplicate_aliases_if_ids_match() {
-            let sandbox = create_sandbox("aliases-conflict");
+            let sandbox = create_moon_sandbox("aliases-conflict");
             let mock = create_workspace_mocker(sandbox.path());
             let context = mock.mock_workspace_builder_context();
 
@@ -1268,8 +1273,8 @@ mod project_graph {
     mod layer_constraints {
         use super::*;
 
-        async fn build_layer_constraints_graph(func: impl FnOnce(&Sandbox)) -> WorkspaceGraph {
-            let sandbox = create_sandbox("layer-constraints");
+        async fn build_layer_constraints_graph(func: impl FnOnce(&MoonSandbox)) -> WorkspaceGraph {
+            let sandbox = create_moon_sandbox("layer-constraints");
 
             func(&sandbox);
 
@@ -1397,8 +1402,8 @@ mod project_graph {
     mod tag_constraints {
         use super::*;
 
-        async fn build_tag_constraints_graph(func: impl FnOnce(&Sandbox)) -> WorkspaceGraph {
-            let sandbox = create_sandbox("tag-constraints");
+        async fn build_tag_constraints_graph(func: impl FnOnce(&MoonSandbox)) -> WorkspaceGraph {
+            let sandbox = create_moon_sandbox("tag-constraints");
 
             func(&sandbox);
 
@@ -1534,7 +1539,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn by_language() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("language!=[typescript,python]").unwrap())
@@ -1545,7 +1550,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn by_project() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("project~{b,d}").unwrap())
@@ -1556,7 +1561,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn by_project_type() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("projectLayer!=[library]").unwrap())
@@ -1567,7 +1572,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn by_project_source() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("projectSource~a").unwrap())
@@ -1578,7 +1583,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn by_tag() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("tag=[three,five]").unwrap())
@@ -1589,7 +1594,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn by_task() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("task=[test,build]").unwrap())
@@ -1600,7 +1605,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn by_task_toolchain() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("taskToolchain=[node]").unwrap())
@@ -1617,7 +1622,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn by_task_type() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("taskType=run").unwrap())
@@ -1628,7 +1633,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn with_and_conditions() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("task=build && taskToolchain=node").unwrap())
@@ -1639,7 +1644,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn with_or_conditions() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(build_query("language=javascript || language=typescript").unwrap())
@@ -1650,7 +1655,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn with_nested_conditions() {
-            let graph = build_graph_from_fixture("query").await;
+            let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
                 .query_projects(
@@ -1667,14 +1672,14 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn renders_full() {
-            let graph = build_graph_from_fixture("dependencies").await;
+            let (_sandbox, graph) = build_graph_from_fixture("dependencies").await;
 
             assert_snapshot!(graph.projects.to_dot());
         }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn renders_partial() {
-            let sandbox = create_sandbox("dependencies");
+            let sandbox = create_moon_sandbox("dependencies");
             let mock = create_workspace_mocker(sandbox.path());
 
             let graph = mock.mock_workspace_graph_for(&["b"]).await;
@@ -1688,7 +1693,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_load_by_new_id() {
-            let sandbox = create_sandbox("custom-id");
+            let sandbox = create_moon_sandbox("custom-id");
             let graph = build_graph(sandbox.path()).await;
 
             assert_eq!(graph.get_project("foo").unwrap().id, "foo");
@@ -1698,7 +1703,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn tasks_can_depend_on_new_id() {
-            let sandbox = create_sandbox("custom-id");
+            let sandbox = create_moon_sandbox("custom-id");
             let graph = build_graph(sandbox.path()).await;
             let task = graph.get_task_from_project("foo", "noop").unwrap();
 
@@ -1713,7 +1718,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_for_duplicate_folder_names_if_renamed() {
-            let graph = build_graph_from_fixture("dupe-folder-ids").await;
+            let (_sandbox, graph) = build_graph_from_fixture("dupe-folder-ids").await;
 
             assert!(graph.get_project("one").is_ok());
             assert!(graph.get_project("two").is_ok());
@@ -1732,7 +1737,7 @@ mod project_graph {
         #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Invalid default project")]
         async fn errors_if_default_id_doesnt_exist() {
-            let sandbox = create_sandbox("dependencies");
+            let sandbox = create_moon_sandbox("dependencies");
 
             create_workspace_mocker(sandbox.path())
                 .update_workspace_config(|config| {

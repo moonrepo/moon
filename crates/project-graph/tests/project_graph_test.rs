@@ -1058,28 +1058,29 @@ mod project_graph {
     mod aliases {
         use super::*;
 
-        async fn build_aliases_graph() -> WorkspaceGraph {
+        async fn build_aliases_graph() -> (MoonSandbox, WorkspaceGraph) {
             build_aliases_graph_for_fixture("aliases").await
         }
 
-        async fn build_aliases_graph_for_fixture(fixture: &str) -> WorkspaceGraph {
-            build_aliases_graph_with_mocker(fixture)
-                .await
-                .mock_workspace_graph()
-                .await
+        async fn build_aliases_graph_for_fixture(fixture: &str) -> (MoonSandbox, WorkspaceGraph) {
+            let (sandbox, mocker) = build_aliases_graph_with_mocker(fixture).await;
+
+            (sandbox, mocker.mock_workspace_graph().await)
         }
 
-        async fn build_aliases_graph_with_mocker(fixture: &str) -> WorkspaceMocker {
+        async fn build_aliases_graph_with_mocker(fixture: &str) -> (MoonSandbox, WorkspaceMocker) {
             let sandbox = create_moon_sandbox(fixture);
 
-            create_workspace_mocker(sandbox.path())
+            let mocker = create_workspace_mocker(sandbox.path())
                 .with_default_projects()
-                .with_all_toolchains()
+                .with_all_toolchains();
+
+            (sandbox, mocker)
         }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn loads_aliases() {
-            let graph = build_aliases_graph().await;
+            let (_sandbox, graph) = build_aliases_graph().await;
 
             assert_snapshot!(graph.projects.to_dot());
 
@@ -1097,7 +1098,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn supports_multi_aliases_from_each_toolchain() {
-            let graph = build_aliases_graph().await;
+            let (_sandbox, graph) = build_aliases_graph().await;
 
             assert_eq!(
                 graph.get_project("multiple").unwrap().aliases,
@@ -1116,7 +1117,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_disable_aliases_per_toolchain() {
-            let mut mocker = build_aliases_graph_with_mocker("aliases").await;
+            let (_sandbox, mut mocker) = build_aliases_graph_with_mocker("aliases").await;
 
             mocker = mocker.update_toolchains_config(|cfg| {
                 if let Some(inner) = cfg.plugins.get_mut("rust") {
@@ -1137,7 +1138,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_set_alias_if_same_as_id() {
-            let graph = build_aliases_graph().await;
+            let (_sandbox, graph) = build_aliases_graph().await;
 
             assert!(
                 graph
@@ -1150,7 +1151,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_set_alias_if_a_project_has_the_id() {
-            let graph = build_aliases_graph_for_fixture("aliases-conflict-ids").await;
+            let (_sandbox, graph) = build_aliases_graph_for_fixture("aliases-conflict-ids").await;
 
             assert!(graph.get_project("one").unwrap().aliases.is_empty());
             assert!(graph.get_project("two").unwrap().aliases.is_empty());
@@ -1158,7 +1159,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_get_projects_by_alias() {
-            let graph = build_aliases_graph().await;
+            let (_sandbox, graph) = build_aliases_graph().await;
 
             assert!(graph.get_project("one").is_ok());
             assert!(graph.get_project("two").is_ok());
@@ -1180,7 +1181,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_depends_on_by_alias() {
-            let graph = build_aliases_graph().await;
+            let (_sandbox, graph) = build_aliases_graph().await;
 
             assert_eq!(
                 map_ids(
@@ -1212,7 +1213,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn removes_or_flattens_dupes() {
-            let graph = build_aliases_graph().await;
+            let (_sandbox, graph) = build_aliases_graph().await;
 
             assert_eq!(
                 graph.get_project("dupes-depends-on").unwrap().dependencies,
@@ -1237,7 +1238,7 @@ mod project_graph {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn can_use_aliases_as_task_deps() {
-            let graph = build_aliases_graph().await;
+            let (_sandbox, graph) = build_aliases_graph().await;
 
             assert_eq!(
                 graph

@@ -1,4 +1,4 @@
-use crate::app_error::AppError;
+// use crate::app_error::AppError;
 use crate::helpers::run_action_pipeline;
 use crate::prompts::select_targets;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
@@ -359,11 +359,11 @@ impl ExecWorkflow {
         }
 
         if result.shallow {
-            if self.ci_env {
-                return Err(AppError::CiNoShallowHistory.into());
-            } else {
-                self.affected = false;
-            }
+            // if self.ci_env {
+            //     return Err(AppError::CiNoShallowHistory.into());
+            // } else {
+            self.affected = false;
+            // }
         }
 
         Ok(result.files)

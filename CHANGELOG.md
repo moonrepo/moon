@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Temporarily disabled shallow checkouts triggering a hard error in CI until we can implement a
+  better solution. This means that if you have a shallow checkout, you may see incorrect affected
+  results, or Git commands may fail.
+
 ## 2.0.1
 
 #### 🚀 Updates

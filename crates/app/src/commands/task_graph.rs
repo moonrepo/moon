@@ -1,4 +1,4 @@
-use crate::commands::graph::{run_server, task_graph_repr};
+use crate::commands::graph::run_server;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_task::Target;
@@ -56,14 +56,14 @@ pub async fn task_graph(session: MoonSession, args: TaskGraphArgs) -> AppResult 
     }
 
     if args.json {
-        session.console.out.write_line(task_graph.to_json()?)?;
+        session.console.out.write_line(task_graph.to_json(true)?)?;
 
         return Ok(None);
     }
 
     run_server(
         "Task graph",
-        task_graph_repr(&task_graph).await,
+        task_graph.to_json(false)?,
         args.host,
         args.port,
     )

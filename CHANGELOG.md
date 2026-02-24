@@ -8,6 +8,10 @@
   better solution. This means that if you have a shallow checkout, you may see incorrect affected
   results, or Git commands may fail.
 
+#### 🐞 Fixes
+
+- Fixed an issue where the graph visualizers would not render correctly in the VS Code extension.
+
 ## 2.0.1
 
 #### 🚀 Updates

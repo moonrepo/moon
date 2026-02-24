@@ -55,13 +55,13 @@ pub trait GraphToDot<N: Debug + Display, E: Debug + Display, K: Display>:
 
 pub trait GraphToJson<N: Serialize, E: Serialize, K>: GraphData<N, E, K> {
     /// Format graph as a JSON string.
-    fn to_json(&self) -> miette::Result<String> {
+    fn to_json(&self, pretty: bool) -> miette::Result<String> {
         Ok(json::format(
             &GraphCache {
                 graph: self.get_graph(),
                 // data: self.get_nodes(),
             },
-            true,
+            pretty,
         )?)
     }
 }

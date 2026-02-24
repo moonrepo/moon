@@ -4235,6 +4235,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@moonrepo/visualizer@workspace:packages/visualizer"
   dependencies:
+    "@moonrepo/types": "workspace:^"
     "@preact/preset-vite": "npm:^2.10.3"
     "@types/cytoscape": "npm:^3.31.0"
     "@types/cytoscape-dagre": "npm:^2.3.4"

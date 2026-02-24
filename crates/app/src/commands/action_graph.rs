@@ -1,4 +1,4 @@
-use crate::commands::graph::{action_graph_repr, run_server};
+use crate::commands::graph::run_server;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_action_graph::{GraphToDot, GraphToJson, RunRequirements};
@@ -76,14 +76,17 @@ pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> AppRes
     }
 
     if args.json {
-        session.console.out.write_line(action_graph.to_json()?)?;
+        session
+            .console
+            .out
+            .write_line(action_graph.to_json(true)?)?;
 
         return Ok(None);
     }
 
     run_server(
         "Action graph",
-        action_graph_repr(&action_graph).await,
+        action_graph.to_json(false)?,
         args.host,
         args.port,
     )

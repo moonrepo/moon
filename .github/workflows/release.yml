@@ -41,10 +41,6 @@ permissions:
 # If there's a prerelease-style suffix to the version, then the release(s)
 # will be marked as a prerelease.
 on:
-  pull_request:
-    branches:
-      # Only run when targeting the default branch
-      - master
   push:
     tags:
       # Only release for the CLI crate
@@ -56,9 +52,9 @@ jobs:
     runs-on: "ubuntu-22.04"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
-      tag: ${{ !github.event.pull_request && github.ref_name || '' }}
-      tag-flag: ${{ !github.event.pull_request && format('--tag={0}', github.ref_name) || '' }}
-      publishing: ${{ !github.event.pull_request }}
+      tag: ${{ github.ref_name }}
+      tag-flag: ${{ format('--tag={0}', github.ref_name) }}
+      publishing: 'true'
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -76,14 +72,9 @@ jobs:
         with:
           name: cargo-dist-cache
           path: ~/.cargo/bin/dist
-      # sure would be cool if github gave us proper conditionals...
-      # so here's a doubly-nested ternary-via-truthiness to try to provide the best possible
-      # functionality based on whether this is a pull_request, and whether it's from a fork.
-      # (PRs run on the *source* but secrets are usually on the *target* -- that's *good*
-      # but also really annoying to build CI around when it needs secrets to work right.)
       - id: plan
         run: |
-          dist ${{ (!github.event.pull_request && format('host --steps=create --tag={0}', github.ref_name)) || 'plan' }} --output-format=json > plan-dist-manifest.json
+          dist host --steps=create ${{ format('--tag={0}', github.ref_name) }} --output-format=json > plan-dist-manifest.json
           echo "dist ran successfully"
           cat plan-dist-manifest.json
           echo "manifest=$(jq -c "." plan-dist-manifest.json)" >> "$GITHUB_OUTPUT"

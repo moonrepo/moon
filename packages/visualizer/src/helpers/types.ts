@@ -1,4 +1,4 @@
-import type { ActionNode, Project, Task } from "@moonrepo/types";
+import type { ActionNode, Project, Task } from '@moonrepo/types';
 
 export type GraphInfo = GraphInfoV1 | GraphInfoV2;
 

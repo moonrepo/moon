@@ -1,8 +1,8 @@
+import type { ActionNode } from '@moonrepo/types';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import klay from 'cytoscape-klay';
 import type { GraphInfo } from './types';
-import type { ActionNode } from '@moonrepo/types';
 
 cytoscape.use(dagre);
 cytoscape.use(klay);

@@ -197,6 +197,10 @@ pub async fn prune_toolchains(
         });
     }
 
+    while set.join_next().await.is_some() {
+        continue;
+    }
+
     Ok(())
 }
 

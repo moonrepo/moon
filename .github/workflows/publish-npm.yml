@@ -1,0 +1,29 @@
+# This is for publishing non-core/cli npm packages!
+
+name: Publish npm
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish-npm:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    name: Publish npm packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build packages
+        run: bash ./scripts/release/buildPackages.sh
+      - name: Publish npm packages
+        run: bash ./scripts/release/publishPackages.sh
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: latest
+          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

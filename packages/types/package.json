@@ -28,7 +28,7 @@
     "bundle": true
   },
   "engines": {
-    "node": ">=16.12.0"
+    "node": ">=18.12.0"
   },
   "exports": {
     "./package.json": "./package.json",

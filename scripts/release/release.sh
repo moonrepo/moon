@@ -120,12 +120,7 @@ fi
 for package in packages/cli packages/core-* packages/types; do
 	echo "  $package"
 
-	if [[ -z "$GITHUB_TOKEN" ]]; then
-		# Testing locally
-		echo "Not publishing"
-	else
-		cd "./$package" || exit
-		npm publish --tag "$tag" --access public
-		cd ../..
-	fi
+  cd "./$package" || exit
+  npm publish --tag "$tag" --access public
+  cd ../..
 done

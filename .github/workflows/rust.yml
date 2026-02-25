@@ -5,6 +5,15 @@ on:
     branches:
       - master
   pull_request:
+    paths:
+      - .cargo/config.toml
+      - .github/workflows/rust.yml
+      - crates/**
+      - legacy/**
+      - wasm/**
+      - Cargo.lock
+      - Cargo.toml
+      - rust-toolchain.toml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

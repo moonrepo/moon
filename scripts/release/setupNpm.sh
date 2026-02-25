@@ -8,8 +8,3 @@ set -euo pipefail
 # 	echo "npmAuthToken: $NPM_TOKEN" >> ./.yarnrc.yml
 # fi
 
-# if [[ -d ".yarn/versions" ]]; then
-# 	echo "Yarn versions detected, applying updates"
-# 	yarn version apply --all
-# fi
-

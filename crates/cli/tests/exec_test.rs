@@ -271,8 +271,8 @@ mod exec {
 
             if is_ci() {
                 assert
-                    .success()
-                    .stdout(predicate::str::contains("Tasks: 0 tasks ran"));
+                    .failure()
+                    .stderr(predicate::str::contains("No tasks found"));
             } else {
                 assert
                     .success()

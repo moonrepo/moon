@@ -2593,4 +2593,46 @@ tasks:
             }
         }
     }
+
+    mod option_run_in_ci {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn enables_or_disables_based_on_task_type() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("options-runinci").await;
+
+            let task = tasks.get("build-type").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(true));
+
+            let task = tasks.get("test-type").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(true));
+
+            let task = tasks.get("run-type").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(false));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_override_explicit_setting() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("options-runinci").await;
+
+            let task = tasks.get("build-type-custom").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Only);
+
+            let task = tasks.get("test-type-custom").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Skip);
+
+            let task = tasks.get("run-type-custom").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Always);
+        }
+    }
 }

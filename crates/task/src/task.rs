@@ -31,6 +31,10 @@ cacheable!(
         #[serde(skip_serializing_if = "is_false")]
         pub root_level: bool,
 
+        // The `runInCI` option was configured explicitly
+        #[serde(skip_serializing_if = "is_false")]
+        pub set_run_in_ci: bool,
+
         // Has shell been explicitly disabled
         #[serde(skip_serializing_if = "is_false")]
         pub shell_disabled: bool,
@@ -333,19 +337,10 @@ impl Task {
     /// Return true if the task should run, whether in a CI environment or not.
     pub fn should_run(&self, in_ci: bool) -> bool {
         if in_ci {
-            let is_runnable = self.is_build_type() || self.is_test_type();
-
             return match self.options.run_in_ci {
-                TaskOptionRunInCI::Affected | TaskOptionRunInCI::Only => is_runnable,
-                TaskOptionRunInCI::Always => true,
                 TaskOptionRunInCI::Skip => false,
-                TaskOptionRunInCI::Enabled(state) => {
-                    if state {
-                        is_runnable
-                    } else {
-                        false
-                    }
-                }
+                TaskOptionRunInCI::Enabled(state) => state,
+                _ => true,
             };
         }
 

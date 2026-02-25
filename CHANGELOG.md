@@ -17,6 +17,7 @@
 - Fixed an issue where the graph visualizers would not render correctly in the VS Code extension.
 - Fixed an issue where a task with `shell: false` would be force enabled when a glob/env was
   detected. We now respect the configured value.
+- Fixed an issue where "run" type based tasks would not run in CI.
 
 ## 2.0.1
 

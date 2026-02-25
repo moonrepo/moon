@@ -532,6 +532,13 @@ impl<'proj> TasksBuilder<'proj> {
             };
         }
 
+        if !state.set_run_in_ci {
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(matches!(
+                task.type_of,
+                TaskType::Build | TaskType::Test
+            ));
+        }
+
         if state.shell_disabled {
             requires_shell = false;
         } else {
@@ -592,7 +599,7 @@ impl<'proj> TasksBuilder<'proj> {
         preset: Option<TaskPreset>,
         state: &mut TaskState,
     ) -> miette::Result<TaskOptions> {
-        let mut options = self.get_task_options_from_preset(preset);
+        let mut options = self.get_task_options_from_preset(preset, state);
         let mut chain = self.global_task_options.clone();
 
         chain.extend(
@@ -715,6 +722,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(run_in_ci) = &config.run_in_ci {
                 options.run_in_ci = run_in_ci.to_owned();
+                state.set_run_in_ci = true;
             }
 
             if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
@@ -745,6 +753,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             if options.run_in_ci != TaskOptionRunInCI::Skip {
                 options.run_in_ci = TaskOptionRunInCI::Enabled(false);
+                state.set_run_in_ci = true;
             }
         }
 
@@ -1144,7 +1153,15 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(stack)
     }
 
-    fn get_task_options_from_preset(&self, preset: Option<TaskPreset>) -> TaskOptions {
+    fn get_task_options_from_preset(
+        &self,
+        preset: Option<TaskPreset>,
+        state: &mut TaskState,
+    ) -> TaskOptions {
+        if preset.is_some() {
+            state.set_run_in_ci = true;
+        }
+
         match preset {
             Some(TaskPreset::Utility) => TaskOptions {
                 cache: TaskOptionCache::Enabled(false),

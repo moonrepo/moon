@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.e6dcddd9.css">
-<script src="/assets/js/runtime~main.cdf418e7.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.1fe7de36.js" defer="defer"></script>
 <script src="/assets/js/main.51dc5ede.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -201,6 +201,7 @@ noisy when inputs are truly optional.</p>
 <p>To ignore warnings for missing inputs, a list of <a class="" href="/docs/concepts/file-pattern#globs">glob patterns</a> can
 be configured to filter and ignore files. Files are matched against workspace relative paths, so
 prefixing patterns with <code>**/</code> is suggested.</p>
+<p>Defaults to <code>**/.env</code> and <code>**/.env.*</code> but will be overwritten when configured.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">hasher</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">ignoreMissingPatterns</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;**/.eslintrc.*&#x27;</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;**/*.config.*&#x27;</span><br></span></code></pre></div></div>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="ignorepatterns"><code>ignorePatterns</code><span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v1.10.0</span><a href="#ignorepatterns" class="hash-link" aria-label="Direct link to ignorepatterns" title="Direct link to ignorepatterns" translate="no">​</a></h3>
 <!-- -->

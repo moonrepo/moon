@@ -7203,6 +7203,8 @@ To ignore warnings for missing inputs, a list of [glob patterns](../concepts/fil
 be configured to filter and ignore files. Files are matched against workspace relative paths, so
 prefixing patterns with `**/` is suggested.
 
+Defaults to `**/.env` and `**/.env.*` but will be overwritten when configured.
+
 ```yaml title=".moon/workspace.yml" {2-4}
 hasher:
   ignoreMissingPatterns:

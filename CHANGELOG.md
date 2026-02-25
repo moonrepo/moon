@@ -8,6 +8,9 @@
   better solution. This means that if you have a shallow checkout, you may see incorrect affected
   results, or Git commands may fail.
 - Added more logs to `moon docker prune` to help debug edge cases.
+- Added `MOON_INCLUDE_RELATIONS` environment variable support for the `--include-relations` CLI
+  option.
+- Added `.env` and `.env.*` as defaults to the `hasher.ignoreMissingPatterns` setting.
 
 #### 🐞 Fixes
 

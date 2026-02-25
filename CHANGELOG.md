@@ -7,6 +7,7 @@
 - Temporarily disabled shallow checkouts triggering a hard error in CI until we can implement a
   better solution. This means that if you have a shallow checkout, you may see incorrect affected
   results, or Git commands may fail.
+- Added more logs to `moon docker prune` to help debug edge cases.
 
 #### 🐞 Fixes
 

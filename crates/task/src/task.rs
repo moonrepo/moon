@@ -30,6 +30,10 @@ cacheable!(
         // Is task defined in a root-level project
         #[serde(skip_serializing_if = "is_false")]
         pub root_level: bool,
+
+        // Has shell been explicitly disabled
+        #[serde(skip_serializing_if = "is_false")]
+        pub shell_disabled: bool,
     }
 );
 

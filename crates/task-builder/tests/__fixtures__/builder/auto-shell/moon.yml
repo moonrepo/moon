@@ -1,0 +1,13 @@
+tasks:
+  with-globs:
+    command: 'exec src/**/*'
+  with-env:
+    command: 'exec "$FOO"'
+  with-globs-off:
+    command: 'exec src/**/*'
+    options:
+      shell: false
+  with-env-off:
+    command: 'exec "$FOO"'
+    options:
+      shell: false

@@ -378,22 +378,41 @@ mod tasks_builder {
             let task = tasks.get("command-no-env").unwrap();
 
             assert_eq!(task.command, "./file.sh");
-            assert_eq!(task.options.shell, Some(false));
 
             let task = tasks.get("command-with-env").unwrap();
 
             assert_eq!(task.command, "./${DIR}/file.sh");
-            assert_eq!(task.options.shell, Some(true));
 
             let task = tasks.get("args-no-env").unwrap();
 
             assert_eq!(task.args, vec!["arg"]);
-            assert_eq!(task.options.shell, Some(false));
 
             let task = tasks.get("args-with-env").unwrap();
 
             assert_eq!(task.args, vec!["arg", "$ARG"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn handles_auto_shell() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("auto-shell").await;
+            let task = tasks.get("with-globs").unwrap();
+
             assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("with-env").unwrap();
+
+            assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("with-globs-off").unwrap();
+
+            assert_eq!(task.options.shell, Some(false));
+
+            let task = tasks.get("with-env-off").unwrap();
+
+            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -454,7 +473,6 @@ mod tasks_builder {
 
             assert_eq!(task.command, "foo");
             assert_eq!(task.args, ["-a", "--bar", "baz", "qux"]);
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -467,7 +485,6 @@ mod tasks_builder {
 
             assert_eq!(task.command, "foo");
             assert_eq!(task.args, ["--", "bar", "-b"]);
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -488,7 +505,6 @@ mod tasks_builder {
                     TaskArg::new_quoted("special quote", "$\"special quote\""),
                 ]
             );
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -506,7 +522,6 @@ mod tasks_builder {
                     "\"./some/file path/with/spaces.sh\""
                 )
             );
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -566,7 +581,6 @@ mod tasks_builder {
                     ("BAZ".into(), Some("quoted value".into())),
                 ])
             );
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -587,7 +601,6 @@ mod tasks_builder {
                     ("BAZ".into(), Some("quoted value".into())),
                 ])
             );
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -601,7 +614,6 @@ mod tasks_builder {
             assert_eq!(task.command, "exit");
             assert_eq!(task.args, ["0"]);
             assert_eq!(task.env, EnvMap::default());
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -615,7 +627,6 @@ mod tasks_builder {
             assert_eq!(task.command, "foo");
             assert_eq!(task.args, ["--env", "FOO=abc", "arg"]);
             assert_eq!(task.env, EnvMap::default());
-            assert_eq!(task.options.shell, Some(false));
         }
 
         // We can't place these invalid commands in the fixture,

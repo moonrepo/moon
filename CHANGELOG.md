@@ -15,6 +15,8 @@
 #### 🐞 Fixes
 
 - Fixed an issue where the graph visualizers would not render correctly in the VS Code extension.
+- Fixed an issue where a task with `shell: false` would be force enabled when a glob/env was
+  detected. We now respect the configured value.
 
 ## 2.0.1
 

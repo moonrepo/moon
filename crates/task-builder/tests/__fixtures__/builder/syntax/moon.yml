@@ -1,52 +1,30 @@
-# Disable shell ensures our "requires shell" detection works!
-
 tasks:
   simple:
     command: 'foo -a --bar baz "qux"'
-    options:
-      shell: false
 
   passthrough:
     command: 'foo -- bar -b'
-    options:
-      shell: false
 
   quotes:
     command: 'echo noquotes ''single quote'' "double quote" $"special quote"'
-    options:
-      shell: false
 
   quotes-exe:
     command: '"./some/file path/with/spaces.sh"'
-    options:
-      shell: false
 
   expansion:
     command: 'echo $(( 1+1 )) file/*.txt ${foo:bar}'
-    options:
-      shell: false
 
   substitution:
     command: 'echo $(do something) <(echo bar)'
-    options:
-      shell: false
 
   env:
     command: 'FOO=abc BAR=123 BAZ="quoted value" exit 0'
-    options:
-      shell: false
 
   env-multi:
     command: 'FOO=abc; BAR=123; BAZ="quoted value"; exit 0'
-    options:
-      shell: false
 
   env-inside:
     command: 'foo --env FOO=abc arg'
-    options:
-      shell: false
 
   env-ignore:
     command: 'FOO=$(exp) BAR=${sub} exit 0'
-    options:
-      shell: false

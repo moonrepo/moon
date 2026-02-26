@@ -83,6 +83,66 @@ proto:
   version: '0.51.0'
 ```
 
+## Shared
+
+The following settings are available and shared across all toolchains. Run
+`moon toolchain info <toolchain>` for all available settings for a specific toolchain.
+
+### `inheritAliases`<VersionLabel version="2.1.0" />
+
+When enabled, will inherit [aliases for projects](../concepts/project#aliases) while the toolchain
+is extending the project graph. An alias is typically derived from a `name` field in a toolchain
+manifest file (`package.json`, `Cargo.toml`, etc). Defaults to `true`.
+
+```yaml title=".moon/toolchains.yml"
+javascript:
+  inheritAliases: false
+```
+
+### `installDependencies`<VersionLabel version="2.1.0" />
+
+When enabled and running a task, will automatically install toolchain dependencies if the lockfile,
+manifest, or environment has changed changed since the last run. This is achieved through the
+[`InstallDependencies` action](../how-it-works/action-graph). Defaults to `true`.
+
+```yaml title=".moon/toolchains.yml"
+javascript:
+  installDependencies: false
+```
+
+### `plugin`
+
+Configures the location of the `.wasm` plugin file that moon will use to run this toolchain.
+Supports `file://` (relative from `.moon`), `https://`, and `github://` protocols.
+[Learn more about plugin locators](../guides/wasm-plugins#configuring-plugin-locations).
+
+```yaml title=".moon/toolchains.yml"
+custom-toolchain:
+  plugin: 'file://../path/to/plugin.wasm'
+```
+
+> This field is not required for built-in toolchains. However, it can be configured to override the
+> built-in plugin if you want to use your own implementation.
+
+### `versionFromPrototools`<VersionLabel version="2.0.0" />
+
+When a toolchain supports the `version` setting, this setting controls whether the version will be
+inherited from the root `.prototools` configuration file. This is useful for sharing a single
+version across multiple toolchains, and only having to update it in one place.
+
+When `false`, doesn't inherit a version. When `true`, matches the version specified in `.prototools`
+using the same toolchain identifier. Otherwise a string can be provided to specify a proto-specific
+identifier. Defaults to `true`.
+
+```yaml title=".moon/toolchains.yml"
+node:
+  versionFromPrototools: 'nodejs'
+```
+
+```toml title=".prototools"
+nodejs = "~24"
+```
+
 ## Go
 
 ## `go`

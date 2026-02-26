@@ -343,6 +343,31 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_add_if_disabled_in_config() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let spec = create_tier_spec(2);
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                if let Some(inner) = cfg.plugins.get_mut(&spec.id) {
+                    inner.install_dependencies = false;
+                }
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
             let mut container = ActionGraphContainer::new(sandbox.path());

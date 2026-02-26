@@ -41,10 +41,7 @@ The most important action in the graph is the setup toolchain action, which down
 tier 3 language into the toolchain. For other tiers, this is basically a no-operation.
 
 - When the tool has already been installed, this action will be skipped.
-- Actions will be scoped by language and version, also known as a runtime. For example,
-  `SetupToolchain(node:18.1.0)` or `SetupToolchain(deno:1.31.0)`.
-- Tools that require a global binary (found on `PATH`) will display the version as "global". For
-  example, `SetupToolchain(node:global)`.
+- Actions will be scoped by toolchain and version (or none if using global `PATH`).
 
 :::info
 
@@ -69,16 +66,15 @@ installed.
 
 ### Install dependencies
 
-Before we run a task, we ensure that all language dependencies (`node_modules` for example) have
-been installed, by automatically installing them if we detect changes since the last run. We achieve
-this by comparing lockfile modified timestamps, parsing manifest files, and hashing resolved
-dependency versions.
+Before we run a task, we ensure that all language/toolchain dependencies (`node_modules` for
+example) have been installed, by automatically installing them if we detect changes since the last
+run. We achieve this by comparing lockfile modified timestamps, parsing manifest files, and hashing
+resolved dependency versions.
 
 - When dependencies do _not_ need to be installed, this action will be skipped.
-- Depending on the language and configuration, we may install dependencies in a project
-  (`InstallProjectDeps`), or in the workspace root for all projects (`InstallWorkspaceDeps`).
-- Actions will be scoped by language and version, also known as a runtime. For example,
-  `InstallWorkspaceDeps(node:18.1.0)` or `InstallProjectDeps(node:18.1.0, example)`.
+- Depending on the language and configuration, we may install dependencies in a project, or in the
+  workspace root for all projects.
+- Actions will be scoped by toolchain and dependencies root.
 
 :::info
 

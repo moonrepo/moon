@@ -30,6 +30,22 @@ export type ToolchainPluginConfigConfig = Record<string, unknown>;
 
 /** Configures an individual toolchain. */
 export interface ToolchainPluginConfigBase {
+	/**
+	 * Inherit aliases (name derived from a manifest) for all
+	 * projects associated with this toolchain.
+	 * @since 2.1.0
+	 *
+	 * @default true
+	 */
+	inheritAliases?: boolean;
+	/**
+	 * Run the `InstallDependencies` actions for each running task
+	 * when changes to lockfiles and manifests are detected.
+	 * @since 2.1.0
+	 *
+	 * @default true
+	 */
+	installDependencies?: boolean;
 	/** Location of the WASM plugin to use. */
 	plugin?: PluginLocator | null;
 	/** The version of the toolchain to download and install. */
@@ -103,6 +119,22 @@ export type PartialToolchainPluginConfigConfig = Record<string, unknown>;
 
 /** Configures an individual toolchain. */
 export interface PartialToolchainPluginConfigBase {
+	/**
+	 * Inherit aliases (name derived from a manifest) for all
+	 * projects associated with this toolchain.
+	 * @since 2.1.0
+	 *
+	 * @default true
+	 */
+	inheritAliases?: boolean | null;
+	/**
+	 * Run the `InstallDependencies` actions for each running task
+	 * when changes to lockfiles and manifests are detected.
+	 * @since 2.1.0
+	 *
+	 * @default true
+	 */
+	installDependencies?: boolean | null;
 	/** Location of the WASM plugin to use. */
 	plugin?: PluginLocator | null;
 	/** The version of the toolchain to download and install. */

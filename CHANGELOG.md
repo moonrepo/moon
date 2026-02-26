@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- **Projects**
+  - Updated duplicate aliases to no longer be a hard error, and instead will apply to the first
+    encountered project. Duplicates are possible when multiple toolchains all use the same package
+    name (Go, Rust, Node, etc).
+- **Toolchains**
+  - Added `inheritAliases` (default `true`) setting for each toolchain. Can toggle whether to
+    inherit aliases for projects while extending the project graph.
+  - Added `installDependencies` (default `true`) setting for each toolchain. Can toggle whether to
+    install dependencies (via the `InstallDependencies` action) when running a task.
+
 ## 2.0.4
 
 #### 🧰 Toolchains

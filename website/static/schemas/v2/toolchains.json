@@ -102,6 +102,19 @@
       "description": "Configures an individual toolchain.",
       "type": "object",
       "properties": {
+        "inheritAliases": {
+          "title": "inheritAliases",
+          "description": "Inherit aliases (name derived from a manifest) for all projects associated with this toolchain. @since 2.1.0",
+          "default": true,
+          "type": "boolean"
+        },
+        "installDependencies": {
+          "title": "installDependencies",
+          "description": "Run the InstallDependencies actions for each running task when changes to lockfiles and manifests are detected. @since 2.1.0",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Run the `InstallDependencies` actions for each running task when changes to lockfiles and manifests are detected. @since 2.1.0"
+        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use.",

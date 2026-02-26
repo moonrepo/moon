@@ -131,7 +131,6 @@ pub struct ActionGraphBuilder<'query> {
     changed_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
-    // initial_targets: FxHashSet<Target>,
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
 }
@@ -288,7 +287,14 @@ impl<'query> ActionGraphBuilder<'query> {
         project: &Project,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
-        if !self.options.install_dependencies.is_enabled(&spec.id) || spec.is_system() {
+        if spec.is_system()
+            || !self.options.install_dependencies.is_enabled(&spec.id)
+            || self
+                .app_context
+                .toolchains_config
+                .get_plugin_config(&spec.id)
+                .is_some_and(|cfg| !cfg.install_dependencies)
+        {
             return Ok(None);
         }
 

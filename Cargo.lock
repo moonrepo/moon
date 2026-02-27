@@ -4471,6 +4471,7 @@ dependencies = [
  "moon_docker",
  "moon_env",
  "moon_env_var",
+ "moon_exec_plan",
  "moon_extension_plugin",
  "moon_feature_flags",
  "moon_mcp",

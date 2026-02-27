@@ -33,7 +33,9 @@ cacheable!(
     #[derive(Default)]
     #[serde(default, deny_unknown_fields)]
     pub struct PipelineBlock {
+        pub ci: Option<bool>,
         pub concurrency: Option<u8>,
+        pub ignore_ci_checks: Option<bool>,
         pub on_failure: Option<OnFailure>,
         pub job: Option<usize>,
         pub job_total: Option<usize>,

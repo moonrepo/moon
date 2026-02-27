@@ -15,10 +15,12 @@ use moon_cache::CacheMode;
 use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
 use moon_console::ui::{Container, Notice, SelectOption, SelectProps, StyledText, Variant};
 use moon_console::{Console, Level};
+use moon_exec_plan::ExecutionPlan;
 use moon_task::{Target, TargetLocator};
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::AppResult;
+use starbase_utils::json;
 use std::fmt;
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -108,7 +110,21 @@ pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
         }
     }
 
-    let executor = ExecWorkflow::new(session, args)?;
+    let mut plan = ExecutionPlan::default();
+
+    if let Some(rel_plan_path) = &args.plan {
+        let plan_path = if rel_plan_path.is_absolute() {
+            rel_plan_path.to_path_buf()
+        } else {
+            session.working_dir.join(rel_plan_path)
+        };
+
+        debug!(plan = ?plan_path, "Received an execution plan, attempting to load");
+
+        plan = json::read_file(plan_path)?;
+    };
+
+    let executor = ExecWorkflow::new(session, args, plan)?;
     let exit_code = executor.execute().await?;
 
     Ok(exit_code)
@@ -117,6 +133,7 @@ pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
 pub struct ExecWorkflow {
     args: ExecArgs,
     console: Arc<Console>,
+    plan: ExecutionPlan,
     session: MoonSession,
 
     last_title: String,
@@ -143,7 +160,7 @@ pub struct ExecWorkflow {
 }
 
 impl ExecWorkflow {
-    pub fn new(session: MoonSession, args: ExecArgs) -> miette::Result<Self> {
+    pub fn new(session: MoonSession, args: ExecArgs, plan: ExecutionPlan) -> miette::Result<Self> {
         Ok(Self {
             affected: args
                 .affected
@@ -151,15 +168,19 @@ impl ExecWorkflow {
                 .is_some_and(|affected| match affected {
                     Some(inner) => inner.is_enabled(),
                     None => true, // No arg value
-                }),
+                })
+                || plan.affected.is_some(),
             summary: args
                 .summary
                 .clone()
                 .map(|sum| sum.unwrap_or_default())
                 .unwrap_or_default()
                 .to_level(),
-            ci_check: !args.ignore_ci_checks,
-            ci_env: args.ci.unwrap_or(is_ci()),
+            ci_check: !plan
+                .pipeline
+                .ignore_ci_checks
+                .unwrap_or(args.ignore_ci_checks),
+            ci_env: plan.pipeline.ci.or(args.ci).unwrap_or_else(is_ci),
             console: session.get_console()?,
             session,
             step: 0,
@@ -171,6 +192,7 @@ impl ExecWorkflow {
                 open_log_group: "▮▮▮▮ {name}",
             }),
             last_title: String::new(),
+            plan,
         })
     }
 

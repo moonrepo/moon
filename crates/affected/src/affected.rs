@@ -20,7 +20,8 @@ pub enum AffectedBy {
 }
 
 // Dependents
-#[derive(Clone, Copy, Debug, Default, PartialEq, ValueEnum)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, ValueEnum)]
+#[serde(rename_all = "lowercase")]
 pub enum DownstreamScope {
     #[default]
     None,
@@ -53,7 +54,8 @@ impl fmt::Display for DownstreamScope {
 }
 
 // Dependencies
-#[derive(Clone, Copy, Debug, Default, PartialEq, ValueEnum)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, ValueEnum)]
+#[serde(rename_all = "lowercase")]
 pub enum UpstreamScope {
     #[default]
     None,

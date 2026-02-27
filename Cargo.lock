@@ -4751,6 +4751,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_exec_plan"
+version = "0.0.1"
+dependencies = [
+ "moon_affected",
+ "moon_common",
+ "moon_vcs",
+ "serde",
+]
+
+[[package]]
 name = "moon_extension_plugin"
 version = "0.0.1"
 dependencies = [

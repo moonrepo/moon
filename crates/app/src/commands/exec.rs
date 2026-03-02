@@ -1,3 +1,4 @@
+use crate::app_options::AffectedOption;
 // use crate::app_error::AppError;
 use crate::helpers::run_action_pipeline;
 use crate::prompts::select_targets;
@@ -17,6 +18,7 @@ use moon_console::ui::{Container, Notice, SelectOption, SelectProps, StyledText,
 use moon_console::{Console, Level};
 use moon_exec_plan::ExecutionPlan;
 use moon_task::{Target, TargetLocator};
+use moon_vcs::ChangedStatus;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::AppResult;
@@ -212,16 +214,18 @@ impl ExecWorkflow {
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
 
         if self.targets.is_empty() {
+            let status = self.get_status();
+            let targets = self.get_targets();
+
             let message = if self.affected {
-                if self.args.status.is_empty() {
+                if status.is_empty() {
                     "No tasks affected by changed files.".to_string()
                 } else {
                     format!(
                         "No tasks affected by changed files with status {}.",
-                        self.args
-                            .status
+                        status
                             .iter()
-                            .map(|status| format!("<symbol>{status}</symbol>"))
+                            .map(|item| format!("<symbol>{item}</symbol>"))
                             .collect::<Vec<_>>()
                             .join(", ")
                     )
@@ -241,14 +245,12 @@ impl ExecWorkflow {
                             }
                         }))
 
-                        #((self.args.targets.len() < 15).then(|| {
+                        #((targets.len() < 15).then(|| {
                             element! {
                                 StyledText(
                                     content: format!(
                                         "For targets {}.",
-                                        self
-                                            .args
-                                            .targets
+                                        targets
                                             .iter()
                                             .map(|target| format!("<id>{}</id>", target.as_str()))
                                             .collect::<Vec<_>>()
@@ -301,8 +303,8 @@ impl ExecWorkflow {
             return Ok(FxHashSet::default());
         }
 
-        let mut base = self.args.base.clone();
-        let mut head = self.args.head.clone();
+        let mut base = self.get_base();
+        let mut head = self.get_head();
 
         // If we're in CI, extract PR information for base and head
         if self.ci_env
@@ -335,16 +337,18 @@ impl ExecWorkflow {
             head.as_deref().unwrap_or("HEAD")
         ))?;
 
+        let status = self.get_status();
+        let stdin = self.get_stdin();
+
         if self.affected {
             self.print(format!(
                 "Affected by changes: {}",
-                if self.args.status.is_empty() {
+                if status.is_empty() {
                     "<symbol>all</symbol>".to_owned()
                 } else {
-                    self.args
-                        .status
+                    status
                         .iter()
-                        .map(|status| format!("<symbol>{status}</symbol>"))
+                        .map(|item| format!("<symbol>{item}</symbol>"))
                         .collect::<Vec<_>>()
                         .join(", ")
                 }
@@ -356,11 +360,18 @@ impl ExecWorkflow {
             base,
             head,
             local: !self.ci_env,
-            status: self.args.status.clone(),
-            stdin: self.args.stdin,
+            status: status.to_owned(),
+            stdin,
         };
 
-        if let Some(Some(by)) = &self.args.affected {
+        if let Some(source) = self
+            .plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.source.as_ref())
+        {
+            options.apply_affected(&AffectedOption::String(source.into()));
+        } else if let Some(Some(by)) = &self.args.affected {
             options.apply_affected(by);
         }
 
@@ -398,7 +409,7 @@ impl ExecWorkflow {
     ) -> miette::Result<(ActionContext, ActionGraph)> {
         self.print_step("Building action graph")?;
 
-        let mut action_graph_builder = if self.args.no_actions {
+        let mut action_graph_builder = if self.get_no_actions() {
             self.session
                 .build_action_graph_with_options(ActionGraphBuilderOptions::new(false))
                 .await?
@@ -415,10 +426,13 @@ impl ExecWorkflow {
         action_graph_builder.set_changed_files(changed_files)?;
 
         // Only track affected if enabled
+        let upstream = self.get_upstream();
+        let downstream = self.get_downstream();
+
         if self.affected {
             action_graph_builder.track_affected(
-                self.args.upstream.unwrap_or(UpstreamScope::Deep),
-                self.args.downstream.unwrap_or(DownstreamScope::None),
+                upstream,
+                downstream,
                 self.ci_env && self.ci_check,
             )?;
         }
@@ -429,18 +443,22 @@ impl ExecWorkflow {
         }
 
         // Insert targets into the graph
+        let job = self.get_job();
+        let job_total = self.get_job_total();
+        let targets = self.get_targets();
+
         let partition = action_graph_builder
             .run_tasks(
-                &self.args.targets,
+                targets,
                 RunRequirements {
                     ci: self.ci_env,
                     ci_check: self.ci_check,
-                    dependencies: self.args.upstream.unwrap_or(UpstreamScope::Deep),
-                    dependents: self.args.downstream.unwrap_or(DownstreamScope::None),
-                    include_relations: self.args.include_relations,
+                    dependencies: upstream,
+                    dependents: downstream,
+                    include_relations: self.get_include_relations(),
                     interactive: self.args.interactive,
-                    job: self.args.job,
-                    job_total: self.args.job_total,
+                    job,
+                    job_total,
                     skip_affected: !self.affected,
                 },
             )
@@ -449,11 +467,11 @@ impl ExecWorkflow {
         // Build the graph
         let (action_context, action_graph) = action_graph_builder.build();
 
-        if let Some(job_index) = &self.args.job
-            && let Some(job_total) = &self.args.job_total
+        if let Some(index) = &job
+            && let Some(total) = &job_total
         {
-            self.print(format!("Job index: <property>{job_index}</property>"))?;
-            self.print(format!("Job total: <property>{job_total}</property>"))?;
+            self.print(format!("Job index: <property>{index}</property>"))?;
+            self.print(format!("Job total: <property>{total}</property>"))?;
             self.print(format!(
                 "Partition size: <property>{}</property>",
                 partition.size.unwrap_or_default()
@@ -467,10 +485,10 @@ impl ExecWorkflow {
 
         self.print(format!(
             "Requested targets: <mutedlight>{}</mutedlight>",
-            self.args.targets.len()
+            targets.len()
         ))?;
 
-        for target in &self.args.targets {
+        for target in targets {
             self.print(format!("\t<label>{}</label>", target.as_str()))?;
         }
 
@@ -513,14 +531,14 @@ impl ExecWorkflow {
                     state.projects.iter().next().unwrap()
                 ))?;
             } else if !state.upstream.is_empty() {
-                if self.args.include_relations {
+                if self.get_include_relations() {
                     self.print(format!(
                         "\t<id>{target}</id> affected by dependency task <label>{}</label>",
                         state.upstream.iter().next().unwrap()
                     ))?;
                 }
             } else if !state.downstream.is_empty() {
-                if self.args.include_relations {
+                if self.get_include_relations() {
                     self.print(format!(
                         "\t<id>{target}</id> affected by dependent task <label>{}</label>",
                         state.downstream.iter().next().unwrap()
@@ -603,5 +621,80 @@ impl ExecWorkflow {
         }
 
         Ok(())
+    }
+
+    fn get_base(&self) -> Option<String> {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.base.clone())
+            .or(self.args.base.clone())
+    }
+
+    fn get_downstream(&self) -> DownstreamScope {
+        self.plan
+            .graph
+            .downstream
+            .or(self.args.downstream)
+            .unwrap_or(DownstreamScope::None)
+    }
+
+    fn get_head(&self) -> Option<String> {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.head.clone())
+            .or(self.args.head.clone())
+    }
+
+    fn get_include_relations(&self) -> bool {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.include_relations)
+            .unwrap_or(self.args.include_relations)
+    }
+
+    fn get_job(&self) -> Option<usize> {
+        self.plan.pipeline.job.or(self.args.job)
+    }
+
+    fn get_job_total(&self) -> Option<usize> {
+        self.plan.pipeline.job_total.or(self.args.job_total)
+    }
+
+    fn get_no_actions(&self) -> bool {
+        self.plan
+            .pipeline
+            .no_actions
+            .unwrap_or(self.args.no_actions)
+    }
+
+    fn get_stdin(&self) -> bool {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.stdin)
+            .unwrap_or(self.args.stdin)
+    }
+
+    fn get_status(&self) -> &[ChangedStatus] {
+        self.plan
+            .affected
+            .as_ref()
+            .map(|aff| &aff.status)
+            .unwrap_or(&self.args.status)
+    }
+
+    fn get_targets(&self) -> &[TargetLocator] {
+        &self.args.targets
+    }
+
+    fn get_upstream(&self) -> UpstreamScope {
+        self.plan
+            .graph
+            .upstream
+            .or(self.args.upstream)
+            .unwrap_or(UpstreamScope::Deep)
     }
 }

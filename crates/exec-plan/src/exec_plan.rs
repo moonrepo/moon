@@ -8,6 +8,7 @@ cacheable!(
         pub base: Option<String>,
         pub head: Option<String>,
         pub include_relations: Option<bool>,
+        pub source: Option<String>,
         pub status: Vec<moon_vcs::ChangedStatus>,
         pub stdin: Option<bool>,
     }
@@ -36,6 +37,7 @@ cacheable!(
         pub ci: Option<bool>,
         pub concurrency: Option<u8>,
         pub ignore_ci_checks: Option<bool>,
+        pub no_actions: Option<bool>,
         pub on_failure: Option<OnFailure>,
         pub job: Option<usize>,
         pub job_total: Option<usize>,

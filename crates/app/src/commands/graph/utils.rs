@@ -1,16 +1,8 @@
-use super::dto::{GraphEdgeDto, GraphInfoDto, GraphNodeDto};
 use miette::IntoDiagnostic;
-use moon_action_graph::ActionGraph;
 use moon_common::color;
 use moon_env_var::GlobalEnvBag;
 use moon_process::ProcessRegistry;
-use moon_project_graph::{GraphConversions, ProjectGraph};
-use moon_task_graph::TaskGraph;
-use petgraph::{Graph, graph::NodeIndex};
-use rustc_hash::FxHashMap;
 use serde::Serialize;
-use starbase_utils::json;
-use std::fmt::Display;
 use std::sync::Arc;
 use tera::{Context, Tera};
 use tiny_http::{Header, Request, Response, Server};
@@ -21,7 +13,7 @@ const INDEX_HTML: &str = include_str!("html.tera");
 #[derive(Debug, Serialize)]
 pub struct RenderContext {
     pub page_title: String,
-    pub graph_data: String,
+    pub graph_data: String, // JSON
     pub js_url: String,
 }
 
@@ -33,80 +25,24 @@ pub async fn setup_server(host: String, port: u16) -> miette::Result<(Arc<Server
     Ok((Arc::new(server), tera))
 }
 
-pub fn extract_nodes_and_edges_from_graph<T: Display>(
-    graph: &Graph<String, T>,
-    include_orphans: bool,
-) -> GraphInfoDto {
-    let mut nodes = FxHashMap::default();
-    let edges = graph
-        .raw_edges()
-        .iter()
-        .map(|e| GraphEdgeDto {
-            label: e.weight.to_string(),
-            source: e.source().index(),
-            target: e.target().index(),
-            id: format!("{} -> {}", e.source().index(), e.target().index()),
-        })
-        .collect::<Vec<_>>();
-
-    let get_graph_node = |ni: NodeIndex| GraphNodeDto {
-        id: ni.index(),
-        label: graph
-            .node_weight(ni)
-            .expect("Unable to get node weight")
-            .clone(),
-    };
-
-    for edge in graph.raw_edges().iter() {
-        nodes.insert(edge.source(), get_graph_node(edge.source()));
-        nodes.insert(edge.target(), get_graph_node(edge.target()));
-    }
-
-    if include_orphans {
-        for ni in graph.node_indices() {
-            nodes.entry(ni).or_insert_with(|| get_graph_node(ni));
-        }
-    }
-
-    let nodes = nodes.into_values().collect();
-
-    GraphInfoDto { edges, nodes }
-}
-
-pub async fn action_graph_repr(action_graph: &ActionGraph) -> GraphInfoDto {
-    let labeled_graph = action_graph.labeled_graph();
-    extract_nodes_and_edges_from_graph(&labeled_graph, false)
-}
-
-pub async fn project_graph_repr(project_graph: &ProjectGraph) -> GraphInfoDto {
-    let labeled_graph = project_graph.to_labeled_graph();
-    extract_nodes_and_edges_from_graph(&labeled_graph, true)
-}
-
-pub async fn task_graph_repr(task_graph: &TaskGraph) -> GraphInfoDto {
-    let labeled_graph = task_graph.to_labeled_graph();
-    extract_nodes_and_edges_from_graph(&labeled_graph, true)
-}
-
 pub fn respond_to_request(
     req: Request,
     tera: &mut Tera,
-    graph: &GraphInfoDto,
+    graph_data: &str,
     page_title: String,
 ) -> miette::Result<()> {
     let response = match req.url() {
         "/graph-data" => {
-            let mut response = Response::from_data(json::format(graph, false)?);
+            let mut response = Response::from_data(graph_data);
             response.add_header(
                 Header::from_bytes(&b"Content-Type"[..], &b"application/json"[..]).unwrap(),
             );
             response
         }
         _ => {
-            let graph_data = json::format(graph, false)?;
             let context = RenderContext {
                 page_title,
-                graph_data,
+                graph_data: graph_data.into(),
                 js_url: get_js_url(),
             };
 
@@ -142,7 +78,7 @@ pub fn get_js_url() -> String {
 
 pub async fn run_server(
     title: &str,
-    graph_info: GraphInfoDto,
+    graph_data: String,
     host: String,
     port: u16,
 ) -> miette::Result<()> {
@@ -166,7 +102,7 @@ pub async fn run_server(
     let title = title.to_owned();
     let handle2: JoinHandle<miette::Result<()>> = spawn(async move {
         for req in server.incoming_requests() {
-            respond_to_request(req, &mut tera, &graph_info, title.clone())?;
+            respond_to_request(req, &mut tera, &graph_data, title.clone())?;
         }
 
         Ok(())

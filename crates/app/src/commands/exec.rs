@@ -1,4 +1,4 @@
-use crate::app_error::AppError;
+// use crate::app_error::AppError;
 use crate::helpers::run_action_pipeline;
 use crate::prompts::select_targets;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
@@ -52,19 +52,27 @@ pub struct ExecArgs {
 
     #[arg(
         long,
+        help = "Execute the pipeline as if it's a CI environment",
+        default_missing_value = "true",
+        num_args=0..=1
+    )]
+    pub ci: Option<bool>,
+
+    #[arg(
+        long,
+        help = "Ignore \"run in CI\" task checks",
+        help_heading = super::HEADING_WORKFLOW,
+    )]
+    pub ignore_ci_checks: bool,
+
+    #[arg(
+        long,
         env = "MOON_ON_FAILURE",
         help = "When a task fails, either bail the pipeline, or continue executing",
         help_heading = super::HEADING_WORKFLOW,
         default_value_t,
     )]
     pub on_failure: OnFailure,
-
-    #[arg(
-        long,
-        help = "Filter tasks to those that only run in CI",
-        help_heading = super::HEADING_WORKFLOW,
-    )]
-    pub only_ci_tasks: bool,
 
     #[arg(
         long,
@@ -136,15 +144,13 @@ pub struct ExecWorkflow {
 
 impl ExecWorkflow {
     pub fn new(session: MoonSession, args: ExecArgs) -> miette::Result<Self> {
-        let ci_env = is_ci();
-
         Ok(Self {
             affected: args
                 .affected
                 .as_ref()
                 .is_some_and(|affected| match affected {
                     Some(inner) => inner.is_enabled(),
-                    None => true, // no arg value
+                    None => true, // No arg value
                 }),
             summary: args
                 .summary
@@ -152,8 +158,8 @@ impl ExecWorkflow {
                 .map(|sum| sum.unwrap_or_default())
                 .unwrap_or_default()
                 .to_level(),
-            ci_check: args.only_ci_tasks,
-            ci_env,
+            ci_check: !args.ignore_ci_checks,
+            ci_env: args.ci.unwrap_or(is_ci()),
             console: session.get_console()?,
             session,
             step: 0,
@@ -353,11 +359,11 @@ impl ExecWorkflow {
         }
 
         if result.shallow {
-            if self.ci_env {
-                return Err(AppError::CiNoShallowHistory.into());
-            } else {
-                self.affected = false;
-            }
+            // if self.ci_env {
+            //     return Err(AppError::CiNoShallowHistory.into());
+            // } else {
+            self.affected = false;
+            // }
         }
 
         Ok(result.files)
@@ -391,7 +397,7 @@ impl ExecWorkflow {
             action_graph_builder.track_affected(
                 self.args.upstream.unwrap_or(UpstreamScope::Deep),
                 self.args.downstream.unwrap_or(DownstreamScope::None),
-                self.ci_check,
+                self.ci_env && self.ci_check,
             )?;
         }
 
@@ -407,10 +413,9 @@ impl ExecWorkflow {
                 RunRequirements {
                     ci: self.ci_env,
                     ci_check: self.ci_check,
-                    dependents: self
-                        .args
-                        .downstream
-                        .is_some_and(|down| down != DownstreamScope::None),
+                    dependencies: self.args.upstream.unwrap_or(UpstreamScope::Deep),
+                    dependents: self.args.downstream.unwrap_or(DownstreamScope::None),
+                    include_relations: self.args.include_relations,
                     interactive: self.args.interactive,
                     job: self.args.job,
                     job_total: self.args.job_total,
@@ -472,31 +477,35 @@ impl ExecWorkflow {
         for (target, state) in &affected.tasks {
             if !state.env.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> affected by environment variable <property>{}</property>",
+                    "\t<id>{target}</id> affected by environment variable <property>{}</property>",
                     state.env.iter().next().unwrap()
                 ))?;
             } else if !state.files.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> affected by file <file>{}</file>",
+                    "\t<id>{target}</id> affected by file <file>{}</file>",
                     state.files.iter().next().unwrap()
                 ))?;
             } else if !state.projects.is_empty() {
                 self.print(format!(
-                    "<id>{target}</id> affected by project <id>{}</id>",
+                    "\t<id>{target}</id> affected by project <id>{}</id>",
                     state.projects.iter().next().unwrap()
                 ))?;
             } else if !state.upstream.is_empty() {
-                self.print(format!(
-                    "<id>{target}</id> affected by dependency task <label>{}</label>",
-                    state.upstream.iter().next().unwrap()
-                ))?;
+                if self.args.include_relations {
+                    self.print(format!(
+                        "\t<id>{target}</id> affected by dependency task <label>{}</label>",
+                        state.upstream.iter().next().unwrap()
+                    ))?;
+                }
             } else if !state.downstream.is_empty() {
-                self.print(format!(
-                    "<id>{target}</id> affected by dependent task <label>{}</label>",
-                    state.downstream.iter().next().unwrap()
-                ))?;
+                if self.args.include_relations {
+                    self.print(format!(
+                        "\t<id>{target}</id> affected by dependent task <label>{}</label>",
+                        state.downstream.iter().next().unwrap()
+                    ))?;
+                }
             } else {
-                self.print(format!("<id>{target}</id> affected"))?;
+                self.print(format!("\t<id>{target}</id> affected"))?;
             }
         }
 

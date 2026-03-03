@@ -13,7 +13,7 @@ manages, downloads, and installs Node.js and other languages behind the scenes u
 [proto](/proto). It also enables [advanced functionality](./how-it-works/languages#tier-2--platform)
 for task running based on the platform (language and environment combination) it runs in.
 
-The toolchain is configured with [`.moon/toolchains.yml`](./config/toolchain).
+The toolchain is configured with [`.moon/toolchains.*`](./config/toolchain).
 
 :::tip
 
@@ -40,7 +40,7 @@ By default all tasks run through the
 [system toolchain](./how-it-works/languages#system-language-and-toolchain) and inherit _no_ special
 functionality. If you want to take advantage of this functionality, like dependency hashing, package
 shorthand execution, and lockfile management, you'll need to enable the toolchain in
-[`.moon/toolchains.yml`](./config/toolchain). Otherwise, you can skip to the
+[`.moon/toolchains.*`](./config/toolchain). Otherwise, you can skip to the
 [create a task](./create-task) guide.
 
 Begin by declaring the necessary configuration block, even if an empty object! This configuration

@@ -1,14 +1,19 @@
 use async_trait::async_trait;
 use moon_common::Id;
+use moon_config::is_glob_like;
 use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
+use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
+use proto_core::flow::locate::Locator;
+use proto_core::flow::manage::Manager;
+use proto_core::flow::resolve::Resolver;
 use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
-use starbase_utils::glob::{self, GlobSet, GlobWalkOptions};
+use starbase_utils::glob::{self, GlobSet};
 use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -134,17 +139,19 @@ impl ToolchainPlugin {
         if let Some(version) = &version
             && let Some(tool) = &self.tool
         {
-            let mut tool = tool.write().await;
-            let spec = ToolSpec::new(version.to_owned());
+            let tool = tool.read().await;
+            let mut spec = ToolSpec::new(version.to_owned());
 
-            tool.resolve_version_if_different(&spec, false).await?;
+            Resolver::resolve(&tool, &mut spec, false).await?;
 
-            if let Some(dir) = tool.locate_exe_file().await?.parent() {
+            let locations = Locator::locate(&tool, &spec).await?;
+
+            if let Some(dir) = locations.exe_file.parent() {
                 paths.insert(dir.to_path_buf());
             }
 
-            paths.extend(tool.locate_exes_dirs().await?);
-            paths.extend(tool.locate_globals_dirs().await?);
+            paths.extend(locations.exes_dirs);
+            paths.extend(locations.globals_dirs);
         }
 
         Ok(paths.into_iter().collect())
@@ -226,12 +233,19 @@ impl ToolchainPlugin {
             return Ok(false);
         }
 
-        // Oh no, heavy lookup... but at least it's cached
-        let results = glob::walk_fast_with_options(
-            dir,
-            &self.metadata.config_file_globs,
-            GlobWalkOptions::default().cache(),
-        )?;
+        // Before we glob, extract non-globs from the list
+        let mut globs = vec![];
+
+        for glob in &self.metadata.config_file_globs {
+            if is_glob_like(glob) {
+                globs.push(glob);
+            } else if dir.join(glob).exists() {
+                return Ok(true);
+            }
+        }
+
+        // Oh no, heavy lookup...
+        let results = glob::walk_fast(dir, globs)?;
 
         Ok(!results.is_empty())
     }
@@ -266,7 +280,7 @@ impl ToolchainPlugin {
 
         let tool = tool.read().await;
 
-        if let Some((version, _)) = tool.detect_version_from(dir).await? {
+        if let Some((version, _)) = Detector::new(&tool).detect_version_from(dir).await? {
             return Ok(Some(version));
         }
 
@@ -305,9 +319,9 @@ impl ToolchainPlugin {
         mut input: ExtendTaskCommandInput,
     ) -> miette::Result<ExtendCommandOutput> {
         if let Some(tool) = &self.tool {
-            input.globals_dir = tool
-                .write()
-                .await
+            let tool = tool.read().await;
+
+            input.globals_dir = Locator::new(&tool, &ToolSpec::default())
                 .locate_globals_dir()
                 .await?
                 .map(|dir| self.to_virtual_path(dir));
@@ -327,9 +341,9 @@ impl ToolchainPlugin {
         mut input: ExtendTaskScriptInput,
     ) -> miette::Result<ExtendTaskScriptOutput> {
         if let Some(tool) = &self.tool {
-            input.globals_dir = tool
-                .write()
-                .await
+            let tool = tool.read().await;
+
+            input.globals_dir = Locator::new(&tool, &ToolSpec::default())
                 .locate_globals_dir()
                 .await?
                 .map(|dir| self.to_virtual_path(dir));
@@ -388,12 +402,12 @@ impl ToolchainPlugin {
         spec: Option<&UnresolvedVersionSpec>,
     ) -> miette::Result<bool> {
         if let (Some(tool), Some(spec)) = (&self.tool, spec) {
-            let mut tool = tool.write().await;
-            let spec = ToolSpec::new(spec.to_owned());
+            let tool = tool.read().await;
+            let mut spec = ToolSpec::new(spec.to_owned());
 
-            tool.resolve_version_if_different(&spec, false).await?;
+            Resolver::resolve(&tool, &mut spec, false).await?;
 
-            return Ok(tool.is_installed());
+            return Ok(tool.is_installed(&spec));
         }
 
         Ok(false)
@@ -463,9 +477,9 @@ impl ToolchainPlugin {
         mut input: SetupEnvironmentInput,
     ) -> miette::Result<SetupEnvironmentOutput> {
         if let Some(tool) = &self.tool {
-            input.globals_dir = tool
-                .write()
-                .await
+            let tool = tool.read().await;
+
+            input.globals_dir = Locator::new(&tool, &ToolSpec::default())
                 .locate_globals_dir()
                 .await?
                 .map(|dir| self.to_virtual_path(dir));
@@ -494,18 +508,18 @@ impl ToolchainPlugin {
 
             // Only install if a version has been configured
             if let Some(version) = &input.configured_version {
-                let spec = ToolSpec::new(version.to_owned());
+                let mut spec = ToolSpec::new(version.to_owned());
 
                 // Resolve the version first so that it is available
-                input.version = Some(tool.resolve_version_if_different(&spec, false).await?);
+                input.version = Some(Resolver::resolve(&tool, &mut spec, false).await?);
 
                 // Only setup if not already been
-                if !tool.is_setup(&spec).await? {
+                if !tool.is_installed(&spec) {
                     on_setup()?;
 
-                    output.installed = tool
-                        .setup(
-                            &spec,
+                    output.installed = Manager::new(&mut tool)
+                        .install(
+                            &mut spec,
                             InstallOptions {
                                 skip_prompts: true,
                                 skip_ui: true,
@@ -515,10 +529,6 @@ impl ToolchainPlugin {
                         .await?
                         .is_some();
                 }
-
-                // Locate pieces that we'll need
-                tool.locate_exes_dirs().await?;
-                tool.locate_globals_dirs().await?;
             }
 
             // Pre-load the tool plugin so that task executions
@@ -571,11 +581,11 @@ impl ToolchainPlugin {
     ) -> miette::Result<()> {
         if let (Some(version), Some(tool)) = (&input.configured_version, &self.tool) {
             let mut tool = tool.write().await;
-            let spec = ToolSpec::new(version.to_owned());
+            let mut spec = ToolSpec::new(version.to_owned());
 
-            input.version = Some(tool.resolve_version_if_different(&spec, false).await?);
+            input.version = Some(Resolver::resolve(&tool, &mut spec, false).await?);
 
-            tool.teardown(&spec).await?;
+            Manager::new(&mut tool).uninstall(&mut spec).await?;
         }
 
         if self.plugin.has_func("teardown_toolchain").await {

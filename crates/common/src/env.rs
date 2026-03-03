@@ -21,7 +21,12 @@ fn has_proc_config(path: &str, value: &str) -> bool {
 pub fn is_ci() -> bool {
     static CI_CACHE: OnceLock<bool> = OnceLock::new();
 
-    *CI_CACHE.get_or_init(|| has_env_var("CI"))
+    *CI_CACHE.get_or_init(|| {
+        has_env_var("CI") ||
+        has_env_var("CI_NAME") ||
+        // Azure doesn't set the `CI` var
+        has_env_var("AZURE_PIPELINES")
+    })
 }
 
 pub fn is_ci_env() -> bool {

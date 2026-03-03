@@ -22,8 +22,6 @@ sources = ["src/**/*"]
 tests = ["*.test.ts", "*.test.tsx"]
 
 [taskOptions]
-affectedFiles = "args"
-affectedPassInputs = true
 allowFailure = true
 cache = false
 envFile = ".env"
@@ -45,6 +43,10 @@ shell = false
 timeout = 60
 unixShell = "zsh"
 windowsShell = "pwsh"
+
+[taskOptions.affectedFiles]
+pass = "args"
+passInputsWhenNoMatch = true
 
 [tasks.example.options]
 cache = true

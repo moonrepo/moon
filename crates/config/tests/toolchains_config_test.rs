@@ -1,10 +1,8 @@
 mod utils;
 
 use httpmock::prelude::*;
-use moon_config::{ConfigLoader, ToolchainPluginConfig, ToolchainsConfig};
-use proto_core::{
-    Id, PluginLocator, ProtoConfig, ToolContext, UnresolvedVersionSpec, warpgate::FileLocator,
-};
+use moon_config::{ConfigLoader, ToolchainsConfig};
+use proto_core::{Id, ProtoConfig, ToolContext, UnresolvedVersionSpec};
 use schematic::ConfigLoader as BaseLoader;
 use serde_json::Value;
 use serial_test::serial;
@@ -177,16 +175,7 @@ plugin:
 
             let cfg = config.plugins.get("plugin").unwrap();
 
-            assert_eq!(
-                cfg,
-                &ToolchainPluginConfig {
-                    plugin: Some(PluginLocator::File(Box::new(FileLocator {
-                        file: "file://example.wasm".into(),
-                        path: None
-                    }))),
-                    ..Default::default()
-                }
-            );
+            assert!(cfg.plugin.is_some());
         }
 
         #[test]

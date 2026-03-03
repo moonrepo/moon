@@ -1,0 +1,23 @@
+language: javascript
+layer: library
+
+tasks:
+  build-type:
+    type: 'build'
+  test-type:
+    type: 'test'
+  run-type:
+    type: 'run'
+
+  build-type-custom:
+    type: 'build'
+    options:
+      runInCI: only
+  test-type-custom:
+    type: 'test'
+    options:
+      runInCI: skip
+  run-type-custom:
+    type: 'run'
+    options:
+      runInCI: always

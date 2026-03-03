@@ -3,8 +3,9 @@ tasks:
     command: node ./affected.js
     toolchain: node
     options:
-      affectedFiles: true
-      affectedPassInputs: true
+      affectedFiles:
+        pass: true
+        passInputsWhenNoMatch: true
     inputs:
       - file.txt
   misconfigured:

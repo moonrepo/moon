@@ -33,9 +33,11 @@ config_struct!(
     #[config(allow_unknown_fields)]
     pub struct ToolchainPluginConfig {
         /// Location of the WASM plugin to use.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub plugin: Option<PluginLocator>,
 
         /// The version of the toolchain to download and install.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub version: Option<UnresolvedVersionSpec>,
 
         /// Inherit the version from the root `.prototools`.
@@ -74,6 +76,7 @@ config_struct!(
         /// Supports a relative file path or a secure URL.
         /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
 
         /// Configures moon itself.
@@ -133,17 +136,20 @@ impl ToolchainsConfig {
         use proto_core::warpgate::find_debug_locator_with_url_fallback as locate;
 
         match id.as_str() {
-            "bun" => Some(locate("bun_toolchain", "1.0.0")),
-            "deno" => Some(locate("deno_toolchain", "1.0.0")),
-            "go" => Some(locate("go_toolchain", "1.0.0")),
-            "javascript" => Some(locate("javascript_toolchain", "1.0.0")),
-            "node" => Some(locate("node_toolchain", "1.0.0")),
-            "npm" => Some(locate("node_depman_toolchain", "1.0.0")),
-            "pnpm" => Some(locate("node_depman_toolchain", "1.0.0")),
-            "rust" => Some(locate("rust_toolchain", "1.0.0")),
-            "system" => Some(locate("system_toolchain", "1.0.0")),
-            "typescript" => Some(locate("typescript_toolchain", "1.0.0")),
-            "yarn" => Some(locate("node_depman_toolchain", "1.0.0")),
+            "bun" => Some(locate("bun_toolchain", "1.0.2")),
+            "deno" => Some(locate("deno_toolchain", "1.0.3")),
+            "go" => Some(locate("go_toolchain", "1.0.3")),
+            "javascript" => Some(locate("javascript_toolchain", "1.0.4")),
+            "node" => Some(locate("node_toolchain", "1.0.2")),
+            "npm" => Some(locate("node_depman_toolchain", "1.0.2")),
+            "pnpm" => Some(locate("node_depman_toolchain", "1.0.2")),
+            "rust" => Some(locate("rust_toolchain", "1.0.4")),
+            "system" => Some(locate("system_toolchain", "1.0.2")),
+            "typescript" => Some(locate("typescript_toolchain", "1.0.3")),
+            "unstable_python" => Some(locate("python_toolchain", "0.1.2")),
+            "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.2")),
+            "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.2")),
+            "yarn" => Some(locate("node_depman_toolchain", "1.0.2")),
             _ => None,
         }
     }
@@ -218,6 +224,7 @@ impl ToolchainsConfig {
     }
 
     pub fn inherit_test_builtin_plugins(&mut self) -> miette::Result<()> {
+        // We don't need all package managers
         for id in [
             "bun",
             "deno",
@@ -228,6 +235,8 @@ impl ToolchainsConfig {
             "rust",
             "system",
             "typescript",
+            "unstable_python",
+            "unstable_pip",
         ] {
             self.plugins.entry(Id::raw(id)).or_default();
         }
@@ -245,7 +254,8 @@ impl ToolchainsConfig {
 
             match id.as_str() {
                 "bun" | "deno" | "go" | "javascript" | "node" | "npm" | "pnpm" | "rust"
-                | "system" | "typescript" | "yarn" => {
+                | "system" | "typescript" | "unstable_python" | "unstable_pip" | "unstable_uv"
+                | "yarn" => {
                     config.plugin = Self::get_plugin_locator(id);
                 }
                 #[cfg(debug_assertions)]

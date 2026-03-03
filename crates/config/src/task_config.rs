@@ -15,7 +15,7 @@ fn validate_command<C>(
     _finalize: bool,
 ) -> Result<(), ValidateError> {
     let invalid = match command {
-        PartialTaskArgs::None => false,
+        PartialTaskArgs::Noop => false,
         PartialTaskArgs::String(args) => {
             let mut parts = args.split(' ');
             let cmd = parts.next();
@@ -43,7 +43,7 @@ pub(crate) fn validate_deps<D, C>(
         let scope;
 
         match dep {
-            PartialTaskDependency::Config(cfg) => {
+            PartialTaskDependency::Object(cfg) => {
                 if let Some(target) = &cfg.target {
                     scope = &target.scope;
                 } else {
@@ -98,11 +98,11 @@ config_unit_enum!(
 config_enum!(
     /// Configures a command and its arguments to execute.
     #[derive(Config)]
-    #[serde(untagged, expecting = "expected a string or a list of strings")]
+    #[serde(untagged)]
     pub enum TaskArgs {
-        /// No value defined.
+        /// No value defined; no operation.
         #[setting(default, null)]
-        None,
+        Noop,
         /// A command and arguments as a string. Will be parsed into a list.
         String(String),
         /// A command and arguments as a list of individual values.
@@ -136,6 +136,7 @@ config_struct!(
 
         /// Marks the dependency as optional when being inherited from the top-level.
         /// @since 1.20.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,
     }
 );
@@ -162,24 +163,21 @@ impl TaskDependencyConfig {
 config_enum!(
     /// Configures another task that this task depends on.
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a valid target or dependency config object"
-    )]
+    #[serde(untagged)]
     pub enum TaskDependency {
         /// A task referenced by target.
         Target(Target),
 
         /// A task referenced by target, with additional parameters to pass through.
         #[setting(nested)]
-        Config(TaskDependencyConfig),
+        Object(TaskDependencyConfig),
     }
 );
 
 impl TaskDependency {
     pub fn into_config(self) -> TaskDependencyConfig {
         match self {
-            Self::Config(config) => config,
+            Self::Object(config) => config,
             Self::Target(target) => TaskDependencyConfig::new(target),
         }
     }
@@ -190,10 +188,12 @@ config_struct!(
     #[derive(Config)]
     pub struct TaskConfig {
         /// Extends settings from a sibling task by identifier.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<Id>,
 
         /// A human-readable description about the task.
         /// @since 1.22.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
         /// The command line to execute when the task is ran.
@@ -211,10 +211,12 @@ config_struct!(
         /// before this task is ran. Can depend on sibling tasks, or tasks in
         /// other projects, using targets.
         #[setting(nested, validate = validate_deps, alias = "dependsOn")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub deps: Option<Vec<TaskDependency>>,
 
         /// A map of environment variables that will be set in the child
         /// process when the task is ran.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub env: Option<EnvMap>,
 
         /// Internal only. Inputs defined through task inheritance.
@@ -229,10 +231,12 @@ config_struct!(
         /// When not provided, all files within the project are considered inputs.
         /// When an empty list, no files are considered. Otherwise, an
         /// explicit list of inputs are considered.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub inputs: Option<Vec<Input>>,
 
         /// A list of outputs that will be created when the task has successfully ran.
         /// An output can be a literal file path, or a glob pattern.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub outputs: Option<Vec<Output>>,
 
         /// Options to control task inheritance, execution, and more.
@@ -240,22 +244,26 @@ config_struct!(
         pub options: TaskOptionsConfig,
 
         /// The preset to apply for the task. Will inherit default options.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub preset: Option<TaskPreset>,
 
         /// A script to run within a shell. A script is anything from a single command,
         /// to multiple commands, or shell specific syntax. Does not support
         /// arguments, merging, or inheritance. This overrides `command` and `args`.
         /// @since 1.27.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub script: Option<String>,
 
         /// A toolchain, or list of toolchains, in which the task will inherit
         /// functionality from.
         #[setting(alias = "toolchain")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub toolchains: Option<OneOrMany<Id>>,
 
         /// The type of task, primarily used for categorical reasons. When not provided,
         /// will be automatically determined based on configured outputs.
         #[setting(rename = "type")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub type_of: Option<TaskType>,
     }
 );

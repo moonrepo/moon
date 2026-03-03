@@ -1,6 +1,42 @@
 # Changelog
 
-## Unreleased
+## 2.0.3
+
+This is a re-release as the v2.0.0 release workflow failed.
+
+## 2.0.2
+
+#### 🚀 Updates
+
+- Temporarily disabled shallow checkouts triggering a hard error in CI until we can implement a
+  better solution. This means that if you have a shallow checkout, you may see incorrect affected
+  results, or Git commands may fail.
+- Added more logs to `moon docker prune` to help debug edge cases.
+- Added `MOON_INCLUDE_RELATIONS` environment variable support for the `--include-relations` CLI
+  option.
+- Added `.env` and `.env.*` as defaults to the `hasher.ignoreMissingPatterns` setting.
+
+#### 🐞 Fixes
+
+- Fixed an issue where the graph visualizers would not render correctly in the VS Code extension.
+- Fixed an issue where a task with `shell: false` would be force enabled when a glob/env was
+  detected. We now respect the configured value.
+- Fixed an issue where "run" type based tasks would not run in CI.
+
+## 2.0.1
+
+#### 🚀 Updates
+
+- Updated `moon upgrade` to upgrade via proto if we detect that moon is managed by proto. This will
+  run `proto install moon latest`.
+
+#### 🐞 Fixes
+
+- Fixed some WASM serialization errors.
+- Fixed the `moon upgrade` command not handling the new v2 distribution format correctly. If you are
+  on moon v2.0.0, the upgrade command will still be broken until you upgrade to this patch.
+
+## 2.0.0
 
 #### 💥 Breaking
 
@@ -8,7 +44,9 @@ View the [migration guide](https://moonrepo.dev/docs/migrate/2.0) for a full lis
 changes and how to easily migrate!
 
 - Renamed "touched files" to "changed files".
+
 - **CLI**
+  - Removed canary and nightly releases.
   - Removed commands: `moon node`, `moon migrate from-package-json`, `moon query hash`,
     `moon query hash-diff`
   - Renamed all options and flags to kebab-case instead of camelCase.
@@ -18,6 +56,9 @@ changes and how to easily migrate!
 - **Configuration**
   - Renamed, removed, or changed _many_ settings. Refer to the migration guide for details.
   - Renamed `.moon/toolchain.yml` to `.moon/toolchains.yml` (plural).
+- **MCP**
+  - Updated protocol version to 2025-11-25.
+  - Updated `get_projects` and `get_tasks` to return fragments, to reduce the payload size.
 - **Projects**
   - Reworked how the `language` is detected.
   - Flattened `project` metadata structure.
@@ -70,6 +111,7 @@ features, improvements, and much more!
     overflow issues.
 - **Configuration**
   - Added support for more formats: JSON, TOML, and HCL.
+  - Improved error messages for union based settings.
   - `.moon/extensions.*`
     - New file for configuring extensions (formerly in `workspace.extensions`).
   - `.moon/tasks.*`
@@ -92,10 +134,15 @@ features, improvements, and much more!
   - Added support for new plugin APIs: `define_extension_config`, `extend_command`,
     `extend_project_graph`, `extend_task_command`, `extend_task_script`, `sync_project`, and
     `sync_workspace`.
+- **MCP**
+  - Added a `generate` tool for running the code generator.
 - **Projects**
   - Added a default project concept.
   - Added path based IDs instead of dir name IDs.
   - Updated projects to support multiple aliases (one from each applicable toolchain).
+- **Remote cache**
+  - Stabilized all settings.
+  - Enabled gzip/zstd compression for HTTP requests.
 - **Tasks**
   - Added deep merging support for task inheritance.
   - Updated `command` and `args` with better syntax parsing and error handling.
@@ -154,10 +201,13 @@ features, improvements, and much more!
 - Fixed an issue where running a task that triggers a system/moon error wouldn't output the error
   message. This also aborts the action pipeline correctly now.
 - Fixed an issue where errors during project graph building would not be reported correctly.
+- Fixed an issue where a negated glob in a file group would not expand properly when used as an
+  argument.
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.54.1](https://github.com/moonrepo/proto/releases/tag/v0.54.0) (from 0.53.2).
+- Updated proto to [v0.55.2](https://github.com/moonrepo/proto/releases/tag/v0.55.0) from 0.53.2
+  (view [v0.54](https://github.com/moonrepo/proto/releases/tag/v0.54.0) changes).
 - Updated wasmtime to v37.
-- Updated Rust to v1.92.0.
+- Updated Rust to v1.93.0.
 - Updated dependencies.

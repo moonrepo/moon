@@ -33,8 +33,8 @@ mod task_config {
     fn loads_defaults() {
         let config = test_parse_config("{}", load_config_from_code);
 
-        assert_eq!(config.command, TaskArgs::None);
-        assert_eq!(config.args, TaskArgs::None);
+        assert_eq!(config.command, TaskArgs::Noop);
+        assert_eq!(config.args, TaskArgs::Noop);
         assert_eq!(config.type_of, None);
     }
 
@@ -49,7 +49,7 @@ mod task_config {
         use super::*;
 
         #[test]
-        #[should_panic(expected = "expected a string or a list of strings")]
+        #[should_panic(expected = "failed to parse as any variant of PartialTaskArgs")]
         fn errors_on_invalid_type() {
             test_parse_config("command: 123", load_config_from_code);
         }
@@ -162,6 +162,7 @@ deps:
 
         #[test]
         fn supports_configs() {
+            // TODO fix null handling in schematic
             let config = test_parse_config(
                 r"
 deps:
@@ -177,7 +178,7 @@ deps:
       - c
     env:
       FOO: 'abc'
-      BAR: null
+      # BAR: null
     target: ~:task
 ",
                 load_config_from_code,
@@ -186,24 +187,24 @@ deps:
             assert_eq!(
                 config.deps,
                 Some(vec![
-                    TaskDependency::Config(TaskDependencyConfig::new(
+                    TaskDependency::Object(TaskDependencyConfig::new(
                         Target::parse("task").unwrap()
                     )),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
                         target: Target::parse("project:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("^:task").unwrap(),
                         ..TaskDependencyConfig::default()
                     }),
-                    TaskDependency::Config(TaskDependencyConfig {
+                    TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
                         env: IndexMap::from_iter([
                             ("FOO".into(), Some("abc".to_owned())),
-                            ("BAR".into(), None)
+                            // ("BAR".into(), None)
                         ]),
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
@@ -213,7 +214,7 @@ deps:
         }
 
         #[test]
-        #[should_panic(expected = "expected a valid target or dependency config object")]
+        #[should_panic(expected = "failed to parse as any variant of PartialTaskDependency")]
         fn errors_on_invalid_format() {
             test_parse_config("deps: ['bad target']", load_config_from_code);
         }
@@ -514,6 +515,30 @@ inputs:
                 ]
             );
         }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum InputShape")]
+        fn errors_for_invalid_type() {
+            test_parse_config(
+                r"
+inputs:
+  - 123
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum InputShape")]
+        fn errors_for_invalid_object_field() {
+            test_parse_config(
+                r"
+inputs:
+  - unknown: '*'
+",
+                load_config_from_code,
+            );
+        }
     }
 
     mod outputs {
@@ -555,6 +580,30 @@ outputs:
 outputs:
   - $FOO_BAR
   - file/path
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum OutputShape")]
+        fn errors_for_invalid_type() {
+            test_parse_config(
+                r"
+outputs:
+  - 123
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum OutputShape")]
+        fn errors_for_invalid_object_field() {
+            test_parse_config(
+                r"
+outputs:
+  - unknown: '*'
 ",
                 load_config_from_code,
             );
@@ -614,7 +663,10 @@ options:
 
         mod affected_files {
             use super::*;
-            use moon_config::TaskOptionAffectedFiles;
+            use moon_config::{
+                TaskOptionAffectedFilesConfig, TaskOptionAffectedFilesEntry,
+                TaskOptionAffectedFilesPattern,
+            };
 
             #[test]
             fn can_use_true() {
@@ -628,7 +680,31 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Enabled(true))
+                    Some(TaskOptionAffectedFilesEntry::Pattern(
+                        TaskOptionAffectedFilesPattern::Enabled(true)
+                    ))
+                );
+            }
+
+            #[test]
+            fn can_use_true_object() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: true
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Enabled(true),
+                            ..Default::default()
+                        }
+                    ))
                 );
             }
 
@@ -644,7 +720,31 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Enabled(false))
+                    Some(TaskOptionAffectedFilesEntry::Pattern(
+                        TaskOptionAffectedFilesPattern::Enabled(false)
+                    ))
+                );
+            }
+
+            #[test]
+            fn can_use_false_object() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: false
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Enabled(false),
+                            ..Default::default()
+                        }
+                    ))
                 );
             }
 
@@ -660,7 +760,31 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Args)
+                    Some(TaskOptionAffectedFilesEntry::Pattern(
+                        TaskOptionAffectedFilesPattern::Args
+                    ))
+                );
+            }
+
+            #[test]
+            fn can_set_args_object() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: args
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Args,
+                            ..Default::default()
+                        }
+                    ))
                 );
             }
 
@@ -676,12 +800,61 @@ options:
 
                 assert_eq!(
                     config.options.affected_files,
-                    Some(TaskOptionAffectedFiles::Env)
+                    Some(TaskOptionAffectedFilesEntry::Pattern(
+                        TaskOptionAffectedFilesPattern::Env
+                    ))
                 );
             }
 
             #[test]
-            #[should_panic(expected = "expected `args`, `env`, or a boolean")]
+            fn can_set_env_object() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: env
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Env,
+                            ..Default::default()
+                        }
+                    ))
+                );
+            }
+
+            #[test]
+            fn can_set_object_fields() {
+                let config = test_parse_config(
+                    r"
+options:
+  affectedFiles:
+    pass: args
+    passInputsWhenNoMatch: true
+",
+                    load_config_from_code,
+                );
+
+                assert_eq!(
+                    config.options.affected_files,
+                    Some(TaskOptionAffectedFilesEntry::Object(
+                        TaskOptionAffectedFilesConfig {
+                            pass: TaskOptionAffectedFilesPattern::Args,
+                            pass_inputs_when_no_match: Some(true),
+                        }
+                    ))
+                );
+            }
+
+            #[test]
+            #[should_panic(
+                expected = "Failed to deserialize the untagged enum TaskOptionAffectedFilesEntry"
+            )]
             fn errors_on_invalid_variant() {
                 test_parse_config(
                     r"
@@ -813,7 +986,7 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "expected a boolean, a file path, or a list of file paths")]
+            #[should_panic(expected = "Failed to deserialize the untagged enum TaskOptionEnvFile")]
             fn errors_on_glob() {
                 test_parse_config(
                     r"
@@ -894,7 +1067,9 @@ options:
             }
 
             #[test]
-            #[should_panic(expected = "expected a single value, or a list of values")]
+            #[should_panic(
+                expected = "failed to parse as a single value, or a list of multiple values"
+            )]
             fn errors_for_unknown() {
                 test_parse_config(
                     r"

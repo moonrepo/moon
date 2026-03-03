@@ -96,10 +96,7 @@ config_struct!(
 config_enum!(
     /// Configures projects in the workspace.
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a list of globs, a map of projects, or both"
-    )]
+    #[serde(untagged)]
     pub enum WorkspaceProjects {
         /// Using both glob patterns and file source paths.
         #[setting(nested)]
@@ -134,6 +131,7 @@ config_struct!(
         /// The default/main project within the workspace. When a task is
         /// ran without a project, the default will be used.
         /// @since 2.0.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub default_project: Option<Id>,
 
         /// Configures Docker integration for the workspace.
@@ -150,6 +148,7 @@ config_struct!(
         /// Supports a relative file path or a secure URL.
         /// @since 1.12.0
         #[setting(extend, validate = validate::extends_from)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
 
         /// Configures the generator for scaffolding from templates.
@@ -188,6 +187,7 @@ config_struct!(
         pub vcs: VcsConfig,
 
         /// Requires a specific version of the `moon` binary.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub version_constraint: Option<VersionReq>,
     }
 );

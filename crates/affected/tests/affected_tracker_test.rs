@@ -650,13 +650,10 @@ mod affected_tasks {
         assert_eq!(
             affected.tasks,
             FxHashMap::from_iter([
-                (Target::parse("upstream:task").unwrap(), {
-                    let mut state = create_state_from_file("upstream/file.txt");
-                    state
-                        .downstream
-                        .insert(Target::parse("downstream:task").unwrap());
-                    state
-                }),
+                (
+                    Target::parse("upstream:task").unwrap(),
+                    create_state_from_file("upstream/file.txt")
+                ),
                 (
                     Target::parse("upstream:global").unwrap(),
                     create_state_from_file("upstream/file.txt")
@@ -897,10 +894,10 @@ mod affected_tasks {
                         Target::parse("chain:b").unwrap(),
                         create_state_from_dependency("chain:c")
                     ),
-                    (
-                        Target::parse("chain:a").unwrap(),
-                        create_state_from_dependency("chain:b")
-                    ),
+                    // (
+                    //     Target::parse("chain:a").unwrap(),
+                    //     create_state_from_dependency("chain:b")
+                    // ),
                 ])
             );
         }

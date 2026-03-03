@@ -28,6 +28,16 @@ pub enum DownstreamScope {
     Deep,
 }
 
+impl DownstreamScope {
+    pub fn is_in_scope(&self, depth: u8) -> bool {
+        match self {
+            Self::None => false,
+            Self::Direct => depth == 0,
+            Self::Deep => true,
+        }
+    }
+}
+
 impl fmt::Display for DownstreamScope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(
@@ -49,6 +59,16 @@ pub enum UpstreamScope {
     None,
     Direct,
     Deep,
+}
+
+impl UpstreamScope {
+    pub fn is_in_scope(&self, depth: u8) -> bool {
+        match self {
+            Self::None => false,
+            Self::Direct => depth == 0,
+            Self::Deep => true,
+        }
+    }
 }
 
 impl fmt::Display for UpstreamScope {

@@ -1,0 +1,3 @@
+tasks:
+  debug:
+    command: 'exit 0'

@@ -15,7 +15,7 @@ config_enum!(
         Disabled, // null
         Enabled(bool),
         #[setting(nested)]
-        Config(ToolchainPluginConfig),
+        Object(ToolchainPluginConfig),
     }
 );
 
@@ -24,13 +24,13 @@ impl ProjectToolchainEntry {
         match self {
             Self::Disabled => false,
             Self::Enabled(state) => *state,
-            Self::Config(_) => true,
+            Self::Object(_) => true,
         }
     }
 
     pub fn get_version(&self) -> Option<&UnresolvedVersionSpec> {
         match self {
-            Self::Config(config) => config.version.as_ref(),
+            Self::Object(config) => config.version.as_ref(),
             _ => None,
         }
     }
@@ -45,6 +45,7 @@ config_struct!(
         /// this project and all of its tasks.
         /// @since 1.31.0
         #[setting(alias = "defaults")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub default: Option<OneOrMany<Id>>,
 
         /// Overrides workspace-level toolchains by their identifier.
@@ -68,15 +69,18 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectWorkspaceInheritedTasksConfig {
         /// Excludes inheriting tasks by their identifier.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub exclude: Vec<Id>,
 
         /// Only inherits tasks with the provided identifiers,
         /// and ignores the rest. When not defined, inherits
         /// all matching tasks. When an empty list, inherits no tasks.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub include: Option<Vec<Id>>,
 
         /// Renames inherited tasks by mapping their existing
         /// identifier to a new identifier, scoped to this project.
+        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub rename: FxHashMap<Id, Id>,
     }
 );

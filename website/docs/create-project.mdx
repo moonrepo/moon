@@ -11,15 +11,15 @@ import LangPartials from '@site/src/components/LangPartials';
 <HeaderLabel text="3 min" />
 
 With a [workspace](./setup-workspace), we can now house one or many [projects](./concepts/project),
-with a project being an application, library, or tool. In the end, each project will have its own
+with a project being an application, library, or more. In the end, each project will have its own
 build layer, personal tasks, and custom configuration.
 
 ## Declaring a project in the workspace
 
 Although a project may exist in your repository, it's not accessible from moon until it's been
 mapped in the [`projects`](./config/workspace#projects) setting found in
-[`.moon/workspace.yml`](./config/workspace). When mapping a project, we require a unique name for
-the project, and a project source location (path relative from the workspace root).
+[`.moon/workspace.*`](./config/workspace). When mapping a project, we require a unique name for the
+project, and a project source location (path relative from the workspace root).
 
 Let's say we have a frontend web application called "client", and a backend application called
 "server", our `projects` setting would look like the following.
@@ -45,11 +45,11 @@ to not manually curate the projects list!
 
 A project can be configured in 1 of 2 ways:
 
-- Through the [`.moon/tasks/all.yml`](./config/tasks) config file, which defines file groups and
-  tasks that are inherited by _all_ projects within the workspace. Perfect for standardizing common
+- Through the [`.moon/tasks/**/*`](./config/tasks) config files, which defines file groups and tasks
+  that are inherited by _matching_ projects within the workspace. Perfect for standardizing common
   tasks like linting, typechecking, and code formatting.
-- Through the [`moon.yml`](./config/project) config file, found at the root of each project, which
-  defines files groups, tasks, dependencies, and more that are unique to that project.
+- Through the [`<project>/moon.*`](./config/project) config file, found at the root of each project,
+  which defines files groups, tasks, dependencies, and more that are unique to that project.
 
 Both config files are optional, and can be used separately or together, the choice is yours!
 
@@ -113,8 +113,7 @@ tasks:
 
 When utilizing moon in a large monorepo or organization, ownership becomes very important, but also
 difficult to maintain. To combat this problem, moon supports the
-[`project`](./config/project#project) field within a project's [`moon.yml`](./config/project)
-config.
+[`project`](./config/project#project) field within a project's [`moon.*`](./config/project) config.
 
 This field is _optional_ by default, but when defined it provides metadata about the project,
 specifically around team ownership, which developers maintain the project, where to discuss it, and
@@ -145,7 +144,7 @@ project:
       icon: 'workspace-config',
       label: (
         <span>
-          Configure <code>.moon/workspace.yml</code> further
+          Configure <code>.moon/workspace.*</code> further
         </span>
       ),
       url: './config/workspace',
@@ -154,7 +153,7 @@ project:
       icon: 'project-config-global',
       label: (
         <span>
-          Configure <code>.moon/tasks/all.yml</code> further
+          Configure <code>.moon/tasks/**/*</code> further
         </span>
       ),
       url: './config/tasks',
@@ -163,7 +162,7 @@ project:
       icon: 'project-config',
       label: (
         <span>
-          Configure <code>moon.yml</code> further
+          Configure <code>moon.*</code> further
         </span>
       ),
       url: './config/project',

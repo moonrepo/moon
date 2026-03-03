@@ -1,4 +1,4 @@
-use crate::{config_enum, config_struct};
+use crate::{config_enum, config_struct, is_false};
 use schematic::{Config, validate};
 
 config_struct!(
@@ -10,12 +10,15 @@ config_struct!(
         pub bin: String,
 
         /// Force install the binary if it already exists.
+        #[serde(default, skip_serializing_if = "is_false")]
         pub force: bool,
 
         /// Only install the binary locally, and not within CI.
+        #[serde(default, skip_serializing_if = "is_false")]
         pub local: bool,
 
         /// For supported tools, a custom name to use.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
     }
 );
@@ -23,22 +26,22 @@ config_struct!(
 config_enum!(
     /// Configures to a tool-specific global binary to install.
     #[derive(Config)]
-    #[serde(untagged, expecting = "expecting a bin name, or bin config object")]
+    #[serde(untagged)]
     pub enum BinEntry {
         /// Name of the binary to install.
-        Name(String),
+        String(String),
 
         /// Expanded configuration for the binary to install.
         #[setting(nested)]
-        Config(BinConfig),
+        Object(BinConfig),
     }
 );
 
 impl BinEntry {
     pub fn get_name(&self) -> &str {
         match self {
-            BinEntry::Name(name) => name,
-            BinEntry::Config(cfg) => &cfg.bin,
+            BinEntry::String(name) => name,
+            BinEntry::Object(cfg) => &cfg.bin,
         }
     }
 }

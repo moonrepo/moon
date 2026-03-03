@@ -12,10 +12,20 @@ pub struct QueryAffectedArgs {
     #[arg(help = "Conditions in which to track affected")]
     by: Option<AffectedOption>,
 
-    #[arg(long, default_value_t, help = "Include downstream dependents")]
+    #[arg(
+        long,
+        default_value_t,
+        visible_alias = "dependents",
+        help = "Include downstream dependents"
+    )]
     downstream: DownstreamScope,
 
-    #[arg(long, default_value_t, help = "Include upstream dependencies")]
+    #[arg(
+        long,
+        default_value_t,
+        visible_alias = "dependencies",
+        help = "Include upstream dependencies"
+    )]
     upstream: UpstreamScope,
 }
 

@@ -14,6 +14,7 @@ config_struct!(
 
         /// Enforces relationships between projects based on each project's
         /// `tags` setting. Requires a mapping of tags, to acceptable tags.
+        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub tag_relationships: FxHashMap<Id, Vec<Id>>,
     }
 );

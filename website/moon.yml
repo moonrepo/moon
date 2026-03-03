@@ -7,12 +7,6 @@ project:
   title: 'Website'
   description: 'A static website powered by Docusaurus.'
 
-dependsOn:
-  - id: 'runtime'
-    scope: 'development'
-  - id: 'types'
-    scope: 'development'
-
 tasks:
   build:
     description: 'Builds the Docusaurus app.'

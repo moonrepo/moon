@@ -175,6 +175,16 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
             quote! {
                 #[arg(
                     long,
+                    short = 'g',
+                    env = "MOON_INCLUDE_RELATIONS",
+                    help = "Include graph relations for affected checks, instead of just changed files",
+                    help_heading = super::HEADING_AFFECTED,
+                )]
+                pub include_relations: bool
+            },
+            quote! {
+                #[arg(
+                    long,
                     help = "Filter changed files based on a changed status",
                     help_heading = super::HEADING_AFFECTED,
                 )]
@@ -220,6 +230,17 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
                     requires = "affected-args",
                 )]
                 pub head: Option<String>
+            },
+            quote! {
+                #[arg(
+                    long,
+                    short = 'g',
+                    env = "MOON_INCLUDE_RELATIONS",
+                    help = "Include graph relations for affected checks, instead of just changed files",
+                    help_heading = super::HEADING_AFFECTED,
+                    requires = "affected-args",
+                )]
+                pub include_relations: bool
             },
             quote! {
                 #[arg(

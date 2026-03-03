@@ -498,6 +498,21 @@ mod task_runner {
             use std::time::Duration;
 
             #[tokio::test(flavor = "multi_thread")]
+            async fn returns_if_no_previous_run_time() {
+                let container = TaskRunnerContainer::new("runner", "cache-lifetime").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.last_run_time = 0;
+
+                assert_eq!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn returns_if_within_the_ttl() {
                 let container = TaskRunnerContainer::new("runner", "cache-lifetime").await;
                 let mut runner = container.create_runner();

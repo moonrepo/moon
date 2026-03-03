@@ -46,6 +46,8 @@ impl HttpRemoteClient {
     fn create_client(&self, workspace_root: &Path, headers: HeaderMap) -> miette::Result<Client> {
         let mut client = Client::builder()
             .user_agent("moon")
+            .gzip(true)
+            .zstd(true)
             .tcp_keepalive(Duration::from_secs(60))
             .default_headers(headers);
 

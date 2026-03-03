@@ -8,9 +8,21 @@ tasks:
       internal: true
 
   willFail:
-    command: exit 1
+    command: 'exit 1'
 
   willFailButAllowed:
-    command: exit 1
+    command: 'exit 1'
     options:
       allowFailure: true
+
+  buildType:
+    command: 'exit 0'
+    type: 'build'
+
+  testType:
+    command: 'exit 0'
+    type: 'test'
+
+  runType:
+    command: 'exit 0'
+    type: 'run'

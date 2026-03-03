@@ -8,10 +8,10 @@ Unlike other task runners that require the same tasks to be repeatedly defined f
 moon uses an inheritance model where tasks can be defined once at the workspace-level, and are then
 inherited by _many or all_ projects.
 
-Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks/**/*.yml`][tasks],
-and are inherited by based on conditions. However, projects are able to include, exclude, or rename
+Workspace-level tasks (also known as global tasks) are defined in [`.moon/tasks/**/*`][tasks], and
+are inherited by based on conditions. However, projects are able to include, exclude, or rename
 inherited tasks using the [`workspace.inheritedTasks`](../config/project#inheritedtasks) in
-[`moon.yml`](../config/project).
+[`moon.*`](../config/project).
 
 ## Conditional inheritance
 
@@ -22,7 +22,7 @@ are defined, the configuration is inherited by _all_ projects.
 
 The following conditions are supported:
 
-- `file`, `files` - Inherit for projects that contain specific files.
+- `file`, `files` - Inherit for projects that contain specific files (does not support globs).
 - `language`, `languages` - Inherit for projects that belong to specific
   [`language`](../config/project#language)s.
 - `layer`, `layers` - Inherit for projects that belong to specific

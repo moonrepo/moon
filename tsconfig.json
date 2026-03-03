@@ -6,9 +6,6 @@
       "path": "packages/report"
     },
     {
-      "path": "packages/runtime"
-    },
-    {
       "path": "packages/types"
     },
     {

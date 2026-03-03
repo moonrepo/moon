@@ -10,7 +10,7 @@ especially when coupled with our [built-in continuous integration support](./ci)
 However, a pain point with moon is that it has an explicitly configured version for each tool in the
 [toolchain](../concepts/toolchain), but open source projects typically need to run checks against
 multiple versions! To mitigate this problem, you can set the matrix value as an environment
-variable, in the format of `MOON_<TOOL>_VERSION`.
+variable, in the format of `MOON_<TOOLCHAIN>_VERSION`.
 
 ```yaml title=".github/workflows/ci.yml"
 name: 'Pipeline'
@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: ['ubuntu-latest', 'windows-latest']
-        node-version: [16, 18, 20]
+        node-version: [20, 22, 24]
     steps:
       # Checkout repository
       - uses: 'actions/checkout@v4'

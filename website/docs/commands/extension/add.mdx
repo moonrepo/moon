@@ -8,7 +8,7 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 <VersionLabel version="2.0.0" header />
 
 The `moon extension add <id> [plugin]` command will add a extension to the workspace by injecting a
-configuration block into `.moon/extensions.yml`. To do this, the command will download the WASM
+configuration block into `.moon/extensions.*`. To do this, the command will download the WASM
 plugin, extract information, and call initialize functions.
 
 For built-in extensions, the [plugin locator][locator] argument is optional, and will be derived

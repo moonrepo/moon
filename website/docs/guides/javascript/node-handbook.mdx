@@ -25,29 +25,24 @@ explicitly configured. We follow this approach to avoid unnecessary overhead.
 ### Enabling the language
 
 To enable JavaScript support via Node.js, define the [`node`](../../config/toolchain#node) setting
-in [`.moon/toolchains.yml`](../../config/toolchain), even if an empty object.
+in [`.moon/toolchains.*`](../../config/toolchain), even if an empty object. The
+[`javascript`](../../config/toolchain#javascript) toolchain must also be enabled, and configured to
+use Bun as the package manager.
 
 ```yaml title=".moon/toolchains.yml"
-# Enable Node.js
-node: {}
-
-# Enable Node.js and override default settings
-node:
+# Enable JavaScript
+javascript:
   packageManager: 'pnpm'
+
+# Enable Node.js and pnpm
+node: {}
+pnpm: {}
 ```
-
-:::info
-
-In moon v1.40+, use `javascript` and `node` instead of `node` to enable the new WASM powered Node.js
-toolchain, which is far more accurate and efficient. The non-WASM toolchain will be deprecated in
-the future.
-
-:::
 
 Or by pinning a `node` version in [`.prototools`](../../proto/config) in the workspace root.
 
 ```toml title=".prototools"
-node = "18.0.0"
+node = "24.0.0"
 pnpm = "7.29.0"
 ```
 
@@ -90,11 +85,11 @@ node:
 
 If you're looking to prototype moon, or reduce the migration effort to moon tasks, you can configure
 moon to inherit `package.json` scripts, and internally convert them to moon tasks. This can be
-achieved with the [`node.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
+achieved with the [`javascript.inferTasksFromScripts`](../../config/toolchain#infertasksfromscripts)
 setting.
 
 ```yaml title=".moon/toolchains.yml"
-node:
+javascript:
   inferTasksFromScripts: true
 ```
 
@@ -161,7 +156,7 @@ and its own encapsulated code. They represent the whole, while packages are the 
 can import and depend on packages, but they _must not_ import and depend on other applications.
 
 In moon, you can denote a project as an application using the [`layer`](../../config/project#layer)
-setting in [`moon.yml`](../../config/project).
+setting in [`moon.*`](../../config/project).
 
 ```yaml title="moon.yml"
 layer: 'application'
@@ -174,7 +169,7 @@ suggested pattern for [code sharing](#code-sharing). Packages can import and dep
 packages, but they _must not_ import and depend on applications!
 
 In moon, you can denote a project as a library using the [`layer`](../../config/project#layer)
-setting in [`moon.yml`](../../config/project).
+setting in [`moon.*`](../../config/project).
 
 ```yaml title="moon.yml"
 layer: 'library'
@@ -219,7 +214,7 @@ import PackageWorkspaces from '../../__partials__/node/package-workspaces.mdx';
 
 <PackageWorkspaces />
 
-:::caution
+:::info
 
 Package workspaces are not a requirement for monorepos, but they do solve an array of problems
 around module resolution, avoiding duplicate packages in bundles, and general interoperability.

@@ -3,6 +3,7 @@
 /wasm/*/target
 node_modules/
 bazel-remote
+.venv
 
 # Yarn
 .yarn/*

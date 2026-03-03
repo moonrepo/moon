@@ -1,3 +1,4 @@
+import type { ActionNode } from '@moonrepo/types';
 import cytoscape from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import klay from 'cytoscape-klay';
@@ -5,6 +6,37 @@ import type { GraphInfo } from './types';
 
 cytoscape.use(dagre);
 cytoscape.use(klay);
+
+function getActionLabel(node: ActionNode) {
+	switch (node.action) {
+		case 'sync-workspace':
+			return 'SyncWorkspace';
+
+		case 'sync-project':
+			return `SyncProject(${node.params.projectId})`;
+
+		case 'setup-proto':
+			return `SetupProto(${node.params.version})`;
+
+		case 'setup-environment':
+			return `SetupEnvironment(${node.params.toolchainId}${node.params.root ? `, ${node.params.root}` : ''})`;
+
+		case 'setup-toolchain':
+			return `SetupToolchain(${node.params.toolchain.id}${node.params.toolchain.req ? `:${node.params.toolchain.req}` : ''})`;
+
+		case 'install-dependencies':
+			return `InstallDependencies(${node.params.toolchainId}${node.params.root ? `, ${node.params.root}` : ''})`;
+
+		case 'run-task':
+			if (node.params.persistent) {
+				return `RunPersistentTask(${node.params.target})`;
+			} else if (node.params.interactive) {
+				return `RunInteractiveTask(${node.params.target})`;
+			} else {
+				return `RunTask(${node.params.target})`;
+			}
+	}
+}
 
 function getActionType(label: string) {
 	if (label === 'SyncWorkspace') {
@@ -46,19 +78,57 @@ function getShortDepLabel(label: string) {
 	return label;
 }
 
-export function render(element: HTMLElement, data: GraphInfo, layout: string) {
-	const nodes = data.nodes.map((n) => ({
+function extractNodes(data: GraphInfo) {
+	// v2
+	if ('graph' in data) {
+		return data.graph.nodes.map((node, index) => {
+			let row = { id: String(index), label: '', type: 'unknown' };
+
+			if ('action' in node) {
+				row.label = getActionLabel(node);
+				row.type = node.action;
+			} else if ('target' in node) {
+				row.label = node.target;
+			} else if ('id' in node) {
+				row.label = node.id;
+			}
+
+			return { data: row };
+		});
+	}
+
+	// v1
+	return data.nodes.map((n) => ({
 		data: { id: n.id.toString(), label: n.label, type: getActionType(n.label) },
 	}));
+}
 
-	const edges = data.edges.map((e) => ({
+function extractEdges(data: GraphInfo) {
+	// v2
+	if ('graph' in data) {
+		return data.graph.edges.map((edge) => ({
+			data: {
+				id: `${edge[0]} -> ${edge[1]}`,
+				label: getShortDepLabel(edge[2]),
+				source: String(edge[0]),
+				target: String(edge[1]),
+			},
+		}));
+	}
+
+	return data.edges.map((e) => ({
 		data: {
-			id: e.id.toString(),
+			id: e.id,
 			label: getShortDepLabel(e.label),
-			source: e.source.toString(),
-			target: e.target.toString(),
+			source: String(e.source),
+			target: String(e.target),
 		},
 	}));
+}
+
+export function render(element: HTMLElement, data: GraphInfo, layout: string) {
+	const nodes = extractNodes(data);
+	const edges = extractEdges(data);
 
 	// https://js.cytoscape.org/
 	return cytoscape({

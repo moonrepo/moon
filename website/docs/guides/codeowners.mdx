@@ -20,7 +20,7 @@ upon the popular `CODEOWNERS` integration in VCS providers, like GitHub, GitLab,
 ## Defining owners
 
 With moon, you _do not_ modify a `CODEOWNERS` file directly. Instead you define owners _per project_
-with [`moon.yml`](../config/project), or globally with [`.moon/workspace.yml`](../config/workspace).
+with [`moon.*`](../config/project), or globally with [`.moon/workspace.*`](../config/workspace).
 These owners are then aggregated and automatically
 [synced to a `CODEOWNERS` file](#generating-codeowners).
 
@@ -34,7 +34,7 @@ documentation for the correct format in which to define owners.
 ### Project-level
 
 For projects, we support an [`owners`](../config/project#owners) setting in
-[`moon.yml`](../config/project) that accepts file patterns/paths and their owners (contributors
+[`moon.*`](../config/project) that accepts file patterns/paths and their owners (contributors
 required to review), as well as operational settings for minimum required approvals, custom groups,
 and more.
 
@@ -99,7 +99,7 @@ The configuration above would generate the following:
 Project scoped owners are great but sometimes you need to define owners for files that span across
 all projects, or files at any depth within the repository. With the
 [`codeowners.globalPaths`](../config/workspace#globalpaths) setting in
-[`.moon/workspace.yml`](../config/workspace), you can do just that.
+[`.moon/workspace.*`](../config/workspace), you can do just that.
 
 Paths configured here are used as-is, allowing for full control of what ownership is applied.
 
@@ -170,13 +170,13 @@ $ moon sync codeowners
 While this works, it is a manual process, and can easily be forgotten, resulting in an out-of-date
 file.
 
-An alternative solution is the [`codeowners.syncOnRun`](../config/workspace#synconrun) setting in
-[`.moon/workspace.yml`](../config/workspace#codeowners), that when enabled, moon will automatically
+An alternative solution is the [`codeowners.sync`](../config/workspace#sync) setting in
+[`.moon/workspace.*`](../config/workspace#codeowners), that when enabled, moon will automatically
 generate a `CODEOWNERS` file when a [target](../concepts/target) is ran.
 
 ```yaml title=".moon/workspace.yml"
 codeowners:
-  syncOnRun: true
+  sync: true
 ```
 
 > The format and location of the `CODEOWNERS` file is based on the
@@ -203,7 +203,7 @@ The location of the file is dependent on the configured provider.
 - GitLab -> `.gitlab/CODEOWNERS`
 - Everything else -> `CODEOWNERS`
 
-### Why are owners defined in `moon.yml` and not an alternative like `OWNERS`?
+### Why are owners defined in `moon.*` and not an alternative like `OWNERS`?
 
 A very popular pattern for defining owners is through an `OWNERS` file, which can appear in any
 folder, at any depth, within the repository. All of these files are then aggregated into a single
@@ -211,7 +211,7 @@ folder, at any depth, within the repository. All of these files are then aggrega
 
 While this is useful for viewing ownership of a folder at a glance, it incurs a massive performance
 hit as we'd have to constantly glob the _entire_ repository to find all `OWNERS` files. We found it
-best to define owners in `moon.yml` instead for the following reasons:
+best to define owners in `moon.*` instead for the following reasons:
 
 - No performance hit, as we're already loading and parsing these config files.
 - Co-locates owners with the rest of moon's configuration.

@@ -43,7 +43,7 @@ moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.11.0"
+bytes = "1.11.1"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
     "color",
@@ -72,6 +72,7 @@ schematic = { workspace = true, features = [
 semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }
+starbase_archive = { workspace = true }
 starbase_shell = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true, features = [

@@ -130,7 +130,7 @@ impl<'app> CodeGenerator<'app> {
             ..Default::default()
         };
 
-        yaml::write_file(
+        yaml::write_file_with_config(
             ConfigLoader::default()
                 .get_template_files(&template_root)
                 .remove(0),

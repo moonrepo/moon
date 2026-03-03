@@ -30,6 +30,14 @@ cacheable!(
         // Is task defined in a root-level project
         #[serde(skip_serializing_if = "is_false")]
         pub root_level: bool,
+
+        // The `runInCI` option was configured explicitly
+        #[serde(skip_serializing_if = "is_false")]
+        pub set_run_in_ci: bool,
+
+        // Has shell been explicitly disabled
+        #[serde(skip_serializing_if = "is_false")]
+        pub shell_disabled: bool,
     }
 );
 
@@ -326,14 +334,17 @@ impl Task {
         self.options.persistent
     }
 
-    /// Return true if the task should run in a CI environment.
-    pub fn should_run_in_ci(&self) -> bool {
-        if !self.options.run_in_ci.is_enabled() || self.options.run_in_ci == TaskOptionRunInCI::Skip
-        {
-            return false;
+    /// Return true if the task should run, whether in a CI environment or not.
+    pub fn should_run(&self, in_ci: bool) -> bool {
+        if in_ci {
+            return match self.options.run_in_ci {
+                TaskOptionRunInCI::Skip => false,
+                TaskOptionRunInCI::Enabled(state) => state,
+                _ => true,
+            };
         }
 
-        self.is_build_type() || self.is_test_type()
+        !matches!(self.options.run_in_ci, TaskOptionRunInCI::Only)
     }
 
     /// Convert the task into a fragment.

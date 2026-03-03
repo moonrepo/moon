@@ -150,7 +150,22 @@ impl ConfigLoader {
 
         #[cfg(feature = "proto")]
         {
+            use proto_core::PluginLocator;
+
             result.config.inherit_defaults()?;
+
+            // Resolve plugin file locations
+            for config in result.config.plugins.values_mut() {
+                if let Some(PluginLocator::File(file)) = &mut config.plugin {
+                    let file_path = file.get_unresolved_path();
+
+                    file.path = Some(if file_path.is_absolute() {
+                        file_path
+                    } else {
+                        self.dir.join(file_path)
+                    });
+                }
+            }
         }
 
         Ok(result.config)
@@ -253,7 +268,22 @@ impl ConfigLoader {
 
         #[cfg(feature = "proto")]
         {
+            use proto_core::PluginLocator;
+
             result.config.inherit_defaults(proto_config)?;
+
+            // Resolve plugin file locations
+            for config in result.config.plugins.values_mut() {
+                if let Some(PluginLocator::File(file)) = &mut config.plugin {
+                    let file_path = file.get_unresolved_path();
+
+                    file.path = Some(if file_path.is_absolute() {
+                        file_path
+                    } else {
+                        self.dir.join(file_path)
+                    });
+                }
+            }
         }
 
         Ok(result.config)

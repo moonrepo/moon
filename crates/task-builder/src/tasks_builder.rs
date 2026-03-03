@@ -9,12 +9,15 @@ use moon_common::{
 use moon_config::{
     ConfigLoader, EnvMap, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache, TaskOptionRunInCI, TaskOptionsConfig,
-    TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig, is_glob_like,
+    TaskDependencyConfig, TaskMergeStrategy, TaskOptionAffectedFilesEntry, TaskOptionCache,
+    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
+    ToolchainsConfig, is_glob_like,
 };
 use moon_env_var::contains_env_var;
 use moon_target::Target;
-use moon_task::{Task, TaskArg, TaskOptionEnvFile, TaskOptions};
+use moon_task::{
+    Task, TaskArg, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptions, TaskState,
+};
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -286,6 +289,7 @@ impl<'proj> TasksBuilder<'proj> {
             toolchains: vec![],
             ..Default::default()
         };
+        let mut state = TaskState::default();
 
         // Determine command and args before building options and the task,
         // as we need to figure out if we're running in local mode or not.
@@ -325,9 +329,9 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         task.preset = preset;
-        task.options = self.build_task_options(id, preset)?;
-        task.state.root_level = is_root_level_source(self.project_source);
+        task.options = self.build_task_options(id, preset, &mut state)?;
         task.env = self.inherit_project_env(&target)?;
+        state.root_level = is_root_level_source(self.project_source);
 
         // Aggregate all values that are inherited from the global task configs,
         // and should always be included in the task, regardless of merge strategy.
@@ -446,14 +450,14 @@ impl<'proj> TasksBuilder<'proj> {
                     "Task has explicitly disabled inputs",
                 );
 
-                task.state.empty_inputs = true;
-            } else if self.context.monorepo && task.state.root_level {
+                state.empty_inputs = true;
+            } else if self.context.monorepo && state.root_level {
                 trace!(
                     task_target = target.as_str(),
                     "Task is a root-level project in a monorepo, defaulting to no inputs",
                 );
 
-                task.state.empty_inputs = true;
+                state.empty_inputs = true;
             } else {
                 trace!(
                     task_target = target.as_str(),
@@ -462,7 +466,7 @@ impl<'proj> TasksBuilder<'proj> {
                 );
 
                 task.inputs.push(Input::parse("**/*").unwrap());
-                task.state.default_inputs = true;
+                state.default_inputs = true;
             }
         } else if configured_inputs == 1
             && task
@@ -470,12 +474,11 @@ impl<'proj> TasksBuilder<'proj> {
                 .first()
                 .is_some_and(|first| first.as_str() == "**/*")
         {
-            task.state.default_inputs = true;
+            state.default_inputs = true;
         }
 
         // If a script, wipe out inherited arguments, and extract the first command
         if let Some(script) = &task.script {
-            requires_shell = true;
             task.args.clear();
 
             if let Some(i) = script.find(' ') {
@@ -483,6 +486,11 @@ impl<'proj> TasksBuilder<'proj> {
             } else {
                 task.command = TaskArg::new(script);
             }
+
+            trace!(
+                task_target = target.as_str(),
+                "Task has defined a shell script, wrapping in a shell as its required",
+            );
         }
 
         // And lastly, before we return the task and options, we should finalize
@@ -524,43 +532,38 @@ impl<'proj> TasksBuilder<'proj> {
             };
         }
 
-        // if task.options.shell.is_none() {
-        //     // Windows requires a shell for path resolution to work correctly
-        //     if cfg!(windows) || task.is_system_toolchain() || task.script.is_some() {
-        //         requires_shell = true;
-        //     }
-        // }
-
-        if task.script.is_some() && task.options.shell.is_none() {
-            trace!(
-                task_target = target.as_str(),
-                "Task has defined a shell script, wrapping in a shell as its required",
-            );
-
-            requires_shell = true;
+        if !state.set_run_in_ci {
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(matches!(
+                task.type_of,
+                TaskType::Build | TaskType::Test
+            ));
         }
 
-        // If an arg contains a glob, we must run in a shell for expansion to work
-        if task.args.iter().any(|arg| is_glob_like(arg)) {
-            trace!(
-                task_target = target.as_str(),
-                "Task has a glob-like argument, wrapping in a shell so glob expansion works",
-            );
+        if state.shell_disabled {
+            requires_shell = false;
+        } else {
+            // If an arg contains a glob, we must run in a shell for expansion to work
+            if task.args.iter().any(|arg| is_glob_like(arg)) {
+                trace!(
+                    task_target = target.as_str(),
+                    "Task has a glob-like argument, wrapping in a shell so glob expansion works",
+                );
 
-            requires_shell = true;
+                requires_shell = true;
+            }
+
+            // If an arg contains an env var, we must run in a shell for substitution to work
+            if contains_env_var(&task.command) || task.args.iter().any(contains_env_var) {
+                trace!(
+                    task_target = target.as_str(),
+                    "Task references an environment variable, wrapping in a shell so substitution works",
+                );
+
+                requires_shell = true;
+            }
         }
 
-        // If an arg contains an env var, we must run in a shell for substitution to work
-        if contains_env_var(&task.command) || task.args.iter().any(contains_env_var) {
-            trace!(
-                task_target = target.as_str(),
-                "Task references an environment variable, wrapping in a shell so substitution works",
-            );
-
-            requires_shell = true;
-        }
-
-        if requires_shell {
+        if requires_shell || task.script.is_some() {
             task.options.shell = Some(true);
         }
 
@@ -582,6 +585,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         task.id = id.to_owned();
         task.target = target;
+        task.state = state;
 
         self.resolve_task_inputs(&mut task)?;
         self.resolve_task_toolchains(&mut task).await?;
@@ -593,8 +597,9 @@ impl<'proj> TasksBuilder<'proj> {
         &self,
         id: &Id,
         preset: Option<TaskPreset>,
+        state: &mut TaskState,
     ) -> miette::Result<TaskOptions> {
-        let mut options = self.get_task_options_from_preset(preset);
+        let mut options = self.get_task_options_from_preset(preset, state);
         let mut chain = self.global_task_options.clone();
 
         chain.extend(
@@ -606,11 +611,20 @@ impl<'proj> TasksBuilder<'proj> {
 
         for config in chain {
             if let Some(affected_files) = &config.affected_files {
-                options.affected_files = Some(affected_files.to_owned());
-            }
+                let mut option = TaskOptionAffectedFiles::default();
 
-            if let Some(affected_pass_inputs) = &config.affected_pass_inputs {
-                options.affected_pass_inputs = *affected_pass_inputs;
+                match affected_files {
+                    TaskOptionAffectedFilesEntry::Pattern(pat) => {
+                        option.pass = pat.to_owned();
+                    }
+                    TaskOptionAffectedFilesEntry::Object(opt) => {
+                        option.pass = opt.pass.clone();
+                        option.pass_inputs_when_no_match =
+                            opt.pass_inputs_when_no_match.unwrap_or_default();
+                    }
+                };
+
+                options.affected_files = Some(option);
             }
 
             if let Some(allow_failure) = &config.allow_failure {
@@ -708,6 +722,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(run_in_ci) = &config.run_in_ci {
                 options.run_in_ci = run_in_ci.to_owned();
+                state.set_run_in_ci = true;
             }
 
             if let Some(run_in_sync_phase) = &config.run_in_sync_phase {
@@ -720,6 +735,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(shell) = &config.shell {
                 options.shell = Some(*shell);
+                state.shell_disabled = !shell;
             }
 
             if let Some(timeout) = &config.timeout {
@@ -741,6 +757,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             if options.run_in_ci != TaskOptionRunInCI::Skip {
                 options.run_in_ci = TaskOptionRunInCI::Enabled(false);
+                state.set_run_in_ci = true;
             }
         }
 
@@ -941,7 +958,7 @@ impl<'proj> TasksBuilder<'proj> {
         let mut res = CommandLineParseResult::default();
 
         match args {
-            TaskArgs::None => Ok(res),
+            TaskArgs::Noop => Ok(res),
             TaskArgs::List(list) => {
                 res.args = Some(list.iter().map(TaskArg::new).collect());
 
@@ -957,7 +974,7 @@ impl<'proj> TasksBuilder<'proj> {
                 let mut args = vec![];
                 let mut env = EnvMap::default();
 
-                let mut handle_arg = |arg: &Argument, ignore_env: bool| {
+                let mut handle_arg = |arg: &Argument, extract_env: bool| {
                     if let Argument::Value(value) = arg {
                         if !res.requires_shell
                             && matches!(
@@ -980,10 +997,12 @@ impl<'proj> TasksBuilder<'proj> {
                             args.push(TaskArg::new_unquoted(value.to_string()));
                         }
                     } else if let Argument::EnvVar(key, value, _) = arg {
-                        if !ignore_env
-                            && !matches!(value, Value::Expansion(_) | Value::Substitution(_))
-                        {
-                            env.insert(key.to_owned(), Some(value.as_str().to_owned()));
+                        if extract_env {
+                            if !matches!(value, Value::Expansion(_) | Value::Substitution(_)) {
+                                env.insert(key.to_owned(), Some(value.as_str().to_owned()));
+                            }
+                        } else {
+                            args.push(TaskArg::new_unquoted(arg.to_string()));
                         }
                     } else {
                         args.push(TaskArg::new_unquoted(arg.to_string()));
@@ -1022,20 +1041,27 @@ impl<'proj> TasksBuilder<'proj> {
                                         allow_next_sequence = command
                                             .iter()
                                             .all(|arg| matches!(arg, Argument::EnvVar(_, _, _)));
+                                        let mut extract_env = true;
 
                                         for arg in command.iter() {
-                                            handle_arg(arg, false);
+                                            handle_arg(arg, extract_env);
+
+                                            if extract_env
+                                                && !matches!(arg, Argument::EnvVar(_, _, _))
+                                            {
+                                                extract_env = false;
+                                            }
                                         }
                                     }
                                     // Capture anything after `--`
                                     Sequence::Passthrough(command) => {
                                         handle_arg(
                                             &Argument::Value(Value::Unquoted("--".into())),
-                                            true,
+                                            false,
                                         );
 
                                         for arg in command.iter() {
-                                            handle_arg(arg, true);
+                                            handle_arg(arg, false);
                                         }
                                     }
                                     Sequence::Stop(term) => {
@@ -1106,7 +1132,7 @@ impl<'proj> TasksBuilder<'proj> {
             command_line.requires_shell = true;
         }
 
-        if config.args != TaskArgs::None {
+        if config.args != TaskArgs::Noop {
             let parse_result = self.parse_command_line(target, &config.args)?;
 
             if let Some(args) = parse_result.args {
@@ -1131,7 +1157,15 @@ impl<'proj> TasksBuilder<'proj> {
         Ok(stack)
     }
 
-    fn get_task_options_from_preset(&self, preset: Option<TaskPreset>) -> TaskOptions {
+    fn get_task_options_from_preset(
+        &self,
+        preset: Option<TaskPreset>,
+        state: &mut TaskState,
+    ) -> TaskOptions {
+        if preset.is_some() {
+            state.set_run_in_ci = true;
+        }
+
         match preset {
             Some(TaskPreset::Utility) => TaskOptions {
                 cache: TaskOptionCache::Enabled(false),

@@ -259,7 +259,7 @@
         },
         "template": {
           "title": "template",
-          "description": "A custom template file, relative from the workspace root, to use when rendering the Dockerfile. Powered by Tera.",
+          "description": "A custom template file, relative from the workspace root, to use when rendering the Dockerfile. Powered by Tera. @since 2.0.0",
           "anyOf": [
             {
               "type": "string"
@@ -268,7 +268,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`. Powered by Tera."
+          "markdownDescription": "A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`. Powered by Tera. @since 2.0.0"
         }
       },
       "additionalProperties": false,
@@ -280,7 +280,7 @@
       "properties": {
         "configsPhaseGlobs": {
           "title": "configsPhaseGlobs",
-          "description": "List of glob patterns in which to include/exclude files in the \"configs\" skeleton. Applies to both project and workspace level scaffolding.",
+          "description": "List of glob patterns in which to include/exclude files in the \"configs\" skeleton. Applies to both project and workspace level scaffolding. @since 2.0.0",
           "type": "array",
           "items": {
             "type": "string"
@@ -288,7 +288,7 @@
         },
         "sourcesPhaseGlobs": {
           "title": "sourcesPhaseGlobs",
-          "description": "List of glob patterns in which to include/exclude files in the \"sources\" skeleton. Applies to both project and workspace level scaffolding.",
+          "description": "List of glob patterns in which to include/exclude files in the \"sources\" skeleton. Applies to both project and workspace level scaffolding. @since 2.0.0",
           "type": "array",
           "items": {
             "type": "string"
@@ -828,24 +828,6 @@
             "type": "string"
           }
         },
-        "metadata": {
-          "title": "metadata",
-          "description": "Custom metadata fields.",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
         "owner": {
           "title": "owner",
           "description": "The owner of the project. Can be an individual, team, or organization. The format is unspecified.",
@@ -872,7 +854,16 @@
           "markdownDescription": "A human-readable title of the project."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
+      }
     },
     "ProjectToolchainEntry": {
       "description": "Variants a project-level toolchain can be configured.",
@@ -936,21 +927,11 @@
               "type": "null"
             }
           ]
-        },
-        "plugins": {
-          "title": "plugins",
-          "description": "Overrides workspace-level toolchains by their identifier.",
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/definitions/ProjectToolchainEntry"
-          },
-          "propertyNames": {
-            "$ref": "#/definitions/Id"
-          },
-          "markdownDescription": "Overrides workspace-level toolchains by their identifier."
         }
       },
-      "additionalProperties": false,
+      "additionalProperties": {
+        "$ref": "#/definitions/ProjectToolchainEntry"
+      },
       "markdownDescription": "Overrides top-level toolchain settings, scoped to this project."
     },
     "ProjectWorkspaceConfig": {
@@ -1346,6 +1327,63 @@
         "windows"
       ]
     },
+    "TaskOptionAffectedFilesConfig": {
+      "description": "Expanded information about affected files handling.",
+      "type": "object",
+      "properties": {
+        "pass": {
+          "title": "pass",
+          "description": "The pattern in which affected files will be passed to the affected task.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "args",
+                "env"
+              ]
+            }
+          ]
+        },
+        "passInputsWhenNoMatch": {
+          "title": "passInputsWhenNoMatch",
+          "description": "When no affected files are matching, pass the task's inputs as arguments to the command, instead of ..",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "When no affected files are matching, pass the task's inputs as arguments to the command, instead of `.`."
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskOptionAffectedFilesEntry": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "enum": [
+                "args",
+                "env"
+              ]
+            }
+          ]
+        },
+        {
+          "$ref": "#/definitions/TaskOptionAffectedFilesConfig"
+        }
+      ]
+    },
     "TaskOptionEnvFile": {
       "anyOf": [
         {
@@ -1371,36 +1409,12 @@
           "description": "The pattern in which affected files will be passed to the task.",
           "anyOf": [
             {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "string",
-                  "enum": [
-                    "args",
-                    "env"
-                  ]
-                }
-              ]
+              "$ref": "#/definitions/TaskOptionAffectedFilesEntry"
             },
             {
               "type": "null"
             }
           ]
-        },
-        "affectedPassInputs": {
-          "title": "affectedPassInputs",
-          "description": "When affected and no files are matching, pass the task's inputs as arguments to the command, instead of ..",
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "markdownDescription": "When affected and no files are matching, pass the task's inputs as arguments to the command, instead of `.`."
         },
         "allowFailure": {
           "title": "allowFailure",
@@ -1880,24 +1894,6 @@
       "description": "Configures an individual toolchain.",
       "type": "object",
       "properties": {
-        "config": {
-          "title": "config",
-          "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
-          },
-          "propertyNames": {
-            "type": "string"
-          }
-        },
         "plugin": {
           "title": "plugin",
           "description": "Location of the WASM plugin to use.",
@@ -1933,7 +1929,16 @@
           "markdownDescription": "Inherit the version from the root `.prototools`. When true, matches using the same identifier, otherwise a string can be provided for a custom identifier."
         }
       },
-      "additionalProperties": false
+      "additionalProperties": {
+        "type": [
+          "boolean",
+          "object",
+          "array",
+          "number",
+          "string",
+          "integer"
+        ]
+      }
     },
     "ToolchainPluginVersionFrom": {
       "description": "The strategy in which to inherit a version from .prototools.",

@@ -1,4 +1,0 @@
-language: typescript
-layer: library
-
-dependsOn: [types]

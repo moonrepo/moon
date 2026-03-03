@@ -10,6 +10,7 @@ The `proto unpin <tool>` command will unpin a version of a tool.
 
 ```shell
 $ proto unpin go
+$ proto unpin node --tool-native
 ```
 
 By default this will update the local [`./.prototools`](../config) file. Pass `--from` to customize
@@ -24,3 +25,6 @@ the location.
 - `--from` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
   and `user`.
   <VersionLabel version="0.41.0" />
+- `--tool-native` - Use a tool specific location, like the `devEngines` field in the `package.json`
+  for JavaScript tools.
+  <VersionLabel version="0.55.0" />

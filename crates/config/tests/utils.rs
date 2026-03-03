@@ -5,7 +5,7 @@ use moon_common::Id;
 pub use moon_config::test_utils::*;
 use moon_config::*;
 use moon_target::Target;
-use proto_core::PluginLocator;
+use proto_core::{FileLocator, PluginLocator};
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigError, ConfigLoader as BaseLoader};
 use serde_json::Value;
@@ -127,14 +127,14 @@ pub fn load_project_config_in_format(format: &str) {
                 plugins: FxHashMap::from_iter([
                     (
                         Id::raw("deno"),
-                        ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                        ProjectToolchainEntry::Object(ToolchainPluginConfig {
                             version: Some(UnresolvedVersionSpec::parse("1.2.3").unwrap()),
                             ..Default::default()
                         })
                     ),
                     (
                         Id::raw("typescript"),
-                        ProjectToolchainEntry::Config(ToolchainPluginConfig {
+                        ProjectToolchainEntry::Object(ToolchainPluginConfig {
                             config: BTreeMap::from_iter([(
                                 "includeSharedTypes".into(),
                                 serde_json::Value::Bool(true)
@@ -179,13 +179,13 @@ pub fn load_task_config_in_format(format: &str) {
             args: TaskArgs::List(vec!["-c".into(), "-b".into(), "arg".into()]),
             deps: Some(vec![
                 TaskDependency::Target(Target::parse("proj:task").unwrap()),
-                TaskDependency::Config(TaskDependencyConfig {
+                TaskDependency::Object(TaskDependencyConfig {
                     args: vec![],
                     env: IndexMap::default(),
                     target: Target::parse("^:build").unwrap(),
                     optional: Some(true)
                 }),
-                TaskDependency::Config(TaskDependencyConfig {
+                TaskDependency::Object(TaskDependencyConfig {
                     args: vec!["--minify".into()],
                     env: IndexMap::from_iter([("DEBUG".into(), Some("1".to_owned()))]),
                     target: Target::parse("~:build").unwrap(),
@@ -250,13 +250,13 @@ pub fn load_tasks_config_in_format(format: &str) {
             ]),
             implicit_deps: vec![
                 TaskDependency::Target(Target::parse("project:task-a").unwrap()),
-                TaskDependency::Config(TaskDependencyConfig {
+                TaskDependency::Object(TaskDependencyConfig {
                     target: Target::parse("project:task-b").unwrap(),
                     optional: Some(true),
                     ..Default::default()
                 }),
                 TaskDependency::Target(Target::parse("project:task-c").unwrap()),
-                TaskDependency::Config(TaskDependencyConfig {
+                TaskDependency::Object(TaskDependencyConfig {
                     args: vec!["--foo".into(), "--bar".into()],
                     env: IndexMap::from_iter([("KEY".into(), Some("value".to_owned()))]),
                     target: Target::parse("project:task-d").unwrap(),
@@ -272,8 +272,12 @@ pub fn load_tasks_config_in_format(format: &str) {
                 Input::Glob(stub_glob_input("/file.*")),
             ],
             task_options: Some(TaskOptionsConfig {
-                affected_files: Some(TaskOptionAffectedFiles::Args),
-                affected_pass_inputs: Some(true),
+                affected_files: Some(TaskOptionAffectedFilesEntry::Object(
+                    TaskOptionAffectedFilesConfig {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        pass_inputs_when_no_match: Some(true)
+                    }
+                )),
                 allow_failure: Some(true),
                 cache: Some(TaskOptionCache::Enabled(false)),
                 cache_key: None,
@@ -464,7 +468,8 @@ pub fn load_template_config_in_format(format: &str) {
 pub fn load_toolchains_config_in_format(format: &str) {
     use starbase_sandbox::pretty_assertions::assert_eq;
 
-    let config = test_config(locate_fixture(format), |path| {
+    let fixture = locate_fixture(format);
+    let config = test_config(&fixture, |path| {
         let proto = proto_core::ProtoConfig::default();
         ConfigLoader::new(path.join(".moon")).load_toolchains_config(path, &proto)
     });
@@ -496,7 +501,10 @@ pub fn load_toolchains_config_in_format(format: &str) {
     assert_eq!(
         config.plugins.get("node").unwrap(),
         &ToolchainPluginConfig {
-            plugin: Some(PluginLocator::from_str("file://node.wasm").unwrap()),
+            plugin: Some(PluginLocator::File(Box::new(FileLocator {
+                file: "file://node.wasm".into(),
+                path: Some(fixture.join(".moon").join("node.wasm")),
+            }))),
             version: Some(UnresolvedVersionSpec::parse("20").unwrap()),
             ..Default::default()
         }
@@ -508,14 +516,18 @@ pub fn load_toolchains_config_in_format(format: &str) {
 pub fn load_extensions_config_in_format(format: &str) {
     use starbase_sandbox::pretty_assertions::assert_eq;
 
-    let config = test_config(locate_fixture(format), |path| {
+    let fixture = locate_fixture(format);
+    let config = test_config(&fixture, |path| {
         ConfigLoader::new(path.join(".moon")).load_extensions_config(path)
     });
 
     assert_eq!(
         config.plugins.get("custom").unwrap(),
         &ExtensionPluginConfig {
-            plugin: Some(PluginLocator::from_str("file://node.wasm").unwrap()),
+            plugin: Some(PluginLocator::File(Box::new(FileLocator {
+                file: "file://node.wasm".into(),
+                path: Some(fixture.join(".moon").join("node.wasm")),
+            }))),
             config: FxHashMap::from_iter([("key".into(), Value::String("value".into()))]),
         }
     );

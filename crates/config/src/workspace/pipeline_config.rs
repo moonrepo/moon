@@ -1,4 +1,4 @@
-use crate::{config_enum, config_struct};
+use crate::{config_enum, config_struct, is_false};
 use moon_common::Id;
 use schematic::Config;
 
@@ -67,6 +67,7 @@ config_struct!(
         pub kill_process_threshold: u32,
 
         /// Logs the task's command and arguments when running the task.
+        #[serde(default, skip_serializing_if = "is_false")]
         pub log_running_command: bool,
 
         /// Run the `SyncProject` actions in the pipeline for each owning project

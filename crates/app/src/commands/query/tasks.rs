@@ -27,6 +27,7 @@ pub struct QueryTasksArgs {
     #[arg(
         long,
         default_value_t,
+        visible_alias = "dependents",
         help = "Include downstream dependents of queried tasks",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
@@ -36,6 +37,7 @@ pub struct QueryTasksArgs {
     #[arg(
         long,
         default_value_t,
+        visible_alias = "dependencies",
         help = "Include upstream dependencies of queried tasks",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",

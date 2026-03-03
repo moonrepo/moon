@@ -1,5 +1,5 @@
 use crate::shapes::FilePath;
-use crate::{config_struct, config_unit_enum};
+use crate::{config_struct, config_unit_enum, is_false};
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigEnum, ValidateError, ValidateResult, env};
 
@@ -35,10 +35,12 @@ config_struct!(
     #[derive(Config)]
     pub struct RemoteAuthConfig {
         /// A map of HTTP headers to inject into every request.
+        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub headers: FxHashMap<String, String>,
 
         /// The name of an environment variable to use as a bearer token.
         #[setting(env = "MOON_REMOTE_AUTH_TOKEN")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub token: Option<String>,
     }
 );
@@ -80,6 +82,7 @@ config_struct!(
         /// blobs. Blobs will only be uploaded in CI environments.
         /// @since 1.40.0
         #[setting(parse_env = env::parse_bool)]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub local_read_only: bool,
 
         /// When downloading blobs, verify the digests/hashes in the response
@@ -87,6 +90,7 @@ config_struct!(
         /// but ensure partial or corrupted blobs won't cause failures.
         /// @since 1.36.0
         #[setting(parse_env = env::parse_bool)]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub verify_integrity: bool,
     }
 );
@@ -100,6 +104,7 @@ config_struct!(
         /// If true, assume that the server supports HTTP/2,
         /// even if it doesn't provide protocol negotiation via ALPN.
         #[setting(env = "MOON_REMOTE_TLS_HTTP2", parse_env = env::parse_bool)]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub assume_http2: bool,
 
         /// A file path, relative from the workspace root, to the
@@ -108,6 +113,7 @@ config_struct!(
         pub cert: FilePath,
 
         /// The domain name in which to verify the TLS certificate.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub domain: Option<String>,
     }
 );
@@ -121,6 +127,7 @@ config_struct!(
         /// If true, assume that the server supports HTTP/2,
         /// even if it doesn't provide protocol negotiation via ALPN.
         #[setting(env = "MOON_REMOTE_MTLS_HTTP", parse_env = env::parse_bool)]
+        #[serde(default, skip_serializing_if = "is_false")]
         pub assume_http2: bool,
 
         /// A file path, relative from the workspace root, to the
@@ -139,6 +146,7 @@ config_struct!(
         pub client_key: FilePath,
 
         /// The domain name in which to verify the TLS certificate.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub domain: Option<String>,
     }
 );
@@ -156,6 +164,7 @@ config_struct!(
         /// Connect to the host using basic HTTP authentication.
         /// @since 1.32.0
         #[setting(nested)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub auth: Option<RemoteAuthConfig>,
 
         /// Configures the action cache (AC) and content addressable cache (CAS).
@@ -165,15 +174,18 @@ config_struct!(
         /// The remote host to connect and send requests to.
         /// Supports gRPC protocols.
         #[setting(env = "MOON_REMOTE_HOST")]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub host: Option<String>,
 
         /// Connect to the host using server and client authentication with mTLS.
         /// This takes precedence over normal TLS.
         #[setting(nested)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub mtls: Option<RemoteMtlsConfig>,
 
         /// Connect to the host using server-only authentication with TLS.
         #[setting(nested)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub tls: Option<RemoteTlsConfig>,
     }
 );

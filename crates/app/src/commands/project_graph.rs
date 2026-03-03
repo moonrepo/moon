@@ -1,4 +1,4 @@
-use crate::commands::graph::{project_graph_repr, run_server};
+use crate::commands::graph::run_server;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_common::Id;
@@ -56,14 +56,17 @@ pub async fn project_graph(session: MoonSession, args: ProjectGraphArgs) -> AppR
     }
 
     if args.json {
-        session.console.out.write_line(project_graph.to_json()?)?;
+        session
+            .console
+            .out
+            .write_line(project_graph.to_json(true)?)?;
 
         return Ok(None);
     }
 
     run_server(
         "Project graph",
-        project_graph_repr(&project_graph).await,
+        project_graph.to_json(false)?,
         args.host,
         args.port,
     )

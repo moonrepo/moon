@@ -354,7 +354,7 @@
         },
         "template": {
           "title": "template",
-          "description": "A custom template file, relative from the workspace root, to use when rendering the Dockerfile. Powered by Tera.",
+          "description": "A custom template file, relative from the workspace root, to use when rendering the Dockerfile. Powered by Tera. @since 2.0.0",
           "anyOf": [
             {
               "type": "string"
@@ -363,7 +363,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`. Powered by Tera."
+          "markdownDescription": "A custom template file, relative from the workspace root, to use when rendering the `Dockerfile`. Powered by Tera. @since 2.0.0"
         }
       },
       "additionalProperties": false,
@@ -394,7 +394,7 @@
       "properties": {
         "configsPhaseGlobs": {
           "title": "configsPhaseGlobs",
-          "description": "List of glob patterns in which to include/exclude files in the \"configs\" skeleton. Applies to both project and workspace level scaffolding.",
+          "description": "List of glob patterns in which to include/exclude files in the \"configs\" skeleton. Applies to both project and workspace level scaffolding. @since 2.0.0",
           "type": "array",
           "items": {
             "type": "string"
@@ -402,7 +402,7 @@
         },
         "sourcesPhaseGlobs": {
           "title": "sourcesPhaseGlobs",
-          "description": "List of glob patterns in which to include/exclude files in the \"sources\" skeleton. Applies to both project and workspace level scaffolding.",
+          "description": "List of glob patterns in which to include/exclude files in the \"sources\" skeleton. Applies to both project and workspace level scaffolding. @since 2.0.0",
           "type": "array",
           "items": {
             "type": "string"

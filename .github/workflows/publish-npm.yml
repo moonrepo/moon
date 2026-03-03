@@ -1,0 +1,33 @@
+# This is for publishing non-core/cli/types npm packages!
+# It is manually dispatched from the GitHub UI.
+
+name: Publish npm
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # Required for OIDC
+
+jobs:
+  publish:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - name: Install dependencies
+        run: yarn install --immutable
+      - name: Build packages
+        run: bash ./scripts/release/buildPackages.sh
+      - name: Publish npm packages
+        run: unset NODE_AUTH_TOKEN && bash ./scripts/release/publish.sh
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CHANNEL: latest
+          # NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

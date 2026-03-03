@@ -26,6 +26,7 @@ pub struct QueryProjectsArgs {
     #[arg(
         long,
         default_value_t,
+        visible_alias = "dependents",
         help = "Include downstream dependents of queried projects",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",
@@ -35,6 +36,7 @@ pub struct QueryProjectsArgs {
     #[arg(
         long,
         default_value_t,
+        visible_alias = "dependencies",
         help = "Include upstream dependencies of queried projects",
         help_heading = HEADING_AFFECTED,
         requires = "affected-args",

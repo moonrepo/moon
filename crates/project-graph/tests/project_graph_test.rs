@@ -1588,13 +1588,10 @@ mod project_graph {
             assert_eq!(get_ids_from_projects(projects), vec!["a"]);
 
             let projects = graph
-                .query_projects(build_query("taskToolchain=system").unwrap())
+                .query_projects(build_query("taskToolchain=python").unwrap())
                 .unwrap();
 
-            // this changed because of the new toolchain system
             assert_eq!(get_ids_from_projects(projects), vec!["c"]);
-
-            // assert_eq!(get_ids_from_projects(projects), vec!["a", "b", "c", "d"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]

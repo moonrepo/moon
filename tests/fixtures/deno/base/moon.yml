@@ -38,8 +38,9 @@ tasks:
   affectedFiles:
     command: deno run --allow-env ./affectedFiles.ts
     options:
-      affectedFiles: true
-      affectedPassInputs: true
+      affectedFiles:
+        pass: true
+        passInputsWhenNoMatch: true
   affectedFilesArgs:
     command: deno run --allow-env ./affectedFiles.ts
     options:

@@ -108,8 +108,9 @@ tasks:
     command: pwsh ./affectedFiles.ps1
     options:
       windowsShell: pwsh
-      affectedFiles: true
-      affectedPassInputs: true
+      affectedFiles:
+        pass: true
+        passInputsWhenNoMatch: true
 
   affectedFilesArgs:
     command: pwsh ./affectedFiles.ps1

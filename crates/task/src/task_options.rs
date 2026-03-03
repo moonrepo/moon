@@ -1,8 +1,17 @@
 use moon_common::cacheable;
 use moon_config::{
-    Input, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFiles, TaskOptionCache,
+    Input, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesPattern, TaskOptionCache,
     TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell, TaskWindowsShell,
 };
+
+cacheable!(
+    #[derive(Clone, Debug, Default, Eq, PartialEq)]
+    #[serde(default)]
+    pub struct TaskOptionAffectedFiles {
+        pub pass: TaskOptionAffectedFilesPattern,
+        pub pass_inputs_when_no_match: bool,
+    }
+);
 
 cacheable!(
     #[derive(Clone, Debug, Eq, PartialEq)]
@@ -10,8 +19,6 @@ cacheable!(
     pub struct TaskOptions {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub affected_files: Option<TaskOptionAffectedFiles>,
-
-        pub affected_pass_inputs: bool,
 
         pub allow_failure: bool,
 
@@ -84,7 +91,6 @@ impl Default for TaskOptions {
     fn default() -> Self {
         TaskOptions {
             affected_files: None,
-            affected_pass_inputs: false,
             allow_failure: false,
             cache: TaskOptionCache::Enabled(true),
             cache_key: None,
@@ -108,7 +114,7 @@ impl Default for TaskOptions {
             run_deps_in_parallel: true,
             run_in_sync_phase: false,
             run_from_workspace_root: false,
-            run_in_ci: TaskOptionRunInCI::Affected,
+            run_in_ci: TaskOptionRunInCI::Enabled(true),
             shell: Some(true),
             timeout: None,
             unix_shell: TaskUnixShell::Bash,

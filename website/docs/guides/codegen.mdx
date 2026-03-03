@@ -17,16 +17,16 @@ files to a destination.
 ## Creating a new template
 
 To create a new template, run [`moon generate`][command] while passing the `--template` option. This
-will create a template directory and [`template.yml`][config] file in the 1st file-based template
+will create a template directory and [`template.*`][config] file in the 1st file-based template
 location defined in [`generator.templates`][gen-templates].
 
 ```shell
 $ moon generate <name> --template
 ```
 
-### Configuring `template.yml`
+### Configuring `template.*`
 
-Every template requires a [`template.yml`][config] file in the template's directory root. This file
+Every template requires a [`template.*`][config] file in the template's directory root. This file
 acts as a schema and declares metadata and variables required by the generator.
 
 ```yaml title="template.yml"
@@ -227,7 +227,7 @@ Once a template has been created and configured, you can generate files based on
 
 This command requires the name of a template as the 1st argument. The template name is the folder
 name on the file system that houses all the template files, or the [`id`](../config/template#id)
-setting configured in [`template.yml`](../config/template).
+setting configured in [`template.*`](../config/template).
 
 ```shell
 $ moon generate npm-package
@@ -235,11 +235,11 @@ $ moon generate npm-package
 
 An optional destination path, relative from the current working directory, can be provided as the
 2nd argument. If not provided, the [`destination`](../config/template#destination) setting
-configured in [`template.yml`](../config/template) will be used, or you'll be prompted during
+configured in [`template.*`](../config/template) will be used, or you'll be prompted during
 generation to provide one.
 
 ```shell
-$ moon generate npm-package ./packages/example
+$ moon generate npm-package --to ./packages/example
 ```
 
 > This command is extremely interactive, as we'll prompt you for the destination path, variable
@@ -281,7 +281,7 @@ generator:
 
 If you'd prefer more control over literal file paths (above), you can instead use glob paths or the
 `glob://` protocol. Globs are relative from the workspace root, and will only match directories, or
-patterns that end in `template.yml`.
+patterns that end in `template.*`.
 
 ```yaml title=".moon/workspace.yml"
 generator:
@@ -331,7 +331,7 @@ names.
 Using the package template example above, we could pre-fill the `name` variable like so:
 
 ```shell
-$ moon generate npm-package ./packages/example -- --name '@company/example' --private
+$ moon generate npm-package --to ./packages/example -- --name '@company/example' --private
 ```
 
 :::info
@@ -378,8 +378,8 @@ the layout of those projects must follow these guidelines:
 
 - A project must support multiple templates
 - A template is denoted by a folder in the root of the project
-- Each template must have a [`template.yml`][config] file
-- Template names are derived from the folder name, or the `id` field in [`template.yml`][config]
+- Each template must have a [`template.*`][config] file
+- Template names are derived from the folder name, or the `id` field in [`template.*`][config]
 
 An example of this layout structure may look something like the following:
 

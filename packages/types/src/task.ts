@@ -7,6 +7,7 @@ import type {
 	TaskDependencyType,
 	TaskMergeStrategy,
 	TaskOperatingSystem,
+	TaskOptionAffectedFilesConfig,
 	TaskOutputStyle,
 	TaskPreset,
 	TaskPriority,
@@ -21,8 +22,7 @@ export interface InheritedTasks {
 }
 
 export interface TaskOptions {
-	affectedFiles?: boolean | 'args' | 'env' | null;
-	affectedPassInputs: boolean;
+	affectedFiles?: TaskOptionAffectedFilesConfig | boolean | 'args' | 'env' | null;
 	allowFailure: boolean;
 	cache: boolean | 'local' | 'remote';
 	cacheKey?: string | null;

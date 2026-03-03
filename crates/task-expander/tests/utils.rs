@@ -42,6 +42,7 @@ pub fn create_project(workspace_root: &Path) -> Project {
                         source.join("**/*.json"),
                         source.join("config.yml"),
                         source.join("dir/subdir"),
+                        WorkspaceRelativePathBuf::from(format!("!{source}/node_modules/**/*")),
                     ],
                 )
                 .unwrap(),

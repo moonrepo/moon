@@ -7,10 +7,11 @@ you'll want to use the same configuration across all repositories for consistenc
 the maintenance burden while ensuring a similar developer experience.
 
 To help streamline this process, moon provides an `extends` setting in both
-[`.moon/workspace.yml`](../config/workspace#extends),
-[`.moon/toolchains.yml`](../config/toolchain#extends), and
-[`.moon/tasks/all.yml`](../config/tasks#extends). This setting requires a HTTPS URL _or_ relative
-file system path that points to a valid YAML document for the configuration in question.
+[`.moon/workspace.*`](../config/workspace#extends),
+[`.moon/toolchains.*`](../config/toolchain#extends),
+[`.moon/extensions.*`](../config/extensions#extends), and
+[`.moon/tasks/**/*`](../config/tasks#extends). This setting requires a HTTPS URL _or_ relative file
+system path that points to a valid YAML document for the configuration in question.
 
 A great way to share configuration is by using GitHub's "raw file view", as demonstrated below using
 our very own [examples repository](https://github.com/moonrepo/examples).

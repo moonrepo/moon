@@ -22,7 +22,11 @@ tasks:
     deps: ['chain2']
   chain2:
     deps: ['chain3']
-  chain3: {}
+  chain3:
+    deps: ['chain4']
+  chain4:
+    deps: ['chain5']
+  chain5: {}
 
   # Cycle detection
   cycle1:

@@ -11,6 +11,7 @@ projects:
     - '!packages/cli'
     - '!packages/core-*'
     # - 'scenarios/*'
+    # - 'scenarios/python'
     - 'website'
 
 generator:

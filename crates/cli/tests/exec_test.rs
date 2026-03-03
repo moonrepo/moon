@@ -1,5 +1,6 @@
 mod utils;
 
+use moon_common::is_ci;
 use moon_task_runner::TaskRunCacheState;
 use moon_test_utils2::predicates::prelude::*;
 use starbase_utils::{fs, json};
@@ -232,6 +233,51 @@ mod exec {
                 .failure()
                 .code(1)
                 .stdout(predicate::str::contains(id).and(predicate::str::contains("attempt 4/4")));
+        }
+
+        #[test]
+        fn runs_build_task_in_ci() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:buildType");
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("Tasks: 1 completed"));
+        }
+
+        #[test]
+        fn runs_test_task_in_ci() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:testType");
+            });
+
+            assert
+                .success()
+                .stdout(predicate::str::contains("Tasks: 1 completed"));
+        }
+
+        #[test]
+        fn doesnt_run_run_task_in_ci() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("shared:runType");
+            });
+
+            if is_ci() {
+                assert
+                    .failure()
+                    .stderr(predicate::str::contains("No tasks found"));
+            } else {
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("Tasks: 1 completed"));
+            }
         }
     }
 
@@ -700,7 +746,7 @@ mod exec {
             });
 
             assert.failure().stderr(predicate::str::contains(
-                "projects: expected a list of globs, a map of projects, or both",
+                "projects: failed to parse as any variant",
             ));
         }
 

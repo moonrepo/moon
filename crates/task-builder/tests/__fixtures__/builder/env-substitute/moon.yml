@@ -1,17 +1,9 @@
 tasks:
   command-no-env:
     command: './file.sh'
-    options:
-      shell: false
   command-with-env:
     command: './${DIR}/file.sh'
-    options:
-      shell: false
   args-no-env:
     args: ['arg']
-    options:
-      shell: false
   args-with-env:
     args: ['arg', '$ARG']
-    options:
-      shell: false

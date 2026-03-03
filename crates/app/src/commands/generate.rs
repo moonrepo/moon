@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_unwrap)]
+
 use crate::app_error::AppError;
 use crate::prompts::select_identifier;
 use crate::session::MoonSession;
@@ -733,7 +735,7 @@ pub async fn gather_variables(
                 let values = cfg.get_values();
                 let labels = cfg.get_labels();
                 let default_value = match &cfg.default {
-                    TemplateVariableEnumDefault::Vec(def) => def.to_owned(),
+                    TemplateVariableEnumDefault::List(def) => def.to_owned(),
                     TemplateVariableEnumDefault::String(def) => vec![def.to_owned()],
                 };
 
@@ -788,7 +790,7 @@ pub async fn gather_variables(
                 let labels = cfg.get_labels();
                 let default_value = match &cfg.default {
                     TemplateVariableEnumDefault::String(def) => def.to_owned(),
-                    TemplateVariableEnumDefault::Vec(def) => {
+                    TemplateVariableEnumDefault::List(def) => {
                         if def.is_empty() {
                             values[0].to_owned()
                         } else {

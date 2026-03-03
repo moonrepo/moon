@@ -3,7 +3,7 @@ mod utils;
 use moon_common::Id;
 use moon_config::{test_utils::*, *};
 use moon_target::Target;
-use moon_task::TaskArg;
+use moon_task::{TaskArg, TaskOptionAffectedFiles};
 use starbase_sandbox::create_sandbox;
 use std::fs;
 use std::path::PathBuf;
@@ -173,7 +173,7 @@ mod tasks_builder {
 
             assert_eq!(task.type_of, TaskType::Test);
             assert!(task.is_test_type());
-            assert!(task.should_run_in_ci());
+            assert!(task.should_run(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -186,7 +186,7 @@ mod tasks_builder {
 
             assert_eq!(task.type_of, TaskType::Run);
             assert!(task.is_run_type());
-            assert!(!task.should_run_in_ci());
+            assert!(!task.should_run(true));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -199,7 +199,7 @@ mod tasks_builder {
 
             assert_eq!(task.type_of, TaskType::Build);
             assert!(task.is_build_type());
-            assert!(task.should_run_in_ci());
+            assert!(task.should_run(true));
         }
     }
 
@@ -378,22 +378,85 @@ mod tasks_builder {
             let task = tasks.get("command-no-env").unwrap();
 
             assert_eq!(task.command, "./file.sh");
-            assert_eq!(task.options.shell, Some(false));
 
             let task = tasks.get("command-with-env").unwrap();
 
             assert_eq!(task.command, "./${DIR}/file.sh");
-            assert_eq!(task.options.shell, Some(true));
 
             let task = tasks.get("args-no-env").unwrap();
 
             assert_eq!(task.args, vec!["arg"]);
-            assert_eq!(task.options.shell, Some(false));
 
             let task = tasks.get("args-with-env").unwrap();
 
             assert_eq!(task.args, vec!["arg", "$ARG"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn handles_auto_shell() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("auto-shell").await;
+            let task = tasks.get("with-globs").unwrap();
+
             assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("with-env").unwrap();
+
+            assert_eq!(task.options.shell, Some(true));
+
+            let task = tasks.get("with-globs-off").unwrap();
+
+            assert_eq!(task.options.shell, Some(false));
+
+            let task = tasks.get("with-env-off").unwrap();
+
+            assert_eq!(task.options.shell, Some(false));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_token_funcs() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("tokens").await;
+            let task = tasks.get("funcs-string").unwrap();
+
+            assert_eq!(task.command, "bin");
+            assert_eq!(
+                task.args,
+                vec![
+                    TaskArg::new_unquoted("@group(storybook)"),
+                    TaskArg::new_quoted("@root(sources)", "\"@root(sources)\""),
+                    TaskArg::new_unquoted("@in(0)"),
+                    TaskArg::new_unquoted("@out(0)"),
+                    TaskArg::new_unquoted("@meta(title)"),
+                    TaskArg::new_unquoted("@meta(index)"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn supports_token_vars() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("tokens").await;
+            let task = tasks.get("vars-string").unwrap();
+
+            assert_eq!(task.command, "bin");
+            assert_eq!(
+                task.args,
+                vec![
+                    TaskArg::new_unquoted("arg"),
+                    TaskArg::new_quoted("$workspaceRoot", "\"$workspaceRoot\""),
+                    TaskArg::new_unquoted("$os"),
+                    TaskArg::new_quoted("$projectTitle", "'$projectTitle'"),
+                    TaskArg::new_unquoted("$projectRoot/in/path.txt"),
+                    TaskArg::new_unquoted("./in/$target/path.txt"),
+                ]
+            );
         }
     }
 
@@ -410,7 +473,6 @@ mod tasks_builder {
 
             assert_eq!(task.command, "foo");
             assert_eq!(task.args, ["-a", "--bar", "baz", "qux"]);
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -423,7 +485,6 @@ mod tasks_builder {
 
             assert_eq!(task.command, "foo");
             assert_eq!(task.args, ["--", "bar", "-b"]);
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -444,7 +505,6 @@ mod tasks_builder {
                     TaskArg::new_quoted("special quote", "$\"special quote\""),
                 ]
             );
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -462,7 +522,6 @@ mod tasks_builder {
                     "\"./some/file path/with/spaces.sh\""
                 )
             );
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -522,7 +581,6 @@ mod tasks_builder {
                     ("BAZ".into(), Some("quoted value".into())),
                 ])
             );
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -543,7 +601,6 @@ mod tasks_builder {
                     ("BAZ".into(), Some("quoted value".into())),
                 ])
             );
-            assert_eq!(task.options.shell, Some(false));
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -557,7 +614,19 @@ mod tasks_builder {
             assert_eq!(task.command, "exit");
             assert_eq!(task.args, ["0"]);
             assert_eq!(task.env, EnvMap::default());
-            assert_eq!(task.options.shell, Some(false));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn ignores_env_assignments_when_inside_command() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("env-inside").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, ["--env", "FOO=abc", "arg"]);
+            assert_eq!(task.env, EnvMap::default());
         }
 
         // We can't place these invalid commands in the fixture,
@@ -874,28 +943,40 @@ tasks:
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Enabled(true))
+                Some(TaskOptionAffectedFiles {
+                    pass: TaskOptionAffectedFilesPattern::Enabled(true),
+                    ..Default::default()
+                })
             );
 
             let task = tasks.get("not-affected").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Enabled(false))
+                Some(TaskOptionAffectedFiles {
+                    pass: TaskOptionAffectedFilesPattern::Enabled(false),
+                    ..Default::default()
+                })
             );
 
             let task = tasks.get("affected-args").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Args)
+                Some(TaskOptionAffectedFiles {
+                    pass: TaskOptionAffectedFilesPattern::Args,
+                    ..Default::default()
+                })
             );
 
             let task = tasks.get("affected-env").unwrap();
 
             assert_eq!(
                 task.options.affected_files,
-                Some(TaskOptionAffectedFiles::Env)
+                Some(TaskOptionAffectedFiles {
+                    pass: TaskOptionAffectedFilesPattern::Env,
+                    ..Default::default()
+                })
             );
         }
 
@@ -2510,6 +2591,48 @@ tasks:
                 assert_eq!(task.args, Vec::<TaskArg>::new());
                 assert_eq!(task.script, None);
             }
+        }
+    }
+
+    mod option_run_in_ci {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn enables_or_disables_based_on_task_type() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("options-runinci").await;
+
+            let task = tasks.get("build-type").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(true));
+
+            let task = tasks.get("test-type").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(true));
+
+            let task = tasks.get("run-type").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(false));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_override_explicit_setting() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("options-runinci").await;
+
+            let task = tasks.get("build-type-custom").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Only);
+
+            let task = tasks.get("test-type-custom").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Skip);
+
+            let task = tasks.get("run-type-custom").unwrap();
+
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Always);
         }
     }
 }

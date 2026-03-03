@@ -54,12 +54,12 @@ $ moon query changed-files | moon query projects --affected
 
 #### Affected
 
-- `--affected` - Filter projects that have been affected by touched files.
+- `--affected` - Filter projects that have been affected by changed files.
 - `--downstream` - Include downstream dependents of queried projects. Supports "none" (default),
   "direct", "deep".
   <VersionLabel version="1.29.0" />
-- `--upstream` - Include upstream dependencies of queried projects. Supports "none", "direct",
-  "deep" (default).
+- `--upstream` - Include upstream dependencies of queried projects. Supports "none" (default),
+  "direct", "deep".
   <VersionLabel version="1.29.0" />
 
 #### Filters
@@ -77,4 +77,4 @@ All option values are case-insensitive regex patterns.
 
 ### Configuration
 
-- [`projects`](../../config/workspace#projects) in `.moon/workspace.yml`
+- [`projects`](../../config/workspace#projects) in `.moon/workspace.*`

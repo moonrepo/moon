@@ -1,5 +1,5 @@
 ---
-title: Webhooks (experimental)
+title: Webhooks
 toc_max_heading_level: 6
 ---
 
@@ -378,57 +378,6 @@ Synced projects can be scoped with the `SyncProject(...)` labels.
       "id": "client"
       // ...
     },
-    "runtime": {
-      "toolchain": "Node",
-      "version": "18.0.0"
-    }
-  },
-  "uuid": "..."
-}
-```
-
-### `tool.installing`
-
-<HeadingApiLink to="/api/types#PayloadToolInstalling" />
-
-Triggered when a tool within the toolchain has started downloading and installing.
-
-This event is _always_ triggered, regardless of whether the tool has already been installed or not.
-For an accurate state, use the [`action.finished`](#actionfinished) event. If the `status` is
-"skipped", then the tool was already installed.
-
-```json
-{
-  "type": "tool.installing",
-  "createdAt": "...",
-  "environment": "...",
-  "event": {
-    "runtime": {
-      "toolchain": "Node",
-      "version": "18.0.0"
-    }
-  },
-  "uuid": "..."
-}
-```
-
-### `tool.installed`
-
-<HeadingApiLink to="/api/types#PayloadToolInstalled" />
-
-Triggered when a tool within the toolchain has finished installing. If the install failed, the
-`error` field will be set with the error message.
-
-For more information about the action, refer to the [`action.finished`](#actionfinished) event.
-Tools can be scoped with the `SetupToolchain(...)` labels.
-
-```json
-{
-  "type": "tool.installed",
-  "createdAt": "...",
-  "environment": "...",
-  "event": {
-    "error": null,
     "runtime": {
       "toolchain": "Node",
       "version": "18.0.0"

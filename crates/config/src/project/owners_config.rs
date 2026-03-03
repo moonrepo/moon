@@ -1,5 +1,5 @@
 use crate::shapes::GlobPath;
-use crate::{config_enum, config_struct};
+use crate::{config_enum, config_struct, is_false};
 use indexmap::IndexMap;
 use rustc_hash::FxHashMap;
 use schematic::{Config, PathSegment, ValidateError};
@@ -7,15 +7,13 @@ use schematic::{Config, PathSegment, ValidateError};
 config_enum!(
     /// A mapping of file paths and file globs to owners.
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a list of paths, or a map of paths to owners"
-    )]
+    #[serde(untagged)]
     pub enum OwnersPaths {
         /// A list of file paths and glob patterns. The owner of these
         /// is the project-level `defaultOwner`.
         #[setting(default)]
         List(Vec<GlobPath>),
+
         /// A map of file paths and glob patterns to owners.
         Map(IndexMap<GlobPath, Vec<String>>),
     }
@@ -66,12 +64,15 @@ config_struct!(
     pub struct OwnersConfig {
         /// Bitbucket only. A map of custom groups (prefixed with `@@@`),
         /// to a list of user and normal groups.
+        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub custom_groups: FxHashMap<String, Vec<String>>,
 
         /// The default owner for `paths`.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub default_owner: Option<String>,
 
         /// GitLab only. Marks the code owners section as optional.
+        #[serde(default, skip_serializing_if = "is_false")]
         pub optional: bool,
 
         /// A list or map of file paths and glob patterns to owners.
@@ -83,6 +84,7 @@ config_struct!(
         /// Bitbucket and GitLab only. The number of approvals required for the
         /// request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
         /// For GitLab, marks the code owners section as required.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub required_approvals: Option<u8>,
     }
 );

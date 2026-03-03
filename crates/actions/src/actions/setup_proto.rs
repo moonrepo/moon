@@ -7,6 +7,8 @@ use moon_console::Checkpoint;
 use moon_env_var::GlobalEnvBag;
 use moon_toolchain::is_using_global_toolchains;
 use proto_core::flow::install::{InstallOptions, ProtoInstallError};
+use proto_core::flow::manage::Manager;
+use proto_core::flow::resolve::Resolver;
 use proto_core::{Id, ToolContext, ToolSpec, is_offline, load_tool_from_locator};
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -84,21 +86,19 @@ pub async fn setup_proto(
     .await?;
 
     // Install using proto itself
-    let spec = ToolSpec::new(
-        app_context
-            .toolchains_config
-            .proto
-            .version
-            .to_unresolved_spec(),
-    );
+    let mut spec = ToolSpec::new_resolved(app_context.toolchains_config.proto.version.clone());
 
-    if tool.is_setup(&spec).await? {
+    Resolver::new(&tool)
+        .resolve_version(&mut spec, false)
+        .await?;
+
+    if tool.is_installed(&spec) {
         return Ok(ActionStatus::Skipped);
     }
 
-    let record = tool
-        .setup(
-            &spec,
+    let record = Manager::new(&mut tool)
+        .install(
+            &mut spec,
             InstallOptions {
                 skip_prompts: true,
                 skip_ui: true,

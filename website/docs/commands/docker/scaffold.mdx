@@ -21,31 +21,30 @@ utilize this command.
 
 ### Arguments
 
-- `<...projects>` - List of project names or aliases to scaffold sources for, as defined in
+- `<...ids>` - List of project IDs or aliases to scaffold sources for, as defined in
   [`projects`][graph].
 
 ### Configuration
 
-- [`docker.scaffold`](../../config/workspace#scaffold) in `.moon/workspace.yml` (entire workspace)
-- [`docker.scaffold`](../../config/project#scaffold) in `moon.yml` (per project)
+- [`docker.scaffold`](../../config/workspace#scaffold) in `.moon/workspace.*` (entire workspace)
+- [`docker.scaffold`](../../config/project#scaffold) in `moon.*` (per project)
 
 ## How it works
 
 This command may seem like magic, but it's relative simple thanks to moon's infrastructure and its
 project graph. When the command is ran, we generate 2 skeleton structures in `.moon/docker` (be sure
-to gitignore this). One for the workspace, and the other for sources.
+to gitignore this). One for configs, and the other for sources.
 
 :::warning
 
-Because scaffolding uses the project graph, it requires all projects with a `package.json` to be
-[configured in moon][graph]. Otherwise, moon will fail to copy all required files and builds may
-fail.
+Because scaffolding uses the project graph, it requires all projects to be [configured in
+moon][graph]. Otherwise, moon will fail to copy all required files and builds may fail.
 
 :::
 
-### Workspace
+### Configs
 
-The workspace skeleton mirrors the project folder structure of the repository 1:1, and only copies
+The configs skeleton mirrors the project folder structure of the repository 1:1, and only copies
 files required for dependencies to install. This is typically manifests (`package.json`), lockfiles
 (`yarn.lock`, etc), other critical configs, and `.moon` itself. This is necessary for package
 managers to install dependencies (otherwise they will fail), and for dependencies to be layer cached
@@ -54,7 +53,7 @@ in Docker.
 An example of this skeleton using Yarn may look like the following:
 
 ```
-.moon/docker/workspace/
+.moon/docker/configs/
 ├── .moon/
 ├── .yarn/
 ├── apps/

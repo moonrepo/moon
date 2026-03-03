@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/visualizer",
-  "version": "0.11.0",
+  "version": "0.12.2",
   "description": "A project graph and dependency graph visualizer for moon.",
   "keywords": [
     "moon",
@@ -15,6 +15,11 @@
   "contributors": [
     "Diptesh Choudhuri"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moonrepo/moon",
+    "directory": "packages/visualizer"
+  },
   "license": "MIT",
   "main": "dist/assets/index.js",
   "files": [
@@ -24,20 +29,21 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@moonrepo/types": "workspace:^",
     "cytoscape": "^3.31.1",
     "cytoscape-dagre": "^2.5.0",
     "cytoscape-klay": "^3.1.4",
-    "preact": "^10.26.4"
+    "preact": "^10.28.3"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.10.1",
-    "@types/cytoscape": "^3.21.9",
-    "@types/cytoscape-dagre": "^2.3.3",
-    "@types/cytoscape-klay": "^3.1.4",
-    "autoprefixer": "^10.4.21",
-    "postcss": "^8.5.3",
-    "tailwindcss": "^3.4.17",
-    "vite": "^6.2.3",
+    "@preact/preset-vite": "^2.10.3",
+    "@types/cytoscape": "^3.31.0",
+    "@types/cytoscape-dagre": "^2.3.4",
+    "@types/cytoscape-klay": "^3.1.5",
+    "autoprefixer": "^10.4.24",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "vite": "^6.4.1",
     "vite-plugin-css-injected-by-js": "^3.5.2"
   }
 }

@@ -328,13 +328,12 @@ mod project_builder {
             let project = build_lang_project("python").await;
 
             assert_eq!(project.language, LanguageType::Python);
-            assert_eq!(project.toolchains, vec![Id::raw("system")]);
+            assert_eq!(project.toolchains, vec![Id::raw("unstable_python")]);
 
             let project = build_lang_project("python-config").await;
 
-            // no python toolchain yet
-            assert_eq!(project.language, LanguageType::Unknown);
-            assert_eq!(project.toolchains, vec![Id::raw("system")]);
+            assert_eq!(project.language, LanguageType::Python);
+            assert_eq!(project.toolchains, vec![Id::raw("unstable_python")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]

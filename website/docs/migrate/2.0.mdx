@@ -19,6 +19,7 @@ $ moon migrate v2
 
 - Removed `x86_64-apple-darwin` (Apple Intel) as a supported operating system. Only
   `aarch64-apple-darwin` (Apple Silicon) is now supported.
+- Removed canary and nightly releases.
 
 ### Commands
 
@@ -49,6 +50,8 @@ $ moon migrate v2
 #### `moon ci`
 
 - Now runs `moon exec` under the hood, with some arguments/options pre-filled.
+- No longer includes graph relations when determining affected state, and solely relies on changed
+  files/env vars. Pass `--include-relations` to include them.
 - Renamed options:
   - `--update-cache, -u` -> `--force, -f`
 
@@ -66,6 +69,7 @@ $ moon migrate v2
 
 #### `moon mcp`
 
+- Updated protocol version to 2025-11-25.
 - Updated the `get_projects` tool to no longer have an `includeTasks` option.
 - Updated the `get_projects` tool to return a list of project fragments, instead of the whole
   project object. This was required as the response was too large for MCP.
@@ -80,6 +84,8 @@ $ moon migrate v2
 #### `moon run`
 
 - Now runs `moon exec` under the hood, with some arguments/options pre-filled.
+- No longer includes graph relations when determining affected state, and solely relies on changed
+  files/env vars. Pass `--include-relations` to include them.
 - Updated options:
   - `--dependents` now requires a value, either `deep` or `direct`
 - Renamed options:
@@ -126,9 +132,10 @@ $ moon migrate v2
 
 - This file was renamed to `.moon/toolchains.*` (plural) to reflect that multiple toolchains are
   configured. This also aligns with the new `.moon/extensions.*` file.
-- All toolchains have been stabilized, so the `unstable_` prefix must be removed from identifiers.
+- All toolchains have been stabilized (excluding Python), so the `unstable_` prefix must be removed
+  from identifiers.
 
-#### JavaScript
+### JavaScript
 
 The `bun`, `deno`, and `node` toolchains now require the `javascript` toolchain to be defined as
 well. All shared settings have been moved to the `javascript` toolchain.
@@ -187,6 +194,35 @@ yarn:
   version: '4.8.0'
 ```
 
+### Python
+
+All the Python toolchains are still unstable, and still require the `unstable_` prefix. We're not
+Python experts, so we would love help from the community to test and improve the implementation. If
+you're interested in helping out, please reach out in our Discord server.
+
+- Moved settings:
+  - `python.pip` -> `unstable_pip`
+  - `python.uv` -> `unstable_uv`
+- Removed settings:
+  - `python.rootVenvOnly`
+
+```yaml title=".moon/toolchains.yml"
+# Before
+python:
+  version: '3.12.0'
+  packageManager: 'uv'
+  uv:
+    version: '0.10.2'
+
+# After
+unstable_python:
+  version: '3.12.0'
+  packageManager: 'uv'
+
+unstable_uv:
+  version: '0.10.2'
+```
+
 ## Extensions
 
 ### Configuration: `.moon/extensions.*`
@@ -203,6 +239,39 @@ download: {}
 
 migrate-nx: {}
 ```
+
+## Pipeline
+
+### Affected graph relations
+
+In v1 when determining the affected state of a task (via `--affected`), the graph relations
+(dependencies and dependents) were always included in the calculation. This meant that tasks were
+affected, even if there were no changed files or environment variables, just because they were
+related to other affected tasks. This was sometimes confusing to users, as it seemed like the
+pipeline was over-zealously running tasks that it shouldn't (even though it was correct).
+
+In v2 and later, the graph relations are no longer included by default, and only changed files and
+environment variables are taken into account. To include graph relations in the affected
+calculation, you can pass the `--include-relations` (`-g`) flag.
+
+### Better CI handling
+
+Tasks have an option called `runInCI` that indicates whether the task should be run in CI or not,
+and can be configured with more granulary conditions. However, in v1 this option was only taken into
+account in the `moon ci` command, and not in `moon run`. There was no way to force this option to be
+respected in `moon run`, which meant that users had to be careful to not accidentally run CI-only
+tasks locally.
+
+In v2, we've improved the implementation of this option, and how we detect CI environments. The
+following changes have been made.
+
+- `moon ci`, `moon check`, `moon run`, and `moon exec` now all respect the `runInCI` option.
+- `moon ci` is always forced in CI mode. The other commands are dependent on the `CI` environment
+  variable.
+  - To force CI mode, set the `CI` environment variable to `true`, or pass the `--ci` flag.
+- The `runInCI` option will be applied when in an CI environment. The exception to this is the
+  "only" condition, which also applies locally.
+- The `runInCI` option can be disabled entirely with `moon exec --ignore-ci-checks`.
 
 ## Project
 
@@ -275,10 +344,12 @@ toolchains:
 - Renamed settings:
   - [`tasks.*.local`](#local-mode) -> `tasks.*.preset` using `server` value
   - `tasks.*.platform` -> `tasks.*.toolchains`
+  - `tasks.*.options.affectedPassInputs` -> `tasks.*.options.affectedFiles.passInputsWhenNoMatch`
 - Removed setting values:
   - `tasks.*.preset` value `watcher`
 - Changed settings:
   - `tasks.deps.*.args` no longer supports a string. Use a list of strings instead.
+  - `tasks.*.options.affectedFiles` now supports an object for more granular control.
 - Changed option defaults:
   - `tasks.*.options.envFile` now defaults to a list of files, instead of a single file, when
     `true`. Refer to the blog post for more information.
@@ -370,8 +441,8 @@ tokens (`$VAR`) and `?` flag tokens (`$VAR?`) swapped functionality. Refer to th
 | `${VAR!}`                               | Don't substitute and keep variable syntax (`$VAR`)         | ~                                                             |
 | `${VAR?}`                               | Substitute with empty string if variable empty             | 💥 Substitute with variable syntax (`$VAR`) if variable empty |
 | `${VAR:default}`                        | Use default value if variable empty                        | ~                                                             |
-| `${VAR:-default}`, `${VAR-default}`     | ⛔️ Not supported                                          | Use default value if variable empty                           |
-| `${VAR:+alternate}`, `${VAR+alternate}` | ⛔️ Not supported                                          | Use alternate value if variable non-empty                     |
+| `${VAR:-default}`, `${VAR-default}`     | ⛔️ Not supported                                           | Use default value if variable empty                           |
+| `${VAR:+alternate}`, `${VAR+alternate}` | ⛔️ Not supported                                           | Use alternate value if variable non-empty                     |
 
 Legend:
 
@@ -428,6 +499,39 @@ can no longer reference them for substitution. This is because the `.env` files 
 the process.
 
 :::
+
+### Toolchain detection
+
+How toolchains work and get detected for projects and tasks has been heavily reworked in v2.
+Ideally, you should _never_ configure the `toolchains` setting for a task directly. This can cause
+unintended consequences, and instead you should rely on the toolchain detection system itself.
+
+For example, in moon v1, the `platform: node` setting represented Node.js, the configured package
+manager (npm, pnpm, yarn), and JavaScript itself. That's 3 different layers of functionality in 1
+implementation. In v2, these layers are now split into separate toolchains (plugins), and act
+independently.
+
+So if you had the following configuration in v2:
+
+```yaml
+tasks:
+  build:
+    # ...
+    toolchains: 'node'
+```
+
+This would _only_ apply the Node.js toolchain, and NOT the JavaScript toolchain, NOR the package
+manager toolchain. This may cause unexpected issues. The correct configuration should be:
+
+```yaml
+tasks:
+  build:
+    # ...
+    toolchains: ['node', 'javascript', 'npm']
+```
+
+But adding all those toolchains is cumbersome, so we suggest omitting `toolchains` entirely and let
+the detection do its thing.
 
 ### Other changes
 

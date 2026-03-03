@@ -11,6 +11,7 @@ use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
+#[derive(Debug)]
 struct PruneToolchainInstance {
     deps_root: PathBuf,
     projects: Vec<Arc<Project>>,
@@ -27,6 +28,11 @@ pub async fn prune_toolchains(
 
     // Collect all dependency roots and which projects belong to it
     let mut deps_roots: Vec<PruneToolchainInstance> = vec![];
+
+    debug!(
+        project_ids = ?manifest.focused_projects,
+        "Locating dependency workspaces for focused projects",
+    );
 
     for project_id in &manifest.focused_projects {
         let project = workspace_graph.get_project(project_id)?;
@@ -46,8 +52,22 @@ pub async fn prune_toolchains(
                 let toolchain = locate_result.plugin;
 
                 if !toolchain.in_dependencies_workspace(&locate_result.output, &project.root)? {
+                    debug!(
+                        project_id = project.id.as_str(),
+                        project_root = ?project.root,
+                        deps_root = ?root,
+                        "Not in a dependency workspace, skipping!",
+                    );
+
                     continue;
                 }
+
+                debug!(
+                    project_id = project.id.as_str(),
+                    project_root = ?project.root,
+                    deps_root = ?root,
+                    "Adding to dependency workspace",
+                );
 
                 match deps_roots.iter_mut().find(|instance| {
                     &instance.deps_root == root && instance.toolchain.id == toolchain.id
@@ -63,11 +83,19 @@ pub async fn prune_toolchains(
                         });
                     }
                 };
+            } else {
+                debug!(
+                    project_id = project.id.as_str(),
+                    project_root = ?project.root,
+                    "No dependency workspace found, skipping!",
+                );
             }
         }
     }
 
     if deps_roots.is_empty() {
+        debug!("No dependency workspaces for focused projects, skipping prune");
+
         return Ok(());
     }
 
@@ -83,7 +111,7 @@ pub async fn prune_toolchains(
         set.spawn(async move {
             // Run prune first, so this can remove all development artifacts
             if toolchain.has_func("prune_docker").await {
-                let _ = toolchain
+                toolchain
                     .prune_docker(PruneDockerInput {
                         context: toolchain_registry.create_context(),
                         docker_config: docker_config.clone(),
@@ -167,6 +195,10 @@ pub async fn prune_toolchains(
 
             Ok::<_, miette::Report>(())
         });
+    }
+
+    while set.join_next().await.is_some() {
+        continue;
     }
 
     Ok(())

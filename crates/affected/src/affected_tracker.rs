@@ -388,10 +388,6 @@ impl AffectedTracker {
     }
 
     pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {
-        if self.is_task_marked(task) {
-            return Ok(Some(AffectedBy::AlreadyMarked));
-        }
-
         // Special CI handling
         match (self.ci, &task.options.run_in_ci) {
             (true, TaskOptionRunInCI::Always) => {
@@ -454,6 +450,19 @@ impl AffectedTracker {
 
     pub fn is_task_marked(&self, task: &Task) -> bool {
         self.tasks.contains_key(&task.target)
+    }
+
+    pub fn is_task_marked_ignoring_relations(&self, task: &Task) -> bool {
+        self.tasks.get(&task.target).is_some_and(|by_list| {
+            by_list.iter().any(|by| {
+                matches!(
+                    by,
+                    AffectedBy::AlwaysAffected
+                        | AffectedBy::ChangedFile(_)
+                        | AffectedBy::EnvironmentVariable(_)
+                )
+            })
+        })
     }
 
     pub fn mark_task_affected(&mut self, task: &Task, affected: AffectedBy) -> miette::Result<()> {

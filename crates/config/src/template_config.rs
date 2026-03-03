@@ -1,5 +1,5 @@
 use crate::shapes::OneOrMany;
-use crate::{config_enum, config_struct};
+use crate::{config_enum, config_struct, is_false};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ValidateError, validate};
@@ -16,15 +16,19 @@ macro_rules! var_setting {
                 pub default: $ty,
 
                 /// Marks the variable as internal, and won't be overwritten via CLI arguments.
+                #[serde(skip_serializing_if = "is_false")]
                 pub internal: bool,
 
                 /// The order in which variables should be prompted for.
+                #[serde(skip_serializing_if = "Option::is_none")]
                 pub order: Option<usize>,
 
                 /// Prompt the user for a value when the generator is running.
+                #[serde(skip_serializing_if = "Option::is_none")]
                 pub prompt: Option<String>,
 
                 /// Marks the variable as required, and will not accept an empty value.
+                #[serde(skip_serializing_if = "Option::is_none")]
                 pub required: Option<bool>,
             }
         );
@@ -42,6 +46,7 @@ config_struct!(
     pub struct TemplateVariableEnumValueConfig {
         /// A human-readable label for the value.
         pub label: String,
+
         /// The literal enumerable value.
         pub value: String,
     }
@@ -49,10 +54,7 @@ config_struct!(
 
 config_enum!(
     #[derive(Config)]
-    #[serde(
-        untagged,
-        expecting = "expected a value string or value object with label"
-    )]
+    #[serde(untagged)]
     pub enum TemplateVariableEnumValue {
         String(String),
         #[setting(nested)]
@@ -66,7 +68,7 @@ config_enum!(
     pub enum TemplateVariableEnumDefault {
         String(String),
         #[setting(default)]
-        Vec(Vec<String>),
+        List(Vec<String>),
     }
 );
 
@@ -74,7 +76,7 @@ impl TemplateVariableEnumDefault {
     pub fn to_vec(&self) -> Vec<&String> {
         match self {
             Self::String(value) => vec![value],
-            Self::Vec(list) => list.iter().collect(),
+            Self::List(list) => list.iter().collect(),
         }
     }
 }
@@ -86,7 +88,7 @@ fn validate_enum_default<C>(
     _finalize: bool,
 ) -> Result<(), ValidateError> {
     if let Some(values) = &partial.values {
-        if let PartialTemplateVariableEnumDefault::Vec(list) = default_value {
+        if let PartialTemplateVariableEnumDefault::List(list) = default_value {
             // Vector is the default value, so check if not-empty
             if !partial.multiple.is_some_and(|m| m) && !list.is_empty() {
                 return Err(ValidateError::new(
@@ -105,7 +107,7 @@ fn validate_enum_default<C>(
 
         let matches = match default_value {
             PartialTemplateVariableEnumDefault::String(inner) => values.contains(&inner),
-            PartialTemplateVariableEnumDefault::Vec(list) => {
+            PartialTemplateVariableEnumDefault::List(list) => {
                 list.iter().all(|v| values.contains(&v))
             }
         };
@@ -128,15 +130,19 @@ config_struct!(
         pub default: TemplateVariableEnumDefault,
 
         /// Marks the variable as internal, and won't be overwritten via CLI arguments.
+        #[serde(default, skip_serializing_if = "is_false")]
         pub internal: bool,
 
         /// Allows multiple values to be selected.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub multiple: Option<bool>,
 
         /// The order in which variables should be prompted for.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub order: Option<usize>,
 
         /// Prompt the user for a value when the generator is running.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub prompt: Option<String>,
 
         /// List of acceptable values for this variable.
@@ -174,7 +180,7 @@ impl TemplateVariableEnumSetting {
 config_enum!(
     /// Each type of template variable.
     #[derive(Config)]
-    #[serde(tag = "type", expecting = "expected a supported value type")]
+    #[serde(tag = "type")]
     pub enum TemplateVariable {
         /// An array variable.
         #[setting(nested)]
@@ -272,12 +278,15 @@ config_struct!(
 
         /// A pre-populated destination to scaffold to, relative from the
         /// workspace root when leading with `/`, otherwise the working directory.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub destination: Option<String>,
 
         /// Extends one or many other templates.
+        #[serde(default, skip_serializing_if = "OneOrMany::is_empty")]
         pub extends: OneOrMany<Id>,
 
         /// Overrides the identifier of the template, instead of using the folder name.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub id: Option<Id>,
 
         /// A human-readable title for the template.
@@ -287,6 +296,7 @@ config_struct!(
         /// A map of variables that'll be interpolated within each template file.
         /// Variables can also be populated by passing command line arguments.
         #[setting(nested)]
+        #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub variables: FxHashMap<String, TemplateVariable>,
     }
 );

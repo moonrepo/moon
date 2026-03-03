@@ -12,6 +12,7 @@ config_struct!(
     #[config(allow_unknown_fields)]
     pub struct ExtensionPluginConfig {
         /// Location of the WASM plugin to use.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub plugin: Option<PluginLocator>,
 
         /// Arbitrary configuration that'll be passed to the WASM plugin.
@@ -42,6 +43,7 @@ config_struct!(
         /// Supports a relative file path or a secure URL.
         /// @since 2.0.0
         #[setting(extend, validate = validate::extends_from)]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
 
         /// Configures and integrates extensions into the system using
@@ -63,10 +65,10 @@ impl ExtensionsConfig {
         use proto_core::warpgate::find_debug_locator_with_url_fallback as locate;
 
         match id.as_str() {
-            "download" => Some(locate("download_extension", "1.0.0")),
-            "migrate-nx" => Some(locate("migrate_nx_extension", "1.0.0")),
-            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "1.0.0")),
-            "unpack" => Some(locate("unpack_extension", "1.0.0")),
+            "download" => Some(locate("download_extension", "1.0.2")),
+            "migrate-nx" => Some(locate("migrate_nx_extension", "1.0.3")),
+            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "1.0.3")),
+            "unpack" => Some(locate("unpack_extension", "1.0.2")),
             _ => None,
         }
     }

@@ -66,9 +66,17 @@ The following diagram outlines our cache folder structure and why each piece exi
 		# Contents includes all sources used to generate the hash.
 		<hash>.json
 
+	# File system locks for parallel processes.
+	locks/
+		<file>.lock
+
 	# Stores `tar.gz` archives of a task's outputs based on its generated hash.
 	outputs/
 		<hash>.tar.gz
+
+	# JSON schemas for validating configuration files.
+	schemas/
+		<schema>.json
 
 	# State information about anything and everything within moon. Toolchain,
 	# dependencies, projects, running targets, etc.

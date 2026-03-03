@@ -21,5 +21,10 @@
     "postcss.config.cjs",
     "tailwind.config.cjs",
     "vite.config.mjs"
+  ],
+  "references": [
+    {
+      "path": "../types"
+    }
   ]
 }

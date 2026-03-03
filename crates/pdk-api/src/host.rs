@@ -60,6 +60,15 @@ impl ExecCommand {
             retry_count: 0,
         }
     }
+
+    /// Return the label, or the command + arguments.
+    pub fn get_label(&self) -> String {
+        self.label.clone().unwrap_or_else(|| {
+            format!("{} {}", self.command.command, self.command.args.join(" "))
+                .trim()
+                .into()
+        })
+    }
 }
 
 impl From<ExecCommandInput> for ExecCommand {

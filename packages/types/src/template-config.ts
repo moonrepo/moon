@@ -11,11 +11,11 @@ import type { Id } from './common';
 export interface TemplateFrontmatterConfig {
 	$schema: string;
 	/** Force overwrite a file at the destination if there is a conflict. */
-	force: boolean;
+	force?: boolean;
 	/** Skip writing this file to the destination. */
-	skip: boolean;
+	skip?: boolean;
 	/** Override the destination using a relative file path. */
-	to: string | null;
+	to?: string | null;
 }
 
 /**
@@ -83,13 +83,13 @@ export interface TemplateVariableEnumSetting {
 	/** The default value of the variable if none was provided. */
 	default: TemplateVariableEnumDefault;
 	/** Marks the variable as internal, and won't be overwritten via CLI arguments. */
-	internal: boolean;
+	internal?: boolean;
 	/** Allows multiple values to be selected. */
-	multiple: boolean | null;
+	multiple?: boolean | null;
 	/** The order in which variables should be prompted for. */
-	order: number | null;
+	order?: number | null;
 	/** Prompt the user for a value when the generator is running. */
-	prompt: string | null;
+	prompt?: string | null;
 	type: 'enum';
 	/** List of acceptable values for this variable. */
 	values: TemplateVariableEnumValue[];
@@ -166,18 +166,18 @@ export interface TemplateConfig {
 	 * A pre-populated destination to scaffold to, relative from the
 	 * workspace root when leading with `/`, otherwise the working directory.
 	 */
-	destination: string | null;
+	destination?: string | null;
 	/** Extends one or many other templates. */
-	extends: Id | Id[];
+	extends?: Id | Id[];
 	/** Overrides the identifier of the template, instead of using the folder name. */
-	id: Id | null;
+	id?: Id | null;
 	/** A human-readable title for the template. */
 	title: string;
 	/**
 	 * A map of variables that'll be interpolated within each template file.
 	 * Variables can also be populated by passing command line arguments.
 	 */
-	variables: Record<string, TemplateVariable>;
+	variables?: Record<string, TemplateVariable>;
 }
 
 /** Configuration for a template variable. */

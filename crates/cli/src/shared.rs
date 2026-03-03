@@ -119,7 +119,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         && is_globally_installed(&home_dir)
         && let Some(local_bin) = has_locally_installed(&home_dir, &current_dir)
     {
-        debug!("Binary is running from a global path, but we found a local binary to use instead");
+        debug!(local = ?local_bin, "Binary is running from a global path, but we found a local binary to use instead");
         debug!("Will now execute the local binary and replace this running process");
 
         let mut command = Command::new(local_bin);

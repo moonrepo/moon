@@ -457,12 +457,10 @@ impl ExecWorkflow {
         // Insert targets into the graph
         let job = self.get_job();
         let job_total = self.get_job_total();
-        let targets = self.get_targets();
 
-        // TODO pass plan with partitioned targets
         let partition = action_graph_builder
-            .run_tasks(
-                &targets,
+            .run_tasks_with_plan(
+                &self.plan,
                 RunRequirements {
                     ci: self.ci_env,
                     ci_check: self.ci_check,
@@ -479,6 +477,7 @@ impl ExecWorkflow {
 
         // Build the graph
         let (action_context, action_graph) = action_graph_builder.build();
+        let targets = self.get_targets();
 
         if let Some(index) = &job
             && let Some(total) = &job_total

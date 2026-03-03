@@ -12,6 +12,7 @@ use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, color};
 use moon_config::{EnvMap, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
+use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
@@ -493,6 +494,14 @@ impl<'query> ActionGraphBuilder<'query> {
             && let Some(job_total) = reqs.job_total
             && job_total > 0
         {
+            if job_index > job_total - 1 {
+                return Err(ActionGraphError::InvalidJobIndex {
+                    index: job_index,
+                    total: job_total,
+                }
+                .into());
+            }
+
             // If we are going to parallelize, then we need to filter the
             // tasks list based on affected state before partitioning!
             tasks.retain(|task| self.is_task_affected(task, &reqs));
@@ -530,6 +539,61 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         Ok(partition)
+    }
+
+    #[instrument(skip(self, plan))]
+    pub async fn run_tasks_with_plan(
+        &mut self,
+        plan: &ExecutionPlan,
+        reqs: RunRequirements,
+    ) -> miette::Result<RunPartition> {
+        match &plan.targets {
+            TargetsBlock::Partitioned { jobs } => {
+                let mut partition = RunPartition::default();
+
+                if let Some(job_index) = reqs.job
+                    && let Some(job_total) = reqs.job_total
+                    && job_total > 0
+                {
+                    if job_index > job_total - 1 {
+                        return Err(ActionGraphError::InvalidJobIndex {
+                            index: job_index,
+                            total: job_total,
+                        }
+                        .into());
+                    }
+
+                    if jobs.len() != job_total {
+                        return Err(ActionGraphError::MismatchedPlanJobTotals {
+                            plan_total: jobs.len(),
+                            total: job_total,
+                        }
+                        .into());
+                    }
+
+                    let targets = &jobs[job_index];
+
+                    for locator in targets {
+                        for task in self
+                            .internal_resolve_tasks_from_target_locator(locator, false)
+                            .await?
+                        {
+                            if let Some(index) = self.run_task(&task, &reqs).await? {
+                                partition.targets.insert(index, task.target.clone());
+                            }
+                        }
+                    }
+
+                    partition.size = Some(targets.len());
+                } else {
+                    return Err(ActionGraphError::InvalidPlanJobs.into());
+                }
+
+                Ok(partition)
+            }
+            TargetsBlock::Filtered { include } => self.run_tasks(include, reqs).await,
+            TargetsBlock::Included(targets) => self.run_tasks(targets, reqs).await,
+        }
     }
 
     #[instrument(skip(self))]

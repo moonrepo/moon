@@ -81,7 +81,7 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
             #[arg(
                 long,
                 env = "MOON_JOB",
-                help = "Index of the current job",
+                help = "Index (zero-based) of the current job",
                 help_heading = super::HEADING_PARALLELISM,
             )]
             pub job: Option<usize>

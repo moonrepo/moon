@@ -16,7 +16,7 @@ use moon_cache::CacheMode;
 use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
 use moon_console::ui::{Container, Notice, SelectOption, SelectProps, StyledText, Variant};
 use moon_console::{Console, Level};
-use moon_exec_plan::ExecutionPlan;
+use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_task::{Target, TargetLocator};
 use moon_vcs::ChangedStatus;
 use petgraph::graph::NodeIndex;
@@ -25,7 +25,7 @@ use starbase::AppResult;
 use starbase_utils::json;
 use std::fmt;
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 #[derive(Clone, Debug, Default, PartialEq, ValueEnum)]
 pub enum OnFailure {
@@ -87,8 +87,35 @@ pub struct ExecArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
-    if args.targets.is_empty() {
+pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
+    let mut plan = ExecutionPlan::default();
+
+    // Load the execution plan if provided
+    if let Some(rel_plan_path) = &args.plan {
+        let plan_path = if rel_plan_path.is_absolute() {
+            rel_plan_path.to_path_buf()
+        } else {
+            session.working_dir.join(rel_plan_path)
+        };
+
+        debug!(plan = ?plan_path, "Received an execution plan, attempting to load");
+
+        plan = json::read_file(plan_path)?;
+    };
+
+    // Inherit CLI targets if the plan does not provide them
+    if !args.targets.is_empty() {
+        if plan.targets.is_empty() {
+            plan.targets = TargetsBlock::Included(args.targets.clone());
+        } else {
+            warn!(
+                "Targets were passed on the command line, but the provided execution plan already defines a list of targets!"
+            );
+        }
+    }
+
+    // Otherwise prompt for a list of targets
+    if plan.targets.is_empty() {
         let workspace_graph = session.get_workspace_graph().await?;
         let tasks = workspace_graph.get_tasks()?;
 
@@ -107,24 +134,9 @@ pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
         })
         .await?;
 
-        for target in targets {
-            args.targets.push(TargetLocator::Qualified(target));
-        }
+        plan.targets =
+            TargetsBlock::Included(targets.into_iter().map(TargetLocator::Qualified).collect());
     }
-
-    let mut plan = ExecutionPlan::default();
-
-    if let Some(rel_plan_path) = &args.plan {
-        let plan_path = if rel_plan_path.is_absolute() {
-            rel_plan_path.to_path_buf()
-        } else {
-            session.working_dir.join(rel_plan_path)
-        };
-
-        debug!(plan = ?plan_path, "Received an execution plan, attempting to load");
-
-        plan = json::read_file(plan_path)?;
-    };
 
     let executor = ExecWorkflow::new(session, args, plan)?;
     let exit_code = executor.execute().await?;
@@ -447,9 +459,10 @@ impl ExecWorkflow {
         let job_total = self.get_job_total();
         let targets = self.get_targets();
 
+        // TODO pass plan with partitioned targets
         let partition = action_graph_builder
             .run_tasks(
-                targets,
+                &targets,
                 RunRequirements {
                     ci: self.ci_env,
                     ci_check: self.ci_check,
@@ -560,9 +573,13 @@ impl ExecWorkflow {
     ) -> miette::Result<Vec<Action>> {
         self.print_step("Executing action pipeline")?;
 
-        action_context
-            .initial_targets
-            .extend(self.args.targets.clone());
+        action_context.initial_targets.extend(
+            self.get_targets()
+                .into_iter()
+                .map(|target| target.to_owned())
+                .collect::<Vec<_>>(),
+        );
+
         action_context.passthrough_args = self.args.passthrough.clone();
 
         let results = run_action_pipeline(&self.session, action_context, action_graph).await?;
@@ -686,8 +703,12 @@ impl ExecWorkflow {
             .unwrap_or(&self.args.status)
     }
 
-    fn get_targets(&self) -> &[TargetLocator] {
-        &self.args.targets
+    fn get_targets(&self) -> Vec<&TargetLocator> {
+        match &self.plan.targets {
+            TargetsBlock::Partitioned { jobs } => jobs.iter().flatten().collect(),
+            TargetsBlock::Filtered { include } => Vec::from_iter(include),
+            TargetsBlock::Included(targets) => Vec::from_iter(targets),
+        }
     }
 
     fn get_upstream(&self) -> UpstreamScope {

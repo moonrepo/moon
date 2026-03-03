@@ -4757,6 +4757,7 @@ version = "0.0.1"
 dependencies = [
  "moon_affected",
  "moon_common",
+ "moon_target",
  "moon_vcs",
  "serde",
 ]

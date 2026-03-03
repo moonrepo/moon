@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_affected = { path = "../affected" }
+moon_target = { path = "../target" }
 moon_vcs = { path = "../vcs" }
 # miette = { workspace = true }
 serde = { workspace = true }

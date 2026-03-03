@@ -1,5 +1,6 @@
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_common::{cacheable, cacheable_enum};
+use moon_target::TargetLocator;
 
 cacheable!(
     #[derive(Default)]
@@ -44,6 +45,33 @@ cacheable!(
     }
 );
 
+cacheable_enum!(
+    #[serde(untagged)]
+    pub enum TargetsBlock {
+        Partitioned { jobs: Vec<Vec<TargetLocator>> },
+
+        Filtered { include: Vec<TargetLocator> },
+
+        Included(Vec<TargetLocator>),
+    }
+);
+
+impl Default for TargetsBlock {
+    fn default() -> Self {
+        Self::Included(vec![])
+    }
+}
+
+impl TargetsBlock {
+    pub fn is_empty(&self) -> bool {
+        match self {
+            Self::Partitioned { jobs } => jobs.is_empty(),
+            Self::Filtered { include } => include.is_empty(),
+            Self::Included(targets) => targets.is_empty(),
+        }
+    }
+}
+
 cacheable!(
     #[derive(Default)]
     #[serde(default, deny_unknown_fields)]
@@ -51,5 +79,6 @@ cacheable!(
         pub affected: Option<AffectedBlock>,
         pub graph: GraphBlock,
         pub pipeline: PipelineBlock,
+        pub targets: TargetsBlock,
     }
 );

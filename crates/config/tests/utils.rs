@@ -304,7 +304,7 @@ pub fn load_tasks_config_in_format(format: &str) {
                 retry_count: Some(3),
                 run_deps_in_parallel: Some(false),
                 run_in_ci: Some(TaskOptionRunInCI::Enabled(true)),
-                run_in_sync_phase: Some(false),
+                run_in_sync_phase: None,
                 run_from_workspace_root: Some(false),
                 shell: Some(false),
                 timeout: Some(60),

@@ -15,7 +15,7 @@ features = ["loader"]
 moon_common = { version = "2.0.2", path = "../common" }
 moon_target = { version = "2.0.1", path = "../target" }
 deserialize_untagged_verbose_error = "0.1.5"
-hcl-rs = "0.19.5"
+hcl-rs = "0.19.6"
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }

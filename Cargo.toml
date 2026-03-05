@@ -8,7 +8,7 @@ default-members = ["crates/cli"]
 async-recursion = "1.1.1"
 async-trait = "0.1.89"
 cached = "0.56.0"
-chrono = { version = "0.4.43", features = ["serde"] }
+chrono = { version = "0.4.44", features = ["serde"] }
 cd_env = "0.3.1"
 ci_env = "0.4.1"
 clap = { version = "4.5.60", default-features = false, features = [
@@ -43,11 +43,11 @@ reqwest = { version = "0.13.2", default-features = false, features = [
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
-scc = "3.6.4"
+scc = "3.6.9"
 schematic = { version = "0.19.4", default-features = false, features = [
     "schema",
 ] }
-serial_test = "3.3.1"
+serial_test = "3.4.0"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
@@ -71,7 +71,7 @@ starbase_utils = { version = "0.12.6", default-features = false, features = [
 ] }
 tera = { version = "1.20.1", features = ["preserve_order"] }
 thiserror = "2.0.18"
-tokio = { version = "1.49.0", default-features = false, features = [
+tokio = { version = "1.50.0", default-features = false, features = [
     "macros",
     "process",
     "rt-multi-thread",

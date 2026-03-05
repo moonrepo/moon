@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated Rust to v1.94.0.
+
 ## 2.0.3
 
 This is a re-release as the v2.0.0 release workflow failed.

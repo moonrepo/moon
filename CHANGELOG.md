@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.0.4
 
 #### 🧰 Toolchains
 

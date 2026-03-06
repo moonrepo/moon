@@ -1128,9 +1128,9 @@
             }
           ]
         },
-        "passInputsWhenNoMatch": {
-          "title": "passInputsWhenNoMatch",
-          "description": "When no affected files are matching, pass the task's inputs as arguments to the command, instead of ..",
+        "passDotWhenNoResults": {
+          "title": "passDotWhenNoResults",
+          "description": "When there are no affected files after matching and filtering, use . instead of an empty value.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1139,7 +1139,19 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "When no affected files are matching, pass the task's inputs as arguments to the command, instead of `.`."
+          "markdownDescription": "When there are no affected files after matching and filtering, use `.` instead of an empty value."
+        },
+        "passInputsWhenNoMatch": {
+          "title": "passInputsWhenNoMatch",
+          "description": "When there are no affected files after matching, use the task's inputs instead.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false

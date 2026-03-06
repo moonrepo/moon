@@ -275,7 +275,8 @@ pub fn load_tasks_config_in_format(format: &str) {
                 affected_files: Some(TaskOptionAffectedFilesEntry::Object(
                     TaskOptionAffectedFilesConfig {
                         pass: TaskOptionAffectedFilesPattern::Args,
-                        pass_inputs_when_no_match: Some(true)
+                        pass_inputs_when_no_match: Some(true),
+                        pass_dot_when_no_results: None,
                     }
                 )),
                 allow_failure: Some(true),

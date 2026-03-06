@@ -48,10 +48,16 @@ config_struct!(
         /// The pattern in which affected files will be passed to the affected task.
         pub pass: TaskOptionAffectedFilesPattern,
 
-        /// When no affected files are matching, pass the task's inputs
-        /// as arguments to the command, instead of `.`.
+        /// When there are no affected files after matching, use the
+        /// task's inputs instead.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub pass_inputs_when_no_match: Option<bool>,
+
+        /// When there are no affected files after matching and filtering,
+        /// use `.` instead of an empty value.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[setting(default = true)]
+        pub pass_dot_when_no_results: Option<bool>,
     }
 );
 

@@ -702,6 +702,7 @@ options:
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Enabled(true),
+                            pass_dot_when_no_results: None,
                             ..Default::default()
                         }
                     ))
@@ -742,6 +743,7 @@ options:
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Enabled(false),
+                            pass_dot_when_no_results: None,
                             ..Default::default()
                         }
                     ))
@@ -782,6 +784,7 @@ options:
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Args,
+                            pass_dot_when_no_results: None,
                             ..Default::default()
                         }
                     ))
@@ -822,6 +825,7 @@ options:
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Env,
+                            pass_dot_when_no_results: None,
                             ..Default::default()
                         }
                     ))
@@ -846,6 +850,7 @@ options:
                         TaskOptionAffectedFilesConfig {
                             pass: TaskOptionAffectedFilesPattern::Args,
                             pass_inputs_when_no_match: Some(true),
+                            pass_dot_when_no_results: None,
                         }
                     ))
                 );

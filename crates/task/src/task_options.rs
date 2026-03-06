@@ -10,6 +10,7 @@ cacheable!(
     pub struct TaskOptionAffectedFiles {
         pub pass: TaskOptionAffectedFilesPattern,
         pub pass_inputs_when_no_match: bool,
+        pub pass_dot_when_no_results: bool,
     }
 );
 

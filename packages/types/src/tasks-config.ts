@@ -193,8 +193,13 @@ export interface TaskOptionAffectedFilesConfig {
 	/** The pattern in which affected files will be passed to the affected task. */
 	pass: boolean | 'args' | 'env';
 	/**
-	 * When no affected files are matching, pass the task's inputs
-	 * as arguments to the command, instead of `.`.
+	 * When there are no affected files after matching and filtering,
+	 * use `.` instead of an empty value.
+	 */
+	passDotWhenNoResults?: boolean | null;
+	/**
+	 * When there are no affected files after matching, use the
+	 * task's inputs instead.
 	 */
 	passInputsWhenNoMatch?: boolean | null;
 }
@@ -668,8 +673,13 @@ export interface PartialTaskOptionAffectedFilesConfig {
 	/** The pattern in which affected files will be passed to the affected task. */
 	pass?: boolean | 'args' | 'env' | null;
 	/**
-	 * When no affected files are matching, pass the task's inputs
-	 * as arguments to the command, instead of `.`.
+	 * When there are no affected files after matching and filtering,
+	 * use `.` instead of an empty value.
+	 */
+	passDotWhenNoResults?: boolean | null;
+	/**
+	 * When there are no affected files after matching, use the
+	 * task's inputs instead.
 	 */
 	passInputsWhenNoMatch?: boolean | null;
 }

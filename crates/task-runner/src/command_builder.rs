@@ -339,7 +339,11 @@ impl<'task> CommandBuilder<'task> {
             self.command.env(
                 "MOON_AFFECTED_FILES",
                 if rel_files.is_empty() {
-                    ".".into()
+                    if affected_options.pass_dot_when_no_results {
+                        ".".into()
+                    } else {
+                        "".into()
+                    }
                 } else {
                     env::join_paths(
                         rel_files
@@ -358,7 +362,9 @@ impl<'task> CommandBuilder<'task> {
             TaskOptionAffectedFilesPattern::Args | TaskOptionAffectedFilesPattern::Enabled(true)
         ) {
             if rel_files.is_empty() {
-                self.command.arg_if_missing(".");
+                if affected_options.pass_dot_when_no_results {
+                    self.command.arg_if_missing(".");
+                }
             } else {
                 let args = rel_files
                     .into_iter()

@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Added support for `*` versions when determining project relationships.
+  - Reworked `pnpm dedupe` and `yarn dedupe` detection logic.
+- **Python**
+  - Will now read `pyproject.toml` dependencies to determine project relationships.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.55.4](https://github.com/moonrepo/proto/releases/tag/v0.55.4) from 0.55.2.
+- Updated Rust to v1.94.0.
+- Updated dependencies.
+
 ## 2.0.3
 
 This is a re-release as the v2.0.0 release workflow failed.

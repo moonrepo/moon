@@ -1112,6 +1112,18 @@
       "description": "Expanded information about affected files handling.",
       "type": "object",
       "properties": {
+        "ignoreProjectBoundary": {
+          "title": "ignoreProjectBoundary",
+          "description": "When matching affected files, ignore the project boundary and include workspace relative files. Otherwise, only files within the project are matched.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "pass": {
           "title": "pass",
           "description": "The pattern in which affected files will be passed to the affected task.",

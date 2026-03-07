@@ -301,11 +301,8 @@ impl<'task> CommandBuilder<'task> {
 
         // Only get files when `--affected` is passed
         let mut abs_files = if context.affected.is_some() {
-            self.task.get_affected_files(
-                &self.app.workspace_root,
-                &context.changed_files,
-                &self.project.source,
-            )?
+            self.task
+                .get_affected_files(&self.app.workspace_root, &context.changed_files)?
         } else {
             Vec::with_capacity(0)
         };
@@ -317,18 +314,15 @@ impl<'task> CommandBuilder<'task> {
 
         abs_files.sort();
 
+        // Filter to project only files
+        if !affected_options.ignore_project_boundary {
+            abs_files.retain(|abs_file| abs_file.starts_with(self.project.source.as_str()));
+        }
+
         // Convert to relative paths
         let rel_files = abs_files
             .into_iter()
-            .filter_map(|abs_file| {
-                if self.working_dir == self.app.workspace_root
-                    || abs_file.starts_with(&self.project.root)
-                {
-                    abs_file.relative_to(self.working_dir).ok()
-                } else {
-                    None
-                }
-            })
+            .filter_map(|abs_file| abs_file.relative_to(self.working_dir).ok())
             .collect::<Vec<_>>();
 
         // Set an environment variable

@@ -848,6 +848,7 @@ options:
                     config.options.affected_files,
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
+                            ignore_project_boundary: None,
                             pass: TaskOptionAffectedFilesPattern::Args,
                             pass_inputs_when_no_match: Some(true),
                             pass_dot_when_no_results: None,

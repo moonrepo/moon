@@ -1146,6 +1146,9 @@ tasks:
 
 The following additional parameters are supported:
 
+- `ignoreProjectBoundary` (`boolean`) <VersionLabel version="2.1.0" /> - When matching affected
+  files, ignore the project boundary and include workspace relative files. Otherwise, only files
+  within the project are matched. Defaults to `false`.
 - `passDotWhenNoResults` (`boolean`) <VersionLabel version="2.1.0" /> - When no affected files are
   found, will pass `.` instead of an empty or no value. Defaults to `true`.
 - `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, will pass all configured

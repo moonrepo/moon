@@ -190,6 +190,11 @@ export interface InheritedByConfig {
 
 /** Expanded information about affected files handling. */
 export interface TaskOptionAffectedFilesConfig {
+	/**
+	 * When matching affected files, ignore the project boundary and include
+	 * workspace relative files. Otherwise, only files within the project are matched.
+	 */
+	ignoreProjectBoundary?: boolean | null;
 	/** The pattern in which affected files will be passed to the affected task. */
 	pass: boolean | 'args' | 'env';
 	/**
@@ -670,6 +675,11 @@ export interface PartialInheritedByConfig {
 
 /** Expanded information about affected files handling. */
 export interface PartialTaskOptionAffectedFilesConfig {
+	/**
+	 * When matching affected files, ignore the project boundary and include
+	 * workspace relative files. Otherwise, only files within the project are matched.
+	 */
+	ignoreProjectBoundary?: boolean | null;
 	/** The pattern in which affected files will be passed to the affected task. */
 	pass?: boolean | 'args' | 'env' | null;
 	/**

@@ -45,6 +45,11 @@ config_struct!(
     /// Expanded information about affected files handling.
     #[derive(Config)]
     pub struct TaskOptionAffectedFilesConfig {
+        /// When matching affected files, ignore the project boundary and include
+        /// workspace relative files. Otherwise, only files within the project are matched.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub ignore_project_boundary: Option<bool>,
+
         /// The pattern in which affected files will be passed to the affected task.
         pub pass: TaskOptionAffectedFilesPattern,
 

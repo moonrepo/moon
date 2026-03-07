@@ -1146,9 +1146,10 @@ tasks:
 
 The following additional parameters are supported:
 
-- `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, and `pass` includes
-  `args`, will pass all configured [`inputs`](#inputs) as relative file paths instead of `.`.
-  Defaults to `false`.
+- `passDotWhenNoResults` (`boolean`) <VersionLabel version="2.1.0" /> - When no affected files are
+  found, will pass `.` instead of an empty or no value. Defaults to `true`.
+- `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, will pass all configured
+  [`inputs`](#inputs) as relative file paths instead. Defaults to `false`.
 
 #### `allowFailure`<VersionLabel version="1.13.0" />
 

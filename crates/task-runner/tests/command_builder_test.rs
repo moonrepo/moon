@@ -828,12 +828,34 @@ mod command_builder {
                 .create_command_with_config(context, |task, _| {
                     task.options.affected_files = Some(TaskOptionAffectedFiles {
                         pass: TaskOptionAffectedFilesPattern::Args,
+                        pass_dot_when_no_results: true,
                         ..Default::default()
                     });
                 })
                 .await;
 
             assert_eq!(get_args(&command), vec!["arg", "--opt", "."]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_fallback_to_dot_in_args_when_no_match_and_configured() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.changed_files.insert("project/other.txt".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        pass_dot_when_no_results: false,
+                        ..Default::default()
+                    });
+                })
+                .await;
+
+            assert_eq!(get_args(&command), vec!["arg", "--opt"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -871,12 +893,34 @@ mod command_builder {
                 .create_command_with_config(context, |task, _| {
                     task.options.affected_files = Some(TaskOptionAffectedFiles {
                         pass: TaskOptionAffectedFilesPattern::Env,
+                        pass_dot_when_no_results: true,
                         ..Default::default()
                     });
                 })
                 .await;
 
             assert_eq!(get_env(&command, "MOON_AFFECTED_FILES").unwrap(), ".");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_fallback_to_dot_in_env_when_no_match_and_configured() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.changed_files.insert("project/other.txt".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Env,
+                        pass_dot_when_no_results: false,
+                        ..Default::default()
+                    });
+                })
+                .await;
+
+            assert_eq!(get_env(&command, "MOON_AFFECTED_FILES").unwrap(), "");
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -887,6 +931,7 @@ mod command_builder {
                     task.options.affected_files = Some(TaskOptionAffectedFiles {
                         pass: TaskOptionAffectedFilesPattern::Args,
                         pass_inputs_when_no_match: true,
+                        ..Default::default()
                     });
                 })
                 .await;

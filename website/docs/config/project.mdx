@@ -1146,6 +1146,9 @@ tasks:
 
 The following additional parameters are supported:
 
+- `filter` (`boolean`) <VersionLabel version="2.1.0" /> - A list of glob patterns to filter the
+  affected files list before passing to the task. Globs must start with `**` to match against
+  absolute paths.
 - `ignoreProjectBoundary` (`boolean`) <VersionLabel version="2.1.0" /> - When matching affected
   files, ignore the project boundary and include workspace relative files. Otherwise, only files
   within the project are matched. Defaults to `false`.

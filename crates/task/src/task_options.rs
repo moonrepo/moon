@@ -8,6 +8,7 @@ cacheable!(
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     #[serde(default)]
     pub struct TaskOptionAffectedFiles {
+        pub filter: Vec<String>,
         pub ignore_project_boundary: bool,
         pub pass: TaskOptionAffectedFilesPattern,
         pub pass_inputs_when_no_match: bool,

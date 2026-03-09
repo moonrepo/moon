@@ -976,6 +976,66 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn can_filter_affected_list() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.changed_files.insert("project/input.txt".into());
+            context.changed_files.insert("project/file.json".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        filter: vec!["**/*.json".into()],
+                        ..Default::default()
+                    });
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./file.json'"]
+                } else {
+                    vec!["arg", "--opt", "./file.json"]
+                }
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_filter_affected_list_and_ignore_project_boundary() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.changed_files.insert("project/input.txt".into());
+            context.changed_files.insert("project/file.json".into());
+            context.changed_files.insert("shared/config.json".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        filter: vec!["**/*.json".into()],
+                        ignore_project_boundary: true,
+                        ..Default::default()
+                    });
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./file.json'", "../shared/config.json"]
+                } else {
+                    vec!["arg", "--opt", "./file.json", "../shared/config.json"]
+                }
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn quotes_files_with_special_chars() {
             let container = TaskRunnerContainer::new("builder", "base").await;
 

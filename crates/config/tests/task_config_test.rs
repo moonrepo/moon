@@ -848,6 +848,7 @@ options:
                     config.options.affected_files,
                     Some(TaskOptionAffectedFilesEntry::Object(
                         TaskOptionAffectedFilesConfig {
+                            filter: vec![],
                             ignore_project_boundary: None,
                             pass: TaskOptionAffectedFilesPattern::Args,
                             pass_inputs_when_no_match: Some(true),

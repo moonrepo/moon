@@ -11,6 +11,7 @@ use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
 use moon_task::Task;
 use rustc_hash::FxHashMap;
+use starbase_utils::glob::GlobSet;
 use std::env;
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
@@ -330,6 +331,13 @@ impl<'task> CommandBuilder<'task> {
         }
 
         abs_files.sort();
+
+        // Filter the list before converting
+        if !affected_options.filter.is_empty() {
+            let globset = GlobSet::new(&affected_options.filter)?;
+
+            abs_files.retain(|abs_file| globset.matches(&abs_file));
+        }
 
         // Convert to relative paths
         let rel_files = abs_files

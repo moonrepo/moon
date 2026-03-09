@@ -626,6 +626,7 @@ impl<'proj> TasksBuilder<'proj> {
                             opt.pass_dot_when_no_results.unwrap_or(true);
                         option.ignore_project_boundary =
                             opt.ignore_project_boundary.unwrap_or(false);
+                        option.filter = opt.filter.iter().map(|f| f.to_string()).collect();
                     }
                 };
 

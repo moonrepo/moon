@@ -1112,6 +1112,15 @@
       "description": "Expanded information about affected files handling.",
       "type": "object",
       "properties": {
+        "filter": {
+          "title": "filter",
+          "description": "A list of glob patterns to filter the affected files list before passing to the task as arguments or environment variables. Globs must start with ** to match against absolute paths.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "A list of glob patterns to filter the affected files list before passing to the task as arguments or environment variables. Globs must start with `**` to match against absolute paths."
+        },
         "ignoreProjectBoundary": {
           "title": "ignoreProjectBoundary",
           "description": "When matching affected files, ignore the project boundary and include workspace relative files. Otherwise, only files within the project are matched.",

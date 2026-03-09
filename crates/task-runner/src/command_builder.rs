@@ -336,7 +336,7 @@ impl<'task> CommandBuilder<'task> {
         if !affected_options.filter.is_empty() {
             let globset = GlobSet::new(&affected_options.filter)?;
 
-            abs_files.retain(|abs_file| globset.matches(&abs_file));
+            abs_files.retain(|abs_file| globset.matches(abs_file));
         }
 
         // Convert to relative paths

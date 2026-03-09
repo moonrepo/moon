@@ -1,0 +1,43 @@
+---
+slug: moon-v2.1
+title: moon v2.1 - ???
+authors: [milesj]
+tags: []
+# image: ./img/moon/v2.1.png
+---
+
+TODO
+
+<!--truncate-->
+
+## New task `affectedFiles` settings
+
+In [v2](./moon-v2.0) we introduced an object form for the the task option `affectedFiles`, allowing
+you to further customize this feature. Based on feedback from the community, we're introducing 3 new
+settings to this object:
+
+- `filter` - A list of glob patterns to filter the affected files list before passing to the task.
+- `ignoreProjectBoundary` - When matching affected files, ignore the project boundary and include
+  workspace relative files. Otherwise, only files within the project are matched.
+- `passDotWhenNoResults` - When there are no affected files after matching and filtering, use `.`
+  instead of an empty value.
+
+```yaml
+tasks:
+  lint:
+    command: 'eslint'
+    inputs:
+      - 'src/**/*.{ts,tsx}'
+      - '**/*.json'
+      - 'eslint.config.*'
+    options:
+      affectedFiles:
+        filter: ['**/*.tsx?']
+        ignoreProjectBoundary: true
+        passDotWhenNoResults: false
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.1.0) for a full list of
+changes.

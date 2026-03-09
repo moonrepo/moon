@@ -12,7 +12,7 @@ use moon_project::Project;
 use moon_task::Task;
 use rustc_hash::FxHashMap;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
@@ -299,25 +299,37 @@ impl<'task> CommandBuilder<'task> {
             return Ok(());
         };
 
+        // Filter to project only files
+        let filter_files = |path: &PathBuf| {
+            if affected_options.ignore_project_boundary {
+                true
+            } else {
+                path.starts_with(&self.project.root)
+            }
+        };
+
         // Only get files when `--affected` is passed
         let mut abs_files = if context.affected.is_some() {
             self.task
                 .get_affected_files(&self.app.workspace_root, &context.changed_files)?
+                .into_iter()
+                .filter(filter_files)
+                .collect::<Vec<_>>()
         } else {
             Vec::with_capacity(0)
         };
 
         // If we have no files, use the task's inputs instead
         if abs_files.is_empty() && affected_options.pass_inputs_when_no_match {
-            abs_files = self.task.get_input_files(&self.app.workspace_root)?;
+            abs_files = self
+                .task
+                .get_input_files(&self.app.workspace_root)?
+                .into_iter()
+                .filter(filter_files)
+                .collect::<Vec<_>>();
         }
 
         abs_files.sort();
-
-        // Filter to project only files
-        if !affected_options.ignore_project_boundary {
-            abs_files.retain(|abs_file| abs_file.starts_with(self.project.source.as_str()));
-        }
 
         // Convert to relative paths
         let rel_files = abs_files
@@ -364,7 +376,11 @@ impl<'task> CommandBuilder<'task> {
                     .into_iter()
                     .map(|file| {
                         // Mimic relative from ("./")
-                        let arg = format!("./{file}");
+                        let arg = if file.as_str().starts_with('.') {
+                            file.to_string()
+                        } else {
+                            format!("./{file}")
+                        };
 
                         // Escape files with special characters
                         if arg.contains(['*', '$', '+', '[', ']']) {

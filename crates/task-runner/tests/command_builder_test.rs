@@ -947,6 +947,35 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn can_ignore_project_boundary() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+
+            let mut context = ActionContext::default();
+            context.affected = Some(Affected::default());
+            context.changed_files.insert("project/input.txt".into());
+            context.changed_files.insert("shared/config.json".into());
+
+            let command = container
+                .create_command_with_config(context, |task, _| {
+                    task.options.affected_files = Some(TaskOptionAffectedFiles {
+                        pass: TaskOptionAffectedFilesPattern::Args,
+                        ignore_project_boundary: true,
+                        ..Default::default()
+                    });
+                })
+                .await;
+
+            assert_eq!(
+                get_args(&command),
+                if cfg!(windows) {
+                    vec!["arg", "--opt", "'./input.txt'", "../shared/config.json"]
+                } else {
+                    vec!["arg", "--opt", "./input.txt", "../shared/config.json"]
+                }
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn quotes_files_with_special_chars() {
             let container = TaskRunnerContainer::new("builder", "base").await;
 

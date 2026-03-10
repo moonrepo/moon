@@ -30,5 +30,10 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 
+[dev-dependencies]
+jsonschema = "0.45.0"
+rustc-hash = { workspace = true }
+serde_json = { workspace = true }
+
 [lints]
 workspace = true

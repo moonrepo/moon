@@ -10,6 +10,33 @@ use rust_mcp_sdk::{
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::ops::Deref;
+
+/// Newtype wrapper around `FxHashMap<String, Value>` that provides a valid
+/// JSON Schema (`"type": "object"`) instead of the `"type": "unknown"` that
+/// the `rust-mcp-macros` `JsonSchema` derive emits for unrecognized generic types.
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(transparent)]
+pub struct Variables(pub FxHashMap<String, serde_json::Value>);
+
+impl Variables {
+    pub fn json_schema() -> serde_json::Map<String, serde_json::Value> {
+        let mut map = serde_json::Map::new();
+        map.insert(
+            "type".to_string(),
+            serde_json::Value::String("object".to_string()),
+        );
+        map
+    }
+}
+
+impl Deref for Variables {
+    type Target = FxHashMap<String, serde_json::Value>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[mcp_tool(
     name = "generate",
@@ -28,7 +55,7 @@ pub struct Generate {
     pub force: Option<bool>,
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub variables: Option<FxHashMap<String, serde_json::Value>>,
+    pub variables: Option<Variables>,
 }
 
 impl Generate {
@@ -54,7 +81,7 @@ impl Generate {
         {
             args.push("--".into());
 
-            for (key, value) in vars {
+            for (key, value) in vars.iter() {
                 let opt = format!("--{key}");
 
                 match value {

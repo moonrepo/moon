@@ -1,3 +1,4 @@
+use crate::dep_scope::DependencyScope;
 use crate::target_error::TargetError;
 use crate::target_scope::TargetScope;
 use compact_str::CompactString;
@@ -12,7 +13,7 @@ use tracing::instrument;
 // The @ is to support npm package scopes!
 pub static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(&format!(
-        r"^(?P<scope>(?:[A-Za-z@#_]{{1}}[{ID_CHARS}{ID_SYMBOLS}]*|\^|~))?:(?P<task>[{ID_CHARS}{ID_SYMBOLS}]+)$"
+        r"^(?P<scope>(?:[A-Za-z@#_]{{1}}[{ID_CHARS}{ID_SYMBOLS}]*|\^(?:build|development|peer|production)?|~))?:(?P<task>[{ID_CHARS}{ID_SYMBOLS}]+)$"
     ))
     .unwrap()
 });
@@ -83,6 +84,10 @@ impl Target {
             Some(value) => match value.as_str() {
                 "" => TargetScope::All,
                 "^" => TargetScope::Deps,
+                "^build" => TargetScope::DepsOf(DependencyScope::Build),
+                "^development" => TargetScope::DepsOf(DependencyScope::Development),
+                "^peer" => TargetScope::DepsOf(DependencyScope::Peer),
+                "^production" => TargetScope::DepsOf(DependencyScope::Production),
                 "~" => TargetScope::OwnSelf,
                 id => {
                     if let Some(tag) = id.strip_prefix('#') {

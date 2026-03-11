@@ -630,8 +630,8 @@ impl<'query> ActionGraphBuilder<'query> {
                     }
                 }
             }
-            // ^:task
-            TargetScope::Deps => {
+            // ^:task, ^build:task, etc.
+            TargetScope::Deps | TargetScope::DepsOf(_) => {
                 return Err(TargetError::NoDepsInRunContext.into());
             }
             // project:task

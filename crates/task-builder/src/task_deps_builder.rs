@@ -4,7 +4,9 @@ use moon_config::{
     DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
 };
 use moon_project::Project;
-use moon_task::{Target, TargetScope, Task, TaskOptionRunInCI, TaskOptions};
+use moon_task::{
+    DependencyScope as TargetDepScope, Target, TargetScope, Task, TaskOptionRunInCI, TaskOptions,
+};
 use std::mem;
 use tracing::trace;
 
@@ -50,6 +52,25 @@ impl TaskDepsBuilder<'_> {
                         dep_config.optional.unwrap_or(true),
                         false,
                     ),
+                    // ^build:task, ^development:task, etc.
+                    TargetScope::DepsOf(scope) => {
+                        let config_scope = match scope {
+                            TargetDepScope::Build => DependencyScope::Build,
+                            TargetDepScope::Development => DependencyScope::Development,
+                            TargetDepScope::Peer => DependencyScope::Peer,
+                            TargetDepScope::Production => DependencyScope::Production,
+                        };
+                        (
+                            project
+                                .dependencies
+                                .iter()
+                                .filter(|dep| dep.scope == config_scope)
+                                .map(|dep| &dep.id)
+                                .collect::<Vec<_>>(),
+                            dep_config.optional.unwrap_or(true),
+                            false,
+                        )
+                    }
                     // ~:task
                     TargetScope::OwnSelf => (
                         vec![&project.id],
@@ -78,7 +99,7 @@ impl TaskDepsBuilder<'_> {
 
             if results.is_empty() && !skip_if_missing {
                 return Err(match &dep_config.target.scope {
-                    TargetScope::Deps => TasksBuilderError::UnknownDepTargetParentScope {
+                    TargetScope::Deps | TargetScope::DepsOf(_) => TasksBuilderError::UnknownDepTargetParentScope {
                         dep: dep_config.target.to_owned(),
                         task: self.task.target.to_owned(),
                     }

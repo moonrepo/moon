@@ -1,4 +1,4 @@
-use crate::{TargetScope, target::Target};
+use crate::{TargetScope, dep_scope::DependencyScope, target::Target};
 use moon_common::Id;
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::str::FromStr;
@@ -70,6 +70,14 @@ impl FromStr for TargetLocator {
                     "" | "*" | "**" | "**/*" | "..." => scope = Some(TargetScope::All),
                     "~" => scope = Some(TargetScope::OwnSelf),
                     "^" => scope = Some(TargetScope::Deps),
+                    "^build" => scope = Some(TargetScope::DepsOf(DependencyScope::Build)),
+                    "^development" => {
+                        scope = Some(TargetScope::DepsOf(DependencyScope::Development))
+                    }
+                    "^peer" => scope = Some(TargetScope::DepsOf(DependencyScope::Peer)),
+                    "^production" => {
+                        scope = Some(TargetScope::DepsOf(DependencyScope::Production))
+                    }
                     inner => {
                         project_glob = Some(inner.replace("...", "**/*"));
                     }

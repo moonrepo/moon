@@ -8,3 +8,4 @@ tasks:
       - 'input.txt'
       - 'file.*'
       - 'routes/**/*'
+      - '/shared/**/*'

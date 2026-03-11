@@ -616,11 +616,17 @@ impl<'proj> TasksBuilder<'proj> {
                 match affected_files {
                     TaskOptionAffectedFilesEntry::Pattern(pat) => {
                         option.pass = pat.to_owned();
+                        option.pass_dot_when_no_results = true;
                     }
                     TaskOptionAffectedFilesEntry::Object(opt) => {
                         option.pass = opt.pass.clone();
                         option.pass_inputs_when_no_match =
-                            opt.pass_inputs_when_no_match.unwrap_or_default();
+                            opt.pass_inputs_when_no_match.unwrap_or(false);
+                        option.pass_dot_when_no_results =
+                            opt.pass_dot_when_no_results.unwrap_or(true);
+                        option.ignore_project_boundary =
+                            opt.ignore_project_boundary.unwrap_or(false);
+                        option.filter = opt.filter.iter().map(|f| f.to_string()).collect();
                     }
                 };
 

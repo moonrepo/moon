@@ -1146,9 +1146,16 @@ tasks:
 
 The following additional parameters are supported:
 
-- `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, and `pass` includes
-  `args`, will pass all configured [`inputs`](#inputs) as relative file paths instead of `.`.
-  Defaults to `false`.
+- `filter` (`boolean`) <VersionLabel version="2.1.0" /> - A list of glob patterns to filter the
+  affected files list before passing to the task. Globs must start with `**` to match against
+  absolute paths.
+- `ignoreProjectBoundary` (`boolean`) <VersionLabel version="2.1.0" /> - When matching affected
+  files, ignore the project boundary and include workspace relative files. Otherwise, only files
+  within the project are matched. Defaults to `false`.
+- `passDotWhenNoResults` (`boolean`) <VersionLabel version="2.1.0" /> - When no affected files are
+  found, will pass `.` instead of an empty or no value. Defaults to `true`.
+- `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, will pass all configured
+  [`inputs`](#inputs) as relative file paths instead. Defaults to `false`.
 
 #### `allowFailure`<VersionLabel version="1.13.0" />
 

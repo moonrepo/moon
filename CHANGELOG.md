@@ -8,6 +8,14 @@
   - Updated duplicate aliases to no longer be a hard error, and instead will apply to the first
     encountered project. Duplicates are possible when multiple toolchains all use the same package
     name (Go, Rust, Node, etc).
+- **Tasks**
+  - Added 3 new settings to the `affectedFiles` option when using the object syntax:
+    - `filter` - A list of glob patterns to filter the affected files list before passing to the
+      task.
+    - `ignoreProjectBoundary` - When matching affected files, ignore the project boundary and
+      include workspace relative files. Otherwise, only files within the project are matched.
+    - `passDotWhenNoResults` - When there are no affected files after matching and filtering, use
+      `.` instead of an empty value.
 - **Toolchains**
   - Added `inheritAliases` (default `true`) setting for each toolchain. Can toggle whether to
     inherit aliases for projects while extending the project graph.

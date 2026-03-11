@@ -145,6 +145,14 @@ fn parse_deps_of_development_scope() {
             task_id: Id::raw("lint"),
         }
     );
+    assert_eq!(
+        Target::parse("^dev:lint").unwrap(),
+        Target {
+            id: CompactString::from("^dev:lint"),
+            scope: TargetScope::DepsOf(DependencyScope::Development),
+            task_id: Id::raw("lint"),
+        }
+    );
 }
 
 #[test]
@@ -165,6 +173,14 @@ fn parse_deps_of_production_scope() {
         Target::parse("^production:lint").unwrap(),
         Target {
             id: CompactString::from("^production:lint"),
+            scope: TargetScope::DepsOf(DependencyScope::Production),
+            task_id: Id::raw("lint"),
+        }
+    );
+    assert_eq!(
+        Target::parse("^prod:lint").unwrap(),
+        Target {
+            id: CompactString::from("^prod:lint"),
             scope: TargetScope::DepsOf(DependencyScope::Production),
             task_id: Id::raw("lint"),
         }

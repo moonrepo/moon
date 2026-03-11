@@ -52,7 +52,7 @@ impl TaskDepsBuilder<'_> {
                         dep_config.optional.unwrap_or(true),
                         false,
                     ),
-                    // ^build:task, ^development:task, etc.
+                    // ^build:task, ^development:task, etc
                     TargetScope::DepsOf(scope) => {
                         let config_scope = match scope {
                             TargetDepScope::Build => DependencyScope::Build,
@@ -60,12 +60,18 @@ impl TaskDepsBuilder<'_> {
                             TargetDepScope::Peer => DependencyScope::Peer,
                             TargetDepScope::Production => DependencyScope::Production,
                         };
+
                         (
                             project
                                 .dependencies
                                 .iter()
-                                .filter(|dep| dep.scope == config_scope)
-                                .map(|dep| &dep.id)
+                                .filter_map(|dep| {
+                                    if dep.scope == config_scope {
+                                        Some(&dep.id)
+                                    } else {
+                                        None
+                                    }
+                                })
                                 .collect::<Vec<_>>(),
                             dep_config.optional.unwrap_or(true),
                             false,
@@ -99,11 +105,13 @@ impl TaskDepsBuilder<'_> {
 
             if results.is_empty() && !skip_if_missing {
                 return Err(match &dep_config.target.scope {
-                    TargetScope::Deps | TargetScope::DepsOf(_) => TasksBuilderError::UnknownDepTargetParentScope {
-                        dep: dep_config.target.to_owned(),
-                        task: self.task.target.to_owned(),
+                    TargetScope::Deps | TargetScope::DepsOf(_) => {
+                        TasksBuilderError::UnknownDepTargetParentScope {
+                            dep: dep_config.target.to_owned(),
+                            task: self.task.target.to_owned(),
+                        }
+                        .into()
                     }
-                    .into(),
                     TargetScope::Tag(_) => TasksBuilderError::UnknownDepTargetTagScope {
                         dep: dep_config.target.to_owned(),
                         task: self.task.target.to_owned(),

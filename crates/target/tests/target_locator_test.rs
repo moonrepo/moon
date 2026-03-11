@@ -175,12 +175,20 @@ mod target_locator {
                 TargetLocator::Qualified(Target::parse("^development:lint").unwrap())
             );
             assert_eq!(
+                TargetLocator::parse("^dev:lint").unwrap(),
+                TargetLocator::Qualified(Target::parse("^dev:lint").unwrap())
+            );
+            assert_eq!(
                 TargetLocator::parse("^peer:lint").unwrap(),
                 TargetLocator::Qualified(Target::parse("^peer:lint").unwrap())
             );
             assert_eq!(
                 TargetLocator::parse("^production:lint").unwrap(),
                 TargetLocator::Qualified(Target::parse("^production:lint").unwrap())
+            );
+            assert_eq!(
+                TargetLocator::parse("^prod:lint").unwrap(),
+                TargetLocator::Qualified(Target::parse("^prod:lint").unwrap())
             );
         }
 

@@ -190,11 +190,27 @@ export interface InheritedByConfig {
 
 /** Expanded information about affected files handling. */
 export interface TaskOptionAffectedFilesConfig {
+	/**
+	 * A list of glob patterns to filter the affected files list before
+	 * passing to the task as arguments or environment variables. Globs
+	 * must start with `**` to match against absolute paths.
+	 */
+	filter?: string[];
+	/**
+	 * When matching affected files, ignore the project boundary and include
+	 * workspace relative files. Otherwise, only files within the project are matched.
+	 */
+	ignoreProjectBoundary?: boolean | null;
 	/** The pattern in which affected files will be passed to the affected task. */
 	pass: boolean | 'args' | 'env';
 	/**
-	 * When no affected files are matching, pass the task's inputs
-	 * as arguments to the command, instead of `.`.
+	 * When there are no affected files after matching and filtering,
+	 * use `.` instead of an empty value.
+	 */
+	passDotWhenNoResults?: boolean | null;
+	/**
+	 * When there are no affected files after matching, use the
+	 * task's inputs instead.
 	 */
 	passInputsWhenNoMatch?: boolean | null;
 }
@@ -665,11 +681,27 @@ export interface PartialInheritedByConfig {
 
 /** Expanded information about affected files handling. */
 export interface PartialTaskOptionAffectedFilesConfig {
+	/**
+	 * A list of glob patterns to filter the affected files list before
+	 * passing to the task as arguments or environment variables. Globs
+	 * must start with `**` to match against absolute paths.
+	 */
+	filter?: string[] | null;
+	/**
+	 * When matching affected files, ignore the project boundary and include
+	 * workspace relative files. Otherwise, only files within the project are matched.
+	 */
+	ignoreProjectBoundary?: boolean | null;
 	/** The pattern in which affected files will be passed to the affected task. */
 	pass?: boolean | 'args' | 'env' | null;
 	/**
-	 * When no affected files are matching, pass the task's inputs
-	 * as arguments to the command, instead of `.`.
+	 * When there are no affected files after matching and filtering,
+	 * use `.` instead of an empty value.
+	 */
+	passDotWhenNoResults?: boolean | null;
+	/**
+	 * When there are no affected files after matching, use the
+	 * task's inputs instead.
 	 */
 	passInputsWhenNoMatch?: boolean | null;
 }

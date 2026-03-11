@@ -1,4 +1,4 @@
-use crate::shapes::{FilePath, OneOrMany};
+use crate::shapes::{FilePath, GlobPath, OneOrMany};
 use crate::{config_enum, config_struct, config_unit_enum, config_untagged_enum, generate_switch};
 use schematic::schema::{StringType, UnionType};
 use schematic::{Config, ConfigEnum, Schema, SchemaBuilder, Schematic, ValidateError};
@@ -45,13 +45,30 @@ config_struct!(
     /// Expanded information about affected files handling.
     #[derive(Config)]
     pub struct TaskOptionAffectedFilesConfig {
+        /// A list of glob patterns to filter the affected files list before
+        /// passing to the task as arguments or environment variables. Globs
+        /// must start with `**` to match against absolute paths.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub filter: Vec<GlobPath>,
+
+        /// When matching affected files, ignore the project boundary and include
+        /// workspace relative files. Otherwise, only files within the project are matched.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub ignore_project_boundary: Option<bool>,
+
         /// The pattern in which affected files will be passed to the affected task.
         pub pass: TaskOptionAffectedFilesPattern,
 
-        /// When no affected files are matching, pass the task's inputs
-        /// as arguments to the command, instead of `.`.
+        /// When there are no affected files after matching, use the
+        /// task's inputs instead.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub pass_inputs_when_no_match: Option<bool>,
+
+        /// When there are no affected files after matching and filtering,
+        /// use `.` instead of an empty value.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[setting(default = true)]
+        pub pass_dot_when_no_results: Option<bool>,
     }
 );
 

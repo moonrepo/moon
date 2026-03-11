@@ -968,7 +968,7 @@ mod command_builder {
             assert_eq!(
                 get_args(&command),
                 if cfg!(windows) {
-                    vec!["arg", "--opt", "'./input.txt'", "../shared/config.json"]
+                    vec!["arg", "--opt", "'./input.txt'", "'../shared/config.json'"]
                 } else {
                     vec!["arg", "--opt", "./input.txt", "../shared/config.json"]
                 }
@@ -1028,7 +1028,7 @@ mod command_builder {
             assert_eq!(
                 get_args(&command),
                 if cfg!(windows) {
-                    vec!["arg", "--opt", "'./file.json'", "../shared/config.json"]
+                    vec!["arg", "--opt", "'./file.json'", "'../shared/config.json'"]
                 } else {
                     vec!["arg", "--opt", "./file.json", "../shared/config.json"]
                 }

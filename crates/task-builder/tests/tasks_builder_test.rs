@@ -956,6 +956,7 @@ tasks:
                 task.options.affected_files,
                 Some(TaskOptionAffectedFiles {
                     pass: TaskOptionAffectedFilesPattern::Enabled(false),
+                    pass_dot_when_no_results: true,
                     ..Default::default()
                 })
             );
@@ -966,6 +967,7 @@ tasks:
                 task.options.affected_files,
                 Some(TaskOptionAffectedFiles {
                     pass: TaskOptionAffectedFilesPattern::Args,
+                    pass_dot_when_no_results: true,
                     ..Default::default()
                 })
             );
@@ -976,6 +978,7 @@ tasks:
                 task.options.affected_files,
                 Some(TaskOptionAffectedFiles {
                     pass: TaskOptionAffectedFilesPattern::Env,
+                    pass_dot_when_no_results: true,
                     ..Default::default()
                 })
             );

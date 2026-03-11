@@ -10,6 +10,50 @@ TODO
 
 <!--truncate-->
 
+## New common toolchain settings
+
+Going forward, we want to provide more customization for toolchains, enabling you to curate the
+experience you want. The first step in this process is introducing 2 new settings that are common
+across all toolchains.
+
+### `inheritAliases`
+
+Aliases are a feature of projects that allow for alternate names to be used when referencing them.
+Aliases cannot be configured manually and instead are inferred from toolchains, typically by
+extracting the `name` field from a manifest file (`package.json`, `Cargo.toml`, `pyproject.toml`,
+etc).
+
+This happens automatically, but what if you don't want to use aliases? Or there are conflicting
+aliases across projects? In v2.1, we're introducing a new common toolchain setting called
+`inheritAliases` that allows you to disable this feature. When set to `false`, no aliases will be
+inferred for any projects using that toolchain.
+
+```yaml title=".moon/toolchains.yml"
+javascript:
+  inheritAliases: false
+```
+
+> We've also updated duplicate aliases to no longer be a hard error, and instead will apply to the
+> first encountered project.
+
+### `installDependencies`
+
+When you run a task, all toolchains associated with the task will automatically install dependencies
+if they've determined that they need to (lockfile changes, dependency updates, etc). This is a great
+feature for ensuring that your environment is always up to date, especially when switching branches,
+but it can be a bit too much for some use cases.
+
+In v2.1, we're introducing another common toolchain setting called `installDependencies` that allows
+you to disable this feature. When set to `false`, toolchains will not automatically install
+dependencies before running a task.
+
+```yaml title=".moon/toolchains.yml"
+python:
+  installDependencies: false
+```
+
+> Not all toolchains support this tier 2 feature.
+
 ## New task `affectedFiles` settings
 
 In [v2](./moon-v2.0) we introduced an object form for the the task option `affectedFiles`, allowing

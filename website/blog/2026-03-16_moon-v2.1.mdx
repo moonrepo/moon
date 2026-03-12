@@ -81,6 +81,33 @@ tasks:
         passDotWhenNoResults: false
 ```
 
+## Target project dependencies by scope
+
+moon has always allowed you to reference dependencies of a project (external projects) within a task
+using `^` syntax, for both `inputs` and `deps`. However, it was quite restrictive in that it
+referenced _all_ project dependencies, regardless of scope (production, development, etc).
+
+We felt it was time to change this, and in v2.1 we're introducing a new syntax that allows you to
+target dependencies by scope. By default, the `^` syntax will still reference all dependencies, but
+you can now specify a scope by suffixing the `^` with one of the following:
+
+- `development` / `dev`
+- `production` / `prod`
+- `build`
+- `peer`
+
+```yaml
+tasks:
+  build:
+    command: 'tsc'
+    deps:
+      # Depend on build tasks in production level project dependencies
+      - '^production:build'
+    inputs:
+      # Source files of all production level project dependencies
+      - 'project:^production'
+```
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.1.0) for a full list of

@@ -1,6 +1,6 @@
 use compact_str::CompactString;
 use moon_common::Id;
-use moon_target::{Target, TargetScope};
+use moon_target::{DependencyScope, Target, TargetScope};
 
 #[test]
 #[should_panic(expected = "Invalid target foo$:build")]
@@ -28,6 +28,38 @@ fn format_all_scope() {
 #[test]
 fn format_deps_scope() {
     assert_eq!(Target::format(TargetScope::Deps, "build"), "^:build");
+}
+
+#[test]
+fn format_deps_of_build_scope() {
+    assert_eq!(
+        Target::format(TargetScope::DepsOf(DependencyScope::Build), "build"),
+        "^build:build"
+    );
+}
+
+#[test]
+fn format_deps_of_development_scope() {
+    assert_eq!(
+        Target::format(TargetScope::DepsOf(DependencyScope::Development), "build"),
+        "^development:build"
+    );
+}
+
+#[test]
+fn format_deps_of_peer_scope() {
+    assert_eq!(
+        Target::format(TargetScope::DepsOf(DependencyScope::Peer), "build"),
+        "^peer:build"
+    );
+}
+
+#[test]
+fn format_deps_of_production_scope() {
+    assert_eq!(
+        Target::format(TargetScope::DepsOf(DependencyScope::Production), "build"),
+        "^production:build"
+    );
 }
 
 #[test]
@@ -87,6 +119,70 @@ fn parse_deps_scope() {
             id: CompactString::from("^:build"),
             scope: TargetScope::Deps,
             task_id: Id::raw("build"),
+        }
+    );
+}
+
+#[test]
+fn parse_deps_of_build_scope() {
+    assert_eq!(
+        Target::parse("^build:lint").unwrap(),
+        Target {
+            id: CompactString::from("^build:lint"),
+            scope: TargetScope::DepsOf(DependencyScope::Build),
+            task_id: Id::raw("lint"),
+        }
+    );
+}
+
+#[test]
+fn parse_deps_of_development_scope() {
+    assert_eq!(
+        Target::parse("^development:lint").unwrap(),
+        Target {
+            id: CompactString::from("^development:lint"),
+            scope: TargetScope::DepsOf(DependencyScope::Development),
+            task_id: Id::raw("lint"),
+        }
+    );
+    assert_eq!(
+        Target::parse("^dev:lint").unwrap(),
+        Target {
+            id: CompactString::from("^dev:lint"),
+            scope: TargetScope::DepsOf(DependencyScope::Development),
+            task_id: Id::raw("lint"),
+        }
+    );
+}
+
+#[test]
+fn parse_deps_of_peer_scope() {
+    assert_eq!(
+        Target::parse("^peer:lint").unwrap(),
+        Target {
+            id: CompactString::from("^peer:lint"),
+            scope: TargetScope::DepsOf(DependencyScope::Peer),
+            task_id: Id::raw("lint"),
+        }
+    );
+}
+
+#[test]
+fn parse_deps_of_production_scope() {
+    assert_eq!(
+        Target::parse("^production:lint").unwrap(),
+        Target {
+            id: CompactString::from("^production:lint"),
+            scope: TargetScope::DepsOf(DependencyScope::Production),
+            task_id: Id::raw("lint"),
+        }
+    );
+    assert_eq!(
+        Target::parse("^prod:lint").unwrap(),
+        Target {
+            id: CompactString::from("^prod:lint"),
+            scope: TargetScope::DepsOf(DependencyScope::Production),
+            task_id: Id::raw("lint"),
         }
     );
 }

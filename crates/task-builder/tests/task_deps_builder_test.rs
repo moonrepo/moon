@@ -384,6 +384,62 @@ mod task_deps_builder {
         }
 
         #[test]
+        fn returns_each_parent_task_by_scope() {
+            let mut project = create_project();
+            project.dependencies = vec![
+                {
+                    let mut dep = ProjectDependencyConfig::new(Id::raw("foo"));
+                    dep.scope = DependencyScope::Build;
+                    dep
+                },
+                {
+                    let mut dep = ProjectDependencyConfig::new(Id::raw("bar"));
+                    dep.scope = DependencyScope::Development;
+                    dep
+                },
+                {
+                    let mut dep = ProjectDependencyConfig::new(Id::raw("baz"));
+                    dep.scope = DependencyScope::Production;
+                    dep
+                },
+                {
+                    let mut dep = ProjectDependencyConfig::new(Id::raw("qux"));
+                    dep.scope = DependencyScope::Peer;
+                    dep
+                },
+            ];
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("^build:build").unwrap(),
+            ));
+
+            TaskDepsBuilder {
+                querent: Box::new(TestQuerent {
+                    data: FxHashMap::from_iter([
+                        (Target::parse("foo:build").unwrap(), TaskOptions::default()),
+                        (Target::parse("bar:test").unwrap(), TaskOptions::default()),
+                        (Target::parse("baz:lint").unwrap(), TaskOptions::default()),
+                        (Target::parse("qux:build").unwrap(), TaskOptions::default()),
+                    ]),
+                    tag_ids: vec![],
+                }),
+                project: Some(&mut project),
+                root_project_id: None,
+                task: &mut task,
+            }
+            .build()
+            .unwrap();
+
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig::new(
+                    Target::parse("foo:build").unwrap()
+                )]
+            );
+        }
+
+        #[test]
         #[should_panic(
             expected = "Invalid dependency ^:build for task project:task, no matching targets"
         )]

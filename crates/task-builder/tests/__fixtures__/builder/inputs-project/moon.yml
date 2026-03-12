@@ -1,12 +1,18 @@
 dependsOn:
-  - 'dep-a'
-  - 'dep-b'
+  - id: 'dep-a'
+    scope: 'production'
+  - id: 'dep-b'
+    scope: 'development'
   - 'dep-c'
 
 tasks:
   all-deps:
     inputs:
       - project: '^'
+        group: 'sources'
+  prod-deps:
+    inputs:
+      - project: '^production'
         group: 'sources'
   only-a:
     inputs:

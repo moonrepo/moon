@@ -751,6 +751,34 @@ mod tasks_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn expands_project_scope() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("inputs-project").await;
+            let task = tasks.get("prod-deps").unwrap();
+
+            assert_eq!(
+                task.inputs,
+                [
+                    Input::Project(ProjectInput {
+                        project: "dep-a".into(),
+                        filter: vec![],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Project(ProjectInput {
+                        project: "dep-c".into(),
+                        filter: vec![],
+                        group: Some(Id::raw("sources")),
+                    }),
+                    Input::Glob(stub_glob_input(
+                        "/.moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}"
+                    )),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn uses_single_project() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();

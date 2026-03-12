@@ -891,8 +891,8 @@ mod project_graph {
             assert_eq!(
                 task.deps,
                 [
-                    TaskDependencyConfig::new(Target::parse("tag-three:test").unwrap()),
                     TaskDependencyConfig::new(Target::parse("tag-one:test").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("tag-three:test").unwrap()),
                 ]
             );
         }

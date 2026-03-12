@@ -380,6 +380,33 @@ mod input_shape {
         }
 
         #[test]
+        fn project_protocol_scoped() {
+            assert_eq!(
+                Input::parse("project://^development").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "^development".into(),
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://^production?filter=src/**&filter=!tests/**/*").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "^production".into(),
+                    filter: vec!["src/**".into(), "!tests/**/*".into()],
+                    ..Default::default()
+                })
+            );
+            assert_eq!(
+                Input::parse("project://^build?group=sources").unwrap(),
+                Input::Project(ProjectInput {
+                    project: "^build".into(),
+                    group: Some(Id::raw("sources")),
+                    ..Default::default()
+                })
+            );
+        }
+
+        #[test]
         #[should_panic(expected = "input protocol `unknown://` is not supported")]
         fn errors_for_unknown_protocol() {
             Input::parse("unknown://test").unwrap();

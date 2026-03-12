@@ -815,6 +815,16 @@ impl<'proj> TasksBuilder<'proj> {
                             group: inner.group.clone(),
                         }));
                     }
+                } else if let Some(dep_scope) = inner.get_deps_scope() {
+                    for dep_config in self.project_dependencies {
+                        if dep_config.scope == dep_scope {
+                            inputs.push(Input::Project(ProjectInput {
+                                project: dep_config.id.to_string(),
+                                filter: inner.filter.clone(),
+                                group: inner.group.clone(),
+                            }));
+                        }
+                    }
                 } else if self
                     .project_dependencies
                     .iter()

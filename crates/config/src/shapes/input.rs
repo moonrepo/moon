@@ -1,7 +1,8 @@
 use super::portable_path::{FilePath, GlobPath, PortablePath, is_glob_like};
 use super::*;
 use crate::{
-    config_struct, config_unit_enum, generate_io_file_methods, generate_io_glob_methods, patterns,
+    DependencyScope, config_struct, config_unit_enum, generate_io_file_methods,
+    generate_io_glob_methods, patterns,
 };
 use deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError;
 use moon_common::Id;
@@ -240,7 +241,7 @@ impl ProjectInput {
         let mut input = Self {
             project: if uri.path.is_empty() {
                 return Err(ParseError::new("a project identifier is required"));
-            } else if uri.path == "^" {
+            } else if uri.path.starts_with('^') {
                 uri.path
             } else {
                 Id::new(&uri.path).map_err(map_parse_error)?.to_string()
@@ -271,6 +272,16 @@ impl ProjectInput {
 
     pub fn is_all_deps(&self) -> bool {
         self.project == "^"
+    }
+
+    pub fn get_deps_scope(&self) -> Option<DependencyScope> {
+        match self.project.as_str() {
+            "^dev" | "^development" => Some(DependencyScope::Development),
+            "^prod" | "^production" => Some(DependencyScope::Production),
+            "^peer" => Some(DependencyScope::Peer),
+            "^build" => Some(DependencyScope::Build),
+            _ => None,
+        }
     }
 }
 

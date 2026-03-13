@@ -42,6 +42,12 @@ $ moonx format
 $ moon exec :build --query "language=javascript && projectLayer=library"
 ```
 
+:::info
+
+For a declarative alternative to CLI options, see the [execution plan guide](../guides/exec-plan).
+
+:::
+
 ## Arguments
 
 - `...<target>` - [Task targets](../concepts/target) or project relative tasks to run.
@@ -53,6 +59,8 @@ $ moon exec :build --query "language=javascript && projectLayer=library"
 - `--ci` - Force enable CI mode.
 - `-f`, `--force` - Force run and bypass cache, ignore changed files, and skip affected checks.
 - `-i`, `--interactive` - Run the pipeline and tasks interactively.
+- `-p`, `--plan <PATH>` - Path to an execution plan JSON file. See the
+  [execution plan guide](../guides/exec-plan) for more details. <VersionLabel version="2.1.0" />
 - `-s`, `--summary [LEVEL]` - Print a summary of all actions that were ran in the pipeline.
 
 ### Workflow

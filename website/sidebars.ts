@@ -229,6 +229,7 @@ const sidebars: SidebarsConfig = {
 		'guides/codeowners',
 		'guides/debug-task',
 		'guides/docker',
+		'guides/exec-plan',
 		'guides/extensions',
 		'guides/mcp',
 		'guides/offline-mode',

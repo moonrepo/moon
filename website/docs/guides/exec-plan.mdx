@@ -1,0 +1,243 @@
+---
+title: Execution plan
+tags: [exec, plan, ci, parallelism]
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.1.0" header />
+
+An execution plan is a JSON file that declaratively configures how [`moon exec`](../commands/exec)
+(and derived commands) runs tasks. Instead of passing many command line options, you can define your
+execution settings in a file and pass it with a single flag — keeping your commands short and your
+configuration version-controlled.
+
+## Usage
+
+Pass an execution plan to `moon exec` with the `--plan` (or `-p`) flag:
+
+```shell
+$ moon exec --plan plan.json
+```
+
+Or set the `MOON_EXEC_PLAN` environment variable:
+
+```shell
+MOON_EXEC_PLAN=plan.json moon exec
+```
+
+The path can be relative (resolved against the working directory) or absolute. The file must be
+valid JSON.
+
+When both a plan and CLI options are provided, plan values take priority. If targets are defined in
+both the plan and the command line, the plan's targets are used and a warning is logged.
+
+## Structure
+
+A plan is a JSON object with four top-level blocks. All blocks are optional and default to safe
+values when omitted. Unknown fields are rejected.
+
+```json
+{
+  "affected": {},
+  "graph": {},
+  "pipeline": {},
+  "targets": []
+}
+```
+
+### `targets`
+
+Defines which tasks to run. Accepts the same target syntax as the `moon exec` command line
+(`project:task`, `:task`, `~:task`, `#tag:task`, globs, etc).
+
+In its simplest form, `targets` is an array of target strings:
+
+```json
+{
+  "targets": ["app:build", "lib:build"]
+}
+```
+
+For advanced use cases, `targets` can be an object with one of two strategies:
+
+- **Filtered** — Run only the targets that match the `include` list (`excluding` coming soon):
+
+```json
+{
+  "targets": {
+    "include": ["app:build", "#frontend:test"]
+  }
+}
+```
+
+- **Partitioned** — Split targets into groups for parallel CI jobs. Each inner array is one
+  partition:
+
+```json
+{
+  "targets": {
+    "jobs": [
+      ["app:build", "app:test"],
+      ["lib:build", "lib:test"]
+    ]
+  }
+}
+```
+
+Use in combination with [`pipeline.job`](#pipeline) to select which partition to run.
+
+### `pipeline`
+
+Controls how the pipeline executes tasks.
+
+- `ci` (`boolean`) - Force enable CI mode. Same as `--ci`.
+- `concurrency` (`number`) - Maximum number of tasks to run in parallel.
+- `ignoreCiChecks` (`boolean`) - Ignore "run in CI" task checks. Same as `--ignore-ci-checks`.
+- `noActions` (`boolean`) - Skip sync and setup actions. Same as `--no-actions`.
+- `onFailure` (`"bail" | "continue"`) - When a task fails, either bail the pipeline immediately or
+  continue running other tasks. Same as `--on-failure`.
+- `job` (`number`) - Index of the current job (0-based). Used with partitioned targets; errors if
+  targets are not partitioned. Same as `--job`.
+- `jobTotal` (`number`) - Total number of jobs. Used with partitioned targets. Same as
+  `--job-total`.
+
+### `graph`
+
+Controls how deeply the dependency graph is traversed when building the task graph.
+
+- `downstream` (`none | direct | deep`) - Depth of downstream dependents to include. Defaults to
+  `none`. Same as `--downstream`.
+- `upstream` (`none | direct | deep`) - Depth of upstream dependencies to include. Defaults to
+  `none`. Same as `--upstream`.
+
+### `affected`
+
+Restricts execution to tasks affected by changed files. When this block is omitted, affected
+filtering is disabled and all matched targets run.
+
+- `base` (`string`) - Base branch, commit, or revision to compare against. Same as `--base`.
+- `head` (`string`) - Current branch, commit, or revision to compare with. Defaults to `HEAD`. Same
+  as `--head`.
+- `includeRelations` (`boolean`) - Include graph relations for affected checks, instead of just
+  changed files. Same as `--include-relations`.
+- `source` (`string`) - Source of affected files. Determines which git commands are used to detect
+  changes. Accepts `local` or `remote`.
+- `status` (`string[]`) - Filter changed files by status. Same as `--status`.
+- `stdin` (`boolean`) - Accept changed files from stdin. Same as `--stdin`.
+
+## Examples
+
+### Run specific targets
+
+The simplest plan — just list the targets to run:
+
+```json
+{
+  "targets": ["app:build", "lib:build"]
+}
+```
+
+### CI with affected filtering
+
+Only run tests affected by changes between the base branch and HEAD:
+
+```json
+{
+  "affected": {
+    "base": "main",
+    "source": "remote"
+  },
+  "pipeline": {
+    "ci": true
+  },
+  "targets": [":test"]
+}
+```
+
+### Partitioned CI jobs
+
+Split targets across 3 CI jobs. Each job runs with `--plan plan.json` and sets its own `job` index
+via the CLI or an environment variable:
+
+```json
+{
+  "pipeline": {
+    "ci": true,
+    "jobTotal": 3
+  },
+  "targets": {
+    "jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
+  }
+}
+```
+
+Then in CI, run each partition:
+
+```shell
+# Job 0
+$ moon exec --plan plan.json --job 0
+
+# Job 1
+$ moon exec --plan plan.json --job 1
+
+# Job 2
+$ moon exec --plan plan.json --job 2
+```
+
+### Continue on failure
+
+Run all lint tasks, continuing past failures so you get the full list of issues:
+
+```json
+{
+  "pipeline": {
+    "concurrency": 4,
+    "onFailure": "continue"
+  },
+  "targets": [":lint"]
+}
+```
+
+### Deep dependency graph
+
+Build a target along with all of its upstream dependencies and downstream dependents:
+
+```json
+{
+  "graph": {
+    "upstream": "deep",
+    "downstream": "deep"
+  },
+  "targets": ["core:build"]
+}
+```
+
+### Full example
+
+Combine all blocks — run affected tests in CI across partitioned jobs, with full graph traversal:
+
+```json
+{
+  "affected": {
+    "base": "main",
+    "head": "HEAD",
+    "includeRelations": true,
+    "source": "remote",
+    "status": ["modified", "added"]
+  },
+  "graph": {
+    "upstream": "deep",
+    "downstream": "direct"
+  },
+  "pipeline": {
+    "ci": true,
+    "concurrency": 8,
+    "jobTotal": 3,
+    "onFailure": "continue"
+  },
+  "targets": {
+    "jobs": [["app:test", "app:lint"], ["#frontend:test"], ["lib:test", "core:test"]]
+  }
+}
+```

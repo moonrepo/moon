@@ -1,5 +1,5 @@
 use clap::ValueEnum;
-use moon_common::is_ci;
+use moon_common::is_local;
 use moon_console::Level;
 use std::fmt;
 use std::str::FromStr;
@@ -138,7 +138,7 @@ impl AffectedOption {
     }
 
     pub fn is_local(&self) -> bool {
-        let mut local = !is_ci();
+        let mut local = is_local();
 
         if let Self::String(inner) = self {
             for part in inner.split(',') {

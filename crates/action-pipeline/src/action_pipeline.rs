@@ -14,7 +14,7 @@ use moon_action::{Action, ActionNode, ActionPipelineStatus};
 use moon_action_context::{ActionContext, TargetState};
 use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
-use moon_common::{color, is_ci, is_test_env};
+use moon_common::{color, is_remote, is_test_env};
 use moon_console::Level;
 use moon_process::{ProcessRegistry, SignalType};
 use moon_workspace_graph::WorkspaceGraph;
@@ -410,8 +410,8 @@ impl ActionPipeline {
             ))
             .await;
 
-        // For security and privacy purposes, only send webhooks from a CI environment
-        if (is_ci() || is_test_env())
+        // For security and privacy purposes, only send webhooks in a remote environment
+        if (is_remote() || is_test_env())
             && let Some(webhook_url) = &self.app_context.workspace_config.notifier.webhook_url
         {
             let require_acknowledge = self

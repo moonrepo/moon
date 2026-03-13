@@ -8,7 +8,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, Digest, ServerCapabilities, digest_function,
 };
 use miette::IntoDiagnostic;
-use moon_common::{color, is_ci};
+use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashMap;
@@ -43,7 +43,7 @@ impl RemoteService {
 
     #[instrument]
     pub async fn connect(config: &RemoteConfig, workspace_root: &Path) -> miette::Result<()> {
-        if is_ci() && config.is_localhost() {
+        if is_remote() && config.is_localhost() {
             warn!(
                 host = &config.host,
                 "Remote service is configured with a localhost endpoint, but we are in a CI environment; disabling service",

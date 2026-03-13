@@ -4,6 +4,9 @@
 
 #### 🚀 Updates
 
+- **Environment**
+  - Improved our local and remote detection logic. We now also check for common remote devboxes
+    (GitHub Codespaces, Gitpod, etc) in addition to CI environments.
 - **Projects**
   - Updated duplicate aliases to no longer be a hard error, and instead will apply to the first
     encountered project. Duplicates are possible when multiple toolchains all use the same package

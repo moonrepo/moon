@@ -2,7 +2,7 @@
 
 use super::map_miette_error;
 use moon_app_context::AppContext;
-use moon_common::is_ci;
+use moon_common::is_remote;
 use moon_common::path::WorkspaceRelativePathBuf;
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
@@ -38,7 +38,7 @@ impl GetChangedFiles {
 
         let base = self.base.as_deref().unwrap_or(&default_branch);
         let head = self.head.as_deref().unwrap_or("HEAD");
-        let remote = self.remote.unwrap_or(is_ci());
+        let remote = self.remote.unwrap_or(is_remote());
 
         let check_against_previous =
             self.base.is_none() && self.head.is_none() && vcs.is_default_branch(&current_branch);

@@ -48,6 +48,17 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
             )]
             pub summary: Option<Option<crate::app_options::SummaryOption>>
         },
+        quote! {
+            #[arg(
+                long,
+                short = 'x',
+                global = true,
+                env = "MOON_HIDE_CACHED",
+                help = "Hide all stdout/stderr from succesful cached tasks",
+                help_heading = super::HEADING_WORKFLOW,
+            )]
+            pub hide_cached: bool
+        },
         // GRAPH
         quote! {
             #[arg(

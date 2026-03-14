@@ -5152,6 +5152,7 @@ dependencies = [
  "rustc-hash",
  "starbase_args",
  "starbase_sandbox",
+ "system_env",
  "thiserror 2.0.18",
  "tokio",
  "tracing",

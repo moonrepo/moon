@@ -17,6 +17,7 @@ use moon_env_var::contains_env_var;
 use moon_target::Target;
 use moon_task::{
     Task, TaskArg, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptions, TaskState,
+    TaskUnixShell, TaskWindowsShell,
 };
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
@@ -24,7 +25,8 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
+use system_env::is_command_on_path;
 use tracing::{instrument, trace};
 
 #[derive(Debug, Default)]
@@ -600,6 +602,9 @@ impl<'proj> TasksBuilder<'proj> {
         state: &mut TaskState,
     ) -> miette::Result<TaskOptions> {
         let mut options = self.get_task_options_from_preset(preset, state);
+        options.unix_shell = default_unix_shell();
+        options.windows_shell = default_windows_shell();
+
         let mut chain = self.global_task_options.clone();
 
         chain.extend(
@@ -1357,4 +1362,28 @@ impl<'proj> TasksBuilder<'proj> {
 
         list
     }
+}
+
+fn default_unix_shell() -> TaskUnixShell {
+    static UNIX_CACHE: OnceLock<TaskUnixShell> = OnceLock::new();
+
+    *UNIX_CACHE.get_or_init(|| {
+        if is_command_on_path("bash") {
+            TaskUnixShell::Bash
+        } else {
+            TaskUnixShell::Sh
+        }
+    })
+}
+
+fn default_windows_shell() -> TaskWindowsShell {
+    static WIN_CACHE: OnceLock<TaskWindowsShell> = OnceLock::new();
+
+    *WIN_CACHE.get_or_init(|| {
+        if is_command_on_path("pwsh") {
+            TaskWindowsShell::Pwsh
+        } else {
+            TaskWindowsShell::PowerShell
+        }
+    })
 }

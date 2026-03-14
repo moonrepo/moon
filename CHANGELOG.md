@@ -28,6 +28,8 @@
 #### 🐞 Fixes
 
 - Fixed invalid JSON schema in MCP `generate` tool.
+- Fixed `$projectTitle` and `$projectAliases` tokens not being substituted.
+- Fixed an issue where `bash` may not be available (fallsback to `sh`).
 
 #### ⚙️ Internal
 

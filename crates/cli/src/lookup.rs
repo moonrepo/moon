@@ -104,7 +104,7 @@ pub fn has_locally_installed(home_dir: &Path, current_dir: &Path) -> Option<Path
             }
         }
 
-        if locate_config_dir(&dir).exists() || dir == home_dir {
+        if locate_config_dir(dir).exists() || dir == home_dir {
             break;
         }
 

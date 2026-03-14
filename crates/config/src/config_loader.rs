@@ -24,8 +24,7 @@ impl ConfigLoader {
     pub fn new(dir: impl AsRef<Path>) -> Self {
         Self {
             dir: dir.as_ref().to_path_buf(),
-            dir_prefix: ".moon".into(),
-            finder: ConfigFinder::default(),
+            ..Default::default()
         }
     }
 
@@ -38,6 +37,7 @@ impl ConfigLoader {
             self.dir_prefix = ".config/moon".into();
         } else {
             self.dir = moon_dir;
+            self.dir_prefix = ".moon".into();
         }
 
         self.dir.clone()

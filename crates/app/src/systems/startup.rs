@@ -57,7 +57,7 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
 
         loop {
             if let Some(dir) = current_dir {
-                if locate_config_dir(&dir).exists() {
+                if locate_config_dir(dir).exists() {
                     break dir.to_path_buf();
                 } else {
                     current_dir = dir.parent();

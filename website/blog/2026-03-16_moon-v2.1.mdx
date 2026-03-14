@@ -17,8 +17,20 @@ hard to read and easy to get wrong. In v2.1, you can now define an **execution p
 that declaratively configures targets, affected filtering, graph traversal, and pipeline behavior —
 and pass it with a single flag:
 
+```json title="plan.json"
+{
+  "pipeline": {
+    "jobTotal": 3
+  },
+  "targets": {
+    "jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
+  }
+}
+```
+
 ```shell
-$ moon exec --plan plan.json
+# Runs docs:build only!
+$ moon exec --plan plan.json --job 1
 ```
 
 This is especially useful for CI pipelines where you need partitioned jobs, affected-only runs, or

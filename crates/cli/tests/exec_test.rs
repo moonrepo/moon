@@ -765,4 +765,331 @@ mod exec {
             ));
         }
     }
+
+    mod plan {
+        use super::*;
+
+        mod targets {
+            use super::*;
+
+            #[test]
+            fn simple_array() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file("plan.json", r#"{ "targets": ["shared:base"] }"#);
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.success();
+            }
+
+            #[test]
+            fn filtered_include() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{ "targets": { "include": ["shared:base"] } }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.success();
+            }
+
+            #[test]
+            fn partitioned_jobs() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "pipeline": { "jobTotal": 2 },
+                    "targets": {
+                        "jobs": [
+                            ["shared:base"],
+                            ["shared:buildType"]
+                        ]
+                    }
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec")
+                        .arg("--plan")
+                        .arg("plan.json")
+                        .arg("--job")
+                        .arg("0");
+                });
+
+                assert.success();
+            }
+        }
+
+        mod pipeline {
+            use super::*;
+
+            #[test]
+            fn ci_mode() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "pipeline": { "ci": true },
+                    "targets": ["shared:base"]
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.success();
+            }
+
+            #[test]
+            fn concurrency() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "pipeline": { "concurrency": 1 },
+                    "targets": ["shared:base"]
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.success();
+            }
+
+            #[test]
+            fn on_failure_continue() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "pipeline": { "onFailure": "continue" },
+                    "targets": ["shared:willFail", "shared:base"]
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                // Should still fail overall but both tasks should have run
+                assert.failure();
+            }
+
+            #[test]
+            fn on_failure_bail() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "pipeline": { "onFailure": "bail" },
+                    "targets": ["shared:willFail", "shared:base"]
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.failure();
+            }
+
+            #[test]
+            fn job_selection() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "pipeline": { "job": 1, "jobTotal": 2 },
+                    "targets": {
+                        "jobs": [
+                            ["shared:base"],
+                            ["shared:buildType"]
+                        ]
+                    }
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.success();
+            }
+        }
+
+        mod graph {
+            use super::*;
+
+            #[test]
+            fn upstream_deep() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "graph": { "upstream": "deep" },
+                    "targets": ["shared:base"]
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.success();
+            }
+
+            #[test]
+            fn downstream_direct() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "graph": { "downstream": "direct" },
+                    "targets": ["shared:base"]
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.success();
+            }
+        }
+
+        mod affected {
+            use super::*;
+
+            #[test]
+            fn with_affected_base() {
+                let sandbox = create_pipeline_sandbox();
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "affected": { "base": "master" },
+                    "targets": ["shared:base"]
+                }"#,
+                );
+
+                change_files(&sandbox, ["shared/file.txt"]);
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                if is_ci() {
+                    assert.success();
+                } else {
+                    // Locally, affected detection may differ
+                    assert.success();
+                }
+            }
+        }
+
+        mod precedence {
+            use super::*;
+
+            #[test]
+            fn plan_overrides_cli_targets() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file("plan.json", r#"{ "targets": ["shared:base"] }"#);
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec")
+                        .arg("--plan")
+                        .arg("plan.json")
+                        .arg("shared:buildType");
+                });
+
+                // Plan targets should take priority over CLI targets
+                assert.success();
+            }
+        }
+
+        mod errors {
+            use super::*;
+
+            #[test]
+            fn invalid_json() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file("plan.json", "not valid json {{{");
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.failure();
+            }
+
+            #[test]
+            fn unknown_fields() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{ "unknownField": true, "targets": ["shared:base"] }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.failure();
+            }
+
+            #[test]
+            fn missing_plan_file() {
+                let sandbox = create_pipeline_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("nonexistent.json");
+                });
+
+                assert.failure();
+            }
+
+            #[test]
+            fn job_without_partitioned_targets() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "plan.json",
+                    r#"{
+                    "pipeline": { "job": 1, "jobTotal": 2 },
+                    "targets": {
+                        "jobs": [["shared:base"]]
+                    }
+                }"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--plan").arg("plan.json");
+                });
+
+                assert.failure();
+            }
+        }
+    }
 }

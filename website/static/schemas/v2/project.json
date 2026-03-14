@@ -1755,15 +1755,6 @@
           ],
           "markdownDescription": "Runs direct task dependencies (via `deps`) in sequential order. This _does not_ apply to indirect or transient dependencies."
         },
-        "runInSyncPhase": {
-          "title": "runInSyncPhase",
-          "description": "Marks the task to run automatically during repo sync.",
-          "anyOf": [
-            { "type": "boolean" },
-            { "type": "null" }
-          ],
-          "markdownDescription": "Marks the task to run automatically during `moon sync`."
-        },
         "runFromWorkspaceRoot": {
           "title": "runFromWorkspaceRoot",
           "description": "Runs the task from the workspace root, instead of the project root.",
@@ -1801,6 +1792,19 @@
             }
           ],
           "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci`, `moon check`, or `moon run`."
+        },
+        "runInSyncPhase": {
+          "title": "runInSyncPhase",
+          "description": "Runs the task automatically when executing moon sync.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Runs the task automatically when executing `moon sync`."
         },
         "shell": {
           "title": "shell",
@@ -1906,6 +1910,7 @@
         "murex",
         "nu",
         "pwsh",
+        "sh",
         "xonsh",
         "zsh"
       ]
@@ -1920,6 +1925,7 @@
         "murex",
         "nu",
         "pwsh",
+        "powershell",
         "xonsh"
       ]
     },

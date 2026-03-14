@@ -19,6 +19,7 @@
       include workspace relative files. Otherwise, only files within the project are matched.
     - `passDotWhenNoResults` - When there are no affected files after matching and filtering, use
       `.` instead of an empty value.
+  - Added a new option, `runInSyncPhase`, that will run the task during `moon sync` commands.
 - **Toolchains**
   - Added `inheritAliases` (default `true`) setting for each toolchain. Can toggle whether to
     inherit aliases for projects while extending the project graph.
@@ -29,7 +30,7 @@
 
 - Fixed invalid JSON schema in MCP `generate` tool.
 - Fixed `$projectTitle` and `$projectAliases` tokens not being substituted.
-- Fixed an issue where `bash` may not be available (fallsback to `sh`).
+- Fixed an issue where `bash` may not be available (falls back to `sh`).
 - Fixed an issue where a task `command` could not end with `--`.
 - Fixed some issues where `.config/moon` was not respected.
 - Potential fix for tail-end console output not being written.

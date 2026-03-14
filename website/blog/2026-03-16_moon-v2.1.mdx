@@ -10,6 +10,62 @@ TODO
 
 <!--truncate-->
 
+## Execution plans
+
+The `moon exec` command is powerful, but complex invocations can mean long CLI commands that are
+hard to read and easy to get wrong. In v2.1, you can now define an **execution plan** — a JSON file
+that declaratively configures targets, affected filtering, graph traversal, and pipeline behavior —
+and pass it with a single flag:
+
+```json title="plan.json"
+{
+  "pipeline": {
+    "jobTotal": 3
+  },
+  "targets": {
+    "jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
+  }
+}
+```
+
+```shell
+# Runs docs:build only!
+$ moon exec --plan plan.json --job 1
+```
+
+This is especially useful for CI pipelines where you need partitioned jobs, affected-only runs, or
+specific failure handling. Instead of stitching together a dozen flags, drop a `plan.json` into your
+repo and version-control your execution strategy.
+
+Check out the [execution plan guide](/docs/guides/exec-plan) for the full structure and examples.
+
+## Target project dependencies by scope
+
+moon has always allowed you to reference dependencies of a project (external projects) within a task
+using `^` syntax, for both `inputs` and `deps`. However, it was quite restrictive in that it
+referenced _all_ project dependencies, regardless of scope (production, development, etc).
+
+We felt it was time to change this, and in v2.1 we're introducing a new syntax that allows you to
+target dependencies by scope. By default, the `^` syntax will still reference all dependencies, but
+you can now specify a scope by suffixing the `^` with one of the following:
+
+- `development` / `dev`
+- `production` / `prod`
+- `build`
+- `peer`
+
+```yaml
+tasks:
+  build:
+    command: 'tsc'
+    deps:
+      # Depend on build tasks in production level project dependencies
+      - '^production:build'
+    inputs:
+      # Source files of all production level project dependencies
+      - 'project:^production'
+```
+
 ## New common toolchain settings
 
 Going forward, we want to provide more customization for toolchains, enabling you to curate the
@@ -79,33 +135,6 @@ tasks:
         filter: ['**/*.tsx?']
         ignoreProjectBoundary: true
         passDotWhenNoResults: false
-```
-
-## Target project dependencies by scope
-
-moon has always allowed you to reference dependencies of a project (external projects) within a task
-using `^` syntax, for both `inputs` and `deps`. However, it was quite restrictive in that it
-referenced _all_ project dependencies, regardless of scope (production, development, etc).
-
-We felt it was time to change this, and in v2.1 we're introducing a new syntax that allows you to
-target dependencies by scope. By default, the `^` syntax will still reference all dependencies, but
-you can now specify a scope by suffixing the `^` with one of the following:
-
-- `development` / `dev`
-- `production` / `prod`
-- `build`
-- `peer`
-
-```yaml
-tasks:
-  build:
-    command: 'tsc'
-    deps:
-      # Depend on build tasks in production level project dependencies
-      - '^production:build'
-    inputs:
-      # Source files of all production level project dependencies
-      - 'project:^production'
 ```
 
 ## Other changes

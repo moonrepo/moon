@@ -4298,6 +4298,7 @@ dependencies = [
  "moon_app_context",
  "moon_common",
  "moon_config",
+ "moon_exec_plan",
  "moon_graph_utils",
  "moon_pdk_api",
  "moon_project",
@@ -4471,6 +4472,7 @@ dependencies = [
  "moon_docker",
  "moon_env",
  "moon_env_var",
+ "moon_exec_plan",
  "moon_extension_plugin",
  "moon_feature_flags",
  "moon_mcp",
@@ -4748,6 +4750,17 @@ dependencies = [
  "scc 3.6.9",
  "starbase_utils",
  "thiserror 2.0.18",
+]
+
+[[package]]
+name = "moon_exec_plan"
+version = "0.0.1"
+dependencies = [
+ "moon_affected",
+ "moon_common",
+ "moon_target",
+ "moon_vcs",
+ "serde",
 ]
 
 [[package]]

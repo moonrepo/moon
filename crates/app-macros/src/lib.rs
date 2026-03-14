@@ -42,6 +42,15 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
         quote! {
             #[arg(
                 long,
+                short = 'p',
+                env = "MOON_EXEC_PLAN",
+                help = "Relative path to an execution plan (JSON) in which to customize the action graph and pipeline"
+            )]
+            pub plan: Option<std::path::PathBuf>
+        },
+        quote! {
+            #[arg(
+                long,
                 short = 's',
                 env = "MOON_SUMMARY",
                 help = "Print a summary of all actions that were ran in the pipeline"
@@ -72,7 +81,7 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
             #[arg(
                 long,
                 env = "MOON_JOB",
-                help = "Index of the current job",
+                help = "Index (zero-based) of the current job",
                 help_heading = super::HEADING_PARALLELISM,
             )]
             pub job: Option<usize>

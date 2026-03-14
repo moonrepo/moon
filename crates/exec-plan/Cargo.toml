@@ -1,0 +1,19 @@
+[package]
+name = "moon_exec_plan"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "Execution plan."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_affected = { path = "../affected" }
+moon_target = { path = "../target" }
+moon_vcs = { path = "../vcs" }
+serde = { workspace = true }
+
+[lints]
+workspace = true

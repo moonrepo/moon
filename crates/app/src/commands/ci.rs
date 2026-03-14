@@ -20,7 +20,7 @@ pub struct CiArgs {
 pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
     let mut targets = args.targets.clone();
 
-    if targets.is_empty() {
+    if targets.is_empty() && args.plan.is_none() {
         let workspace_graph = session.get_workspace_graph().await?;
 
         for task in workspace_graph.get_tasks()? {

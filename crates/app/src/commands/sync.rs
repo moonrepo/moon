@@ -1,7 +1,7 @@
 use crate::helpers::run_action_pipeline;
 use crate::session::MoonSession;
 use iocraft::prelude::element;
-use moon_action_graph::ActionGraphBuilderOptions;
+use moon_action_graph::{ActionGraphBuilderOptions, RunRequirements};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 
@@ -17,6 +17,13 @@ pub async fn sync(session: MoonSession) -> AppResult {
 
     for project in workspace_graph.projects.get_all_unexpanded() {
         action_graph_builder.sync_project(project).await?;
+        for task in workspace_graph.get_tasks_from_project(&project.id)? {
+            if task.options.run_in_sync_phase {
+                action_graph_builder
+                    .run_task(task.as_ref(), &RunRequirements::default())
+                    .await?;
+            }
+        }
     }
 
     let (action_context, action_graph) = action_graph_builder.build();

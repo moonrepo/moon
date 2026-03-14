@@ -1,6 +1,6 @@
 use miette::IntoDiagnostic;
 use moon_cache::{CacheEngine, cache_item};
-use moon_common::{is_ci, is_test_env};
+use moon_common::{is_local, is_test_env};
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_time::now_millis;
@@ -194,7 +194,7 @@ impl Launchpad {
         &self,
         toolchains: BTreeMap<String, String>,
     ) -> miette::Result<()> {
-        if !is_ci() || is_test_env() || proto_core::is_offline() {
+        if is_local() || is_test_env() || proto_core::is_offline() {
             return Ok(());
         }
 

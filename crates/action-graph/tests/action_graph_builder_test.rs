@@ -9,6 +9,7 @@ use moon_config::{
     EnvMap, PipelineActionSwitch, SemVer, TaskDependencyConfig, TaskOptionRunInCI,
     UnresolvedVersionSpec, Version, VersionSpec,
 };
+use moon_exec_plan::{ExecutionPlan, GraphBlock, TargetsBlock};
 use moon_graph_utils::*;
 use moon_task::{Target, TargetLocator, Task, TaskFileInput};
 use moon_toolchain::ToolchainSpec;
@@ -332,6 +333,31 @@ mod action_graph_builder {
                 .await;
 
             let spec = create_tier_spec(2);
+
+            let project = wg.get_project("bar").unwrap();
+            builder.install_dependencies(&spec, &project).await.unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(topo(graph), vec![]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_add_if_disabled_in_config() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let spec = create_tier_spec(2);
+
+            container.mocker = container.mocker.update_toolchains_config(|cfg| {
+                if let Some(inner) = cfg.plugins.get_mut(&spec.id) {
+                    inner.install_dependencies = false;
+                }
+            });
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
 
             let project = wg.get_project("bar").unwrap();
             builder.install_dependencies(&spec, &project).await.unwrap();
@@ -3347,6 +3373,358 @@ mod action_graph_builder {
 
             assert_snapshot!(graph.to_dot());
             assert_eq!(topo(graph), vec![]);
+        }
+    }
+
+    mod run_tasks_with_plan {
+        use super::*;
+
+        mod included_targets {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_included_targets() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    targets: TargetsBlock::Included(vec![
+                        TargetLocator::parse("base:build").unwrap(),
+                    ]),
+                    ..Default::default()
+                };
+
+                let partition = builder
+                    .run_tasks_with_plan(&plan, RunRequirements::default())
+                    .await
+                    .unwrap();
+
+                assert_eq!(partition.targets.len(), 1);
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(context.primary_targets.len(), 1);
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_multiple_included_targets() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    targets: TargetsBlock::Included(vec![
+                        TargetLocator::parse("base:build").unwrap(),
+                        TargetLocator::parse("common:lint").unwrap(),
+                    ]),
+                    ..Default::default()
+                };
+
+                let partition = builder
+                    .run_tasks_with_plan(&plan, RunRequirements::default())
+                    .await
+                    .unwrap();
+
+                assert_eq!(partition.targets.len(), 2);
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(context.primary_targets.len(), 2);
+                assert_snapshot!(graph.to_dot());
+            }
+        }
+
+        mod filtered_targets {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_filtered_include() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    targets: TargetsBlock::Filtered {
+                        include: vec![TargetLocator::parse("base:build").unwrap()],
+                    },
+                    ..Default::default()
+                };
+
+                let partition = builder
+                    .run_tasks_with_plan(&plan, RunRequirements::default())
+                    .await
+                    .unwrap();
+
+                assert_eq!(partition.targets.len(), 1);
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(context.primary_targets.len(), 1);
+                assert_snapshot!(graph.to_dot());
+            }
+        }
+
+        mod partitioned_targets {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_specific_job_partition() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    targets: TargetsBlock::Partitioned {
+                        jobs: vec![
+                            vec![TargetLocator::parse("base:build").unwrap()],
+                            vec![TargetLocator::parse("common:lint").unwrap()],
+                        ],
+                    },
+                    ..Default::default()
+                };
+
+                let partition = builder
+                    .run_tasks_with_plan(
+                        &plan,
+                        RunRequirements {
+                            job: Some(0),
+                            job_total: Some(2),
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                assert_eq!(partition.targets.len(), 1);
+                assert_eq!(partition.size, Some(1));
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(context.primary_targets.len(), 1);
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_second_job_partition() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    targets: TargetsBlock::Partitioned {
+                        jobs: vec![
+                            vec![TargetLocator::parse("base:build").unwrap()],
+                            vec![TargetLocator::parse("common:lint").unwrap()],
+                        ],
+                    },
+                    ..Default::default()
+                };
+
+                let partition = builder
+                    .run_tasks_with_plan(
+                        &plan,
+                        RunRequirements {
+                            job: Some(1),
+                            job_total: Some(2),
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                assert_eq!(partition.targets.len(), 1);
+                assert_eq!(partition.size, Some(1));
+
+                let (context, graph) = builder.build();
+
+                assert_eq!(context.primary_targets.len(), 1);
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[should_panic(expected = "pipeline has not been configured for parallelism")]
+            #[tokio::test(flavor = "multi_thread")]
+            async fn errors_without_job_and_job_total() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    targets: TargetsBlock::Partitioned {
+                        jobs: vec![
+                            vec![TargetLocator::parse("base:build").unwrap()],
+                            vec![TargetLocator::parse("common:lint").unwrap()],
+                        ],
+                    },
+                    ..Default::default()
+                };
+
+                builder
+                    .run_tasks_with_plan(&plan, RunRequirements::default())
+                    .await
+                    .unwrap();
+            }
+
+            #[should_panic(expected = "invalid job index was provided")]
+            #[tokio::test(flavor = "multi_thread")]
+            async fn errors_when_job_index_exceeds_total() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    targets: TargetsBlock::Partitioned {
+                        jobs: vec![
+                            vec![TargetLocator::parse("base:build").unwrap()],
+                            vec![TargetLocator::parse("common:lint").unwrap()],
+                        ],
+                    },
+                    ..Default::default()
+                };
+
+                builder
+                    .run_tasks_with_plan(
+                        &plan,
+                        RunRequirements {
+                            job: Some(5),
+                            job_total: Some(2),
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+            }
+
+            #[should_panic(expected = "pipeline has been configured for 5 jobs")]
+            #[tokio::test(flavor = "multi_thread")]
+            async fn errors_when_job_total_mismatches_partitions() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    targets: TargetsBlock::Partitioned {
+                        jobs: vec![
+                            vec![TargetLocator::parse("base:build").unwrap()],
+                            vec![TargetLocator::parse("common:lint").unwrap()],
+                        ],
+                    },
+                    ..Default::default()
+                };
+
+                builder
+                    .run_tasks_with_plan(
+                        &plan,
+                        RunRequirements {
+                            job: Some(0),
+                            job_total: Some(5),
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+            }
+        }
+
+        mod graph_options {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn applies_upstream_from_plan() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    graph: GraphBlock {
+                        upstream: Some(UpstreamScope::Deep),
+                        ..Default::default()
+                    },
+                    targets: TargetsBlock::Included(vec![
+                        TargetLocator::parse("common:build").unwrap(),
+                    ]),
+                    ..Default::default()
+                };
+
+                builder
+                    .run_tasks_with_plan(
+                        &plan,
+                        RunRequirements {
+                            dependencies: plan.graph.upstream.unwrap_or_default(),
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn applies_downstream_from_plan() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let mut builder = container
+                    .create_builder(container.create_workspace_graph().await)
+                    .await;
+
+                let plan = ExecutionPlan {
+                    graph: GraphBlock {
+                        downstream: Some(DownstreamScope::Direct),
+                        ..Default::default()
+                    },
+                    targets: TargetsBlock::Included(vec![
+                        TargetLocator::parse("base:build").unwrap(),
+                    ]),
+                    ..Default::default()
+                };
+
+                builder
+                    .run_tasks_with_plan(
+                        &plan,
+                        RunRequirements {
+                            dependents: plan.graph.downstream.unwrap_or_default(),
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+            }
         }
     }
 }

@@ -1,3 +1,4 @@
+use crate::app_options::AffectedOption;
 // use crate::app_error::AppError;
 use crate::helpers::run_action_pipeline;
 use crate::prompts::select_targets;
@@ -15,13 +16,16 @@ use moon_cache::CacheMode;
 use moon_common::{apply_style_tags, is_ci, is_test_env, path::WorkspaceRelativePathBuf};
 use moon_console::ui::{Container, Notice, SelectOption, SelectProps, StyledText, Variant};
 use moon_console::{Console, Level};
+use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_task::{Target, TargetLocator};
+use moon_vcs::ChangedStatus;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase::AppResult;
+use starbase_utils::json;
 use std::fmt;
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 #[derive(Clone, Debug, Default, PartialEq, ValueEnum)]
 pub enum OnFailure {
@@ -83,8 +87,35 @@ pub struct ExecArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
-    if args.targets.is_empty() {
+pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
+    let mut plan = ExecutionPlan::default();
+
+    // Load the execution plan if provided
+    if let Some(rel_plan_path) = &args.plan {
+        let plan_path = if rel_plan_path.is_absolute() {
+            rel_plan_path.to_path_buf()
+        } else {
+            session.working_dir.join(rel_plan_path)
+        };
+
+        debug!(plan = ?plan_path, "Received an execution plan, attempting to load");
+
+        plan = json::read_file(plan_path)?;
+    };
+
+    // Inherit CLI targets if the plan does not provide them
+    if !args.targets.is_empty() {
+        if plan.targets.is_empty() {
+            plan.targets = TargetsBlock::Included(args.targets.clone());
+        } else {
+            warn!(
+                "Targets were passed on the command line, but the provided execution plan already defines a list of targets!"
+            );
+        }
+    }
+
+    // Otherwise prompt for a list of targets
+    if plan.targets.is_empty() {
         let workspace_graph = session.get_workspace_graph().await?;
         let tasks = workspace_graph.get_tasks()?;
 
@@ -103,12 +134,11 @@ pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
         })
         .await?;
 
-        for target in targets {
-            args.targets.push(TargetLocator::Qualified(target));
-        }
+        plan.targets =
+            TargetsBlock::Included(targets.into_iter().map(TargetLocator::Qualified).collect());
     }
 
-    let executor = ExecWorkflow::new(session, args)?;
+    let executor = ExecWorkflow::new(session, args, plan)?;
     let exit_code = executor.execute().await?;
 
     Ok(exit_code)
@@ -117,6 +147,7 @@ pub async fn exec(session: MoonSession, mut args: ExecArgs) -> AppResult {
 pub struct ExecWorkflow {
     args: ExecArgs,
     console: Arc<Console>,
+    plan: ExecutionPlan,
     session: MoonSession,
 
     last_title: String,
@@ -143,7 +174,7 @@ pub struct ExecWorkflow {
 }
 
 impl ExecWorkflow {
-    pub fn new(session: MoonSession, args: ExecArgs) -> miette::Result<Self> {
+    pub fn new(session: MoonSession, args: ExecArgs, plan: ExecutionPlan) -> miette::Result<Self> {
         Ok(Self {
             affected: args
                 .affected
@@ -151,15 +182,19 @@ impl ExecWorkflow {
                 .is_some_and(|affected| match affected {
                     Some(inner) => inner.is_enabled(),
                     None => true, // No arg value
-                }),
+                })
+                || plan.affected.is_some(),
             summary: args
                 .summary
                 .clone()
                 .map(|sum| sum.unwrap_or_default())
                 .unwrap_or_default()
                 .to_level(),
-            ci_check: !args.ignore_ci_checks,
-            ci_env: args.ci.unwrap_or(is_ci()),
+            ci_check: !plan
+                .pipeline
+                .ignore_ci_checks
+                .unwrap_or(args.ignore_ci_checks),
+            ci_env: plan.pipeline.ci.or(args.ci).unwrap_or_else(is_ci),
             console: session.get_console()?,
             session,
             step: 0,
@@ -171,6 +206,7 @@ impl ExecWorkflow {
                 open_log_group: "▮▮▮▮ {name}",
             }),
             last_title: String::new(),
+            plan,
         })
     }
 
@@ -190,16 +226,18 @@ impl ExecWorkflow {
         let (action_context, action_graph) = self.build_action_graph(changed_files).await?;
 
         if self.targets.is_empty() {
+            let status = self.get_status();
+            let targets = self.get_targets();
+
             let message = if self.affected {
-                if self.args.status.is_empty() {
+                if status.is_empty() {
                     "No tasks affected by changed files.".to_string()
                 } else {
                     format!(
                         "No tasks affected by changed files with status {}.",
-                        self.args
-                            .status
+                        status
                             .iter()
-                            .map(|status| format!("<symbol>{status}</symbol>"))
+                            .map(|item| format!("<symbol>{item}</symbol>"))
                             .collect::<Vec<_>>()
                             .join(", ")
                     )
@@ -219,14 +257,12 @@ impl ExecWorkflow {
                             }
                         }))
 
-                        #((self.args.targets.len() < 15).then(|| {
+                        #((targets.len() < 15).then(|| {
                             element! {
                                 StyledText(
                                     content: format!(
                                         "For targets {}.",
-                                        self
-                                            .args
-                                            .targets
+                                        targets
                                             .iter()
                                             .map(|target| format!("<id>{}</id>", target.as_str()))
                                             .collect::<Vec<_>>()
@@ -279,8 +315,8 @@ impl ExecWorkflow {
             return Ok(FxHashSet::default());
         }
 
-        let mut base = self.args.base.clone();
-        let mut head = self.args.head.clone();
+        let mut base = self.get_base();
+        let mut head = self.get_head();
 
         // If we're in CI, extract PR information for base and head
         if self.ci_env
@@ -313,16 +349,18 @@ impl ExecWorkflow {
             head.as_deref().unwrap_or("HEAD")
         ))?;
 
+        let status = self.get_status();
+        let stdin = self.get_stdin();
+
         if self.affected {
             self.print(format!(
                 "Affected by changes: {}",
-                if self.args.status.is_empty() {
+                if status.is_empty() {
                     "<symbol>all</symbol>".to_owned()
                 } else {
-                    self.args
-                        .status
+                    status
                         .iter()
-                        .map(|status| format!("<symbol>{status}</symbol>"))
+                        .map(|item| format!("<symbol>{item}</symbol>"))
                         .collect::<Vec<_>>()
                         .join(", ")
                 }
@@ -334,11 +372,18 @@ impl ExecWorkflow {
             base,
             head,
             local: !self.ci_env,
-            status: self.args.status.clone(),
-            stdin: self.args.stdin,
+            status: status.to_owned(),
+            stdin,
         };
 
-        if let Some(Some(by)) = &self.args.affected {
+        if let Some(source) = self
+            .plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.source.as_ref())
+        {
+            options.apply_affected(&AffectedOption::String(source.into()));
+        } else if let Some(Some(by)) = &self.args.affected {
             options.apply_affected(by);
         }
 
@@ -376,7 +421,7 @@ impl ExecWorkflow {
     ) -> miette::Result<(ActionContext, ActionGraph)> {
         self.print_step("Building action graph")?;
 
-        let mut action_graph_builder = if self.args.no_actions {
+        let mut action_graph_builder = if self.get_no_actions() {
             self.session
                 .build_action_graph_with_options(ActionGraphBuilderOptions::new(false))
                 .await?
@@ -393,10 +438,13 @@ impl ExecWorkflow {
         action_graph_builder.set_changed_files(changed_files)?;
 
         // Only track affected if enabled
+        let upstream = self.get_upstream();
+        let downstream = self.get_downstream();
+
         if self.affected {
             action_graph_builder.track_affected(
-                self.args.upstream.unwrap_or(UpstreamScope::Deep),
-                self.args.downstream.unwrap_or(DownstreamScope::None),
+                upstream,
+                downstream,
                 self.ci_env && self.ci_check,
             )?;
         }
@@ -407,18 +455,21 @@ impl ExecWorkflow {
         }
 
         // Insert targets into the graph
+        let job = self.get_job();
+        let job_total = self.get_job_total();
+
         let partition = action_graph_builder
-            .run_tasks(
-                &self.args.targets,
+            .run_tasks_with_plan(
+                &self.plan,
                 RunRequirements {
                     ci: self.ci_env,
                     ci_check: self.ci_check,
-                    dependencies: self.args.upstream.unwrap_or(UpstreamScope::Deep),
-                    dependents: self.args.downstream.unwrap_or(DownstreamScope::None),
-                    include_relations: self.args.include_relations,
+                    dependencies: upstream,
+                    dependents: downstream,
+                    include_relations: self.get_include_relations(),
                     interactive: self.args.interactive,
-                    job: self.args.job,
-                    job_total: self.args.job_total,
+                    job,
+                    job_total,
                     skip_affected: !self.affected,
                 },
             )
@@ -426,12 +477,13 @@ impl ExecWorkflow {
 
         // Build the graph
         let (action_context, action_graph) = action_graph_builder.build();
+        let targets = self.get_targets();
 
-        if let Some(job_index) = &self.args.job
-            && let Some(job_total) = &self.args.job_total
+        if let Some(index) = &job
+            && let Some(total) = &job_total
         {
-            self.print(format!("Job index: <property>{job_index}</property>"))?;
-            self.print(format!("Job total: <property>{job_total}</property>"))?;
+            self.print(format!("Job index: <property>{index}</property>"))?;
+            self.print(format!("Job total: <property>{total}</property>"))?;
             self.print(format!(
                 "Partition size: <property>{}</property>",
                 partition.size.unwrap_or_default()
@@ -445,10 +497,10 @@ impl ExecWorkflow {
 
         self.print(format!(
             "Requested targets: <mutedlight>{}</mutedlight>",
-            self.args.targets.len()
+            targets.len()
         ))?;
 
-        for target in &self.args.targets {
+        for target in targets {
             self.print(format!("\t<label>{}</label>", target.as_str()))?;
         }
 
@@ -491,14 +543,14 @@ impl ExecWorkflow {
                     state.projects.iter().next().unwrap()
                 ))?;
             } else if !state.upstream.is_empty() {
-                if self.args.include_relations {
+                if self.get_include_relations() {
                     self.print(format!(
                         "\t<id>{target}</id> affected by dependency task <label>{}</label>",
                         state.upstream.iter().next().unwrap()
                     ))?;
                 }
             } else if !state.downstream.is_empty() {
-                if self.args.include_relations {
+                if self.get_include_relations() {
                     self.print(format!(
                         "\t<id>{target}</id> affected by dependent task <label>{}</label>",
                         state.downstream.iter().next().unwrap()
@@ -520,9 +572,13 @@ impl ExecWorkflow {
     ) -> miette::Result<Vec<Action>> {
         self.print_step("Executing action pipeline")?;
 
-        action_context
-            .initial_targets
-            .extend(self.args.targets.clone());
+        action_context.initial_targets.extend(
+            self.get_targets()
+                .into_iter()
+                .map(|target| target.to_owned())
+                .collect::<Vec<_>>(),
+        );
+
         action_context.passthrough_args = self.args.passthrough.clone();
 
         let results = run_action_pipeline(&self.session, action_context, action_graph).await?;
@@ -581,5 +637,84 @@ impl ExecWorkflow {
         }
 
         Ok(())
+    }
+
+    fn get_base(&self) -> Option<String> {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.base.clone())
+            .or(self.args.base.clone())
+    }
+
+    fn get_downstream(&self) -> DownstreamScope {
+        self.plan
+            .graph
+            .downstream
+            .or(self.args.downstream)
+            .unwrap_or(DownstreamScope::None)
+    }
+
+    fn get_head(&self) -> Option<String> {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.head.clone())
+            .or(self.args.head.clone())
+    }
+
+    fn get_include_relations(&self) -> bool {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.include_relations)
+            .unwrap_or(self.args.include_relations)
+    }
+
+    fn get_job(&self) -> Option<usize> {
+        self.plan.pipeline.job.or(self.args.job)
+    }
+
+    fn get_job_total(&self) -> Option<usize> {
+        self.plan.pipeline.job_total.or(self.args.job_total)
+    }
+
+    fn get_no_actions(&self) -> bool {
+        self.plan
+            .pipeline
+            .no_actions
+            .unwrap_or(self.args.no_actions)
+    }
+
+    fn get_stdin(&self) -> bool {
+        self.plan
+            .affected
+            .as_ref()
+            .and_then(|aff| aff.stdin)
+            .unwrap_or(self.args.stdin)
+    }
+
+    fn get_status(&self) -> &[ChangedStatus] {
+        self.plan
+            .affected
+            .as_ref()
+            .map(|aff| &aff.status)
+            .unwrap_or(&self.args.status)
+    }
+
+    fn get_targets(&self) -> Vec<&TargetLocator> {
+        match &self.plan.targets {
+            TargetsBlock::Partitioned { jobs } => jobs.iter().flatten().collect(),
+            TargetsBlock::Filtered { include } => Vec::from_iter(include),
+            TargetsBlock::Included(targets) => Vec::from_iter(targets),
+        }
+    }
+
+    fn get_upstream(&self) -> UpstreamScope {
+        self.plan
+            .graph
+            .upstream
+            .or(self.args.upstream)
+            .unwrap_or(UpstreamScope::Deep)
     }
 }

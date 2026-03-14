@@ -1,7 +1,7 @@
 use crate::event_emitter::{Event, Subscriber};
 use async_trait::async_trait;
 use moon_api::Launchpad;
-use moon_common::is_ci;
+use moon_common::is_remote;
 use moon_config::ToolchainsConfig;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -20,7 +20,7 @@ impl TelemetrySubscriber {
 impl Subscriber for TelemetrySubscriber {
     async fn on_emit<'data>(&mut self, event: &Event<'data>) -> miette::Result<()> {
         // Only capture toolchain usage in CI
-        if !is_ci() {
+        if !is_remote() {
             return Ok(());
         }
 

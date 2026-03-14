@@ -315,6 +315,8 @@ impl RemoteClient for GrpcRemoteClient {
 
     // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L351
     async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
+        trace!(query = blob_digests.len(), "Finding missing blobs");
+
         match self
             .get_cas_client()
             .find_missing_blobs(FindMissingBlobsRequest {
@@ -324,7 +326,17 @@ impl RemoteClient for GrpcRemoteClient {
             })
             .await
         {
-            Ok(response) => Ok(response.into_inner().missing_blob_digests),
+            Ok(response) => {
+                let found = response.into_inner().missing_blob_digests;
+
+                if found.is_empty() {
+                    trace!("No missing blobs");
+                } else {
+                    trace!(found = found.len(), "Found missing blobs");
+                }
+
+                Ok(found)
+            }
             Err(status) => Err(self.map_status_error("find_missing_blobs", status).into()),
         }
     }
@@ -463,6 +475,12 @@ impl RemoteClient for GrpcRemoteClient {
             }
             .into());
         }
+
+        trace!(
+            hash = &action_digest.hash,
+            blob_hash = &blob_digest.hash,
+            "Downloaded output blob"
+        );
 
         Ok(Some(blob))
     }
@@ -628,6 +646,12 @@ impl RemoteClient for GrpcRemoteClient {
                 return Err(self.map_status_error("stream_update_blob", status).into());
             }
         };
+
+        trace!(
+            hash = &action_digest.hash,
+            blob_hash = &blob.digest.hash,
+            "Uploaded output blob"
+        );
 
         Ok(blob.digest)
     }

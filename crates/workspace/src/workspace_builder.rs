@@ -881,37 +881,48 @@ impl<'app> WorkspaceBuilder<'app> {
             .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
             .collect::<BTreeMap<_, _>>();
 
-        let mut process_output =
-            |plugin_id: Id, output: ExtendProjectGraphOutput| -> miette::Result<()> {
-                for (project_id, mut project_extend) in output.extended_projects {
-                    if !self.project_data.contains_key(&project_id) {
-                        return Err(ProjectGraphError::UnconfiguredID {
-                            id: project_id.to_string(),
-                        }
-                        .into());
-                    }
-
-                    if let Some(alias) = project_extend.alias.take() {
-                        self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
-                    }
-
-                    if let Some(build_data) = self.project_data.get_mut(&project_id) {
-                        build_data.extensions.push(project_extend);
-                    }
-                }
-
-                for input_file in output.input_files {
-                    self.config_paths.push(
-                        context
-                            .toolchain_registry
-                            .from_virtual_path(input_file)
-                            .relative_to(context.workspace_root)
-                            .into_diagnostic()?,
-                    );
-                }
-
-                Ok(())
+        let mut process_output = |plugin_id: Id,
+                                  output: ExtendProjectGraphOutput,
+                                  is_toolchain: bool|
+         -> miette::Result<()> {
+            let inherit_aliases = if is_toolchain {
+                self.context()
+                    .toolchains_config
+                    .get_plugin_config(&plugin_id)
+                    .is_none_or(|cfg| cfg.inherit_aliases)
+            } else {
+                true
             };
+
+            for (project_id, mut project_extend) in output.extended_projects {
+                if !self.project_data.contains_key(&project_id) {
+                    return Err(ProjectGraphError::UnconfiguredID {
+                        id: project_id.to_string(),
+                    }
+                    .into());
+                }
+
+                if inherit_aliases && let Some(alias) = project_extend.alias.take() {
+                    self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
+                }
+
+                if let Some(build_data) = self.project_data.get_mut(&project_id) {
+                    build_data.extensions.push(project_extend);
+                }
+            }
+
+            for input_file in output.input_files {
+                self.config_paths.push(
+                    context
+                        .toolchain_registry
+                        .from_virtual_path(input_file)
+                        .relative_to(context.workspace_root)
+                        .into_diagnostic()?,
+                );
+            }
+
+            Ok(())
+        };
 
         // From toolchains
         for result in context
@@ -924,7 +935,7 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .await?
         {
-            process_output(result.id.clone(), result.output)?;
+            process_output(result.id.clone(), result.output, true)?;
         }
 
         // From extensions
@@ -938,7 +949,7 @@ impl<'app> WorkspaceBuilder<'app> {
             })
             .await?
         {
-            process_output(result.id.clone(), result.output)?;
+            process_output(result.id.clone(), result.output, false)?;
         }
 
         debug!("Loaded {} project aliases", self.aliases.len());
@@ -984,12 +995,14 @@ impl<'app> WorkspaceBuilder<'app> {
                 return Ok(());
             }
 
-            return Err(WorkspaceBuilderError::DuplicateProjectAlias {
-                alias: alias.clone(),
-                old_id: existing_id.to_string(),
-                new_id: id.to_string(),
-            }
-            .into());
+            debug!(
+                "Skipping alias {} for project {} as it already exists for project {}",
+                color::label(&alias),
+                color::id(&id),
+                color::id(existing_id),
+            );
+
+            return Ok(());
         }
 
         self.project_data

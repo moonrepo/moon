@@ -44,6 +44,19 @@ mod target_locator {
         }
 
         #[test]
+        fn deps_of_scope() {
+            assert_eq!(
+                TargetLocator::parse("^build:lint-*").unwrap(),
+                TargetLocator::GlobMatch {
+                    original: String::from("^build:lint-*"),
+                    scope: Some(TargetScope::DepsOf(DependencyScope::Build)),
+                    scope_glob: None,
+                    task_glob: String::from("lint-*"),
+                }
+            );
+        }
+
+        #[test]
         fn self_scope() {
             assert_eq!(
                 TargetLocator::parse("~:build-*").unwrap(),
@@ -148,6 +161,34 @@ mod target_locator {
             assert_eq!(
                 TargetLocator::parse("^:build").unwrap(),
                 TargetLocator::Qualified(Target::parse("^:build").unwrap())
+            );
+        }
+
+        #[test]
+        fn deps_of_scope() {
+            assert_eq!(
+                TargetLocator::parse("^build:lint").unwrap(),
+                TargetLocator::Qualified(Target::parse("^build:lint").unwrap())
+            );
+            assert_eq!(
+                TargetLocator::parse("^development:lint").unwrap(),
+                TargetLocator::Qualified(Target::parse("^development:lint").unwrap())
+            );
+            assert_eq!(
+                TargetLocator::parse("^dev:lint").unwrap(),
+                TargetLocator::Qualified(Target::parse("^dev:lint").unwrap())
+            );
+            assert_eq!(
+                TargetLocator::parse("^peer:lint").unwrap(),
+                TargetLocator::Qualified(Target::parse("^peer:lint").unwrap())
+            );
+            assert_eq!(
+                TargetLocator::parse("^production:lint").unwrap(),
+                TargetLocator::Qualified(Target::parse("^production:lint").unwrap())
+            );
+            assert_eq!(
+                TargetLocator::parse("^prod:lint").unwrap(),
+                TargetLocator::Qualified(Target::parse("^prod:lint").unwrap())
             );
         }
 

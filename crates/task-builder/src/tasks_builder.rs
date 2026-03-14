@@ -17,6 +17,7 @@ use moon_env_var::contains_env_var;
 use moon_target::Target;
 use moon_task::{
     Task, TaskArg, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptions, TaskState,
+    TaskUnixShell, TaskWindowsShell,
 };
 use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
@@ -24,7 +25,8 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
+use system_env::is_command_on_path;
 use tracing::{instrument, trace};
 
 #[derive(Debug, Default)]
@@ -600,6 +602,9 @@ impl<'proj> TasksBuilder<'proj> {
         state: &mut TaskState,
     ) -> miette::Result<TaskOptions> {
         let mut options = self.get_task_options_from_preset(preset, state);
+        options.unix_shell = default_unix_shell();
+        options.windows_shell = default_windows_shell();
+
         let mut chain = self.global_task_options.clone();
 
         chain.extend(
@@ -616,11 +621,17 @@ impl<'proj> TasksBuilder<'proj> {
                 match affected_files {
                     TaskOptionAffectedFilesEntry::Pattern(pat) => {
                         option.pass = pat.to_owned();
+                        option.pass_dot_when_no_results = true;
                     }
                     TaskOptionAffectedFilesEntry::Object(opt) => {
                         option.pass = opt.pass.clone();
                         option.pass_inputs_when_no_match =
-                            opt.pass_inputs_when_no_match.unwrap_or_default();
+                            opt.pass_inputs_when_no_match.unwrap_or(false);
+                        option.pass_dot_when_no_results =
+                            opt.pass_dot_when_no_results.unwrap_or(true);
+                        option.ignore_project_boundary =
+                            opt.ignore_project_boundary.unwrap_or(false);
+                        option.filter = opt.filter.iter().map(|f| f.to_string()).collect();
                     }
                 };
 
@@ -725,6 +736,10 @@ impl<'proj> TasksBuilder<'proj> {
                 state.set_run_in_ci = true;
             }
 
+            if let Some(run_in_sync_phase) = &config.run_in_sync_phase {
+                options.run_in_sync_phase = run_in_sync_phase.to_owned();
+            }
+
             if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
                 options.run_from_workspace_root = *run_from_workspace_root;
             }
@@ -808,6 +823,16 @@ impl<'proj> TasksBuilder<'proj> {
                             filter: inner.filter.clone(),
                             group: inner.group.clone(),
                         }));
+                    }
+                } else if let Some(dep_scope) = inner.get_deps_scope() {
+                    for dep_config in self.project_dependencies {
+                        if dep_config.scope == dep_scope {
+                            inputs.push(Input::Project(ProjectInput {
+                                project: dep_config.id.to_string(),
+                                filter: inner.filter.clone(),
+                                group: inner.group.clone(),
+                            }));
+                        }
                     }
                 } else if self
                     .project_dependencies
@@ -907,7 +932,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         global_inputs.push(
             Input::parse(format!(
-                "/.moon/*.{}",
+                "/{}/*.{}",
+                self.context.config_loader.dir_prefix,
                 self.context.config_loader.get_ext_glob()
             ))
             .unwrap(),
@@ -1061,7 +1087,7 @@ impl<'proj> TasksBuilder<'proj> {
                                         }
                                     }
                                     Sequence::Stop(term) => {
-                                        if term == ";" {
+                                        if term == ";" || term == "--" || term == "\n" {
                                             // Allow
                                         } else {
                                             return Err(
@@ -1337,4 +1363,28 @@ impl<'proj> TasksBuilder<'proj> {
 
         list
     }
+}
+
+fn default_unix_shell() -> TaskUnixShell {
+    static UNIX_CACHE: OnceLock<TaskUnixShell> = OnceLock::new();
+
+    *UNIX_CACHE.get_or_init(|| {
+        if is_command_on_path("bash") {
+            TaskUnixShell::Bash
+        } else {
+            TaskUnixShell::Sh
+        }
+    })
+}
+
+fn default_windows_shell() -> TaskWindowsShell {
+    static WIN_CACHE: OnceLock<TaskWindowsShell> = OnceLock::new();
+
+    *WIN_CACHE.get_or_init(|| {
+        if is_command_on_path("pwsh") {
+            TaskWindowsShell::Pwsh
+        } else {
+            TaskWindowsShell::PowerShell
+        }
+    })
 }

@@ -1,13 +1,15 @@
+use crate::dep_scope::DependencyScope;
 use moon_common::Id;
 use std::fmt::{self, Display};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum TargetScope {
-    All,         // :task
-    Deps,        // ^:task
-    OwnSelf,     // ~:task
-    Project(Id), // project:task
-    Tag(Id),     // #tag:task
+    All,                     // :task
+    Deps,                    // ^:task
+    DepsOf(DependencyScope), // ^build:task, ^development:task, etc.
+    OwnSelf,                 // ~:task
+    Project(Id),             // project:task
+    Tag(Id),                 // #tag:task
 }
 
 impl Display for TargetScope {
@@ -15,6 +17,7 @@ impl Display for TargetScope {
         match self {
             TargetScope::All => write!(f, ""),
             TargetScope::Deps => write!(f, "^"),
+            TargetScope::DepsOf(scope) => write!(f, "^{scope}"),
             TargetScope::OwnSelf => write!(f, "~"),
             TargetScope::Project(id) => write!(f, "{id}"),
             TargetScope::Tag(id) => write!(f, "#{id}"),

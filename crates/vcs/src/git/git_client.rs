@@ -96,11 +96,18 @@ impl Git {
                 worktree.git_dir = clean_components(repo.git_dir());
 
                 match repo.kind() {
-                    Kind::Bare => {
-                        debug!(
-                            git = ?worktree.work_dir,
-                            "Found a bare repository (things may not work correctly)"
-                        );
+                    Kind::Common => {
+                        if worktree.work_dir.join("HEAD").exists() {
+                            debug!(
+                                git = ?worktree.work_dir,
+                                "Found a bare repository (things may not work correctly)"
+                            );
+                        } else {
+                            debug!(
+                                git = ?worktree.work_dir,
+                                "Found a .git directory (repository root)"
+                            );
+                        }
                     }
                     Kind::Submodule => {
                         debug!(
@@ -110,20 +117,13 @@ impl Git {
 
                         worktree.type_of = GitTreeType::Submodule;
                     }
-                    Kind::WorkTree { is_linked } => {
-                        if is_linked {
-                            debug!(
-                                git = ?worktree.work_dir,
-                                "Found a .git file (worktree root)"
-                            );
+                    Kind::LinkedWorkTree => {
+                        debug!(
+                            git = ?worktree.work_dir,
+                            "Found a .git file (worktree root)"
+                        );
 
-                            worktree.type_of = GitTreeType::Worktree;
-                        } else {
-                            debug!(
-                                git = ?worktree.work_dir,
-                                "Found a .git directory (repository root)"
-                            );
-                        };
+                        worktree.type_of = GitTreeType::Worktree;
                     }
                 };
 

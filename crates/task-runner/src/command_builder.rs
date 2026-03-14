@@ -11,8 +11,9 @@ use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
 use moon_task::Task;
 use rustc_hash::FxHashMap;
+use starbase_utils::glob::GlobSet;
 use std::env;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
@@ -268,6 +269,7 @@ impl<'task> CommandBuilder<'task> {
                     TaskUnixShell::Murex => Shell::new(ShellType::Murex),
                     TaskUnixShell::Nu => Shell::new(ShellType::Nu),
                     TaskUnixShell::Pwsh => Shell::new(ShellType::Pwsh),
+                    TaskUnixShell::Sh => Shell::new(ShellType::Sh),
                     TaskUnixShell::Xonsh => Shell::new(ShellType::Xonsh),
                     TaskUnixShell::Zsh => Shell::new(ShellType::Zsh),
                 });
@@ -285,6 +287,7 @@ impl<'task> CommandBuilder<'task> {
                         TaskWindowsShell::Murex => Shell::new(ShellType::Murex),
                         TaskWindowsShell::Nu => Shell::new(ShellType::Nu),
                         TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
+                        TaskWindowsShell::PowerShell => Shell::new(ShellType::PowerShell),
                         TaskWindowsShell::Xonsh => Shell::new(ShellType::Xonsh),
                     });
             }
@@ -299,36 +302,49 @@ impl<'task> CommandBuilder<'task> {
             return Ok(());
         };
 
+        // Filter to project only files
+        let filter_files = |path: &PathBuf| {
+            if affected_options.ignore_project_boundary {
+                true
+            } else {
+                path.starts_with(&self.project.root)
+            }
+        };
+
         // Only get files when `--affected` is passed
         let mut abs_files = if context.affected.is_some() {
-            self.task.get_affected_files(
-                &self.app.workspace_root,
-                &context.changed_files,
-                &self.project.source,
-            )?
+            self.task
+                .get_affected_files(&self.app.workspace_root, &context.changed_files)?
+                .into_iter()
+                .filter(filter_files)
+                .collect::<Vec<_>>()
         } else {
             Vec::with_capacity(0)
         };
 
         // If we have no files, use the task's inputs instead
         if abs_files.is_empty() && affected_options.pass_inputs_when_no_match {
-            abs_files = self.task.get_input_files(&self.app.workspace_root)?;
+            abs_files = self
+                .task
+                .get_input_files(&self.app.workspace_root)?
+                .into_iter()
+                .filter(filter_files)
+                .collect::<Vec<_>>();
         }
 
         abs_files.sort();
 
+        // Filter the list before converting
+        if !affected_options.filter.is_empty() {
+            let globset = GlobSet::new(&affected_options.filter)?;
+
+            abs_files.retain(|abs_file| globset.matches(abs_file));
+        }
+
         // Convert to relative paths
         let rel_files = abs_files
             .into_iter()
-            .filter_map(|abs_file| {
-                if self.working_dir == self.app.workspace_root
-                    || abs_file.starts_with(&self.project.root)
-                {
-                    abs_file.relative_to(self.working_dir).ok()
-                } else {
-                    None
-                }
-            })
+            .filter_map(|abs_file| abs_file.relative_to(self.working_dir).ok())
             .collect::<Vec<_>>();
 
         // Set an environment variable
@@ -339,7 +355,11 @@ impl<'task> CommandBuilder<'task> {
             self.command.env(
                 "MOON_AFFECTED_FILES",
                 if rel_files.is_empty() {
-                    ".".into()
+                    if affected_options.pass_dot_when_no_results {
+                        ".".into()
+                    } else {
+                        "".into()
+                    }
                 } else {
                     env::join_paths(
                         rel_files
@@ -358,13 +378,19 @@ impl<'task> CommandBuilder<'task> {
             TaskOptionAffectedFilesPattern::Args | TaskOptionAffectedFilesPattern::Enabled(true)
         ) {
             if rel_files.is_empty() {
-                self.command.arg_if_missing(".");
+                if affected_options.pass_dot_when_no_results {
+                    self.command.arg_if_missing(".");
+                }
             } else {
                 let args = rel_files
                     .into_iter()
                     .map(|file| {
                         // Mimic relative from ("./")
-                        let arg = format!("./{file}");
+                        let arg = if file.as_str().starts_with('.') {
+                            file.to_string()
+                        } else {
+                            format!("./{file}")
+                        };
 
                         // Escape files with special characters
                         if arg.contains(['*', '$', '+', '[', ']']) {

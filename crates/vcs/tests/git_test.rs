@@ -6,7 +6,7 @@ use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fs;
 
-fn create_root_sandbox(bare: bool) -> (Sandbox, Git) {
+fn create_git_test_sandbox(bare: bool) -> Sandbox {
     let sandbox = create_empty_sandbox();
 
     sandbox.run_git(|cmd| {
@@ -22,26 +22,18 @@ fn create_root_sandbox(bare: bool) -> (Sandbox, Git) {
         }
     });
 
+    sandbox
+}
+
+fn create_root_sandbox(bare: bool) -> (Sandbox, Git) {
+    let sandbox = create_git_test_sandbox(bare);
     let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
     (sandbox, git)
 }
 
 fn create_worktree_sandbox(bare: bool) -> (Sandbox, Git) {
-    let sandbox = create_empty_sandbox();
-
-    sandbox.run_git(|cmd| {
-        cmd.args([
-            "clone",
-            "https://github.com/moonrepo/git-test.git",
-            ".",
-            "--recurse-submodules",
-        ]);
-
-        if bare {
-            cmd.arg("--bare");
-        }
-    });
+    let sandbox = create_git_test_sandbox(bare);
 
     sandbox.run_git(|cmd| {
         cmd.args(["worktree", "add", "trees/one", "-b", "one"]);
@@ -124,6 +116,17 @@ mod git {
 
     mod root {
         use super::*;
+
+        #[test]
+        fn supports_sha256() {
+            let sandbox = create_git_test_sandbox(false);
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["config", "extensions.objectFormat", "sha256"]);
+            });
+
+            Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+        }
 
         #[test]
         fn loads_trees() {
@@ -388,7 +391,7 @@ mod git {
             );
             assert_eq!(git.worktree.work_dir, sandbox.path().join("trees/one"));
             assert_eq!(git.worktree.path.as_str(), "");
-            assert_eq!(git.worktree.type_of, GitTreeType::Worktree);
+            assert_eq!(git.worktree.type_of, GitTreeType::Root);
             assert_eq!(
                 git.submodules,
                 vec![

@@ -22,6 +22,7 @@ moon_console = { path = "../console" }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_env_var = { path = "../env-var" }
+moon_exec_plan = { path = "../exec-plan" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_mcp = { path = "../mcp" }
@@ -55,7 +56,7 @@ clap = { workspace = true, features = [
     "wrap_help",
 ] }
 clap_complete = { workspace = true }
-clap_complete_nushell = "4.5.10"
+clap_complete_nushell = "4.6.0"
 convert_case = { workspace = true }
 diff = "0.1.13"
 iocraft = { workspace = true }

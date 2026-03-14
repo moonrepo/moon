@@ -1,6 +1,7 @@
 use std::env;
 use std::env::consts;
 use std::fs;
+use std::io::{self, IsTerminal};
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
@@ -33,6 +34,36 @@ pub fn is_ci_env() -> bool {
     is_ci() && !is_test_env()
 }
 
+pub fn is_devbox() -> bool {
+    static DEVBOX_CACHE: OnceLock<bool> = OnceLock::new();
+
+    *DEVBOX_CACHE.get_or_init(|| {
+        for key in [
+            "CODESPACES",
+            "CODESPACE_NAME",
+            "GITHUB_CODESPACES",
+            "GITPOD_INSTANCE_ID",
+            "DAYTONA_WORKSPACE_ID",
+            "DEVPOD",
+            "VSCODE_INJECTION",
+            "REMOTE_CONTAINERS",
+            "C9_HOSTNAME",
+            "GOOGLE_CLOUD_PROJECT",
+            "GCLOUD_PROJECT",
+            "CHE_WORKSPACE_ID",
+            "GL_WORKSPACE_ID",
+            "CODESANDBOX_SSE",
+            "REPL_ID",
+        ] {
+            if has_env_var(key) {
+                return true;
+            }
+        }
+
+        false
+    })
+}
+
 pub fn is_docker() -> bool {
     static DOCKER_CACHE: OnceLock<bool> = OnceLock::new();
 
@@ -43,6 +74,18 @@ pub fn is_docker() -> bool {
 
         has_proc_config("/proc/self/cgroup", "docker")
     })
+}
+
+pub fn is_headless() -> bool {
+    static HEADLESS_CACHE: OnceLock<bool> = OnceLock::new();
+
+    *HEADLESS_CACHE.get_or_init(|| !(io::stdin().is_terminal() && io::stdout().is_terminal()))
+}
+
+pub fn is_ssh() -> bool {
+    static SSH_CACHE: OnceLock<bool> = OnceLock::new();
+
+    *SSH_CACHE.get_or_init(|| has_env_var("SSH_CLIENT") || has_env_var("SSH_TTY"))
 }
 
 pub fn is_wsl() -> bool {
@@ -67,6 +110,14 @@ pub fn is_test_env() -> bool {
     *TEST_CACHE.get_or_init(|| {
         has_env_var("MOON_TEST") || has_env_var("STARBASE_TEST") || has_env_var("NEXTEST")
     })
+}
+
+pub fn is_remote() -> bool {
+    is_ci() || is_ssh() || is_devbox() || is_headless()
+}
+
+pub fn is_local() -> bool {
+    !is_remote()
 }
 
 #[inline]

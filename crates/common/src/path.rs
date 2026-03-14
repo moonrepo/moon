@@ -195,3 +195,14 @@ pub fn clean_components<T: AsRef<Path>>(path: T) -> PathBuf {
 pub fn paths_are_equal<L: AsRef<Path>, R: AsRef<Path>>(left: L, right: R) -> bool {
     clean_components(left) == clean_components(right)
 }
+
+pub fn locate_config_dir(workspace_root: &Path) -> PathBuf {
+    let moon_dir = workspace_root.join(".moon");
+    let config_moon_dir = workspace_root.join(".config").join("moon");
+
+    if config_moon_dir.exists() {
+        config_moon_dir
+    } else {
+        moon_dir
+    }
+}

@@ -1,4 +1,4 @@
-use moon_common::is_ci;
+use moon_common::is_remote;
 use notify_rust::{Notification, Timeout};
 use std::time::Duration;
 use tracing::{debug, trace};
@@ -53,7 +53,7 @@ fn configure_application(notification: &mut Notification) {
 
 // https://docs.rs/notify-rust/latest/notify_rust/#platform-differences
 pub fn notify_terminal(title: impl AsRef<str>, description: impl AsRef<str>) -> miette::Result<()> {
-    if is_ci() {
+    if is_remote() {
         return Ok(());
     }
 

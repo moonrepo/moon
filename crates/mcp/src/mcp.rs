@@ -104,6 +104,7 @@ pub async fn run_mcp(
         server_details,
         task_store: None,
         client_task_store: None,
+        message_observer: None,
     });
 
     // STEP 5: Start the server

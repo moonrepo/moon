@@ -1,5 +1,6 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
+use moon_common::path::locate_config_dir;
 use moon_config::{
     ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
 };
@@ -46,7 +47,7 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
             .parse()
             .map_err(|_| AppError::InvalidWorkspaceRootEnvVar)?;
 
-        if !root.join(".moon").exists() && !root.join(".config").join("moon").exists() {
+        if !locate_config_dir(&root).exists() {
             return Err(AppError::MissingConfigDir.into());
         }
 
@@ -56,7 +57,7 @@ pub fn find_workspace_root(working_dir: &Path) -> miette::Result<PathBuf> {
 
         loop {
             if let Some(dir) = current_dir {
-                if dir.join(".moon").exists() || dir.join(".config").join("moon").exists() {
+                if locate_config_dir(dir).exists() {
                     break dir.to_path_buf();
                 } else {
                     current_dir = dir.parent();

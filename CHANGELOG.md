@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- **Environment**
+  - Improved our local and remote detection logic. We now also check for common remote devboxes
+    (GitHub Codespaces, Gitpod, etc) in addition to CI environments.
+- **Projects**
+  - Updated duplicate aliases to no longer be a hard error, and instead will apply to the first
+    encountered project. Duplicates are possible when multiple toolchains all use the same package
+    name (Go, Rust, Node, etc).
+- **Tasks**
+  - Added 3 new settings to the `affectedFiles` option when using the object syntax:
+    - `filter` - A list of glob patterns to filter the affected files list before passing to the
+      task.
+    - `ignoreProjectBoundary` - When matching affected files, ignore the project boundary and
+      include workspace relative files. Otherwise, only files within the project are matched.
+    - `passDotWhenNoResults` - When there are no affected files after matching and filtering, use
+      `.` instead of an empty value.
+  - Added a new option, `runInSyncPhase`, that will run the task during `moon sync` commands.
+- **Toolchains**
+  - Added `inheritAliases` (default `true`) setting for each toolchain. Can toggle whether to
+    inherit aliases for projects while extending the project graph.
+  - Added `installDependencies` (default `true`) setting for each toolchain. Can toggle whether to
+    install dependencies (via the `InstallDependencies` action) when running a task.
+
+#### 🐞 Fixes
+
+- Fixed invalid JSON schema in MCP `generate` tool.
+- Fixed `$projectTitle` and `$projectAliases` tokens not being substituted.
+- Fixed an issue where `bash` may not be available (falls back to `sh`).
+- Fixed an issue where a task `command` could not end with `--`.
+- Fixed some issues where `.config/moon` was not respected.
+- Potential fix for tail-end console output not being written.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 2.0.4
 
 #### 🧰 Toolchains

@@ -932,7 +932,8 @@ impl<'proj> TasksBuilder<'proj> {
 
         global_inputs.push(
             Input::parse(format!(
-                "/.moon/*.{}",
+                "/{}/*.{}",
+                self.context.config_loader.dir_prefix,
                 self.context.config_loader.get_ext_glob()
             ))
             .unwrap(),

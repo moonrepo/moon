@@ -2,7 +2,7 @@ use crate::codegen_error::CodegenError;
 use crate::template::Template;
 use miette::IntoDiagnostic;
 use moon_common::Id;
-use moon_common::path::{PathExt, RelativePathBuf};
+use moon_common::path::{PathExt, RelativePathBuf, locate_config_dir};
 use moon_config::{ConfigLoader, GeneratorConfig, PartialTemplateConfig, TemplateLocator};
 use moon_env::MoonEnvironment;
 use moon_process::{Command, Output};
@@ -113,9 +113,8 @@ impl<'app> CodeGenerator<'app> {
             "Creating new template",
         );
 
-        let schema_path = self
-            .workspace_root
-            .join(".moon/cache/schemas/template.json");
+        let schema_path =
+            locate_config_dir(self.workspace_root).join("cache/schemas/template.json");
 
         let template = PartialTemplateConfig {
             schema: Some(

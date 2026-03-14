@@ -16,6 +16,7 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug, Default)]
 pub struct ConfigLoader {
     pub dir: PathBuf, // .moon
+    pub dir_prefix: String,
     finder: ConfigFinder,
 }
 
@@ -23,7 +24,7 @@ impl ConfigLoader {
     pub fn new(dir: impl AsRef<Path>) -> Self {
         Self {
             dir: dir.as_ref().to_path_buf(),
-            finder: ConfigFinder::default(),
+            ..Default::default()
         }
     }
 
@@ -33,8 +34,10 @@ impl ConfigLoader {
 
         if config_moon_dir.exists() {
             self.dir = config_moon_dir;
+            self.dir_prefix = ".config/moon".into();
         } else {
             self.dir = moon_dir;
+            self.dir_prefix = ".moon".into();
         }
 
         self.dir.clone()

@@ -193,12 +193,13 @@ async fn scaffold_configs(
         "Copying moon configuration"
     );
 
+    let cfg_dir_prefix = &session.config_loader.dir_prefix;
     let ext_glob = session.config_loader.get_ext_glob();
 
     copy_files(
         [
-            format!(".moon/*.{ext_glob}"),
-            format!(".moon/tasks/**/*.{ext_glob}"),
+            format!("{cfg_dir_prefix}/*.{ext_glob}"),
+            format!("{cfg_dir_prefix}/tasks/**/*.{ext_glob}"),
         ],
         &session.workspace_root,
         &docker_configs_root,
@@ -356,13 +357,13 @@ fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 
         // Check lines so we can match exactly and avoid comments or nested paths
         for line in ignore.lines() {
-            if line
+            let line_clean = line
                 .trim()
                 .trim_start_matches("./")
                 .trim_start_matches('/')
-                .trim_end_matches('/')
-                == ".moon/cache"
-            {
+                .trim_end_matches('/');
+
+            if line_clean == ".moon/cache" || line_clean == ".config/moon/cache" {
                 is_ignored = true;
                 break;
             }

@@ -14,9 +14,10 @@ moon_env_var = { path = "../env-var" }
 moon_process = { path = "../process" }
 async-trait = { workspace = true }
 futures = { workspace = true }
-gix = { version = "0.78.0", default-features = false, features = [
+gix = { version = "0.80.0", default-features = false, features = [
 	"attributes",
 ] }
+gix-hash = { version = "0.22.1", features = ["sha256"] }
 git-url-parse = "0.6.0"
 ignore = "0.4.25"
 miette = { workspace = true }

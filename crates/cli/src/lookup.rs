@@ -1,4 +1,5 @@
 use moon_app::commands::upgrade::is_musl;
+use moon_common::path::locate_config_dir;
 use starbase_utils::fs;
 use std::env;
 use std::env::consts::{ARCH, OS};
@@ -103,10 +104,7 @@ pub fn has_locally_installed(home_dir: &Path, current_dir: &Path) -> Option<Path
             }
         }
 
-        if dir.join(".moon").exists()
-            || dir.join(".config").join("moon").exists()
-            || dir == home_dir
-        {
+        if locate_config_dir(dir).exists() || dir == home_dir {
             break;
         }
 

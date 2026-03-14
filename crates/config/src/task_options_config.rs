@@ -236,6 +236,7 @@ config_unit_enum!(
         Nu,
         #[serde(alias = "powershell")]
         Pwsh,
+        Sh,
         Xonsh,
         Zsh,
     }
@@ -252,8 +253,9 @@ config_unit_enum!(
         #[serde(alias = "nushell")]
         Nu,
         #[default]
-        #[serde(alias = "powershell")]
         Pwsh,
+        #[serde(rename = "powershell")]
+        PowerShell,
         Xonsh,
     }
 );

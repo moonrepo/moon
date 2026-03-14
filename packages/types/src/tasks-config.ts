@@ -243,11 +243,20 @@ export type TaskUnixShell =
 	| 'murex'
 	| 'nu'
 	| 'pwsh'
+	| 'sh'
 	| 'xonsh'
 	| 'zsh';
 
 /** A list of available shells on Windows. */
-export type TaskWindowsShell = 'bash' | 'elvish' | 'fish' | 'murex' | 'nu' | 'pwsh' | 'xonsh';
+export type TaskWindowsShell =
+	| 'bash'
+	| 'elvish'
+	| 'fish'
+	| 'murex'
+	| 'nu'
+	| 'pwsh'
+	| 'powershell'
+	| 'xonsh';
 
 /** Options to control task inheritance, execution, and more. */
 export interface TaskOptionsConfig {
@@ -388,6 +397,8 @@ export interface TaskOptionsConfig {
 	 * `moon check`, or `moon run`.
 	 */
 	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
+	/** Runs the task automatically when executing `moon sync`. */
+	runInSyncPhase?: boolean | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on native `PATH` resolution.
@@ -845,6 +856,8 @@ export interface PartialTaskOptionsConfig {
 	 * `moon check`, or `moon run`.
 	 */
 	runInCI?: boolean | 'always' | 'affected' | 'only' | 'skip' | null;
+	/** Runs the task automatically when executing `moon sync`. */
+	runInSyncPhase?: boolean | null;
 	/**
 	 * Runs the task within a shell. When not defined, runs the task
 	 * directly while relying on native `PATH` resolution.

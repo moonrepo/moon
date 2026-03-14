@@ -269,6 +269,7 @@ impl<'task> CommandBuilder<'task> {
                     TaskUnixShell::Murex => Shell::new(ShellType::Murex),
                     TaskUnixShell::Nu => Shell::new(ShellType::Nu),
                     TaskUnixShell::Pwsh => Shell::new(ShellType::Pwsh),
+                    TaskUnixShell::Sh => Shell::new(ShellType::Sh),
                     TaskUnixShell::Xonsh => Shell::new(ShellType::Xonsh),
                     TaskUnixShell::Zsh => Shell::new(ShellType::Zsh),
                 });
@@ -286,6 +287,7 @@ impl<'task> CommandBuilder<'task> {
                         TaskWindowsShell::Murex => Shell::new(ShellType::Murex),
                         TaskWindowsShell::Nu => Shell::new(ShellType::Nu),
                         TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
+                        TaskWindowsShell::PowerShell => Shell::new(ShellType::PowerShell),
                         TaskWindowsShell::Xonsh => Shell::new(ShellType::Xonsh),
                     });
             }

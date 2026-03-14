@@ -3,7 +3,7 @@
 use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{FlexDirection, View, element};
-use moon_common::path::clean_components;
+use moon_common::path::{clean_components, locate_config_dir};
 use moon_config::{VcsProvider, WorkspaceConfig};
 use moon_console::ui::{Confirm, Container, Notice, StyledText, Variant};
 use moon_vcs::{Vcs, git::Git};
@@ -63,10 +63,9 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
         return Ok(None);
     }
 
-    let moon_dir = dest_dir.join(".moon");
-    let config_moon_dir = dest_dir.join(".config").join("moon");
+    let config_dir = locate_config_dir(&dest_dir);
 
-    if !args.force && (moon_dir.exists() || config_moon_dir.exists()) {
+    if !args.force && config_dir.exists() {
         let mut force = false;
 
         session
@@ -83,12 +82,6 @@ pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
             return Ok(Some(1));
         }
     }
-
-    let config_dir = if config_moon_dir.exists() {
-        config_moon_dir
-    } else {
-        moon_dir
-    };
 
     fs::create_dir_all(&config_dir)?;
 

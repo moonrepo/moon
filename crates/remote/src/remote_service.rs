@@ -396,19 +396,19 @@ async fn batch_find_blobs(
 
     for (group_index, group) in digest_groups.into_iter() {
         let client = Arc::clone(&client);
+        let group_key = format!("{}:{group_total}", group_index + 1);
 
-        if group_total > 1 {
-            trace!(
-                hash = &action_digest.hash,
-                blobs = group.items.len(),
-                "Batching find blobs (group {} of {})",
-                group_index + 1,
-                group_total
-            );
-        }
+        trace!(
+            hash = &action_digest.hash,
+            blobs = group.items.len(),
+            "Batching find blobs (group {group_key})",
+        );
 
         set.spawn(Box::pin(async move {
-            client.find_missing_blobs(group.items).await
+            client
+                .find_missing_blobs(group.items)
+                .await
+                .map(|res| (group_key, res))
         }));
     }
 
@@ -422,7 +422,15 @@ async fn batch_find_blobs(
             break;
         }
 
-        missing_digests.extend(res.into_diagnostic()??);
+        let (group_key, digests) = res.into_diagnostic()??;
+
+        trace!(
+            hash = &action_digest.hash,
+            digests = digests.len(),
+            "Batched find blobs (group {group_key})",
+        );
+
+        missing_digests.extend(digests);
     }
 
     if abort {
@@ -468,28 +476,28 @@ async fn batch_upload_blobs(
     for (group_index, mut group) in blob_groups.into_iter() {
         let client = Arc::clone(&client);
         let action_digest = action_digest.to_owned();
+        let group_key = format!("{}:{group_total}", group_index + 1);
 
-        if group_total > 1 {
-            trace!(
-                hash = &action_digest.hash,
-                blobs = group.items.len(),
-                size = group.size,
-                "Batching blobs upload (group {} of {})",
-                group_index + 1,
-                group_total
-            );
-        }
+        trace!(
+            hash = &action_digest.hash,
+            blobs = group.items.len(),
+            size = group.size,
+            "Batching blobs upload (group {group_key})",
+        );
 
         if group.stream {
             set.spawn(Box::pin(async move {
                 client
                     .stream_update_blob(&action_digest, group.items.remove(0))
                     .await
-                    .map(|res| vec![Some(res)])
+                    .map(|res| (group_key, vec![Some(res)]))
             }));
         } else {
             set.spawn(Box::pin(async move {
-                client.batch_update_blobs(&action_digest, group.items).await
+                client
+                    .batch_update_blobs(&action_digest, group.items)
+                    .await
+                    .map(|res| (group_key, res))
             }));
         }
     }
@@ -503,7 +511,15 @@ async fn batch_upload_blobs(
             break 'outer;
         }
 
-        for maybe_digest in res.into_diagnostic()?? {
+        let (group_key, digests) = res.into_diagnostic()??;
+
+        trace!(
+            hash = &action_digest.hash,
+            digests = digests.len(),
+            "Batched blobs upload (group {group_key})",
+        );
+
+        for maybe_digest in digests {
             if maybe_digest.is_none() {
                 abort = true;
                 break 'outer;
@@ -542,34 +558,34 @@ async fn batch_download_blobs(
     let digest_groups =
         partition_into_groups(blob_digests, max_size, |dig| dig.size_bytes as usize);
     let group_total = digest_groups.len();
-    let mut set = JoinSet::<miette::Result<Vec<Option<Blob>>>>::default();
+    let mut set = JoinSet::default();
 
     for (group_index, mut group) in digest_groups.into_iter() {
         let client = Arc::clone(&client);
         let action_digest = action_digest.to_owned();
+        let group_key = format!("{}:{group_total}", group_index + 1);
 
-        if group_total > 1 {
-            trace!(
-                hash = &action_digest.hash,
-                blobs = group.items.len(),
-                size = group.size,
-                max_size,
-                "Batching blobs download (group {} of {})",
-                group_index + 1,
-                group_total
-            );
-        }
+        trace!(
+            hash = &action_digest.hash,
+            blobs = group.items.len(),
+            size = group.size,
+            max_size,
+            "Batching blobs download (group {group_key})",
+        );
 
         if group.stream {
             set.spawn(Box::pin(async move {
                 client
                     .stream_read_blob(&action_digest, group.items.remove(0))
                     .await
-                    .map(|res| vec![res])
+                    .map(|res| (group_key, vec![res]))
             }));
         } else {
             set.spawn(Box::pin(async move {
-                client.batch_read_blobs(&action_digest, group.items).await
+                client
+                    .batch_read_blobs(&action_digest, group.items)
+                    .await
+                    .map(|res| (group_key, res))
             }));
         }
     }
@@ -583,7 +599,15 @@ async fn batch_download_blobs(
             break 'outer;
         }
 
-        for blob in res.into_diagnostic()?? {
+        let (group_key, blobs) = res.into_diagnostic()??;
+
+        trace!(
+            hash = &action_digest.hash,
+            blobs = blobs.len(),
+            "Batched blobs download (group {group_key})",
+        );
+
+        for blob in blobs {
             let Some(blob) = blob else {
                 abort = true;
                 break 'outer;

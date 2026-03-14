@@ -30,6 +30,7 @@
 - Fixed invalid JSON schema in MCP `generate` tool.
 - Fixed `$projectTitle` and `$projectAliases` tokens not being substituted.
 - Fixed an issue where `bash` may not be available (fallsback to `sh`).
+- Fixed an issue where a task `command` could not end with `--`.
 - Fixed some issues where `.config/moon` was not respected.
 - Potential fix for tail-end console output not being written.
 

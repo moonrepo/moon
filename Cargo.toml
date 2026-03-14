@@ -58,7 +58,7 @@ starbase_archive = { version = "0.12.4", default-features = false, features = [
     "tar-all",
     "zip-all",
 ] }
-starbase_args = { version = "0.1.7" }
+starbase_args = { version = "0.1.8" }
 starbase_console = { version = "0.6.24", features = ["miette"] }
 starbase_id = { version = "0.3.2", features = ["miette", "schematic"] }
 starbase_sandbox = "0.10.5"

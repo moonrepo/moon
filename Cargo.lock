@@ -7733,9 +7733,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_args"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b9bcf4b25a2d264f096a57b104463be5f7097f22281e3c768cc4061224ea5fd"
+checksum = "1ca89864b3ce30881d6727e5ab4662a3f45647918b05928d7854330ce2c8971b"
 dependencies = [
  "pest",
  "pest_derive",

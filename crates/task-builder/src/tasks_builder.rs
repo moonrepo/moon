@@ -1087,7 +1087,7 @@ impl<'proj> TasksBuilder<'proj> {
                                         }
                                     }
                                     Sequence::Stop(term) => {
-                                        if term == ";" {
+                                        if term == ";" || term == "--" || term == "\n" {
                                             // Allow
                                         } else {
                                             return Err(

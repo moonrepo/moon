@@ -731,6 +731,10 @@ impl<'proj> TasksBuilder<'proj> {
                 state.set_run_in_ci = true;
             }
 
+            if let Some(run_in_sync_phase) = &config.run_in_sync_phase {
+                options.run_in_sync_phase = run_in_sync_phase.to_owned();
+            }
+
             if let Some(run_from_workspace_root) = &config.run_from_workspace_root {
                 options.run_from_workspace_root = *run_from_workspace_root;
             }

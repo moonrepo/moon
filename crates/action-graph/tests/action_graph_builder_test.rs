@@ -3617,7 +3617,7 @@ mod action_graph_builder {
                     .unwrap();
             }
 
-            #[should_panic(expected = "partitioned across 2 jobs")]
+            #[should_panic(expected = "pipeline has been configured for 5 jobs")]
             #[tokio::test(flavor = "multi_thread")]
             async fn errors_when_job_total_mismatches_partitions() {
                 let sandbox = create_sandbox("tasks");

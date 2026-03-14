@@ -25,6 +25,14 @@
   - Added `installDependencies` (default `true`) setting for each toolchain. Can toggle whether to
     install dependencies (via the `InstallDependencies` action) when running a task.
 
+#### 🐞 Fixes
+
+- Fixed invalid JSON schema in MCP `generate` tool.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 2.0.4
 
 #### 🧰 Toolchains

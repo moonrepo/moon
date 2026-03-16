@@ -1112,6 +1112,27 @@
       "description": "Expanded information about affected files handling.",
       "type": "object",
       "properties": {
+        "filter": {
+          "title": "filter",
+          "description": "A list of glob patterns to filter the affected files list before passing to the task as arguments or environment variables. Globs must start with ** to match against absolute paths.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "markdownDescription": "A list of glob patterns to filter the affected files list before passing to the task as arguments or environment variables. Globs must start with `**` to match against absolute paths."
+        },
+        "ignoreProjectBoundary": {
+          "title": "ignoreProjectBoundary",
+          "description": "When matching affected files, ignore the project boundary and include workspace relative files. Otherwise, only files within the project are matched.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "pass": {
           "title": "pass",
           "description": "The pattern in which affected files will be passed to the affected task.",
@@ -1128,9 +1149,9 @@
             }
           ]
         },
-        "passInputsWhenNoMatch": {
-          "title": "passInputsWhenNoMatch",
-          "description": "When no affected files are matching, pass the task's inputs as arguments to the command, instead of ..",
+        "passDotWhenNoResults": {
+          "title": "passDotWhenNoResults",
+          "description": "When there are no affected files after matching and filtering, use . instead of an empty value.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1139,7 +1160,19 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "When no affected files are matching, pass the task's inputs as arguments to the command, instead of `.`."
+          "markdownDescription": "When there are no affected files after matching and filtering, use `.` instead of an empty value."
+        },
+        "passInputsWhenNoMatch": {
+          "title": "passInputsWhenNoMatch",
+          "description": "When there are no affected files after matching, use the task's inputs instead.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "additionalProperties": false
@@ -1541,6 +1574,19 @@
           ],
           "markdownDescription": "Whether to run the task in CI or not, when executing `moon ci`, `moon check`, or `moon run`."
         },
+        "runInSyncPhase": {
+          "title": "runInSyncPhase",
+          "description": "Runs the task automatically when executing moon sync.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Runs the task automatically when executing `moon sync`."
+        },
         "shell": {
           "title": "shell",
           "description": "Runs the task within a shell. When not defined, runs the task directly while relying on native PATH resolution.",
@@ -1645,6 +1691,7 @@
         "murex",
         "nu",
         "pwsh",
+        "sh",
         "xonsh",
         "zsh"
       ]
@@ -1659,6 +1706,7 @@
         "murex",
         "nu",
         "pwsh",
+        "powershell",
         "xonsh"
       ]
     }

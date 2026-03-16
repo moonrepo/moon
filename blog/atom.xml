@@ -2,11 +2,129 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-02-18T00:00:00.000Z</updated>
+    <updated>2026-03-16T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v2.1 - Execution plans, target deps scopes, toolchain/task settings, and more]]></title>
+        <id>https://moonrepo.dev/blog/moon-v2.1</id>
+        <link href="https://moonrepo.dev/blog/moon-v2.1"/>
+        <updated>2026-03-16T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[It's been about a month since our major v2.0 release, and we're back with a smaller, but still]]></summary>
+        <content type="html"><![CDATA[<p>It's been about a month since our major v2.0 release, and we're back with a smaller, but still
+impactful, v2.1 release! This release includes a new execution plan feature for <code>moon exec</code>, the
+ability to target project dependencies by scope, new common toolchain settings for aliases and
+dependency installation, new task options for <a class="" href="https://moonrepo.dev/docs/config/project#affectedfiles"><code>affectedFiles</code></a>,
+and more.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="execution-plans">Execution plans<a href="https://moonrepo.dev/blog/moon-v2.1#execution-plans" class="hash-link" aria-label="Direct link to Execution plans" title="Direct link to Execution plans" translate="no">​</a></h2>
+<p>The <a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a> command is powerful, but complex invocations can mean long
+CLI commands that are hard to read and easy to get wrong. In v2.1, you can now define an <strong>execution
+plan</strong> — a JSON file that declaratively configures targets, affected filtering, graph traversal, and
+pipeline behavior — and pass it with a single flag:</p>
+<div class="language-json codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">plan.json</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-json codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token property" style="color:#b7a9f9">"pipeline"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token property" style="color:#b7a9f9">"jobTotal"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token number" style="color:#94dded">3</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token property" style="color:#b7a9f9">"targets"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token property" style="color:#b7a9f9">"jobs"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"app:build"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"app:test"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"lib:build"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"lib:test"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"docs:build"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">}</span><br></span></code></pre></div></div>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Runs docs:build only!</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">exec</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--plan</span><span class="token plain"> plan.json </span><span class="token parameter variable" style="color:#fef9c3">--job</span><span class="token plain"> </span><span class="token number" style="color:#94dded">2</span><br></span></code></pre></div></div>
+<p>This is especially useful for CI pipelines where you need partitioned jobs, affected-only runs, or
+specific failure handling. Instead of stitching together a dozen flags, drop a <code>plan.json</code> into your
+repo and version-control your execution strategy.</p>
+<p>Check out the <a class="" href="https://moonrepo.dev/docs/guides/exec-plan">execution plan guide</a> for the full structure and examples.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="target-project-dependencies-by-scope">Target project dependencies by scope<a href="https://moonrepo.dev/blog/moon-v2.1#target-project-dependencies-by-scope" class="hash-link" aria-label="Direct link to Target project dependencies by scope" title="Direct link to Target project dependencies by scope" translate="no">​</a></h2>
+<p>moon has always allowed you to reference dependencies of a project (external projects) within a task
+using <code>^</code> syntax, for both <a class="" href="https://moonrepo.dev/docs/config/project#inputs"><code>inputs</code></a> and
+<a class="" href="https://moonrepo.dev/docs/config/project#deps"><code>deps</code></a>. However, it was quite restrictive in that it referenced <em>all</em>
+project dependencies, regardless of scope (production, development, etc).</p>
+<p>We felt it was time to change this, and in v2.1 we're introducing a new syntax that allows you to
+target dependencies by scope. By default, the <code>^</code> syntax will still reference all dependencies, but
+you can now specify a scope by suffixing the <code>^</code> with one of the following:</p>
+<ul>
+<li class=""><code>development</code> / <code>dev</code></li>
+<li class=""><code>production</code> / <code>prod</code></li>
+<li class=""><code>build</code></li>
+<li class=""><code>peer</code></li>
+</ul>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'tsc'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># Depend on build tasks in production level project dependencies</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'^production:build'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">inputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token comment" style="color:#97a1af;font-style:italic"># Source files of all production level project dependencies</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'project:^production'</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-common-toolchain-settings">New common toolchain settings<a href="https://moonrepo.dev/blog/moon-v2.1#new-common-toolchain-settings" class="hash-link" aria-label="Direct link to New common toolchain settings" title="Direct link to New common toolchain settings" translate="no">​</a></h2>
+<p>Going forward, we want to provide more customization for toolchains, enabling you to curate the
+experience you want. The first step in this process is introducing 2 new settings that are common
+across all toolchains.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="inheritaliases"><code>inheritAliases</code><a href="https://moonrepo.dev/blog/moon-v2.1#inheritaliases" class="hash-link" aria-label="Direct link to inheritaliases" title="Direct link to inheritaliases" translate="no">​</a></h3>
+<p>Aliases are a feature of projects that allow for alternate names to be used when referencing them.
+Aliases cannot be configured manually and instead are inferred from toolchains, typically by
+extracting the <code>name</code> field from a manifest file (<code>package.json</code>, <code>Cargo.toml</code>, <code>pyproject.toml</code>,
+etc).</p>
+<p>This happens automatically, but what if you don't want to use aliases? Or there are conflicting
+aliases across projects? In v2.1, we're introducing a new common toolchain setting called
+<a class="" href="https://moonrepo.dev/docs/config/toolchain#inheritaliases"><code>inheritAliases</code></a> that allows you to disable this feature.
+When set to <code>false</code>, no aliases will be inferred for any projects using that toolchain.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchains.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">javascript</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">inheritAliases</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></span></code></pre></div></div>
+<blockquote>
+<p>We've also updated duplicate aliases to no longer be a hard error, and instead will apply to the
+first encountered project.</p>
+</blockquote>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="installdependencies"><code>installDependencies</code><a href="https://moonrepo.dev/blog/moon-v2.1#installdependencies" class="hash-link" aria-label="Direct link to installdependencies" title="Direct link to installdependencies" translate="no">​</a></h3>
+<p>When you run a task, all toolchains associated with the task will automatically install dependencies
+if they've determined that they need to (lockfile changes, dependency updates, etc). This is a great
+feature for ensuring that your environment is always up to date, especially when switching branches,
+but it can be a bit too much for some use cases.</p>
+<p>In v2.1, we're introducing another common toolchain setting called
+<a class="" href="https://moonrepo.dev/docs/config/toolchain#installdependencies"><code>installDependencies</code></a> that allows you to disable this
+feature. When set to <code>false</code>, toolchains will not automatically install dependencies before running
+a task.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchains.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">installDependencies</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></span></code></pre></div></div>
+<blockquote>
+<p>Not all toolchains support this tier 2 feature.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-task-affectedfiles-settings">New task <code>affectedFiles</code> settings<a href="https://moonrepo.dev/blog/moon-v2.1#new-task-affectedfiles-settings" class="hash-link" aria-label="Direct link to new-task-affectedfiles-settings" title="Direct link to new-task-affectedfiles-settings" translate="no">​</a></h2>
+<p>In <a class="" href="https://moonrepo.dev/blog/moon-v2.0">v2</a> we introduced an object form for the the task option
+<a class="" href="https://moonrepo.dev/docs/config/project#affectedfiles"><code>affectedFiles</code></a>, allowing you to further customize this
+feature. Based on feedback from the community, we're introducing 3 new settings to this object:</p>
+<ul>
+<li class=""><code>filter</code> - A list of glob patterns to filter the affected files list before passing to the task.</li>
+<li class=""><code>ignoreProjectBoundary</code> - When matching affected files, ignore the project boundary and include
+workspace relative files. Otherwise, only files within the project are matched.</li>
+<li class=""><code>passDotWhenNoResults</code> - When there are no affected files after matching and filtering, use <code>.</code>
+instead of an empty value.</li>
+</ul>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">lint</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'eslint'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">inputs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'src/**/*.{ts,tsx}'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'**/*.json'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'eslint.config.*'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">affectedFiles</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">filter</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'**/*.tsx?'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">ignoreProjectBoundary</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">passDotWhenNoResults</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v2.1#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v2.1.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list of
+changes.</p>
+<ul>
+<li class="">Improved our local and remote detection logic. We now also check for common remote devboxes
+(GitHub Codespaces, Gitpod, etc) in addition to CI environments.</li>
+<li class="">Added a new task option, <a class="" href="https://moonrepo.dev/docs/config/project#runinsyncphase"><code>runInSyncPhase</code></a>, that will run
+the task during <code>moon sync</code> commands.</li>
+<li class=""><strong>Go</strong>
+<ul>
+<li class="">Will now run <code>go list --deps</code> to determine project relationships while extending the project
+graph.</li>
+</ul>
+</li>
+<li class=""><strong>Python</strong>
+<ul>
+<li class="">Normalized package/dependency names to PEP 503 during graph extending.</li>
+<li class="">Fixed an issue where package manager toolchain settings were not being inherited correctly.</li>
+</ul>
+</li>
+<li class=""><strong>TypeScript</strong>
+<ul>
+<li class="">Added a <code>pruneProjectReferences</code> setting that prunes non-moon managed project references when
+syncing.</li>
+</ul>
+</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="exec" term="exec"/>
+        <category label="plan" term="plan"/>
+        <category label="task" term="task"/>
+        <category label="affected" term="affected"/>
+        <category label="dependencies" term="dependencies"/>
+        <category label="toolchain" term="toolchain"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v2.0 - Official "Phobos" release!]]></title>
         <id>https://moonrepo.dev/blog/moon-v2.0</id>
@@ -1874,151 +1992,5 @@ of changes.</p>
         <category label="backend" term="backend"/>
         <category label="plugin" term="plugin"/>
         <category label="asdf" term="asdf"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[moon v1.32 - Remote cache and built-in toolchain improvements]]></title>
-        <id>https://moonrepo.dev/blog/moon-v1.32</id>
-        <link href="https://moonrepo.dev/blog/moon-v1.32"/>
-        <updated>2025-02-03T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release we focused primarily on remote caching and toolchain improvements.]]></summary>
-        <content type="html"><![CDATA[<p>In this release we focused primarily on remote caching and toolchain improvements.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="improved-remote-caching-stability">Improved remote caching stability<a href="https://moonrepo.dev/blog/moon-v1.32#improved-remote-caching-stability" class="hash-link" aria-label="Direct link to Improved remote caching stability" title="Direct link to Improved remote caching stability" translate="no">​</a></h2>
-<p>The main focus of this release was the stability of our remote caching implementation, by fixing all
-bugs and edge cases, and adding support for missing or new features.</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-settings">New settings<a href="https://moonrepo.dev/blog/moon-v1.32#new-settings" class="hash-link" aria-label="Direct link to New settings" title="Direct link to New settings" translate="no">​</a></h3>
-<p>To support new features (below), we are introducing 2 new settings,
-<a class="" href="https://moonrepo.dev/docs/config/workspace#api"><code>unstable_remote.api</code></a> and
-<a class="" href="https://moonrepo.dev/docs/config/workspace#auth"><code>unstable_remote.auth</code></a>. The <code>api</code> setting defines what API format the
-remote server supports and expects client requests to be sent in, either <code>grpc</code> (default) or <code>http</code>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">api</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'grpc'</span><br></span></code></pre></div></div>
-<p>While the <code>auth</code> setting does 2 things; allows HTTP headers to be configured that will be injected
-into all gRPC/HTTP requests, and a token (via environment variable) to be used for bearer
-authorization (instead of TLS/mTLS).</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">auth</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">headers</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">'X-Custom-Header'</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'value'</span><br></span></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="http-api-support">HTTP API support<a href="https://moonrepo.dev/blog/moon-v1.32#http-api-support" class="hash-link" aria-label="Direct link to HTTP API support" title="Direct link to HTTP API support" translate="no">​</a></h3>
-<p>If you don't want or can't use gRPC, we now support the
-<a href="https://bazel.build/remote/caching#http-caching" target="_blank" rel="noopener noreferrer" class="">HTTP caching protocol</a>. This is a very simple API
-that uploads action results to <code>/ac/</code> endpoints, and output blobs to <code>/cas/</code> endpoints (content
-addressable storage). The HTTP API is <em>very</em> simple and does not support any of the features
-provided by gRPC, like batch uploading/downloading, streaming, or missing blob detection.</p>
-<p>To use this protocol, set the new <code>api</code> setting to <code>http</code>, and configure an HTTP host.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">api</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'http'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">host</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'https://cache.yourhost.com'</span><br></span></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="bytestream-support">ByteStream support<a href="https://moonrepo.dev/blog/moon-v1.32#bytestream-support" class="hash-link" aria-label="Direct link to ByteStream support" title="Direct link to ByteStream support" translate="no">​</a></h3>
-<p>We now support the ByteStream API for gRPC servers, which will automatically download and upload
-blobs larger than 4mb by streaming chunks of data. Previously, if we encountered a blob larger than
-4mb, we would abort uploading to the cache for that action, so subseqeuent runs would always be a
-cache miss.</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="depot-cloud-hosting">Depot cloud hosting<a href="https://moonrepo.dev/blog/moon-v1.32#depot-cloud-hosting" class="hash-link" aria-label="Direct link to Depot cloud hosting" title="Direct link to Depot cloud hosting" translate="no">​</a></h3>
-<p>Our good friends at Depot (<a href="https://depot.dev/" target="_blank" rel="noopener noreferrer" class="">depot.dev</a>) recently announced
-<a href="https://depot.dev/blog/introducing-depot-cache" target="_blank" rel="noopener noreferrer" class="">Depot Cache</a>, a cloud-based caching solution that's
-compatible with the Bazel remote execution/caching API. We were very excited to read this
-announcement, and wanted to get it working in moon immediately. It took a bit of work, and uncovered
-a lot of bugs on our end, but we eventually got it working!</p>
-<p>To make use of Depot Cache, create an account on their end, and then configure moon with the
-following.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">host</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'grpcs://cache.depot.dev'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">auth</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">token</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'DEPOT_TOKEN'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># If you have multiple org's</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">headers</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">'X-Depot-Org'</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'&lt;id&gt;'</span><br></span></code></pre></div></div>
-<p>You'll need to set the <code>DEPOT_TOKEN</code> environment variable on every machine that will use remote
-caching.
-<a class="" href="https://moonrepo.dev/docs/guides/remote-cache#cloud-hosted-depot">Learn more about this flow in our documentation</a>.</p>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>moon itself now uses Depot Cache for its remote caching, and it has been working quite well! You can
-see it in action within each pull request.</p></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="miscellaneous">Miscellaneous<a href="https://moonrepo.dev/blog/moon-v1.32#miscellaneous" class="hash-link" aria-label="Direct link to Miscellaneous" title="Direct link to Miscellaneous" translate="no">​</a></h3>
-<ul>
-<li class="">You can now use <code>http(s)</code> protocols for gRPC servers, instead of just <code>grpc(s)</code>.</li>
-<li class="">Added timeouts and concurrency limits to our internal clients. In the future, we will also support
-retrying.</li>
-<li class="">Added a <code>MOON_DEBUG_REMOTE</code> environment variable, which can be used to debug internal errors for
-diagnosing connection/integration issues.</li>
-<li class="">Improved handling of TLS/mTLS connections.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="improved-built-in-toolchains">Improved built-in toolchains<a href="https://moonrepo.dev/blog/moon-v1.32#improved-built-in-toolchains" class="hash-link" aria-label="Direct link to Improved built-in toolchains" title="Direct link to Improved built-in toolchains" translate="no">​</a></h2>
-<p>It's been quite some time since we've made any changes to our existing built-in toolchains, and
-since there's been many updates in the ecosystem (like Deno v2), we felt it was time to do a pass on
-them and introduce some improvements.</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="bun">Bun<a href="https://moonrepo.dev/blog/moon-v1.32#bun" class="hash-link" aria-label="Direct link to Bun" title="Direct link to Bun" translate="no">​</a></h3>
-<ul>
-<li class="">Added support for the new text-based <code>bun.lock</code> file in
-<a href="https://bun.sh/blog/bun-v1.2#introducing-bun-lock" target="_blank" rel="noopener noreferrer" class="">Bun v1.2</a>.<!-- -->
-<ul>
-<li class="">We do our best to detect between the text and binary formats, but we suggest configuring
-<code>--save-text-lockfile</code> in <a class="" href="https://moonrepo.dev/docs/config/toolchain#installargs"><code>bun.installArgs</code></a> to be
-explicit.</li>
-</ul>
-</li>
-</ul>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="deno">Deno<a href="https://moonrepo.dev/blog/moon-v1.32#deno" class="hash-link" aria-label="Direct link to Deno" title="Direct link to Deno" translate="no">​</a></h3>
-<ul>
-<li class="">Added support for <a href="https://deno.com/blog/v2.0" target="_blank" rel="noopener noreferrer" class="">Deno v2</a>.<!-- -->
-<ul>
-<li class="">Now supports all lockfile versions (1-4), thanks to the official <code>deno_lockfile</code> crate.</li>
-<li class="">Now uses <code>deno install</code> in v2+ instead of <code>deno cache</code> that was used in v1.</li>
-<li class="">Added a new <a class="" href="https://moonrepo.dev/docs/config/toolchain#installargs-1"><code>deno.installArgs</code></a> setting.</li>
-</ul>
-</li>
-<li class="">Added support for workspaces that were introduced in <a href="https://deno.com/blog/v1.45" target="_blank" rel="noopener noreferrer" class="">Deno v1.45</a>.<!-- -->
-<ul>
-<li class="">When a project is within a workspace, it will now install dependencies once in the workspace,
-instead of in each project.</li>
-</ul>
-</li>
-</ul>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="python">Python<a href="https://moonrepo.dev/blog/moon-v1.32#python" class="hash-link" aria-label="Direct link to Python" title="Direct link to Python" translate="no">​</a></h3>
-<ul>
-<li class="">Added unstable <a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener noreferrer" class="">uv support</a>. Can be enabled with the new
-<a class="" href="https://moonrepo.dev/docs/config/toolchain#packagemanager-1"><code>python.packageManager</code></a> and
-<a class="" href="https://moonrepo.dev/docs/config/toolchain#uv"><code>python.uv</code></a> settings.<!-- -->
-<ul>
-<li class="">Right now, has basic toolchain support, including dependency installs and virtual environments.</li>
-<li class="">Uses <code>uv venv</code> instead of <code>python venv</code> and <code>uv sync</code> instead of <code>pip install</code>.</li>
-<li class="">Relies on <code>pyproject.toml</code> and <code>uv.lock</code> instead of <code>requirements.txt</code>.</li>
-</ul>
-</li>
-<li class="">Renamed the <code>python.rootRequirementsOnly</code> setting to
-<a class="" href="https://moonrepo.dev/docs/config/toolchain#rootvenvonly"><code>python.rootVenvOnly</code></a>. Open for discussion on the name of
-this setting.</li>
-<li class="">Will now inherit versions from the root <code>.prototools</code>.</li>
-</ul>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'3.12.0'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'uv'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">uv</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'0.5.26'</span><br></span></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="rust">Rust<a href="https://moonrepo.dev/blog/moon-v1.32#rust" class="hash-link" aria-label="Direct link to Rust" title="Direct link to Rust" translate="no">​</a></h3>
-<ul>
-<li class="">The root-level project is now properly taken into account when detecting if a project is within
-the Cargo workspace.</li>
-<li class="">Project dependencies (<code>dependsOn</code>) are now automatically inferred from <code>Cargo.toml</code> dependencies
-(only <code>path</code> allowed).</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="pkl-configuration-now-available">Pkl configuration now available<a href="https://moonrepo.dev/blog/moon-v1.32#pkl-configuration-now-available" class="hash-link" aria-label="Direct link to Pkl configuration now available" title="Direct link to Pkl configuration now available" translate="no">​</a></h2>
-<p>In <a class="" href="https://moonrepo.dev/blog/moon-v1.29">moon v1.29</a> we introduced support for Pkl-based (<code>.pkl</code>) configuration as an
-alternative to YAML (<code>.yml</code>), but it was hidden behind an experimental flag. Going forward, you can
-now use Pkl without having to enable the experimental flag, and can remove any references to
-<code>--experimentPklConfig</code> or <code>MOON_EXPERIMENT_PKL_CONFIG</code>.</p>
-<p>Additionally, we now have official documentation on what Pkl is, how to use it, and some examples of
-what it looks like. Check it out!</p>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Based on feedback from the community, and our current thoughts on the configuration problem, at this
-point in time, we plan to support multiple configuration formats instead of choosing one, and will
-most likely include support for JSON/JSONC in v2. We're also open to other formats that may work
-well in moon, and are compatible with our current codebase.</p></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.32#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.32.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added unstable support for multiple package workspaces when installing dependencies and resolving
-lockfiles.</li>
-<li class="">Reworked child process handling to better handle signals and shutdown accordingly. Additionally,
-when the pipeline receives a signal, we now display the status that shutdown the pipeline in the
-summary.</li>
-<li class="">Reworked the new task <code>inferInputs</code> option to not infer environment variables from popular CI/CD
-providers, as those values constantly change, causing tasks to always be affected. If you would
-like to reference these values, add them as an explicit inputs.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="platform" term="platform"/>
-        <category label="toolchain" term="toolchain"/>
-        <category label="remote" term="remote"/>
-        <category label="cache" term="cache"/>
-        <category label="pkl" term="pkl"/>
-        <category label="config" term="config"/>
     </entry>
 </feed>

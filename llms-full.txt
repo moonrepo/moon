@@ -759,6 +759,12 @@ $ moonx format
 $ moon exec :build --query "language=javascript && projectLayer=library"
 ```
 
+:::info
+
+For a declarative alternative to CLI options, see the [execution plan guide](../guides/exec-plan).
+
+:::
+
 ## Arguments
 
 - `...<target>` - [Task targets](../concepts/target) or project relative tasks to run.
@@ -770,6 +776,8 @@ $ moon exec :build --query "language=javascript && projectLayer=library"
 - `--ci` - Force enable CI mode.
 - `-f`, `--force` - Force run and bypass cache, ignore changed files, and skip affected checks.
 - `-i`, `--interactive` - Run the pipeline and tasks interactively.
+- `-p`, `--plan <PATH>` - Path to an execution plan JSON file. See the
+  [execution plan guide](../guides/exec-plan) for more details. <VersionLabel version="2.1.0" />
 - `-s`, `--summary [LEVEL]` - Print a summary of all actions that were ran in the pipeline.
 
 ### Workflow
@@ -5480,9 +5488,16 @@ tasks:
 
 The following additional parameters are supported:
 
-- `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, and `pass` includes
-  `args`, will pass all configured [`inputs`](#inputs) as relative file paths instead of `.`.
-  Defaults to `false`.
+- `filter` (`boolean`) <VersionLabel version="2.1.0" /> - A list of glob patterns to filter the
+  affected files list before passing to the task. Globs must start with `**` to match against
+  absolute paths.
+- `ignoreProjectBoundary` (`boolean`) <VersionLabel version="2.1.0" /> - When matching affected
+  files, ignore the project boundary and include workspace relative files. Otherwise, only files
+  within the project are matched. Defaults to `false`.
+- `passDotWhenNoResults` (`boolean`) <VersionLabel version="2.1.0" /> - When no affected files are
+  found, will pass `.` instead of an empty or no value. Defaults to `true`.
+- `passInputsWhenNoMatch` (`boolean`) - When no affected files are found, will pass all configured
+  [`inputs`](#inputs) as relative file paths instead. Defaults to `false`.
 
 #### `allowFailure`<VersionLabel version="1.13.0" />
 
@@ -5884,6 +5899,20 @@ tasks:
     # ...
     options:
       runInCI: false
+```
+
+#### `runInSyncPhase`<VersionLabel version="2.1.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#runInSyncPhase" />
+
+Whether to run the task automatically during `moon sync`. Defaults to `false`.
+
+```yaml title="moon.yml" {5}
+tasks:
+  generate-schema:
+    # ...
+    options:
+      runInSyncPhase: true
 ```
 
 #### `runFromWorkspaceRoot`
@@ -6704,6 +6733,66 @@ been installed yet, it will be installed automatically when running a task.
 ```yaml title=".moon/toolchains.yml" {2}
 proto:
   version: '0.51.0'
+```
+
+## Shared
+
+The following settings are available and shared across all toolchains. Run
+`moon toolchain info <toolchain>` for all available settings for a specific toolchain.
+
+### `inheritAliases`<VersionLabel version="2.1.0" />
+
+When enabled, will inherit [aliases for projects](../concepts/project#aliases) while the toolchain
+is extending the project graph. An alias is typically derived from a `name` field in a toolchain
+manifest file (`package.json`, `Cargo.toml`, etc). Defaults to `true`.
+
+```yaml title=".moon/toolchains.yml"
+javascript:
+  inheritAliases: false
+```
+
+### `installDependencies`<VersionLabel version="2.1.0" />
+
+When enabled and running a task, will automatically install toolchain dependencies if the lockfile,
+manifest, or environment has changed changed since the last run. This is achieved through the
+[`InstallDependencies` action](../how-it-works/action-graph). Defaults to `true`.
+
+```yaml title=".moon/toolchains.yml"
+javascript:
+  installDependencies: false
+```
+
+### `plugin`
+
+Configures the location of the `.wasm` plugin file that moon will use to run this toolchain.
+Supports `file://` (relative from `.moon`), `https://`, and `github://` protocols.
+[Learn more about plugin locators](../guides/wasm-plugins#configuring-plugin-locations).
+
+```yaml title=".moon/toolchains.yml"
+custom-toolchain:
+  plugin: 'file://../path/to/plugin.wasm'
+```
+
+> This field is not required for built-in toolchains. However, it can be configured to override the
+> built-in plugin if you want to use your own implementation.
+
+### `versionFromPrototools`<VersionLabel version="2.0.0" />
+
+When a toolchain supports the `version` setting, this setting controls whether the version will be
+inherited from the root `.prototools` configuration file. This is useful for sharing a single
+version across multiple toolchains, and only having to update it in one place.
+
+When `false`, doesn't inherit a version. When `true`, matches the version specified in `.prototools`
+using the same toolchain identifier. Otherwise a string can be provided to specify a proto-specific
+identifier. Defaults to `true`.
+
+```yaml title=".moon/toolchains.yml"
+node:
+  versionFromPrototools: 'nodejs'
+```
+
+```toml title=".prototools"
+nodejs = "~24"
 ```
 
 ## Go
@@ -12432,6 +12521,249 @@ tasks:
 
 ---
 
+## Execution plan
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.1.0" header />
+
+An execution plan is a JSON file that declaratively configures how [`moon exec`](../commands/exec)
+(and derived commands) runs tasks. Instead of passing many command line options, you can define your
+execution settings in a file and pass it with a single flag — keeping your commands short and your
+configuration version-controlled.
+
+## Usage
+
+Pass an execution plan to `moon exec` with the `--plan` (or `-p`) flag:
+
+```shell
+$ moon exec --plan plan.json
+```
+
+Or set the `MOON_EXEC_PLAN` environment variable:
+
+```shell
+MOON_EXEC_PLAN=plan.json moon exec
+```
+
+The path can be relative (resolved against the working directory) or absolute. The file must be
+valid JSON.
+
+When both a plan and CLI options are provided, plan values take priority. If targets are defined in
+both the plan and the command line, the plan's targets are used and a warning is logged.
+
+## Structure
+
+A plan is a JSON object with four top-level blocks. All blocks are optional and default to safe
+values when omitted. Unknown fields are rejected.
+
+```json
+{
+  "affected": {},
+  "graph": {},
+  "pipeline": {},
+  "targets": []
+}
+```
+
+### `targets`
+
+Defines which tasks to run. Accepts the same target syntax as the `moon exec` command line
+(`project:task`, `:task`, `~:task`, `#tag:task`, globs, etc).
+
+In its simplest form, `targets` is an array of target strings:
+
+```json
+{
+  "targets": ["app:build", "lib:build"]
+}
+```
+
+For advanced use cases, `targets` can be an object with one of two strategies:
+
+- **Filtered** — Run only the targets that match the `include` list (`excluding` coming soon):
+
+```json
+{
+  "targets": {
+    "include": ["app:build", "#frontend:test"]
+  }
+}
+```
+
+- **Partitioned** — Split targets into groups for parallel CI jobs. Each inner array is one
+  partition:
+
+```json
+{
+  "targets": {
+    "jobs": [
+      ["app:build", "app:test"],
+      ["lib:build", "lib:test"]
+    ]
+  }
+}
+```
+
+Use in combination with [`pipeline.job`](#pipeline) to select which partition to run.
+
+### `pipeline`
+
+Controls how the pipeline executes tasks.
+
+- `ci` (`boolean`) - Force enable CI mode. Same as `--ci`.
+- `concurrency` (`number`) - Maximum number of tasks to run in parallel.
+- `ignoreCiChecks` (`boolean`) - Ignore "run in CI" task checks. Same as `--ignore-ci-checks`.
+- `noActions` (`boolean`) - Skip sync and setup actions. Same as `--no-actions`.
+- `onFailure` (`"bail" | "continue"`) - When a task fails, either bail the pipeline immediately or
+  continue running other tasks. Same as `--on-failure`.
+- `job` (`number`) - Index of the current job (0-based). Used with partitioned targets; errors if
+  targets are not partitioned. Same as `--job`.
+- `jobTotal` (`number`) - Total number of jobs. Used with partitioned targets. Same as
+  `--job-total`.
+
+### `graph`
+
+Controls how deeply the dependency graph is traversed when building the task graph.
+
+- `downstream` (`none | direct | deep`) - Depth of downstream dependents to include. Defaults to
+  `none`. Same as `--downstream`.
+- `upstream` (`none | direct | deep`) - Depth of upstream dependencies to include. Defaults to
+  `none`. Same as `--upstream`.
+
+### `affected`
+
+Restricts execution to tasks affected by changed files. When this block is omitted, affected
+filtering is disabled and all matched targets run.
+
+- `base` (`string`) - Base branch, commit, or revision to compare against. Same as `--base`.
+- `head` (`string`) - Current branch, commit, or revision to compare with. Defaults to `HEAD`. Same
+  as `--head`.
+- `includeRelations` (`boolean`) - Include graph relations for affected checks, instead of just
+  changed files. Same as `--include-relations`.
+- `source` (`string`) - Source of affected files. Determines which git commands are used to detect
+  changes. Accepts `local` or `remote`.
+- `status` (`string[]`) - Filter changed files by status. Same as `--status`.
+- `stdin` (`boolean`) - Accept changed files from stdin. Same as `--stdin`.
+
+## Examples
+
+### Run specific targets
+
+The simplest plan — just list the targets to run:
+
+```json
+{
+  "targets": ["app:build", "lib:build"]
+}
+```
+
+### CI with affected filtering
+
+Only run tests affected by changes between the base branch and HEAD:
+
+```json
+{
+  "affected": {
+    "base": "main",
+    "source": "remote"
+  },
+  "pipeline": {
+    "ci": true
+  },
+  "targets": [":test"]
+}
+```
+
+### Partitioned CI jobs
+
+Split targets across 3 CI jobs. Each job runs with `--plan plan.json` and sets its own `job` index
+via the CLI or an environment variable:
+
+```json
+{
+  "pipeline": {
+    "ci": true,
+    "jobTotal": 3
+  },
+  "targets": {
+    "jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
+  }
+}
+```
+
+Then in CI, run each partition:
+
+```shell
+# Job 0
+$ moon exec --plan plan.json --job 0
+
+# Job 1
+$ moon exec --plan plan.json --job 1
+
+# Job 2
+$ moon exec --plan plan.json --job 2
+```
+
+### Continue on failure
+
+Run all lint tasks, continuing past failures so you get the full list of issues:
+
+```json
+{
+  "pipeline": {
+    "concurrency": 4,
+    "onFailure": "continue"
+  },
+  "targets": [":lint"]
+}
+```
+
+### Deep dependency graph
+
+Build a target along with all of its upstream dependencies and downstream dependents:
+
+```json
+{
+  "graph": {
+    "upstream": "deep",
+    "downstream": "deep"
+  },
+  "targets": ["core:build"]
+}
+```
+
+### Full example
+
+Combine all blocks — run affected tests in CI across partitioned jobs, with full graph traversal:
+
+```json
+{
+  "affected": {
+    "base": "main",
+    "head": "HEAD",
+    "includeRelations": true,
+    "source": "remote",
+    "status": ["modified", "added"]
+  },
+  "graph": {
+    "upstream": "deep",
+    "downstream": "direct"
+  },
+  "pipeline": {
+    "ci": true,
+    "concurrency": 8,
+    "jobTotal": 3,
+    "onFailure": "continue"
+  },
+  "targets": {
+    "jobs": [["app:test", "app:lint"], ["#frontend:test"], ["lib:test", "core:test"]]
+  }
+}
+```
+
+---
+
 ## Extensions
 
 import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -16618,10 +16950,7 @@ The most important action in the graph is the setup toolchain action, which down
 tier 3 language into the toolchain. For other tiers, this is basically a no-operation.
 
 - When the tool has already been installed, this action will be skipped.
-- Actions will be scoped by language and version, also known as a runtime. For example,
-  `SetupToolchain(node:18.1.0)` or `SetupToolchain(deno:1.31.0)`.
-- Tools that require a global binary (found on `PATH`) will display the version as "global". For
-  example, `SetupToolchain(node:global)`.
+- Actions will be scoped by toolchain and version (or none if using global `PATH`).
 
 :::info
 
@@ -16646,16 +16975,15 @@ installed.
 
 ### Install dependencies
 
-Before we run a task, we ensure that all language dependencies (`node_modules` for example) have
-been installed, by automatically installing them if we detect changes since the last run. We achieve
-this by comparing lockfile modified timestamps, parsing manifest files, and hashing resolved
-dependency versions.
+Before we run a task, we ensure that all language/toolchain dependencies (`node_modules` for
+example) have been installed, by automatically installing them if we detect changes since the last
+run. We achieve this by comparing lockfile modified timestamps, parsing manifest files, and hashing
+resolved dependency versions.
 
 - When dependencies do _not_ need to be installed, this action will be skipped.
-- Depending on the language and configuration, we may install dependencies in a project
-  (`InstallProjectDeps`), or in the workspace root for all projects (`InstallWorkspaceDeps`).
-- Actions will be scoped by language and version, also known as a runtime. For example,
-  `InstallWorkspaceDeps(node:18.1.0)` or `InstallProjectDeps(node:18.1.0, example)`.
+- Depending on the language and configuration, we may install dependencies in a project, or in the
+  workspace root for all projects.
+- Actions will be scoped by toolchain and dependencies root.
 
 :::info
 
@@ -34223,3 +34551,163 @@ root, but we now don't write to `.git` at all, and entirely rely on `.moon/hooks
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.0.0) for a full list of
 changes.
+
+---
+
+## moon v2.1 - Execution plans, target deps scopes, toolchain/task settings, and more
+
+It's been about a month since our major v2.0 release, and we're back with a smaller, but still
+impactful, v2.1 release! This release includes a new execution plan feature for `moon exec`, the
+ability to target project dependencies by scope, new common toolchain settings for aliases and
+dependency installation, new task options for [`affectedFiles`](/docs/config/project#affectedfiles),
+and more.
+
+<!--truncate-->
+
+## Execution plans
+
+The [`moon exec`](/docs/commands/exec) command is powerful, but complex invocations can mean long
+CLI commands that are hard to read and easy to get wrong. In v2.1, you can now define an **execution
+plan** — a JSON file that declaratively configures targets, affected filtering, graph traversal, and
+pipeline behavior — and pass it with a single flag:
+
+```json title="plan.json"
+{
+  "pipeline": {
+    "jobTotal": 3
+  },
+  "targets": {
+    "jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
+  }
+}
+```
+
+```shell
+# Runs docs:build only!
+$ moon exec --plan plan.json --job 2
+```
+
+This is especially useful for CI pipelines where you need partitioned jobs, affected-only runs, or
+specific failure handling. Instead of stitching together a dozen flags, drop a `plan.json` into your
+repo and version-control your execution strategy.
+
+Check out the [execution plan guide](/docs/guides/exec-plan) for the full structure and examples.
+
+## Target project dependencies by scope
+
+moon has always allowed you to reference dependencies of a project (external projects) within a task
+using `^` syntax, for both [`inputs`](/docs/config/project#inputs) and
+[`deps`](/docs/config/project#deps). However, it was quite restrictive in that it referenced _all_
+project dependencies, regardless of scope (production, development, etc).
+
+We felt it was time to change this, and in v2.1 we're introducing a new syntax that allows you to
+target dependencies by scope. By default, the `^` syntax will still reference all dependencies, but
+you can now specify a scope by suffixing the `^` with one of the following:
+
+- `development` / `dev`
+- `production` / `prod`
+- `build`
+- `peer`
+
+```yaml
+tasks:
+  build:
+    command: 'tsc'
+    deps:
+      # Depend on build tasks in production level project dependencies
+      - '^production:build'
+    inputs:
+      # Source files of all production level project dependencies
+      - 'project:^production'
+```
+
+## New common toolchain settings
+
+Going forward, we want to provide more customization for toolchains, enabling you to curate the
+experience you want. The first step in this process is introducing 2 new settings that are common
+across all toolchains.
+
+### `inheritAliases`
+
+Aliases are a feature of projects that allow for alternate names to be used when referencing them.
+Aliases cannot be configured manually and instead are inferred from toolchains, typically by
+extracting the `name` field from a manifest file (`package.json`, `Cargo.toml`, `pyproject.toml`,
+etc).
+
+This happens automatically, but what if you don't want to use aliases? Or there are conflicting
+aliases across projects? In v2.1, we're introducing a new common toolchain setting called
+[`inheritAliases`](/docs/config/toolchain#inheritaliases) that allows you to disable this feature.
+When set to `false`, no aliases will be inferred for any projects using that toolchain.
+
+```yaml title=".moon/toolchains.yml"
+javascript:
+  inheritAliases: false
+```
+
+> We've also updated duplicate aliases to no longer be a hard error, and instead will apply to the
+> first encountered project.
+
+### `installDependencies`
+
+When you run a task, all toolchains associated with the task will automatically install dependencies
+if they've determined that they need to (lockfile changes, dependency updates, etc). This is a great
+feature for ensuring that your environment is always up to date, especially when switching branches,
+but it can be a bit too much for some use cases.
+
+In v2.1, we're introducing another common toolchain setting called
+[`installDependencies`](/docs/config/toolchain#installdependencies) that allows you to disable this
+feature. When set to `false`, toolchains will not automatically install dependencies before running
+a task.
+
+```yaml title=".moon/toolchains.yml"
+python:
+  installDependencies: false
+```
+
+> Not all toolchains support this tier 2 feature.
+
+## New task `affectedFiles` settings
+
+In [v2](./moon-v2.0) we introduced an object form for the the task option
+[`affectedFiles`](/docs/config/project#affectedfiles), allowing you to further customize this
+feature. Based on feedback from the community, we're introducing 3 new settings to this object:
+
+- `filter` - A list of glob patterns to filter the affected files list before passing to the task.
+- `ignoreProjectBoundary` - When matching affected files, ignore the project boundary and include
+  workspace relative files. Otherwise, only files within the project are matched.
+- `passDotWhenNoResults` - When there are no affected files after matching and filtering, use `.`
+  instead of an empty value.
+
+```yaml
+tasks:
+  lint:
+    command: 'eslint'
+    inputs:
+      - 'src/**/*.{ts,tsx}'
+      - '**/*.json'
+      - 'eslint.config.*'
+    options:
+      affectedFiles:
+        filter: ['**/*.tsx?']
+        ignoreProjectBoundary: true
+        passDotWhenNoResults: false
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.1.0) for a full list of
+changes.
+
+- Improved our local and remote detection logic. We now also check for common remote devboxes
+  (GitHub Codespaces, Gitpod, etc) in addition to CI environments.
+- Added a new task option, [`runInSyncPhase`](/docs/config/project#runinsyncphase), that will run
+  the task during `moon sync` commands.
+- **Go**
+  - Will now run `go list --deps` to determine project relationships while extending the project
+    graph.
+- **Python**
+  - Normalized package/dependency names to PEP 503 during graph extending.
+  - Fixed an issue where package manager toolchain settings were not being inherited correctly.
+- **TypeScript**
+  - Added a `pruneProjectReferences` setting that prunes non-moon managed project references when
+    syncing.

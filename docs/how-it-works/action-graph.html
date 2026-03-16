@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.e6dcddd9.css">
-<script src="/assets/js/runtime~main.6bb03b72.js" defer="defer"></script>
-<script src="/assets/js/main.51dc5ede.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.9072381c.js" defer="defer"></script>
+<script src="/assets/js/main.40cd3463.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
 <svg style="display: none;"><defs>
@@ -43,10 +43,7 @@ checks across the entire workspace.</p>
 tier 3 language into the toolchain. For other tiers, this is basically a no-operation.</p>
 <ul>
 <li class="">When the tool has already been installed, this action will be skipped.</li>
-<li class="">Actions will be scoped by language and version, also known as a runtime. For example,
-<code>SetupToolchain(node:18.1.0)</code> or <code>SetupToolchain(deno:1.31.0)</code>.</li>
-<li class="">Tools that require a global binary (found on <code>PATH</code>) will display the version as &quot;global&quot;. For
-example, <code>SetupToolchain(node:global)</code>.</li>
+<li class="">Actions will be scoped by toolchain and version (or none if using global <code>PATH</code>).</li>
 </ul>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>This action can be skipped by setting the <code>MOON_SKIP_SETUP_TOOLCHAIN=true</code> environment variable. The
 skip can be scoped per tool by setting the value to the tool name (<code>node</code>), and also by version
@@ -61,16 +58,15 @@ and so forth.</p>
 installed and is available for use. This is required for toolchains that will be downloaded and
 installed.</p>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="install-dependencies">Install dependencies<a href="#install-dependencies" class="hash-link" aria-label="Direct link to Install dependencies" title="Direct link to Install dependencies" translate="no">​</a></h3>
-<p>Before we run a task, we ensure that all language dependencies (<code>node_modules</code> for example) have
-been installed, by automatically installing them if we detect changes since the last run. We achieve
-this by comparing lockfile modified timestamps, parsing manifest files, and hashing resolved
-dependency versions.</p>
+<p>Before we run a task, we ensure that all language/toolchain dependencies (<code>node_modules</code> for
+example) have been installed, by automatically installing them if we detect changes since the last
+run. We achieve this by comparing lockfile modified timestamps, parsing manifest files, and hashing
+resolved dependency versions.</p>
 <ul>
 <li class="">When dependencies do <em>not</em> need to be installed, this action will be skipped.</li>
-<li class="">Depending on the language and configuration, we may install dependencies in a project
-(<code>InstallProjectDeps</code>), or in the workspace root for all projects (<code>InstallWorkspaceDeps</code>).</li>
-<li class="">Actions will be scoped by language and version, also known as a runtime. For example,
-<code>InstallWorkspaceDeps(node:18.1.0)</code> or <code>InstallProjectDeps(node:18.1.0, example)</code>.</li>
+<li class="">Depending on the language and configuration, we may install dependencies in a project, or in the
+workspace root for all projects.</li>
+<li class="">Actions will be scoped by toolchain and dependencies root.</li>
 </ul>
 <div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>This action can be skipped by disabling the
 <a class="" href="/docs/config/workspace#installdependencies"><code>pipeline.installDependencies</code></a> setting.</p></div></div>

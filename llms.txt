@@ -94,6 +94,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [TypeScript example](https://moonrepo.dev/docs/guides/examples/typescript): import AddDepsTabs from '@site/src/components/AddDepsTabs';
 - [Vite & Vitest example](https://moonrepo.dev/docs/guides/examples/vite): import AddDepsTabs from '@site/src/components/AddDepsTabs';
 - [Vue example](https://moonrepo.dev/docs/guides/examples/vue): import AddDepsTabs from '@site/src/components/AddDepsTabs';
+- [Execution plan](https://moonrepo.dev/docs/guides/exec-plan): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Extensions](https://moonrepo.dev/docs/guides/extensions): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Bun handbook](https://moonrepo.dev/docs/guides/javascript/bun-handbook): import Tabs from '@theme/Tabs';
 - [Deno handbook](https://moonrepo.dev/docs/guides/javascript/deno-handbook): import Tabs from '@theme/Tabs';
@@ -271,3 +272,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Beta release of moon v2 now available!](https://moonrepo.dev/blog/2026-01-13_moon-v2-beta): About two weeks ago we announced the [alpha release of moon v2](/blog/moon-v2-alpha), and today we
 - [Release Candidate of moon v2 now available!](https://moonrepo.dev/blog/2026-01-26_moon-v2-rc): About two weeks ago we announced the [beta release of moon v2](/blog/moon-v2-alpha), and today we
 - [moon v2.0 - Official "Phobos" release!](https://moonrepo.dev/blog/2026-02-18_moon-v2.0): We're very excited to announce the release of moon v2.0, codenamed "Phobos", after one of Mars'
+- [moon v2.1 - Execution plans, target deps scopes, toolchain/task settings, and more](https://moonrepo.dev/blog/2026-03-16_moon-v2.1): It's been about a month since our major v2.0 release, and we're back with a smaller, but still

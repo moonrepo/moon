@@ -30,6 +30,11 @@ Configuration ──────────────────────
   projectConfigFileName: string
   Name of the `tsconfig.json` file within each project.
 
+  pruneProjectReferences: bool
+  Prunes synced project `references` in `tsconfig.json` when they are
+  no longer needed. When enabled, existing references are treated as
+  moon-managed and may be removed during sync.
+
   root: string
   The relative root to the TypeScript root. Primarily used for
   resolving project references.

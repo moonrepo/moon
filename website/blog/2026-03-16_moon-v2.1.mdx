@@ -1,9 +1,9 @@
 ---
 slug: moon-v2.1
-title: moon v2.1 - Execution plans, target dep scopes, toolchain/task settings, and more
+title: moon v2.1 - Execution plans, target deps scopes, toolchain/task settings, and more
 authors: [milesj]
 tags: [exec, plan, task, affected, dependencies, toolchain]
-# image: ./img/moon/v2.1.png
+image: ./img/moon/v2.1.png
 ---
 
 It's been about a month since our major v2.0 release, and we're back with a smaller, but still
@@ -152,3 +152,12 @@ changes.
   (GitHub Codespaces, Gitpod, etc) in addition to CI environments.
 - Added a new task option, [`runInSyncPhase`](/docs/config/project#runinsyncphase), that will run
   the task during `moon sync` commands.
+- **Go**
+  - Will now run `go list --deps` to determine project relationships while extending the project
+    graph.
+- **Python**
+  - Normalized package/dependency names to PEP 503 during graph extending.
+  - Fixed an issue where package manager toolchain settings were not being inherited correctly.
+- **TypeScript**
+  - Added a `pruneProjectReferences` setting that prunes non-moon managed project references when
+    syncing.

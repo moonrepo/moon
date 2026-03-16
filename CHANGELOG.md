@@ -26,6 +26,18 @@
   - Added `installDependencies` (default `true`) setting for each toolchain. Can toggle whether to
     install dependencies (via the `InstallDependencies` action) when running a task.
 
+#### 🧰 Toolchains
+
+- **Go**
+  - Will now run `go list --deps` to determine project relationships while extending the project
+    graph.
+- **Python**
+  - Normalized package/dependency names to PEP 503 during graph extending.
+  - Fixed an issue where package manager toolchain settings were not being inherited correctly.
+- **TypeScript**
+  - Added a `pruneProjectReferences` setting that prunes non-moon managed project references when
+    syncing.
+
 #### 🐞 Fixes
 
 - Fixed invalid JSON schema in MCP `generate` tool.

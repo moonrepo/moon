@@ -4283,7 +4283,7 @@ dependencies = [
  "moon_common",
  "moon_target",
  "rustc-hash",
- "scc 3.6.9",
+ "scc 3.6.10",
  "serde",
  "tokio",
 ]
@@ -4390,7 +4390,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash",
- "scc 3.6.9",
+ "scc 3.6.10",
  "serde",
  "serial_test",
  "starbase_sandbox",
@@ -4750,7 +4750,7 @@ dependencies = [
  "moon_common",
  "regex",
  "rustc-hash",
- "scc 3.6.9",
+ "scc 3.6.10",
  "starbase_utils",
  "thiserror 2.0.18",
 ]
@@ -4930,7 +4930,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash",
- "scc 3.6.9",
+ "scc 3.6.10",
  "serde",
  "serde_json",
  "starbase_sandbox",
@@ -5054,7 +5054,7 @@ dependencies = [
  "moon_workspace",
  "petgraph",
  "rustc-hash",
- "scc 3.6.9",
+ "scc 3.6.10",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
@@ -5095,7 +5095,7 @@ dependencies = [
  "moon_task",
  "reqwest",
  "rustc-hash",
- "scc 3.6.9",
+ "scc 3.6.10",
  "serde",
  "sha2",
  "starbase_utils",
@@ -5373,7 +5373,7 @@ dependencies = [
  "moon_process",
  "regex",
  "rustc-hash",
- "scc 3.6.9",
+ "scc 3.6.10",
  "semver",
  "serde",
  "soft-canonicalize",
@@ -5448,7 +5448,7 @@ dependencies = [
  "moon_project_graph",
  "moon_query",
  "moon_task_graph",
- "scc 3.6.9",
+ "scc 3.6.10",
  "tracing",
 ]
 
@@ -6419,7 +6419,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rustc-hash",
- "scc 3.6.9",
+ "scc 3.6.10",
  "schematic",
  "semver",
  "serde",
@@ -7166,12 +7166,12 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "3.6.9"
+version = "3.6.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45bb5ce9efd4a6e7b0f86c2697fe4c1d78d1f4e6d988c54b752d577cafe22fe8"
+checksum = "ec3cea477634b93dee5619c6e437e2eae11c1e3730e59bad72af0e09dba9126f"
 dependencies = [
  "saa",
- "sdd 4.7.4",
+ "sdd 4.7.5",
  "serde",
 ]
 
@@ -7269,9 +7269,9 @@ checksum = "490dcfcbfef26be6800d11870ff2df8774fa6e86d047e3e8c8a76b25655e41ca"
 
 [[package]]
 name = "sdd"
-version = "4.7.4"
+version = "4.7.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29768e2b8c67de4b243612538a62e021aab09a461ef11f9c6c07a05887a4c80a"
+checksum = "e6ca0e33fc1ae39e36b2d1fdfc8ee470b26397b642ff87572a59a36ff4f2340b"
 
 [[package]]
 name = "security-framework"
@@ -7826,7 +7826,7 @@ dependencies = [
  "miette 7.6.0",
  "regex",
  "reqwest",
- "scc 3.6.9",
+ "scc 3.6.10",
  "serde",
  "serde_json",
  "serde_norway",
@@ -8202,9 +8202,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.10.0"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfa5fdc3bce6191a1dbc8c02d5c8bffcf557bafa17c124c5264a458f1b0613fa"
+checksum = "3e61e67053d25a4e82c844e8424039d9745781b3fc4f32b8d55ed50f5f667ef3"
 dependencies = [
  "tinyvec_macros",
 ]
@@ -8865,7 +8865,7 @@ dependencies = [
  "reqwest",
  "reqwest-middleware",
  "rust-netrc",
- "scc 3.6.9",
+ "scc 3.6.10",
  "schematic",
  "serde",
  "serde_json",

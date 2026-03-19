@@ -128,6 +128,10 @@ impl MoonSession {
     }
 
     pub async fn connect_to_daemon(&self) -> miette::Result<Option<DaemonClient>> {
+        if !self.workspace_config.daemon {
+            return Ok(None);
+        }
+
         let client = self.get_daemon_connector()?.connect().await?;
 
         Ok(Some(client))

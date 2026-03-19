@@ -3,5 +3,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_server(true)
         .build_client(true)
         .compile_protos(&["proto/daemon.proto"], &["proto/"])?;
+
     Ok(())
 }

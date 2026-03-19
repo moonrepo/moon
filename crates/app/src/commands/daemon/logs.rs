@@ -1,7 +1,7 @@
 use crate::session::MoonSession;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use moon_process::{Command, find_command_on_path};
+use moon_process::Command;
 use starbase::AppResult;
 use std::path::Path;
 
@@ -28,6 +28,8 @@ pub async fn logs(session: MoonSession) -> AppResult {
 
 #[cfg(unix)]
 async fn tail_logs(session: &MoonSession, log_path: &Path) -> AppResult {
+    use moon_process::find_command_on_path;
+
     if find_command_on_path("tail".into()).is_none() {
         session.console.render(element! {
             Container {
@@ -50,7 +52,7 @@ async fn tail_logs(session: &MoonSession, log_path: &Path) -> AppResult {
 }
 
 #[cfg(windows)]
-async fn tail_logs(session: &MoonSession, log_path: &Path) -> AppResult {
+async fn tail_logs(_session: &MoonSession, log_path: &Path) -> AppResult {
     use moon_process::{Shell, ShellType};
 
     Command::new("Get-Content")

@@ -11,12 +11,12 @@ use tonic::{Request, Response, Status, transport::Server};
 use tracing::{debug, info};
 
 struct DaemonServiceInner {
-    started_at: Instant,
-    workspace_root: PathBuf,
+    endpoint: String,
     moon_version: String,
     pid: u32,
-    endpoint: String,
     shutdown_tx: mpsc::Sender<()>,
+    started_at: Instant,
+    workspace_root: PathBuf,
 }
 
 pub struct DaemonService {
@@ -27,18 +27,18 @@ impl DaemonService {
     fn new(
         workspace_root: PathBuf,
         moon_version: String,
-        pid: u32,
         endpoint: String,
+        pid: u32,
         shutdown_tx: mpsc::Sender<()>,
     ) -> Self {
         Self {
             inner: Arc::new(DaemonServiceInner {
-                started_at: Instant::now(),
-                workspace_root,
+                endpoint,
                 moon_version,
                 pid,
-                endpoint,
                 shutdown_tx,
+                started_at: Instant::now(),
+                workspace_root,
             }),
         }
     }
@@ -53,9 +53,9 @@ impl MoonDaemon for DaemonService {
         debug!("Received start request (daemon already running)");
 
         Ok(Response::new(StartResponse {
-            pid: self.inner.pid,
-            endpoint: self.inner.endpoint.clone(),
             already_running: true,
+            endpoint: self.inner.endpoint.clone(),
+            pid: self.inner.pid,
         }))
     }
 
@@ -78,11 +78,11 @@ impl MoonDaemon for DaemonService {
         let uptime_secs = self.inner.started_at.elapsed().as_secs();
 
         Ok(Response::new(StatusResponse {
-            running: true,
-            pid: self.inner.pid,
             endpoint: self.inner.endpoint.clone(),
-            uptime_secs,
             moon_version: self.inner.moon_version.clone(),
+            pid: self.inner.pid,
+            running: true,
+            uptime_secs,
             workspace_root: self.inner.workspace_root.to_string_lossy().into_owned(),
         }))
     }
@@ -96,16 +96,15 @@ impl MoonDaemon for DaemonService {
 /// Blocks until the server shuts down (via the `Stop` RPC or signal).
 pub async fn start_daemon_server(
     workspace_root: &Path,
-    cache_dir: &Path,
+    daemon_dir: &Path,
     moon_version: &str,
 ) -> miette::Result<()> {
-    let endpoint = get_endpoint(workspace_root, cache_dir);
-    let daemon_dir = get_daemon_dir(cache_dir);
+    let endpoint = get_endpoint(daemon_dir);
 
     fs::create_dir_all(&daemon_dir)?;
 
     let pid = std::process::id();
-    let pid_path = get_pid_path(cache_dir);
+    let pid_path = get_pid_path(daemon_dir);
 
     write_pid(&pid_path, pid)?;
 
@@ -114,8 +113,8 @@ pub async fn start_daemon_server(
     let service = DaemonService::new(
         workspace_root.to_owned(),
         moon_version.to_owned(),
-        pid,
         endpoint.clone(),
+        pid,
         shutdown_tx,
     );
 
@@ -126,18 +125,14 @@ pub async fn start_daemon_server(
     info!(pid, endpoint, "Daemon server starting");
 
     #[cfg(unix)]
-    {
-        serve_unix(&endpoint, service, shutdown_signal).await?;
-    }
+    serve_unix(&endpoint, service, shutdown_signal).await?;
 
     #[cfg(windows)]
-    {
-        serve_windows(&endpoint, service, shutdown_signal).await?;
-    }
+    serve_windows(&endpoint, service, shutdown_signal).await?;
 
     info!("Daemon server stopped");
 
-    cleanup_daemon_files(workspace_root, cache_dir)?;
+    cleanup_daemon_files(daemon_dir)?;
 
     Ok(())
 }

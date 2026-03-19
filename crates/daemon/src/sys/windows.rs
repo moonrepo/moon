@@ -1,14 +1,35 @@
-// https://github.com/catalinsh/tonic-named-pipe-example/blob/master/src/bin/server/named_pipe_stream.rs
-
 use async_stream::stream;
 use futures_core::stream::Stream;
+use std::os::windows::io::FromRawHandle;
 use std::pin::Pin;
 use tokio::{
     io::{self, AsyncRead, AsyncWrite},
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},
 };
 use tonic::transport::server::Connected;
+use windows_sys::Win32::{Foundation, System::Threading};
 
+pub fn is_process_alive(pid: u32) -> bool {
+    const PROCESS_QUERY_LIMITED_INFORMATION: u32 = 0x1000;
+    const STILL_ACTIVE: u32 = 259;
+
+    unsafe {
+        let handle = Threading::OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+
+        if handle.is_null() {
+            return false;
+        }
+
+        let mut exit_code: u32 = 0;
+        let result = Threading::GetExitCodeProcess(handle, &mut exit_code);
+
+        Foundation::CloseHandle(handle);
+
+        result != 0 && exit_code == STILL_ACTIVE
+    }
+}
+
+// https://github.com/catalinsh/tonic-named-pipe-example/blob/master/src/bin/server/named_pipe_stream.rs
 pub struct TonicNamedPipeServer {
     inner: NamedPipeServer,
 }

@@ -54,4 +54,12 @@ pub enum DaemonError {
         #[source]
         error: Box<tonic::transport::Error>,
     },
+
+    #[diagnostic(code(daemon::start_timed_out))]
+    #[error("Timed out waiting for the daemon to start.")]
+    StartTimedOut,
+
+    #[diagnostic(code(daemon::stop_timed_out))]
+    #[error("Timed out waiting for the daemon to stop gracefully.")]
+    StopTimedOut,
 }

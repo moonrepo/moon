@@ -1,3 +1,4 @@
+pub mod restart;
 pub mod server;
 pub mod start;
 pub mod stop;
@@ -6,6 +7,13 @@ use clap::Subcommand;
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum DaemonCommands {
+    #[command(
+        name = "restart",
+        about = "Retart the daemon.",
+        long_about = "Restart the daemon by attempting to stop the currently running process, and then start a new process."
+    )]
+    Restart,
+
     #[command(
         name = "start",
         alias = "startup",

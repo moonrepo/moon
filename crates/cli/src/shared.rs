@@ -147,6 +147,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                     commands::completions::completions(session, args).await
                 }
                 Commands::Daemon { command } => match command {
+                    DaemonCommands::Restart => commands::daemon::restart::restart(session).await,
                     DaemonCommands::Start => commands::daemon::start::start(session).await,
                     DaemonCommands::Stop => commands::daemon::stop::stop(session).await,
                     DaemonCommands::Server => commands::daemon::server::server(session).await,

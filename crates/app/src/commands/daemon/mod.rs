@@ -2,6 +2,7 @@ pub mod logs;
 pub mod restart;
 pub mod server;
 pub mod start;
+pub mod status;
 pub mod stop;
 
 use clap::Subcommand;
@@ -29,6 +30,14 @@ pub enum DaemonCommands {
         long_about = "Start the daemon if it's not running. If already running, will reuse the PID."
     )]
     Start,
+
+    #[command(
+        name = "status",
+        alias = "stats",
+        about = "View status of the daemon.",
+        long_about = "View status of the daemon if it's running."
+    )]
+    Status,
 
     #[command(
         name = "stop",

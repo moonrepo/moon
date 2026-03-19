@@ -36,6 +36,10 @@ impl DaemonConnector {
         self.daemon_dir.join("server.log")
     }
 
+    pub fn get_pid_file(&self) -> PathBuf {
+        get_pid_path(&self.daemon_dir)
+    }
+
     #[instrument(skip(self))]
     pub fn is_running(&self) -> Option<u32> {
         let pid_path = get_pid_path(&self.daemon_dir);

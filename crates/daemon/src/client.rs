@@ -5,6 +5,7 @@ use crate::proto::*;
 use hyper_util::rt::TokioIo;
 use std::io::Error;
 use std::path::Path;
+use std::time::Duration;
 use tonic::Status;
 use tonic::transport::{Channel, Endpoint, Error as TransportError, Uri};
 use tower::service_fn;
@@ -78,6 +79,7 @@ impl DaemonClient {
 
 // https://github.com/hyperium/tonic/blob/master/examples/src/uds/client_with_connector.rs
 // https://docs.rs/tokio/latest/tokio/net/windows/named_pipe/index.html
+const CONNECT_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[cfg(unix)]
 async fn connect_channel(endpoint: &str) -> Result<Channel, TransportError> {
@@ -87,6 +89,7 @@ async fn connect_channel(endpoint: &str) -> Result<Channel, TransportError> {
     // TokioIo wraps the stream to satisfy hyper's Read/Write traits.
     Endpoint::try_from("http://[::]:50051")
         .unwrap()
+        .timeout(CONNECT_TIMEOUT)
         .connect_with_connector(service_fn(move |_: Uri| {
             let path = path.clone();
 
@@ -107,6 +110,7 @@ async fn connect_channel(endpoint: &str) -> Result<Channel, TransportError> {
     // TokioIo wraps the pipe to satisfy hyper's Read/Write traits.
     Endpoint::try_from("http://[::]:50051")
         .unwrap()
+        .timeout(CONNECT_TIMEOUT)
         .connect_with_connector(service_fn(move |_: Uri| {
             let name = pipe_name.clone();
 

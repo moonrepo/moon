@@ -28,30 +28,21 @@ pub fn get_pid_path(daemon_dir: &Path) -> PathBuf {
 }
 
 pub fn read_pid(pid_path: &Path) -> Option<u32> {
-    let content = fs::read_file(pid_path).ok()?;
+    let content = fs::read_file_with_lock(pid_path).ok()?;
     content.trim().parse().ok()
 }
 
 pub fn write_pid(pid_path: &Path, pid: u32) -> Result<(), FsError> {
-    fs::write_file(pid_path, pid.to_string())
+    fs::write_file_with_lock(pid_path, pid.to_string())
 }
 
 pub fn cleanup_daemon_files(daemon_dir: &Path) -> Result<(), FsError> {
     trace!(daemon_dir = ?daemon_dir, "Cleaning daemon files");
 
-    fs::remove_dir_all(&daemon_dir)?;
+    fs::remove_dir_all(daemon_dir)?;
 
     Ok(())
 }
-
-// pub fn is_daemon_running(cache_dir: &Path) -> bool {
-//     let pid_path = get_pid_path(cache_dir);
-
-//     match read_pid(&pid_path) {
-//         Some(pid) => is_process_alive(pid),
-//         None => false,
-//     }
-// }
 
 #[cfg(test)]
 mod tests {

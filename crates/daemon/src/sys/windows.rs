@@ -1,7 +1,9 @@
 use async_stream::stream;
 use futures_core::stream::Stream;
-use std::os::windows::io::FromRawHandle;
+use std::os::windows::{io::FromRawHandle, process::CommandExt};
+use std::path::Path;
 use std::pin::Pin;
+use std::process::{Child, Command, Stdio};
 use tokio::{
     io::{self, AsyncRead, AsyncWrite},
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},
@@ -27,6 +29,51 @@ pub fn is_process_alive(pid: u32) -> bool {
 
         result != 0 && exit_code == STILL_ACTIVE
     }
+}
+
+pub fn kill_process(pid: u32) -> std::io::Result<()> {
+    const PROCESS_TERMINATE: u32 = 0x0001;
+
+    unsafe {
+        let handle = Threading::OpenProcess(PROCESS_TERMINATE, 0, pid);
+
+        if handle.is_null() {
+            let error = std::io::Error::last_os_error();
+
+            // If the process is already gone, that's fine.
+            if error.raw_os_error() != Some(87) {
+                return Err(error);
+            }
+
+            return Ok(());
+        }
+
+        let terminated = Threading::TerminateProcess(handle, 1);
+
+        Foundation::CloseHandle(handle);
+
+        if terminated == 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+    }
+
+    Ok(())
+}
+
+fn spawn_detached(exe: &Path, args: &[&str], cwd: &Path) -> std::io::Result<Child> {
+    // DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+    const DETACH_FLAGS: u32 = 0x0000_0008 | 0x0000_0200;
+
+    let child = Command::new(exe)
+        .args(args)
+        .current_dir(cwd)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .creation_flags(DETACH_FLAGS)
+        .spawn()?;
+
+    Ok(child)
 }
 
 // https://github.com/catalinsh/tonic-named-pipe-example/blob/master/src/bin/server/named_pipe_stream.rs

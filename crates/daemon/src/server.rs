@@ -101,7 +101,7 @@ pub async fn start_daemon_server(
 ) -> miette::Result<()> {
     let endpoint = get_endpoint(daemon_dir);
 
-    fs::create_dir_all(&daemon_dir)?;
+    fs::create_dir_all(daemon_dir)?;
 
     let pid = std::process::id();
     let pid_path = get_pid_path(daemon_dir);
@@ -173,7 +173,7 @@ async fn serve_windows(
     Server::builder()
         .serve_with_incoming_shutdown(
             MoonDaemonServer::new(service),
-            crate::windows::get_named_pipe_server_stream(endpoint),
+            crate::sys::get_named_pipe_server_stream(endpoint),
             shutdown_signal,
         )
         .await

@@ -19,8 +19,8 @@ const POLL_INTERVAL: Duration = Duration::from_millis(150);
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 
 pub struct DaemonConnector {
-    daemon_dir: PathBuf,
-    workspace_root: PathBuf,
+    pub daemon_dir: PathBuf,
+    pub workspace_root: PathBuf,
 }
 
 impl DaemonConnector {
@@ -35,6 +35,11 @@ impl DaemonConnector {
     #[instrument(skip(self))]
     pub fn is_already_running(&self) -> Option<u32> {
         let pid_path = get_pid_path(&self.daemon_dir);
+
+        if !pid_path.exists() {
+            return None;
+        }
+
         let pid = read_pid(&pid_path)?;
 
         if is_process_alive(pid) {
@@ -61,12 +66,13 @@ impl DaemonConnector {
         })?;
         let log_path = self.daemon_dir.join("server.log");
 
-        debug!(binary = ?exe_path, "Spawning daemon process");
+        debug!(exe = ?exe_path, "Spawning daemon process");
 
         let child = spawn_detached(
             &exe_path,
             &[
                 "daemon",
+                "server",
                 "--log",
                 "trace",
                 "--log-file",
@@ -100,7 +106,7 @@ impl DaemonConnector {
 
         debug!(pid, "Stopping daemon");
 
-        // Try graceful shutdown via RPC first.
+        // Try graceful shutdown via RPC first
         match self.graceful_shutdown().await {
             Ok(()) => {
                 debug!(pid, "Daemon stopped gracefully");

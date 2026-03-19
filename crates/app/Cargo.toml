@@ -19,6 +19,7 @@ moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
 moon_console = { path = "../console" }
+moon_daemon = { path = "../daemon" }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_env_var = { path = "../env-var" }

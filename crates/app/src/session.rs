@@ -13,6 +13,7 @@ use moon_config::{
     ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
 };
 use moon_console::{Console, MoonReporter, create_console_theme};
+use moon_daemon::{DaemonClient, DaemonConnector};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::*;
 use moon_plugin::MoonHostData;
@@ -126,6 +127,12 @@ impl MoonSession {
         )
     }
 
+    pub async fn connect_to_daemon(&self) -> miette::Result<Option<DaemonClient>> {
+        let client = self.get_daemon_connector()?.connect().await?;
+
+        Ok(Some(client))
+    }
+
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
         Ok(Arc::new(AppContext {
             cli_version: self.cli_version.clone(),
@@ -157,6 +164,13 @@ impl MoonSession {
 
     pub fn get_console(&self) -> miette::Result<Arc<Console>> {
         Ok(Arc::new(self.console.clone()))
+    }
+
+    pub fn get_daemon_connector(&self) -> miette::Result<DaemonConnector> {
+        Ok(DaemonConnector {
+            daemon_dir: self.config_dir.join("cache").join("daemon"),
+            workspace_root: self.workspace_root.clone(),
+        })
     }
 
     pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {

@@ -5,6 +5,7 @@ use crate::commands::check::CheckArgs;
 use crate::commands::ci::CiArgs;
 use crate::commands::clean::CleanArgs;
 use crate::commands::completions::CompletionsArgs;
+use crate::commands::daemon::DaemonCommands;
 use crate::commands::debug::DebugCommands;
 use crate::commands::docker::DockerCommands;
 use crate::commands::exec::ExecArgs;
@@ -78,6 +79,12 @@ pub enum Commands {
         about = "Generate command completions for your current shell."
     )]
     Completions(CompletionsArgs),
+
+    #[command(alias = "d", name = "daemon", about = "Manage the background daemon.")]
+    Daemon {
+        #[command(subcommand)]
+        command: DaemonCommands,
+    },
 
     #[command(name = "debug", about = "Debug internals.", hide = true)]
     Debug {

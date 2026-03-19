@@ -32,8 +32,12 @@ impl DaemonConnector {
         DaemonClient::connect(&self.daemon_dir).await
     }
 
+    pub fn get_log_file(&self) -> PathBuf {
+        self.daemon_dir.join("server.log")
+    }
+
     #[instrument(skip(self))]
-    pub fn is_already_running(&self) -> Option<u32> {
+    pub fn is_running(&self) -> Option<u32> {
         let pid_path = get_pid_path(&self.daemon_dir);
 
         if !pid_path.exists() {
@@ -52,7 +56,7 @@ impl DaemonConnector {
     #[instrument(skip(self))]
     pub async fn start_daemon(&self) -> miette::Result<u32> {
         // If already running, return its PID
-        if let Some(pid) = self.is_already_running() {
+        if let Some(pid) = self.is_running() {
             debug!(pid, "Daemon already running, skipping spawn");
 
             return Ok(pid);
@@ -64,7 +68,7 @@ impl DaemonConnector {
         let exe_path = std::env::current_exe().map_err(|error| DaemonError::StartFailed {
             error: Box::new(error),
         })?;
-        let log_path = self.daemon_dir.join("server.log");
+        let log_path = self.get_log_file();
 
         debug!(exe = ?exe_path, "Spawning daemon process");
 
@@ -95,7 +99,7 @@ impl DaemonConnector {
 
     #[instrument(skip(self))]
     pub async fn stop_daemon(&self) -> miette::Result<bool> {
-        let pid = match self.is_already_running() {
+        let pid = match self.is_running() {
             Some(pid) => pid,
             None => {
                 debug!("Daemon not running, nothing to stop");

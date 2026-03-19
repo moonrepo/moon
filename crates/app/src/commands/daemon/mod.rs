@@ -1,3 +1,4 @@
+pub mod logs;
 pub mod restart;
 pub mod server;
 pub mod start;
@@ -7,6 +8,13 @@ use clap::Subcommand;
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum DaemonCommands {
+    #[command(
+        name = "logs",
+        about = "Tail the daemon's logs.",
+        long_about = "Tail the daemon's logs. If the daemon is not running, this will fail."
+    )]
+    Logs,
+
     #[command(
         name = "restart",
         about = "Retart the daemon.",

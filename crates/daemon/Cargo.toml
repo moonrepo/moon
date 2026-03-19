@@ -11,7 +11,7 @@ hyper-util = "0.1"
 md5 = { workspace = true }
 miette = { workspace = true }
 prost = "0.14"
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["fs-lock"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["net"] }
 tonic = { workspace = true, features = ["channel", "codegen", "transport"] }

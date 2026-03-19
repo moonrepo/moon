@@ -51,9 +51,9 @@ mod tests {
 
     #[test]
     fn test_get_pid_path() {
-        let store = Path::new("/home/user/.moon");
+        let store = Path::new("/home/user/.moon/daemon");
         let pid_path = get_pid_path(store);
-        assert!(pid_path.starts_with("/home/user/.moon/daemon/"));
+        assert!(pid_path.starts_with("/home/user/.moon/daemon"));
         assert!(pid_path.to_string_lossy().ends_with(".pid"));
     }
 

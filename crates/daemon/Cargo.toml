@@ -24,6 +24,7 @@ libc = "0.2.183"
 tokio-stream = { version = "0.1.18", features = ["net"] }
 
 [target.'cfg(windows)'.dependencies]
+futures-core = "0.3.32"
 windows-sys = { version = "0.61.2", default-features = false, features = [
     "Win32_Foundation",
     "Win32_System_Threading",

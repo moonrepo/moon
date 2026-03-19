@@ -4723,6 +4723,7 @@ name = "moon_daemon"
 version = "0.0.1"
 dependencies = [
  "async-stream",
+ "futures-core",
  "hyper-util",
  "libc",
  "md5",

@@ -1,6 +1,6 @@
 use async_stream::stream;
 use futures_core::stream::Stream;
-use std::os::windows::{io::FromRawHandle, process::CommandExt};
+use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::pin::Pin;
 use std::process::{Child, Command, Stdio};
@@ -60,7 +60,7 @@ pub fn kill_process(pid: u32) -> std::io::Result<()> {
     Ok(())
 }
 
-fn spawn_detached(exe: &Path, args: &[&str], cwd: &Path) -> std::io::Result<Child> {
+pub fn spawn_detached(exe: &Path, args: &[&str], cwd: &Path) -> std::io::Result<Child> {
     // DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
     const DETACH_FLAGS: u32 = 0x0000_0008 | 0x0000_0200;
 
@@ -90,9 +90,7 @@ impl TonicNamedPipeServer {
 impl Connected for TonicNamedPipeServer {
     type ConnectInfo = ();
 
-    fn connect_info(&self) -> Self::ConnectInfo {
-        ()
-    }
+    fn connect_info(&self) -> Self::ConnectInfo {}
 }
 
 impl AsyncRead for TonicNamedPipeServer {
@@ -135,7 +133,7 @@ pub fn get_named_pipe_server_stream(
     stream! {
         let mut server = ServerOptions::new()
             .first_pipe_instance(true)
-            .create(&name)?;
+            .create(endpoint)?;
 
         loop {
             server.connect().await?;
@@ -144,7 +142,7 @@ pub fn get_named_pipe_server_stream(
 
             yield Ok(instance);
 
-            server = ServerOptions::new().create(&name)?;
+            server = ServerOptions::new().create(endpoint)?;
         }
     }
 }

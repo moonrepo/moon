@@ -371,16 +371,17 @@ impl AppSession for MoonSession {
     }
 
     async fn execute(&mut self) -> AppResult {
-        if self.is_telemetry_enabled()
-            && matches!(
-                self.cli.command,
-                Commands::Ci(_)
-                    | Commands::Check(_)
-                    | Commands::Exec(_)
-                    | Commands::Run(_)
-                    | Commands::Sync { .. }
-            )
-        {
+        let is_exec_command = matches!(
+            self.cli.command,
+            Commands::Ci(_)
+                | Commands::Check(_)
+                | Commands::Exec(_)
+                | Commands::Run(_)
+                | Commands::Sync { .. }
+        );
+
+        // Check for a new version and log to the console
+        if self.is_telemetry_enabled() && is_exec_command {
             let cache_engine = self.get_cache_engine()?;
 
             execute::check_for_new_version(
@@ -389,6 +390,11 @@ impl AppSession for MoonSession {
                 &self.toolchains_config.moon.manifest_url,
             )
             .await?;
+        }
+
+        // Start the daemon in the background
+        if self.workspace_config.daemon && is_exec_command {
+            self.get_daemon_connector()?.start_daemon().await?;
         }
 
         Ok(None)

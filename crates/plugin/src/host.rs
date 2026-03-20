@@ -364,7 +364,7 @@ fn load_toolchain_config_by_id(
                 .unwrap_or(&default_config);
 
             // We don't have access to the toolchain registry here,
-            // so we must manually merge this config objects
+            // so we must manually merge these config objects
             plugin.memory_set_val(
                 &mut outputs[0],
                 serde_json::to_string(&json_merge(&root_config.to_json(), &config.to_json()))?,

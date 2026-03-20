@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where toolchains that loaded project/workspace toolchain configuration would not be
+  merged correctly.
+
 ## 2.1.0
 
 #### 🚀 Updates

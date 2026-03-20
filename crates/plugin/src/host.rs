@@ -9,6 +9,7 @@ use moon_target::Target;
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
+use starbase_utils::json::merge as json_merge;
 use std::fmt;
 use std::sync::{Arc, OnceLock};
 use tracing::{instrument, trace};
@@ -337,12 +338,21 @@ fn load_toolchain_config_by_id(
     let data = user_data.get()?;
     let data = data.lock().unwrap();
 
+    let default_config = ToolchainPluginConfig::default();
+    let root_config = data
+        .toolchains_config
+        .get_plugin_config(&toolchain_id)
+        .ok_or_else(|| {
+            Error::msg(format!(
+                "Unable to load toolchain configuration. Toolchain {toolchain_id} does not exist."
+            ))
+        })?;
+
     match &project_id {
         Some(project_id) => {
             let workspace_graph = data.workspace_graph.get().unwrap();
             let project = workspace_graph.get_project(project_id).map_err(map_error)?;
 
-            let default_config = ToolchainPluginConfig::default();
             let config = project
                 .config
                 .toolchains
@@ -353,19 +363,18 @@ fn load_toolchain_config_by_id(
                 })
                 .unwrap_or(&default_config);
 
-            plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&config.to_json())?)?;
+            // We don't have access to the toolchain registry here,
+            // so we must manually merge this config objects
+            plugin.memory_set_val(
+                &mut outputs[0],
+                serde_json::to_string(&json_merge(&root_config.to_json(), &config.to_json()))?,
+            )?;
         }
         None => {
-            let config = data
-                .toolchains_config
-                .get_plugin_config(&toolchain_id)
-                .ok_or_else(|| {
-                    Error::msg(format!(
-                        "Unable to load toolchain configuration. Toolchain {toolchain_id} does not exist."
-                    ))
-                })?;
-
-            plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&config.to_json())?)?;
+            plugin.memory_set_val(
+                &mut outputs[0],
+                serde_json::to_string(&root_config.to_json())?,
+            )?;
         }
     };
 

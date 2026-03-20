@@ -3,13 +3,14 @@ use crate::endpoint::*;
 use crate::proto::moon_daemon_client::MoonDaemonClient;
 use crate::proto::*;
 use hyper_util::rt::TokioIo;
+use moon_common::color;
 use std::io::Error;
 use std::path::Path;
 use std::time::Duration;
 use tonic::Status;
 use tonic::transport::{Channel, Endpoint, Error as TransportError, Uri};
 use tower::service_fn;
-use tracing::debug;
+use tracing::{debug, instrument};
 
 fn map_rpc_error(error: Status) -> DaemonError {
     DaemonError::RpcFailed {
@@ -44,7 +45,10 @@ impl DaemonClient {
         })
     }
 
+    #[instrument(skip(self))]
     pub async fn start(&mut self, workspace_root: &str) -> miette::Result<StartResponse> {
+        debug!("Calling {} method", color::property("Start"));
+
         let response = self
             .inner
             .start(StartRequest {
@@ -56,7 +60,10 @@ impl DaemonClient {
         Ok(response.into_inner())
     }
 
+    #[instrument(skip(self))]
     pub async fn stop(&mut self) -> miette::Result<StopResponse> {
+        debug!("Calling {} method", color::property("Stop"));
+
         let response = self
             .inner
             .stop(StopRequest {})
@@ -66,7 +73,10 @@ impl DaemonClient {
         Ok(response.into_inner())
     }
 
+    #[instrument(skip(self))]
     pub async fn status(&mut self) -> miette::Result<StatusResponse> {
+        debug!("Calling {} method", color::property("Status"));
+
         let response = self
             .inner
             .status(StatusRequest {})

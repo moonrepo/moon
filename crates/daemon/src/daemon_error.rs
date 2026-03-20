@@ -34,7 +34,7 @@ pub enum DaemonError {
     },
 
     #[diagnostic(code(daemon::rpc_failed))]
-    #[error("Daemon RPC call failed.\n{}: {}", .error.code(), .error.message())]
+    #[error("Failed to make daemon RPC call.\n{}: {}", .error.code(), .error.message())]
     RpcFailed {
         #[source]
         error: Box<tonic::Status>,

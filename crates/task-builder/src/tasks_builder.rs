@@ -14,7 +14,7 @@ use moon_config::{
     ToolchainsConfig, is_glob_like,
 };
 use moon_env_var::contains_env_var;
-use moon_target::Target;
+use moon_target::{Target, TargetScope};
 use moon_task::{
     Task, TaskArg, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptions, TaskState,
     TaskUnixShell, TaskWindowsShell,
@@ -1214,17 +1214,32 @@ impl<'proj> TasksBuilder<'proj> {
             return deps;
         };
 
-        deps.into_iter()
-            .filter(|dep| !filters.exclude.contains(&dep.target.task_id))
-            .map(|mut dep| {
-                if let Some(new_task_id) = filters.rename.get(&dep.target.task_id) {
-                    dep.target.id = Target::format(&dep.target.scope, new_task_id).into();
-                    dep.target.task_id = new_task_id.to_owned();
+        let mut next_deps = vec![];
+
+        for mut dep in deps {
+            // Only exclude/rename deps targeting the current project
+            if matches!(dep.target.scope, TargetScope::OwnSelf)
+                || dep
+                    .target
+                    .get_project_id()
+                    .is_ok_and(|id| id == self.project_id)
+            {
+                // Deps targeting upstream (^:task) or other scopes should
+                // be preserved, as excluding a task locally shouldn't
+                // prevent it from running on dependencies
+                if filters.exclude.contains(&dep.target.task_id) {
+                    continue;
                 }
 
-                dep
-            })
-            .collect()
+                if let Some(new_task_id) = filters.rename.get(&dep.target.task_id) {
+                    dep.target = Target::new_self(new_task_id).unwrap();
+                }
+            }
+
+            next_deps.push(dep);
+        }
+
+        next_deps
     }
 
     fn merge_map<K, V>(

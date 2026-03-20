@@ -4,6 +4,8 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where exclude/rename for task inheritance applied to tasks other than those in the
+  current project.
 - Fixed an issue where toolchains that loaded project/workspace toolchain configuration would not be
   merged correctly.
 - Fixed an issue with git file hashing by temporarily re-enabling Git locks.

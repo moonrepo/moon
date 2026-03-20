@@ -2143,9 +2143,12 @@ tasks:
 
             assert_eq!(
                 tasks.get("deploy").unwrap().deps,
-                vec![TaskDependencyConfig::new(
-                    Target::parse("~:compile").unwrap()
-                )]
+                vec![
+                    TaskDependencyConfig::new(Target::parse("~:compile").unwrap()),
+                    // Doesn't exclude/rename tasks in other projects
+                    TaskDependencyConfig::new(Target::parse("^:test").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("^:build").unwrap())
+                ]
             );
 
             assert_eq!(tasks.get("build").unwrap().command, "build-local");

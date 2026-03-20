@@ -4,6 +4,8 @@ tasks:
     deps:
       - 'test'
       - '~:build'
+      - '^:test'
+      - '^:build'
   build:
     command: 'build-global'
   test:

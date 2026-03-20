@@ -162,16 +162,30 @@ impl<'app> WorkspaceBuilder<'app> {
         let cache_path = cache_engine.state.resolve_path("workspaceGraph.json");
 
         if hash == state.data.last_hash && cache_path.exists() {
+            let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;
+
+            // Verify that the cached projects match the current projects
+            // on disk. If a project has been added or removed since the
+            // cache was created, we need to rebuild the graph
+            let cached_ids: FxHashSet<&Id> = cache.project_data.keys().collect();
+            let current_ids: FxHashSet<&Id> = graph.project_data.keys().collect();
+
+            if cached_ids == current_ids {
+                debug!(
+                    cache = ?cache_path,
+                    "Loading workspace graph with {} projects from cache",
+                    cache.project_data.len(),
+                );
+
+                cache.context = graph.context;
+
+                return Ok(cache);
+            }
+
             debug!(
                 cache = ?cache_path,
-                "Loading workspace graph with {} projects from cache",
-                graph.project_data.len(),
+                "Cached workspace graph has mismatched projects, rebuilding",
             );
-
-            let mut cache: WorkspaceBuilder = json::read_file(cache_path)?;
-            cache.context = graph.context;
-
-            return Ok(cache);
         }
 
         // Build the graph, update the state, and save the cache

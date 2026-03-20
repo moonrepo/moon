@@ -4730,6 +4730,7 @@ dependencies = [
  "md5",
  "miette 7.6.0",
  "moon_common",
+ "moon_process",
  "prost",
  "starbase_utils",
  "thiserror 2.0.18",

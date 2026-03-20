@@ -2,6 +2,8 @@ use crate::daemon_error::DaemonError;
 use crate::endpoint::*;
 use crate::proto::moon_daemon_server::{MoonDaemon, MoonDaemonServer};
 use crate::proto::*;
+use crate::sys::is_process_alive;
+use moon_process::ProcessRegistry;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -93,7 +95,11 @@ impl MoonDaemon for DaemonService {
 /// - Unix: binds a Unix domain socket
 /// - Windows: creates a named pipe server
 ///
-/// Blocks until the server shuts down (via the `Stop` RPC or signal).
+/// The server shuts down cleanly on:
+/// - A `Stop` RPC call from a client
+/// - `SIGINT` or `SIGTERM` (Unix) / `Ctrl+C` (Windows)
+///
+/// On shutdown the PID file and socket are removed.
 pub async fn start_daemon_server(
     workspace_root: &Path,
     daemon_dir: &Path,
@@ -103,12 +109,17 @@ pub async fn start_daemon_server(
 
     fs::create_dir_all(daemon_dir)?;
 
+    // Remove stale endpoint files left by a previous crash, but only
+    // if no daemon process is actually alive
+    remove_stale_endpoint(daemon_dir, &endpoint)?;
+
     let pid = std::process::id();
     let pid_path = get_pid_path(daemon_dir);
 
     write_pid(&pid_path, pid)?;
 
     let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
+    let mut signal_rx = ProcessRegistry::instance().receive_signal();
 
     let service = DaemonService::new(
         workspace_root.to_owned(),
@@ -118,8 +129,17 @@ pub async fn start_daemon_server(
         shutdown_tx,
     );
 
+    // Merge the RPC-driven shutdown channel with OS signals so the
+    // daemon cleans up regardless of how it is stopped
     let shutdown_signal = async move {
-        shutdown_rx.recv().await;
+        tokio::select! {
+            _ = shutdown_rx.recv() => {
+                info!("Shutdown requested via RPC");
+            }
+            _ = signal_rx.recv() => {
+                info!("Shutdown requested via OS signal");
+            }
+        }
     };
 
     info!(pid, endpoint, "Daemon server starting");
@@ -133,6 +153,41 @@ pub async fn start_daemon_server(
     info!("Daemon server stopped");
 
     cleanup_daemon_files(daemon_dir)?;
+
+    Ok(())
+}
+
+/// Remove a stale Unix socket (or check a stale PID file on Windows)
+/// left behind by a crashed daemon that didn't clean up after itself.
+///
+/// Only removes files when no daemon process is actually running.
+fn remove_stale_endpoint(daemon_dir: &Path, endpoint: &str) -> miette::Result<()> {
+    let pid_path = get_pid_path(daemon_dir);
+
+    // If there's a PID file for a process that's still alive, the
+    // endpoint is not stale — bail out
+    if let Some(pid) = read_pid(&pid_path) {
+        if is_process_alive(pid) {
+            return Ok(());
+        }
+
+        debug!(pid, "Found stale PID file for dead process, cleaning up");
+    }
+
+    // On Unix the socket file itself blocks `bind()`
+    #[cfg(unix)]
+    {
+        let sock = Path::new(endpoint);
+
+        if sock.exists() {
+            fs::remove_file(sock)?;
+        }
+    }
+
+    // Remove the stale PID file too.
+    if pid_path.exists() {
+        fs::remove_file(&pid_path)?;
+    }
 
     Ok(())
 }

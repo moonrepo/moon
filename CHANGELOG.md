@@ -4,6 +4,8 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue with remote caching where the batching max size and limit were not being applied
+  correctly.
 - Fixed an issue where exclude/rename for task inheritance applied to tasks other than those in the
   current project.
 - Fixed an issue where toolchains that loaded project/workspace toolchain configuration would not be

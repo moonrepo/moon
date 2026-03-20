@@ -1,4 +1,5 @@
 use crate::blob::*;
+use crate::fs_digest::create_digest;
 use crate::grpc_services::*;
 use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;
@@ -53,17 +54,30 @@ impl GrpcRemoteClient {
             .layer(RequestHeadersLayer::new(headers))
             .service(self.channel.clone().unwrap());
 
-        let _ = self.ac_client.set(ActionCacheClient::new(service.clone()));
+        // Raise the max decoding message size from tonic's default of 4MB.
+        // We already partition batches by size ourselves using the server's
+        // MaxBatchTotalSizeBytes, but the server's gRPC frame limit and the
+        // CAS batch size limit are separate concerns. The response also includes
+        // protobuf overhead (digests, status, etc.) per blob that can push the
+        // encoded response beyond 4MB even when blob data fits within the limit.
+        let max_decode_size = 64 * 1024 * 1024; // 64MB
 
-        let _ = self.bs_client.set(ByteStreamClient::new(service.clone()));
+        let _ = self.ac_client.set(
+            ActionCacheClient::new(service.clone()).max_decoding_message_size(max_decode_size),
+        );
 
         let _ = self
-            .cap_client
-            .set(CapabilitiesClient::new(service.clone()));
+            .bs_client
+            .set(ByteStreamClient::new(service.clone()).max_decoding_message_size(max_decode_size));
 
-        let _ = self
-            .cas_client
-            .set(ContentAddressableStorageClient::new(service));
+        let _ = self.cap_client.set(
+            CapabilitiesClient::new(service.clone()).max_decoding_message_size(max_decode_size),
+        );
+
+        let _ = self.cas_client.set(
+            ContentAddressableStorageClient::new(service)
+                .max_decoding_message_size(max_decode_size),
+        );
     }
 
     fn get_ac_client(&self) -> ActionCacheClient<LayeredService> {
@@ -372,6 +386,8 @@ impl RemoteClient for GrpcRemoteClient {
         let mut total_count = 0;
 
         for download in response.into_inner().responses {
+            let mut success = true;
+
             if let Some(status) = download.status {
                 let code = Code::from_i32(status.code);
 
@@ -388,13 +404,26 @@ impl RemoteClient for GrpcRemoteClient {
                             status.message
                         }),
                     );
+
+                    success = false;
                 }
             }
 
-            if let Some(digest) = download.digest {
+            if success && let Some(digest) = download.digest {
                 let mut blob = Blob::new(digest, download.data);
                 blob.compressed = get_compression_from_code(download.compressor);
                 blob.decompress()?;
+
+                // Verify digest matches decompressed content
+                let actual_digest = create_digest(&blob.bytes);
+
+                if actual_digest != blob.digest {
+                    return Err(RemoteError::GrpcDownloadDigestMismatch {
+                        actual: actual_digest,
+                        expected: blob.digest,
+                    }
+                    .into());
+                }
 
                 blobs.push(Some(blob));
             } else {
@@ -616,6 +645,7 @@ impl RemoteClient for GrpcRemoteClient {
                     },
                     Err(error) => {
                         *stream_error_clone.lock().await = Some(error);
+                        break;
                     },
                 }
             }
@@ -634,7 +664,7 @@ impl RemoteClient for GrpcRemoteClient {
             Ok(response) => {
                 let result = response.into_inner();
 
-                if result.committed_size != -1 && result.committed_size < total_bytes {
+                if result.committed_size != total_bytes {
                     return Err(RemoteError::GrpcUploadBytesMismatch {
                         actual: result.committed_size,
                         expected: total_bytes,

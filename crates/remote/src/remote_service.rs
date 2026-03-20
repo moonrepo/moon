@@ -706,10 +706,9 @@ fn partition_into_groups<T>(
 
     // Subtract a chunk from the max size, because when down/uploading blobs,
     // we need to account for the non-blob data in the request/response, like the
-    // compression level, digest strings, etc. All of these "add up" and can
-    // bump the total body size larger than the actual limit. Is there a better
-    // way to handle this? Probably, but for now, just reduce the size by 1%,
-    // which is about 42k bytes.
+    // compression level, digest strings, status fields, etc. All of these "add up"
+    // and can bump the total body size larger than the actual limit. To be safe,
+    // we reduce the max size by 25%.
     let max_group_size = (max_size as f64 * 0.75) as usize;
 
     for item in items {

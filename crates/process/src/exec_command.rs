@@ -121,8 +121,15 @@ impl Command {
             let mut logs = vec![];
             let mut lines = BufReader::new(stdout.unwrap()).lines();
 
-            while let Ok(Some(line)) = lines.next_line().await {
-                logs.push(line);
+            loop {
+                match lines.next_line().await {
+                    Ok(Some(line)) => logs.push(line),
+                    Ok(None) => break,
+                    Err(error) => {
+                        trace!("Failed to read stdout line: {error}");
+                        break;
+                    }
+                }
             }
 
             Ok(logs)
@@ -132,8 +139,15 @@ impl Command {
             let mut logs = vec![];
             let mut lines = BufReader::new(stderr.unwrap()).lines();
 
-            while let Ok(Some(line)) = lines.next_line().await {
-                logs.push(line);
+            loop {
+                match lines.next_line().await {
+                    Ok(Some(line)) => logs.push(line),
+                    Ok(None) => break,
+                    Err(error) => {
+                        trace!("Failed to read stderr line: {error}");
+                        break;
+                    }
+                }
             }
 
             Ok(logs)
@@ -281,15 +295,28 @@ impl Command {
             let mut lines = stderr.lines();
             let mut captured_lines = vec![];
 
-            while let Ok(Some(line)) = lines.next_line().await {
-                let _ = if let Some(prefix) = &*stderr_prefix {
-                    stderr_stream.write_line_with_prefix(&line, prefix)
-                } else {
-                    stderr_stream.write_line(&line)
-                };
+            loop {
+                match lines.next_line().await {
+                    Ok(Some(line)) => {
+                        let _ = if let Some(prefix) = &*stderr_prefix {
+                            stderr_stream.write_line_with_prefix(&line, prefix)
+                        } else {
+                            stderr_stream.write_line(&line)
+                        };
 
-                captured_lines.push(line);
+                        captured_lines.push(line);
+                    }
+                    Ok(None) => break,
+                    Err(error) => {
+                        trace!("Failed to read stderr line: {error}");
+                        break;
+                    }
+                }
             }
+
+            // Flush any remaining buffered output to ensure all streamed
+            // content is visible before the next flow is printed
+            let _ = stderr_stream.flush();
 
             captured_stderr_clone
                 .write()
@@ -301,15 +328,28 @@ impl Command {
             let mut lines = stdout.lines();
             let mut captured_lines = vec![];
 
-            while let Ok(Some(line)) = lines.next_line().await {
-                let _ = if let Some(prefix) = &*stdout_prefix {
-                    stdout_stream.write_line_with_prefix(&line, prefix)
-                } else {
-                    stdout_stream.write_line(&line)
-                };
+            loop {
+                match lines.next_line().await {
+                    Ok(Some(line)) => {
+                        let _ = if let Some(prefix) = &*stdout_prefix {
+                            stdout_stream.write_line_with_prefix(&line, prefix)
+                        } else {
+                            stdout_stream.write_line(&line)
+                        };
 
-                captured_lines.push(line);
+                        captured_lines.push(line);
+                    }
+                    Ok(None) => break,
+                    Err(error) => {
+                        trace!("Failed to read stdout line: {error}");
+                        break;
+                    }
+                }
             }
+
+            // Flush any remaining buffered output to ensure all streamed
+            // content is visible before the next flow is printed
+            let _ = stdout_stream.flush();
 
             captured_stdout_clone
                 .write()

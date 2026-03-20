@@ -8,7 +8,8 @@
   current project.
 - Fixed an issue where toolchains that loaded project/workspace toolchain configuration would not be
   merged correctly.
-- Fixed an issue with git file hashing by temporarily re-enabling Git locks.
+- Fixed an issue where task console output may appear out of order.
+- Fixed an issue with Git file hashing by temporarily re-enabling Git locks.
 
 ## 2.1.0
 

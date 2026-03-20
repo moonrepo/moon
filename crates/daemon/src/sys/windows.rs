@@ -60,20 +60,19 @@ pub fn kill_process(pid: u32) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn spawn_detached(exe: &Path, args: &[&str], cwd: &Path) -> std::io::Result<Child> {
+pub fn create_detached_command(exe: &Path) -> Command {
     // DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
     const DETACH_FLAGS: u32 = 0x0000_0008 | 0x0000_0200;
 
-    let child = Command::new(exe)
-        .args(args)
-        .current_dir(cwd)
+    let mut command = Command::new(exe);
+
+    command
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .creation_flags(DETACH_FLAGS)
-        .spawn()?;
+        .creation_flags(DETACH_FLAGS);
 
-    Ok(child)
+    command
 }
 
 // https://github.com/catalinsh/tonic-named-pipe-example/blob/master/src/bin/server/named_pipe_stream.rs

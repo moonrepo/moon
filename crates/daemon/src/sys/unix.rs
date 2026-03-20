@@ -1,6 +1,6 @@
 use std::os::unix::process::CommandExt;
 use std::path::Path;
-use std::process::{Child, Command, Stdio};
+use std::process::{Command, Stdio};
 
 pub fn is_process_alive(pid: u32) -> bool {
     // Reject invalid PIDs (0 = all processes in group, negative = process groups)
@@ -29,11 +29,11 @@ pub fn kill_process(pid: u32) -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn spawn_detached(exe: &Path, args: &[&str], cwd: &Path) -> std::io::Result<Child> {
-    let child = unsafe {
-        Command::new(exe)
-            .args(args)
-            .current_dir(cwd)
+pub fn create_detached_command(exe: &Path) -> Command {
+    let mut command = Command::new(exe);
+
+    unsafe {
+        command
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -41,9 +41,8 @@ pub fn spawn_detached(exe: &Path, args: &[&str], cwd: &Path) -> std::io::Result<
             .pre_exec(|| {
                 libc::setsid();
                 Ok(())
-            })
-            .spawn()?
+            });
     };
 
-    Ok(child)
+    command
 }

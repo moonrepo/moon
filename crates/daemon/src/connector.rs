@@ -72,23 +72,18 @@ impl DaemonConnector {
         let exe_path = std::env::current_exe().map_err(|error| DaemonError::StartFailed {
             error: Box::new(error),
         })?;
-        let log_path = self.get_log_file();
 
         debug!(exe = ?exe_path, "Spawning daemon process");
 
-        let child = spawn_detached(
-            &exe_path,
-            &[
-                "daemon",
-                "server",
-                "--log",
-                "trace",
-                "--log-file",
-                log_path.to_str().unwrap(),
-            ],
-            &self.workspace_root,
-        )
-        .map_err(|error| DaemonError::StartFailed {
+        let mut command = create_detached_command(&exe_path);
+
+        command
+            .args(["daemon", "server", "--log", "trace", "--log-file"])
+            .arg(self.get_log_file())
+            .env("MOON_DAEMON_RUNNING", "true")
+            .current_dir(&self.workspace_root);
+
+        let child = command.spawn().map_err(|error| DaemonError::StartFailed {
             error: Box::new(error),
         })?;
 

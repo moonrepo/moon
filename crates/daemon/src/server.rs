@@ -193,7 +193,7 @@ fn remove_stale_endpoint(daemon_dir: &Path, endpoint: &str) -> miette::Result<()
 }
 
 #[cfg(unix)]
-async fn serve_unix(
+pub async fn serve_unix(
     endpoint: &str,
     service: DaemonService,
     shutdown_signal: impl std::future::Future<Output = ()>,
@@ -220,7 +220,7 @@ async fn serve_unix(
 }
 
 #[cfg(windows)]
-async fn serve_windows(
+pub async fn serve_windows(
     endpoint: &str,
     service: DaemonService,
     shutdown_signal: impl std::future::Future<Output = ()>,

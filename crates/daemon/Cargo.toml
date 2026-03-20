@@ -31,6 +31,10 @@ windows-sys = { version = "0.61.2", default-features = false, features = [
     "Win32_System_Threading",
 ] }
 
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }
+
 [build-dependencies]
 tonic-prost-build = "0.14.5"
 

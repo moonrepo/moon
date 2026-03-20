@@ -26,7 +26,7 @@ pub struct DaemonService {
 }
 
 impl DaemonService {
-    fn new(
+    pub fn new(
         workspace_root: PathBuf,
         moon_version: String,
         endpoint: String,

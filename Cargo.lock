@@ -4732,6 +4732,7 @@ dependencies = [
  "moon_common",
  "moon_process",
  "prost",
+ "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
  "tokio",

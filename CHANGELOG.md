@@ -6,6 +6,7 @@
 
 - Fixed an issue where toolchains that loaded project/workspace toolchain configuration would not be
   merged correctly.
+- Fixed an issue with git file hashing by temporarily re-enabling Git locks.
 
 ## 2.1.0
 

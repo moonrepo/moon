@@ -148,7 +148,7 @@ fn parse_deps_of_development_scope() {
     assert_eq!(
         Target::parse("^dev:lint").unwrap(),
         Target {
-            id: CompactString::from("^dev:lint"),
+            id: CompactString::from("^development:lint"),
             scope: TargetScope::DepsOf(DependencyScope::Development),
             task_id: Id::raw("lint"),
         }
@@ -180,7 +180,7 @@ fn parse_deps_of_production_scope() {
     assert_eq!(
         Target::parse("^prod:lint").unwrap(),
         Target {
-            id: CompactString::from("^prod:lint"),
+            id: CompactString::from("^production:lint"),
             scope: TargetScope::DepsOf(DependencyScope::Production),
             task_id: Id::raw("lint"),
         }

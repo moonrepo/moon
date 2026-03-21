@@ -143,7 +143,7 @@ mod command_builder {
             context.passthrough_args.push("--passthrough".into());
             context
                 .primary_targets
-                .insert(Target::new("project", "base").unwrap());
+                .insert(Target::new_project("project", "base").unwrap());
 
             let command = container.create_command(context).await;
 
@@ -173,7 +173,7 @@ mod command_builder {
             context.passthrough_args.push("--passthrough".into());
             context
                 .primary_targets
-                .insert(Target::new("other-project", "base").unwrap());
+                .insert(Target::new_project("other-project", "base").unwrap());
 
             let command = container.create_command(context).await;
 
@@ -188,7 +188,7 @@ mod command_builder {
             context.passthrough_args.push("--passthrough".into());
             context
                 .primary_targets
-                .insert(Target::new("project", "base").unwrap());
+                .insert(Target::new_project("project", "base").unwrap());
 
             let command = container
                 .create_command_with_config(context, |_, node| {

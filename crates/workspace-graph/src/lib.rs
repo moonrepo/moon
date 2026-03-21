@@ -92,7 +92,7 @@ impl WorkspaceGraph {
         task_id: impl AsRef<str>,
     ) -> miette::Result<Arc<Task>> {
         let project_id = self.projects.resolve_id(project_id_or_alias.as_ref());
-        let target = Target::new(project_id, task_id)?;
+        let target = Target::new_project(project_id, task_id)?;
 
         self.tasks.get(&target)
     }

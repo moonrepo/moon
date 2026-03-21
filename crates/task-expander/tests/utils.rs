@@ -80,7 +80,7 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
     for task_id in ["build", "lint", "test", "test-fail", "dev"] {
         let mut task = Task {
             id: Id::raw(task_id),
-            target: Target::new(id, task_id).unwrap(),
+            target: Target::new_project(id, task_id).unwrap(),
             ..Task::default()
         };
 
@@ -102,7 +102,7 @@ pub fn create_project_with_tasks(workspace_root: &Path, id: &str) -> Project {
 pub fn create_task() -> Task {
     Task {
         id: Id::raw("task"),
-        target: Target::new("project", "task").unwrap(),
+        target: Target::new_project("project", "task").unwrap(),
         ..Task::default()
     }
 }

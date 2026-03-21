@@ -1,4 +1,3 @@
-use crate::dep_scope::DependencyScope;
 use crate::target::Target;
 use crate::target_scope::TargetScope;
 use moon_common::Id;
@@ -29,36 +28,41 @@ impl TargetLocator {
 
     #[tracing::instrument(name = "parse_target_locator")]
     pub fn parse(value: &str) -> miette::Result<TargetLocator> {
-        Self::from_str(value)
+        if value.contains(':') {
+            if value.contains(['*', '?', '[', ']', '{', '}', '!']) || value.contains("...") {
+                let (base_scope, base_task) = value.split_once(':').unwrap();
+
+                Ok(Self::parse_glob(value, base_scope, base_task)?)
+            } else {
+                Ok(TargetLocator::Qualified(Target::parse(value)?))
+            }
+        } else {
+            Ok(TargetLocator::DefaultProject(Id::new(value)?))
+        }
     }
 
-    fn parse_glob(value: &str, base_scope: &str, base_task: &str) -> TargetLocator {
+    fn parse_glob(value: &str, base_scope: &str, base_task: &str) -> miette::Result<TargetLocator> {
         let mut scope = None;
         let mut scope_glob = None;
 
         match base_scope {
-            "" | "*" | "**" | "**/*" | "..." => scope = Some(TargetScope::All),
-            "~" => scope = Some(TargetScope::OwnSelf),
-            "^" => scope = Some(TargetScope::Deps),
-            "^build" => scope = Some(TargetScope::DepsOf(DependencyScope::Build)),
-            "^dev" | "^development" => {
-                scope = Some(TargetScope::DepsOf(DependencyScope::Development))
+            "" | "*" | "**" | "**/*" | "..." => {
+                scope = Some(TargetScope::All);
             }
-            "^peer" => scope = Some(TargetScope::DepsOf(DependencyScope::Peer)),
-            "^prod" | "^production" => {
-                scope = Some(TargetScope::DepsOf(DependencyScope::Production))
+            "~" | "^" | "^build" | "^dev" | "^development" | "^peer" | "^prod" | "^production" => {
+                scope = Some(TargetScope::parse(base_scope)?);
             }
             inner => {
                 scope_glob = Some(inner.replace("...", "**/*"));
             }
         };
 
-        TargetLocator::GlobMatch {
+        Ok(TargetLocator::GlobMatch {
             original: value.to_owned(),
             scope,
             scope_glob,
             task_glob: base_task.to_owned(),
-        }
+        })
     }
 }
 
@@ -91,17 +95,7 @@ impl FromStr for TargetLocator {
     type Err = miette::Report;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
-        if value.contains(':') {
-            if value.contains(['*', '?', '[', ']', '{', '}', '!']) || value.contains("...") {
-                let (base_scope, base_task) = value.split_once(':').unwrap();
-
-                Ok(Self::parse_glob(value, base_scope, base_task))
-            } else {
-                Ok(TargetLocator::Qualified(Target::parse(value)?))
-            }
-        } else {
-            Ok(TargetLocator::DefaultProject(Id::new(value)?))
-        }
+        Self::parse(value)
     }
 }
 

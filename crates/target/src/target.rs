@@ -26,36 +26,73 @@ pub struct Target {
 }
 
 impl Target {
-    pub fn new<S, T>(scope_id: S, task_id: T) -> miette::Result<Target>
+    pub fn new<T>(scope: TargetScope, task_id: T) -> miette::Result<Target>
+    where
+        T: AsRef<str>,
+    {
+        let task_id = task_id.as_ref();
+        let id = Target::format(&scope, task_id);
+
+        Ok(Target {
+            task_id: Id::new(task_id).map_err(|_| TargetError::InvalidFormat(id.clone()))?,
+            id: CompactString::new(id),
+            scope,
+        })
+    }
+
+    pub fn new_deps<T>(task_id: T) -> miette::Result<Target>
+    where
+        T: AsRef<str>,
+    {
+        Self::new(TargetScope::Deps, task_id)
+    }
+
+    pub fn new_deps_of<T>(deps: DependencyScope, task_id: T) -> miette::Result<Target>
+    where
+        T: AsRef<str>,
+    {
+        Self::new(TargetScope::DepsOf(deps), task_id)
+    }
+
+    pub fn new_project<S, T>(project_id: S, task_id: T) -> miette::Result<Target>
     where
         S: AsRef<str>,
         T: AsRef<str>,
     {
-        let scope_id = scope_id.as_ref();
+        let project_id = project_id.as_ref();
         let task_id = task_id.as_ref();
 
-        let handle_error = |_| TargetError::InvalidFormat(format!("{scope_id}:{task_id}"));
-        let scope = TargetScope::Project(Id::new(scope_id).map_err(handle_error)?);
-
-        Ok(Target {
-            id: CompactString::new(Target::format(&scope, task_id)),
-            scope,
-            task_id: Id::new(task_id).map_err(handle_error)?,
-        })
+        Self::new(
+            TargetScope::Project(
+                Id::new(project_id)
+                    .map_err(|_| TargetError::InvalidFormat(format!("{project_id}:{task_id}")))?,
+            ),
+            task_id,
+        )
     }
 
     pub fn new_self<T>(task_id: T) -> miette::Result<Target>
     where
         T: AsRef<str>,
     {
+        Self::new(TargetScope::OwnSelf, task_id)
+    }
+
+    pub fn new_tag<S, T>(tag_id: S, task_id: T) -> miette::Result<Target>
+    where
+        S: AsRef<str>,
+        T: AsRef<str>,
+    {
+        let tag_id = tag_id.as_ref();
         let task_id = task_id.as_ref();
 
-        Ok(Target {
-            id: CompactString::new(Target::format(TargetScope::OwnSelf, task_id)),
-            scope: TargetScope::OwnSelf,
-            task_id: Id::new(task_id)
-                .map_err(|_| TargetError::InvalidFormat(format!("~:{task_id}")))?,
-        })
+        Self::new(
+            TargetScope::Tag(
+                Id::new(tag_id)
+                    .map_err(|_| TargetError::InvalidFormat(format!("#{tag_id}:{task_id}")))?,
+            ),
+            task_id,
+        )
     }
 
     pub fn format<S, T>(scope: S, task: T) -> String
@@ -81,38 +118,13 @@ impl Target {
         };
 
         let scope = match matches.name("scope") {
-            Some(value) => match value.as_str() {
-                "" => TargetScope::All,
-                "^" => TargetScope::Deps,
-                "^build" => TargetScope::DepsOf(DependencyScope::Build),
-                "^dev" | "^development" => TargetScope::DepsOf(DependencyScope::Development),
-                "^peer" => TargetScope::DepsOf(DependencyScope::Peer),
-                "^prod" | "^production" => TargetScope::DepsOf(DependencyScope::Production),
-                "~" => TargetScope::OwnSelf,
-                id => {
-                    if let Some(tag) = id.strip_prefix('#') {
-                        TargetScope::Tag(Id::raw(tag))
-                    } else {
-                        TargetScope::Project(Id::raw(id))
-                    }
-                }
-            },
+            Some(value) => TargetScope::parse(value.as_str())?,
             None => TargetScope::All,
         };
 
-        let task_id = Id::new(
-            matches
-                .name("task")
-                .ok_or_else(|| TargetError::InvalidFormat(target_id.to_owned()))?
-                .as_str(),
-        )
-        .map_err(|_| TargetError::InvalidFormat(target_id.to_owned()))?;
+        let task_id = matches.name("task").expect("Task ID required.").as_str();
 
-        Ok(Target {
-            id: CompactString::new(target_id),
-            scope,
-            task_id,
-        })
+        Self::new(scope, task_id)
     }
 
     pub fn parse_strict(target_id: &str) -> miette::Result<Target> {

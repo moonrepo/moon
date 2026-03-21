@@ -20,7 +20,7 @@ use utils::ActionGraphContainer;
 fn create_task(project: &str, id: &str) -> Task {
     Task {
         id: Id::raw(id),
-        target: Target::new(project, id).unwrap(),
+        target: Target::new_project(project, id).unwrap(),
         toolchains: vec![Id::raw("node")],
         ..Task::default()
     }

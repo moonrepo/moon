@@ -813,7 +813,7 @@ impl<'query> ActionGraphBuilder<'query> {
             }
             TargetLocator::Qualified(target) => {
                 let target = if target.scope == TargetScope::OwnSelf {
-                    Target::new(
+                    Target::new_project(
                         &self.workspace_graph.get_project_from_path(None)?.id,
                         &target.task_id,
                     )?
@@ -833,7 +833,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     }
                 })?;
 
-                let target = Target::new(&project.id, task_id)?;
+                let target = Target::new_project(&project.id, task_id)?;
 
                 tasks.extend(
                     self.internal_resolve_tasks_from_target(&target, allow_internal)

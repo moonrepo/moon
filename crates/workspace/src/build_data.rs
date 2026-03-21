@@ -66,6 +66,6 @@ impl TaskBuildData {
         let project_id = ProjectBuildData::resolve_id(target.get_project_id()?, project_data);
 
         // IDs should be valid here, so ignore the result
-        Target::new(&project_id, &target.task_id)
+        Target::new_project(&project_id, &target.task_id)
     }
 }

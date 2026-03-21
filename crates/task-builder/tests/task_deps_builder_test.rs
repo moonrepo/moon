@@ -47,7 +47,7 @@ fn create_project() -> Project {
 fn create_task() -> Task {
     Task {
         id: Id::raw("task"),
-        target: Target::new("project", "task").unwrap(),
+        target: Target::new_project("project", "task").unwrap(),
         ..Task::default()
     }
 }

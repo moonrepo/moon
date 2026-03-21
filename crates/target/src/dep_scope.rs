@@ -12,10 +12,10 @@ pub enum DependencyScope {
 impl Display for DependencyScope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DependencyScope::Build => write!(f, "build"),
-            DependencyScope::Development => write!(f, "development"),
-            DependencyScope::Peer => write!(f, "peer"),
-            DependencyScope::Production => write!(f, "production"),
+            Self::Build => write!(f, "build"),
+            Self::Development => write!(f, "development"),
+            Self::Peer => write!(f, "peer"),
+            Self::Production => write!(f, "production"),
         }
     }
 }

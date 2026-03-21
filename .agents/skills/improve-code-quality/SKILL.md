@@ -57,6 +57,9 @@ findings by category:
 - O(n^2) or worse algorithms with better alternatives
 - Blocking calls inside async functions
 - Large types on the stack that should be `Box`ed
+- Avoid cloning in loops; use `.iter()` instead of `.into_iter()` for `Copy` types
+- Prefer iterators over manual loops (when applicable); avoid intermediate `.collect()` calls
+- Detect memory leaks or dangling pointers
 
 ### Readability & structure
 
@@ -72,6 +75,12 @@ findings by category:
 - Incomplete pattern matches
 - Missing input validation at boundaries
 - Race conditions in concurrent code
+
+# Borrowing & ownership
+
+- Prefer `&T` over `.clone()` unless ownership transfer is required
+- Small `Copy` types (≤24 bytes) can be passed by value
+- Use `Cow<'_, T>` when ownership is ambiguous
 
 ### Dependencies
 
@@ -195,14 +204,22 @@ Wait for the user's response. Do not apply anything without explicit approval.
 ### Fixing process
 
 1. **Run auto-fix tools first:**
-   - Rust: `cargo clippy -p <crate> --all-targets --fix --allow-dirty --allow-staged` and
-     `cargo fmt -p <crate> -- --emit=files`
+   - Linting: `cargo clippy -p <crate> --all-targets --fix --allow-dirty --allow-staged`
+   - Formatting: `cargo fmt -p <crate> -- --emit=files`
 
 2. **Apply manual fixes one at a time**, stating what changed and why for each.
 
 3. **Re-run automated tools** to verify no regressions were introduced.
 
 4. **Do not commit.** Tell the user the changes are ready for their review.
+
+## Step 6: Validate best practices
+
+After applying fixes, check that the target path adheres to best practices by running the
+`/rust-skills` skill. If this skill does not exist, skip this step.
+
+If you notice any new issues or deviations from conventions, add them to the report and ask the user
+if they want to address those as well.
 
 ## moon specific conventions
 

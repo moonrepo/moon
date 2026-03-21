@@ -31,6 +31,35 @@ impl TargetLocator {
     pub fn parse(value: &str) -> miette::Result<TargetLocator> {
         Self::from_str(value)
     }
+
+    fn parse_glob(value: &str, base_scope: &str, base_task: &str) -> TargetLocator {
+        let mut scope = None;
+        let mut scope_glob = None;
+
+        match base_scope {
+            "" | "*" | "**" | "**/*" | "..." => scope = Some(TargetScope::All),
+            "~" => scope = Some(TargetScope::OwnSelf),
+            "^" => scope = Some(TargetScope::Deps),
+            "^build" => scope = Some(TargetScope::DepsOf(DependencyScope::Build)),
+            "^dev" | "^development" => {
+                scope = Some(TargetScope::DepsOf(DependencyScope::Development))
+            }
+            "^peer" => scope = Some(TargetScope::DepsOf(DependencyScope::Peer)),
+            "^prod" | "^production" => {
+                scope = Some(TargetScope::DepsOf(DependencyScope::Production))
+            }
+            inner => {
+                scope_glob = Some(inner.replace("...", "**/*"));
+            }
+        };
+
+        TargetLocator::GlobMatch {
+            original: value.to_owned(),
+            scope,
+            scope_glob,
+            task_glob: base_task.to_owned(),
+        }
+    }
 }
 
 impl AsRef<TargetLocator> for TargetLocator {
@@ -64,33 +93,9 @@ impl FromStr for TargetLocator {
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         if value.contains(':') {
             if value.contains(['*', '?', '[', ']', '{', '}', '!']) || value.contains("...") {
-                let (base_scope, base_id) = value.split_once(':').unwrap();
-                let mut scope = None;
-                let mut project_glob = None;
+                let (base_scope, base_task) = value.split_once(':').unwrap();
 
-                match base_scope {
-                    "" | "*" | "**" | "**/*" | "..." => scope = Some(TargetScope::All),
-                    "~" => scope = Some(TargetScope::OwnSelf),
-                    "^" => scope = Some(TargetScope::Deps),
-                    "^build" => scope = Some(TargetScope::DepsOf(DependencyScope::Build)),
-                    "^dev" | "^development" => {
-                        scope = Some(TargetScope::DepsOf(DependencyScope::Development))
-                    }
-                    "^peer" => scope = Some(TargetScope::DepsOf(DependencyScope::Peer)),
-                    "^prod" | "^production" => {
-                        scope = Some(TargetScope::DepsOf(DependencyScope::Production))
-                    }
-                    inner => {
-                        project_glob = Some(inner.replace("...", "**/*"));
-                    }
-                };
-
-                Ok(TargetLocator::GlobMatch {
-                    original: value.to_owned(),
-                    scope,
-                    scope_glob: project_glob,
-                    task_glob: base_id.to_owned(),
-                })
+                Ok(Self::parse_glob(value, base_scope, base_task))
             } else {
                 Ok(TargetLocator::Qualified(Target::parse(value)?))
             }

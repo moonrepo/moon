@@ -87,7 +87,7 @@ findings by category:
 - Unused dependencies in `Cargo.toml`
 - Overly broad feature flags on dependencies
 
-## Step 2: Run automated tools
+## Step 3: Run automated tools
 
 Run the appropriate tools from the repository root (without asking for permission if possible).
 Capture all output, including errors.

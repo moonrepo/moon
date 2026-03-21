@@ -100,8 +100,13 @@ impl Target {
             None => TargetScope::All,
         };
 
-        let task_id = Id::new(matches.name("task").unwrap().as_str())
-            .map_err(|_| TargetError::InvalidFormat(target_id.to_owned()))?;
+        let task_id = Id::new(
+            matches
+                .name("task")
+                .ok_or_else(|| TargetError::InvalidFormat(target_id.to_owned()))?
+                .as_str(),
+        )
+        .map_err(|_| TargetError::InvalidFormat(target_id.to_owned()))?;
 
         Ok(Target {
             id: CompactString::new(target_id),

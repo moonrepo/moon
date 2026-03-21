@@ -1,0 +1,17 @@
+{
+  "skill_name": "improve-code-quality",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "/improve-code-quality crates/common",
+      "expected_output": "A structured code quality report for the common crate covering automated tool results (clippy, rustfmt) and manual analysis across security, performance, readability, robustness, and dependencies categories. Should detect Rust language, run clippy and rustfmt, and present findings in a table format with severity levels.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "/improve-code-quality crates/task-runner",
+      "expected_output": "A structured code quality report for the task-runner crate, which contains async code. Should detect Rust language, run clippy and rustfmt, and perform manual analysis that catches async-specific issues like blocking in async contexts. Report should be organized by severity with tables.",
+      "files": []
+    }
+  ]
+}

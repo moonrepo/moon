@@ -238,9 +238,11 @@ mod run_legacy {
             let sandbox = cases_sandbox();
             sandbox.enable_git();
 
-            sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("outputs:withDeps");
-            });
+            sandbox
+                .run_moon(|cmd| {
+                    cmd.arg("run").arg("outputs:withDeps");
+                })
+                .debug();
 
             let h1 = extract_hash_from_run(sandbox.path(), "outputs:asDep");
             let h2 = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
@@ -248,9 +250,11 @@ mod run_legacy {
             // Create an `inputs` file for `outputs:asDep`
             sandbox.create_file("outputs/random.js", "");
 
-            sandbox.run_moon(|cmd| {
-                cmd.arg("run").arg("outputs:withDeps");
-            });
+            sandbox
+                .run_moon(|cmd| {
+                    cmd.arg("run").arg("outputs:withDeps");
+                })
+                .debug();
 
             assert_debug_snapshot!([
                 h1,
@@ -1344,6 +1348,8 @@ mod run_legacy {
                     .arg("--affected");
             });
 
+            assert.debug();
+
             let output = assert.output();
 
             assert!(predicate::str::contains("affected:dep").eval(&output));
@@ -1367,6 +1373,8 @@ mod run_legacy {
                     .arg("modified");
             });
 
+            assert.debug();
+
             assert!(predicate::str::contains("\nfile.txt\n").eval(&assert.output()));
 
             // Then test added
@@ -1385,6 +1393,8 @@ mod run_legacy {
                     .arg("added");
             });
 
+            assert.debug();
+
             assert!(predicate::str::contains("\nother.txt\n").eval(&assert.output()));
 
             // Then test both
@@ -1399,6 +1409,9 @@ mod run_legacy {
                     .arg("--status")
                     .arg("added");
             });
+
+            assert.debug();
+
             let envs = ["file.txt", "other.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
             assert!(predicate::str::contains(format!("\n{envs}\n")).eval(&assert.output()));

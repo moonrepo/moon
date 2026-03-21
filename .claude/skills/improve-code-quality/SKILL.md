@@ -48,8 +48,7 @@ findings by category:
 - `.unwrap()` on user-facing code paths (not tests — unwrap is fine in tests)
 - Path traversal or injection risks
 - Hardcoded secrets or credentials
-- Use of `std::collections::HashMap` or `std::collections::HashSet` — the project requires
-  `rustc_hash::FxHashMap`/`FxHashSet` instead (enforced via clippy.toml)
+- Use of `std::collections::HashMap` or `std::collections::HashSet` (refer to conventions below)
 
 ### Performance
 
@@ -81,7 +80,8 @@ findings by category:
 
 ## Step 2: Run automated tools
 
-Run the appropriate tools from the repository root. Capture all output, including errors.
+Run the appropriate tools from the repository root (without asking for permission if possible).
+Capture all output, including errors.
 
 Find the crate name by reading the `Cargo.toml` in the target directory (the `[package] name`
 field). If the target is a subdirectory within a crate, walk up to find the crate root.
@@ -94,7 +94,7 @@ cargo check -p <crate_name> 2>&1
 cargo clippy -p <crate_name> --all-targets -- -D warnings 2>&1
 
 # Format check
-cargo fmt -p <crate_name> -- --check 2>&1
+cargo fmt -p <crate_name> --check 2>&1
 
 # Testing
 cargo nextest run -p <crate_name> --no-fail-fast -j 4 2>&1
@@ -204,7 +204,7 @@ Wait for the user's response. Do not apply anything without explicit approval.
 
 4. **Do not commit.** Tell the user the changes are ready for their review.
 
-## Moon-Specific Conventions
+## moon specific conventions
 
 Always enforce these project rules during analysis:
 

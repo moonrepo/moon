@@ -12,7 +12,6 @@ publish = true
 dirs = { workspace = true }
 miette = { workspace = true }
 relative-path = { workspace = true, features = ["serde"] }
-regex = { workspace = true, features = ["unicode"] }
 rustc-hash = { workspace = true }
 schematic = { workspace = true }
 serde = { workspace = true }

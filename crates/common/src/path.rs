@@ -168,7 +168,7 @@ pub fn clean_components<T: AsRef<Path>>(path: T) -> PathBuf {
             }
             Component::ParentDir => {
                 if component_count == 1 && cleaned.is_absolute() {
-                    // Nothing
+                    // Can't go above the filesystem root, so drop the `..`
                 } else if component_count == leading_parent_dots {
                     cleaned.push("..");
                     leading_parent_dots += 1;

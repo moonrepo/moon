@@ -122,5 +122,7 @@ pub fn is_local() -> bool {
 
 #[inline]
 pub fn is_formatted_output() -> bool {
-    env::args().any(|arg| arg == "--json" || arg == "--dot")
+    static FORMATTED_CACHE: OnceLock<bool> = OnceLock::new();
+
+    *FORMATTED_CACHE.get_or_init(|| env::args().any(|arg| arg == "--json" || arg == "--dot"))
 }

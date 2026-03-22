@@ -282,6 +282,8 @@ const config: Config = {
 			'docusaurus-plugin-llms',
 			{
 				includeBlog: true,
+				excludeImports: true,
+				removeDuplicateHeadings: true,
 				ignoreFiles: ['**/__partials__/**'],
 				// version: ''
 			},

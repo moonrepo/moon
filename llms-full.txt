@@ -6,8 +6,6 @@ This file contains all documentation content in a single document following the 
 
 ## Cheat sheet
 
-import Columns from '@site/src/components/Columns';
-
 Don't have time to read the docs? Here's a quick cheat sheet to get you started.
 
 ## Tasks
@@ -221,8 +219,6 @@ tasks:
 
 ## action-graph
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.15.0" header />
 
 The `moon action-graph [target]` (or `moon ag`) command will generate and serve a visual graph of
@@ -301,8 +297,6 @@ $ moon bin node
 
 ## check
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 The `moon check [...projects]` (or `moon c`) command will run _all_
 [build and test tasks](../concepts/task#types) for one or many projects. This is a convenience
 command for verifying the current state of a project, instead of running multiple
@@ -344,8 +338,6 @@ Inherits all options from [`moon exec`](./exec), and pre-fills with: `--on-failu
 ---
 
 ## ci
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `moon ci` command is a special command that should be ran in a continuous integration (CI)
 environment, as it does all the heavy lifting necessary for effectively running tasks.
@@ -390,8 +382,6 @@ Inherits most options from [`moon exec`](./exec) and pre-fills with: `--affected
 
 ## clean
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 The `moon clean` command will clean the current workspace by deleting stale cache. For the most
 part, the action pipeline will clean automatically, but this command can be used to reset the
 workspace entirely.
@@ -412,9 +402,6 @@ $ moon clean --lifetime '24 hours'
 ---
 
 ## completions
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 The `moon completions` command will generate moon command and argument completions for your current
 shell. This command will write to stdout, which can then be redirected to a file of your choice.
@@ -486,8 +473,6 @@ omz reload
 ---
 
 ## docker file
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.27.0" header />
 
@@ -719,8 +704,6 @@ This command _must be_ ran after [`moon docker scaffold`](./scaffold) and is typ
 
 ## exec
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="2.0.0" header />
 
 The `moon exec` (or `moon x`, or `moonx`) command is a low-level command for executing tasks in the
@@ -814,8 +797,6 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
 
 ## ext
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.20.0" header />
 
 The `moon ext <id>` command will execute an extension (a WASM plugin) that has been configured in
@@ -848,8 +829,6 @@ a URL, and it hasn't been cached locally.
 ---
 
 ## extension add
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="2.0.0" header />
 
@@ -886,8 +865,6 @@ $ moon extension add custom https://example.com/path/to/plugin.wasm
 ---
 
 ## extension info
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="2.0.0" header />
 
@@ -985,8 +962,6 @@ $ moon generate react-app --template
 ---
 
 ## hash
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="2.0.0" header />
 
@@ -1098,8 +1073,6 @@ $ moon init ./app
 
 ## mcp
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.37.0" header />
 
 The `moon mcp` command will start an [MCP](https://modelcontextprotocol.io) server that listens for
@@ -1119,8 +1092,6 @@ This command should not be ran manually and instead should be integrated into yo
 ---
 
 ## Overview
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The following options are available for _all_ moon commands.
 
@@ -1277,8 +1248,6 @@ inspect and debug slow operations.
 
 ## project-graph
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 The `moon project-graph [id]` (or `moon pg`) command will generate and serve a visual graph of all
 configured projects as nodes, with dependencies between as edges, and can also output the graph in
 [Graphviz DOT format](https://graphviz.org/doc/info/lang.html).
@@ -1406,8 +1375,6 @@ tests:
 
 ## projects
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="2.0.0" header />
 
 The `moon projects` command will list all projects configured in the workspace as a table of
@@ -1435,8 +1402,6 @@ Use [`moon query projects`](./query/projects) for advanced querying and filterin
 ---
 
 ## query affected
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="2.0.0" header />
 
@@ -1521,8 +1486,6 @@ This will output a list of workspace relative files as JSON. The output has the 
 
 ## query projects
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 Use the `moon query projects` sub-command to query information about all projects in the project
 graph. The project list can be filtered by passing a [query statement](../../concepts/query-lang) as
 an argument, or by using [options](#options) arguments.
@@ -1600,8 +1563,6 @@ All option values are case-insensitive regex patterns.
 
 ## query tasks
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 Use the `moon query tasks` sub-command to query task information for all projects in the project
 graph. The tasks list can be filtered by passing a [query statement](../../concepts/query-lang) as
 an argument, or by using [options](#options) arguments.
@@ -1660,8 +1621,6 @@ All option values are case-insensitive regex patterns.
 ---
 
 ## run
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `moon run` (or `moon r`) command will run one or many [targets](../concepts/target) and all of
 its dependencies in topological order. Each run will incrementally cache each task, improving speed
@@ -1744,8 +1703,6 @@ commands, like detecting affected projects, running a task, or generating a buil
 
 ## sync code-owners
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.8.0" header />
 
 The `moon sync code-owners` command will manually sync code owners, by aggregating all owners from
@@ -1770,8 +1727,6 @@ $ moon sync code-owners
 
 ## sync config-schemas
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.27.0" header />
 
 The `moon sync config-schemas` command will manually generate JSON schemas to `.moon/cache/schemas`
@@ -1788,8 +1743,6 @@ $ moon sync config-schemas
 ---
 
 ## sync projects
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.8.0" header />
 
@@ -1817,8 +1770,6 @@ $ moon sync projects
 
 ## sync vcs-hooks
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.9.0" header />
 
 The `moon sync vcs-hooks` command will manually sync hooks for the configured
@@ -1842,8 +1793,6 @@ $ moon sync vcs-hooks
 ---
 
 ## task-graph
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.30.0" header />
 
@@ -1892,8 +1841,6 @@ digraph {
 ---
 
 ## task
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.1.0" header />
 
@@ -1968,8 +1915,6 @@ OUTPUTS
 
 ## tasks
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="2.0.0" header />
 
 The `moon tasks` command will list all tasks available in the workspace as a table of information.
@@ -2025,8 +1970,6 @@ $ moon teardown
 
 ## template
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="2.0.0" header />
 
 The `moon template [id]` command will display information about a template, its files, and
@@ -2064,8 +2007,6 @@ Variables ───────────────────────�
 
 ## templates
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.24.0" header />
 
 The `moon templates` command will list all templates available for [code generation](./generate).
@@ -2088,8 +2029,6 @@ $ moon templates
 ---
 
 ## toolchain add
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.38.0" header />
 
@@ -2126,8 +2065,6 @@ $ moon toolchain add custom https://example.com/path/to/plugin.wasm
 ---
 
 ## toolchain info
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.38.0" header />
 
@@ -2269,8 +2206,7 @@ This command will only work if moon was installed in the `~/.moon` directory, us
 
 ## Feature comparison
 
-import {
-  DockerTable,
+DockerTable,
   GeneratorTable,
   JavaScriptTable,
   OtherSystemsTable,
@@ -2280,7 +2216,6 @@ import {
   ToolchainTable,
   WorkspaceTable,
 } from '@site/src/components/ComparisonTable';
-import ComparisonColumn from '@site/src/components/ComparisonColumn';
 
 The following comparisons are _not_ an exhaustive list of features, and may be inaccurate or out of
 date, but represent a good starting point for investigation. If something is not correct, please
@@ -2868,8 +2803,6 @@ through the optional workspace-level [`.moon/tasks/**/*`](../config/tasks).
 
 ## Query language
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.3.0" header />
 
 moon supports an integrated query language, known as MQL, that can be used to filter and select
@@ -3036,8 +2969,6 @@ taskType=build
 
 ## Targets
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 A target is a compound identifier that pairs a [scope](#common-scopes) to a [task](./task),
 separated by a `:`, in the format of `scope:task`.
 
@@ -3183,8 +3114,6 @@ tasks:
 ---
 
 ## Task inheritance
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 Unlike other task runners that require the same tasks to be repeatedly defined for _every_ project,
 moon uses an inheritance model where tasks can be defined once at the workspace-level, and are then
@@ -3340,8 +3269,6 @@ tasks:
 
 ## Tasks(Concepts)
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 Tasks are commands that are ran in the context of a [project](./project). Underneath the hood, a
 task is simply a binary or system command that is ran as a child process.
 
@@ -3482,8 +3409,6 @@ View the official documentation on [task inheritance](./task-inheritance).
 ---
 
 ## Tokens
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 Tokens are variables and functions that can be used by [`command`](../config/project#command),
 [`args`](../config/project#args), [`env`](../config/project#env) (>= v1.12),
@@ -4090,12 +4015,6 @@ Configuration that's applied to the entire workspace is defined in
 
 ## .moon/extensions
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="2.0.0" header />
 
 The `.moon/extensions.*` file configures extensions that can hook into pipeline events, or be
@@ -4153,10 +4072,6 @@ View the [official guide](../guides/extensions) for all built-in extensions.
 ---
 
 ## Overview(Config)
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 ## Supported formats<VersionLabel version="2.0.0" />
 
@@ -4344,10 +4259,6 @@ tasks {
 ---
 
 ## moon
-
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `moon.*` configuration file _is not required_ but can be used to define additional metadata for
 a project, override inherited tasks, and more at the project-level. When used, this file must exist
@@ -6113,9 +6024,6 @@ workspace:
 
 ## .moon/tasks
 
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 The `.moon/tasks/**/*` files configures file groups and tasks that are inherited by _every matching_
 project in the workspace based on inheritance conditions.
 [Learn more about task inheritance!](../concepts/task-inheritance)
@@ -6312,12 +6220,6 @@ tasks:
 ---
 
 ## template(Config)
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `template.*` file configures metadata and variables for a template,
 [used by the generator](../guides/codegen), and must exist at the root of a named template folder.
@@ -6655,12 +6557,6 @@ Some template content!
 
 ## .moon/toolchains
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 The `.moon/toolchains.*` file configures the toolchain and the workspace development environment.
 This file is _optional_.
 
@@ -6906,12 +6802,6 @@ Run `moon toolchain info rust` for all available settings.
 ---
 
 ## .moon/workspace
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-import RequiredLabel from '@site/src/components/Docs/RequiredLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `.moon/workspace.*` file configures projects and services in the workspace. This file is
 _required_.
@@ -7913,12 +7803,6 @@ versionConstraint: '>=0.20.0'
 
 ## Create a project
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import NextSteps from '@site/src/components/NextSteps';
-import LangPartials from '@site/src/components/LangPartials';
-
 <HeaderLabel text="3 min" />
 
 With a [workspace](./setup-workspace), we can now house one or many [projects](./concepts/project),
@@ -8085,10 +7969,6 @@ project:
 ---
 
 ## Create a task
-
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import NextSteps from '@site/src/components/NextSteps';
-import LangPartials from '@site/src/components/LangPartials';
 
 <HeaderLabel text="6 min" />
 
@@ -8720,9 +8600,6 @@ encourage certain file structures for consuming projects!
 
 ## VS Code extension
 
-import Image from '@site/src/components/Image';
-import TwoColumn from '@site/src/components/TwoColumn';
-
 Enhance your VS Code experience with our integrated moon console! Whether you're a fan of the
 command line, or prefer interactive interfaces, our console will be a welcome experience.
 
@@ -9006,11 +8883,6 @@ For more information on this problem as a whole,
 
 ## Continuous integration (CI)
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import Image from '@site/src/components/Image';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 All companies and projects rely on continuous integration (CI) to ensure high quality code and to
 avoid regressions. Because this is such a critical piece of every developer's workflow, we wanted to
 support it as a first-class feature within moon, and we do just that with the
@@ -9293,8 +9165,6 @@ The following GitHub actions are provided by the community:
 ---
 
 ## Code generation
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 Code generation provides an easy mechanism for automating common development workflows and file
 structures. Whether it's scaffolding a new library or application, updating configuration, or
@@ -9694,10 +9564,6 @@ These templates can then be referenced by name, such as [`moon generate template
 
 ## Code owners
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.8.0" header />
 
 Code owners enables companies to define individuals, teams, or groups that are responsible for code
@@ -10073,9 +9939,6 @@ ask for help!
 ---
 
 ## Docker integration
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 Using [Docker](https://www.docker.com/) to run your applications? Or build your artifacts? No
 worries, moon can be utilized with Docker, and supports a robust integration layer.
@@ -10459,12 +10322,6 @@ ENV MOON_TOOLCHAIN_FORCE_GLOBALS=true
 
 ## Angular example
 
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import CreateDepTabs from '@site/src/components/CreateDepTabs';
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-
 In this guide, you'll learn how to integrate [Angular](https://angular.io/) into moon.
 
 Begin by creating a new Angular project in the root of an existing moon project (this should not be
@@ -10682,10 +10539,6 @@ their needs.
 
 ## Astro example
 
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import CreateDepTabs from '@site/src/components/CreateDepTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-
 <HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/astro-app" />
 
 In this guide, you'll learn how to integrate [Astro](https://docs.astro.build).
@@ -10801,7 +10654,6 @@ When creating a new Astro project, a
 _must_ exist in the project root. This allows each project to configure Astro for their needs.
 
 ```js title="<project>/astro.config.mjs"
-import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({});
@@ -10810,9 +10662,6 @@ export default defineConfig({});
 ---
 
 ## ESLint example
-
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
 <HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/tasks/node.yml#L59" />
 
@@ -11036,9 +10885,6 @@ module.exports = {
 
 ## Jest example
 
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-
 <HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/tasks/node.yml#L83" />
 
 In this guide, you'll learn how to integrate [Jest](https://jestjs.io/) into moon.
@@ -11147,12 +10993,6 @@ task is ran _per_ project. If you'd like to test multiple projects, use
 
 ## Nest example
 
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import CreateDepTabs from '@site/src/components/CreateDepTabs';
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-
 In this guide, you'll learn how to integrate [NestJS](https://nestjs.com/) into moon.
 
 Begin by creating a new NestJS project in the root of an existing moon project (this should not be
@@ -11227,12 +11067,6 @@ their needs.
 ---
 
 ## Next example
-
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import CreateDepTabs from '@site/src/components/CreateDepTabs';
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
 <HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/nextjs-app" />
 
@@ -11394,8 +11228,6 @@ module.exports = {
 
 ## Nuxt example
 
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-
 <HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/nuxt-app" />
 
 In this guide, you'll learn how to integrate [Nuxt v3](https://nuxt.com), a [Vue](./vue) framework,
@@ -11508,11 +11340,6 @@ our [Jest documentation](./jest) or [Vitest documentation](./vite) for more info
 
 ## Packemon example
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-
 <HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/tasks/node.yml#L22" />
 
 In this guide, you'll learn how to integrate [Packemon](https://packemon.dev/) into moon. Packemon
@@ -11594,9 +11421,6 @@ formats must also be listed as `outputs` in the task.
 ---
 
 ## Prettier example
-
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
 <HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/tasks/node.yml#L41" />
 
@@ -11691,8 +11515,6 @@ To work around this limitation, we suggest the following alternatives:
 
 ## React example
 
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-
 React is an application or library concern, and not a build system one, since the bundling of React
 is abstracted away through another tool like webpack. Because of this, moon has no guidelines around
 utilizing React directly. You can use React however you wish!
@@ -11710,10 +11532,6 @@ However, with that being said, we do suggest the following:
 ---
 
 ## Remix example
-
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import CreateDepTabs from '@site/src/components/CreateDepTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
 <HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/remix-app" />
 
@@ -11827,8 +11645,6 @@ module.exports = {
 
 ## Solid example
 
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-
 [Solid](https://www.solidjs.com) (also known as SolidJS) is a JavaScript framework for building
 interactive web applications. Because of this, Solid is an application or library concern, and not a
 build system one, since the bundling of Solid is abstracted away through the application or a
@@ -11873,8 +11689,6 @@ enable [`vite-plugin-solid`](https://www.npmjs.com/package/vite-plugin-solid) in
 Babel. Be sure to read our [guide on Vite](./vite) as well!
 
 ```js title="<project>/vite.config.js"
-import { defineConfig } from 'vite';
-import solidPlugin from 'vite-plugin-solid';
 
 export default defineConfig({
   // ...
@@ -11885,8 +11699,6 @@ export default defineConfig({
 ---
 
 ## Storybook example
-
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
 
 Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of
 teams use it for UI development, testing, and documentation. It’s open source and free.
@@ -11944,7 +11756,6 @@ Storybook 7 uses Vite out of the box, and as such, no configuration is required,
 choose to extend the Vite config, you can do so by passing in `viteFinal`:
 
 ```ts title=".storybook/main.ts"
-import { mergeConfig } from 'vite';
 
 export default {
   stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -12040,10 +11851,6 @@ imports.
 ---
 
 ## SvelteKit example
-
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import CreateDepTabs from '@site/src/components/CreateDepTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
 <HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/sveltekit" />
 
@@ -12177,8 +11984,6 @@ When creating a new SvelteKit project, a
 project root. This allows each project to configure SvelteKit for their needs.
 
 ```js title="<project>/svelte.config.js"
-import adapter from '@sveltejs/adapter-auto';
-import { vitePreprocess } from '@sveltejs/kit/vite';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -12197,9 +12002,6 @@ export default config;
 ---
 
 ## TypeScript example
-
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
 <HeadingApiLink to="https://github.com/moonrepo/examples/blob/master/.moon/tasks/node.yml#L95" />
 
@@ -12359,10 +12161,6 @@ preserve and always display the pretty format, be sure to pass the `--pretty` ar
 
 ## Vite & Vitest example
 
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import CreateDepTabs from '@site/src/components/CreateDepTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-
 <HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/vue-vite-app" />
 
 In this guide, you'll learn how to integrate [Vite](https://vitejs.dev/) and
@@ -12409,7 +12207,6 @@ When creating a new Vite project, a [`vite.config.<js|ts>`](https://vitejs.dev/c
 and _must_ exist in the project root.
 
 ```js title="<project>/vite.config.js"
-import { defineConfig } from 'vite';
 
 export default defineConfig({
   // ...
@@ -12430,9 +12227,6 @@ export default defineConfig({
 ---
 
 ## Vue example
-
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
 
 <HeadingApiLink to="https://github.com/moonrepo/examples/tree/master/apps/vue-vite-app" />
 
@@ -12522,8 +12316,6 @@ tasks:
 ---
 
 ## Execution plan
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="2.1.0" header />
 
@@ -12765,8 +12557,6 @@ Combine all blocks — run affected tests in CI across partitioned jobs, with fu
 ---
 
 ## Extensions
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.20.0" header />
 
@@ -13063,9 +12853,6 @@ pub fn execute_extension(Json(input): Json<ExecuteExtensionInput>) -> FnResult<(
 
 ## Bun handbook
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 Utilizing JavaScript (and TypeScript) in a monorepo can be a daunting task, especially when using
 Bun (or Node.js), as there are many ways to structure your code and to configure your tools. With
 this handbook, we'll help guide you through this process.
@@ -13193,9 +12980,6 @@ handbook also applies to Bun!
 
 ## Deno handbook
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 Utilizing Deno in a TypeScript based monorepo can be a non-trivial task. With this handbook, we'll
 help guide you through this process.
 
@@ -13247,9 +13031,6 @@ The handbook is currently being written while we finalize our Deno integration s
 ---
 
 ## Node.js handbook
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 Utilizing JavaScript (and TypeScript) in a monorepo can be a daunting task, especially when using
 Node.js, as there are many ways to structure your code and to configure your tools. With this
@@ -13455,9 +13236,6 @@ workspaces, they will:
 
 All of this functionality enables robust monorepo support, and can be enabled with the following:
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-
 <Tabs
   groupId="package-manager"
   defaultValue="yarn"
@@ -13534,9 +13312,6 @@ Proceed with caution for non-workspaces setups!
 
 The following common commands can be used for adding, removing, or managing dependencies in a
 workspace. View the package manager's official documentation for a thorough list of commands.
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 <Tabs
   groupId="package-manager"
@@ -13728,7 +13503,7 @@ name.
 
 ```ts
 // Imports from /packages/utils/package.json
-import utils from '@company/utils';
+
 ```
 
 ### Depending on packages
@@ -13811,8 +13586,6 @@ the following functionality:
 <TabItem value="vite">
 
 ```ts title="vite.config.ts"
-import path from 'path';
-import { defineConfig } from 'vite';
 
 export default defineConfig({
   // ...
@@ -13859,10 +13632,6 @@ We suggest using TypeScript project references. Luckily, we have an
 ---
 
 ## TypeScript project references
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import Image from '@site/src/components/Image';
 
 > The ultimate in-depth guide for using TypeScript in a monorepo effectively!
 
@@ -14319,12 +14088,9 @@ The above aliases would be imported like the following:
 
 ```ts
 // Before
-import { Button } from '../../../../components/Button';
-import utils from '../../shared/code/utils';
 
 // After
-import { Button } from ':components/Button';
-import utils from ':shared/utils';
+
 ```
 
 :::info
@@ -14626,8 +14392,6 @@ automate this, or detect cycles, so you'll need to do it manually.
 
 ## MCP integration
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.37.0" header />
 
 [Model Context Protocol](https://modelcontextprotocol.io) (MCP) is an open standard that enables AI
@@ -14773,8 +14537,6 @@ for these tools are defined as TypeScript types in the
 
 ## Terminal notifications
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="1.38.0" header />
 
 moon is able to send operating system desktop notifications for specific events in the action
@@ -14867,8 +14629,6 @@ Some additional variables to interact with offline checks.
 
 ## Open source usage
 
-import Image from '@site/src/components/Image';
-
 Although moon was designed for large monorepos, it can also be used for open source projects,
 especially when coupled with our [built-in continuous integration support](./ci).
 
@@ -14943,8 +14703,6 @@ The report looks something like the following:
 ---
 
 ## Task profiling
-
-import Image from '@site/src/components/Docs/Image';
 
 Troubleshooting slow or unperformant tasks? Profile and diagnose them with ease!
 
@@ -15078,8 +14836,6 @@ over time. The y-axis represents the call stack. The events on top cause the eve
 ---
 
 ## Remote caching
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 Is your CI pipeline running slower than usual? Are you tired of running the same build over and over
 although nothing has changed? Do you wish to reuse the same local cache across other machines and
@@ -15310,9 +15066,6 @@ workspace:
 ---
 
 ## Rust handbook
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 Utilizing Rust in a monorepo is a trivial task, thanks to Cargo, and also moon. With this handbook,
 we'll help guide you through this process.
@@ -15719,8 +15472,6 @@ are relatively safe.
 ---
 
 ## VCS hooks
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="1.9.0" header />
 
@@ -16392,9 +16143,6 @@ git push --tags
 
 ## Webhooks
 
-import HeadingApiLink from '@site/src/components/Docs/HeadingApiLink';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 Looking to gather metrics for your pipelines? Gain insight into run durations and failures? Maybe
 you want to send Slack or Discord notifications? With our webhooks, all of these are possible!
 
@@ -16911,9 +16659,6 @@ set with the error message.
 
 ## Action graph
 
-import ActionGraph from '@site/src/components/Docs/ActionGraph';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 When you run a [task](../config/project#tasks-1) on the command line, we generate an action graph to
 ensure [dependencies](../config/project#deps) of tasks have ran before running run the primary task.
 
@@ -17030,8 +16775,6 @@ run tasks in parallel, in the correct order, and to ensure a reliable outcome.
 ---
 
 ## Languages
-
-import LangGraph from '@site/src/components/Docs/LangGraph';
 
 Although moon is currently focusing on the JavaScript ecosystem, our long-term vision is to be a
 multi-language task runner and monorepo management tool. To that end, our languages (known as
@@ -17167,8 +16910,6 @@ node:
 
 ## Project graph
 
-import ProjectGraph from '@site/src/components/Docs/ProjectGraph';
-
 The project graph is a representation of all configured
 [projects in the workspace](../config/workspace#projects) and their relationships between each
 other, and is represented internally as a directed acyclic graph (DAG). Below is a visual
@@ -17257,8 +16998,6 @@ functions, but mainly:
 
 ## Task graph
 
-import TaskGraph from '@site/src/components/Docs/TaskGraph';
-
 The task graph is a representation of all configured
 [tasks in the workspace](../config/workspace#projects) and their relationships between each other,
 and is represented internally as a directed acyclic graph (DAG). This graph is derived from
@@ -17300,12 +17039,6 @@ Great question, the task graph is extremely important for running tasks (duh), a
 ---
 
 ## Install moon
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import NextSteps from '@site/src/components/NextSteps';
-import AddDepsTabs from '@site/src/components/AddDepsTabs';
 
 <HeaderLabel text="2 min" />
 
@@ -17427,9 +17160,6 @@ latest version.
 ---
 
 ## Introduction
-
-import FeatureStatus from '@site/src/components/FeatureStatus';
-import Label from '@site/src/ui/typography/Label';
 
 moonrepo is a productivity platform that aims to eliminate pain points for both developers and
 companies, by automating tiresome and complex workflows, and improving the overall developer
@@ -18250,8 +17980,6 @@ projectLayer=application && taskToolchain=node
 
 ## activate
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.38.0" header />
 
 The `proto activate <shell>` command will activate proto for the current shell session, by exporting
@@ -18363,8 +18091,6 @@ eval "$(proto activate zsh)"
 
 ## alias
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 The `proto alias <tool> <alias> <version>` (or `proto a`) command will define a custom alias that
 maps to a specific version for the provided tool. Aliases can be used anywhere a version is
 accepted.
@@ -18391,8 +18117,6 @@ the location.
 ---
 
 ## bin(Commands)
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `proto bin <tool> [version]` command will return an absolute path to a tool's binary within the
 toolchain. When a tool has not been installed, or a version cannot be resolved, the command will
@@ -18433,8 +18157,6 @@ $ proto bin node 16.10.0 --dir globals
 
 ## clean(Commands)
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 The `proto clean` command can be used to uninstall stale and unused tools, plugins, and more. By
 default, it will remove items that haven't been used in the last 30 days.
 
@@ -18462,9 +18184,6 @@ $ proto clean plugins
 ---
 
 ## completions(Commands)
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 The `proto completions` command will generate proto command and argument completions for your
 current shell. This command will write to stdout, which can then be redirected to a file of your
@@ -18538,8 +18257,6 @@ omz reload
 
 ## debug config
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.25.0" header />
 
 The `proto debug config` command will list all `.prototools` configuration files (in TOML format)
@@ -18589,8 +18306,6 @@ Final configuration ────────────────────
 
 ## debug env
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.26.0" header />
 
 The `proto debug env` command will print information about your current proto environment. Primarily
@@ -18634,8 +18349,6 @@ Environment ──────────────────────�
 
 ## diagnose
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.37.0" header />
 
 The `proto diagnose` command will diagnose your proto installation for any potential issues. Issues
@@ -18663,8 +18376,6 @@ Errors ────────────────────────�
 ---
 
 ## exec(Commands)
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.53.0" header />
 
@@ -18722,8 +18433,6 @@ $ proto exec node pnpm -- bash
 ---
 
 ## install
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `proto install` (or `proto i`) command can be used to install one or many tools.
 
@@ -18878,8 +18587,6 @@ $ proto list node
 
 ## outdated
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.19.0" header />
 
 The `proto outdated` command will load all [`.prototools`](../config) files and check for newer
@@ -18913,8 +18620,6 @@ $ proto outdated
 ---
 
 ## pin
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.19.0" header />
 
@@ -18951,8 +18656,6 @@ the location, or use the `--tool-native` option to use a location unique to the 
 
 ## plugin add
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.23.0" header />
 
 The `proto plugin add <id> <plugin>` command will add the provided ID and plugin locator string to
@@ -18979,8 +18682,6 @@ $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest
 ---
 
 ## plugin info
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.23.0" header />
 
@@ -19054,8 +18755,6 @@ Configuration ──────────────────────
 
 ## plugin list
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.23.0" header />
 
 The `proto plugin list [...id]` command will list all available and configured plugins, for both
@@ -19118,8 +18817,6 @@ $ proto plugin list node npm
 
 ## plugin remove
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.23.0" header />
 
 The `proto plugin remove <id>` command will remove the provided tool ID from the `[plugins]` section
@@ -19145,8 +18842,6 @@ $ proto plugin remove node
 ---
 
 ## plugin search
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.36.0" header />
 
@@ -19179,8 +18874,6 @@ Learn more about plugins: https://moonrepo.dev/docs/proto/plugins
 ---
 
 ## regen
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.27.0" header />
 
@@ -19304,8 +18997,6 @@ If you would like to opt-out of this behavior, pass the `--no-modify-path` flag.
 
 ## status
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.34.0" header />
 
 The `proto status` command will list all tools that are currently active for a target directory,
@@ -19342,8 +19033,6 @@ $ proto status
 ---
 
 ## unalias
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `proto unalias <tool> <alias>` (or `proto ua`) command will remove a custom alias for the
 provided tool.
@@ -19390,8 +19079,6 @@ $ proto uninstall deno
 
 ## unpin
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.36.0" header />
 
 The `proto unpin <tool>` command will unpin a version of a tool.
@@ -19420,8 +19107,6 @@ the location.
 ---
 
 ## upgrade(Commands)
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `proto upgrade` (or `proto up`) command can be used to upgrade your current proto binary to the
 latest version, or check if you're currently outdated.
@@ -19476,8 +19161,6 @@ $ proto use
 
 ## versions
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <VersionLabel version="0.44.0" header />
 
 The `proto versions <tool>` command will list available versions by resolving versions from the
@@ -19523,8 +19206,6 @@ $ proto versions node
 ---
 
 ## Configuration
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 We support configuration at both the project-level and user-level using a
 [TOML](https://toml.io/en/) based `.prototools` file. This file can be used to pin versions of
@@ -20128,8 +19809,6 @@ jobs:
 
 ## Version detection
 
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-
 <HeaderLabel text="2 min" />
 
 The most powerful feature in proto is its contextual version detection, that is triggered with
@@ -20331,9 +20010,6 @@ issues, or the request is timing out, you can bypass these checks with the follo
 
 ## What is proto?
 
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import ToolsGrid from '@site/src/components/Products/Proto/ToolsGrid';
-
 <HeaderLabel text="3 min" />
 
 proto is a pluggable version manager, a unified toolchain.
@@ -20408,9 +20084,6 @@ are currently:
 ---
 
 ## Install proto
-
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="1 min" />
 
@@ -20535,9 +20208,6 @@ master. Nightly releases are available as a
 ---
 
 ## Non-WASM plugin
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-import NonWasmTabs from '@site/src/components/NonWasmTabs';
 
 The non-WASM plugin is by design, very simple. It's a JSON, TOML, or YAML file that describes a
 schema for the tool, how it should be installed, and how it should be invoked. Since this is a
@@ -20870,9 +20540,6 @@ information on how to publish a plugin.
 
 ## Tool specification
 
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 <HeaderLabel text="3 min" />
 
 Since proto is a toolchain for multiple tools, each with differing version formats, we must align
@@ -21038,10 +20705,6 @@ For example, if you want to use `npm` 11.6.2 but 11.6.3 has an issue, use:
 
 ## Supported tools
 
-import Button from '@site/src/ui/Button';
-import ToolCards from '@site/src/components/Products/Proto/ToolCards';
-import { BUILT_IN_TOOLS, THIRD_PARTY_TOOLS } from '@site/src/data/proto-tools';
-
 ## Built-in
 
 The following tools are supported natively in proto's toolchain.
@@ -21063,8 +20726,6 @@ Additional tools can be supported through [plugins](./plugins).
 ---
 
 ## WASM plugin
-
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 If you want more control over how your tool works, a WASM plugin is the way to go.
 
@@ -21734,8 +21395,6 @@ Some helpful resources for learning about and building plugins.
 
 ## Workflows
 
-import VersionLabel from '@site/src/components/Docs/VersionLabel';
-
 With proto, we provide multiple workflows for everyday use for you to choose from. They can be used
 individually, or together, it's up to you!
 
@@ -21880,11 +21539,6 @@ comparison table outlining the features each workflow supports.
 
 ## Run a task
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import NextSteps from '@site/src/components/NextSteps';
-
 <HeaderLabel text="2 min" />
 
 Even though we've [created a task](./create-task), it's not useful unless we _run it_, which is done
@@ -22011,10 +21665,6 @@ Jump to the official [`moon run` documentation](./commands/run) for more example
 ---
 
 ## Setup toolchain
-
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import NextSteps from '@site/src/components/NextSteps';
-import LangPartials from '@site/src/components/LangPartials';
 
 <HeaderLabel text="5 min" />
 
@@ -22202,9 +21852,6 @@ variables automatically. Amazing right?
 ---
 
 ## Setup workspace
-
-import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
-import NextSteps from '@site/src/components/NextSteps';
 
 <HeaderLabel text="2 min" />
 
@@ -22396,7 +22043,7 @@ TypeScript declarations. It contains everything from project and task shapes, co
 structures, runner information, and more.
 
 ```ts
-import type { ProjectConfig } from '@moonrepo/types';
+
 ```
 
 ## Other changes
@@ -22422,8 +22069,6 @@ Expect the following in the v0.14 release!
 ---
 
 ## moon v0.14 - Code generation and implicit dependencies
-
-import Image from '@site/src/components/Image';
 
 With this release, we've landed some new features that have been requested multiple times since
 launch. A code generation and template scaffolding layer, as well as implicit dependency scanning
@@ -22492,9 +22137,6 @@ Expect the following in the v0.15 release!
 ---
 
 ## moon v0.15 - Enhanced Docker support and 1,000 stars!
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 With this release, we've focused heavily on Docker integration and enhancing the `Dockerfile`
 workflow, as well as some minor quality of life improvements for template files and run reports.
@@ -22800,8 +22442,6 @@ Expect the following in the v0.17 release!
 
 ## New VS Code extension!
 
-import Image from '@site/src/components/Image';
-
 We're very excited to announce the initial release of our Visual Studio Code extension!
 
 <!--truncate-->
@@ -22827,9 +22467,6 @@ first iteration of the extension. Expect more advanced features in the future, l
 ---
 
 ## moon v0.17 - Webhooks, extended YAML, and improved runtime performance
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 With this release, we're landing the first iteration of our notifier service, starting with
 webhooks! We've also spent some time working on quality of life improvements.
@@ -23030,8 +22667,6 @@ Expect the following in the v0.18 release!
 
 ## moon v0.18 - Improved configuration and initialization flow
 
-import Image from '@site/src/components/Image';
-
 Happy Halloween 🎃 👻! With this spooky release, we've focused heavily on our internals and
 benchmarking performance metrics, so it's rather light on new features, but we still have some to
 show!
@@ -23115,8 +22750,6 @@ Expect the following in the v0.19 release!
 ---
 
 ## moon v0.19 - Remote caching beta, affected files, and graph optimization
-
-import Image from '@site/src/components/Image';
 
 With this release, we've focused heavily on our remote caching architecture. Since this is a massive
 task that requires much work behind the scenes, this overall release is rather light.
@@ -23371,9 +23004,6 @@ Expect the following in the v0.21 release!
 ---
 
 ## moon v0.21 - Tiered language support with initial Go, PHP, Python, Ruby, and Rust
-
-import Label from '@site/src/ui/typography/Label';
-import Image from '@site/src/components/Image';
 
 Happy Holidays 🎄☃️! With our last release of the year, we're very excited to announce our tiered
 language support structure, which lays the foundation for turning moon into a multi-language build
@@ -23665,9 +23295,6 @@ more.
 
 ## moon v0.22 - New pipeline, hashing, and caching, with Turborepo migration
 
-import Label from '@site/src/ui/typography/Label';
-import Image from '@site/src/components/Image';
-
 It's the first release of the year, and with this release, we're landing some quality of life
 infrastructure and workflow improvements!
 
@@ -23759,10 +23386,6 @@ Expect the following in the v0.23 release!
 ---
 
 ## moon v0.23 - Scoped task inheritance, and project config updates
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import Button from '@site/src/ui/Button';
 
 With this release, we're launching the next iteration of our task inheritance model, as well as
 quality of life improvements for project configuration.
@@ -24075,10 +23698,6 @@ Expect the following in the v0.24 release!
 
 ## Remote caching is now publicly available through moonbase
 
-import Button from '@site/src/ui/Button';
-import Image from '@site/src/components/Image';
-import Logo from '../static/brand/moonbase/logo.svg';
-
 We are proud to announce the launch of [moonbase](/moonbase) remote caching – a new solution that
 helps moon developers streamline their build processes and save time.
 
@@ -24125,10 +23744,6 @@ products. Stay tuned!
 ---
 
 ## moon v0.24 - Remote caching, interactive tasks, query improvements, and more
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import Button from '@site/src/ui/Button';
 
 With this release, we've polished our CLI experience and improved task interoperability.
 
@@ -24294,11 +23909,6 @@ Expect the following in the v0.25 release!
 ---
 
 ## moon v0.25 - Deno tier 2 support, CI insights, custom project languages, and more
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import Button from '@site/src/ui/Button';
-import Image from '@site/src/components/Image';
 
 With this release, we're landing Deno, our first supported language besides Node.js, and improving
 interoperability of languages as a whole.
@@ -24475,9 +24085,6 @@ Expect the following in the v0.26 release!
 
 ## Introducing proto, a next-generation toolchain manager!
 
-import Button from '@site/src/ui/Button';
-import Logo from '../static/brand/proto/logo.svg';
-
 We are proud to announce the launch of [proto](/proto), a next-generation toolchain manager for all
 of your favorite programming languages.
 
@@ -24556,11 +24163,6 @@ next step in the version manager evolution.
 ---
 
 ## moon v0.26 - Deeper proto integration, Docker setup, and query commands
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
-import Button from '@site/src/ui/Button';
-import Logo from '../static/brand/proto/logo.svg';
 
 With this release, we're providing deeper integration with our new [proto](/proto) toolchain
 manager, better Docker support, and new query commands for debugging.
@@ -25171,9 +24773,6 @@ $ proto install node personal
 
 ## proto v0.6 - Unused cleaning and improved global binaries
 
-import Button from '@site/src/ui/Button';
-import Image from '@site/src/components/Image';
-
 With this release, we're expanding on our global binary support and providing quality of life
 improvements.
 
@@ -25618,8 +25217,6 @@ changes.
 
 ## moon v1.5 - Rust tier 2 and 3 support
 
-import Button from '@site/src/ui/Button';
-
 With this release, we're announcing not just tier 2, but also tier 3 support for the Rust language.
 
 <!--truncate-->
@@ -25732,8 +25329,6 @@ changes.
 ---
 
 ## moon v1.6 - Persistent tasks and task extending RFC
-
-import Button from '@site/src/ui/Button';
 
 In this release, we're introducing a new feature called persistent tasks, and an RFC for extending
 tasks.
@@ -25919,8 +25514,6 @@ of changes.
 ---
 
 ## moon v1.7 - Next-generation configuration and errors
-
-import Image from '@site/src/components/Image';
 
 With this release, we've rewritten configuration from the ground up, improved error messages, and
 started work on diagnostics!
@@ -26273,8 +25866,6 @@ changes.
 
 ## proto v0.12 - Experimental WASM plugins
 
-import Button from '@site/src/ui/Button';
-
 After months of hard work, we're excited to release our first iteration of WASM plugins for proto.
 
 <!--truncate-->
@@ -26365,8 +25956,6 @@ of changes.
 ---
 
 ## moon v1.10 - Mid-year quality of life improvements
-
-import Button from '@site/src/ui/Button';
 
 Instead of launching a large feature this release, we're focusing on quality of life and developer
 experience improvements.
@@ -30570,8 +30159,6 @@ of changes.
 
 ## proto v0.40 - Config mode, progress bars, and more
 
-import Image from '@site/src/components/Image';
-
 This is a small release that includes many quality of life improvements.
 
 <!--truncate-->
@@ -30803,9 +30390,6 @@ of changes.
 ---
 
 ## moon v1.29 - Improved affected tracking, experimental Pkl configuration, and more
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 In this release, we're excited to introduce an improved affected tracker and a new (but
 experimental) configuration format!
@@ -31157,8 +30741,6 @@ of changes.
 
 ## proto v0.42 - New bin linking, JSON/YAML plugins, and more
 
-import NonWasmTabs from '@site/src/components/NonWasmTabs';
-
 Happy Halloween 🎃! In this release, we have a new bin linking strategy, and more schema plugin
 formats.
 
@@ -31260,9 +30842,6 @@ of changes.
 ---
 
 ## moon v1.30 - Python support, self-hosted remote caching, task graph, and more!
-
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 
 It's been almost 2 months since our last release, and we're excited to announce some major features
 requested by the community!
@@ -31420,8 +30999,6 @@ of changes.
 ---
 
 ## proto v0.44 - New terminal user interface and versions command
-
-import Image from '@site/src/components/Image';
 
 Merry Christmas and happy holidays 🎄! In this release, we're introducing a new terminal user
 interface.
@@ -31712,8 +31289,6 @@ of changes.
 ---
 
 ## proto v0.45 - New built-in tools and build from source
-
-import Image from '@site/src/components/Image';
 
 In this release, we're very excited to introduce building tools from source, a feature that's been
 in development for over a year.

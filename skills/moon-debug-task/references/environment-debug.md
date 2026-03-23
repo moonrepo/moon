@@ -25,7 +25,7 @@ task execution. Set them before running `moon run`:
 |----------|----------------|
 | `MOON_DEBUG_PROCESS_ENV` | All environment variables passed to the child process. By default moon hides these to avoid leaking secrets. |
 | `MOON_DEBUG_PROCESS_INPUT` | Full stdin passed to the child process. By default moon truncates this. |
-| `MOON_DEBUG_PROTO_INSTALL` | Debug output from the proto toolchain installation process. |
+| `MOON_DEBUG_MCP` | Debug output from MCP server interactions. |
 | `MOON_DEBUG_REMOTE` | Debug output from remote caching — connection errors, sync status. |
 | `MOON_DEBUG_WASM` | Debug output from WASM plugins — loading, execution, memory profiles. |
 
@@ -42,8 +42,8 @@ MOON_DEBUG_PROCESS_ENV=true MOON_DEBUG_PROCESS_INPUT=true \
 # Debug remote caching issues
 MOON_DEBUG_REMOTE=true moon run <project>:<task> --log debug
 
-# Debug toolchain installation
-MOON_DEBUG_PROTO_INSTALL=true moon run <project>:<task> --log debug
+# Debug toolchain installation (use --log debug; no dedicated env var exists)
+moon run <project>:<task> --log debug --force
 ```
 
 ### Environment variables in task config

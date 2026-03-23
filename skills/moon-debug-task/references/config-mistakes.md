@@ -349,22 +349,29 @@ tasks:
           - '**/*.tsx'
 ```
 
-### `affectedPassInputs`
+### `passInputsWhenNoMatch` and `passDotWhenNoResults`
 
-Controls what happens when there are no affected files:
+Controls what happens when there are no affected files. These options are nested
+inside the `affectedFiles` object:
 
 ```yaml
 tasks:
   lint:
     command: 'eslint'
     options:
-      affectedFiles: true
-      affectedPassInputs: true  # Pass task inputs instead of '.'
+      affectedFiles:
+        pass: 'args'
+        passInputsWhenNoMatch: true   # Pass task inputs instead of '.'
+        passDotWhenNoResults: true     # Pass '.' when no results at all
+        ignoreProjectBoundary: false   # Ignore project boundary for file matching
 ```
 
 By default, when no files are affected, `.` (current directory) is passed as
-the argument. Set `affectedPassInputs: true` to pass the task's `inputs` list
+the argument. Set `passInputsWhenNoMatch: true` to pass the task's `inputs` list
 instead.
+
+> **Note:** The v1 option `affectedPassInputs` was removed in v2. Use
+> `affectedFiles.passInputsWhenNoMatch` instead.
 
 ### Key point
 
@@ -615,7 +622,8 @@ The `server` and `utility` presets both set `outputStyle: 'stream'`.
 ### `cacheLifetime`
 
 Controls how long cached outputs are considered valid. After this duration,
-the cached entry becomes stale and `moon clean --lifetime` can remove it.
+the cached entry becomes stale and will **no longer be hydrated** — even if the
+hash matches, the task will re-execute.
 
 ```yaml
 tasks:
@@ -625,8 +633,14 @@ tasks:
       cacheLifetime: '7 days'
 ```
 
-This does NOT mean the cache expires automatically — it only affects cleanup.
-Tasks still match by hash regardless of age.
+At runtime, moon checks staleness in two places:
+- **Last run time:** if the previous run's timestamp exceeds the lifetime, the
+  cached result is skipped and the task re-executes.
+- **Archive file:** if the `.tar.gz` archive in `.moon/cache/outputs/` is older
+  than the lifetime, hydration is rejected and the task re-executes.
+
+Additionally, `moon clean --lifetime` uses this value to remove stale archives
+from disk.
 
 ### `cacheKey`
 

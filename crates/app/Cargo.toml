@@ -19,6 +19,7 @@ moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
 moon_console = { path = "../console" }
+moon_daemon = { path = "../daemon" }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_env_var = { path = "../env-var" }
@@ -37,6 +38,7 @@ moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_task_graph = { path = "../task-graph" }
 moon_task_runner = { path = "../task-runner" }
+moon_time = { path = "../time" }
 moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }

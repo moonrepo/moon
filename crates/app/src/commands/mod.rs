@@ -4,6 +4,7 @@ pub mod check;
 pub mod ci;
 pub mod clean;
 pub mod completions;
+pub mod daemon;
 pub mod debug;
 pub mod docker;
 pub mod exec;

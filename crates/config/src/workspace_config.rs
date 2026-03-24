@@ -128,6 +128,12 @@ config_struct!(
         #[setting(nested)]
         pub constraints: ConstraintsConfig,
 
+        /// Enables a daemon that will process heavy tasks in the background,
+        /// greatly increasing performance of the main thread/executable.
+        /// @since 2.2.0
+        #[setting(alias = "unstable_daemon", env = "MOON_DAEMON", parse_env = env::parse_bool)]
+        pub daemon: bool,
+
         /// The default/main project within the workspace. When a task is
         /// ran without a project, the default will be used.
         /// @since 2.0.0

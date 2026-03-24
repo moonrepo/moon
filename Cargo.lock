@@ -4494,6 +4494,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_daemon",
  "moon_docker",
  "moon_env",
  "moon_env_var",
@@ -4512,6 +4513,7 @@ dependencies = [
  "moon_task",
  "moon_task_graph",
  "moon_task_runner",
+ "moon_time",
  "moon_toolchain",
  "moon_toolchain_plugin",
  "moon_vcs",
@@ -4737,6 +4739,32 @@ dependencies = [
  "starbase_console",
  "starbase_styles",
  "tracing",
+]
+
+[[package]]
+name = "moon_daemon"
+version = "0.0.1"
+dependencies = [
+ "async-stream",
+ "futures-core",
+ "hyper-util",
+ "libc",
+ "md5",
+ "miette 7.6.0",
+ "moon_common",
+ "moon_process",
+ "prost",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
+ "tower",
+ "tracing",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -6393,6 +6421,8 @@ dependencies = [
  "prettyplease",
  "prost",
  "prost-types",
+ "pulldown-cmark",
+ "pulldown-cmark-to-cmark",
  "regex",
  "syn 2.0.117",
  "tempfile",
@@ -6504,6 +6534,26 @@ checksum = "d761ecdee5ce31ba2ada1eb4f70688ea45806819a378fb4481cdcdc83fe53e4e"
 dependencies = [
  "dirs",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "pulldown-cmark"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "83c41efbf8f90ac44de7f3a868f0867851d261b56291732d0cbf7cceaaeb55a6"
+dependencies = [
+ "bitflags",
+ "memchr",
+ "unicase",
+]
+
+[[package]]
+name = "pulldown-cmark-to-cmark"
+version = "22.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50793def1b900256624a709439404384204a5dc3a6ec580281bfaac35e882e90"
+dependencies = [
+ "pulldown-cmark",
 ]
 
 [[package]]
@@ -8456,6 +8506,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "tonic-build"
+version = "0.14.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1882ac3bf5ef12877d7ed57aad87e75154c11931c2ba7e6cde5e22d63522c734"
+dependencies = [
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "tonic-prost"
 version = "0.14.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8464,6 +8526,22 @@ dependencies = [
  "bytes",
  "prost",
  "tonic",
+]
+
+[[package]]
+name = "tonic-prost-build"
+version = "0.14.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3144df636917574672e93d0f56d7edec49f90305749c668df5101751bb8f95a"
+dependencies = [
+ "prettyplease",
+ "proc-macro2",
+ "prost-build",
+ "prost-types",
+ "quote",
+ "syn 2.0.117",
+ "tempfile",
+ "tonic-build",
 ]
 
 [[package]]

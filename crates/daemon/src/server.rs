@@ -161,6 +161,7 @@ pub async fn start_daemon_server(
 /// left behind by a crashed daemon that didn't clean up after itself.
 ///
 /// Only removes files when no daemon process is actually running.
+#[allow(unused_variables)]
 fn remove_stale_endpoint(daemon_dir: &Path, endpoint: &str) -> miette::Result<()> {
     let pid_path = get_pid_path(daemon_dir);
 

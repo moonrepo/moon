@@ -9,7 +9,10 @@ use thiserror::Error;
 pub enum RemoteError {
     #[diagnostic(code(remote::grpc::call_failed))]
     #[error("Failed to make gRPC call.\n{}: {}", .error.code(), .error.message())]
-    GrpcCallFailed { error: Box<tonic::Status> },
+    GrpcCallFailed {
+        #[source]
+        error: Box<tonic::Status>,
+    },
 
     #[diagnostic(code(remote::grpc::connect_failed))]
     #[error("Failed to connect to gRPC host.")]

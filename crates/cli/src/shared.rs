@@ -1,6 +1,7 @@
 use crate::lookup::*;
 use clap::Parser;
 use mimalloc::MiMalloc;
+use moon_app::commands::daemon::DaemonCommands;
 use moon_app::commands::debug::DebugCommands;
 use moon_app::commands::docker::DockerCommands;
 use moon_app::commands::extension::ExtensionCommands;
@@ -145,6 +146,14 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                 Commands::Completions(args) => {
                     commands::completions::completions(session, args).await
                 }
+                Commands::Daemon { command } => match command {
+                    DaemonCommands::Logs => commands::daemon::logs::logs(session).await,
+                    DaemonCommands::Restart => commands::daemon::restart::restart(session).await,
+                    DaemonCommands::Start => commands::daemon::start::start(session).await,
+                    DaemonCommands::Status => commands::daemon::status::status(session).await,
+                    DaemonCommands::Stop => commands::daemon::stop::stop(session).await,
+                    DaemonCommands::Server => commands::daemon::server::server(session).await,
+                },
                 Commands::Debug { command } => match command {
                     DebugCommands::Config => commands::debug::config::debug_config(session).await,
                     DebugCommands::Vcs => commands::debug::vcs::debug_vcs(session).await,

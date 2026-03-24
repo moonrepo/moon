@@ -557,6 +557,22 @@ export interface WorkspaceConfig {
 	/** Configures boundaries and constraints between projects. */
 	constraints: ConstraintsConfig;
 	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 * @since 2.2.0
+	 *
+	 * @env MOON_DAEMON
+	 */
+	unstable_daemon?: boolean;
+	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 * @since 2.2.0
+	 *
+	 * @env MOON_DAEMON
+	 */
+	daemon: boolean;
+	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.
 	 * @since 2.0.0
@@ -1114,6 +1130,22 @@ export interface PartialWorkspaceConfig {
 	codeowners?: PartialCodeownersConfig | null;
 	/** Configures boundaries and constraints between projects. */
 	constraints?: PartialConstraintsConfig | null;
+	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 * @since 2.2.0
+	 *
+	 * @env MOON_DAEMON
+	 */
+	unstable_daemon?: boolean | null;
+	/**
+	 * Enables a daemon that will process heavy tasks in the background,
+	 * greatly increasing performance of the main thread/executable.
+	 * @since 2.2.0
+	 *
+	 * @env MOON_DAEMON
+	 */
+	daemon?: boolean | null;
 	/**
 	 * The default/main project within the workspace. When a task is
 	 * ran without a project, the default will be used.

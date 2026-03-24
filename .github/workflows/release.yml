@@ -126,6 +126,7 @@ jobs:
         with:
           persist-credentials: false
           submodules: recursive
+      - uses: arduino/setup-protoc@v3
       - name: Install Rust non-interactively if not already installed
         if: ${{ matrix.container }}
         run: |

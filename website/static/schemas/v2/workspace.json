@@ -27,6 +27,11 @@
         }
       ]
     },
+    "daemon": {
+      "title": "daemon",
+      "description": "Enables a daemon that will process heavy tasks in the background, greatly increasing performance of the main thread/executable. @since 2.2.0",
+      "type": "boolean"
+    },
     "defaultProject": {
       "title": "defaultProject",
       "description": "The default/main project within the workspace. When a task is ran without a project, the default will be used. @since 2.0.0",
@@ -136,6 +141,11 @@
       "title": "telemetry",
       "description": "Collects anonymous usage information, and checks for new moon versions.",
       "default": true,
+      "type": "boolean"
+    },
+    "unstable_daemon": {
+      "title": "unstable_daemon",
+      "description": "Enables a daemon that will process heavy tasks in the background, greatly increasing performance of the main thread/executable. @since 2.2.0",
       "type": "boolean"
     },
     "vcs": {

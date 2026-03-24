@@ -6,6 +6,7 @@ use rustc_hash::{FxHashMap, FxHasher};
 use std::collections::VecDeque;
 use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[derive(Debug, PartialEq)]
@@ -41,28 +42,31 @@ pub struct CommandArg {
 
 impl From<&str> for CommandArg {
     fn from(value: &str) -> Self {
-        Self {
-            quoted_value: None,
-            value: OsString::from(value),
-        }
+        Self::from(OsString::from(value))
     }
 }
 
 impl From<&String> for CommandArg {
     fn from(value: &String) -> Self {
-        Self {
-            quoted_value: None,
-            value: OsString::from(value),
-        }
+        Self::from(OsString::from(value))
     }
 }
 
 impl From<String> for CommandArg {
     fn from(value: String) -> Self {
-        Self {
-            quoted_value: None,
-            value: OsString::from(value),
-        }
+        Self::from(OsString::from(value))
+    }
+}
+
+impl From<&OsStr> for CommandArg {
+    fn from(value: &OsStr) -> Self {
+        Self::from(value.to_os_string())
+    }
+}
+
+impl From<&OsString> for CommandArg {
+    fn from(value: &OsString) -> Self {
+        Self::from(value.to_os_string())
     }
 }
 
@@ -72,6 +76,24 @@ impl From<OsString> for CommandArg {
             quoted_value: None,
             value,
         }
+    }
+}
+
+impl From<&Path> for CommandArg {
+    fn from(value: &Path) -> Self {
+        Self::from(value.as_os_str())
+    }
+}
+
+impl From<&PathBuf> for CommandArg {
+    fn from(value: &PathBuf) -> Self {
+        Self::from(value.as_os_str())
+    }
+}
+
+impl From<PathBuf> for CommandArg {
+    fn from(value: PathBuf) -> Self {
+        Self::from(value.into_os_string())
     }
 }
 

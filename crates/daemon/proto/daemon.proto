@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package moon.daemon.v1;
+
+service MoonDaemon {
+  rpc Start(StartRequest) returns (StartResponse);
+  rpc Stop(StopRequest) returns (StopResponse);
+  rpc Status(StatusRequest) returns (StatusResponse);
+}
+
+message StartRequest {
+  string workspace_root = 1;
+}
+
+message StartResponse {
+  uint32 pid = 1;
+  string endpoint = 2;
+  bool already_running = 3;
+}
+
+message StopRequest {}
+
+message StopResponse {
+  bool stopped = 1;
+}
+
+message StatusRequest {}
+
+message StatusResponse {
+  bool running = 1;
+  uint32 pid = 2;
+  string endpoint = 3;
+  uint64 uptime_secs = 4;
+  string moon_version = 5;
+  string workspace_root = 6;
+}

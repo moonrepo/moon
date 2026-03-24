@@ -30,16 +30,16 @@ uuid = { workspace = true }
 zstd = "0.13.3"
 
 # gRPC
-async-stream = "0.3.6"
+async-stream = { workspace = true }
 http = "1.4.0"
-tonic = { version = "0.14.5", default-features = false, features = [
+tonic = { workspace = true, features = [
     "channel",
     "codegen",
     "gzip",
     "tls-aws-lc",
     "tls-native-roots",
 ] }
-tower = { version = "0.5.3", features = ["retry", "timeout"] }
+tower = { workspace = true, features = ["retry", "timeout"] }
 
 [lints]
 workspace = true

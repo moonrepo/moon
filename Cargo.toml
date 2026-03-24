@@ -6,6 +6,7 @@ default-members = ["crates/cli"]
 
 [workspace.dependencies]
 async-recursion = "1.1.1"
+async-stream = "0.3.6"
 async-trait = "0.1.89"
 cached = "0.59.0"
 chrono = { version = "0.4.44", features = ["serde"] }
@@ -82,6 +83,9 @@ tokio = { version = "1.50.0", default-features = false, features = [
     "tracing",
 ] }
 tokio-util = "0.7.18"
+tonic = { version = "0.14.5", default-features = false }
+tonic-prost = "0.14.5"
+tower = "0.5.3"
 tracing = "0.1.44"
 url = "2.5.8"
 uuid = { version = "1.22.0", features = ["v4"] }

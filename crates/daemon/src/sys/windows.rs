@@ -3,7 +3,7 @@ use futures_core::stream::Stream;
 use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::pin::Pin;
-use std::process::{Child, Command, Stdio};
+use std::process::{Command, Stdio};
 use tokio::{
     io::{self, AsyncRead, AsyncWrite},
     net::windows::named_pipe::{NamedPipeServer, ServerOptions},

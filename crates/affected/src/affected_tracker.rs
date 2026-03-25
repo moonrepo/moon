@@ -7,7 +7,6 @@ use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::fs;
-use starbase_utils::glob::GlobSet;
 use std::fmt;
 use std::sync::Arc;
 use tracing::{debug, trace};
@@ -149,6 +148,12 @@ impl AffectedTracker {
     }
 
     pub fn is_project_affected(&self, project: &Project) -> Option<AffectedBy> {
+        // If the project was marked with a legitimate source that isn't relationship
+        // related, then we can short-circuit early
+        if self.is_project_marked_ignoring_relations(project) {
+            return Some(AffectedBy::AlreadyMarked);
+        }
+
         if project.is_root_level() {
             // If at the root, any file affects it
             self.changed_files
@@ -163,61 +168,21 @@ impl AffectedTracker {
         }
     }
 
-    pub fn is_project_affected_using_file_group(
-        &self,
-        project: &Project,
-        file_group_id: &Id,
-    ) -> miette::Result<Option<AffectedBy>> {
-        let group = project.get_file_group(file_group_id)?;
-
-        if !group.files.is_empty() {
-            for file in &group.files {
-                if self.changed_files.contains(file) {
-                    return Ok(Some(AffectedBy::ChangedFile(file.to_owned())));
-                }
-            }
-        }
-
-        if !group.globs.is_empty() {
-            return self.is_project_affected_using_globs(project, &group.globs);
-        }
-
-        Ok(None)
-    }
-
-    pub fn is_project_affected_using_globs<G: AsRef<str>>(
-        &self,
-        project: &Project,
-        base_globs: &[G],
-    ) -> miette::Result<Option<AffectedBy>> {
-        let mut globs = vec![];
-
-        // Ensure they are relative from the project root
-        for glob in base_globs {
-            let glob = glob.as_ref();
-
-            if glob.starts_with(project.source.as_str()) {
-                globs.push(glob.to_owned());
-            } else {
-                globs.push(format!("{}/{glob}", project.source));
-            }
-        }
-
-        if !globs.is_empty() {
-            let globset = GlobSet::new(&globs)?;
-
-            for file in &self.changed_files {
-                if globset.matches(file.as_str()) {
-                    return Ok(Some(AffectedBy::ChangedFile(file.to_owned())));
-                }
-            }
-        }
-
-        Ok(None)
-    }
-
     pub fn is_project_marked(&self, project: &Project) -> bool {
         self.projects.contains_key(&project.id)
+    }
+
+    pub fn is_project_marked_ignoring_relations(&self, project: &Project) -> bool {
+        self.projects.get(&project.id).is_some_and(|by_list| {
+            by_list.iter().any(|by| {
+                matches!(
+                    by,
+                    AffectedBy::AlwaysAffected
+                        | AffectedBy::ChangedFile(_)
+                        | AffectedBy::EnvironmentVariable(_)
+                )
+            })
+        })
     }
 
     pub fn mark_project_affected(
@@ -388,6 +353,12 @@ impl AffectedTracker {
     }
 
     pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {
+        // If the task was marked with a legitimate source that isn't relationship
+        // related, then we can short-circuit early
+        if self.is_task_marked_ignoring_relations(task) {
+            return Ok(Some(AffectedBy::AlreadyMarked));
+        }
+
         // Special CI handling
         match (self.ci, &task.options.run_in_ci) {
             (true, TaskOptionRunInCI::Always) => {

@@ -20,7 +20,7 @@ mod tasks {
 
     #[test]
     fn no_tasks_for_a_project() {
-        let sandbox = create_empty_moon_sandbox();
+        let sandbox = create_projects_sandbox();
 
         let assert = sandbox.run_bin(|cmd| {
             cmd.arg("tasks").arg("no-config");

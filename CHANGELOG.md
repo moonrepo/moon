@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Added `inferRelationships` and `inferRelationshipsFromTests` settings to control
+    `go list --deps` usage.
+- **JavaScript**
+  - Updated `deno.lock` and `yarn.lock` parsing dependencies.
+- **Python**
+  - Fixed an issue where install commands didn't have access to venv bins.
+  - Fixed an issue where project dependencies were not being inferred correctly when the dependency
+    contains extras metadata.
+- **Rust**
+  - Updated `Cargo.lock` parsing dependencies.
+- **TypeScript**
+  - Added TypeScript v6 support.
+
 ## 2.1.1
 
 #### 🐞 Fixes

@@ -7,7 +7,7 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 async-recursion = "1.1.1"
 async-trait = "0.1.89"
-cached = "0.58.0"
+cached = "0.59.0"
 chrono = { version = "0.4.44", features = ["serde"] }
 cd_env = "0.3.1"
 ci_env = "0.4.1"
@@ -43,7 +43,7 @@ reqwest = { version = "0.13.2", default-features = false, features = [
     "native-tls-vendored",
 ] }
 rustc-hash = "2.1.1"
-scc = "3.6.9"
+scc = "3.6.12"
 schematic = { version = "0.19.4", default-features = false, features = [
     "schema",
 ] }
@@ -52,8 +52,8 @@ semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 sha2 = "0.10.9"
-starbase = { version = "0.10.9" }
-starbase_archive = { version = "0.12.4", default-features = false, features = [
+starbase = { version = "0.10.10" }
+starbase_archive = { version = "0.12.5", default-features = false, features = [
     "miette",
     "tar-all",
     "zip-all",
@@ -61,7 +61,7 @@ starbase_archive = { version = "0.12.4", default-features = false, features = [
 starbase_args = { version = "0.1.8" }
 starbase_console = { version = "0.6.24", features = ["miette"] }
 starbase_id = { version = "0.3.2", features = ["miette", "schematic"] }
-starbase_sandbox = "0.10.5"
+starbase_sandbox = "0.10.6"
 starbase_shell = "0.10.8"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
 starbase_utils = { version = "0.12.6", default-features = false, features = [
@@ -87,7 +87,7 @@ url = "2.5.8"
 uuid = { version = "1.22.0", features = ["v4"] }
 
 # proto/plugin related
-extism = "=1.13.0"
+extism = "=1.20.0"
 extism-pdk = "1.4.1"
 proto_core = "0.55.5"
 proto_pdk_api = "0.31.8"

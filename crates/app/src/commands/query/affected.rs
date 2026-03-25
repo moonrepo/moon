@@ -37,7 +37,7 @@ pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> AppResul
         session.get_workspace_graph().await?,
         query_changed_files_for_affected(&vcs, args.by.as_ref()).await?,
     );
-    affected_tracker.with_scopes(args.upstream, args.downstream);
+    affected_tracker.set_scopes(args.upstream, args.downstream);
     affected_tracker.track_projects()?;
     affected_tracker.track_tasks()?;
 

@@ -1205,7 +1205,7 @@ mod action_graph_builder {
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]),
                     |affected| {
-                        affected.with_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
                             .unwrap();
@@ -1584,7 +1584,7 @@ mod action_graph_builder {
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]),
                     |affected| {
-                        affected.with_scopes(UpstreamScope::None, DownstreamScope::None);
+                        affected.set_scopes(UpstreamScope::None, DownstreamScope::None);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
                             .unwrap();
@@ -1648,7 +1648,7 @@ mod action_graph_builder {
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]),
                     |affected| {
-                        affected.with_scopes(UpstreamScope::Direct, DownstreamScope::None);
+                        affected.set_scopes(UpstreamScope::Direct, DownstreamScope::None);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
                             .unwrap();
@@ -1712,7 +1712,7 @@ mod action_graph_builder {
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/b.txt")]),
                     |affected| {
-                        affected.with_scopes(UpstreamScope::Deep, DownstreamScope::None);
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::None);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
                             .unwrap();
@@ -1780,7 +1780,7 @@ mod action_graph_builder {
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/c.txt")]),
                     |affected| {
-                        affected.with_scopes(UpstreamScope::None, DownstreamScope::None);
+                        affected.set_scopes(UpstreamScope::None, DownstreamScope::None);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
                             .unwrap();
@@ -1845,7 +1845,7 @@ mod action_graph_builder {
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/c.txt")]),
                     |affected| {
-                        affected.with_scopes(UpstreamScope::None, DownstreamScope::Direct);
+                        affected.set_scopes(UpstreamScope::None, DownstreamScope::Direct);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
                             .unwrap();
@@ -1914,7 +1914,7 @@ mod action_graph_builder {
                 builder.mock_affected(
                     FxHashSet::from_iter([WorkspaceRelativePathBuf::from("deps-affected/c.txt")]),
                     |affected| {
-                        affected.with_scopes(UpstreamScope::None, DownstreamScope::Deep);
+                        affected.set_scopes(UpstreamScope::None, DownstreamScope::Deep);
                         affected
                             .mark_task_affected(&task, AffectedBy::AlwaysAffected)
                             .unwrap();

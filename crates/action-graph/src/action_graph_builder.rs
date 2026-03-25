@@ -273,7 +273,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         if let Some(affected) = self.affected.as_mut() {
             affected.set_ci_check(ci_check);
-            affected.with_scopes(upstream, downstream);
+            affected.set_scopes(upstream, downstream);
             affected.track_projects()?;
             affected.track_tasks()?;
         }

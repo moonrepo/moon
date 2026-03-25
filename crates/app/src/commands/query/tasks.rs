@@ -85,7 +85,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
         let changed_files = query_changed_files_for_affected(&vcs, by.as_ref()).await?;
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
-        affected_tracker.with_task_scopes(args.upstream, args.downstream);
+        affected_tracker.set_task_scopes(args.upstream, args.downstream);
         affected_tracker.track_tasks()?;
 
         options.affected = Some(affected_tracker.build());

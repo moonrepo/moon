@@ -100,7 +100,7 @@ mod affected_projects {
         ]);
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-        tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
+        tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
         tracker.track_projects().unwrap();
         let affected = tracker.build();
 
@@ -124,7 +124,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
+            tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -143,7 +143,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
+            tracker.set_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -164,7 +164,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
+            tracker.set_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -183,7 +183,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -205,7 +205,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -224,7 +224,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -253,7 +253,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::None);
+            tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -272,7 +272,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
+            tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -293,7 +293,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
+            tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -312,7 +312,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -333,7 +333,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -352,7 +352,7 @@ mod affected_projects {
             let changed_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_projects().unwrap();
             let affected = tracker.build();
 
@@ -614,7 +614,7 @@ mod affected_tasks {
         let changed_files = FxHashSet::from_iter(["downstream/file.txt".into()]);
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-        tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
+        tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
         tracker.track_tasks().unwrap();
         let affected = tracker.build();
 
@@ -643,7 +643,7 @@ mod affected_tasks {
         let changed_files = FxHashSet::from_iter(["upstream/file.txt".into()]);
 
         let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-        tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
+        tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
         tracker.track_tasks().unwrap();
         let affected = tracker.build();
 
@@ -675,7 +675,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::None);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -700,7 +700,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
+            tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -729,7 +729,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
+            tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -754,7 +754,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -787,7 +787,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -812,7 +812,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
+            tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -850,7 +850,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::None);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::None);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -875,7 +875,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -908,7 +908,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -933,7 +933,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -966,7 +966,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -991,7 +991,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -1028,7 +1028,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["dep/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -1053,7 +1053,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["dep/src/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -1082,7 +1082,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 
@@ -1115,7 +1115,7 @@ mod affected_tasks {
             let changed_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
-            tracker.with_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
+            tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
             tracker.track_tasks().unwrap();
             let affected = tracker.build();
 

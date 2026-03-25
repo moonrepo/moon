@@ -94,7 +94,7 @@ impl AffectedTracker {
         self
     }
 
-    pub fn with_project_scopes(
+    pub fn set_project_scopes(
         &mut self,
         upstream_scope: UpstreamScope,
         downstream_scope: DownstreamScope,
@@ -110,7 +110,7 @@ impl AffectedTracker {
         self
     }
 
-    pub fn with_task_scopes(
+    pub fn set_task_scopes(
         &mut self,
         upstream_scope: UpstreamScope,
         downstream_scope: DownstreamScope,
@@ -126,13 +126,13 @@ impl AffectedTracker {
         self
     }
 
-    pub fn with_scopes(
+    pub fn set_scopes(
         &mut self,
         upstream_scope: UpstreamScope,
         downstream_scope: DownstreamScope,
     ) -> &mut Self {
-        self.with_project_scopes(upstream_scope, downstream_scope);
-        self.with_task_scopes(upstream_scope, downstream_scope);
+        self.set_project_scopes(upstream_scope, downstream_scope);
+        self.set_task_scopes(upstream_scope, downstream_scope);
         self
     }
 

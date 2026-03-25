@@ -16,8 +16,8 @@ pub async fn sync(session: MoonSession) -> AppResult {
 
     action_graph_builder.sync_workspace().await?;
 
-    for project in workspace_graph.projects.get_all_unexpanded() {
-        action_graph_builder.sync_project(project, &reqs).await?;
+    for project in workspace_graph.get_projects()? {
+        action_graph_builder.sync_project(&project, &reqs).await?;
 
         for task in workspace_graph.get_tasks_from_project(&project.id)? {
             if task.options.run_in_sync_phase {

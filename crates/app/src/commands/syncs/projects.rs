@@ -23,8 +23,8 @@ pub async fn sync(session: MoonSession) -> AppResult {
 
     let reqs = RunRequirements::default();
 
-    for project in workspace_graph.projects.get_all_unexpanded() {
-        action_graph_builder.sync_project(project, &reqs).await?;
+    for project in workspace_graph.get_projects()? {
+        action_graph_builder.sync_project(&project, &reqs).await?;
         project_count += 1;
     }
 

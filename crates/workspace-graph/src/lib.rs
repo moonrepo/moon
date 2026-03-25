@@ -68,6 +68,10 @@ impl WorkspaceGraph {
         self.projects.get_all()
     }
 
+    pub fn get_projects_unexpanded(&self) -> Vec<&Project> {
+        self.projects.get_all_unexpanded()
+    }
+
     pub fn get_projects_by_id<I, T>(&self, ids: I) -> miette::Result<Vec<Arc<Project>>>
     where
         I: IntoIterator<Item = T>,
@@ -125,8 +129,20 @@ impl WorkspaceGraph {
             .collect())
     }
 
+    pub fn get_tasks_unexpanded(&self) -> Vec<&Task> {
+        self.tasks
+            .get_all_unexpanded()
+            .into_iter()
+            .filter(|task| !task.is_internal())
+            .collect()
+    }
+
     /// Get all tasks, including internal.
     pub fn get_tasks_with_internal(&self) -> miette::Result<Vec<Arc<Task>>> {
         self.tasks.get_all()
+    }
+
+    pub fn get_tasks_unexpanded_with_internal(&self) -> Vec<&Task> {
+        self.tasks.get_all_unexpanded()
     }
 }

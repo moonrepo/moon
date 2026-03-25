@@ -23,7 +23,7 @@ pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
     if targets.is_empty() && args.plan.is_none() {
         let workspace_graph = session.get_workspace_graph().await?;
 
-        for task in workspace_graph.get_tasks()? {
+        for task in workspace_graph.get_tasks_unexpanded() {
             targets.push(TargetLocator::Qualified(task.target.clone()));
         }
     }

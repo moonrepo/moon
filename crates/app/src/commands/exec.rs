@@ -117,13 +117,13 @@ pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
     // Otherwise prompt for a list of targets
     if plan.targets.is_empty() {
         let workspace_graph = session.get_workspace_graph().await?;
-        let tasks = workspace_graph.get_tasks()?;
 
         let targets = select_targets(&session.console, &[], || {
             Ok(SelectProps {
                 label: "Which task(s) to run?".into(),
-                options: tasks
-                    .iter()
+                options: workspace_graph
+                    .get_tasks_unexpanded()
+                    .into_iter()
                     .map(|task| {
                         SelectOption::new(&task.target).description_opt(task.description.clone())
                     })

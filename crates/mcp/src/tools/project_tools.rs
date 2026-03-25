@@ -76,7 +76,7 @@ impl GetProjectsTool {
         &self,
         workspace_graph: &WorkspaceGraph,
     ) -> Result<CallToolResult, CallToolError> {
-        let mut projects = workspace_graph.get_projects().map_err(map_miette_error)?;
+        let mut projects = workspace_graph.get_projects_unexpanded();
 
         projects.sort_by(|a, d| a.id.cmp(&d.id));
 

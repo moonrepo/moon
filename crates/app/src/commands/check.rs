@@ -48,7 +48,7 @@ pub async fn check(session: MoonSession, args: CheckArgs) -> AppResult {
             Ok(SelectProps {
                 label: "Which project(s) to check?".into(),
                 options: workspace_graph
-                    .get_projects()?
+                    .get_projects_unexpanded()
                     .into_iter()
                     .map(|project| {
                         SelectOption::new(&project.id).description_opt(

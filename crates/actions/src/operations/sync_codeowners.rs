@@ -17,7 +17,7 @@ pub async fn sync_codeowners(
     )?;
 
     // Sort the projects based on config
-    let mut projects = workspace_graph.projects.get_all_unexpanded();
+    let mut projects = workspace_graph.get_projects_unexpanded();
     let order_by = app_context.workspace_config.codeowners.order_by;
 
     projects.sort_by(|a, d| match order_by {

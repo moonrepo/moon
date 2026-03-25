@@ -29,11 +29,10 @@ pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
 
     let id = select_identifier(&session.console, &args.id, || {
-        let projects = workspace_graph.get_projects()?;
-
         Ok(SelectProps {
             label: "Which project to view?".into(),
-            options: projects
+            options: workspace_graph
+                .get_projects_unexpanded()
                 .into_iter()
                 .map(|project| {
                     SelectOption::new(&project.id).description_opt(

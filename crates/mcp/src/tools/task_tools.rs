@@ -82,11 +82,9 @@ impl GetTasksTool {
         workspace_graph: &WorkspaceGraph,
     ) -> Result<CallToolResult, CallToolError> {
         let mut tasks = if self.include_internal.unwrap_or_default() {
-            workspace_graph
-                .get_tasks_with_internal()
-                .map_err(map_miette_error)?
+            workspace_graph.get_tasks_unexpanded_with_internal()
         } else {
-            workspace_graph.get_tasks().map_err(map_miette_error)?
+            workspace_graph.get_tasks_unexpanded()
         };
 
         tasks.sort_by(|a, d| a.target.cmp(&d.target));

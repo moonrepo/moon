@@ -18,14 +18,10 @@ pub struct TasksArgs {
 
 #[instrument(skip(session))]
 pub async fn tasks(session: MoonSession, args: TasksArgs) -> AppResult {
-    let mut tasks = session.get_workspace_graph().await?.get_tasks()?;
+    let workspace_graph = session.get_workspace_graph().await?;
 
-    if let Some(project_id) = &args.project {
-        tasks.retain(|task| {
-            task.target
-                .get_project_id()
-                .is_ok_and(|id| project_id == id)
-        });
+    let mut tasks = if let Some(project_id) = &args.project {
+        let tasks = workspace_graph.get_tasks_from_project(project_id)?;
 
         if tasks.is_empty() {
             session.console.render(element! {
@@ -40,7 +36,11 @@ pub async fn tasks(session: MoonSession, args: TasksArgs) -> AppResult {
 
             return Ok(None);
         }
-    }
+
+        tasks
+    } else {
+        workspace_graph.get_tasks()?
+    };
 
     tasks.sort_by(|a, d| a.target.cmp(&d.target));
 

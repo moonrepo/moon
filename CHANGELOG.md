@@ -6,6 +6,8 @@
 
 - Updated the affected tracker to mark project/tasks as affected on-demand, instead of everything up
   front. This allows us to short-circuit early, improving performance for very large repos.
+- Updated many commands and call sites to load projects/tasks without expansion, slightly improving
+  performance and memory usage.
 
 #### 🧰 Toolchains
 
@@ -22,6 +24,10 @@
   - Updated `Cargo.lock` parsing dependencies.
 - **TypeScript**
   - Added TypeScript v6 support.
+
+#### ⚙️ Internal
+
+- Updated dependencies.
 
 ## 2.1.1
 

@@ -1,7 +1,7 @@
 use crate::helpers::run_action_pipeline;
 use crate::session::MoonSession;
 use iocraft::prelude::element;
-use moon_action_graph::ActionGraphBuilderOptions;
+use moon_action_graph::{ActionGraphBuilderOptions, RunRequirements};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use starbase::AppResult;
 use tracing::instrument;
@@ -21,8 +21,10 @@ pub async fn sync(session: MoonSession) -> AppResult {
         })
         .await?;
 
+    let reqs = RunRequirements::default();
+
     for project in workspace_graph.projects.get_all_unexpanded() {
-        action_graph_builder.sync_project(project).await?;
+        action_graph_builder.sync_project(project, &reqs).await?;
         project_count += 1;
     }
 

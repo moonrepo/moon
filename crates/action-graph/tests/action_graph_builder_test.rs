@@ -3108,7 +3108,10 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let bar = wg.get_project("bar").unwrap();
-            builder.sync_project(&bar).await.unwrap();
+            builder
+                .sync_project(&bar, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let (_, graph) = builder.build();
 
@@ -3133,13 +3136,22 @@ mod action_graph_builder {
             let mut builder = container.create_builder(wg.clone()).await;
 
             let foo = wg.get_project("foo").unwrap();
-            builder.sync_project(&foo).await.unwrap();
+            builder
+                .sync_project(&foo, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let bar = wg.get_project("bar").unwrap();
-            builder.sync_project(&bar).await.unwrap();
+            builder
+                .sync_project(&bar, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let qux = wg.get_project("qux").unwrap();
-            builder.sync_project(&qux).await.unwrap();
+            builder
+                .sync_project(&qux, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let (_, graph) = builder.build();
 
@@ -3178,10 +3190,16 @@ mod action_graph_builder {
                 .await;
 
             let foo = wg.get_project("foo").unwrap();
-            builder.sync_project(&foo).await.unwrap();
+            builder
+                .sync_project(&foo, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let qux = wg.get_project("qux").unwrap();
-            builder.sync_project(&qux).await.unwrap();
+            builder
+                .sync_project(&qux, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let (_, graph) = builder.build();
 
@@ -3210,9 +3228,18 @@ mod action_graph_builder {
 
             let foo = wg.get_project("foo").unwrap();
 
-            builder.sync_project(&foo).await.unwrap();
-            builder.sync_project(&foo).await.unwrap();
-            builder.sync_project(&foo).await.unwrap();
+            builder
+                .sync_project(&foo, &RunRequirements::default())
+                .await
+                .unwrap();
+            builder
+                .sync_project(&foo, &RunRequirements::default())
+                .await
+                .unwrap();
+            builder
+                .sync_project(&foo, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let (_, graph) = builder.build();
 
@@ -3247,7 +3274,10 @@ mod action_graph_builder {
                 .await;
 
             let bar = wg.get_project("bar").unwrap();
-            builder.sync_project(&bar).await.unwrap();
+            builder
+                .sync_project(&bar, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let (_, graph) = builder.build();
 
@@ -3272,7 +3302,10 @@ mod action_graph_builder {
                 .await;
 
             let bar = wg.get_project("bar").unwrap();
-            builder.sync_project(&bar).await.unwrap();
+            builder
+                .sync_project(&bar, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let (_, graph) = builder.build();
 
@@ -3297,7 +3330,10 @@ mod action_graph_builder {
                 .await;
 
             let bar = wg.get_project("bar").unwrap();
-            builder.sync_project(&bar).await.unwrap();
+            builder
+                .sync_project(&bar, &RunRequirements::default())
+                .await
+                .unwrap();
 
             let (_, graph) = builder.build();
 

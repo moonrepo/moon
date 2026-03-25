@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated the affected tracker to mark project/tasks as affected on-demand, instead of everything up
+  front. This allows us to short-circuit early, improving performance for very large repos.
+
 #### 🧰 Toolchains
 
 - **Go**

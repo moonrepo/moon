@@ -12,11 +12,13 @@ pub async fn sync(session: MoonSession) -> AppResult {
     let mut action_graph_builder = session
         .build_action_graph_with_options(ActionGraphBuilderOptions::default())
         .await?;
+    let reqs = RunRequirements::default();
 
     action_graph_builder.sync_workspace().await?;
 
     for project in workspace_graph.projects.get_all_unexpanded() {
-        action_graph_builder.sync_project(project).await?;
+        action_graph_builder.sync_project(project, &reqs).await?;
+
         for task in workspace_graph.get_tasks_from_project(&project.id)? {
             if task.options.run_in_sync_phase {
                 action_graph_builder

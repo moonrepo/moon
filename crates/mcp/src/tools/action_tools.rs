@@ -2,7 +2,7 @@
 
 use super::map_miette_error;
 use moon_action::Action;
-use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
+use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions, RunRequirements};
 use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
 use moon_workspace_graph::WorkspaceGraph;
@@ -118,7 +118,7 @@ impl SyncProjectsTool {
 
             for project in projects {
                 action_graph
-                    .sync_project(&project)
+                    .sync_project(&project, &RunRequirements::default())
                     .await
                     .map_err(map_miette_error)?;
             }
@@ -127,7 +127,7 @@ impl SyncProjectsTool {
                 let project = workspace_graph.get_project(id).map_err(map_miette_error)?;
 
                 action_graph
-                    .sync_project(&project)
+                    .sync_project(&project, &RunRequirements::default())
                     .await
                     .map_err(map_miette_error)?;
             }

@@ -10,7 +10,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_app_context::AppContext;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
-use moon_common::{Id, color};
+use moon_common::{Id, color, is_ci};
 use moon_config::{EnvMap, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
@@ -67,7 +67,7 @@ pub struct RunRequirements {
 impl Default for RunRequirements {
     fn default() -> Self {
         Self {
-            ci: false,
+            ci: is_ci(),
             ci_check: false,
             dependencies: UpstreamScope::Deep,
             dependents: DownstreamScope::None,
@@ -274,8 +274,12 @@ impl<'query> ActionGraphBuilder<'query> {
         if let Some(affected) = self.affected.as_mut() {
             affected.set_ci_check(ci_check);
             affected.set_scopes(upstream, downstream);
-            affected.track_projects()?;
-            affected.track_tasks()?;
+
+            // Revisit this! Right now we are shifting the logic
+            // into the `internal_run_task` so that we aren't processing
+            // all tasks, only those that have been requested!
+            // affected.track_projects()?;
+            // affected.track_tasks()?;
         }
 
         Ok(())
@@ -504,8 +508,19 @@ impl<'query> ActionGraphBuilder<'query> {
 
             // If we are going to parallelize, then we need to filter the
             // tasks list based on affected state before partitioning!
-            tasks.retain(|task| self.is_task_affected(task, &reqs));
+            if !reqs.skip_affected {
+                let mut new_tasks = vec![];
 
+                for task in tasks {
+                    if self.is_task_affected(&task, &reqs)? {
+                        new_tasks.push(task);
+                    }
+                }
+
+                tasks = new_tasks;
+            }
+
+            // Then slice and partition the tasks based on the job index and total
             let size = tasks.len().div_ceil(job_total);
             let (start, stop) =
                 // beginning
@@ -858,7 +873,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut child_reqs = reqs.clone();
 
         // Abort early if not affected
-        if !self.is_task_affected(task, reqs) {
+        if !self.is_task_affected(task, reqs)? {
             return Ok(None);
         }
 
@@ -924,7 +939,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         // Create initial edges
-        let mut edges = vec![self.sync_project(&project).await?];
+        let mut edges = vec![self.sync_project(&project, reqs).await?];
 
         edges.extend(
             self.install_dependencies_by_toolchains(&project, &task.toolchains)
@@ -1096,13 +1111,18 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     #[instrument(skip(self))]
-    pub async fn sync_project(&mut self, project: &Project) -> miette::Result<Option<NodeIndex>> {
-        Box::pin(self.internal_sync_project(project, &mut FxHashSet::default())).await
+    pub async fn sync_project(
+        &mut self,
+        project: &Project,
+        reqs: &RunRequirements,
+    ) -> miette::Result<Option<NodeIndex>> {
+        Box::pin(self.internal_sync_project(project, reqs, &mut FxHashSet::default())).await
     }
 
     async fn internal_sync_project(
         &mut self,
         project: &Project,
+        reqs: &RunRequirements,
         cycle: &mut FxHashSet<Id>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
@@ -1111,9 +1131,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         // Return early if not affected
-        if let Some(affected) = &self.affected
-            && !affected.is_project_marked(project)
-        {
+        if !self.is_project_affected(project, reqs)? {
             return Ok(None);
         }
 
@@ -1143,7 +1161,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 let dep_project = self.workspace_graph.get_project(&dep_project_id)?;
 
                 if let Some(dep_project_index) =
-                    Box::pin(self.internal_sync_project(&dep_project, cycle)).await?
+                    Box::pin(self.internal_sync_project(&dep_project, reqs, cycle)).await?
                     && index != dep_project_index
                 {
                     edges.push(dep_project_index);
@@ -1241,19 +1259,66 @@ impl<'query> ActionGraphBuilder<'query> {
         index
     }
 
-    fn is_task_affected(&self, task: &Task, reqs: &RunRequirements) -> bool {
-        if let Some(affected) = &self.affected
+    fn is_project_affected(
+        &mut self,
+        project: &Project,
+        reqs: &RunRequirements,
+    ) -> miette::Result<bool> {
+        if let Some(affected) = &mut self.affected
             && !reqs.skip_affected
         {
-            return if reqs.include_relations {
+            // Short-circuit early if the task is already marked
+            let marked = if reqs.include_relations {
+                affected.is_project_marked(project)
+            } else {
+                affected.is_project_marked_ignoring_relations(project)
+            };
+
+            if marked {
+                return Ok(true);
+            }
+
+            // Otherwise run the full affected checks
+            if let Some(mark) = affected.is_project_affected(project) {
+                affected.mark_project_affected(project, mark)?;
+
+                return Ok(true);
+            }
+
+            return Ok(false);
+        }
+
+        // Always affected
+        Ok(true)
+    }
+
+    fn is_task_affected(&mut self, task: &Task, reqs: &RunRequirements) -> miette::Result<bool> {
+        if let Some(affected) = &mut self.affected
+            && !reqs.skip_affected
+        {
+            // Short-circuit early if the task is already marked
+            let marked = if reqs.include_relations {
                 affected.is_task_marked(task)
             } else {
                 affected.is_task_marked_ignoring_relations(task)
             };
+
+            if marked {
+                return Ok(true);
+            }
+
+            // Otherwise run the full affected checks
+            if let Some(mark) = affected.is_task_affected(task)? {
+                affected.mark_task_affected(task, mark)?;
+
+                return Ok(true);
+            }
+
+            return Ok(false);
         }
 
         // Always affected
-        true
+        Ok(true)
     }
 }
 

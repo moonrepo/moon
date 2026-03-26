@@ -148,6 +148,10 @@ impl AffectedTracker {
     }
 
     pub fn is_project_affected(&self, project: &Project) -> Option<AffectedBy> {
+        if self.is_project_marked_ignoring_relations(project) {
+            return Some(AffectedBy::AlreadyMarked);
+        }
+
         if project.is_root_level() {
             // If at the root, any file affects it
             self.changed_files
@@ -347,6 +351,10 @@ impl AffectedTracker {
     }
 
     pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {
+        if self.is_task_marked_ignoring_relations(task) {
+            return Ok(Some(AffectedBy::AlreadyMarked));
+        }
+
         // Special CI handling
         match (self.ci, &task.options.run_in_ci) {
             (true, TaskOptionRunInCI::Always) => {

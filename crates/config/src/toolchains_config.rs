@@ -153,15 +153,15 @@ impl ToolchainsConfig {
             "go" => Some(locate("go_toolchain", "1.1.2")),
             "javascript" => Some(locate("javascript_toolchain", "1.0.7")),
             "node" => Some(locate("node_toolchain", "1.0.2")),
-            "npm" => Some(locate("node_depman_toolchain", "1.0.2")),
-            "pnpm" => Some(locate("node_depman_toolchain", "1.0.2")),
+            "npm" => Some(locate("node_depman_toolchain", "1.0.3")),
+            "pnpm" => Some(locate("node_depman_toolchain", "1.0.3")),
             "rust" => Some(locate("rust_toolchain", "1.0.5")),
             "system" => Some(locate("system_toolchain", "1.0.2")),
             "typescript" => Some(locate("typescript_toolchain", "1.1.1")),
             "unstable_python" => Some(locate("python_toolchain", "0.1.6")),
             "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.2")),
             "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.2")),
-            "yarn" => Some(locate("node_depman_toolchain", "1.0.2")),
+            "yarn" => Some(locate("node_depman_toolchain", "1.0.3")),
             _ => None,
         }
     }

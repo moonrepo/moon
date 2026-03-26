@@ -11,6 +11,8 @@
   - Will now remove `node_modules` during Docker prune, as some package managers don't do this
     automatically.
   - Removed `*.config.*` files from the Docker scaffold process.
+- **npm/pnpm/yarn**
+  - Updated to always include the "shared globals" directory.
 - **Python**
   - Fixed install/venv args being passed incorrectly in some situations.
 

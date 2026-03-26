@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Fixed an issue where `go list` was not running in the project root.
+  - Fixed an issue where `go list` would add a project dependency to itself.
+- **JavaScript**
+  - Will now remove `node_modules` during Docker prune, as some package managers don't do this
+    automatically.
+  - Removed `*.config.*` files from the Docker scaffold process.
+- **Python**
+  - Fixed install/venv args being passed incorrectly in some situations.
+
 ## 2.1.2
 
 #### 🚀 Updates

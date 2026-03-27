@@ -425,6 +425,13 @@
     "ExperimentsConfig": {
       "description": "Configures experiments across the entire moon workspace.",
       "type": "object",
+      "properties": {
+        "asyncAffectedTracking": {
+          "title": "asyncAffectedTracking",
+          "description": "Track and determine affected projects and tasks asynchronously.",
+          "type": "boolean"
+        }
+      },
       "additionalProperties": false
     },
     "ExtendsFrom": {

@@ -93,7 +93,12 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResul
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
         affected_tracker.set_project_scopes(args.upstream, args.downstream);
-        affected_tracker.track_projects()?;
+
+        if session.workspace_config.experiments.async_affected_tracking {
+            affected_tracker.track_projects_async().await?;
+        } else {
+            affected_tracker.track_projects()?;
+        }
 
         options.affected = Some(affected_tracker.build());
     }

@@ -146,7 +146,10 @@ export interface DockerConfig {
 }
 
 /** Configures experiments across the entire moon workspace. */
-export interface ExperimentsConfig {}
+export interface ExperimentsConfig {
+	/** Track and determine affected projects and tasks asynchronously. */
+	asyncAffectedTracking: boolean;
+}
 
 /** Configures the generator for scaffolding from templates. */
 export interface GeneratorConfig {
@@ -764,7 +767,10 @@ export interface PartialDockerConfig {
 }
 
 /** Configures experiments across the entire moon workspace. */
-export interface PartialExperimentsConfig {}
+export interface PartialExperimentsConfig {
+	/** Track and determine affected projects and tasks asynchronously. */
+	asyncAffectedTracking?: boolean | null;
+}
 
 /** Configures the generator for scaffolding from templates. */
 export interface PartialGeneratorConfig {

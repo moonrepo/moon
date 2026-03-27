@@ -1,4 +1,7 @@
 use crate::affected::*;
+use crate::project_tracker::ProjectTracker;
+use crate::task_tracker::TaskTracker;
+use miette::IntoDiagnostic;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
 use moon_env_var::GlobalEnvBag;
@@ -9,13 +12,14 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::fs;
 use std::fmt;
 use std::sync::Arc;
+use tokio::task::JoinSet;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker {
     ci: bool,
 
     workspace_graph: Arc<WorkspaceGraph>,
-    changed_files: FxHashSet<WorkspaceRelativePathBuf>,
+    changed_files: Arc<FxHashSet<WorkspaceRelativePathBuf>>,
 
     projects: FxHashMap<Id, FxHashSet<AffectedBy>>,
     project_downstream: DownstreamScope,
@@ -35,7 +39,7 @@ impl AffectedTracker {
 
         Self {
             workspace_graph,
-            changed_files,
+            changed_files: Arc::new(changed_files),
             projects: FxHashMap::default(),
             project_downstream: DownstreamScope::None,
             project_upstream: UpstreamScope::Deep,
@@ -141,6 +145,48 @@ impl AffectedTracker {
         for project in self.workspace_graph.get_projects()? {
             if let Some(affected) = self.is_project_affected(&project) {
                 self.mark_project_affected(&project, affected)?;
+            }
+        }
+
+        Ok(self)
+    }
+
+    pub async fn track_projects_async(&mut self) -> miette::Result<&mut Self> {
+        debug!("Tracking projects and marking any affected");
+
+        let downstream = self.project_downstream;
+        let upstream = self.project_upstream;
+
+        // Spawn one task per project
+        let mut set = JoinSet::new();
+
+        for project in self.workspace_graph.get_projects()? {
+            let changed_files = Arc::clone(&self.changed_files);
+            let workspace_graph = Arc::clone(&self.workspace_graph);
+
+            set.spawn(async move {
+                ProjectTracker {
+                    changed_files,
+                    downstream,
+                    project,
+                    tracked: FxHashMap::default(),
+                    upstream,
+                    workspace_graph,
+                }
+                .track()
+                .await
+            });
+        }
+
+        // Collect tracker results
+        while let Some(result) = set.join_next().await {
+            let tracker = result.into_diagnostic()??;
+
+            for (project_id, affected) in tracker.tracked {
+                self.projects
+                    .entry(project_id)
+                    .or_default()
+                    .extend(affected);
             }
         }
 
@@ -322,11 +368,71 @@ impl AffectedTracker {
     pub fn track_tasks(&mut self) -> miette::Result<()> {
         debug!("Tracking tasks and marking any affected");
 
-        // Include internal since they can trigger affected
-        // for any dependents!
+        // Include internal since they can trigger affected for any dependents!
         for task in self.workspace_graph.get_tasks_with_internal()? {
             if let Some(affected) = self.is_task_affected(&task)? {
                 self.mark_task_affected(&task, affected)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn track_tasks_async(&mut self) -> miette::Result<()> {
+        // Include internal since they can trigger affected for any dependents!
+        let tasks = self.workspace_graph.get_tasks_with_internal()?;
+
+        self.track_tasks_by_instance_async(&tasks).await
+    }
+
+    pub async fn track_tasks_by_instance_async(
+        &mut self,
+        tasks: &[Arc<Task>],
+    ) -> miette::Result<()> {
+        debug!("Tracking tasks and marking any affected");
+
+        let ci = self.ci;
+        let downstream = self.task_downstream;
+        let upstream = self.task_upstream;
+
+        // Spawn one task per project
+        let mut set = JoinSet::new();
+
+        // Include internal since they can trigger affected for any dependents!
+        for task in tasks {
+            let task = Arc::clone(task);
+            let changed_files = Arc::clone(&self.changed_files);
+            let workspace_graph = Arc::clone(&self.workspace_graph);
+
+            set.spawn(async move {
+                TaskTracker {
+                    changed_files,
+                    ci,
+                    downstream,
+                    task,
+                    tracked: FxHashMap::default(),
+                    tracked_projects: FxHashMap::default(),
+                    upstream,
+                    workspace_graph,
+                }
+                .track()
+                .await
+            });
+        }
+
+        // Collect tracker results
+        while let Some(result) = set.join_next().await {
+            let tracker = result.into_diagnostic()??;
+
+            for (task_target, affected) in tracker.tracked {
+                self.tasks.entry(task_target).or_default().extend(affected);
+            }
+
+            for (project_id, affected) in tracker.tracked_projects {
+                self.projects
+                    .entry(project_id)
+                    .or_default()
+                    .extend(affected);
             }
         }
 
@@ -348,6 +454,16 @@ impl AffectedTracker {
         }
 
         Ok(())
+    }
+
+    pub async fn track_tasks_by_target_async(&mut self, targets: &[Target]) -> miette::Result<()> {
+        let mut tasks = Vec::with_capacity(targets.len());
+
+        for target in targets {
+            tasks.push(self.workspace_graph.get_task(target)?);
+        }
+
+        self.track_tasks_by_instance_async(&tasks).await
     }
 
     pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {

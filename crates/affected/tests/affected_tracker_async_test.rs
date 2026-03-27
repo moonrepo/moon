@@ -62,8 +62,8 @@ mod affected_projects {
         let workspace_graph = build_graph("projects").await;
         let changed_files = FxHashSet::default();
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
-        tracker.track_projects().await.unwrap();
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+        tracker.track_projects_async().await.unwrap();
         let affected = tracker.build();
 
         assert!(affected.projects.is_empty());
@@ -74,8 +74,8 @@ mod affected_projects {
         let workspace_graph = build_graph("projects").await;
         let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
-        tracker.track_projects().await.unwrap();
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+        tracker.track_projects_async().await.unwrap();
         let affected = tracker.build();
 
         assert_eq!(
@@ -99,9 +99,9 @@ mod affected_projects {
             "e/file.txt".into(),
         ]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
-        tracker.track_projects().await.unwrap();
+        tracker.track_projects_async().await.unwrap();
         let affected = tracker.build();
 
         assert_eq!(
@@ -123,9 +123,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -142,9 +142,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -163,9 +163,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Direct, DownstreamScope::None);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -182,9 +182,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["a/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -204,9 +204,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -223,9 +223,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -252,9 +252,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::None);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -271,9 +271,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -292,9 +292,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Direct);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -311,9 +311,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["c/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -332,9 +332,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["e/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -351,9 +351,9 @@ mod affected_projects {
             let workspace_graph = build_graph("projects").await;
             let changed_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_project_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_projects().await.unwrap();
+            tracker.track_projects_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -420,8 +420,8 @@ mod affected_tasks {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::default();
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
-        tracker.track_tasks().await.unwrap();
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
+        tracker.track_tasks_async().await.unwrap();
         let affected = tracker.build();
 
         assert!(affected.tasks.is_empty());
@@ -432,9 +432,9 @@ mod affected_tasks {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
-            .track_tasks_by_target(&[Target::parse("base:no-inputs").unwrap()])
+            .track_tasks_by_target_async(&[Target::parse("base:no-inputs").unwrap()])
             .await
             .unwrap();
         let affected = tracker.build();
@@ -447,9 +447,9 @@ mod affected_tasks {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
-            .track_tasks_by_target(&[Target::parse("base:by-file").unwrap()])
+            .track_tasks_by_target_async(&[Target::parse("base:by-file").unwrap()])
             .await
             .unwrap();
         let affected = tracker.build();
@@ -470,9 +470,9 @@ mod affected_tasks {
 
         let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
-            .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
+            .track_tasks_by_target_async(&[Target::parse("base:by-file-match").unwrap()])
             .await
             .unwrap();
         let affected = tracker.build();
@@ -493,9 +493,9 @@ mod affected_tasks {
 
         let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
-            .track_tasks_by_target(&[Target::parse("base:by-file-match").unwrap()])
+            .track_tasks_by_target_async(&[Target::parse("base:by-file-match").unwrap()])
             .await
             .unwrap();
         let affected = tracker.build();
@@ -508,9 +508,9 @@ mod affected_tasks {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["base/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
-            .track_tasks_by_target(&[Target::parse("base:by-glob").unwrap()])
+            .track_tasks_by_target_async(&[Target::parse("base:by-glob").unwrap()])
             .await
             .unwrap();
         let affected = tracker.build();
@@ -532,9 +532,9 @@ mod affected_tasks {
 
         bag.set("ENV", "affected");
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
-            .track_tasks_by_target(&[Target::parse("base:by-env").unwrap()])
+            .track_tasks_by_target_async(&[Target::parse("base:by-env").unwrap()])
             .await
             .unwrap();
         let affected = tracker.build();
@@ -555,9 +555,9 @@ mod affected_tasks {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["self/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
-            .track_tasks_by_target(&[Target::parse("self:c").unwrap()])
+            .track_tasks_by_target_async(&[Target::parse("self:c").unwrap()])
             .await
             .unwrap();
         let affected = tracker.build();
@@ -586,9 +586,9 @@ mod affected_tasks {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["parent/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker
-            .track_tasks_by_target(&[Target::parse("parent:child").unwrap()])
+            .track_tasks_by_target_async(&[Target::parse("parent:child").unwrap()])
             .await
             .unwrap();
         let affected = tracker.build();
@@ -621,9 +621,9 @@ mod affected_tasks {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["downstream/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
-        tracker.track_tasks().await.unwrap();
+        tracker.track_tasks_async().await.unwrap();
         let affected = tracker.build();
 
         assert_eq!(
@@ -650,9 +650,9 @@ mod affected_tasks {
         let workspace_graph = build_graph("tasks").await;
         let changed_files = FxHashSet::from_iter(["upstream/file.txt".into()]);
 
-        let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+        let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
         tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::Direct);
-        tracker.track_tasks().await.unwrap();
+        tracker.track_tasks_async().await.unwrap();
         let affected = tracker.build();
 
         assert_eq!(
@@ -682,9 +682,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::None);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -707,9 +707,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -736,9 +736,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Direct, DownstreamScope::None);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -761,9 +761,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -794,9 +794,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -819,9 +819,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::Deep, DownstreamScope::None);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -857,9 +857,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::None);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -882,9 +882,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -915,9 +915,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Direct);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -940,9 +940,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/c.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -973,9 +973,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["chain/z.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -998,9 +998,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1035,9 +1035,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["dep/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1060,9 +1060,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["dep/src/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1089,9 +1089,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1122,9 +1122,9 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["dep/tests/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_task_scopes(UpstreamScope::None, DownstreamScope::Deep);
-            tracker.track_tasks().await.unwrap();
+            tracker.track_tasks_async().await.unwrap();
             let affected = tracker.build();
 
             assert_eq!(
@@ -1159,10 +1159,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:enabled").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();
@@ -1181,10 +1181,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(false);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:enabled").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:enabled").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();
@@ -1203,10 +1203,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:disabled").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();
@@ -1219,10 +1219,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(false);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:disabled").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:disabled").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();
@@ -1241,10 +1241,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::default();
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:always").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:always").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();
@@ -1266,10 +1266,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:only").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:only").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();
@@ -1288,10 +1288,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(false);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:only").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:only").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();
@@ -1304,10 +1304,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(true);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:skip").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();
@@ -1320,10 +1320,10 @@ mod affected_tasks {
             let workspace_graph = build_graph("tasks").await;
             let changed_files = FxHashSet::from_iter(["ci/file.txt".into()]);
 
-            let mut tracker = AffectedTrackerAsync::new(workspace_graph.into(), changed_files);
+            let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
             tracker.set_ci_check(false);
             tracker
-                .track_tasks_by_target(&[Target::parse("ci:skip").unwrap()])
+                .track_tasks_by_target_async(&[Target::parse("ci:skip").unwrap()])
                 .await
                 .unwrap();
             let affected = tracker.build();

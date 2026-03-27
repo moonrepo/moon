@@ -442,11 +442,9 @@ impl ExecWorkflow {
         let downstream = self.get_downstream();
 
         if self.affected {
-            action_graph_builder.track_affected(
-                upstream,
-                downstream,
-                self.ci_env && self.ci_check,
-            )?;
+            action_graph_builder
+                .track_affected(upstream, downstream, self.ci_env && self.ci_check)
+                .await?;
         }
 
         // Always sync workspace in CI

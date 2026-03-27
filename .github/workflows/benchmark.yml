@@ -1,6 +1,3 @@
-# Thanks to Rome! https://github.com/rome/tools/blob/main/.github/workflows/bench_parser.yml
-# Bump
-
 name: Benchmark
 on:
   issue_comment:
@@ -13,10 +10,6 @@ jobs:
     name: Bench
     if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     runs-on: ubuntu-latest
-    # strategy:
-    #   matrix:
-    #     bench: [emitter_benchmark, pipeline_benchmark]
-    #   fail-fast: false
     steps:
       - run: echo ${{ github.event.pull_request.head.sha }}
       - name: Get PR SHA
@@ -35,10 +28,7 @@ jobs:
           # ref: ${{ github.event.pull_request.head.sha }}
       - uses: moonrepo/setup-rust@v1
       - name: Run benchmarks
-        # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
-        run:
-          cargo bench --workspace --bench emitter_benchmark --bench pipeline_benchmark --bench
-          tar_benchmark -- --save-baseline head-sha
+        run: cargo bench --workspace --bench tracker -- --save-baseline head-sha
 
       # Run on base branch to get a baseline
       - name: Checkout base branch
@@ -47,10 +37,7 @@ jobs:
           clean: false
           ref: ${{ github.event.pull_request.base.sha }}
       - name: Run benchmarks
-        # args: --workspace --bench ${{ matrix.bench }} -- --save-baseline base-sha
-        run:
-          cargo bench --workspace --bench emitter_benchmark --bench pipeline_benchmark --bench
-          tar_benchmark -- --save-baseline base-sha
+        run: cargo bench --workspace --bench tracker -- --save-baseline base-sha
 
       # Compare diffs
       - name: Install critcmp

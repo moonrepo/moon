@@ -38,8 +38,14 @@ pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> AppResul
         query_changed_files_for_affected(&vcs, args.by.as_ref()).await?,
     );
     affected_tracker.set_scopes(args.upstream, args.downstream);
-    affected_tracker.track_projects()?;
-    affected_tracker.track_tasks()?;
+
+    if session.workspace_config.experiments.async_affected_tracking {
+        affected_tracker.track_projects_async().await?;
+        affected_tracker.track_tasks_async().await?;
+    } else {
+        affected_tracker.track_projects()?;
+        affected_tracker.track_tasks()?;
+    }
 
     let affected = affected_tracker.build();
 

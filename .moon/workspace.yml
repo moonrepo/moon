@@ -22,6 +22,9 @@ generator:
 pipeline:
   logRunningCommand: true
 
+experiments:
+  asyncAffectedTracking: true
+
 vcs:
   defaultBranch: 'master'
   # hooks:

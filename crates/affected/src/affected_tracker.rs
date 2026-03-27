@@ -379,46 +379,16 @@ impl AffectedTracker {
     }
 
     pub async fn track_tasks_async(&mut self) -> miette::Result<()> {
-        debug!("Tracking tasks and marking any affected");
-
         // Include internal since they can trigger affected for any dependents!
-        self.internal_track_tasks_async(self.workspace_graph.get_tasks_with_internal()?)
-            .await
+        let tasks = self.workspace_graph.get_tasks_with_internal()?;
+
+        self.track_tasks_by_instance_async(&tasks).await
     }
 
-    pub fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
-        debug!(
-            task_targets = ?targets.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
-            "Tracking tasks by target and marking any affected",
-        );
-
-        for target in targets {
-            let task = self.workspace_graph.get_task(target)?;
-
-            if let Some(affected) = self.is_task_affected(&task)? {
-                self.mark_task_affected(&task, affected)?;
-            }
-        }
-
-        Ok(())
-    }
-
-    pub async fn track_tasks_by_target_async(&mut self, targets: &[Target]) -> miette::Result<()> {
-        debug!(
-            task_targets = ?targets.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
-            "Tracking tasks by target and marking any affected",
-        );
-
-        let mut tasks = Vec::with_capacity(targets.len());
-
-        for target in targets {
-            tasks.push(self.workspace_graph.get_task(target)?);
-        }
-
-        self.internal_track_tasks_async(tasks).await
-    }
-
-    async fn internal_track_tasks_async(&mut self, tasks: Vec<Arc<Task>>) -> miette::Result<()> {
+    pub async fn track_tasks_by_instance_async(
+        &mut self,
+        tasks: &[Arc<Task>],
+    ) -> miette::Result<()> {
         debug!("Tracking tasks and marking any affected");
 
         let ci = self.ci;
@@ -430,6 +400,7 @@ impl AffectedTracker {
 
         // Include internal since they can trigger affected for any dependents!
         for task in tasks {
+            let task = Arc::clone(task);
             let changed_files = Arc::clone(&self.changed_files);
             let workspace_graph = Arc::clone(&self.workspace_graph);
 
@@ -466,6 +437,33 @@ impl AffectedTracker {
         }
 
         Ok(())
+    }
+
+    pub fn track_tasks_by_target(&mut self, targets: &[Target]) -> miette::Result<()> {
+        debug!(
+            task_targets = ?targets.iter().map(|target| target.as_str()).collect::<Vec<_>>(),
+            "Tracking tasks by target and marking any affected",
+        );
+
+        for target in targets {
+            let task = self.workspace_graph.get_task(target)?;
+
+            if let Some(affected) = self.is_task_affected(&task)? {
+                self.mark_task_affected(&task, affected)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn track_tasks_by_target_async(&mut self, targets: &[Target]) -> miette::Result<()> {
+        let mut tasks = Vec::with_capacity(targets.len());
+
+        for target in targets {
+            tasks.push(self.workspace_graph.get_task(target)?);
+        }
+
+        self.track_tasks_by_instance_async(&tasks).await
     }
 
     pub fn is_task_affected(&self, task: &Task) -> miette::Result<Option<AffectedBy>> {

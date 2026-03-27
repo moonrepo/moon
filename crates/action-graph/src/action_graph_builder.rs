@@ -254,7 +254,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(())
     }
 
-    pub fn track_affected(
+    pub async fn track_affected(
         &mut self,
         upstream: UpstreamScope,
         downstream: DownstreamScope,
@@ -275,11 +275,14 @@ impl<'query> ActionGraphBuilder<'query> {
             affected.set_ci_check(ci_check);
             affected.set_scopes(upstream, downstream);
 
-            // Revisit this! Right now we are shifting the logic
-            // into the `internal_run_task` so that we aren't processing
-            // all tasks, only those that have been requested!
-            // affected.track_projects()?;
-            // affected.track_tasks()?;
+            if self
+                .app_context
+                .workspace_config
+                .experiments
+                .async_affected_tracking
+            {
+                affected.track_projects_async().await?;
+            }
         }
 
         Ok(())
@@ -493,6 +496,18 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
+        // Determine affected status of each task
+        if self
+            .app_context
+            .workspace_config
+            .experiments
+            .async_affected_tracking
+            && !reqs.skip_affected
+            && let Some(affected) = &mut self.affected
+        {
+            affected.track_tasks_by_instance_async(&tasks).await?;
+        }
+
         // Now partition the tasks list based on the job information
         if let Some(job_index) = reqs.job
             && let Some(job_total) = reqs.job_total
@@ -560,7 +575,7 @@ impl<'query> ActionGraphBuilder<'query> {
     pub async fn run_tasks_with_plan(
         &mut self,
         plan: &ExecutionPlan,
-        reqs: RunRequirements,
+        mut reqs: RunRequirements,
     ) -> miette::Result<RunPartition> {
         match &plan.targets {
             TargetsBlock::Partitioned { jobs } => {
@@ -586,19 +601,13 @@ impl<'query> ActionGraphBuilder<'query> {
                         .into());
                     }
 
+                    // Reset job handling since we already did it
+                    reqs.job = None;
+                    reqs.job_total = None;
+
                     let targets = &jobs[job_index];
 
-                    for locator in targets {
-                        for task in self
-                            .internal_resolve_tasks_from_target_locator(locator, false)
-                            .await?
-                        {
-                            if let Some(index) = self.run_task(&task, &reqs).await? {
-                                partition.targets.insert(index, task.target.clone());
-                            }
-                        }
-                    }
-
+                    partition.targets = self.run_tasks(targets, reqs).await?.targets;
                     partition.size = Some(targets.len());
                 } else {
                     return Err(ActionGraphError::InvalidPlanJobs.into());

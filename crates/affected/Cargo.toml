@@ -8,6 +8,10 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
+[[bench]]
+name = "tracker"
+harness = false
+
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
@@ -26,6 +30,7 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils2 = { path = "../test-utils" }
+criterion2 = { workspace = true }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 

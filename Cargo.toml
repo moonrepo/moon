@@ -22,6 +22,9 @@ compact_str = { version = "0.9.0", default-features = false, features = [
     "serde",
 ] }
 convert_case = "0.10.0"
+criterion2 = { version = "3.0.2", default-features = false, features = [
+    "async_tokio",
+] }
 daggy = { version = "0.9.0", features = ["serde-1"] }
 dirs = "6.0.0"
 futures = "0.3.31"

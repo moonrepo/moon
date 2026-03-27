@@ -67,48 +67,47 @@ fn do_limit(c: &mut Criterion, max: u16) {
     let mut group = c.benchmark_group(format!("{max}"));
     let sandbox = create_sandbox(max);
     let files = create_changed_files(max);
+    let mocker = create_workspace_mocker(&sandbox);
 
     group.bench_function("projects sync", |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            let mocker = create_workspace_mocker(&sandbox);
-            let mut affected =
-                AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone());
-
-            affected.track_projects().unwrap();
+            AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
+                .track_projects()
+                .unwrap();
         })
     });
 
     group.bench_function("projects async", |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            let mocker = create_workspace_mocker(&sandbox);
-            let mut affected =
-                AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone());
-
-            affected.track_projects_async().await.unwrap();
+            AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
+                .track_projects_async()
+                .await
+                .unwrap();
         })
     });
 
     group.bench_function("tasks sync", |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            let mocker = create_workspace_mocker(&sandbox);
-            let mut affected =
-                AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone());
-
-            affected.track_tasks().unwrap();
+            AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
+                .track_tasks()
+                .unwrap();
         })
     });
 
     group.bench_function("tasks async", |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            let mocker = create_workspace_mocker(&sandbox);
-            let mut affected =
-                AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone());
-
-            affected.track_tasks_async().await.unwrap();
+            AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
+                .track_tasks_async()
+                .await
+                .unwrap();
         })
     });
 
     group.finish();
+}
+
+fn limit_10(c: &mut Criterion) {
+    do_limit(c, 10);
 }
 
 fn limit_100(c: &mut Criterion) {
@@ -119,9 +118,9 @@ fn limit_1000(c: &mut Criterion) {
     do_limit(c, 1000);
 }
 
-fn limit_10000(c: &mut Criterion) {
-    do_limit(c, 10000);
+fn limit_5000(c: &mut Criterion) {
+    do_limit(c, 5000);
 }
 
-criterion_group!(benches, limit_100, limit_1000, limit_10000);
+criterion_group!(benches, limit_10, limit_100, limit_1000, limit_5000);
 criterion_main!(benches);

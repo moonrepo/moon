@@ -1,0 +1,127 @@
+---
+slug: moon-v2.2
+title: moon v2.2
+authors: [milesj]
+tags: []
+# image: ./img/moon/v2.1.png
+---
+
+TODO
+
+<!--truncate-->
+
+## New experimental async affected tracker
+
+The affected tracker is a core component of moon that determines which projects and tasks are
+affected by changes in the codebase. In previous versions, the tracker was implemented
+synchronously, which could lead to performance issues for larger projects with many tasks. With this
+release, the affected tracker is now available with an experimental async implementation. This new
+version is designed to be faster and more efficient (up to 150%), especially for large repositories
+with many tasks.
+
+Since this is experimental, it is not enabled by default. To enable the async tracker, you can
+configure the following in `.moon/workspace.yml`.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  asyncAffectedTracking: true
+```
+
+To demonstrate the performance improvements, take the following benchmark results for example. For
+every benchmark, we had N projects with 3 tasks per project, iterated 100 times. The "average time"
+columns show the average time taken across all iterations, while the "total suite time" columns show
+the total time taken for all iterations. The "speedup" column shows the percentage improvement of
+the async tracker compared to the sync tracker.
+
+If you'll notice, the improvement for projects is negligible, which is expected as project tracking
+is very simple. However, for tasks, the async tracker shows significant improvements as the number
+of tasks increases, with a speedup of 50-150%. With that said, we believe that after 5,000 tasks,
+the increments diminish, as we're most likely hitting the upper limits of how much we can
+parallelize the work.
+
+<table>
+  <tr>
+    <th>Benchmark</th>
+    <th colspan="2">Average time</th>
+    <th colspan="2">Total suite time</th>
+    <th>Speedup</th>
+  </tr>
+  <tr>
+    <td> </td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td> </td>
+  </tr>
+  <tr>
+    <td>10 projects</td>
+    <td>47.9ms</td>
+    <td>47.3ms</td>
+    <td>4.2s</td>
+    <td>4.2s</td>
+    <td>0%</td>
+  </tr>
+  <tr>
+    <td>30 tasks</td>
+    <td>105.08ms</td>
+    <td>61.75ms</td>
+    <td>10.4s</td>
+    <td>5.6s</td>
+    <td>+51.9%</td>
+  </tr>
+  <tr>
+    <td>100 projects</td>
+    <td>60.02ms</td>
+    <td>60.41ms</td>
+    <td>6s</td>
+    <td>6s</td>
+    <td>0%</td>
+  </tr>
+  <tr>
+    <td>300 tasks</td>
+    <td>585.62ms</td>
+    <td>131.43ms</td>
+    <td>58.6s</td>
+    <td>13.1s</td>
+    <td>+126.6%</td>
+  </tr>
+  <tr>
+    <td>1,000 projects</td>
+    <td>202.14ms</td>
+    <td>199.52ms</td>
+    <td>21.6s</td>
+    <td>20s</td>
+    <td>+1.3%</td>
+  </tr>
+  <tr>
+    <td>3,000 tasks</td>
+    <td>5.5s</td>
+    <td>901ms</td>
+    <td>553.4s</td>
+    <td>88.5s</td>
+    <td>+143.75%</td>
+  </tr>
+  <tr>
+    <td>5,000 projects</td>
+    <td>1.1s</td>
+    <td>1s</td>
+    <td>127.8s</td>
+    <td>111.3s</td>
+    <td>+13.8%</td>
+  </tr>
+  <tr>
+    <td>15,000 tasks</td>
+    <td>29s</td>
+    <td>4.5s</td>
+    <td>2,866s (47m)</td>
+    <td>476s (7.9m)</td>
+    <td>+146%</td>
+  </tr>
+</table>
+​
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.2.0) for a full list of
+changes.

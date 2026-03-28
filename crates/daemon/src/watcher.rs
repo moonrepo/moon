@@ -96,16 +96,17 @@ pub async fn start_file_watcher(
                             }
 
                             let kind = match event.kind {
-                                DebouncedEventKind::Any => FileEventKind::Any,
                                 DebouncedEventKind::AnyContinuous => FileEventKind::AnyContinuous,
                                 _ => FileEventKind::Any,
                             };
 
-                            trace!(path = ?event.path, "File change event");
+                            let path = event.path.relative_to(&workspace_root).unwrap();
+
+                            trace!(path = ?path, "File change event");
 
                             // Ignore send failures
                             let _ = event_tx.send(FileEvent {
-                                path: event.path.relative_to(&workspace_root).unwrap(),
+                                path,
                                 kind,
                             });
                         }
@@ -125,13 +126,20 @@ pub async fn start_file_watcher(
     Ok(())
 }
 
-pub async fn start_file_dispatcher<T: Send + 'static>(
+/// Start a file listener that receives file events from `event_rx` and
+/// dispatches them to the provided `watchers`. The listener runs until
+/// `shutdown_rx` receives a message, at which point it returns.
+///
+/// Errors from the watchers are logged but do not stop the listener —
+/// only a shutdown signal does. Watchers are expected to handle their own internal
+/// state and debounce as needed, since file events can arrive in bursts.
+pub async fn start_file_listener<T: Send + 'static>(
     mut state: T,
     mut watchers: Vec<BoxedFileWatcher<T>>,
     mut event_rx: broadcast::Receiver<FileEvent>,
     mut shutdown_rx: broadcast::Receiver<()>,
 ) {
-    debug!("File dispatcher started");
+    debug!("File listener started");
 
     loop {
         tokio::select! {
@@ -148,13 +156,13 @@ pub async fn start_file_dispatcher<T: Send + 'static>(
                         warn!("File change event receiver lagged by {count} events");
                     }
                     Err(broadcast::error::RecvError::Closed) => {
-                        debug!("File dispatcher shutting down");
+                        debug!("File listener shutting down");
                         break;
                     }
                 }
             }
             _ = shutdown_rx.recv() => {
-                debug!("File dispatcher shutting down");
+                debug!("File listener shutting down");
                 break;
             }
         }

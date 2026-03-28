@@ -44,6 +44,8 @@ pub struct WorkspaceBuilderContext<'app> {
     pub extensions_config: &'app ExtensionsConfig,
     pub extension_registry: Arc<ExtensionRegistry>,
     pub inherited_tasks: &'app InheritedTasksManager,
+    pub state_graph_file_name: String,
+    pub state_projects_file_name: String,
     pub toolchains_config: &'app ToolchainsConfig,
     pub toolchain_registry: Arc<ToolchainRegistry>,
     pub vcs: Option<Arc<BoxedVcs>>,
@@ -158,8 +160,10 @@ impl<'app> WorkspaceBuilder<'app> {
         // Check the current state and cache
         let mut state = cache_engine
             .state
-            .load_state::<WorkspaceProjectsCacheState>("projectsBuildDataV1.json")?;
-        let cache_path = cache_engine.state.resolve_path("workspaceGraph.json");
+            .load_state::<WorkspaceProjectsCacheState>(&graph.context().state_projects_file_name)?;
+        let cache_path = cache_engine
+            .state
+            .resolve_path(&graph.context().state_graph_file_name);
 
         if hash == state.data.last_hash && cache_path.exists() {
             let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;

@@ -4,6 +4,7 @@ use moon_config::ConfigFinder;
 use moon_file_watcher::*;
 use proto_core::ProtoEnvironment;
 use regex::Regex;
+use starbase_utils::fs;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
 use tracing::trace;
@@ -61,14 +62,14 @@ impl FileWatcher<MoonSession> for WorkspaceWatcher {
 
         // Handle `.moon/tasks/**/*.config` changes
         if self.tasks_config_regex.is_match(event.path.as_str()) {
-            self.reset_tasks(session)?;
+            self.reset_tasks(session).await?;
 
             return Ok(());
         }
 
         // Handle `moon.config` changes
         if self.project_config_regex.is_match(event.path.as_str()) {
-            self.reset_projects(session)?;
+            self.reset_projects(session).await?;
 
             return Ok(());
         }
@@ -78,14 +79,34 @@ impl FileWatcher<MoonSession> for WorkspaceWatcher {
 }
 
 impl WorkspaceWatcher {
-    fn rebuild_graphs(&mut self, session: &mut MoonSession) {
+    async fn rebuild_graphs(&mut self, session: &mut MoonSession) -> miette::Result<()> {
         session.reset_components();
 
+        // Abort any existing graph building
         if let Some(handle) = self.graph_handle.take() {
             handle.abort();
         }
 
+        // Ensure the cache/state files are cleared before rebuilding
+        let cache_engine = session.get_cache_engine()?;
+        let context = session.create_workspace_graph_context().await?;
+
+        fs::remove_file(
+            cache_engine
+                .state
+                .resolve_path(&context.state_graph_file_name),
+        )?;
+
+        fs::remove_file(
+            cache_engine
+                .state
+                .resolve_path(&context.state_projects_file_name),
+        )?;
+
+        // Rebuild the graphs in a background thread
         self.graph_handle = Some(session.rebuild_graphs());
+
+        Ok(())
     }
 
     fn reset_proto(&self, session: &mut MoonSession) -> miette::Result<()> {
@@ -121,14 +142,14 @@ impl WorkspaceWatcher {
         Ok(())
     }
 
-    fn reset_projects(&mut self, session: &mut MoonSession) -> miette::Result<()> {
+    async fn reset_projects(&mut self, session: &mut MoonSession) -> miette::Result<()> {
         // Always invalidate the workspace graph if a project config changes
-        self.rebuild_graphs(session);
+        self.rebuild_graphs(session).await?;
 
         Ok(())
     }
 
-    fn reset_tasks(&mut self, session: &mut MoonSession) -> miette::Result<()> {
+    async fn reset_tasks(&mut self, session: &mut MoonSession) -> miette::Result<()> {
         trace!("Updating inherited tasks config");
 
         let tasks_config = session
@@ -141,7 +162,7 @@ impl WorkspaceWatcher {
         // Invalidate the workspace graphs if the tasks config changed,
         // so that task inheritance is properly reflected
         if invalidate {
-            self.rebuild_graphs(session);
+            self.rebuild_graphs(session).await?;
         }
 
         Ok(())
@@ -204,7 +225,7 @@ impl WorkspaceWatcher {
 
         // Must run after the new config has been set!
         if rebuild {
-            self.rebuild_graphs(session);
+            self.rebuild_graphs(session).await?;
         }
 
         Ok(())

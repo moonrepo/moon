@@ -1,6 +1,5 @@
 use crate::app::{Cli, Commands};
 use crate::app_error::AppError;
-use crate::helpers::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
@@ -22,7 +21,7 @@ use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, git::Git};
-use moon_workspace::WorkspaceBuilder;
+use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderContext};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use semver::Version;
@@ -135,6 +134,28 @@ impl MoonSession {
         let client = self.get_daemon_connector()?.connect().await?;
 
         Ok(Some(client))
+    }
+
+    pub async fn create_workspace_graph_context(
+        &self,
+    ) -> miette::Result<WorkspaceBuilderContext<'_>> {
+        let context = WorkspaceBuilderContext {
+            config_loader: &self.config_loader,
+            enabled_toolchains: self.toolchains_config.get_enabled(),
+            extensions_config: &self.extensions_config,
+            extension_registry: self.get_extension_registry().await?,
+            inherited_tasks: &self.tasks_config,
+            state_graph_file_name: "workspaceGraph.json".into(),
+            state_projects_file_name: "projectsBuildDataV1.json".into(),
+            toolchains_config: &self.toolchains_config,
+            toolchain_registry: self.get_toolchain_registry().await?,
+            vcs: Some(self.get_vcs_adapter()?),
+            working_dir: &self.working_dir,
+            workspace_config: &self.workspace_config,
+            workspace_root: &self.workspace_root,
+        };
+
+        Ok(context)
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
@@ -267,7 +288,7 @@ impl MoonSession {
 
     async fn load_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
         let cache_engine = self.get_cache_engine()?;
-        let context = create_workspace_graph_context(self).await?;
+        let context = self.create_workspace_graph_context().await?;
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
         let workspace_graph = Arc::new(builder.build().await?);
 

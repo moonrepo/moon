@@ -3,7 +3,7 @@ use crate::endpoint::*;
 use crate::proto::moon_daemon_server::{MoonDaemon, MoonDaemonServer};
 use crate::proto::*;
 use crate::sys::is_process_alive;
-use crate::watcher::{start_file_dispatcher, start_file_watcher};
+use crate::watcher::{start_file_listener, start_file_watcher};
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_process::ProcessRegistry;
 use starbase_utils::fs;
@@ -133,14 +133,14 @@ pub async fn start_daemon_server<T: Send + 'static>(
     let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
     let mut signal_rx = ProcessRegistry::instance().receive_signal();
 
-    // Spawn the file watcher in the background
+    // Spawn the file watcher and listener in the background
     let (event_tx, event_rx) = broadcast::channel::<FileEvent>(1024);
     let watcher_handle = tokio::spawn(start_file_watcher(
         workspace_root.to_owned(),
         event_tx.clone(),
         shutdown_tx.subscribe(),
     ));
-    let dispatcher_handle = tokio::spawn(start_file_dispatcher(
+    let listener_handle = tokio::spawn(start_file_listener(
         state,
         watchers,
         event_rx,
@@ -181,15 +181,15 @@ pub async fn start_daemon_server<T: Send + 'static>(
     #[cfg(windows)]
     serve_windows(&endpoint, service, shutdown_signal).await?;
 
-    // Wait for the file watcher and dispatcher to finish
+    // Wait for the file watcher and listener to finish
     match watcher_handle.await {
         Ok(Err(error)) => error!("File watcher exited with error: {error}"),
         Err(error) => error!("File watcher task panicked: {error}"),
         _ => {}
     };
 
-    if let Err(error) = dispatcher_handle.await {
-        error!("File dispatcher task panicked: {error}");
+    if let Err(error) = listener_handle.await {
+        error!("File listener task panicked: {error}");
     };
 
     info!("Daemon server stopped");

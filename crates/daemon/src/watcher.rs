@@ -1,4 +1,6 @@
 use crate::daemon_error::DaemonError;
+use moon_common::path::PathExt;
+use moon_file_watcher::*;
 use notify_debouncer_mini::{DebouncedEventKind, new_debouncer, notify::RecursiveMode};
 use rustc_hash::FxHashSet;
 use std::path::{Component, Path, PathBuf};
@@ -17,20 +19,6 @@ static IGNORED_DIRS: LazyLock<FxHashSet<&'static str>> =
 /// Path segments (multi-component) that are ignored
 static IGNORED_PATHS: LazyLock<Vec<[&'static str; 2]>> =
     LazyLock::new(|| vec![[".moon", "cache"], [".moon", "docker"]]);
-
-#[derive(Clone, Debug)]
-pub struct FileEvent {
-    pub path: PathBuf,
-    pub kind: FileEventKind,
-}
-
-#[derive(Clone, Debug)]
-pub enum FileEventKind {
-    /// File or directory was created or modified
-    Any,
-    /// Continuous/ongoing modification (e.g. a long write)
-    AnyContinuous,
-}
 
 /// Returns `true` if the path should be ignored by the watcher
 fn is_ignored(path: &Path) -> bool {
@@ -117,7 +105,7 @@ pub async fn start_file_watcher(
 
                             // Ignore send failures
                             let _ = event_tx.send(FileEvent {
-                                path: event.path,
+                                path: event.path.relative_to(&workspace_root).unwrap(),
                                 kind,
                             });
                         }

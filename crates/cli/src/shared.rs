@@ -56,7 +56,7 @@ fn get_tracing_modules() -> Vec<String> {
         modules.push("extism::pdk".into());
     }
 
-    if bag.should_debug_remote() {
+    if bag.should_debug_daemon() || bag.should_debug_remote() {
         modules.push("tonic".into());
     }
 

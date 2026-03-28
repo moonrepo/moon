@@ -145,6 +145,9 @@ impl<'app> WorkspaceBuilder<'app> {
             return Ok(graph);
         }
 
+        // Create a lock to avoid colliding cache writes
+        let _lock = cache_engine.create_lock("workspaceGraph")?;
+
         // Hash the project graph based on the preloaded state
         let mut fingerprint = WorkspaceGraphFingerprint::default();
         fingerprint.add_projects(&graph.project_data);

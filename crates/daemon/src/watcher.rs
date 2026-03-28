@@ -1,7 +1,7 @@
 use crate::daemon_error::DaemonError;
 use moon_common::path::PathExt;
 use moon_file_watcher::*;
-use notify_debouncer_mini::{DebouncedEventKind, new_debouncer, notify::RecursiveMode};
+use notify_debouncer_full::{new_debouncer, notify::RecursiveMode};
 use rustc_hash::FxHashSet;
 use std::path::{Component, Path, PathBuf};
 use std::sync::LazyLock;
@@ -49,7 +49,7 @@ fn is_ignored(path: &Path) -> bool {
     false
 }
 
-fn map_notify_error(error: notify_debouncer_mini::notify::Error) -> DaemonError {
+fn map_notify_error(error: notify_debouncer_full::notify::Error) -> DaemonError {
     DaemonError::WatcherFailed {
         error: Box::new(error),
     }
@@ -71,7 +71,7 @@ pub async fn start_file_watcher(
     let (bridge_tx, mut bridge_rx) = mpsc::channel(512);
 
     // This closure runs on notify's internal thread
-    let mut debouncer = new_debouncer(DEBOUNCE_TIMEOUT, move |result| {
+    let mut debouncer = new_debouncer(DEBOUNCE_TIMEOUT, None, move |result| {
         if bridge_tx.blocking_send(result).is_err() {
             // Receiver dropped — watcher is shutting down
         }
@@ -79,7 +79,6 @@ pub async fn start_file_watcher(
     .map_err(map_notify_error)?;
 
     debouncer
-        .watcher()
         .watch(&workspace_root, RecursiveMode::Recursive)
         .map_err(map_notify_error)?;
 
@@ -91,28 +90,27 @@ pub async fn start_file_watcher(
                 match result {
                     Ok(events) => {
                         for event in events {
-                            if is_ignored(&event.path) {
-                                continue;
+                            for path in &event.paths {
+                                if is_ignored(&path) {
+                                    continue;
+                                }
+
+                                let rel_path = path.relative_to(&workspace_root).unwrap();
+
+                                trace!(path = ?rel_path, kind = ?event.kind, "File change event");
+
+                                // Ignore send failures
+                                let _ = event_tx.send(FileEvent {
+                                    path: rel_path,
+                                    kind: event.kind.clone(),
+                                });
                             }
-
-                            let kind = match event.kind {
-                                DebouncedEventKind::AnyContinuous => FileEventKind::AnyContinuous,
-                                _ => FileEventKind::Any,
-                            };
-
-                            let path = event.path.relative_to(&workspace_root).unwrap();
-
-                            trace!(path = ?path, "File change event");
-
-                            // Ignore send failures
-                            let _ = event_tx.send(FileEvent {
-                                path,
-                                kind,
-                            });
                         }
                     }
-                    Err(error) => {
-                        warn!("File watcher error: {error}");
+                    Err(errors) => {
+                        for error in errors {
+                            warn!("File watcher error: {error}");
+                        }
                     }
                 }
             }

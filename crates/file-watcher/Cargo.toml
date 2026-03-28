@@ -12,6 +12,7 @@ publish = false
 moon_common = { path = "../common" }
 async-trait = { workspace = true }
 miette = { workspace = true }
+notify-types = "2.1.0"
 
 [lints]
 workspace = true

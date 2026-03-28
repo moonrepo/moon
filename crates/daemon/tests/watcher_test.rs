@@ -72,7 +72,7 @@ impl FileWatcher<TestState> for SecondRecordingWatcher {
 fn make_event(path: &str) -> FileEvent {
     FileEvent {
         path: path.into(),
-        kind: FileEventKind::Any,
+        kind: EventKind::Any,
     }
 }
 

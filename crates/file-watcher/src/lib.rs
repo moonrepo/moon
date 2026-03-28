@@ -1,18 +1,12 @@
 use async_trait::async_trait;
 use moon_common::path::WorkspaceRelativePathBuf;
 
+pub use notify_types::event::*;
+
 #[derive(Clone, Debug)]
 pub struct FileEvent {
     pub path: WorkspaceRelativePathBuf,
-    pub kind: FileEventKind,
-}
-
-#[derive(Clone, Debug)]
-pub enum FileEventKind {
-    /// File or directory was created or modified
-    Any,
-    /// Continuous/ongoing modification (e.g. a long write)
-    AnyContinuous,
+    pub kind: EventKind,
 }
 
 #[async_trait]

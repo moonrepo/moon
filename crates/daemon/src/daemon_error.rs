@@ -67,6 +67,6 @@ pub enum DaemonError {
     #[error("File watcher failed to start.")]
     WatcherFailed {
         #[source]
-        error: Box<notify_debouncer_mini::notify::Error>,
+        error: Box<notify_debouncer_full::notify::Error>,
     },
 }

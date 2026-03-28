@@ -35,6 +35,9 @@ windows-sys = { version = "0.61.2", default-features = false, features = [
 ] }
 
 [dev-dependencies]
+async-trait = { workspace = true }
+miette = { workspace = true }
+moon_file_watcher = { path = "../file-watcher" }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 

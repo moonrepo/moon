@@ -91,7 +91,7 @@ pub async fn start_file_watcher(
                     Ok(events) => {
                         for event in events {
                             for path in &event.paths {
-                                if is_ignored(&path) {
+                                if is_ignored(path) {
                                     continue;
                                 }
 
@@ -101,8 +101,9 @@ pub async fn start_file_watcher(
 
                                 // Ignore send failures
                                 let _ = event_tx.send(FileEvent {
+                                    path_original: path.clone(),
                                     path: rel_path,
-                                    kind: event.kind.clone(),
+                                    kind: event.kind,
                                 });
                             }
                         }

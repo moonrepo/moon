@@ -3,6 +3,7 @@
 use async_trait::async_trait;
 use moon_daemon::start_file_listener;
 use moon_file_watcher::*;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::broadcast;
@@ -71,6 +72,7 @@ impl FileWatcher<TestState> for SecondRecordingWatcher {
 
 fn make_event(path: &str) -> FileEvent {
     FileEvent {
+        path_original: PathBuf::from(path),
         path: path.into(),
         kind: EventKind::Any,
     }

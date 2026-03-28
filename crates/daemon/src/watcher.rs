@@ -101,7 +101,7 @@ pub async fn start_file_watcher(
                                 _ => FileEventKind::Any,
                             };
 
-                            trace!(path = ?event.path, ?kind, "File event");
+                            trace!(path = ?event.path, "File change event");
 
                             // Ignore send failures
                             let _ = event_tx.send(FileEvent {
@@ -140,12 +140,12 @@ pub async fn start_file_dispatcher<T: Send + 'static>(
                     Ok(event) => {
                         for watcher in watchers.iter() {
                             if let Err(error) = watcher.on_file_event(&mut state, &event).await {
-                                error!("File watcher error: {error}");
+                                error!("System watcher error: {error}");
                             }
                         }
                     }
                     Err(broadcast::error::RecvError::Lagged(count)) => {
-                        warn!("File event receiver lagged by {count} events");
+                        warn!("File change event receiver lagged by {count} events");
                     }
                     Err(broadcast::error::RecvError::Closed) => {
                         debug!("File dispatcher shutting down");

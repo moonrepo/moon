@@ -39,8 +39,6 @@ impl FileWatcher<MoonSession> for WorkspaceWatcher {
         session: &mut MoonSession,
         event: &FileEvent,
     ) -> miette::Result<()> {
-        println!("WorkspaceWatcher: File event: {:?}", event);
-
         // Handle `.prototools` changes
         if event.path.as_str() == ".prototools" {
             self.reset_proto(session)?;

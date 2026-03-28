@@ -407,8 +407,6 @@ impl WorkspaceMocker {
             extensions_config: &self.extensions_config,
             extension_registry: Arc::new(self.mock_extension_registry()),
             inherited_tasks: &self.inherited_tasks,
-            state_graph_file_name: "workspaceGraph.json".into(),
-            state_projects_file_name: "projectsBuildData.json".into(),
             toolchains_config: &self.toolchains_config,
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),
             vcs: if self.workspace_root.join(".git").exists() {

@@ -16,7 +16,6 @@ use tracing::{debug, error, info};
 
 struct DaemonServiceInner {
     endpoint: String,
-    event_tx: broadcast::Sender<FileEvent>,
     moon_version: String,
     pid: u32,
     shutdown_tx: broadcast::Sender<()>,
@@ -35,12 +34,10 @@ impl DaemonService {
         endpoint: String,
         pid: u32,
         shutdown_tx: broadcast::Sender<()>,
-        event_tx: broadcast::Sender<FileEvent>,
     ) -> Self {
         Self {
             inner: Arc::new(DaemonServiceInner {
                 endpoint,
-                event_tx,
                 moon_version,
                 pid,
                 shutdown_tx,
@@ -48,11 +45,6 @@ impl DaemonService {
                 workspace_root,
             }),
         }
-    }
-
-    /// Subscribe to file change events from the watcher
-    pub fn subscribe_events(&self) -> broadcast::Receiver<FileEvent> {
-        self.inner.event_tx.subscribe()
     }
 }
 
@@ -154,7 +146,6 @@ pub async fn start_daemon_server<T: Send + 'static>(
         endpoint.clone(),
         pid,
         shutdown_tx.clone(),
-        event_tx,
     );
 
     // Merge the RPC-driven shutdown with OS signals so the daemon

@@ -145,8 +145,6 @@ impl MoonSession {
             extensions_config: &self.extensions_config,
             extension_registry: self.get_extension_registry().await?,
             inherited_tasks: &self.tasks_config,
-            state_graph_file_name: "workspaceGraph.json".into(),
-            state_projects_file_name: "projectsBuildDataV1.json".into(),
             toolchains_config: &self.toolchains_config,
             toolchain_registry: self.get_toolchain_registry().await?,
             vcs: Some(self.get_vcs_adapter()?),

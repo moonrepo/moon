@@ -2,6 +2,7 @@ use crate::session::MoonSession;
 use async_trait::async_trait;
 use moon_config::ConfigFinder;
 use moon_file_watcher::*;
+use moon_workspace::{STATE_GRAPH_FILE_NAME, STATE_PROJECTS_FILE_NAME};
 use proto_core::ProtoEnvironment;
 use regex::Regex;
 use starbase_utils::fs;
@@ -89,19 +90,9 @@ impl WorkspaceWatcher {
 
         // Ensure the cache/state files are cleared before rebuilding
         let cache_engine = session.get_cache_engine()?;
-        let context = session.create_workspace_graph_context().await?;
 
-        fs::remove_file(
-            cache_engine
-                .state
-                .resolve_path(&context.state_graph_file_name),
-        )?;
-
-        fs::remove_file(
-            cache_engine
-                .state
-                .resolve_path(&context.state_projects_file_name),
-        )?;
+        fs::remove_file(cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME))?;
+        fs::remove_file(cache_engine.state.resolve_path(STATE_PROJECTS_FILE_NAME))?;
 
         // Rebuild the graphs in a background thread
         self.graph_handle = Some(session.rebuild_graphs());

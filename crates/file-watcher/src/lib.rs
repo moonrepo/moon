@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use moon_common::path::WorkspaceRelativePathBuf;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct FileEvent {
@@ -16,6 +17,8 @@ pub enum FileEventKind {
 }
 
 #[async_trait]
-pub trait FileWatcher<T> {
-    async fn on_file_event(&self, event: FileEvent, state: T);
+pub trait FileWatcher<T>: Send + Sync {
+    async fn on_file_event(&self, state: &mut T, event: &FileEvent) -> miette::Result<()>;
 }
+
+pub type BoxedFileWatcher<T> = Arc<dyn FileWatcher<T>>;

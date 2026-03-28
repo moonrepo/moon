@@ -47,13 +47,13 @@ pub struct MoonSession {
     pub proto_env: Arc<ProtoEnvironment>,
 
     // Lazy components
-    cache_engine: OnceLock<Arc<CacheEngine>>,
-    extension_registry: OnceLock<Arc<ExtensionRegistry>>,
-    project_graph: OnceLock<Arc<ProjectGraph>>,
-    task_graph: OnceLock<Arc<TaskGraph>>,
-    toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
-    vcs_adapter: OnceLock<Arc<BoxedVcs>>,
-    workspace_graph: OnceCell<Arc<WorkspaceGraph>>,
+    pub(crate) cache_engine: OnceLock<Arc<CacheEngine>>,
+    pub(crate) extension_registry: OnceLock<Arc<ExtensionRegistry>>,
+    pub(crate) project_graph: OnceLock<Arc<ProjectGraph>>,
+    pub(crate) task_graph: OnceLock<Arc<TaskGraph>>,
+    pub(crate) toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
+    pub(crate) vcs_adapter: OnceLock<Arc<BoxedVcs>>,
+    pub(crate) workspace_graph: OnceCell<Arc<WorkspaceGraph>>,
 
     // Configs
     pub extensions_config: Arc<ExtensionsConfig>,
@@ -171,10 +171,10 @@ impl MoonSession {
     }
 
     pub fn get_daemon_connector(&self) -> miette::Result<DaemonConnector> {
-        Ok(DaemonConnector {
-            daemon_dir: self.config_dir.join("cache").join("daemon"),
-            workspace_root: self.workspace_root.clone(),
-        })
+        Ok(DaemonConnector::new(
+            self.config_dir.join("cache").join("daemon"),
+            self.workspace_root.clone(),
+        ))
     }
 
     pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {

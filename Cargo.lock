@@ -4637,6 +4637,7 @@ dependencies = [
  "moon_exec_plan",
  "moon_extension_plugin",
  "moon_feature_flags",
+ "moon_file_watcher",
  "moon_mcp",
  "moon_pdk_api",
  "moon_plugin",
@@ -4995,6 +4996,7 @@ name = "moon_file_watcher"
 version = "0.0.1"
 dependencies = [
  "async-trait",
+ "miette 7.6.0",
  "moon_common",
 ]
 

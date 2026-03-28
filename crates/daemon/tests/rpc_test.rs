@@ -2,6 +2,7 @@
 // transport, connect a client, and exercise every RPC method.
 
 use moon_daemon::*;
+use moon_file_watcher::FileEvent;
 use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
@@ -16,7 +17,14 @@ pub fn build_daemon_service(
     shutdown_tx: broadcast::Sender<()>,
 ) -> DaemonService {
     let (event_tx, _) = broadcast::channel::<FileEvent>(16);
-    DaemonService::new(workspace_root, moon_version, endpoint, pid, shutdown_tx, event_tx)
+    DaemonService::new(
+        workspace_root,
+        moon_version,
+        endpoint,
+        pid,
+        shutdown_tx,
+        event_tx,
+    )
 }
 
 #[cfg(unix)]

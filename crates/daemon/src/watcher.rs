@@ -7,7 +7,7 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::LazyLock;
 use std::time::Duration;
 use tokio::sync::{broadcast, mpsc};
-use tracing::{debug, trace, warn};
+use tracing::{debug, error, trace, warn};
 
 /// Debounce timeout — events within this window are coalesced
 const DEBOUNCE_TIMEOUT: Duration = Duration::from_millis(500);
@@ -123,6 +123,42 @@ pub async fn start_file_watcher(
     }
 
     Ok(())
+}
+
+pub async fn start_file_dispatcher<T: Send + 'static>(
+    mut state: T,
+    watchers: Vec<BoxedFileWatcher<T>>,
+    mut event_rx: broadcast::Receiver<FileEvent>,
+    mut shutdown_rx: broadcast::Receiver<()>,
+) {
+    debug!("File dispatcher started");
+
+    loop {
+        tokio::select! {
+            result = event_rx.recv() => {
+                match result {
+                    Ok(event) => {
+                        for watcher in watchers.iter() {
+                            if let Err(error) = watcher.on_file_event(&mut state, &event).await {
+                                error!("File watcher error: {error}");
+                            }
+                        }
+                    }
+                    Err(broadcast::error::RecvError::Lagged(count)) => {
+                        warn!("File event receiver lagged by {count} events");
+                    }
+                    Err(broadcast::error::RecvError::Closed) => {
+                        debug!("File dispatcher shutting down");
+                        break;
+                    }
+                }
+            }
+            _ = shutdown_rx.recv() => {
+                debug!("File dispatcher shutting down");
+                break;
+            }
+        }
+    }
 }
 
 #[cfg(test)]

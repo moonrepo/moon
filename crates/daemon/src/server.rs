@@ -3,7 +3,8 @@ use crate::endpoint::*;
 use crate::proto::moon_daemon_server::{MoonDaemon, MoonDaemonServer};
 use crate::proto::*;
 use crate::sys::is_process_alive;
-use crate::watcher::{FileEvent, start_file_watcher};
+use crate::watcher::{start_file_dispatcher, start_file_watcher};
+use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_process::ProcessRegistry;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
@@ -108,10 +109,12 @@ impl MoonDaemon for DaemonService {
 /// - `SIGINT` or `SIGTERM` (Unix) / `Ctrl+C` (Windows)
 ///
 /// On shutdown the PID file and socket are removed.
-pub async fn start_daemon_server(
+pub async fn start_daemon_server<T: Send + 'static>(
     workspace_root: &Path,
     daemon_dir: &Path,
     moon_version: &str,
+    state: T,
+    watchers: Vec<BoxedFileWatcher<T>>,
 ) -> miette::Result<()> {
     let endpoint = get_endpoint(daemon_dir);
 
@@ -131,10 +134,16 @@ pub async fn start_daemon_server(
     let mut signal_rx = ProcessRegistry::instance().receive_signal();
 
     // Spawn the file watcher in the background
-    let (event_tx, _) = broadcast::channel::<FileEvent>(1024);
+    let (event_tx, event_rx) = broadcast::channel::<FileEvent>(1024);
     let watcher_handle = tokio::spawn(start_file_watcher(
         workspace_root.to_owned(),
         event_tx.clone(),
+        shutdown_tx.subscribe(),
+    ));
+    let dispatcher_handle = tokio::spawn(start_file_dispatcher(
+        state,
+        watchers,
+        event_rx,
         shutdown_tx.subscribe(),
     ));
 
@@ -172,11 +181,15 @@ pub async fn start_daemon_server(
     #[cfg(windows)]
     serve_windows(&endpoint, service, shutdown_signal).await?;
 
-    // Wait for the file watcher to finish
+    // Wait for the file watcher and dispatcher to finish
     match watcher_handle.await {
         Ok(Err(error)) => error!("File watcher exited with error: {error}"),
         Err(error) => error!("File watcher task panicked: {error}"),
         _ => {}
+    };
+
+    if let Err(error) = dispatcher_handle.await {
+        error!("File dispatcher task panicked: {error}");
     };
 
     info!("Daemon server stopped");

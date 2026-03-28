@@ -24,6 +24,13 @@ pub struct DaemonConnector {
 }
 
 impl DaemonConnector {
+    pub fn new(daemon_dir: PathBuf, workspace_root: PathBuf) -> Self {
+        Self {
+            daemon_dir,
+            workspace_root,
+        }
+    }
+
     #[instrument(skip(self))]
     pub async fn connect(&self) -> miette::Result<DaemonClient> {
         // Ensure the server is running

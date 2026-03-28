@@ -130,6 +130,10 @@ impl ToolchainsConfig {
 
         Ok(())
     }
+
+    pub fn should_invalidate(&self, other: &Self) -> bool {
+        self.plugins != other.plugins
+    }
 }
 
 #[cfg(feature = "proto")]

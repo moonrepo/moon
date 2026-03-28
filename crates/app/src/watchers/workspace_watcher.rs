@@ -1,15 +1,16 @@
-use std::sync::Arc;
-
 use crate::session::MoonSession;
 use async_trait::async_trait;
 use moon_config::ConfigFinder;
 use moon_file_watcher::*;
 use proto_core::ProtoEnvironment;
 use regex::Regex;
-use tokio::sync::Mutex;
+use std::sync::Arc;
+use tokio::task::JoinHandle;
+use tracing::trace;
 
 pub struct WorkspaceWatcher {
-    graph_mutex: Arc<Mutex<()>>,
+    graph_handle: Option<JoinHandle<()>>,
+
     project_config_regex: Regex,
     tasks_config_regex: Regex,
     workspace_config_regex: Regex,
@@ -20,7 +21,7 @@ impl Default for WorkspaceWatcher {
         let exts_group = format!("({})", ConfigFinder::default().extensions.join("|"));
 
         Self {
-            graph_mutex: Arc::new(Mutex::new(())),
+            graph_handle: None,
             project_config_regex: Regex::new(&format!(r"(^|/)moon\.{exts_group}$")).unwrap(),
             tasks_config_regex: Regex::new(&format!(r"^(\.moon|\.config/moon)/.*\.{exts_group}$"))
                 .unwrap(),
@@ -35,11 +36,11 @@ impl Default for WorkspaceWatcher {
 #[async_trait]
 impl FileWatcher<MoonSession> for WorkspaceWatcher {
     async fn on_file_event(
-        &self,
+        &mut self,
         session: &mut MoonSession,
         event: &FileEvent,
     ) -> miette::Result<()> {
-        // Handle `.prototools` changes
+        // Handle root `.prototools` changes
         if event.path.as_str() == ".prototools" {
             self.reset_proto(session)?;
 
@@ -51,7 +52,7 @@ impl FileWatcher<MoonSession> for WorkspaceWatcher {
             match caps.name("name").map(|cap| cap.as_str()) {
                 Some("extensions") => self.reset_extensions(session)?,
                 Some("toolchains") => self.reset_toolchains(session)?,
-                Some("workspace") => self.reset_workspace(session)?,
+                Some("workspace") => self.reset_workspace(session).await?,
                 _ => {}
             };
 
@@ -77,60 +78,134 @@ impl FileWatcher<MoonSession> for WorkspaceWatcher {
 }
 
 impl WorkspaceWatcher {
+    fn rebuild_graphs(&mut self, session: &mut MoonSession) {
+        session.reset_components();
+
+        if let Some(handle) = self.graph_handle.take() {
+            handle.abort();
+        }
+
+        self.graph_handle = Some(session.rebuild_graphs());
+    }
+
     fn reset_proto(&self, session: &mut MoonSession) -> miette::Result<()> {
+        trace!("Updating proto environment");
+
         let mut env = ProtoEnvironment::new()?;
         env.working_dir = session.working_dir.clone();
 
-        session.set_proto_env(env);
+        session.proto_env = Arc::new(env);
+        session.reset_components();
 
         Ok(())
     }
 
     fn reset_extensions(&self, session: &mut MoonSession) -> miette::Result<()> {
-        session.set_extensions_config(
-            session
-                .config_loader
-                .load_extensions_config(&session.workspace_root)?,
-        );
+        trace!("Updating extensions config");
+
+        let extensions_config = session
+            .config_loader
+            .load_extensions_config(&session.workspace_root)?;
+        let invalidate = session
+            .extensions_config
+            .should_invalidate(&extensions_config);
+
+        session.extensions_config = Arc::new(extensions_config);
+
+        // Invalidate the extensions registry if the extensions config changed
+        if invalidate {
+            session.reset_components();
+            session.download_extensions();
+        }
 
         Ok(())
     }
 
-    fn reset_projects(&self, session: &mut MoonSession) -> miette::Result<()> {
-        session.reset_components();
-        session.regenerate_graphs(Arc::clone(&self.graph_mutex));
+    fn reset_projects(&mut self, session: &mut MoonSession) -> miette::Result<()> {
+        // Always invalidate the workspace graph if a project config changes
+        self.rebuild_graphs(session);
 
         Ok(())
     }
 
-    fn reset_tasks(&self, session: &mut MoonSession) -> miette::Result<()> {
-        session.set_tasks_config(
-            session
-                .config_loader
-                .load_tasks_manager(&session.workspace_root)?,
-        );
+    fn reset_tasks(&mut self, session: &mut MoonSession) -> miette::Result<()> {
+        trace!("Updating inherited tasks config");
+
+        let tasks_config = session
+            .config_loader
+            .load_tasks_manager(&session.workspace_root)?;
+        let invalidate = session.tasks_config.should_invalidate(&tasks_config);
+
+        session.tasks_config = Arc::new(tasks_config);
+
+        // Invalidate the workspace graphs if the tasks config changed,
+        // so that task inheritance is properly reflected
+        if invalidate {
+            self.rebuild_graphs(session);
+        }
 
         Ok(())
     }
 
     fn reset_toolchains(&self, session: &mut MoonSession) -> miette::Result<()> {
-        session.set_toolchains_config(
-            session.config_loader.load_toolchains_config(
-                &session.workspace_root,
-                session.proto_env.load_config()?,
-            )?,
-        );
+        trace!("Updating toolchains config");
+
+        let toolchains_config = session
+            .config_loader
+            .load_toolchains_config(&session.workspace_root, session.proto_env.load_config()?)?;
+        let invalidate = session
+            .toolchains_config
+            .should_invalidate(&toolchains_config);
+
+        session.toolchains_config = Arc::new(toolchains_config);
+
+        // Invalidate the toolchain registry if the toolchains config changed
+        if invalidate {
+            session.reset_components();
+            session.download_toolchains();
+        }
 
         Ok(())
     }
 
-    fn reset_workspace(&self, session: &mut MoonSession) -> miette::Result<()> {
-        session.set_workspace_config(
-            session
-                .config_loader
-                .load_workspace_config(&session.workspace_root)?,
-        );
-        session.regenerate_graphs(Arc::clone(&self.graph_mutex));
+    async fn reset_workspace(&mut self, session: &mut MoonSession) -> miette::Result<()> {
+        trace!("Updating workspace config");
+
+        let workspace_config = session
+            .config_loader
+            .load_workspace_config(&session.workspace_root)?;
+        let mut rebuild = false;
+
+        // Invalidate the VCS adapter if the VCS config changed
+        if session
+            .workspace_config
+            .vcs
+            .should_invalidate(&workspace_config.vcs)
+        {
+            session.reset_vcs();
+        }
+
+        // Invalidate the workspace graphs if the project configs changed
+        if workspace_config.projects != session.workspace_config.projects
+            || workspace_config.default_project != session.workspace_config.default_project
+        {
+            session.reset_components();
+            rebuild = true;
+        }
+
+        // If the daemon has been turned off, attempt to stop it via the client
+        if !workspace_config.daemon
+            && let Ok(Some(mut client)) = session.connect_to_daemon().await
+        {
+            let _ = client.stop().await;
+        }
+
+        session.workspace_config = Arc::new(workspace_config);
+
+        // Must run after the new config has been set!
+        if rebuild {
+            self.rebuild_graphs(session);
+        }
 
         Ok(())
     }

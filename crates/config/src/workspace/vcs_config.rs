@@ -77,3 +77,10 @@ config_struct!(
         pub sync: bool,
     }
 );
+
+impl VcsConfig {
+    pub fn should_invalidate(&self, other: &Self) -> bool {
+        self.default_branch != other.default_branch
+            || self.remote_candidates != other.remote_candidates
+    }
+}

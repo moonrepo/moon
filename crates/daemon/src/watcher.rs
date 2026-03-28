@@ -127,7 +127,7 @@ pub async fn start_file_watcher(
 
 pub async fn start_file_dispatcher<T: Send + 'static>(
     mut state: T,
-    watchers: Vec<BoxedFileWatcher<T>>,
+    mut watchers: Vec<BoxedFileWatcher<T>>,
     mut event_rx: broadcast::Receiver<FileEvent>,
     mut shutdown_rx: broadcast::Receiver<()>,
 ) {
@@ -138,7 +138,7 @@ pub async fn start_file_dispatcher<T: Send + 'static>(
             result = event_rx.recv() => {
                 match result {
                     Ok(event) => {
-                        for watcher in watchers.iter() {
+                        for watcher in watchers.iter_mut() {
                             if let Err(error) = watcher.on_file_event(&mut state, &event).await {
                                 error!("System watcher error: {error}");
                             }

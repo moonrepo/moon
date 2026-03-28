@@ -57,6 +57,10 @@ impl ExtensionsConfig {
     pub fn get_plugin_config(&self, id: impl AsRef<str>) -> Option<&ExtensionPluginConfig> {
         self.plugins.get(id.as_ref())
     }
+
+    pub fn should_invalidate(&self, other: &Self) -> bool {
+        self.plugins != other.plugins
+    }
 }
 
 #[cfg(feature = "proto")]

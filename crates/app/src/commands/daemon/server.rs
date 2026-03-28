@@ -2,7 +2,6 @@ use crate::session::MoonSession;
 use crate::watchers::WorkspaceWatcher;
 use moon_daemon::start_daemon_server;
 use starbase::AppResult;
-use std::sync::Arc;
 
 pub async fn server(session: MoonSession) -> AppResult {
     let connector = session.get_daemon_connector()?;
@@ -13,7 +12,7 @@ pub async fn server(session: MoonSession) -> AppResult {
         &connector.daemon_dir,
         &moon_version,
         session,
-        vec![Arc::new(WorkspaceWatcher::default())],
+        vec![Box::new(WorkspaceWatcher::default())],
     )
     .await?;
 

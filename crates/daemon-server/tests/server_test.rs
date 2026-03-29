@@ -157,7 +157,7 @@ mod unix_rpc {
 #[cfg(windows)]
 mod windows_rpc {
     use super::*;
-    use moon_daemon::serve_windows;
+    use moon_daemon_server::serve_windows;
 
     /// Helper: start a gRPC server in the background on a temporary named pipe,
     /// returning a shutdown sender so the test can stop it.

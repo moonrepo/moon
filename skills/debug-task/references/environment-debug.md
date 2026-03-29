@@ -18,7 +18,7 @@ inspection tools available for deep debugging of moon tasks.
 
 ## Debug environment variables
 
-Moon provides several environment variables that reveal internal state during
+moon provides several environment variables that reveal internal state during
 task execution. Set them before running `moon run`:
 
 | Variable | What it reveals |
@@ -125,6 +125,9 @@ Shows the fully resolved task configuration after inheritance, merging, and
 token resolution. This is the single most useful debugging command — always
 start here.
 
+**Tip:** Running `moon task <project>:<task>` without `--json` also displays
+all available `PATH`s for the resolved toolchain.
+
 ### `moon project` — inspect project metadata
 
 ```bash
@@ -137,6 +140,19 @@ moon project <project> --json
 
 Shows project metadata: language, toolchain, stack, layer, tags, dependencies,
 file groups, and all configured tasks.
+
+### `moon task-graph` / `moon project-graph` — visualize graphs
+
+```bash
+# Visualize the task dependency graph
+moon task-graph <project>:<task>
+
+# Visualize the project dependency graph
+moon project-graph <project>
+```
+
+These show task-level and project-level dependency relationships respectively,
+complementing the lower-level action graph below.
 
 ### `moon action-graph` — visualize the dependency graph
 
@@ -172,6 +188,8 @@ moon hash <hash1> <hash2>
 # JSON output
 moon hash <hash> --json
 ```
+
+> For interpreting hash diffs in cache investigations, see `cache-issues.md`.
 
 ### `moon query` — query project and task information
 

@@ -30,8 +30,9 @@ and how to fix it.
 
 This is the single most common configuration mistake.
 
-**`command`** accepts a single binary name with optional arguments. It supports
-task inheritance merge strategies (`mergeArgs: append|prepend|replace`).
+**`command`** accepts a single binary name with optional arguments — also known
+as a [simple command](https://www.gnu.org/software/bash/manual/html_node/Simple-Commands.html)
+in shell terminology. It supports task inheritance merge strategies.
 
 ```yaml
 tasks:
@@ -43,8 +44,9 @@ tasks:
       - 'src/'
 ```
 
-**`script`** accepts one or more shell commands with full shell syntax — pipes,
-redirects, `&&`, `||`, subshells. It does **not** support inheritance merging.
+**`script`** accepts [pipelines, compound commands](https://www.gnu.org/software/bash/manual/html_node/Shell-Commands.html),
+and full shell syntax — pipes, redirects, `&&`, `||`, subshells. It does **not**
+support inheritance merging.
 
 ```yaml
 tasks:
@@ -61,8 +63,8 @@ tasks:
     command: 'eslint . && prettier --check .'
 ```
 
-This either fails with a confusing error (moon tries to run `eslint` with
-literal arguments `. && prettier --check .`) or silently does the wrong thing.
+In v2 this is a **parse error** — moon rejects the configuration at build time
+with an `InvalidCommandSyntax` or `UnsupportedCommandSyntax` error.
 
 ### How to detect
 
@@ -70,8 +72,8 @@ literal arguments `. && prettier --check .`) or silently does the wrong thing.
 moon task <project>:<task> --json
 ```
 
-If the `command` field contains `&&`, `|`, `>`, `>>`, `;`, or backticks, it
-should be `script` instead.
+If the `command` field contains pipes, redirects, expressions, etc., it should
+be `script` instead.
 
 ### How to fix
 
@@ -97,7 +99,7 @@ tasks:
 
 ## Task inheritance bugs
 
-Moon's inheritance system lets you define tasks once in `.moon/tasks/**/*` and
+moon's inheritance system lets you define tasks once in `.moon/tasks/**/*` and
 have them inherited by matching projects. When inheritance goes wrong, the task
 either doesn't appear or appears with unexpected config.
 
@@ -126,7 +128,7 @@ Compare `toolchain`, `stack`, `layer`, `language`, and `tags` against the
 **Check for explicit exclusion:**
 
 ```yaml
-# moon.yml (project level)
+# moon.{json,jsonc,hcl,pkl,toml,yaml,yml} (project level)
 workspace:
   inheritedTasks:
     exclude: ['lint']  # This project opted out
@@ -153,6 +155,7 @@ strategies. The defaults are:
 | `env` | `append` (object merge) |
 | `inputs` | `append` |
 | `outputs` | `append` |
+| `toolchains` | `append` (via `mergeToolchains`) |
 
 ```yaml
 # Global: args = ['--check']
@@ -186,7 +189,7 @@ and in what order.
 
 ## Presets and automatic behavior
 
-Moon has two built-in presets that set multiple options at once:
+moon has two built-in presets that set multiple options at once:
 
 ### `server` preset
 
@@ -202,6 +205,7 @@ This sets:
 - `cache` -> off
 - `outputStyle` -> `stream`
 - `persistent` -> on
+- `priority` -> `'low'`
 - `runInCI` -> off
 
 ### `utility` preset
@@ -219,7 +223,7 @@ This sets:
 - `interactive` -> on
 - `outputStyle` -> `stream`
 - `persistent` -> off
-- `runInCI` -> skipped
+- `runInCI` -> `'skip'`
 
 ### Automatic preset assignment
 
@@ -258,16 +262,17 @@ tasks:
 
 A persistent task (`options.persistent: true` or `preset: 'server'`) is one
 that runs continuously — a dev server, a file watcher, a background process.
-Moon handles persistent tasks specially: they run **last** and **in parallel**,
+moon handles persistent tasks specially: they run **last** and **in parallel**,
 after all non-persistent dependencies complete.
 
 ### The problem
 
-If a non-persistent task lists a persistent task in `deps`, the pipeline hangs.
-The persistent task never "finishes," so the dependent task never starts.
+If a non-persistent task lists a persistent task in `deps`, moon produces a
+**hard error** (`PersistentDepRequirement`) at build time. moon validates dep
+chains and rejects this configuration before execution starts.
 
 ```yaml
-# PROBLEM: integration-test depends on dev-server, which never finishes
+# ERROR: integration-test depends on dev-server, which is persistent
 tasks:
   dev-server:
     command: 'vite dev'
@@ -275,7 +280,7 @@ tasks:
   integration-test:
     command: 'cypress run'
     deps:
-      - '~:dev-server'  # HANGS
+      - '~:dev-server'  # PersistentDepRequirement error
 ```
 
 ### How to detect
@@ -403,7 +408,7 @@ tasks:
 project (either defined locally or inherited). If it's not found, the extension
 silently fails or errors.
 
-**Circular extension:** Task A extends B, B extends A. Moon should catch this,
+**Circular extension:** Task A extends B, B extends A. moon should catch this,
 but it's worth checking if you see strange behavior.
 
 ### How to verify
@@ -419,7 +424,7 @@ overrides from the extending task.
 
 ## No-op tasks
 
-Moon treats tasks with command `noop`, `nop`, or `no-op` as intentional no-ops.
+moon treats tasks with command `noop`, `nop`, or `no-op` as intentional no-ops.
 These tasks execute successfully but do nothing. They're sometimes used as
 aggregation points — a task that only exists to declare `deps` on other tasks.
 
@@ -473,7 +478,7 @@ inputs changed.
 
 ```bash
 moon task <project>:<task> --json | grep -i runci
-# Also check state.set_run_in_ci — if true, it was explicitly configured
+# Also check state.setRunInCi — if true, it was explicitly configured
 ```
 
 ---
@@ -496,7 +501,7 @@ This is intentional for advisory tasks. But if it's inherited from a global
 task and the user doesn't realize it's set, real errors go unnoticed.
 
 **Gotcha with deps:** If task A has `allowFailure: true` and task B depends on
-A, B will execute even if A's command failed. Moon's task builder validates that
+A, B will execute even if A's command failed. moon's task builder validates that
 `allowFailure` deps are acceptable, but the runtime behavior can still surprise.
 
 ### How to detect
@@ -662,7 +667,7 @@ moon's tracking, or any "just bust the cache" scenario.
 
 ## Task builder validation errors
 
-Moon's task builder validates configuration at build time and produces specific
+moon's task builder validates configuration at build time and produces specific
 errors. If you see one of these, here's what it means:
 
 **`PersistentDepRequirement`** — a non-persistent task depends on a persistent
@@ -670,7 +675,7 @@ task. This is always a configuration error because the persistent task never
 finishes. Fix: remove the dependency or restructure the task graph.
 
 **`AllowFailureDepRequirement`** — a task depends on a task with
-`allowFailure: true`. Moon warns about this because a failing dependency will
+`allowFailure: true`. moon warns about this because a failing dependency will
 still let the dependent task run, which may produce incorrect results.
 
 **`RunInCiDepRequirement`** — a task that runs in CI depends on a task that

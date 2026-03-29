@@ -1,4 +1,4 @@
-# Decision Tree: Moon Task Diagnostics
+# Decision Tree: moon task diagnostics
 
 A systematic walk-through for diagnosing any moon task issue. Start at the top
 and follow the branches. Each leaf gives you the exact commands to run and what
@@ -18,11 +18,12 @@ If this returns an error or exit code 1, the task does not exist in that project
 
 **Check 1: Is it defined in the project config?**
 
-Look in the project's `moon.yml` (or `moon.toml`, `moon.json`) under `tasks:`.
+Look in the project's config file (`moon.{json,jsonc,hcl,pkl,toml,yaml,yml}`)
+under `tasks:`.
 
 ```bash
 # Read the project's config file directly
-cat <project-root>/moon.yml
+cat <project-root>/moon.yml  # or moon.json, moon.toml, etc.
 ```
 
 **Check 2: Should it be inherited from global tasks?**
@@ -36,20 +37,25 @@ conditions matching the project's `toolchain`, `stack`, `layer`, `language`, or
 moon project <project> --json
 ```
 
-Compare the project's `toolchain`, `stack`, `layer`, and `tags` against the
-`inheritedBy` conditions in the global task file.
+Compare the project's `toolchains`, `stack`, `layer`, and `tags` (note:
+`toolchains` is plural in the JSON output) against the `inheritedBy` conditions
+in the global task file.
 
 Common inheritance failures:
-- Project doesn't have the right `toolchain` set (e.g., global task requires
+- Project doesn't have the right `toolchains` set (e.g., global task requires
   `toolchain: 'node'` but project doesn't declare it)
 - `inheritedBy` uses `and` clause that the project doesn't fully satisfy
 - Project explicitly excludes the task via `workspace.inheritedTasks.exclude`
 - Project renames the task via `workspace.inheritedTasks.rename`
+- Project doesn't `include` the global task file (check for `include` directives)
 
 **Check 3: Is the task ID spelled correctly?**
 
-Task IDs support camel/kebab/snake case and must start with a letter. Check for
-typos, especially with similar names (e.g., `build` vs `buildApp`).
+Task IDs must start with a letter and can contain `a-z`, `A-Z`, `0-9`, `-`,
+`_`, `/`, and `.` (see
+[id_regex.rs](https://github.com/moonrepo/starbase/blob/master/crates/id/src/id_regex.rs#L10)
+for the full pattern). Check for typos, especially with similar names
+(e.g., `build` vs `buildApp`).
 
 **Fix:** Add the task to the project config, fix the `inheritedBy` conditions,
 or correct the task ID.
@@ -76,21 +82,14 @@ moon run <project>:<task> --force
 
 **Check 2: Is `runInCI` blocking execution?**
 
-The `runInCI` option has multiple variants that can cause skipping:
-
-| `runInCI` value | Skipped locally? | Skipped in CI? |
-|-----------------|-----------------|---------------|
-| `false` | No | Yes |
-| `'only'` | **Yes** | No (if affected) |
-| `'skip'` | No | **Yes** (deps stay valid) |
-
 ```bash
 moon task <project>:<task> --json
-# Check options.runInCI and state.set_run_in_ci
+# Check options.runInCI and state.setRunInCi
 ```
 
-If `state.set_run_in_ci` is `false`, the value was not explicitly set and came
-from a preset or default.
+If `state.setRunInCi` is `false`, the value was not explicitly set and came
+from a preset or default. See `config-mistakes.md` § `runInCI` variants for the
+full table of values and their local/CI behavior.
 
 **Check 3: Is the `os` option filtering this platform out?**
 
@@ -104,7 +103,7 @@ moon task <project>:<task> --json
 
 **Check 4: Is the task a no-op?**
 
-Tasks with command `noop`, `nop`, or `no-op` intentionally do nothing. Moon
+Tasks with command `noop`, `nop`, or `no-op` intentionally do nothing. moon
 recognizes these as special no-operation commands.
 
 ```bash
@@ -156,30 +155,19 @@ moon run <project>:<task> --log debug --force 2>&1 | grep -i "toolchain\|version
 
 **Check 5: Are environment variables correct?**
 
-```bash
-MOON_DEBUG_PROCESS_ENV=true moon run <project>:<task> --log trace --force
-```
+Use `MOON_DEBUG_PROCESS_ENV=true` to reveal all env vars passed to the process.
+See `environment-debug.md` for all debug env vars and log levels.
 
-This reveals all env vars passed to the process. Look for missing or incorrect values.
+**Check 6: Is `timeout` or `allowFailure` involved?**
 
-**Check 6: Is the task timing out?**
-
-If `options.timeout` is set, the task is killed after that many seconds. The
-error message should mention a timeout, but if `allowFailure` is also set,
-it may be silently swallowed.
-
-**Check 7: Is `allowFailure` masking the real error?**
-
-If `options.allowFailure: true`, the task reports success even on failure. The
-error is logged but the pipeline continues. Check stderr:
-
-```bash
-cat .moon/cache/states/<project>/<task>/stderr.log
-```
+Check `options.timeout` and `options.allowFailure` in the JSON output. If
+`allowFailure: true`, the task reports success even on failure — check stderr
+at `.moon/cache/states/<project>/<task>/stderr.log`. See `config-mistakes.md`
+for details on both options.
 
 **Fix:** Switch `command` to `script` for shell syntax. Fix the binary path or
-toolchain. Correct the working directory setting. Increase `timeout` if needed.
-Check `allowFailure` and stderr for hidden errors.
+toolchain. Correct the working directory. See `config-mistakes.md` for the full
+`command` vs `script` guide.
 
 ---
 
@@ -205,7 +193,7 @@ moon run <project>:<task> --force
 
 **The output is missing files:**
 
-The task's `outputs` don't cover all files the build produces. Moon only archives
+The task's `outputs` don't cover all files the build produces. moon only archives
 and restores what's declared in `outputs`.
 
 ```bash
@@ -250,44 +238,23 @@ Visualize the graph and look for:
 - A persistent task in the dependency chain (it never "finishes," blocking
   everything downstream)
 
-### Check 2: No cache utilization
-
-If the task re-runs from scratch every time, it's either:
-- Not caching at all (`options.cache: false` or `preset: 'utility'`)
-- Always getting a cache miss (inputs too broad or outputs volatile)
+### Check 2: Cache, inputs, mutex, or retries
 
 ```bash
-moon task <project>:<task> --json | grep -i cache
-```
-
-### Check 3: Large inputs/outputs
-
-Hashing thousands of files is slow. Consider narrowing `inputs` to specific
-directories rather than using `**/*`. Check `state.default_inputs` — if `true`,
-the task is using the default `**/*` glob which captures everything in the
-project directory.
-
-### Check 4: Mutex serialization
-
-If multiple tasks share the same `mutex` value, they run sequentially instead
-of in parallel. This is intentional (to protect shared resources), but can
-cause unexpected slowness.
-
-```bash
-# Check if multiple tasks share the same mutex
 moon task <project>:<task> --json
-# Look at options.mutex
 ```
 
-### Check 5: Retries adding time
-
-If `options.retryCount` is set and the task is flaky, failed attempts add up.
-A task with `retryCount: 3` that fails twice before passing takes 3x the time
-of a single run.
+- **No cache?** Check `options.cache` — may be `false` or set by preset. See
+  `cache-issues.md` for cache miss diagnosis.
+- **Broad inputs?** Check `state.defaultInputs` — if `true`, the default `**/*`
+  glob is hashing the entire project directory.
+- **Mutex?** Check `options.mutex` — shared mutex serializes tasks. See
+  `config-mistakes.md` § `mutex` contention.
+- **Retries?** Check `options.retryCount` — flaky tasks with retries multiply
+  execution time.
 
 **Fix:** Remove unnecessary `deps`, narrow `inputs`, ensure caching is enabled,
-check for persistent tasks blocking the pipeline, review mutex usage, and
-investigate flaky tasks that rely on retries.
+review mutex usage, and investigate flaky tasks.
 
 ---
 

@@ -1,6 +1,6 @@
 # Cache Issues: Diagnosis and Fixes
 
-Moon's cache is powered by content-based hashing. Every task run generates a
+moon's cache is powered by content-based hashing. Every task run generates a
 hash from multiple sources (command, args, inputs, outputs, env, dependencies).
 If the hash matches a previous run, moon skips execution and restores the cached
 output.
@@ -82,6 +82,14 @@ tasks:
       NODE_ENV: 'production'
 ```
 
+Alternatively, you can track an env var in `inputs` using the `$` prefix:
+
+```yaml
+inputs:
+  - 'src/**/*'
+  - '$NODE_ENV'  # env var value is included in the hash
+```
+
 ### Quick fix
 
 ```bash
@@ -125,7 +133,8 @@ what's causing the cache miss.
 **Inputs too broad:**
 
 ```yaml
-# PROBLEM: **/* captures node_modules, .moon/cache, lock files, everything
+# PROBLEM: **/* matches too many irrelevant files in the project directory
+# (node_modules and .git are globally ignored, but everything else matches)
 inputs:
   - '**/*'
 
@@ -150,7 +159,8 @@ task. This is usually correct behavior, but can be surprising.
 
 **Git-ignored files leaking in:**
 
-Moon filters VCS-ignored files from `inputs`, but edge cases exist. If you
+moon filters VCS-ignored files from `inputs` (including `node_modules` and
+`.git` which are globally ignored), but edge cases exist. If you
 see unexpected files in the hash manifest, check `.gitignore` coverage.
 
 ### Quick fix
@@ -165,7 +175,7 @@ see unexpected files in the hash manifest, check `.gitignore` coverage.
 
 ## Outputs not restored
 
-**Symptom:** Moon says "cached" (cache hit), but the expected output files
+**Symptom:** moon says "cached" (cache hit), but the expected output files
 don't appear in the project directory.
 
 **Root cause:** The `outputs` configuration doesn't match the actual files the
@@ -187,11 +197,12 @@ tar tzf .moon/cache/outputs/<hash>.tar.gz
 
 ### Common causes
 
-**Outputs misconfigured — relative vs absolute paths:**
+**Outputs misconfigured — path relativity:**
 
-All output paths are relative to the project root (or workspace root if
-`runFromWorkspaceRoot` is true). If the build tool writes to an unexpected
-location, the paths won't match.
+Output paths can be project-relative or workspace-relative. By default they
+are project-relative, but you can use workspace-relative paths directly in
+the `outputs` config. If the build tool writes to an unexpected location,
+the paths won't match.
 
 ```yaml
 # PROBLEM: build writes to <workspace>/dist, not <project>/dist

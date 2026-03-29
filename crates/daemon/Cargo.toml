@@ -6,12 +6,15 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_file_watcher = { path = "../file-watcher" }
 moon_process = { path = "../process" }
 async-stream = { workspace = true }
 hyper-util = "0.1.20"
 md5 = { workspace = true }
 miette = { workspace = true }
+notify-debouncer-full = { version = "0.7.0", features = ["flume"] }
 prost = "0.14.3"
+rustc-hash = { workspace = true }
 starbase_utils = { workspace = true, features = ["fs-lock"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["net"] }
@@ -32,6 +35,9 @@ windows-sys = { version = "0.61.2", default-features = false, features = [
 ] }
 
 [dev-dependencies]
+async-trait = { workspace = true }
+miette = { workspace = true }
+moon_file_watcher = { path = "../file-watcher" }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }
 

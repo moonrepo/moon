@@ -38,6 +38,10 @@ use std::sync::Arc;
 use std::{collections::BTreeMap, path::Path};
 use tracing::{debug, instrument, trace};
 
+pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
+pub const STATE_GRAPH_FILE_NAME: &str = "workspaceGraph.json";
+pub const STATE_PROJECTS_FILE_NAME: &str = "projectsBuildDataV1.json";
+
 pub struct WorkspaceBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
@@ -143,6 +147,9 @@ impl<'app> WorkspaceBuilder<'app> {
             return Ok(graph);
         }
 
+        // Create a lock to avoid colliding cache writes
+        let _lock = cache_engine.create_lock(LOCK_FILE_NAME)?;
+
         // Hash the project graph based on the preloaded state
         let mut fingerprint = WorkspaceGraphFingerprint::default();
         fingerprint.add_projects(&graph.project_data);
@@ -158,8 +165,8 @@ impl<'app> WorkspaceBuilder<'app> {
         // Check the current state and cache
         let mut state = cache_engine
             .state
-            .load_state::<WorkspaceProjectsCacheState>("projectsBuildDataV1.json")?;
-        let cache_path = cache_engine.state.resolve_path("workspaceGraph.json");
+            .load_state::<WorkspaceProjectsCacheState>(STATE_PROJECTS_FILE_NAME)?;
+        let cache_path = cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME);
 
         if hash == state.data.last_hash && cache_path.exists() {
             let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;

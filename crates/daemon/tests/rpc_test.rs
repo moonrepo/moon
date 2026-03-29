@@ -6,14 +6,14 @@ use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
-use tokio::sync::mpsc;
+use tokio::sync::broadcast;
 
 pub fn build_daemon_service(
     workspace_root: PathBuf,
     moon_version: String,
     endpoint: String,
     pid: u32,
-    shutdown_tx: mpsc::Sender<()>,
+    shutdown_tx: broadcast::Sender<()>,
 ) -> DaemonService {
     DaemonService::new(workspace_root, moon_version, endpoint, pid, shutdown_tx)
 }
@@ -25,17 +25,17 @@ mod unix_rpc {
 
     /// Helper: start a gRPC server in the background on a temporary UDS,
     /// returning a shutdown sender so the test can stop it.
-    async fn start_test_server(daemon_dir: &Path, workspace_root: &Path) -> mpsc::Sender<()> {
+    async fn start_test_server(daemon_dir: &Path, workspace_root: &Path) -> broadcast::Sender<()> {
         let endpoint = get_endpoint(daemon_dir);
         let pid = std::process::id();
         let pid_path = get_pid_path(daemon_dir);
 
         write_pid(&pid_path, pid).unwrap();
 
-        let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
+        let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
 
         let shutdown_signal = async move {
-            shutdown_rx.recv().await.unwrap();
+            let _ = shutdown_rx.recv().await;
         };
 
         let service = build_daemon_service(
@@ -77,7 +77,7 @@ mod unix_rpc {
         assert_eq!(status.workspace_root, workspace_root.to_string_lossy());
         assert!(status.uptime_secs < 5); // should be nearly instant
 
-        let _ = shutdown_tx.send(()).await;
+        let _ = shutdown_tx.send(());
     }
 
     #[tokio::test]
@@ -100,7 +100,7 @@ mod unix_rpc {
         assert_eq!(response.pid, std::process::id());
         assert!(!response.endpoint.is_empty());
 
-        let _ = shutdown_tx.send(()).await;
+        let _ = shutdown_tx.send(());
     }
 
     #[tokio::test]
@@ -136,7 +136,7 @@ mod unix_rpc {
             assert!(status.running);
         }
 
-        let _ = shutdown_tx.send(()).await;
+        let _ = shutdown_tx.send(());
     }
 
     #[tokio::test]
@@ -159,17 +159,17 @@ mod windows_rpc {
 
     /// Helper: start a gRPC server in the background on a temporary named pipe,
     /// returning a shutdown sender so the test can stop it.
-    async fn start_test_server(daemon_dir: &Path, workspace_root: &Path) -> mpsc::Sender<()> {
+    async fn start_test_server(daemon_dir: &Path, workspace_root: &Path) -> broadcast::Sender<()> {
         let endpoint = get_endpoint(daemon_dir);
         let pid = std::process::id();
         let pid_path = get_pid_path(daemon_dir);
 
         write_pid(&pid_path, pid).unwrap();
 
-        let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
+        let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
 
         let shutdown_signal = async move {
-            shutdown_rx.recv().await.unwrap();
+            let _ = shutdown_rx.recv().await;
         };
 
         let service = build_daemon_service(
@@ -211,7 +211,7 @@ mod windows_rpc {
         assert_eq!(status.workspace_root, workspace_root.to_string_lossy());
         assert!(status.uptime_secs < 5);
 
-        let _ = shutdown_tx.send(()).await;
+        let _ = shutdown_tx.send(());
     }
 
     #[tokio::test]
@@ -234,7 +234,7 @@ mod windows_rpc {
         assert_eq!(response.pid, std::process::id());
         assert!(!response.endpoint.is_empty());
 
-        let _ = shutdown_tx.send(()).await;
+        let _ = shutdown_tx.send(());
     }
 
     #[tokio::test]
@@ -270,7 +270,7 @@ mod windows_rpc {
             assert!(status.running);
         }
 
-        let _ = shutdown_tx.send(()).await;
+        let _ = shutdown_tx.send(());
     }
 
     #[tokio::test]

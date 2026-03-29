@@ -51,5 +51,6 @@ dockerManifest.json
 # vscode
 .vscode/settings.json
 
+# AI / agents
 .claude/settings.local.json
 .claude/worktrees

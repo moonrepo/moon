@@ -24,6 +24,13 @@ pub struct DaemonConnector {
 }
 
 impl DaemonConnector {
+    pub fn new(daemon_dir: PathBuf, workspace_root: PathBuf) -> Self {
+        Self {
+            daemon_dir,
+            workspace_root,
+        }
+    }
+
     #[instrument(skip(self))]
     pub async fn connect(&self) -> miette::Result<DaemonClient> {
         // Ensure the server is running
@@ -92,6 +99,8 @@ impl DaemonConnector {
         debug!(pid, "Daemon process spawned, waiting for readiness");
 
         self.wait_for_ready(pid).await?;
+
+        debug!(pid, "Daemon is ready");
 
         Ok(pid)
     }
@@ -185,6 +194,20 @@ impl DaemonConnector {
             }
 
             sleep(POLL_INTERVAL).await;
+        }
+
+        // Final check: the tokio runtime may have been busy, causing sleep
+        // to overshoot the deadline even though the daemon started in time
+        if is_process_alive(expected_pid)
+            && let Some(pid) = read_pid(&pid_path)
+            && pid == expected_pid
+        {
+            trace!(
+                pid,
+                "Daemon PID file detected (after deadline), daemon is ready"
+            );
+
+            return Ok(());
         }
 
         Err(DaemonError::StartTimedOut.into())

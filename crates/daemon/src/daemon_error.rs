@@ -62,4 +62,11 @@ pub enum DaemonError {
     #[diagnostic(code(daemon::stop_timed_out))]
     #[error("Timed out waiting for the daemon to stop gracefully.")]
     StopTimedOut,
+
+    #[diagnostic(code(daemon::watcher_failed))]
+    #[error("File watcher failed to start.")]
+    WatcherFailed {
+        #[source]
+        error: Box<notify_debouncer_full::notify::Error>,
+    },
 }

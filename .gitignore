@@ -50,3 +50,6 @@ dockerManifest.json
 
 # vscode
 .vscode/settings.json
+
+# AI
+.claude/settings.local.json

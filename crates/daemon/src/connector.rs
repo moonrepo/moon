@@ -196,6 +196,20 @@ impl DaemonConnector {
             sleep(POLL_INTERVAL).await;
         }
 
+        // Final check: the tokio runtime may have been busy, causing sleep
+        // to overshoot the deadline even though the daemon started in time
+        if is_process_alive(expected_pid)
+            && let Some(pid) = read_pid(&pid_path)
+            && pid == expected_pid
+        {
+            trace!(
+                pid,
+                "Daemon PID file detected (after deadline), daemon is ready"
+            );
+
+            return Ok(());
+        }
+
         Err(DaemonError::StartTimedOut.into())
     }
 }

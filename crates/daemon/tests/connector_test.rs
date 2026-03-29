@@ -6,10 +6,7 @@ mod connector {
     use super::*;
 
     fn make_connector(sandbox: &Sandbox) -> DaemonConnector {
-        DaemonConnector {
-            daemon_dir: sandbox.path().join("daemon"),
-            workspace_root: sandbox.path().to_path_buf(),
-        }
+        DaemonConnector::new(sandbox.path().join("daemon"), sandbox.path().to_path_buf())
     }
 
     #[test]

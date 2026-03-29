@@ -6,7 +6,7 @@ use rustc_hash::FxHashMap;
 use schematic::schema::indexmap::IndexMap;
 use std::path::Path;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Eq, PartialEq)]
 pub struct InheritedTasksEntry {
     pub input: WorkspaceRelativePathBuf,
     pub config: InheritedTasksConfig,
@@ -95,5 +95,9 @@ impl InheritedTasksManager {
         });
 
         entries
+    }
+
+    pub fn should_invalidate(&self, other: &Self) -> bool {
+        self.configs != other.configs
     }
 }

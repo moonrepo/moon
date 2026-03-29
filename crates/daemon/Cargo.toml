@@ -6,12 +6,11 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_daemon_client = { path = "../daemon-client" }
 moon_daemon_proto = { path = "../daemon-proto" }
 moon_file_watcher = { path = "../file-watcher" }
 moon_process = { path = "../process" }
 async-stream = { workspace = true }
-hyper-util = "0.1.20"
-md5 = { workspace = true }
 miette = { workspace = true }
 notify-debouncer-full = { version = "0.7.0", features = ["flume"] }
 rustc-hash = { workspace = true }

@@ -9,9 +9,12 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+md5 = { workspace = true }
 prost = "0.14.3"
+starbase_utils = { workspace = true, features = ["fs-lock"] }
 tonic = { workspace = true, features = ["channel", "codegen", "transport"] }
 tonic-prost = { workspace = true }
+tracing = { workspace = true }
 
 [build-dependencies]
 tonic-prost-build = "0.14.5"

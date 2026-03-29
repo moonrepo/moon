@@ -4921,11 +4921,10 @@ dependencies = [
  "async-stream",
  "async-trait",
  "futures-core",
- "hyper-util",
  "libc",
- "md5",
  "miette 7.6.0",
  "moon_common",
+ "moon_daemon_client",
  "moon_daemon_proto",
  "moon_file_watcher",
  "moon_process",
@@ -4943,13 +4942,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_daemon_client"
+version = "0.0.1"
+dependencies = [
+ "hyper-util",
+ "miette 7.6.0",
+ "moon_common",
+ "moon_daemon_proto",
+ "thiserror 2.0.18",
+ "tokio",
+ "tonic",
+ "tower",
+ "tracing",
+]
+
+[[package]]
 name = "moon_daemon_proto"
 version = "0.0.1"
 dependencies = [
+ "md5",
  "prost",
+ "starbase_utils",
  "tonic",
  "tonic-prost",
  "tonic-prost-build",
+ "tracing",
 ]
 
 [[package]]

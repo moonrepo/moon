@@ -1,7 +1,7 @@
-use crate::client::DaemonClient;
 use crate::daemon_error::DaemonError;
 use crate::endpoint::*;
 use crate::sys::*;
+use moon_daemon_client::DaemonClient;
 use std::io::Error;
 use std::path::PathBuf;
 use std::time::Duration;

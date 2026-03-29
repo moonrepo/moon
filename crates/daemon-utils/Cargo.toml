@@ -2,14 +2,9 @@
 name = "moon_daemon_utils"
 version = "0.0.1"
 edition = "2024"
-license = "MIT"
-description = "Daemon utilities."
-homepage = "https://moonrepo.dev/moon"
-repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
-md5 = { workspace = true }
 starbase_utils = { workspace = true, features = ["fs-lock"] }
 tokio = { workspace = true, features = ["net"] }
 tracing = { workspace = true }
@@ -21,6 +16,7 @@ tokio-stream = { version = "0.1.18", features = ["net"] }
 [target.'cfg(windows)'.dependencies]
 async-stream = { workspace = true }
 futures-core = "0.3.32"
+md5 = { workspace = true }
 tonic = { workspace = true, features = ["transport"] }
 windows-sys = { version = "0.61.2", default-features = false, features = [
 	"Win32_Foundation",

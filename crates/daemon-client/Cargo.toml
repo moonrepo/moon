@@ -2,10 +2,6 @@
 name = "moon_daemon_client"
 version = "0.0.1"
 edition = "2024"
-license = "MIT"
-description = "Client to connect to the moon Daemon."
-homepage = "https://moonrepo.dev/moon"
-repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]

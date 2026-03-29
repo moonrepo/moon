@@ -1,7 +1,8 @@
 use crate::daemon_client_error::DaemonClientError;
 use hyper_util::rt::TokioIo;
 use moon_common::color;
-use moon_daemon_proto::{endpoint::*, moon_daemon_client::MoonDaemonClient, *};
+use moon_daemon_proto::{moon_daemon_client::MoonDaemonClient, *};
+use moon_daemon_utils::endpoint::*;
 use std::io::Error;
 use std::path::Path;
 use std::time::Duration;

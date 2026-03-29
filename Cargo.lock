@@ -4949,6 +4949,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_common",
  "moon_daemon_proto",
+ "moon_daemon_utils",
  "thiserror 2.0.18",
  "tokio",
  "tonic",
@@ -4960,13 +4961,49 @@ dependencies = [
 name = "moon_daemon_proto"
 version = "0.0.1"
 dependencies = [
- "md5",
  "prost",
- "starbase_utils",
  "tonic",
  "tonic-prost",
  "tonic-prost-build",
+]
+
+[[package]]
+name = "moon_daemon_server"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "miette 7.6.0",
+ "moon_common",
+ "moon_daemon_client",
+ "moon_daemon_proto",
+ "moon_daemon_utils",
+ "moon_file_watcher",
+ "moon_process",
+ "notify-debouncer-full",
+ "rustc-hash",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror 2.0.18",
+ "tokio",
+ "tonic",
  "tracing",
+]
+
+[[package]]
+name = "moon_daemon_utils"
+version = "0.0.1"
+dependencies = [
+ "async-stream",
+ "futures-core",
+ "libc",
+ "md5",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+ "tracing",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

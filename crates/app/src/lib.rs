@@ -7,7 +7,9 @@ mod helpers;
 mod prompts;
 pub mod queries;
 mod session;
+mod session_atomic;
 pub mod systems;
+pub mod watchers;
 
 pub use app::*;
 pub use app_error::*;

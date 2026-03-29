@@ -3,20 +3,22 @@ use crate::endpoint::*;
 use crate::proto::moon_daemon_server::{MoonDaemon, MoonDaemonServer};
 use crate::proto::*;
 use crate::sys::is_process_alive;
+use crate::watcher::{start_file_listener, start_file_watcher};
+use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_process::ProcessRegistry;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Instant;
-use tokio::sync::mpsc;
+use tokio::sync::broadcast;
 use tonic::{Request, Response, Status, transport::Server};
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 
 struct DaemonServiceInner {
     endpoint: String,
     moon_version: String,
     pid: u32,
-    shutdown_tx: mpsc::Sender<()>,
+    shutdown_tx: broadcast::Sender<()>,
     started_at: Instant,
     workspace_root: PathBuf,
 }
@@ -31,7 +33,7 @@ impl DaemonService {
         moon_version: String,
         endpoint: String,
         pid: u32,
-        shutdown_tx: mpsc::Sender<()>,
+        shutdown_tx: broadcast::Sender<()>,
     ) -> Self {
         Self {
             inner: Arc::new(DaemonServiceInner {
@@ -67,7 +69,6 @@ impl MoonDaemon for DaemonService {
         self.inner
             .shutdown_tx
             .send(())
-            .await
             .map_err(|_| Status::internal("Failed to send shutdown signal"))?;
 
         Ok(Response::new(StopResponse { stopped: true }))
@@ -100,10 +101,12 @@ impl MoonDaemon for DaemonService {
 /// - `SIGINT` or `SIGTERM` (Unix) / `Ctrl+C` (Windows)
 ///
 /// On shutdown the PID file and socket are removed.
-pub async fn start_daemon_server(
+pub async fn start_daemon_server<T: Send + 'static>(
     workspace_root: &Path,
     daemon_dir: &Path,
     moon_version: &str,
+    state: T,
+    watchers: Vec<BoxedFileWatcher<T>>,
 ) -> miette::Result<()> {
     let endpoint = get_endpoint(daemon_dir);
 
@@ -118,25 +121,44 @@ pub async fn start_daemon_server(
 
     write_pid(&pid_path, pid)?;
 
-    let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
+    // Single broadcast channel for shutdown
+    let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
     let mut signal_rx = ProcessRegistry::instance().receive_signal();
 
+    // Spawn the file watcher and listener in the background
+    let (event_tx, event_rx) = broadcast::channel::<FileEvent>(1024);
+    let watcher_handle = tokio::spawn(start_file_watcher(
+        workspace_root.to_owned(),
+        event_tx.clone(),
+        shutdown_tx.subscribe(),
+    ));
+    let listener_handle = tokio::spawn(start_file_listener(
+        state,
+        watchers,
+        event_rx,
+        shutdown_tx.subscribe(),
+    ));
+
+    // Create the RPC service
     let service = DaemonService::new(
         workspace_root.to_owned(),
         moon_version.to_owned(),
         endpoint.clone(),
         pid,
-        shutdown_tx,
+        shutdown_tx.clone(),
     );
 
-    // Merge the RPC-driven shutdown channel with OS signals so the
-    // daemon cleans up regardless of how it is stopped
+    // Merge the RPC-driven shutdown with OS signals so the daemon
+    // cleans up regardless of how it is stopped
     let shutdown_signal = async move {
         tokio::select! {
             _ = shutdown_rx.recv() => {
                 info!("Shutdown requested via RPC");
             }
             _ = signal_rx.recv() => {
+                // Broadcast so the watcher also receives it
+                let _ = shutdown_tx.send(());
+
                 info!("Shutdown requested via OS signal");
             }
         }
@@ -149,6 +171,17 @@ pub async fn start_daemon_server(
 
     #[cfg(windows)]
     serve_windows(&endpoint, service, shutdown_signal).await?;
+
+    // Wait for the file watcher and listener to finish
+    match watcher_handle.await {
+        Ok(Err(error)) => error!("File watcher exited with error: {error}"),
+        Err(error) => error!("File watcher task panicked: {error}"),
+        _ => {}
+    };
+
+    if let Err(error) = listener_handle.await {
+        error!("File listener task panicked: {error}");
+    };
 
     info!("Daemon server stopped");
 

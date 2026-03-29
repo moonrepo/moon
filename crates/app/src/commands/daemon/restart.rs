@@ -8,7 +8,7 @@ pub async fn restart(session: MoonSession) -> AppResult {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Caution) {
-                    StyledText(content: "Unable to restart, daemon has not been enabled")
+                    StyledText(content: "Unable to restart, daemon has not been enabled in configuration")
                 }
             }
         })?;

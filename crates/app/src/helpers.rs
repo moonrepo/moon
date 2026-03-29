@@ -10,7 +10,6 @@ use moon_action_pipeline::ActionPipeline;
 use moon_common::Id;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
 use moon_console::{Console, ConsoleError, Level};
-use moon_workspace::WorkspaceBuilderContext;
 use serde::Serialize;
 use starbase_utils::{fs, json, toml, yaml};
 use std::ops::Deref;
@@ -122,26 +121,6 @@ pub async fn run_action_pipeline(
         .await?;
 
     Ok(results)
-}
-
-pub async fn create_workspace_graph_context(
-    session: &MoonSession,
-) -> miette::Result<WorkspaceBuilderContext<'_>> {
-    let context = WorkspaceBuilderContext {
-        config_loader: &session.config_loader,
-        enabled_toolchains: session.toolchains_config.get_enabled(),
-        extensions_config: &session.extensions_config,
-        extension_registry: session.get_extension_registry().await?,
-        inherited_tasks: &session.tasks_config,
-        toolchains_config: &session.toolchains_config,
-        toolchain_registry: session.get_toolchain_registry().await?,
-        vcs: Some(session.get_vcs_adapter()?),
-        working_dir: &session.working_dir,
-        workspace_config: &session.workspace_config,
-        workspace_root: &session.workspace_root,
-    };
-
-    Ok(context)
 }
 
 pub async fn create_progress_loader(

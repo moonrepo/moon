@@ -1,0 +1,18 @@
+[package]
+name = "moon_file_watcher"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "File watching utilities."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_common = { path = "../common" }
+async-trait = { workspace = true }
+miette = { workspace = true }
+notify-types = "2.1.0"
+
+[lints]
+workspace = true

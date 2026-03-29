@@ -42,9 +42,12 @@ jobs:
       - run: cargo run -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
         env:
           DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}
+          MOON_DEBUG_DAEMON: true
           MOON_DEBUG_REMOTE: true
           MOON_DEBUG_PROCESS_ENV: true
           RUST_BACKTRACE: "1"
+      - run: cat .moon/cache/daemon/server.log
+        if: failure()
       - uses: moonrepo/run-report-action@v1
         if: success() || failure()
         with:

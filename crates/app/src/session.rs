@@ -1,6 +1,5 @@
 use crate::app::{Cli, Commands};
 use crate::app_error::AppError;
-use crate::helpers::*;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
@@ -22,7 +21,7 @@ use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
 use moon_vcs::{BoxedVcs, git::Git};
-use moon_workspace::WorkspaceBuilder;
+use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderContext};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
 use semver::Version;
@@ -47,13 +46,13 @@ pub struct MoonSession {
     pub proto_env: Arc<ProtoEnvironment>,
 
     // Lazy components
-    cache_engine: OnceLock<Arc<CacheEngine>>,
-    extension_registry: OnceLock<Arc<ExtensionRegistry>>,
-    project_graph: OnceLock<Arc<ProjectGraph>>,
-    task_graph: OnceLock<Arc<TaskGraph>>,
-    toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
-    vcs_adapter: OnceLock<Arc<BoxedVcs>>,
-    workspace_graph: OnceCell<Arc<WorkspaceGraph>>,
+    pub(crate) cache_engine: OnceLock<Arc<CacheEngine>>,
+    pub(crate) extension_registry: OnceLock<Arc<ExtensionRegistry>>,
+    pub(crate) project_graph: OnceLock<Arc<ProjectGraph>>,
+    pub(crate) task_graph: OnceLock<Arc<TaskGraph>>,
+    pub(crate) toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
+    pub(crate) vcs_adapter: OnceLock<Arc<BoxedVcs>>,
+    pub(crate) workspace_graph: OnceCell<Arc<WorkspaceGraph>>,
 
     // Configs
     pub extensions_config: Arc<ExtensionsConfig>,
@@ -137,6 +136,26 @@ impl MoonSession {
         Ok(Some(client))
     }
 
+    pub async fn create_workspace_graph_context(
+        &self,
+    ) -> miette::Result<WorkspaceBuilderContext<'_>> {
+        let context = WorkspaceBuilderContext {
+            config_loader: &self.config_loader,
+            enabled_toolchains: self.toolchains_config.get_enabled(),
+            extensions_config: &self.extensions_config,
+            extension_registry: self.get_extension_registry().await?,
+            inherited_tasks: &self.tasks_config,
+            toolchains_config: &self.toolchains_config,
+            toolchain_registry: self.get_toolchain_registry().await?,
+            vcs: Some(self.get_vcs_adapter()?),
+            working_dir: &self.working_dir,
+            workspace_config: &self.workspace_config,
+            workspace_root: &self.workspace_root,
+        };
+
+        Ok(context)
+    }
+
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
         Ok(Arc::new(AppContext {
             cli_version: self.cli_version.clone(),
@@ -171,10 +190,10 @@ impl MoonSession {
     }
 
     pub fn get_daemon_connector(&self) -> miette::Result<DaemonConnector> {
-        Ok(DaemonConnector {
-            daemon_dir: self.config_dir.join("cache").join("daemon"),
-            workspace_root: self.workspace_root.clone(),
-        })
+        Ok(DaemonConnector::new(
+            self.config_dir.join("cache").join("daemon"),
+            self.workspace_root.clone(),
+        ))
     }
 
     pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {
@@ -267,7 +286,7 @@ impl MoonSession {
 
     async fn load_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
         let cache_engine = self.get_cache_engine()?;
-        let context = create_workspace_graph_context(self).await?;
+        let context = self.create_workspace_graph_context().await?;
         let builder = WorkspaceBuilder::new_with_cache(context, &cache_engine).await?;
         let workspace_graph = Arc::new(builder.build().await?);
 

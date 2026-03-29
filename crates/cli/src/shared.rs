@@ -56,7 +56,7 @@ fn get_tracing_modules() -> Vec<String> {
         modules.push("extism::pdk".into());
     }
 
-    if bag.should_debug_remote() {
+    if bag.should_debug_daemon() || bag.should_debug_remote() {
         modules.push("tonic".into());
     }
 
@@ -104,15 +104,18 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         ..TracingOptions::default()
     });
 
+    let pid = std::process::id();
+
     if let Ok(exe) = env::current_exe() {
         debug!(
             args = ?args,
+            pid,
             "Running moon v{} (with {})",
             version,
             color::path(exe),
         );
     } else {
-        debug!(args = ?args, "Running moon v{}", version);
+        debug!(args = ?args, pid, "Running moon v{}", version);
     }
 
     // Detect if we've been installed globally

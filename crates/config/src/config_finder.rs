@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug)]
 pub struct ConfigFinder {
-    extensions: Vec<String>,
+    pub extensions: Vec<String>,
 }
 
 impl Default for ConfigFinder {

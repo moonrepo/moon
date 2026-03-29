@@ -125,6 +125,11 @@ impl GlobalEnvBag {
         });
     }
 
+    pub fn should_debug_daemon(&self) -> bool {
+        self.get_as("MOON_DEBUG_DAEMON", as_bool)
+            .unwrap_or_default()
+    }
+
     pub fn should_debug_mcp(&self) -> bool {
         self.get_as("MOON_DEBUG_MCP", as_bool).unwrap_or_default()
     }

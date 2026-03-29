@@ -11,7 +11,7 @@ pub enum DaemonClientError {
         error: Box<tonic::transport::Error>,
     },
 
-    #[diagnostic(code(daemon::client::rpc_failed))]
+    #[diagnostic(code(daemon::client::rpc_call_failed))]
     #[error("Failed to make daemon RPC call.\n{}: {}", .error.code(), .error.message())]
     RpcFailed {
         #[source]

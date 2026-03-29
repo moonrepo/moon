@@ -4918,27 +4918,16 @@ dependencies = [
 name = "moon_daemon"
 version = "0.0.1"
 dependencies = [
- "async-stream",
- "async-trait",
- "futures-core",
- "libc",
  "miette 7.6.0",
- "moon_common",
  "moon_daemon_client",
  "moon_daemon_proto",
- "moon_file_watcher",
- "moon_process",
- "notify-debouncer-full",
- "rustc-hash",
+ "moon_daemon_server",
+ "moon_daemon_utils",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
  "tokio",
- "tokio-stream",
- "tonic",
- "tower",
  "tracing",
- "windows-sys 0.61.2",
 ]
 
 [[package]]

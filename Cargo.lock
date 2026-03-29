@@ -4926,10 +4926,10 @@ dependencies = [
  "md5",
  "miette 7.6.0",
  "moon_common",
+ "moon_daemon_proto",
  "moon_file_watcher",
  "moon_process",
  "notify-debouncer-full",
- "prost",
  "rustc-hash",
  "starbase_sandbox",
  "starbase_utils",
@@ -4937,11 +4937,19 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tonic",
- "tonic-prost",
- "tonic-prost-build",
  "tower",
  "tracing",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "moon_daemon_proto"
+version = "0.0.1"
+dependencies = [
+ "prost",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
 ]
 
 [[package]]
@@ -6782,9 +6790,9 @@ dependencies = [
 
 [[package]]
 name = "pulldown-cmark"
-version = "0.13.1"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83c41efbf8f90ac44de7f3a868f0867851d261b56291732d0cbf7cceaaeb55a6"
+checksum = "7c3a14896dfa883796f1cb410461aef38810ea05f2b2c33c5aded3649095fdad"
 dependencies = [
  "bitflags 2.11.0",
  "memchr",

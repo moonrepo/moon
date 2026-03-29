@@ -12,7 +12,3 @@ pub use daemon_error::*;
 pub use endpoint::*;
 pub use server::*;
 pub use watcher::*;
-
-pub mod proto {
-    tonic::include_proto!("moon.daemon.v1");
-}

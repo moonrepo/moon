@@ -1,14 +1,15 @@
 use crate::daemon_error::DaemonError;
 use crate::endpoint::*;
-use crate::proto::moon_daemon_client::MoonDaemonClient;
-use crate::proto::*;
 use hyper_util::rt::TokioIo;
 use moon_common::color;
+use moon_daemon_proto::{moon_daemon_client::MoonDaemonClient, *};
 use std::io::Error;
 use std::path::Path;
 use std::time::Duration;
-use tonic::Status;
-use tonic::transport::{Channel, Endpoint, Error as TransportError, Uri};
+use tonic::{
+    Status,
+    transport::{Channel, Endpoint, Error as TransportError, Uri},
+};
 use tower::service_fn;
 use tracing::{debug, instrument};
 

@@ -1,9 +1,11 @@
 use crate::daemon_error::DaemonError;
 use crate::endpoint::*;
-use crate::proto::moon_daemon_server::{MoonDaemon, MoonDaemonServer};
-use crate::proto::*;
 use crate::sys::is_process_alive;
 use crate::watcher::{start_file_listener, start_file_watcher};
+use moon_daemon_proto::{
+    moon_daemon_server::{MoonDaemon, MoonDaemonServer},
+    *,
+};
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_process::ProcessRegistry;
 use starbase_utils::fs;

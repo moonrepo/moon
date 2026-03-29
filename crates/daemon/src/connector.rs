@@ -100,6 +100,8 @@ impl DaemonConnector {
 
         self.wait_for_ready(pid).await?;
 
+        debug!(pid, "Daemon is ready");
+
         Ok(pid)
     }
 

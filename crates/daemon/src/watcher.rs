@@ -95,16 +95,23 @@ pub async fn start_file_watcher(
                                     continue;
                                 }
 
-                                let rel_path = path.relative_to(&workspace_root).unwrap();
-
-                                trace!(path = ?rel_path, kind = ?event.kind, "File change event");
-
-                                // Ignore send failures
-                                let _ = event_tx.send(FileEvent {
+                                let file_event = FileEvent {
                                     path_original: path.clone(),
-                                    path: rel_path,
+                                    path: path.relative_to(&workspace_root).unwrap(),
                                     kind: event.kind,
-                                });
+                                };
+
+                                // We only care about mutations, not access, etc
+                                if file_event.is_mutated() {
+                                    trace!(
+                                        path = ?file_event.path,
+                                        kind = ?file_event.kind,
+                                        "File change event",
+                                    );
+
+                                    // Ignore send failures
+                                    let _ = event_tx.send(file_event);
+                                }
                             }
                         }
                     }

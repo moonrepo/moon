@@ -1,0 +1,29 @@
+[package]
+name = "moon_daemon_server"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_daemon_proto = { path = "../daemon-proto" }
+moon_daemon_utils = { path = "../daemon-utils" }
+moon_file_watcher = { path = "../file-watcher" }
+moon_process = { path = "../process" }
+miette = { workspace = true }
+notify-debouncer-full = { version = "0.7.0", features = ["flume"] }
+rustc-hash = { workspace = true }
+starbase_utils = { workspace = true, features = ["fs-lock"] }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tonic = { workspace = true, features = ["transport"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+moon_daemon_client = { path = "../daemon-client" }
+moon_file_watcher = { path = "../file-watcher" }
+async-trait = { workspace = true }
+starbase_sandbox = { workspace = true }
+
+[lints]
+workspace = true

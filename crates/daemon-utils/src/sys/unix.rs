@@ -2,6 +2,8 @@ use std::os::unix::process::CommandExt;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
+pub use tokio_stream::wrappers::UnixListenerStream;
+
 pub fn is_process_alive(pid: u32) -> bool {
     // Reject invalid PIDs (0 = all processes in group, negative = process groups)
     let pid = pid as libc::pid_t;

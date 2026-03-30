@@ -1,19 +1,20 @@
-use crate::daemon_error::DaemonError;
-use crate::endpoint::*;
-use crate::proto::moon_daemon_client::MoonDaemonClient;
-use crate::proto::*;
+use crate::daemon_client_error::DaemonClientError;
 use hyper_util::rt::TokioIo;
 use moon_common::color;
+use moon_daemon_proto::{moon_daemon_client::MoonDaemonClient, *};
+use moon_daemon_utils::endpoint::*;
 use std::io::Error;
 use std::path::Path;
 use std::time::Duration;
-use tonic::Status;
-use tonic::transport::{Channel, Endpoint, Error as TransportError, Uri};
+use tonic::{
+    Status,
+    transport::{Channel, Endpoint, Error as TransportError, Uri},
+};
 use tower::service_fn;
 use tracing::{debug, instrument};
 
-fn map_rpc_error(error: Status) -> DaemonError {
-    DaemonError::RpcFailed {
+fn map_rpc_error(error: Status) -> DaemonClientError {
+    DaemonClientError::RpcFailed {
         error: Box::new(error),
     }
 }
@@ -35,7 +36,7 @@ impl DaemonClient {
         let channel =
             connect_channel(&endpoint)
                 .await
-                .map_err(|error| DaemonError::ConnectFailed {
+                .map_err(|error| DaemonClientError::ConnectFailed {
                     endpoint,
                     error: Box::new(error),
                 })?;

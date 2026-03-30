@@ -1,4 +1,4 @@
-use crate::daemon_error::DaemonError;
+use crate::daemon_server_error::DaemonServerError;
 use moon_common::path::PathExt;
 use moon_file_watcher::*;
 use notify_debouncer_full::{new_debouncer, notify::RecursiveMode};
@@ -49,8 +49,8 @@ fn is_ignored(path: &Path) -> bool {
     false
 }
 
-fn map_notify_error(error: notify_debouncer_full::notify::Error) -> DaemonError {
-    DaemonError::WatcherFailed {
+fn map_notify_error(error: notify_debouncer_full::notify::Error) -> DaemonServerError {
+    DaemonServerError::WatcherFailed {
         error: Box::new(error),
     }
 }

@@ -4918,28 +4918,79 @@ dependencies = [
 name = "moon_daemon"
 version = "0.0.1"
 dependencies = [
- "async-stream",
- "async-trait",
- "futures-core",
+ "miette 7.6.0",
+ "moon_daemon_client",
+ "moon_daemon_proto",
+ "moon_daemon_server",
+ "moon_daemon_utils",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror 2.0.18",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "moon_daemon_client"
+version = "0.0.1"
+dependencies = [
  "hyper-util",
- "libc",
- "md5",
  "miette 7.6.0",
  "moon_common",
+ "moon_daemon_proto",
+ "moon_daemon_utils",
+ "thiserror 2.0.18",
+ "tokio",
+ "tonic",
+ "tower",
+ "tracing",
+]
+
+[[package]]
+name = "moon_daemon_proto"
+version = "0.0.1"
+dependencies = [
+ "prost",
+ "tonic",
+ "tonic-prost",
+ "tonic-prost-build",
+]
+
+[[package]]
+name = "moon_daemon_server"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "miette 7.6.0",
+ "moon_common",
+ "moon_daemon_client",
+ "moon_daemon_proto",
+ "moon_daemon_utils",
  "moon_file_watcher",
  "moon_process",
  "notify-debouncer-full",
- "prost",
  "rustc-hash",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
  "tokio",
+ "tonic",
+ "tracing",
+]
+
+[[package]]
+name = "moon_daemon_utils"
+version = "0.0.1"
+dependencies = [
+ "async-stream",
+ "futures-core",
+ "libc",
+ "md5",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tokio",
  "tokio-stream",
  "tonic",
- "tonic-prost",
- "tonic-prost-build",
- "tower",
  "tracing",
  "windows-sys 0.61.2",
 ]
@@ -6782,9 +6833,9 @@ dependencies = [
 
 [[package]]
 name = "pulldown-cmark"
-version = "0.13.1"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83c41efbf8f90ac44de7f3a868f0867851d261b56291732d0cbf7cceaaeb55a6"
+checksum = "7c3a14896dfa883796f1cb410461aef38810ea05f2b2c33c5aded3649095fdad"
 dependencies = [
  "bitflags 2.11.0",
  "memchr",

@@ -1,22 +1,20 @@
 [package]
-name = "moon_daemon"
+name = "moon_daemon_client"
 version = "0.0.1"
 edition = "2024"
 publish = false
 
 [dependencies]
-moon_daemon_client = { path = "../daemon-client" }
+moon_common = { path = "../common" }
 moon_daemon_proto = { path = "../daemon-proto" }
-moon_daemon_server = { path = "../daemon-server" }
 moon_daemon_utils = { path = "../daemon-utils" }
+hyper-util = "0.1.20"
 miette = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["net"] }
+tonic = { workspace = true }
+tower = { workspace = true }
 tracing = { workspace = true }
-
-[dev-dependencies]
-starbase_sandbox = { workspace = true }
-starbase_utils = { workspace = true }
 
 [lints]
 workspace = true

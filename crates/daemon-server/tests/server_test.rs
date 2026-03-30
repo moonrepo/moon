@@ -1,7 +1,9 @@
 // Integration tests: spin up a real daemon server over a platform-specific
 // transport, connect a client, and exercise every RPC method.
 
-use moon_daemon::*;
+use moon_daemon_client::DaemonClient;
+use moon_daemon_server::*;
+use moon_daemon_utils::endpoint::*;
 use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
@@ -21,7 +23,7 @@ pub fn build_daemon_service(
 #[cfg(unix)]
 mod unix_rpc {
     use super::*;
-    use moon_daemon::serve_unix;
+    use moon_daemon_server::serve_unix;
 
     /// Helper: start a gRPC server in the background on a temporary UDS,
     /// returning a shutdown sender so the test can stop it.
@@ -155,7 +157,7 @@ mod unix_rpc {
 #[cfg(windows)]
 mod windows_rpc {
     use super::*;
-    use moon_daemon::serve_windows;
+    use moon_daemon_server::serve_windows;
 
     /// Helper: start a gRPC server in the background on a temporary named pipe,
     /// returning a shutdown sender so the test can stop it.

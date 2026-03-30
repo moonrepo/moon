@@ -1,7 +1,7 @@
 // Tests for the file listener that dispatches events to registered watchers.
 
 use async_trait::async_trait;
-use moon_daemon::start_file_listener;
+use moon_daemon_server::start_file_listener;
 use moon_file_watcher::*;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};

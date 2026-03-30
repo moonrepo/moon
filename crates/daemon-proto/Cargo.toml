@@ -1,0 +1,16 @@
+[package]
+name = "moon_daemon_proto"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+prost = "0.14.3"
+tonic = { workspace = true, features = ["channel", "codegen", "transport"] }
+tonic-prost = { workspace = true }
+
+[build-dependencies]
+tonic-prost-build = "0.14.5"
+
+[lints]
+workspace = true

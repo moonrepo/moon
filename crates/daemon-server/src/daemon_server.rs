@@ -1,9 +1,10 @@
-use crate::daemon_error::DaemonError;
-use crate::endpoint::*;
-use crate::proto::moon_daemon_server::{MoonDaemon, MoonDaemonServer};
-use crate::proto::*;
-use crate::sys::is_process_alive;
-use crate::watcher::{start_file_listener, start_file_watcher};
+use crate::daemon_server_error::DaemonServerError;
+use crate::daemon_watcher::{start_file_listener, start_file_watcher};
+use moon_daemon_proto::{
+    moon_daemon_server::{MoonDaemon, MoonDaemonServer},
+    *,
+};
+use moon_daemon_utils::{endpoint::*, sys::is_process_alive};
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_process::ProcessRegistry;
 use starbase_utils::fs;
@@ -232,11 +233,11 @@ pub async fn serve_unix(
     service: DaemonService,
     shutdown_signal: impl std::future::Future<Output = ()>,
 ) -> miette::Result<()> {
+    use moon_daemon_utils::sys::UnixListenerStream;
     use tokio::net::UnixListener;
-    use tokio_stream::wrappers::UnixListenerStream;
 
     let listener =
-        UnixListener::bind(endpoint).map_err(|error| DaemonError::EndpointBindFailed {
+        UnixListener::bind(endpoint).map_err(|error| DaemonServerError::EndpointBindFailed {
             endpoint: endpoint.to_owned(),
             error: Box::new(error),
         })?;
@@ -246,7 +247,7 @@ pub async fn serve_unix(
     Server::builder()
         .serve_with_incoming_shutdown(MoonDaemonServer::new(service), incoming, shutdown_signal)
         .await
-        .map_err(|error| DaemonError::ServerFailed {
+        .map_err(|error| DaemonServerError::ServerFailed {
             error: Box::new(error),
         })?;
 
@@ -259,14 +260,16 @@ pub async fn serve_windows(
     service: DaemonService,
     shutdown_signal: impl std::future::Future<Output = ()>,
 ) -> miette::Result<()> {
+    use moon_daemon_utils::sys::get_named_pipe_server_stream;
+
     Server::builder()
         .serve_with_incoming_shutdown(
             MoonDaemonServer::new(service),
-            crate::sys::get_named_pipe_server_stream(endpoint),
+            get_named_pipe_server_stream(endpoint),
             shutdown_signal,
         )
         .await
-        .map_err(|error| DaemonError::ServerFailed {
+        .map_err(|error| DaemonServerError::ServerFailed {
             error: Box::new(error),
         })?;
 

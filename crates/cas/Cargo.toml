@@ -1,0 +1,24 @@
+[package]
+name = "moon_cas"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "Content-addressable file system storage."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+blake3 = { workspace = true }
+miette = { workspace = true }
+serde = { workspace = true }
+starbase_utils = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+
+[lints]
+workspace = true

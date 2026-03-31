@@ -1,0 +1,8 @@
+tasks:
+  test:
+    script: "echo test-a"
+    deps:
+      - "^:test"
+    options:
+      runDepsInParallel: false
+      cache: false

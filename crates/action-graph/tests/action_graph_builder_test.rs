@@ -2106,6 +2106,34 @@ mod action_graph_builder {
                 [Target::parse("deps:base").unwrap()]
             );
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn serial_deps_dont_cycle_on_shared_nodes() {
+            let sandbox = create_sandbox("serial-cycle");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // Run all :test tasks — this previously caused a WouldCycle error
+            // because serial dep chains added ordering edges to pre-existing
+            // nodes created by other tasks' dependency resolution.
+            let tasks: Vec<_> = ["lib-a", "lib-b", "lib-c", "app-d"]
+                .iter()
+                .map(|id| wg.get_task_from_project(id, "test").unwrap())
+                .collect();
+
+            for task in &tasks {
+                builder
+                    .run_task(task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+            }
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+        }
     }
 
     mod run_task_by_target {

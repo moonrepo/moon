@@ -635,9 +635,13 @@ impl<'query> ActionGraphBuilder<'query> {
                     if parallel {
                         indexes.push(Some(dep_index));
                     }
-                    // When serial, next child depends on previous child
+                    // When serial, next child depends on previous child.
+                    // Use try_link to skip edges that would introduce a
+                    // cycle — this can happen when the same task node
+                    // appears in multiple serial dependency chains across
+                    // different parent tasks.
                     else if let Some(prev) = previous_target_index {
-                        self.link_requirements(dep_index, vec![prev])?;
+                        self.try_link_requirements(dep_index, prev);
                     }
 
                     previous_target_index = Some(dep_index);
@@ -1242,6 +1246,25 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         Ok(())
+    }
+
+    /// Try to add a serial ordering edge between two dependency nodes.
+    /// Silently skips the edge if it would introduce a cycle — this happens
+    /// when the same task node appears in multiple serial dependency chains
+    /// across different parent tasks.
+    fn try_link_requirements(&mut self, index: NodeIndex, edge: NodeIndex) {
+        if self.graph.find_edge(index, edge).is_none()
+            && self
+                .graph
+                .add_edge(index, edge, TaskDependencyType::Required)
+                .is_ok()
+        {
+            trace!(
+                index = index.index(),
+                requires = ?[edge.index()],
+                "Linking requirements for index"
+            );
+        }
     }
 
     fn insert_node(&mut self, node: ActionNode) -> NodeIndex {

@@ -1,0 +1,12 @@
+dependsOn:
+  - lib-a
+  - lib-b
+
+tasks:
+  test:
+    script: "echo test-c"
+    deps:
+      - "^:test"
+    options:
+      runDepsInParallel: false
+      cache: false

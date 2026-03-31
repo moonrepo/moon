@@ -1,3 +1,4 @@
+use crate::task_hasher::TaskHasher;
 use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::{ActionContext, TargetState};
@@ -11,7 +12,6 @@ use moon_pdk_api::{
 use moon_project::{Project, ProjectFragment};
 use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFragment};
-use moon_task_hasher::TaskHasher;
 use moon_toolchain_plugin::ToolchainPlugin;
 use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;

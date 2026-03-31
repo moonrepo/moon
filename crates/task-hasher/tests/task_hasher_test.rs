@@ -49,11 +49,11 @@ async fn mock_workspace(workspace_root: &Path) -> (WorkspaceGraph, AppContext) {
 async fn generate_hash<'a>(
     project: &'a Project,
     task: &'a Task,
-    wg: &'a WorkspaceGraph,
+    _wg: &'a WorkspaceGraph,
     app: &'a AppContext,
     config: &'a HasherConfig,
 ) -> TaskFingerprint<'a> {
-    let mut hasher = TaskHasher::new(app, &wg.projects, project, task, config);
+    let mut hasher = TaskHasher::new(app, project, task, config);
     hasher.hash_inputs().await.unwrap();
     hasher.hash()
 }

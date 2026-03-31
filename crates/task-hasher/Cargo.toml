@@ -19,7 +19,6 @@ moon_feature_flags = { path = "../feature-flags" }
 moon_hash = { path = "../hash" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_project = { path = "../project" }
-moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }

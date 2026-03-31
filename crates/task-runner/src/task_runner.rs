@@ -11,7 +11,6 @@ use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
 use moon_remote::{ActionState, Digest, RemoteService};
 use moon_task::Task;
 use moon_task_hasher::*;
@@ -29,7 +28,6 @@ pub struct TaskRunResult {
 
 pub struct TaskRunner<'task> {
     app_context: &'task Arc<AppContext>,
-    project_graph: &'task ProjectGraph,
     project: &'task Project,
     pub task: &'task Task,
 
@@ -47,7 +45,6 @@ pub struct TaskRunner<'task> {
 impl<'task> TaskRunner<'task> {
     pub fn new(
         app_context: &'task Arc<AppContext>,
-        project_graph: &'task ProjectGraph,
         project: &'task Project,
         task: &'task Task,
     ) -> miette::Result<Self> {
@@ -67,13 +64,8 @@ impl<'task> TaskRunner<'task> {
 
         Ok(Self {
             cache,
-            archiver: OutputArchiver {
-                app_context,
-                project,
-                task,
-            },
+            archiver: OutputArchiver { app_context, task },
             hydrater: OutputHydrater { app_context, task },
-            project_graph,
             project,
             remote_state: None,
             report_item: TaskReportItem {
@@ -391,7 +383,6 @@ impl<'task> TaskRunner<'task> {
         hash_common_task_contents(
             self.app_context,
             context,
-            self.project_graph,
             self.project,
             self.task,
             node,

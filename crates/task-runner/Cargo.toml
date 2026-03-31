@@ -23,7 +23,6 @@ moon_hash = { path = "../hash" }
 moon_process = { path = "../process" }
 moon_process_augment = { path = "../process-augment" }
 moon_project = { path = "../project" }
-moon_project_graph = { path = "../project-graph" }
 moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_task_hasher = { path = "../task-hasher" }

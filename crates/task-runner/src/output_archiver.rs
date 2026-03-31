@@ -1,7 +1,6 @@
 use crate::task_runner_error::TaskRunnerError;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_project::Project;
 use moon_remote::{ActionState, RemoteService};
 use moon_task::Task;
 use starbase_archive::Archiver;
@@ -14,7 +13,6 @@ use tracing::{debug, instrument, warn};
 /// can be hydrated easily.
 pub struct OutputArchiver<'task> {
     pub app_context: &'task AppContext,
-    pub project: &'task Project,
     pub task: &'task Task,
 }
 

@@ -10,7 +10,6 @@ use moon_pdk_api::{
     ParseLockInput, ParseLockOutput, ParseManifestInput, ParseManifestOutput,
 };
 use moon_project::{Project, ProjectFragment};
-use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFragment};
 use moon_toolchain_plugin::ToolchainPlugin;
 use rustc_hash::FxHashMap;
@@ -23,7 +22,6 @@ use tokio::task::JoinSet;
 pub async fn hash_common_task_contents(
     app_context: &AppContext,
     action_context: &ActionContext,
-    project_graph: &ProjectGraph,
     project: &Project,
     task: &Task,
     node: &ActionNode,
@@ -31,7 +29,6 @@ pub async fn hash_common_task_contents(
 ) -> miette::Result<()> {
     let mut task_hasher = TaskHasher::new(
         app_context,
-        project_graph,
         project,
         task,
         &app_context.workspace_config.hasher,

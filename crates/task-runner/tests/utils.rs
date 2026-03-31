@@ -85,7 +85,6 @@ impl TaskRunnerContainer {
     pub fn create_archiver(&self) -> OutputArchiver<'_> {
         OutputArchiver {
             app_context: &self.app_context,
-            project: &self.project,
             task: &self.task,
         }
     }
@@ -128,13 +127,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_runner(&self) -> TaskRunner<'_> {
-        TaskRunner::new(
-            &self.app_context,
-            &self.workspace_graph.projects,
-            &self.project,
-            &self.task,
-        )
-        .unwrap()
+        TaskRunner::new(&self.app_context, &self.project, &self.task).unwrap()
     }
 
     pub fn create_action_node(&self) -> ActionNode {

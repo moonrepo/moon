@@ -7,7 +7,6 @@ use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf
 use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob::GlobSet;
@@ -17,7 +16,6 @@ use tracing::{trace, warn};
 // Hash all inputs for a task, but exclude outputs and moon specific configuration files!
 pub struct TaskHasher<'task> {
     pub app_context: &'task AppContext,
-    pub project_graph: &'task ProjectGraph,
     pub project: &'task Project,
     pub task: &'task Task,
     pub hasher_config: &'task HasherConfig,
@@ -28,7 +26,6 @@ pub struct TaskHasher<'task> {
 impl<'task> TaskHasher<'task> {
     pub fn new(
         app_context: &'task AppContext,
-        project_graph: &'task ProjectGraph,
         project: &'task Project,
         task: &'task Task,
         hasher_config: &'task HasherConfig,
@@ -36,7 +33,6 @@ impl<'task> TaskHasher<'task> {
         Self {
             app_context,
             project,
-            project_graph,
             task,
             hasher_config,
             fingerprint: TaskFingerprint::new(project, task),

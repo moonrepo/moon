@@ -4971,6 +4971,7 @@ dependencies = [
  "moon_process",
  "moon_target",
  "moon_task_runner",
+ "moon_test_utils2",
  "moon_workspace_graph",
  "notify-debouncer-full",
  "rustc-hash",

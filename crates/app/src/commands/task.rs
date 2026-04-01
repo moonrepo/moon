@@ -35,7 +35,7 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
         Ok(SelectProps {
             label: "Which task to view?".into(),
             options: workspace_graph
-                .get_tasks_unexpanded()
+                .get_tasks_unexpanded()?
                 .into_iter()
                 .map(|task| {
                     SelectOption::new(&task.target).description_opt(task.description.clone())

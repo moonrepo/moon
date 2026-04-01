@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
+
 ## 2.1.3
 
 #### 🧰 Toolchains

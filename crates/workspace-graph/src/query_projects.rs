@@ -112,7 +112,7 @@ impl WorkspaceGraph {
                         })),
                         Field::TaskToolchain(ids) => Ok(self
                             .tasks
-                            .get_all_for_project(&project.id, false)?
+                            .get_many(&project.task_targets)?
                             .iter()
                             .any(|task| {
                                 let mut toolchains = vec![];
@@ -128,7 +128,7 @@ impl WorkspaceGraph {
                             })),
                         Field::TaskType(types) => Ok(self
                             .tasks
-                            .get_all_for_project(&project.id, false)?
+                            .get_many(&project.task_targets)?
                             .iter()
                             .any(|task| {
                                 condition

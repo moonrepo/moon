@@ -45,7 +45,7 @@ impl WorkspaceGraph {
 
         // Don't use `get_all` as it recursively calls `query`,
         // which runs into a deadlock! This should be faster also...
-        for task in self.tasks.get_all_unexpanded() {
+        for task in self.tasks.get_all_unexpanded()? {
             if does_task_match_criteria(task, query)? {
                 targets.push(task.target.clone());
             }

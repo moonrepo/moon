@@ -3,10 +3,18 @@ syntax = "proto3";
 package moon.daemon.v1;
 
 service MoonDaemon {
+  rpc ArchiveTaskOutputs(ArchiveTaskOutputsRequest) returns (ArchiveTaskOutputsResponse);
   rpc Start(StartRequest) returns (StartResponse);
   rpc Stop(StopRequest) returns (StopResponse);
   rpc Status(StatusRequest) returns (StatusResponse);
 }
+
+message ArchiveTaskOutputsRequest {
+  string task_target = 1;
+  string hash = 2;
+}
+
+message ArchiveTaskOutputsResponse {}
 
 message StartRequest {
   string workspace_root = 1;

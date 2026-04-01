@@ -53,3 +53,4 @@ dockerManifest.json
 
 # AI
 .claude/settings.local.json
+.claude/worktrees

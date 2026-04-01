@@ -28,7 +28,7 @@ impl FileEvent {
 
 #[async_trait]
 pub trait FileWatcher<T>: Send + Sync {
-    async fn on_file_event(&mut self, state: &mut T, event: &FileEvent) -> miette::Result<()>;
+    async fn on_file_event(&mut self, state: T, event: &FileEvent) -> miette::Result<()>;
 }
 
 pub type BoxedFileWatcher<T> = Box<dyn FileWatcher<T>>;

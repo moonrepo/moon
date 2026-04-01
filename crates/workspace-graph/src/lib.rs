@@ -144,6 +144,6 @@ impl WorkspaceGraph {
     }
 
     pub fn get_tasks_unexpanded_with_internal(&self) -> miette::Result<Vec<&Task>> {
-        Ok(self.tasks.get_all_unexpanded()?)
+        self.tasks.get_all_unexpanded()
     }
 }

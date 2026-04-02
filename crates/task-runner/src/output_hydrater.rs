@@ -6,6 +6,7 @@ use starbase_archive::Archiver;
 use starbase_archive::tar::TarUnpacker;
 use starbase_utils::fs;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -16,8 +17,8 @@ pub enum HydrateFrom {
 }
 
 pub struct OutputHydrater<'task> {
-    pub app_context: &'task AppContext,
-    pub task: &'task Task,
+    pub app_context: &'task Arc<AppContext>,
+    pub task: &'task Arc<Task>,
 }
 
 impl OutputHydrater<'_> {

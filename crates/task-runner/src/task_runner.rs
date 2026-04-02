@@ -28,8 +28,8 @@ pub struct TaskRunResult {
 
 pub struct TaskRunner<'task> {
     app_context: &'task Arc<AppContext>,
-    project: &'task Project,
-    pub task: &'task Task,
+    project: &'task Arc<Project>,
+    pub task: &'task Arc<Task>,
 
     archiver: OutputArchiver<'task>,
     hydrater: OutputHydrater<'task>,
@@ -45,8 +45,8 @@ pub struct TaskRunner<'task> {
 impl<'task> TaskRunner<'task> {
     pub fn new(
         app_context: &'task Arc<AppContext>,
-        project: &'task Project,
-        task: &'task Task,
+        project: &'task Arc<Project>,
+        task: &'task Arc<Task>,
     ) -> miette::Result<Self> {
         debug!(
             task_target = task.target.as_str(),

@@ -73,7 +73,7 @@ impl OutputHydrater<'_> {
     }
 
     #[instrument(skip(self))]
-    fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<bool> {
+    fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
         debug!(
             task_target = self.task.target.as_str(),
             hash,
@@ -104,7 +104,7 @@ impl OutputHydrater<'_> {
             self.delete_existing_outputs()?;
         }
 
-        Ok(true)
+        Ok(())
     }
 
     #[instrument(skip(self, state))]

@@ -276,6 +276,25 @@ mod task_hasher {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn excludes_unrelated_local_changed_files_for_explicit_inputs() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+            sandbox.create_file("created.txt", "");
+            sandbox.run_git(|cmd| {
+                cmd.args(["add", "created.txt"]);
+            });
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_from_project("root", "files").unwrap();
+
+            let hasher_config = HasherConfig::default();
+            let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+            assert_eq!(get_input_files(result.inputs), ["2.txt", "dir/abc.txt"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn includes_env_file() {
             let sandbox = create_sandbox("inputs");
             sandbox.enable_git();

@@ -207,7 +207,9 @@ impl<'task> TaskHasher<'task> {
         let ignore = GlobSet::new(&self.hasher_config.ignore_patterns)?;
         let ignore_missing = GlobSet::new(&self.hasher_config.ignore_missing_patterns)?;
         let globset = self.task.create_globset()?;
-        let has_globs = !self.task.input_globs.is_empty() || !self.task.output_globs.is_empty();
+        let has_filters = !self.task.input_files.is_empty()
+            || !self.task.input_globs.is_empty()
+            || !self.task.output_globs.is_empty();
 
         for abs_path in inputs {
             // We need to use relative paths from the workspace root
@@ -216,7 +218,7 @@ impl<'task> TaskHasher<'task> {
                 .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
-            if has_globs && !self.is_valid_input_source(&globset, &rel_path) {
+            if has_filters && !self.is_valid_input_source(&globset, &rel_path) {
                 continue;
             }
 

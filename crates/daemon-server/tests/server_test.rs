@@ -218,7 +218,7 @@ mod windows_rpc {
 
         assert!(status.running);
         assert_eq!(status.pid, std::process::id());
-        assert_eq!(status.moon_version, "0.0.0-test");
+        assert_eq!(status.moon_version, "0.0.1");
         assert_eq!(status.workspace_root, workspace_root.to_string_lossy());
         assert!(status.uptime_secs < 5);
 

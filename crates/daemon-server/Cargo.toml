@@ -5,11 +5,15 @@ edition = "2024"
 publish = false
 
 [dependencies]
+moon_app_context = { path = "../app-context" }
 moon_common = { path = "../common" }
 moon_daemon_proto = { path = "../daemon-proto" }
 moon_daemon_utils = { path = "../daemon-utils" }
 moon_file_watcher = { path = "../file-watcher" }
 moon_process = { path = "../process" }
+moon_target = { path = "../target" }
+moon_task_runner = { path = "../task-runner" }
+moon_workspace_graph = { path = "../workspace-graph" }
 miette = { workspace = true }
 notify-debouncer-full = { version = "0.7.0", features = ["flume"] }
 rustc-hash = { workspace = true }
@@ -22,6 +26,7 @@ tracing = { workspace = true }
 [dev-dependencies]
 moon_daemon_client = { path = "../daemon-client" }
 moon_file_watcher = { path = "../file-watcher" }
+moon_test_utils2 = { path = "../test-utils" }
 async-trait = { workspace = true }
 starbase_sandbox = { workspace = true }
 

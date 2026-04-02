@@ -139,8 +139,8 @@ pub async fn start_file_watcher(
 /// Errors from the watchers are logged but do not stop the listener —
 /// only a shutdown signal does. Watchers are expected to handle their own internal
 /// state and debounce as needed, since file events can arrive in bursts.
-pub async fn start_file_listener<T: Send + 'static>(
-    mut state: T,
+pub async fn start_file_listener<T: Clone + Send + 'static>(
+    state: T,
     mut watchers: Vec<BoxedFileWatcher<T>>,
     mut event_rx: broadcast::Receiver<FileEvent>,
     mut shutdown_rx: broadcast::Receiver<()>,
@@ -153,7 +153,7 @@ pub async fn start_file_listener<T: Send + 'static>(
                 match result {
                     Ok(event) => {
                         for watcher in watchers.iter_mut() {
-                            if let Err(error) = watcher.on_file_event(&mut state, &event).await {
+                            if let Err(error) = watcher.on_file_event(state.clone(), &event).await {
                                 error!("System watcher error: {error}");
                             }
                         }

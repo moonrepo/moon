@@ -87,7 +87,7 @@ impl ToolchainRegistry {
                 .into());
             }
 
-            self.load_many([&id]).await?;
+            return Ok(self.load_many([&id]).await?.remove(0));
         }
 
         self.get_instance(&id).await
@@ -111,11 +111,6 @@ impl ToolchainRegistry {
 
         for id in ids {
             let id = Id::raw(id.as_ref());
-
-            if self.registry.is_registered(&id).await {
-                list.push(self.get_instance(&id).await?);
-                continue;
-            }
 
             let Some(config) = self.config.get_plugin_config(&id) else {
                 continue;
@@ -213,41 +208,37 @@ impl ToolchainRegistry {
             return Ok(results);
         }
 
-        let toolchain_ids = toolchain_ids.into_iter().collect::<Vec<_>>();
-
         // Load the plugins on-demand when we need them
-        self.load_many(toolchain_ids.clone()).await?;
+        let toolchains = self.load_many(toolchain_ids).await?;
 
         // Use ordered futures because we need the results to
         // be in a deterministic order for operations to work
-        // correct, like hashing
+        // correctly, like hashing
         let mut futures = FuturesOrdered::new();
 
-        for toolchain_id in toolchain_ids {
-            let toolchain = self.load(toolchain_id).await?;
-
+        for toolchain in toolchains {
             if skip_func_check || toolchain.has_func(func_name).await {
                 let mut operation = Operation::new(func_name).unwrap();
-                let id = toolchain.id.clone();
                 let input = input_factory(self, &toolchain);
                 let future = output_factory(toolchain.clone(), input);
 
-                futures.push_back(tokio::spawn(Box::pin(async move {
+                futures.push_back(Box::pin(async move {
                     let result = future.await;
+
                     operation.finish_with_result(&result);
 
                     Ok::<_, miette::Report>(CallResult {
-                        id,
+                        id: toolchain.id.clone(),
                         operation,
                         output: result?,
                         plugin: toolchain,
                     })
-                })));
+                }));
             }
         }
 
         while let Some(result) = futures.next().await {
-            results.push(result.into_diagnostic()??);
+            results.push(result?);
         }
 
         Ok(results)

@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- **Project graph**
+  - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
+- **Task runner**
+  - Improved performance of task output archiving, by no longer blocking the main thread pool.
+
 ## 2.1.4
 
 #### 🚀 Updates

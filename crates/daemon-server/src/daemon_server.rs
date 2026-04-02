@@ -1,5 +1,6 @@
 use crate::daemon_server_error::DaemonServerError;
 use crate::daemon_watcher::{start_file_listener, start_file_watcher};
+use moon_app_context::AppContext;
 use moon_daemon_proto::{
     moon_daemon_server::{MoonDaemon, MoonDaemonServer},
     *,
@@ -7,31 +8,39 @@ use moon_daemon_proto::{
 use moon_daemon_utils::{endpoint::*, sys::is_process_alive};
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_process::ProcessRegistry;
+use moon_target::Target;
+use moon_task_runner::output_archiver::OutputArchiver;
+use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
-use tokio::sync::broadcast;
+use tokio::sync::{RwLock, broadcast};
 use tonic::{Request, Response, Status, transport::Server};
 use tracing::{debug, error, info};
 
+pub struct DaemonState {
+    pub app_context: Arc<AppContext>,
+    pub workspace_graph: Arc<WorkspaceGraph>,
+}
+
+pub type AtomicDaemonState = Arc<RwLock<DaemonState>>;
+
 struct DaemonServiceInner {
     endpoint: String,
-    moon_version: String,
     pid: u32,
     shutdown_tx: broadcast::Sender<()>,
     started_at: Instant,
-    workspace_root: PathBuf,
 }
 
 pub struct DaemonService {
     inner: Arc<DaemonServiceInner>,
+    state: AtomicDaemonState,
 }
 
 impl DaemonService {
     pub fn new(
-        workspace_root: PathBuf,
-        moon_version: String,
+        state: AtomicDaemonState,
         endpoint: String,
         pid: u32,
         shutdown_tx: broadcast::Sender<()>,
@@ -39,18 +48,45 @@ impl DaemonService {
         Self {
             inner: Arc::new(DaemonServiceInner {
                 endpoint,
-                moon_version,
                 pid,
                 shutdown_tx,
                 started_at: Instant::now(),
-                workspace_root,
             }),
+            state,
         }
     }
 }
 
 #[tonic::async_trait]
 impl MoonDaemon for DaemonService {
+    async fn archive_task_outputs(
+        &self,
+        request: Request<ArchiveTaskOutputsRequest>,
+    ) -> Result<Response<ArchiveTaskOutputsResponse>, Status> {
+        debug!("Received archive task outputs request");
+
+        let state = self.state.read().await;
+        let req = request.into_inner();
+
+        let target = Target::parse(&req.task_target)
+            .map_err(|error| Status::invalid_argument(error.to_string()))?;
+
+        let task = state
+            .workspace_graph
+            .get_task(&target)
+            .map_err(|error| Status::not_found(error.to_string()))?;
+
+        OutputArchiver {
+            app_context: &state.app_context,
+            task: &task,
+        }
+        .archive(&req.hash, None)
+        .await
+        .map_err(|error| Status::unknown(error.to_string()))?;
+
+        Ok(Response::new(ArchiveTaskOutputsResponse {}))
+    }
+
     async fn start(
         &self,
         _request: Request<StartRequest>,
@@ -79,15 +115,16 @@ impl MoonDaemon for DaemonService {
         &self,
         _request: Request<StatusRequest>,
     ) -> Result<Response<StatusResponse>, Status> {
+        let state = self.state.read().await;
         let uptime_secs = self.inner.started_at.elapsed().as_secs();
 
         Ok(Response::new(StatusResponse {
             endpoint: self.inner.endpoint.clone(),
-            moon_version: self.inner.moon_version.clone(),
+            moon_version: state.app_context.cli_version.to_string(),
             pid: self.inner.pid,
             running: true,
             uptime_secs,
-            workspace_root: self.inner.workspace_root.to_string_lossy().into_owned(),
+            workspace_root: state.app_context.workspace_root.to_string_lossy().into(),
         }))
     }
 }
@@ -102,25 +139,27 @@ impl MoonDaemon for DaemonService {
 /// - `SIGINT` or `SIGTERM` (Unix) / `Ctrl+C` (Windows)
 ///
 /// On shutdown the PID file and socket are removed.
-pub async fn start_daemon_server<T: Send + 'static>(
-    workspace_root: &Path,
-    daemon_dir: &Path,
-    moon_version: &str,
-    state: T,
-    watchers: Vec<BoxedFileWatcher<T>>,
+pub async fn start_daemon_server(
+    state: DaemonState,
+    watchers: Vec<BoxedFileWatcher<AtomicDaemonState>>,
 ) -> miette::Result<()> {
-    let endpoint = get_endpoint(daemon_dir);
+    let daemon_dir = state.app_context.daemon_dir.clone();
+    let workspace_root = state.app_context.workspace_root.clone();
+    let endpoint = get_endpoint(&daemon_dir);
 
-    fs::create_dir_all(daemon_dir)?;
+    fs::create_dir_all(&daemon_dir)?;
 
     // Remove stale endpoint files left by a previous crash, but only
     // if no daemon process is actually alive
-    remove_stale_endpoint(daemon_dir, &endpoint)?;
+    remove_stale_endpoint(&daemon_dir, &endpoint)?;
 
     let pid = std::process::id();
-    let pid_path = get_pid_path(daemon_dir);
+    let pid_path = get_pid_path(&daemon_dir);
 
     write_pid(&pid_path, pid)?;
+
+    // Create a new atomic state
+    let atomic_state = Arc::new(RwLock::new(state));
 
     // Single broadcast channel for shutdown
     let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
@@ -129,25 +168,19 @@ pub async fn start_daemon_server<T: Send + 'static>(
     // Spawn the file watcher and listener in the background
     let (event_tx, event_rx) = broadcast::channel::<FileEvent>(1024);
     let watcher_handle = tokio::spawn(start_file_watcher(
-        workspace_root.to_owned(),
-        event_tx.clone(),
+        workspace_root,
+        event_tx,
         shutdown_tx.subscribe(),
     ));
     let listener_handle = tokio::spawn(start_file_listener(
-        state,
+        atomic_state.clone(),
         watchers,
         event_rx,
         shutdown_tx.subscribe(),
     ));
 
     // Create the RPC service
-    let service = DaemonService::new(
-        workspace_root.to_owned(),
-        moon_version.to_owned(),
-        endpoint.clone(),
-        pid,
-        shutdown_tx.clone(),
-    );
+    let service = DaemonService::new(atomic_state, endpoint.clone(), pid, shutdown_tx.clone());
 
     // Merge the RPC-driven shutdown with OS signals so the daemon
     // cleans up regardless of how it is stopped
@@ -186,7 +219,7 @@ pub async fn start_daemon_server<T: Send + 'static>(
 
     info!("Daemon server stopped");
 
-    cleanup_daemon_files(daemon_dir)?;
+    cleanup_daemon_files(&daemon_dir)?;
 
     Ok(())
 }

@@ -6,6 +6,7 @@ use starbase_archive::Archiver;
 use starbase_archive::tar::TarUnpacker;
 use starbase_utils::fs;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -16,8 +17,8 @@ pub enum HydrateFrom {
 }
 
 pub struct OutputHydrater<'task> {
-    pub app_context: &'task AppContext,
-    pub task: &'task Task,
+    pub app_context: &'task Arc<AppContext>,
+    pub task: &'task Arc<Task>,
 }
 
 impl OutputHydrater<'_> {
@@ -73,7 +74,7 @@ impl OutputHydrater<'_> {
     }
 
     #[instrument(skip(self))]
-    fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<bool> {
+    fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
         debug!(
             task_target = self.task.target.as_str(),
             hash,
@@ -104,7 +105,7 @@ impl OutputHydrater<'_> {
             self.delete_existing_outputs()?;
         }
 
-        Ok(true)
+        Ok(())
     }
 
     #[instrument(skip(self, state))]

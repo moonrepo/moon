@@ -53,6 +53,11 @@ mod vcs_hooks {
             .unwrap();
 
         assert!(!sandbox.path().join(".moon/hooks").exists());
+        assert!(
+            !fs::read_to_string(sandbox.path().join(".git/config"))
+                .unwrap()
+                .contains("hooksPath =")
+        );
     }
 
     #[tokio::test]
@@ -77,6 +82,11 @@ mod vcs_hooks {
         .unwrap();
 
         assert!(!sandbox.path().join(".moon/hooks").exists());
+        assert!(
+            !fs::read_to_string(sandbox.path().join(".git/config"))
+                .unwrap()
+                .contains("hooksPath =")
+        );
     }
 
     #[tokio::test]
@@ -96,6 +106,11 @@ mod vcs_hooks {
 
         assert!(!pre_commit.exists());
         assert!(!post_push.exists());
+        assert!(
+            !fs::read_to_string(sandbox.path().join(".git/config"))
+                .unwrap()
+                .contains("hooksPath =")
+        );
     }
 
     #[tokio::test]

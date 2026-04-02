@@ -4,20 +4,31 @@
 use moon_daemon_client::DaemonClient;
 use moon_daemon_server::*;
 use moon_daemon_utils::endpoint::*;
+use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::broadcast;
+use tokio::sync::{RwLock, broadcast};
 
 pub fn build_daemon_service(
     workspace_root: PathBuf,
-    moon_version: String,
     endpoint: String,
     pid: u32,
     shutdown_tx: broadcast::Sender<()>,
 ) -> DaemonService {
-    DaemonService::new(workspace_root, moon_version, endpoint, pid, shutdown_tx)
+    let mocker = WorkspaceMocker::new(workspace_root);
+
+    DaemonService::new(
+        Arc::new(RwLock::new(DaemonState {
+            app_context: Arc::new(mocker.mock_app_context()),
+            workspace_graph: Arc::new(WorkspaceGraph::default()),
+        })),
+        endpoint,
+        pid,
+        shutdown_tx,
+    )
 }
 
 #[cfg(unix)]
@@ -42,7 +53,6 @@ mod unix_rpc {
 
         let service = build_daemon_service(
             workspace_root.to_owned(),
-            "0.0.0-test".to_owned(),
             endpoint.clone(),
             pid,
             shutdown_tx.clone(),
@@ -75,7 +85,7 @@ mod unix_rpc {
 
         assert!(status.running);
         assert_eq!(status.pid, std::process::id());
-        assert_eq!(status.moon_version, "0.0.0-test");
+        assert_eq!(status.moon_version, "0.0.1");
         assert_eq!(status.workspace_root, workspace_root.to_string_lossy());
         assert!(status.uptime_secs < 5); // should be nearly instant
 
@@ -176,7 +186,6 @@ mod windows_rpc {
 
         let service = build_daemon_service(
             workspace_root.to_owned(),
-            "0.0.0-test".to_owned(),
             endpoint.clone(),
             pid,
             shutdown_tx.clone(),
@@ -209,7 +218,7 @@ mod windows_rpc {
 
         assert!(status.running);
         assert_eq!(status.pid, std::process::id());
-        assert_eq!(status.moon_version, "0.0.0-test");
+        assert_eq!(status.moon_version, "0.0.1");
         assert_eq!(status.workspace_root, workspace_root.to_string_lossy());
         assert!(status.uptime_secs < 5);
 

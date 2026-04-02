@@ -49,11 +49,11 @@ async fn mock_workspace(workspace_root: &Path) -> (WorkspaceGraph, AppContext) {
 async fn generate_hash<'a>(
     project: &'a Project,
     task: &'a Task,
-    wg: &'a WorkspaceGraph,
+    _wg: &'a WorkspaceGraph,
     app: &'a AppContext,
     config: &'a HasherConfig,
 ) -> TaskFingerprint<'a> {
-    let mut hasher = TaskHasher::new(app, &wg.projects, project, task, config);
+    let mut hasher = TaskHasher::new(app, project, task, config);
     hasher.hash_inputs().await.unwrap();
     hasher.hash()
 }
@@ -273,6 +273,25 @@ mod task_hasher {
             let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
 
             assert_eq!(get_input_files(result.inputs), ["created.txt"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn excludes_unrelated_local_changed_files_for_explicit_inputs() {
+            let sandbox = create_sandbox("inputs");
+            sandbox.enable_git();
+            sandbox.create_file("created.txt", "");
+            sandbox.run_git(|cmd| {
+                cmd.args(["add", "created.txt"]);
+            });
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let project = wg.get_project("root").unwrap();
+            let task = wg.get_task_from_project("root", "files").unwrap();
+
+            let hasher_config = HasherConfig::default();
+            let result = generate_hash(&project, &task, &wg, &app, &hasher_config).await;
+
+            assert_eq!(get_input_files(result.inputs), ["2.txt", "dir/abc.txt"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]

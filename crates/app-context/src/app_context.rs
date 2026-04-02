@@ -31,6 +31,7 @@ pub struct AppContext {
 
     // Paths
     pub config_dir: PathBuf,
+    pub daemon_dir: PathBuf,
     pub working_dir: PathBuf,
     pub workspace_root: PathBuf,
 }

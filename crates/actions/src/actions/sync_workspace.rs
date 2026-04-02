@@ -69,7 +69,7 @@ pub async fn sync_workspace(
     if app_context.workspace_config.codeowners.sync {
         debug!(
             "Syncing code owners ({} enabled)",
-            color::property("codeowners.syncOnRun"),
+            color::property("codeowners.sync"),
         );
 
         let app_context = Arc::clone(&app_context);
@@ -90,7 +90,7 @@ pub async fn sync_workspace(
         debug!(
             "Syncing {} hooks ({} enabled)",
             app_context.workspace_config.vcs.client,
-            color::property("vcs.syncHooks"),
+            color::property("vcs.sync"),
         );
 
         let app_context = Arc::clone(&app_context);

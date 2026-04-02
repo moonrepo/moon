@@ -7,7 +7,6 @@ use moon_common::path::{PathExt, WorkspaceRelativePath, WorkspaceRelativePathBuf
 use moon_config::{HasherConfig, HasherWalkStrategy};
 use moon_env_var::GlobalEnvBag;
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob::GlobSet;
@@ -17,7 +16,6 @@ use tracing::{trace, warn};
 // Hash all inputs for a task, but exclude outputs and moon specific configuration files!
 pub struct TaskHasher<'task> {
     pub app_context: &'task AppContext,
-    pub project_graph: &'task ProjectGraph,
     pub project: &'task Project,
     pub task: &'task Task,
     pub hasher_config: &'task HasherConfig,
@@ -28,7 +26,6 @@ pub struct TaskHasher<'task> {
 impl<'task> TaskHasher<'task> {
     pub fn new(
         app_context: &'task AppContext,
-        project_graph: &'task ProjectGraph,
         project: &'task Project,
         task: &'task Task,
         hasher_config: &'task HasherConfig,
@@ -36,7 +33,6 @@ impl<'task> TaskHasher<'task> {
         Self {
             app_context,
             project,
-            project_graph,
             task,
             hasher_config,
             fingerprint: TaskFingerprint::new(project, task),
@@ -211,7 +207,9 @@ impl<'task> TaskHasher<'task> {
         let ignore = GlobSet::new(&self.hasher_config.ignore_patterns)?;
         let ignore_missing = GlobSet::new(&self.hasher_config.ignore_missing_patterns)?;
         let globset = self.task.create_globset()?;
-        let has_globs = !self.task.input_globs.is_empty() || !self.task.output_globs.is_empty();
+        let has_filters = !self.task.input_files.is_empty()
+            || !self.task.input_globs.is_empty()
+            || !self.task.output_globs.is_empty();
 
         for abs_path in inputs {
             // We need to use relative paths from the workspace root
@@ -220,7 +218,7 @@ impl<'task> TaskHasher<'task> {
                 .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
-            if has_globs && !self.is_valid_input_source(&globset, &rel_path) {
+            if has_filters && !self.is_valid_input_source(&globset, &rel_path) {
                 continue;
             }
 

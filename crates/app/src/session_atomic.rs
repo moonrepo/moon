@@ -1,4 +1,5 @@
 use crate::session::MoonSession;
+use moon_daemon::AtomicDaemonState;
 use tokio::task::JoinHandle;
 use tracing::trace;
 
@@ -27,13 +28,15 @@ impl MoonSession {
         });
     }
 
-    pub fn rebuild_graphs(&self) -> JoinHandle<()> {
+    pub fn rebuild_graphs(&self, state: AtomicDaemonState) -> JoinHandle<()> {
         trace!("Rebuilding project and task graphs");
 
         let session = self.clone();
 
         tokio::spawn(async move {
-            session.get_workspace_graph().await.ok();
+            if let Ok(graph) = session.get_workspace_graph().await {
+                state.write().await.workspace_graph = graph;
+            }
         })
     }
 

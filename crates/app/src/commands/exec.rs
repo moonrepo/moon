@@ -122,7 +122,7 @@ pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
             Ok(SelectProps {
                 label: "Which task(s) to run?".into(),
                 options: workspace_graph
-                    .get_tasks_unexpanded()
+                    .get_tasks_unexpanded()?
                     .into_iter()
                     .map(|task| {
                         SelectOption::new(&task.target).description_opt(task.description.clone())

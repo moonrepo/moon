@@ -129,12 +129,13 @@ impl WorkspaceGraph {
             .collect())
     }
 
-    pub fn get_tasks_unexpanded(&self) -> Vec<&Task> {
-        self.tasks
-            .get_all_unexpanded()
+    pub fn get_tasks_unexpanded(&self) -> miette::Result<Vec<&Task>> {
+        Ok(self
+            .tasks
+            .get_all_unexpanded()?
             .into_iter()
             .filter(|task| !task.is_internal())
-            .collect()
+            .collect())
     }
 
     /// Get all tasks, including internal.
@@ -142,7 +143,7 @@ impl WorkspaceGraph {
         self.tasks.get_all()
     }
 
-    pub fn get_tasks_unexpanded_with_internal(&self) -> Vec<&Task> {
+    pub fn get_tasks_unexpanded_with_internal(&self) -> miette::Result<Vec<&Task>> {
         self.tasks.get_all_unexpanded()
     }
 }

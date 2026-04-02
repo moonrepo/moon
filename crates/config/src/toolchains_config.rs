@@ -131,13 +131,6 @@ impl ToolchainsConfig {
         Ok(())
     }
 
-    pub fn should_invalidate(&self, other: &Self) -> bool {
-        self.plugins != other.plugins
-    }
-}
-
-#[cfg(feature = "proto")]
-impl ToolchainsConfig {
     pub fn requires_proto(&self) -> bool {
         for config in self.plugins.values() {
             if config.version.is_some() {
@@ -148,6 +141,13 @@ impl ToolchainsConfig {
         false
     }
 
+    pub fn should_invalidate(&self, other: &Self) -> bool {
+        self.plugins != other.plugins
+    }
+}
+
+#[cfg(feature = "proto")]
+impl ToolchainsConfig {
     pub fn get_plugin_locator(id: &Id) -> Option<proto_core::PluginLocator> {
         use proto_core::warpgate::find_debug_locator_with_url_fallback as locate;
 

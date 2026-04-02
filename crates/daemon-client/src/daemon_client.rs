@@ -47,6 +47,26 @@ impl DaemonClient {
     }
 
     #[instrument(skip(self))]
+    pub async fn archive_task_outputs(
+        &mut self,
+        task_target: &str,
+        hash: &str,
+    ) -> miette::Result<ArchiveTaskOutputsResponse> {
+        debug!("Calling {} method", color::property("ArchiveTaskOutputs"));
+
+        let response = self
+            .inner
+            .archive_task_outputs(ArchiveTaskOutputsRequest {
+                task_target: task_target.to_owned(),
+                hash: hash.to_owned(),
+            })
+            .await
+            .map_err(map_rpc_error)?;
+
+        Ok(response.into_inner())
+    }
+
+    #[instrument(skip(self))]
     pub async fn start(&mut self, workspace_root: &str) -> miette::Result<StartResponse> {
         debug!("Calling {} method", color::property("Start"));
 

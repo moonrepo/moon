@@ -72,7 +72,7 @@ impl ExtensionRegistry {
                 .into());
             }
 
-            self.load_many([&id]).await?;
+            return Ok(self.load_many([&id]).await?.remove(0));
         }
 
         self.get_instance(&id).await
@@ -98,11 +98,6 @@ impl ExtensionRegistry {
 
         for id in ids {
             let id = Id::raw(id.as_ref());
-
-            if self.registry.is_registered(&id).await {
-                list.push(self.get_instance(&id).await?);
-                continue;
-            }
 
             let Some(config) = self.config.plugins.get(&id) else {
                 continue;
@@ -150,7 +145,7 @@ impl ExtensionRegistry {
     pub(crate) async fn call_func_all<I, Id, InFn, In, OutFn, OutFut, Out>(
         &self,
         func_name: &str,
-        plugin_ids: I,
+        extension_ids: I,
         input_factory: InFn,
         output_factory: OutFn,
     ) -> miette::Result<Vec<CallResult<ExtensionPlugin, Out>>>
@@ -168,41 +163,37 @@ impl ExtensionRegistry {
             return Ok(results);
         }
 
-        let plugin_ids = plugin_ids.into_iter().collect::<Vec<_>>();
-
         // Load the plugins on-demand when we need them
-        self.load_many(plugin_ids.clone()).await?;
+        let extensions = self.load_many(extension_ids).await?;
 
         // Use ordered futures because we need the results to
         // be in a deterministic order for operations to work
-        // correct, like hashing
+        // correctly, like hashing
         let mut futures = FuturesOrdered::new();
 
-        for plugin_id in plugin_ids {
-            let extension = self.load(plugin_id).await?;
-
+        for extension in extensions {
             if extension.has_func(func_name).await {
                 let mut operation = Operation::new(func_name).unwrap();
-                let id = extension.id.clone();
                 let input = input_factory(self, &extension);
                 let future = output_factory(extension.clone(), input);
 
-                futures.push_back(tokio::spawn(Box::pin(async move {
+                futures.push_back(Box::pin(async move {
                     let result = future.await;
+
                     operation.finish_with_result(&result);
 
                     Ok::<_, miette::Report>(CallResult {
-                        id,
+                        id: extension.id.clone(),
                         operation,
                         output: result?,
                         plugin: extension,
                     })
-                })));
+                }));
             }
         }
 
         while let Some(result) = futures.next().await {
-            results.push(result.into_diagnostic()??);
+            results.push(result?);
         }
 
         Ok(results)

@@ -1,5 +1,4 @@
 use daggy::Dag;
-use moon_common::Id;
 use moon_config::TaskDependencyType;
 use moon_graph_utils::*;
 use moon_project::ProjectError;
@@ -87,37 +86,37 @@ impl TaskGraph {
         Ok(all)
     }
 
-    /// Return all tasks for a specific project from the graph.
-    #[instrument(name = "get_all_project_tasks", skip(self))]
-    pub fn get_all_for_project(
-        &self,
-        project_id: &Id,
-        include_internal: bool,
-    ) -> miette::Result<Vec<Arc<Task>>> {
-        let mut all = vec![];
-
-        for target in self.metadata.keys() {
-            if target.get_project_id().is_ok_and(|id| id == project_id) {
-                let task = self.internal_get(target)?;
-
-                if !include_internal && task.is_internal() {
-                    continue;
-                }
-
-                all.push(task);
-            }
-        }
-
-        Ok(all)
-    }
-
     /// Return all unexpanded tasks from the graph.
-    pub fn get_all_unexpanded(&self) -> Vec<&Task> {
-        self.graph
+    pub fn get_all_unexpanded(&self) -> miette::Result<Vec<&Task>> {
+        Ok(self
+            .graph
             .raw_nodes()
             .iter()
             .map(|node| &node.weight)
-            .collect()
+            .collect())
+    }
+
+    /// Return many tasks from the graph by target.
+    #[instrument(name = "get_many_tasks", skip(self))]
+    pub fn get_many(&self, targets: &[Target]) -> miette::Result<Vec<Arc<Task>>> {
+        let mut many = vec![];
+
+        for target in targets {
+            many.push(self.internal_get(target)?);
+        }
+
+        Ok(many)
+    }
+
+    /// Return many unexpanded tasks from the graph.
+    pub fn get_many_unexpanded(&self, targets: &[Target]) -> miette::Result<Vec<&Task>> {
+        let mut many = vec![];
+
+        for target in targets {
+            many.push(self.get_unexpanded(target)?);
+        }
+
+        Ok(many)
     }
 
     /// Focus the graph for a specific project by target.

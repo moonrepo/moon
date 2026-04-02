@@ -3,7 +3,6 @@ use crate::command_executor::CommandExecutor;
 use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
 use crate::run_state::*;
-use crate::task_hashing::*;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
@@ -12,9 +11,9 @@ use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_project_graph::ProjectGraph;
 use moon_remote::{ActionState, Digest, RemoteService};
 use moon_task::Task;
+use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
 use std::sync::Arc;
@@ -29,9 +28,8 @@ pub struct TaskRunResult {
 
 pub struct TaskRunner<'task> {
     app_context: &'task Arc<AppContext>,
-    project_graph: &'task ProjectGraph,
-    project: &'task Project,
-    pub task: &'task Task,
+    project: &'task Arc<Project>,
+    pub task: &'task Arc<Task>,
 
     archiver: OutputArchiver<'task>,
     hydrater: OutputHydrater<'task>,
@@ -47,9 +45,8 @@ pub struct TaskRunner<'task> {
 impl<'task> TaskRunner<'task> {
     pub fn new(
         app_context: &'task Arc<AppContext>,
-        project_graph: &'task ProjectGraph,
-        project: &'task Project,
-        task: &'task Task,
+        project: &'task Arc<Project>,
+        task: &'task Arc<Task>,
     ) -> miette::Result<Self> {
         debug!(
             task_target = task.target.as_str(),
@@ -67,13 +64,8 @@ impl<'task> TaskRunner<'task> {
 
         Ok(Self {
             cache,
-            archiver: OutputArchiver {
-                app_context,
-                project,
-                task,
-            },
+            archiver: OutputArchiver { app_context, task },
             hydrater: OutputHydrater { app_context, task },
-            project_graph,
             project,
             remote_state: None,
             report_item: TaskReportItem {
@@ -391,7 +383,6 @@ impl<'task> TaskRunner<'task> {
         hash_common_task_contents(
             self.app_context,
             context,
-            self.project_graph,
             self.project,
             self.task,
             node,

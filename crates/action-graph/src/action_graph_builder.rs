@@ -1037,14 +1037,14 @@ impl<'query> ActionGraphBuilder<'query> {
         spec: &ToolchainSpec,
         project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
-        Box::pin(self.internal_setup_toolchain(spec, project, &mut FxHashSet::default())).await
+        Box::pin(self.internal_setup_toolchain(spec, project, FxHashSet::default())).await
     }
 
     async fn internal_setup_toolchain(
         &mut self,
         spec: &ToolchainSpec,
         project: Option<&Project>,
-        cycle: &mut FxHashSet<Id>,
+        mut cycle: FxHashSet<&Id>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
         if !self.options.setup_toolchains.is_enabled(&spec.id)
@@ -1058,7 +1058,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let toolchain = toolchain_registry.load(&spec.id).await?;
         let mut edges = vec![];
 
-        cycle.insert(spec.id.clone());
+        cycle.insert(&spec.id);
 
         // Toolchain may depend on others
         if toolchain.has_func("define_requirements").await {
@@ -1084,7 +1084,7 @@ impl<'query> ActionGraphBuilder<'query> {
                                 Box::pin(self.internal_setup_toolchain(
                                     &require_spec,
                                     project,
-                                    cycle,
+                                    cycle.clone(),
                                 ))
                                 .await?,
                             );
@@ -1129,17 +1129,17 @@ impl<'query> ActionGraphBuilder<'query> {
         project: &Project,
         reqs: &RunRequirements,
     ) -> miette::Result<Option<NodeIndex>> {
-        Box::pin(self.internal_sync_project(project, reqs, &mut FxHashSet::default())).await
+        Box::pin(self.internal_sync_project(project, reqs, FxHashSet::default())).await
     }
 
     async fn internal_sync_project(
         &mut self,
         project: &Project,
         reqs: &RunRequirements,
-        cycle: &mut FxHashSet<Id>,
+        mut cycle: FxHashSet<&Id>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
-        if !self.options.sync_projects.is_enabled(&project.id) {
+        if !self.options.sync_projects.is_enabled(&project.id) || cycle.contains(&project.id) {
             return Ok(None);
         }
 
@@ -1150,6 +1150,8 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // Insert the node and edges
         let mut edges = vec![];
+
+        cycle.insert(&project.id);
 
         if let Some(sync_workspace_index) = self.sync_workspace().await? {
             edges.push(sync_workspace_index);
@@ -1164,8 +1166,6 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // We should also depend on other projects
         if self.options.sync_project_dependencies {
-            cycle.insert(project.id.clone());
-
             for dep_project_id in self.workspace_graph.projects.dependencies_of(project) {
                 if cycle.contains(&dep_project_id) {
                     continue;
@@ -1174,7 +1174,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 let dep_project = self.workspace_graph.get_project(&dep_project_id)?;
 
                 if let Some(dep_project_index) =
-                    Box::pin(self.internal_sync_project(&dep_project, reqs, cycle)).await?
+                    Box::pin(self.internal_sync_project(&dep_project, reqs, cycle.clone())).await?
                     && index != dep_project_index
                 {
                     edges.push(dep_project_index);
@@ -1367,5 +1367,158 @@ impl ActionGraphBuilder<'_> {
         if let Some(affected) = self.affected.as_mut() {
             op(affected);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_test_utils2::WorkspaceMocker;
+    use starbase_sandbox::create_sandbox;
+    use std::fs;
+
+    fn create_toolchain_spec(id: &str) -> ToolchainSpec {
+        ToolchainSpec::new(
+            Id::raw(id),
+            moon_config::UnresolvedVersionSpec::parse("1.2.3").unwrap(),
+        )
+    }
+
+    async fn create_builder(root: &std::path::Path) -> ActionGraphBuilder<'static> {
+        let mocker = WorkspaceMocker::new(root)
+            .load_default_configs()
+            .with_all_toolchains()
+            .with_test_toolchains()
+            .with_default_projects()
+            .with_global_envs();
+
+        ActionGraphBuilder::new(
+            Arc::new(mocker.mock_app_context()),
+            Arc::new(mocker.mock_workspace_graph().await),
+            Default::default(),
+        )
+        .unwrap()
+    }
+
+    fn find_node_index(
+        graph: &ActionGraph,
+        mut predicate: impl FnMut(&ActionNode) -> bool,
+    ) -> NodeIndex {
+        let inner = graph.get_inner_graph();
+
+        inner
+            .graph()
+            .node_indices()
+            .find(|index| inner.node_weight(*index).is_some_and(&mut predicate))
+            .unwrap()
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn keeps_toolchain_requirements_path_local_across_siblings() {
+        let sandbox = create_sandbox("projects");
+        let mut builder = create_builder(sandbox.path()).await;
+        let id = Id::raw("root");
+        let cycle = FxHashSet::from_iter([&id]);
+
+        builder
+            .internal_setup_toolchain(&create_toolchain_spec("tc-tier3-reqs"), None, cycle.clone())
+            .await
+            .unwrap();
+        builder
+            .internal_setup_toolchain(&create_toolchain_spec("tc-tier2-reqs"), None, cycle.clone())
+            .await
+            .unwrap();
+
+        let (_, graph) = builder.build();
+        let inner = graph.get_inner_graph();
+        let child_index = find_node_index(&graph, |node| {
+            matches!(
+                node,
+                ActionNode::SetupToolchain(inner)
+                    if inner.toolchain.id.as_str() == "tc-tier2-reqs"
+            )
+        });
+        let shared_index = find_node_index(&graph, |node| {
+            matches!(
+                node,
+                ActionNode::SetupToolchain(inner)
+                    if inner.toolchain.id.as_str() == "tc-tier3"
+            )
+        });
+
+        assert!(inner.find_edge(child_index, shared_index).is_some());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn keeps_project_dependencies_path_local_across_siblings() {
+        let sandbox = create_sandbox("projects");
+
+        fs::write(
+            sandbox.path().join("foo/moon.yml"),
+            "dependsOn: [bar, qux]\n",
+        )
+        .unwrap();
+        fs::write(
+            sandbox.path().join("bar/moon.yml"),
+            "dependsOn: [baz]\nlanguage: javascript\n",
+        )
+        .unwrap();
+        fs::write(
+            sandbox.path().join("qux/moon.yml"),
+            "dependsOn: [baz]\nlanguage: rust\n\ntoolchains:\n  rust:\n    version: '1.90.0'\n",
+        )
+        .unwrap();
+
+        let mocker = WorkspaceMocker::new(sandbox.path())
+            .load_default_configs()
+            .with_all_toolchains()
+            .with_test_toolchains()
+            .with_default_projects()
+            .with_global_envs();
+        let workspace_graph = Arc::new(mocker.mock_workspace_graph().await);
+        let mut builder = ActionGraphBuilder::new(
+            Arc::new(mocker.mock_app_context()),
+            Arc::clone(&workspace_graph),
+            Default::default(),
+        )
+        .unwrap();
+        let id = Id::raw("root");
+        let cycle = FxHashSet::from_iter([&id]);
+
+        builder
+            .internal_sync_project(
+                &workspace_graph.get_project("bar").unwrap(),
+                &RunRequirements::default(),
+                cycle.clone(),
+            )
+            .await
+            .unwrap();
+        builder
+            .internal_sync_project(
+                &workspace_graph.get_project("qux").unwrap(),
+                &RunRequirements::default(),
+                cycle.clone(),
+            )
+            .await
+            .unwrap();
+
+        let (_, graph) = builder.build();
+        let inner = graph.get_inner_graph();
+        let qux_index = find_node_index(&graph, |node| {
+            matches!(
+                node,
+                ActionNode::SyncProject(inner)
+                    if inner.project_id.as_str() == "qux"
+            )
+        });
+        let baz_index = find_node_index(&graph, |node| {
+            matches!(
+                node,
+                ActionNode::SyncProject(inner)
+                    if inner.project_id.as_str() == "baz"
+            )
+        });
+
+        assert!(inner.find_edge(qux_index, baz_index).is_some());
     }
 }

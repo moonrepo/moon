@@ -1,3 +1,4 @@
+use crate::task_hasher::TaskHasher;
 use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::{ActionContext, TargetState};
@@ -9,11 +10,8 @@ use moon_pdk_api::{
     ParseLockInput, ParseLockOutput, ParseManifestInput, ParseManifestOutput,
 };
 use moon_project::{Project, ProjectFragment};
-use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFragment};
-use moon_task_hasher::TaskHasher;
 use moon_toolchain_plugin::ToolchainPlugin;
-use rustc_hash::FxHashMap;
 use starbase_utils::json::JsonValue;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -23,7 +21,6 @@ use tokio::task::JoinSet;
 pub async fn hash_common_task_contents(
     app_context: &AppContext,
     action_context: &ActionContext,
-    project_graph: &ProjectGraph,
     project: &Project,
     task: &Task,
     node: &ActionNode,
@@ -31,7 +28,6 @@ pub async fn hash_common_task_contents(
 ) -> miette::Result<()> {
     let mut task_hasher = TaskHasher::new(
         app_context,
-        project_graph,
         project,
         task,
         &app_context.workspace_config.hasher,
@@ -83,8 +79,8 @@ hash_fingerprint!(
         #[serde(skip_serializing_if = "Vec::is_empty")]
         contents: Vec<JsonValue>,
 
-        #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-        dependencies: FxHashMap<String, String>,
+        #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+        dependencies: BTreeMap<DependencyScope, BTreeMap<String, String>>,
     }
 );
 
@@ -150,7 +146,7 @@ async fn apply_toolchain(
     let mut fingerprint = TaskToolchainFingerprint {
         toolchain: toolchain.id.to_string(),
         contents: vec![],
-        dependencies: FxHashMap::default(),
+        dependencies: BTreeMap::default(),
         version: None,
     };
 
@@ -353,6 +349,7 @@ fn apply_toolchain_dependencies_by_manifest(
             (DependencyScope::Production, &manifest.dependencies),
         ] {
             if apply_toolchain_dependencies_by_scope(
+                scope,
                 project_deps,
                 workspace_deps.get(&scope).unwrap_or(&empty_deps),
                 &locked_deps,
@@ -367,6 +364,7 @@ fn apply_toolchain_dependencies_by_manifest(
 }
 
 fn apply_toolchain_dependencies_by_scope(
+    scope: DependencyScope,
     project_deps: &BTreeMap<String, ManifestDependency>,
     workspace_deps: &BTreeMap<&String, &ManifestDependency>,
     locked_deps: &BTreeMap<&String, &Vec<LockDependency>>,
@@ -409,7 +407,11 @@ fn apply_toolchain_dependencies_by_scope(
                 .or_else(|| lock_dep.version.as_ref().map(|v| v.to_string()))
                 .or_else(|| lock_dep.meta.clone())
             {
-                fingerprint.dependencies.insert(name.to_owned(), hash);
+                fingerprint
+                    .dependencies
+                    .entry(scope)
+                    .or_default()
+                    .insert(name.to_owned(), hash);
                 inject = true;
 
                 continue;
@@ -419,6 +421,8 @@ fn apply_toolchain_dependencies_by_scope(
         // None found, so just record the requirement
         fingerprint
             .dependencies
+            .entry(scope)
+            .or_default()
             .insert(name.to_owned(), req.to_string());
         inject = true;
     }

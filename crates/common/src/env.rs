@@ -34,6 +34,12 @@ pub fn is_ci_env() -> bool {
     is_ci() && !is_test_env()
 }
 
+pub fn is_daemon_env() -> bool {
+    static DAEMON_CACHE: OnceLock<bool> = OnceLock::new();
+
+    *DAEMON_CACHE.get_or_init(|| has_env_var("MOON_DAEMON_RUNNING"))
+}
+
 pub fn is_devbox() -> bool {
     static DEVBOX_CACHE: OnceLock<bool> = OnceLock::new();
 

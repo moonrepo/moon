@@ -1,4 +1,4 @@
-use moon_common::is_test_env;
+use moon_common::{is_daemon_env, is_test_env};
 use moon_process::{Command, CommandArg, Output, output_to_string};
 use rustc_hash::FxHashMap;
 use scc::hash_cache::Entry;
@@ -94,8 +94,8 @@ impl ProcessCache {
             Arc::new(format(if trim { value.trim().to_owned() } else { value }))
         };
 
-        // Avoid caching while testing
-        if is_test_env() {
+        // Avoid caching while testing or within the daemon
+        if is_test_env() || is_daemon_env() {
             let output = command.exec_capture_output().await?;
             let value = format_output(output);
 

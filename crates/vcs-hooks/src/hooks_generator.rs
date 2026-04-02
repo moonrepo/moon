@@ -60,13 +60,31 @@ impl<'app> HooksGenerator<'app> {
     pub async fn cleanup(self) -> miette::Result<()> {
         debug!("Cleaning up {} hooks", self.config.client);
 
-        self.app_context.vcs.teardown_hooks().await?;
+        let mut state = self.load_state()?;
+        let has_previous_state =
+            state.data.relative_hooks_dir.is_some() || !state.data.hook_names.is_empty();
 
-        let state = self.cleanup_previous_state()?;
+        if !has_previous_state {
+            return Ok(());
+        }
+
+        if self.app_context.vcs.is_enabled() {
+            self.app_context.vcs.teardown_hooks().await?;
+        }
 
         if let Some(dir) = &state.data.relative_hooks_dir {
-            fs::remove_dir_all(dir.to_logical_path(&self.app_context.workspace_root))?;
+            let hooks_dir = dir.to_logical_path(&self.app_context.workspace_root);
+
+            self.remove_hook_files(&hooks_dir, &state.data.hook_names)?;
+
+            if hooks_dir.exists() {
+                fs::remove_dir_all(hooks_dir)?;
+            }
         }
+
+        state.data.hook_names.clear();
+        state.data.relative_hooks_dir = None;
+        state.save()?;
 
         Ok(())
     }
@@ -87,6 +105,12 @@ impl<'app> HooksGenerator<'app> {
     #[instrument(skip_all)]
     pub async fn generate(self) -> miette::Result<bool> {
         let vcs = &self.app_context.vcs;
+
+        if !self.has_hooks_to_generate() {
+            self.cleanup().await?;
+
+            return Ok(false);
+        }
 
         // Do not generate if there is no `.git` folder, otherwise this
         // will create an invalid `.git` folder, which in turn enables moon caching
@@ -144,9 +168,18 @@ impl<'app> HooksGenerator<'app> {
         };
 
         let hooks_dir = dir.to_logical_path(&self.app_context.workspace_root);
+        let verify_powershell = !self.is_bash_format();
 
         for (hook_name, commands) in &self.config.hooks {
-            if !commands.is_empty() && !hooks_dir.join(hook_name).exists() {
+            if commands.is_empty() {
+                continue;
+            }
+
+            if !hooks_dir.join(hook_name).exists() {
+                return Ok(false);
+            }
+
+            if verify_powershell && !hooks_dir.join(format!("{hook_name}.ps1")).exists() {
                 return Ok(false);
             }
         }
@@ -274,16 +307,33 @@ impl<'app> HooksGenerator<'app> {
     fn remove_hook_files(&self, hooks_dir: &Path, hook_names: &[String]) -> miette::Result<()> {
         for hook_name in hook_names {
             let hook_path = hooks_dir.join(hook_name);
+            let powershell_hook_path = hooks_dir.join(format!("{hook_name}.ps1"));
 
             if hook_path.exists() {
                 debug!(file = ?hook_path, "Removing {} hook", color::file(hook_name));
 
                 fs::remove_file(&hook_path)?;
-                fs::remove_file(hooks_dir.join(format!("{hook_name}.ps1")))?;
+            }
+
+            if powershell_hook_path.exists() {
+                debug!(
+                    file = ?powershell_hook_path,
+                    "Removing {} hook",
+                    color::file(format!("{hook_name}.ps1"))
+                );
+
+                fs::remove_file(powershell_hook_path)?;
             }
         }
 
         Ok(())
+    }
+
+    fn has_hooks_to_generate(&self) -> bool {
+        self.config
+            .hooks
+            .values()
+            .any(|commands| !commands.is_empty())
     }
 
     fn is_bash_format(&self) -> bool {

@@ -123,7 +123,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         debug!("Will now execute the local binary and replace this running process");
 
         let mut command = Command::new(local_bin);
-        command.args(&args);
+        command.args(&args[1..]);
         command.current_dir(current_dir);
 
         let exit_code = exec_local_bin(command).into_diagnostic()?;

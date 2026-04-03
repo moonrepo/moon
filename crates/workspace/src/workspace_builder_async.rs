@@ -191,7 +191,7 @@ impl WorkspaceBuilderAsync {
         self.load_project_build_data(sources).await?;
 
         // Then extend projects from toolchains
-        // self.extend_project_build_data().await?;
+        self.extend_project_build_data().await?;
 
         // Include all workspace-level config files
         let ext_glob = context.config_loader.get_ext_glob();
@@ -294,6 +294,129 @@ impl WorkspaceBuilderAsync {
         debug!("Loaded {} projects", project_data.len());
 
         self.project_data.extend(project_data);
+
+        Ok(())
+    }
+
+    async fn extend_project_build_data(&mut self) -> miette::Result<()> {
+        let context = self.context();
+
+        debug!("Extending project graph");
+
+        let project_sources = self
+            .project_data
+            .iter()
+            .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
+            .collect::<BTreeMap<_, _>>();
+
+        let outputs = tokio::spawn(extend_projects_with_plugins(context, project_sources))
+            .await
+            .into_diagnostic()??;
+        let context = self.context();
+
+        for (plugin_id, output, is_toolchain) in outputs {
+            let inherit_aliases = if is_toolchain {
+                context
+                    .toolchains_config
+                    .get_plugin_config(&plugin_id)
+                    .is_none_or(|cfg| cfg.inherit_aliases)
+            } else {
+                true
+            };
+
+            for (project_id, mut project_extend) in output.extended_projects {
+                if !self.project_data.contains_key(&project_id) {
+                    return Err(ProjectGraphError::UnconfiguredID {
+                        id: project_id.to_string(),
+                    }
+                    .into());
+                }
+
+                if inherit_aliases && let Some(alias) = project_extend.alias.take() {
+                    self.track_project_alias(&project_id, alias, &plugin_id)?;
+                }
+
+                if let Some(build_data) = self.project_data.get_mut(&project_id) {
+                    build_data.extensions.push(project_extend);
+                }
+            }
+
+            for input_file in output.input_files {
+                self.config_paths.insert(
+                    context
+                        .toolchain_registry
+                        .from_virtual_path(input_file)
+                        .relative_to(&context.workspace_root)
+                        .into_diagnostic()?,
+                );
+            }
+        }
+
+        debug!("Loaded {} project aliases", self.aliases.len());
+
+        Ok(())
+    }
+
+    fn track_project_alias(
+        &mut self,
+        id: &Id,
+        alias: String,
+        plugin_id: &Id,
+    ) -> miette::Result<()> {
+        // Skip aliases that match its own ID
+        if alias == id.as_str() {
+            return Ok(());
+        }
+
+        // Skip aliases that are an invalid ID format
+        if let Err(error) = Id::new(&alias) {
+            debug!(
+                "Skipping alias {} for project {} as its an invalid format: {error}",
+                color::label(&alias),
+                color::id(&id),
+            );
+
+            return Ok(());
+        }
+
+        // Skip aliases that would override an ID
+        if self.project_data.contains_key(alias.as_str()) {
+            debug!(
+                "Skipping alias {} for project {} as it conflicts with the existing project {}",
+                color::label(&alias),
+                color::id(&id),
+                color::id(&alias),
+            );
+
+            return Ok(());
+        }
+
+        // Skip aliases that collide with another alias
+        if let Some(existing_id) = self.aliases.get(&alias) {
+            // Skip if the existing ID is already for this ID.
+            // This scenario is possible when multiple toolchains
+            // extract the same aliases (Bun vs Node, etc).
+            if existing_id == id {
+                return Ok(());
+            }
+
+            debug!(
+                "Skipping alias {} for project {} as it already exists for project {}",
+                color::label(&alias),
+                color::id(&id),
+                color::id(existing_id),
+            );
+
+            return Ok(());
+        }
+
+        self.project_data
+            .get_mut(id)
+            .expect("Project build data not found!")
+            .aliases
+            .insert(alias.clone(), plugin_id.to_owned());
+
+        self.aliases.insert(alias, id.to_owned());
 
         Ok(())
     }

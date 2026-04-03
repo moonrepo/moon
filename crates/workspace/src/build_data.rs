@@ -1,67 +1,9 @@
+use crate::project_builder::ProjectBuildData;
 use moon_common::Id;
-use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::ProjectConfig;
-use moon_pdk_api::ExtendProjectOutput;
 use moon_task::{Target, TaskOptions};
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
-#[serde(default)]
-pub struct ProjectBuildData {
-    #[serde(skip_serializing_if = "FxHashMap::is_empty")]
-    pub aliases: FxHashMap<String, Id>,
-
-    #[serde(skip)]
-    pub config: Option<ProjectConfig>,
-
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub extensions: Vec<ExtendProjectOutput>,
-
-    // Only used for renaming!
-    #[serde(skip)]
-    pub id: Option<Id>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_index: Option<NodeIndex>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub original_id: Option<Id>,
-
-    pub source: WorkspaceRelativePathBuf,
-}
-
-impl ProjectBuildData {
-    pub fn rename_id_if_configured(&mut self) -> Option<(Id, Id)> {
-        if let Some(old_id) = &self.id
-            && let Some(config) = &self.config
-            && let Some(new_id) = &config.id
-            && new_id != old_id
-        {
-            return Some((old_id.to_owned(), new_id.to_owned()));
-        }
-
-        None
-    }
-
-    pub fn resolve_id(id_or_alias: &str, project_data: &FxHashMap<Id, ProjectBuildData>) -> Id {
-        if project_data.contains_key(id_or_alias) {
-            Id::raw(id_or_alias)
-        } else {
-            match project_data.iter().find_map(|(id, build_data)| {
-                if build_data.aliases.contains_key(id_or_alias) {
-                    Some(id)
-                } else {
-                    None
-                }
-            }) {
-                Some(project_id) => project_id.to_owned(),
-                None => Id::raw(id_or_alias),
-            }
-        }
-    }
-}
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]

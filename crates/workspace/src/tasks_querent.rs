@@ -1,4 +1,5 @@
-use crate::build_data::{ProjectBuildData, TaskBuildData};
+use crate::build_data::TaskBuildData;
+use crate::project_builder::ProjectBuildData;
 use moon_common::Id;
 use moon_task::{Target, TaskOptions};
 use moon_task_builder::TasksQuerent;

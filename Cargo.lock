@@ -5708,6 +5708,7 @@ dependencies = [
  "moon_env_var",
  "moon_extension_plugin",
  "moon_feature_flags",
+ "moon_graph_utils",
  "moon_hash",
  "moon_pdk_api",
  "moon_project",

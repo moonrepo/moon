@@ -37,7 +37,9 @@ use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
 use starbase_utils::json;
 use std::collections::BTreeMap;
+use std::mem;
 use std::sync::Arc;
+use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tracing::{debug, instrument, trace};
 
@@ -57,10 +59,7 @@ pub struct WorkspaceBuilderAsync {
     projects_by_tag: FxHashMap<Id, Vec<Id>>,
 
     /// Mapping of project IDs to associated data required for building
-    /// the project itself. Currently we track the following:
-    ///   - The alias, derived from manifests (`package.json`).
-    ///   - Their `moon.yml` in the project root.
-    ///   - Their file source location, relative from the workspace root.
+    /// the project itself. Data is wiped after building the graph!
     project_data: FxHashMap<Id, ProjectBuildData>,
 
     /// The project DAG.
@@ -77,8 +76,7 @@ pub struct WorkspaceBuilderAsync {
     root_project_id: Option<Id>,
 
     /// Mapping of task targets to associated data required for building
-    /// the project itself. Currently we track the following:
-    ///   - Their task options, for resolving deps.
+    /// the project itself. Data is wiped after building the graph!
     task_data: FxHashMap<Target, TaskBuildData>,
 
     /// The task DAG.
@@ -110,6 +108,90 @@ impl WorkspaceBuilderAsync {
         Ok(graph)
     }
 
+    /// Load and build all projects into the graph, as configured in the workspace.
+    pub async fn build_project_graph(&mut self) -> miette::Result<()> {
+        let context = self.context();
+        let monorepo = self.repo_type.is_monorepo();
+        let mut set = JoinSet::new();
+        let (tx, mut rx) = mpsc::channel::<ProjectBuildEvent>(1000);
+
+        // Build each project in a separate task
+        for (id, build_data) in mem::take(&mut self.project_data) {
+            debug!(
+                project_id = id.as_str(),
+                "Building project {}",
+                color::id(&id)
+            );
+
+            let context = Arc::clone(&context);
+            let root_id = self.root_project_id.clone();
+            let tx = tx.clone();
+
+            set.spawn(async move {
+                build_project(context, build_data, id, root_id, monorepo, tx).await
+            });
+        }
+
+        let mut node_indexes = FxHashMap::<Id, NodeIndex>::default();
+
+        // Receive events from each background task
+        while let Some(event) = rx.recv().await {
+            match event {
+                ProjectBuildEvent::Node(project) => {
+                    // Extract tags and group projects
+                    for tag in &project.config.tags {
+                        self.projects_by_tag
+                            .entry(tag.to_owned())
+                            .or_default()
+                            .push(project.id.clone());
+                    }
+
+                    // Extract task build data
+                    for task in project.tasks.values() {
+                        self.task_data.insert(
+                            task.target.clone(),
+                            TaskBuildData {
+                                options: task.options.clone(),
+                                ..Default::default()
+                            },
+                        );
+                    }
+
+                    insert_or_update_project_node(
+                        project,
+                        &mut self.project_graph,
+                        &mut node_indexes,
+                    );
+                }
+                ProjectBuildEvent::Edge(from_id, to_id, scope) => {
+                    let from_index = get_or_insert_project_node(
+                        &from_id,
+                        &mut self.project_graph,
+                        &mut node_indexes,
+                    );
+
+                    let to_index = get_or_insert_project_node(
+                        &to_id,
+                        &mut self.project_graph,
+                        &mut node_indexes,
+                    );
+
+                    self.project_graph
+                        .add_edge(from_index, to_index, scope)
+                        .map_err(|_| ProjectGraphError::WouldCycle {
+                            source_id: from_id.to_string(),
+                            target_id: to_id.to_string(),
+                        })?;
+                }
+            }
+        }
+
+        // Ensure all background tasks have completed
+        set.join_all().await;
+
+        Ok(())
+    }
+
     /// Determine the repository type/structure based on the number of project
     /// sources, and where the point to.
     fn determine_repo_type(&mut self) -> miette::Result<()> {
@@ -133,6 +215,65 @@ impl WorkspaceBuilderAsync {
 
         if self.repo_type == RepoType::MonorepoWithRoot {
             self.root_project_id = root_project_id;
+        }
+
+        Ok(())
+    }
+
+    /// Enforce project constraints and boundaries after all nodes have been inserted.
+    fn enforce_constraints(&self) -> miette::Result<()> {
+        debug!("Enforcing project constraints");
+
+        let context = self.context();
+        let layer_relationships = context
+            .workspace_config
+            .constraints
+            .enforce_layer_relationships;
+        let tag_relationships = &context.workspace_config.constraints.tag_relationships;
+
+        if !layer_relationships && tag_relationships.is_empty() {
+            return Ok(());
+        }
+
+        let default_scope = DependencyScope::Build;
+
+        for (project_index, project_state) in self.project_graph.node_references() {
+            let NodeState::Loaded(project) = project_state else {
+                continue;
+            };
+
+            let deps: Vec<_> = self
+                .project_graph
+                .graph()
+                .neighbors_directed(project_index, Direction::Outgoing)
+                .flat_map(|dep_index| {
+                    self.project_graph.node_weight(dep_index).and_then(|dep| {
+                        match dep {
+                            NodeState::Loading => None,
+                            NodeState::Loaded(dep) => {
+                                Some((
+                                    dep,
+                                    // Is this safe?
+                                    self.project_graph
+                                        .find_edge(project_index, dep_index)
+                                        .and_then(|ei| self.project_graph.edge_weight(ei))
+                                        .unwrap_or(&default_scope),
+                                ))
+                            }
+                        }
+                    })
+                })
+                .collect();
+
+            for (dep, dep_scope) in deps {
+                if layer_relationships {
+                    enforce_layer_relationships(project, dep, dep_scope)?;
+                }
+
+                for (source_tag, required_tags) in tag_relationships {
+                    enforce_tag_relationships(project, source_tag, dep, required_tags)?;
+                }
+            }
         }
 
         Ok(())
@@ -309,9 +450,12 @@ impl WorkspaceBuilderAsync {
             .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
             .collect::<BTreeMap<_, _>>();
 
-        let outputs = tokio::spawn(extend_projects_with_plugins(context, project_sources))
-            .await
-            .into_diagnostic()??;
+        let outputs = tokio::spawn(extend_project_build_data_with_plugins(
+            context,
+            project_sources,
+        ))
+        .await
+        .into_diagnostic()??;
         let context = self.context();
 
         for (plugin_id, output, is_toolchain) in outputs {

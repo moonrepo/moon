@@ -16,6 +16,7 @@ use tokio::sync::mpsc;
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default)]
 pub struct ProjectBuildData {
+    /// Map of aliases to the plugin that provided them.
     #[serde(skip_serializing_if = "FxHashMap::is_empty")]
     pub aliases: FxHashMap<String, Id>,
 

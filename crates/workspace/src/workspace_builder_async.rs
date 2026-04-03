@@ -65,6 +65,9 @@ pub struct WorkspaceBuilderAsync {
     /// The project DAG.
     project_graph: Dag<NodeState<Project>, DependencyScope>,
 
+    // Mapping of project IDs to their node index in the graph, for quick lookup.
+    project_indexes: FxHashMap<Id, NodeIndex>,
+
     /// Projects that have explicitly renamed themselves with the `id` setting.
     /// Maps original ID to renamed ID.
     renamed_project_ids: FxHashMap<Id, Id>,
@@ -81,6 +84,9 @@ pub struct WorkspaceBuilderAsync {
 
     /// The task DAG.
     task_graph: Dag<NodeState<Task>, TaskDependencyType>,
+
+    // Mapping of task targets to their node index in the graph, for quick lookup.
+    task_indexes: FxHashMap<Target, NodeIndex>,
 }
 
 impl WorkspaceBuilderAsync {
@@ -95,11 +101,13 @@ impl WorkspaceBuilderAsync {
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph: Dag::new(),
+            project_indexes: FxHashMap::default(),
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
             task_data: FxHashMap::default(),
             task_graph: Dag::new(),
+            task_indexes: FxHashMap::default(),
         };
 
         graph.preload_build_data().await?;
@@ -132,8 +140,6 @@ impl WorkspaceBuilderAsync {
             });
         }
 
-        let mut node_indexes = FxHashMap::<Id, NodeIndex>::default();
-
         // Receive events from each background task
         while let Some(event) = rx.recv().await {
             match event {
@@ -160,20 +166,20 @@ impl WorkspaceBuilderAsync {
                     insert_or_update_project_node(
                         project,
                         &mut self.project_graph,
-                        &mut node_indexes,
+                        &mut self.project_indexes,
                     );
                 }
                 ProjectBuildEvent::Edge(from_id, to_id, scope) => {
                     let from_index = get_or_insert_project_node(
                         &from_id,
                         &mut self.project_graph,
-                        &mut node_indexes,
+                        &mut self.project_indexes,
                     );
 
                     let to_index = get_or_insert_project_node(
                         &to_id,
                         &mut self.project_graph,
-                        &mut node_indexes,
+                        &mut self.project_indexes,
                     );
 
                     self.project_graph
@@ -181,6 +187,88 @@ impl WorkspaceBuilderAsync {
                         .map_err(|_| ProjectGraphError::WouldCycle {
                             source_id: from_id.to_string(),
                             target_id: to_id.to_string(),
+                        })?;
+                }
+            }
+        }
+
+        // Ensure all background tasks have completed
+        set.join_all().await;
+
+        Ok(())
+    }
+
+    /// Load and build all tasks into the graph, as configured in the workspace.
+    pub async fn build_task_graph(&mut self) -> miette::Result<()> {
+        let context = self.context();
+        let mut set = JoinSet::new();
+        let (tx, mut rx) = mpsc::channel::<TaskBuildEvent>(1000);
+
+        // Build each task in a separate task
+        for (target, _build_data) in mem::take(&mut self.task_data) {
+            debug!(
+                task_target = target.as_str(),
+                "Building task {}",
+                color::id(&target)
+            );
+
+            // Extract the task from the project, as the data will live
+            // in the task graph and not the project graph
+            let Some(project_index) = self.project_indexes.get(target.get_project_id()?) else {
+                panic!("Unable to load task, owning project does not exist!");
+            };
+
+            let Some(NodeState::Loaded(project)) =
+                self.project_graph.node_weight_mut(*project_index)
+            else {
+                panic!("Unable to load task, owning project is in a non-loaded state!");
+            };
+
+            let mut task = project.tasks.remove(&target.task_id).unwrap();
+
+            // Resolve the task dependencies so we can link edges correctly
+            TaskDepsBuilder {
+                querent: Box::new(WorkspaceBuilderTasksQuerent {
+                    project_data: &self.project_data,
+                    projects_by_tag: &self.projects_by_tag,
+                    task_data: &self.task_data,
+                }),
+                project: Some(project),
+                root_project_id: self.root_project_id.as_ref(),
+                task: &mut task,
+            }
+            .build()?;
+
+            let context = Arc::clone(&context);
+            let tx = tx.clone();
+
+            set.spawn(async move { build_task(context, task, tx).await });
+        }
+
+        // Receive events from each background task
+        while let Some(event) = rx.recv().await {
+            match event {
+                TaskBuildEvent::Node(task) => {
+                    insert_or_update_task_node(task, &mut self.task_graph, &mut self.task_indexes);
+                }
+                TaskBuildEvent::Edge(from_target, to_target, scope) => {
+                    let from_index = get_or_insert_task_node(
+                        &from_target,
+                        &mut self.task_graph,
+                        &mut self.task_indexes,
+                    );
+
+                    let to_index = get_or_insert_task_node(
+                        &to_target,
+                        &mut self.task_graph,
+                        &mut self.task_indexes,
+                    );
+
+                    self.task_graph
+                        .add_edge(from_index, to_index, scope)
+                        .map_err(|_| ProjectGraphError::WouldCycle {
+                            source_id: from_target.to_string(),
+                            target_id: to_target.to_string(),
                         })?;
                 }
             }

@@ -2,33 +2,15 @@ use crate::projects_builder::*;
 use crate::tasks_builder::*;
 use crate::workspace_builder::*;
 use daggy::Dag;
-use moon_common::{
-    Id, color,
-    path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
-};
-use moon_config::{
-    ConfigLoader, DependencyScope, ExtensionsConfig, InheritedTasksManager,
-    ProjectDependencyConfig, TaskDependencyType, ToolchainsConfig, WorkspaceConfig,
-    WorkspaceProjectGlobFormat, WorkspaceProjects, finalize_config,
-};
+use moon_common::path::WorkspaceRelativePathBuf;
+use moon_config::TaskDependencyType;
 use moon_task::{Target, Task};
-use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
-use moon_toolchain_plugin::ToolchainRegistry;
-use moon_vcs::BoxedVcs;
-use moon_workspace_graph::WorkspaceGraph;
+use moon_task_graph::NodeState;
 use petgraph::prelude::*;
-use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use starbase_utils::glob::{self, GlobWalkOptions};
-use starbase_utils::json;
-use std::collections::BTreeMap;
-use std::mem;
 use std::sync::Arc;
-use tokio::sync::mpsc;
-use tokio::task::JoinSet;
-use tracing::{debug, instrument, trace};
+use tracing::debug;
 
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceBuilderAsync {
@@ -39,6 +21,7 @@ pub struct WorkspaceBuilderAsync {
     /// These are used for invalidation.
     config_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
+    /// Builder for everything projects related.
     projects: WorkspaceProjectsBuilder,
 
     /// Mapping of task targets to associated data required for building

@@ -25,7 +25,7 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
-use tracing::{debug, trace};
+use tracing::{debug, instrument, trace};
 
 pub type ProjectDag = Dag<NodeState<Project>, DependencyScope>;
 pub type ProjectBuildDataMap = FxHashMap<Id, ProjectBuildData>;
@@ -265,13 +265,17 @@ pub struct WorkspaceProjectsBuilder {
 }
 
 impl WorkspaceProjectsBuilder {
-    pub fn get_or_insert_node(&mut self, id: &Id) -> NodeIndex {
-        if let Some(index) = self.ids_to_indexes.get(id) {
-            *index
-        } else {
-            let index = self.graph.add_node(NodeState::Loading);
-            self.ids_to_indexes.insert(id.to_owned(), index);
-            index
+    pub fn get_or_insert_node(&mut self, id_or_alias: &str) -> NodeIndex {
+        // Edge may be linking with an alias, but we should use the ID
+        let id = self.resolve_id(id_or_alias);
+
+        match self.ids_to_indexes.get(&id) {
+            Some(index) => *index,
+            None => {
+                let index = self.graph.add_node(NodeState::Loading);
+                self.ids_to_indexes.insert(id, index);
+                index
+            }
         }
     }
 
@@ -316,6 +320,8 @@ impl WorkspaceProjectsBuilder {
         }
     }
 
+    /// Load and build all projects into the graph, as configured in the workspace.
+    #[instrument(skip(self))]
     pub async fn build(&mut self) -> miette::Result<()> {
         let data = self.load().await?;
 
@@ -326,8 +332,8 @@ impl WorkspaceProjectsBuilder {
         Ok(())
     }
 
-    /// Load and build all projects into the graph, as configured in the workspace.
-    pub async fn build_graph(&mut self, projects_data: ProjectBuildDataMap) -> miette::Result<()> {
+    #[instrument(skip(self))]
+    async fn build_graph(&mut self, projects_data: ProjectBuildDataMap) -> miette::Result<()> {
         let context = self.context();
         let monorepo = self.repo_type.is_monorepo();
         let mut set = JoinSet::new();
@@ -353,7 +359,12 @@ impl WorkspaceProjectsBuilder {
         // Receive events from each background task
         while let Some(event) = rx.recv().await {
             match event {
-                ProjectBuildEvent::Node(project) => {
+                ProjectBuildEvent::Node(mut project) => {
+                    // Resolve dependency IDs as they may be aliases
+                    for dep_config in &mut project.dependencies {
+                        dep_config.id = self.resolve_id(&dep_config.id);
+                    }
+
                     // Extract tags and group projects
                     for tag in &project.config.tags {
                         self.tags_to_ids
@@ -483,9 +494,10 @@ impl WorkspaceProjectsBuilder {
         Ok(())
     }
 
-    /// Preload the graph with project sources from the workspace configuration.
+    /// Load the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
     /// Then extend the graph with aliases, derived from all event subscribers.
+    #[instrument(skip(self))]
     async fn load(&mut self) -> miette::Result<ProjectBuildDataMap> {
         let context = self.context();
         let mut glob_format = WorkspaceProjectGlobFormat::default();
@@ -551,6 +563,7 @@ impl WorkspaceProjectsBuilder {
         Ok(build_data)
     }
 
+    #[instrument(skip(self))]
     async fn load_build_data(
         &mut self,
         sources: Vec<(Id, WorkspaceRelativePathBuf)>,
@@ -624,11 +637,12 @@ impl WorkspaceProjectsBuilder {
         Ok(projects_data)
     }
 
+    #[instrument(skip(self))]
     async fn extend_build_data(
         &mut self,
         projects_data: &mut ProjectBuildDataMap,
     ) -> miette::Result<()> {
-        debug!("Extending project graph");
+        debug!("Extending project graph with plugins");
 
         let context = self.context();
         let project_sources = projects_data

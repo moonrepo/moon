@@ -1,7 +1,7 @@
-use crate::project_builder::*;
+use crate::projects_builder::*;
 use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
-use crate::task_builder::*;
+use crate::tasks_builder::*;
 use crate::tasks_querent::*;
 use crate::workspace_builder::*;
 use crate::workspace_builder_error::WorkspaceBuilderError;

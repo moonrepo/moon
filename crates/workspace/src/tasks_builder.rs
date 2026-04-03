@@ -1,7 +1,5 @@
-use std::sync::Arc;
-
 use crate::WorkspaceBuilderContext;
-use crate::project_builder::ProjectBuildData;
+use crate::projects_builder::ProjectBuildData;
 use daggy::Dag;
 use moon_common::Id;
 use moon_config::TaskDependencyType;
@@ -10,6 +8,7 @@ use moon_task_graph::NodeState;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tokio::sync::mpsc;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]

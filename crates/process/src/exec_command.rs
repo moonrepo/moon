@@ -308,8 +308,11 @@ impl Command {
                     }
                     Ok(None) => break,
                     Err(error) => {
+                        // Don't break on read errors - dropping the BufReader here would close
+                        // the read-end of the pipe while the child process is still writing,
+                        // causing it to receive EPIPE and potentially exit with a non-zero code.
+                        // Continue reading until we get a natural EOF (Ok(None)).
                         trace!("Failed to read stderr line: {error}");
-                        break;
                     }
                 }
             }
@@ -341,8 +344,11 @@ impl Command {
                     }
                     Ok(None) => break,
                     Err(error) => {
+                        // Don't break on read errors - dropping the BufReader here would close
+                        // the read-end of the pipe while the child process is still writing,
+                        // causing it to receive EPIPE and potentially exit with a non-zero code.
+                        // Continue reading until we get a natural EOF (Ok(None)).
                         trace!("Failed to read stdout line: {error}");
-                        break;
                     }
                 }
             }

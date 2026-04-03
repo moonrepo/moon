@@ -136,24 +136,20 @@ impl MoonSession {
         Ok(Some(client))
     }
 
-    pub async fn create_workspace_graph_context(
-        &self,
-    ) -> miette::Result<WorkspaceBuilderContext<'_>> {
-        let context = WorkspaceBuilderContext {
-            config_loader: &self.config_loader,
+    pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {
+        Ok(WorkspaceBuilderContext {
+            config_loader: self.config_loader.clone(),
             enabled_toolchains: self.toolchains_config.get_enabled(),
-            extensions_config: &self.extensions_config,
+            extensions_config: Arc::clone(&self.extensions_config),
             extension_registry: self.get_extension_registry().await?,
-            inherited_tasks: &self.tasks_config,
-            toolchains_config: &self.toolchains_config,
+            inherited_tasks: Arc::clone(&self.tasks_config),
+            toolchains_config: Arc::clone(&self.toolchains_config),
             toolchain_registry: self.get_toolchain_registry().await?,
             vcs: Some(self.get_vcs_adapter()?),
-            working_dir: &self.working_dir,
-            workspace_config: &self.workspace_config,
-            workspace_root: &self.workspace_root,
-        };
-
-        Ok(context)
+            working_dir: self.working_dir.clone(),
+            workspace_config: Arc::clone(&self.workspace_config),
+            workspace_root: self.workspace_root.clone(),
+        })
     }
 
     pub async fn get_app_context(&self) -> miette::Result<Arc<AppContext>> {
@@ -170,8 +166,8 @@ impl MoonSession {
             toolchains_config: Arc::clone(&self.toolchains_config),
             toolchain_registry: self.get_toolchain_registry().await?,
             vcs: self.get_vcs_adapter()?,
-            workspace_config: Arc::clone(&self.workspace_config),
             working_dir: self.working_dir.clone(),
+            workspace_config: Arc::clone(&self.workspace_config),
             workspace_root: self.workspace_root.clone(),
         }))
     }

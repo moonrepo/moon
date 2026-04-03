@@ -1,0 +1,330 @@
+use crate::build_data::*;
+use crate::project_builder::*;
+use crate::projects_locator::locate_projects_with_globs;
+use crate::repo_type::RepoType;
+use crate::tasks_querent::*;
+use crate::workspace_builder::*;
+use crate::workspace_builder_error::WorkspaceBuilderError;
+use crate::workspace_cache::*;
+use daggy::Dag;
+use miette::IntoDiagnostic;
+use moon_cache::CacheEngine;
+use moon_common::{
+    Id, color,
+    path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
+};
+use moon_config::{
+    ConfigLoader, DependencyScope, ExtensionsConfig, InheritedTasksManager,
+    ProjectDependencyConfig, TaskDependencyType, ToolchainsConfig, WorkspaceConfig,
+    WorkspaceProjectGlobFormat, WorkspaceProjects, finalize_config,
+};
+use moon_extension_plugin::ExtensionRegistry;
+use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
+use moon_project::{Project, ProjectAlias, ProjectError};
+use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
+use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
+use moon_task::{Target, Task};
+use moon_task_builder::TaskDepsBuilder;
+use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
+use moon_toolchain_plugin::ToolchainRegistry;
+use moon_vcs::BoxedVcs;
+use moon_workspace_graph::WorkspaceGraph;
+use petgraph::prelude::*;
+use petgraph::visit::IntoNodeReferences;
+use rustc_hash::{FxHashMap, FxHashSet};
+use serde::{Deserialize, Serialize};
+use starbase_utils::glob::{self, GlobWalkOptions};
+use starbase_utils::json;
+use std::collections::BTreeMap;
+use std::sync::Arc;
+use tokio::task::JoinSet;
+use tracing::{debug, instrument, trace};
+
+#[derive(Deserialize, Serialize)]
+pub struct WorkspaceBuilderAsync {
+    #[serde(skip)]
+    context: Option<Arc<WorkspaceBuilderContext>>,
+
+    /// List of config paths used in the hashing process.
+    /// These are used for invalidation.
+    config_paths: FxHashSet<WorkspaceRelativePathBuf>,
+
+    /// Aliases to their associated project by ID.
+    aliases: FxHashMap<String, Id>,
+
+    /// Projects grouped by tag, for use in task dependency resolution.
+    projects_by_tag: FxHashMap<Id, Vec<Id>>,
+
+    /// Mapping of project IDs to associated data required for building
+    /// the project itself. Currently we track the following:
+    ///   - The alias, derived from manifests (`package.json`).
+    ///   - Their `moon.yml` in the project root.
+    ///   - Their file source location, relative from the workspace root.
+    project_data: FxHashMap<Id, ProjectBuildData>,
+
+    /// The project DAG.
+    project_graph: Dag<NodeState<Project>, DependencyScope>,
+
+    /// Projects that have explicitly renamed themselves with the `id` setting.
+    /// Maps original ID to renamed ID.
+    renamed_project_ids: FxHashMap<Id, Id>,
+
+    /// The type of repository: monorepo or polyrepo.
+    repo_type: RepoType,
+
+    /// The root project ID (only if a monorepo).
+    root_project_id: Option<Id>,
+
+    /// Mapping of task targets to associated data required for building
+    /// the project itself. Currently we track the following:
+    ///   - Their task options, for resolving deps.
+    task_data: FxHashMap<Target, TaskBuildData>,
+
+    /// The task DAG.
+    task_graph: Dag<NodeState<Task>, TaskDependencyType>,
+}
+
+impl WorkspaceBuilderAsync {
+    #[instrument(skip_all)]
+    pub async fn new(context: WorkspaceBuilderContext) -> miette::Result<WorkspaceBuilderAsync> {
+        debug!("Building workspace graph (project and task graphs)");
+
+        let mut graph = WorkspaceBuilderAsync {
+            config_paths: FxHashSet::default(),
+            context: Some(Arc::new(context)),
+            aliases: FxHashMap::default(),
+            projects_by_tag: FxHashMap::default(),
+            project_data: FxHashMap::default(),
+            project_graph: Dag::new(),
+            renamed_project_ids: FxHashMap::default(),
+            repo_type: RepoType::Unknown,
+            root_project_id: None,
+            task_data: FxHashMap::default(),
+            task_graph: Dag::new(),
+        };
+
+        graph.preload_build_data().await?;
+        graph.determine_repo_type()?;
+
+        Ok(graph)
+    }
+
+    /// Determine the repository type/structure based on the number of project
+    /// sources, and where the point to.
+    fn determine_repo_type(&mut self) -> miette::Result<()> {
+        let single_project = self.project_data.len() == 1;
+        let mut has_root_project = false;
+        let mut root_project_id = None;
+
+        for (id, build_data) in &self.project_data {
+            if is_root_level_source(&build_data.source) {
+                has_root_project = true;
+                root_project_id = Some(id.to_owned());
+                break;
+            }
+        }
+
+        self.repo_type = match (single_project, has_root_project) {
+            (true, true) => RepoType::Polyrepo,
+            (false, true) => RepoType::MonorepoWithRoot,
+            (false, false) | (true, false) => RepoType::Monorepo,
+        };
+
+        if self.repo_type == RepoType::MonorepoWithRoot {
+            self.root_project_id = root_project_id;
+        }
+
+        Ok(())
+    }
+
+    /// Preload the graph with project sources from the workspace configuration.
+    /// If globs are provided, walk the file system and gather sources.
+    /// Then extend the graph with aliases, derived from all event subscribers.
+    async fn preload_build_data(&mut self) -> miette::Result<()> {
+        let context = self.context();
+        let mut glob_format = WorkspaceProjectGlobFormat::default();
+        let mut globs = vec![];
+        let mut sources = vec![];
+
+        // Gather all project sources
+        let mut add_sources = |map: &FxHashMap<Id, String>| {
+            for (id, source) in map {
+                sources.push((
+                    id.to_owned(),
+                    WorkspaceRelativePathBuf::from(source.trim_start_matches("./")),
+                ));
+            }
+        };
+
+        match &context.workspace_config.projects {
+            WorkspaceProjects::Sources(map) => {
+                add_sources(map);
+            }
+            WorkspaceProjects::Globs(list) => {
+                globs.extend(list);
+            }
+            WorkspaceProjects::Both(cfg) => {
+                glob_format = cfg.glob_format;
+                globs.extend(&cfg.globs);
+                add_sources(&cfg.sources);
+            }
+        };
+
+        if !sources.is_empty() {
+            debug!(
+                sources = ?sources,
+                "Using configured project sources",
+            );
+        }
+
+        if !globs.is_empty() {
+            debug!(
+                globs = ?globs,
+                "Locating projects with globs",
+            );
+
+            locate_projects_with_globs(&context, &globs, &mut sources, glob_format)?;
+        }
+
+        // Load projects and configs first
+        self.load_project_build_data(sources).await?;
+
+        // Then extend projects from toolchains
+        // self.extend_project_build_data().await?;
+
+        // Include all workspace-level config files
+        let ext_glob = context.config_loader.get_ext_glob();
+
+        for file in glob::walk_fast_with_options(
+            &context.config_loader.dir,
+            [&format!("*.{ext_glob}"), &format!("tasks/**/*.{ext_glob}")],
+            GlobWalkOptions::default().cache().log_results(),
+        )? {
+            self.config_paths.insert(
+                file.relative_to(&context.workspace_root)
+                    .into_diagnostic()?,
+            );
+        }
+
+        // Validate the default project exists
+        if let Some(default_id) = &context.workspace_config.default_project
+            && !self.project_data.contains_key(default_id)
+        {
+            return Err(ProjectGraphError::InvalidDefaultId {
+                id: default_id.to_string(),
+            }
+            .into());
+        }
+
+        Ok(())
+    }
+
+    async fn load_project_build_data(
+        &mut self,
+        sources: Vec<(Id, WorkspaceRelativePathBuf)>,
+    ) -> miette::Result<()> {
+        let context = self.context();
+        let config_label = context.config_loader.get_debug_label("moon");
+        let config_names = context.config_loader.get_project_file_names();
+        let mut project_data: FxHashMap<Id, ProjectBuildData> = FxHashMap::default();
+        let mut dupe_original_ids = FxHashSet::default();
+
+        debug!("Loading projects");
+
+        let mut set = JoinSet::new();
+
+        for (id, source) in sources {
+            trace!(
+                project_id = id.as_str(),
+                "Attempting to load {} (optional)",
+                color::file(source.join(&config_label))
+            );
+
+            // Hash all project-level config files
+            for name in &config_names {
+                self.config_paths.insert(source.join(name));
+            }
+
+            // Load each project config in parallel
+            let context = Arc::clone(&context);
+
+            set.spawn_blocking(move || load_project_build_data(context, id, source));
+        }
+
+        while let Some(result) = set.join_next().await {
+            let mut build_data = result.into_diagnostic()??;
+
+            // Track ID renames
+            if let Some((old_id, new_id)) = build_data.rename_id_if_configured() {
+                self.track_project_id_rename(&old_id, &new_id, &mut dupe_original_ids);
+
+                build_data.original_id = Some(old_id);
+                build_data.id = Some(new_id);
+            }
+
+            let id = build_data.id.take().expect("Missing project ID!");
+
+            // Check for duplicate IDs
+            if let Some(existing_data) = project_data.get(&id)
+                && existing_data.source != build_data.source
+            {
+                return Err(WorkspaceBuilderError::DuplicateProjectId {
+                    id: id.to_string(),
+                    old_source: existing_data.source.to_string(),
+                    new_source: build_data.source.to_string(),
+                }
+                .into());
+            }
+
+            project_data.insert(id, build_data);
+        }
+
+        if !dupe_original_ids.is_empty() {
+            trace!(
+                original_ids = ?dupe_original_ids.iter().collect::<Vec<_>>(),
+                "Found multiple renamed projects with the same original ID; will ignore these IDs within lookups"
+            );
+
+            for dupe_id in dupe_original_ids {
+                self.renamed_project_ids.remove(&dupe_id);
+            }
+        }
+
+        debug!("Loaded {} projects", project_data.len());
+
+        self.project_data.extend(project_data);
+
+        Ok(())
+    }
+
+    fn track_project_id_rename(
+        &mut self,
+        old_id: &Id,
+        new_id: &Id,
+        duplicate_ids: &mut FxHashSet<Id>,
+    ) {
+        debug!(
+            old_id = old_id.as_str(),
+            new_id = new_id.as_str(),
+            "Project has been configured with an explicit identifier of {}, renaming from {}",
+            color::id(new_id),
+            color::id(old_id),
+        );
+
+        if self.renamed_project_ids.contains_key(old_id) {
+            duplicate_ids.insert(old_id.to_owned());
+        } else {
+            self.renamed_project_ids
+                .insert(old_id.to_owned(), new_id.to_owned());
+        }
+    }
+
+    fn context(&self) -> Arc<WorkspaceBuilderContext> {
+        Arc::clone(
+            self.context
+                .as_ref()
+                .expect("Missing workspace builder context!"),
+        )
+    }
+}

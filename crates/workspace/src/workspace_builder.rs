@@ -34,32 +34,33 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
 use starbase_utils::json;
+use std::collections::BTreeMap;
+use std::path::PathBuf;
 use std::sync::Arc;
-use std::{collections::BTreeMap, path::Path};
 use tracing::{debug, instrument, trace};
 
 pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
 pub const STATE_GRAPH_FILE_NAME: &str = "workspaceGraph.json";
 pub const STATE_PROJECTS_FILE_NAME: &str = "projectsBuildDataV1.json";
 
-pub struct WorkspaceBuilderContext<'app> {
-    pub config_loader: &'app ConfigLoader,
+pub struct WorkspaceBuilderContext {
+    pub config_loader: ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
-    pub extensions_config: &'app ExtensionsConfig,
+    pub extensions_config: Arc<ExtensionsConfig>,
     pub extension_registry: Arc<ExtensionRegistry>,
-    pub inherited_tasks: &'app InheritedTasksManager,
-    pub toolchains_config: &'app ToolchainsConfig,
+    pub inherited_tasks: Arc<InheritedTasksManager>,
+    pub toolchains_config: Arc<ToolchainsConfig>,
     pub toolchain_registry: Arc<ToolchainRegistry>,
     pub vcs: Option<Arc<BoxedVcs>>,
-    pub working_dir: &'app Path,
-    pub workspace_config: &'app WorkspaceConfig,
-    pub workspace_root: &'app Path,
+    pub working_dir: PathBuf,
+    pub workspace_config: Arc<WorkspaceConfig>,
+    pub workspace_root: PathBuf,
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct WorkspaceBuilder<'app> {
+pub struct WorkspaceBuilder {
     #[serde(skip)]
-    context: Option<Arc<WorkspaceBuilderContext<'app>>>,
+    context: Option<Arc<WorkspaceBuilderContext>>,
 
     /// List of config paths used in the hashing process.
     /// These are used for invalidation.
@@ -100,11 +101,9 @@ pub struct WorkspaceBuilder<'app> {
     task_graph: Dag<NodeState<Task>, TaskDependencyType>,
 }
 
-impl<'app> WorkspaceBuilder<'app> {
+impl WorkspaceBuilder {
     #[instrument(skip_all)]
-    pub async fn new(
-        context: WorkspaceBuilderContext<'app>,
-    ) -> miette::Result<WorkspaceBuilder<'app>> {
+    pub async fn new(context: WorkspaceBuilderContext) -> miette::Result<WorkspaceBuilder> {
         debug!("Building workspace graph (project and task graphs)");
 
         let mut graph = WorkspaceBuilder {
@@ -129,9 +128,9 @@ impl<'app> WorkspaceBuilder<'app> {
 
     #[instrument(skip_all)]
     pub async fn new_with_cache(
-        context: WorkspaceBuilderContext<'app>,
+        context: WorkspaceBuilderContext,
         cache_engine: &CacheEngine,
-    ) -> miette::Result<WorkspaceBuilder<'app>> {
+    ) -> miette::Result<WorkspaceBuilder> {
         let is_vcs_enabled = context
             .vcs
             .as_ref()
@@ -424,7 +423,7 @@ impl<'app> WorkspaceBuilder<'app> {
         let context = self.context();
         let build_data = self.project_data.get(id).unwrap();
 
-        if !build_data.source.to_path(context.workspace_root).exists() {
+        if !build_data.source.to_path(&context.workspace_root).exists() {
             return Err(WorkspaceBuilderError::MissingProjectAtSource(
                 build_data.source.to_string(),
             )
@@ -435,13 +434,13 @@ impl<'app> WorkspaceBuilder<'app> {
             id,
             &build_data.source,
             ProjectBuilderContext {
-                config_loader: context.config_loader,
+                config_loader: &context.config_loader,
                 enabled_toolchains: &context.enabled_toolchains,
                 monorepo: self.repo_type.is_monorepo(),
                 root_project_id: self.root_project_id.as_ref(),
-                toolchains_config: context.toolchains_config,
+                toolchains_config: &context.toolchains_config,
                 toolchain_registry: context.toolchain_registry.clone(),
-                workspace_root: context.workspace_root,
+                workspace_root: &context.workspace_root,
             },
         )?;
 
@@ -451,7 +450,7 @@ impl<'app> WorkspaceBuilder<'app> {
             builder.load_local_config().await?;
         }
 
-        builder.inherit_global_configs(context.inherited_tasks)?;
+        builder.inherit_global_configs(&context.inherited_tasks)?;
 
         // Inherit from build data (toolchains, etc)
         for extended_data in &build_data.extensions {
@@ -780,8 +779,10 @@ impl<'app> WorkspaceBuilder<'app> {
             [&format!("*.{ext_glob}"), &format!("tasks/**/*.{ext_glob}")],
             GlobWalkOptions::default().cache().log_results(),
         )? {
-            self.config_paths
-                .push(file.relative_to(context.workspace_root).into_diagnostic()?);
+            self.config_paths.push(
+                file.relative_to(&context.workspace_root)
+                    .into_diagnostic()?,
+            );
         }
 
         // Validate the default project exists
@@ -825,7 +826,7 @@ impl<'app> WorkspaceBuilder<'app> {
             // Load the config file
             let config = context
                 .config_loader
-                .load_project_config_from_source(context.workspace_root, &source)?;
+                .load_project_config_from_source(&context.workspace_root, &source)?;
 
             let mut build_data = ProjectBuildData {
                 source,
@@ -937,7 +938,7 @@ impl<'app> WorkspaceBuilder<'app> {
                     context
                         .toolchain_registry
                         .from_virtual_path(input_file)
-                        .relative_to(context.workspace_root)
+                        .relative_to(&context.workspace_root)
                         .into_diagnostic()?,
                 );
             }
@@ -1037,7 +1038,7 @@ impl<'app> WorkspaceBuilder<'app> {
         Ok(())
     }
 
-    fn context(&self) -> Arc<WorkspaceBuilderContext<'app>> {
+    fn context(&self) -> Arc<WorkspaceBuilderContext> {
         Arc::clone(
             self.context
                 .as_ref()

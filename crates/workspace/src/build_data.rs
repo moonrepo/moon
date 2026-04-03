@@ -19,6 +19,10 @@ pub struct ProjectBuildData {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub extensions: Vec<ExtendProjectOutput>,
 
+    // Only used for renaming!
+    #[serde(skip)]
+    pub id: Option<Id>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_index: Option<NodeIndex>,
 
@@ -29,6 +33,18 @@ pub struct ProjectBuildData {
 }
 
 impl ProjectBuildData {
+    pub fn rename_id_if_configured(&mut self) -> Option<(Id, Id)> {
+        if let Some(old_id) = &self.id
+            && let Some(config) = &self.config
+            && let Some(new_id) = &config.id
+            && new_id != old_id
+        {
+            return Some((old_id.to_owned(), new_id.to_owned()));
+        }
+
+        None
+    }
+
     pub fn resolve_id(id_or_alias: &str, project_data: &FxHashMap<Id, ProjectBuildData>) -> Id {
         if project_data.contains_key(id_or_alias) {
             Id::raw(id_or_alias)

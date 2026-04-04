@@ -108,7 +108,7 @@ pub async fn prune_toolchains(
         let docker_config = session.workspace_config.docker.prune.clone();
         let app_context = session.get_app_context().await?;
 
-        set.spawn(async move {
+        set.spawn(Box::pin(async move {
             // Run prune first, so this can remove all development artifacts
             if toolchain.has_func("prune_docker").await {
                 toolchain
@@ -194,7 +194,7 @@ pub async fn prune_toolchains(
             }
 
             Ok::<_, miette::Report>(())
-        });
+        }));
     }
 
     while set.join_next().await.is_some() {

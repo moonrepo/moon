@@ -1,4 +1,4 @@
-use crate::projects_builder::{ProjectBuildData, WorkspaceProjectsBuilder};
+use crate::projects_builder::ProjectBuildData;
 use crate::tasks_builder::TaskBuildData;
 use moon_common::Id;
 use moon_task::{Target, TaskOptions};

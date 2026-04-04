@@ -5,13 +5,13 @@ use crate::workspace_builder::WorkspaceBuilderContext;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use daggy::{Dag, NodeIndex};
 use miette::IntoDiagnostic;
-use moon_common::color;
-use moon_common::path::{PathExt, is_root_level_source};
-use moon_common::{Id, path::WorkspaceRelativePathBuf};
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
+use moon_common::{Id, color};
 use moon_config::{
     DependencyScope, ProjectConfig, ProjectDependencyConfig, WorkspaceProjectGlobFormat,
     WorkspaceProjects, finalize_config,
 };
+use moon_graph_utils::NodeState;
 use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendProjectOutput};
 use moon_project::{Project, ProjectAlias};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
@@ -19,7 +19,6 @@ use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relation
 use moon_project_graph::ProjectGraphError;
 use moon_task::{Target, TaskOptions};
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::NodeState;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -93,8 +92,8 @@ impl ProjectBuildData {
 }
 
 pub enum ProjectBuildEvent {
-    Node(Project),
     Edge(Id, Id, DependencyScope),
+    Node(Arc<Project>),
 }
 
 pub fn load_project_build_data(
@@ -230,7 +229,7 @@ pub async fn build_project(
     }
 
     // Send a final event for the project itself
-    tx.send(ProjectBuildEvent::Node(project))
+    tx.send(ProjectBuildEvent::Node(Arc::new(project)))
         .await
         .expect("TODO");
 
@@ -256,7 +255,7 @@ pub struct WorkspaceProjectsBuilder {
     ids_to_target_options: FxHashMap<Id, FxHashMap<Target, TaskOptions>>,
 
     /// The project DAG.
-    graph: ProjectDag,
+    pub graph: ProjectDag,
 
     /// Map of original project IDs to renamed IDs.
     renamed_ids: FxHashMap<Id, Id>,
@@ -365,15 +364,17 @@ impl WorkspaceProjectsBuilder {
             let root_id = self.root_id.clone();
             let tx = tx.clone();
 
-            set.spawn(async move {
-                build_project(context, build_data, id, root_id, monorepo, tx).await
-            });
+            set.spawn(Box::pin(build_project(
+                context, build_data, id, root_id, monorepo, tx,
+            )));
         }
 
         // Receive events from each background task
         while let Some(event) = rx.recv().await {
             match event {
-                ProjectBuildEvent::Node(mut project) => {
+                ProjectBuildEvent::Node(project) => {
+                    let mut project = Arc::unwrap_or_clone(project);
+
                     // Resolve dependency IDs as they may be aliases
                     for dep_config in &mut project.dependencies {
                         dep_config.id = self.resolve_id(&dep_config.id);
@@ -690,10 +691,10 @@ impl WorkspaceProjectsBuilder {
             .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
             .collect::<BTreeMap<_, _>>();
 
-        let outputs = tokio::spawn(extend_project_build_data_with_plugins(
+        let outputs = tokio::spawn(Box::pin(extend_project_build_data_with_plugins(
             context,
             project_sources,
-        ))
+        )))
         .await
         .into_diagnostic()??;
 
@@ -759,7 +760,7 @@ impl WorkspaceProjectsBuilder {
             debug!(
                 "Skipping alias {} for project {} as its an invalid format: {error}",
                 color::label(&alias),
-                color::id(&id),
+                color::id(id),
             );
 
             return Ok(());
@@ -770,7 +771,7 @@ impl WorkspaceProjectsBuilder {
             debug!(
                 "Skipping alias {} for project {} as it conflicts with the existing project {}",
                 color::label(&alias),
-                color::id(&id),
+                color::id(id),
                 color::id(&alias),
             );
 
@@ -789,7 +790,7 @@ impl WorkspaceProjectsBuilder {
             debug!(
                 "Skipping alias {} for project {} as it already exists for project {}",
                 color::label(&alias),
-                color::id(&id),
+                color::id(id),
                 color::id(existing_id),
             );
 

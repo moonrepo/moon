@@ -30,7 +30,7 @@ pub struct WorkspaceBuilderAsync {
 
 impl WorkspaceBuilderAsync {
     pub async fn new(context: WorkspaceBuilderContext) -> miette::Result<Self> {
-        debug!("Building workspace graph (project and task graphs)");
+        debug!("Building workspace graph asynchronously (project and task graphs)");
 
         let context = Arc::new(context);
 

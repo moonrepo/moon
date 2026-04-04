@@ -91,6 +91,7 @@ impl ProjectBuildData {
     }
 }
 
+#[derive(Debug)]
 pub enum ProjectBuildEvent {
     Edge(Id, Id, DependencyScope),
     Node(Arc<Project>),
@@ -360,16 +361,19 @@ impl WorkspaceProjectsBuilder {
                 color::id(&id)
             );
 
-            let context = Arc::clone(&context);
-            let root_id = self.root_id.clone();
-            let tx = tx.clone();
-
             set.spawn(Box::pin(build_project(
-                context, build_data, id, root_id, monorepo, tx,
+                Arc::clone(&context),
+                build_data,
+                id,
+                self.root_id.clone(),
+                monorepo,
+                tx.clone(),
             )));
         }
 
         // Receive events from each background task
+        drop(tx);
+
         while let Some(event) = rx.recv().await {
             match event {
                 ProjectBuildEvent::Node(project) => {

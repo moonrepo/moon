@@ -41,6 +41,7 @@ impl TaskBuildData {
     }
 }
 
+#[derive(Debug)]
 pub enum TaskBuildEvent {
     Edge(Target, Target, TaskDependencyType),
     Node(Arc<Task>),
@@ -149,13 +150,12 @@ impl WorkspaceTasksBuilder {
                 color::id(&task.target)
             );
 
-            let context = Arc::clone(&context);
-            let tx = tx.clone();
-
-            set.spawn(Box::pin(build_task(context, task, tx)));
+            set.spawn(Box::pin(build_task(Arc::clone(&context), task, tx.clone())));
         }
 
         // Receive events from each background task
+        drop(tx);
+
         while let Some(event) = rx.recv().await {
             match event {
                 TaskBuildEvent::Node(task) => {

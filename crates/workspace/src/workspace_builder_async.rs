@@ -2,7 +2,7 @@ use crate::projects_builder::*;
 use crate::tasks_builder::*;
 use crate::workspace_builder::*;
 use moon_cache::CacheEngine;
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_graph_utils::{GraphExpanderContext, NodeState};
 use moon_project_graph::{ProjectGraph, ProjectMetadata};
 use moon_task_graph::{TaskGraph, TaskMetadata};
@@ -55,7 +55,13 @@ impl WorkspaceBuilderAsync {
     }
 
     pub async fn load_projects(&mut self) -> miette::Result<()> {
-        self.projects.build().await?;
+        self.projects.build(None).await?;
+
+        Ok(())
+    }
+
+    pub async fn load_projects_for(&mut self, ids: Vec<Id>) -> miette::Result<()> {
+        self.projects.build(Some(ids)).await?;
 
         Ok(())
     }

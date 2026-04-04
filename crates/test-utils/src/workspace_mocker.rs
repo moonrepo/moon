@@ -443,19 +443,21 @@ impl WorkspaceMocker {
             .take()
             .unwrap_or_else(|| self.mock_workspace_builder_context());
 
+        // TODO
         let mut builder = match &options.cache {
-            Some(engine) => WorkspaceBuilder::new_with_cache(context, engine)
+            Some(engine) => WorkspaceBuilderAsync::new_with_cache(context, engine)
                 .await
                 .unwrap(),
-            None => WorkspaceBuilder::new(context).await.unwrap(),
+            None => WorkspaceBuilderAsync::new(context).await.unwrap(),
         };
 
         if options.ids.is_empty() {
             builder.load_projects().await.unwrap();
         } else {
-            for id in &options.ids {
-                builder.load_project(id).await.unwrap();
-            }
+            builder
+                .load_projects_for(options.ids.iter().map(Id::raw).collect())
+                .await
+                .unwrap();
         }
 
         builder.load_tasks().await.unwrap();

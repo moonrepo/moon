@@ -330,11 +330,11 @@ impl WorkspaceProjectsBuilder {
 
     /// Load and build all projects into the graph, as configured in the workspace.
     #[instrument(skip(self))]
-    pub async fn build(&mut self) -> miette::Result<()> {
+    pub async fn build(&mut self, ids: Option<Vec<Id>>) -> miette::Result<()> {
         let data = self.load().await?;
 
         self.determine_repo_type(&data)?;
-        self.build_graph(data).await?;
+        self.build_graph(ids, data).await?;
         self.resolve_task_deps()?;
         self.enforce_constraints()?;
 
@@ -347,7 +347,11 @@ impl WorkspaceProjectsBuilder {
     }
 
     #[instrument(skip(self))]
-    async fn build_graph(&mut self, projects_data: ProjectBuildDataMap) -> miette::Result<()> {
+    async fn build_graph(
+        &mut self,
+        ids: Option<Vec<Id>>,
+        projects_data: ProjectBuildDataMap,
+    ) -> miette::Result<()> {
         let context = self.context();
         let monorepo = self.repo_type.is_monorepo();
         let mut set = JoinSet::new();
@@ -355,6 +359,10 @@ impl WorkspaceProjectsBuilder {
 
         // Build each project in a separate task
         for (id, build_data) in projects_data {
+            if ids.as_ref().is_some_and(|list| !list.contains(&id)) {
+                continue;
+            }
+
             debug!(
                 project_id = id.as_str(),
                 "Building project {}",

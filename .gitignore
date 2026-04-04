@@ -50,3 +50,4 @@ dockerManifest.json
 
 # vscode
 .vscode/settings.json
+.claude/worktrees

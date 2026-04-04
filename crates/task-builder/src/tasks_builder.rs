@@ -1087,9 +1087,12 @@ impl<'proj> TasksBuilder<'proj> {
                                         }
                                     }
                                     Sequence::Stop(term) => {
-                                        if term == ";" || term == "--" || term == "\n" {
-                                            // Allow
-                                        } else {
+                                        if term == "--" {
+                                            handle_arg(
+                                                &Argument::Value(Value::Unquoted("--".into())),
+                                                false,
+                                            );
+                                        } else if term != ";" && term != "\n" {
                                             return Err(
                                                 TasksBuilderError::UnsupportedCommandSyntax {
                                                     task: target.to_owned(),

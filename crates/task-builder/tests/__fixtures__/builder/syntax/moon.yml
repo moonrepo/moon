@@ -5,6 +5,9 @@ tasks:
   passthrough:
     command: 'foo -- bar -b'
 
+  passthrough-only:
+    command: 'foo --'
+
   quotes:
     command: 'echo noquotes ''single quote'' "double quote" $"special quote"'
 

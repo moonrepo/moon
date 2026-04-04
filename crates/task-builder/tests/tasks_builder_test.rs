@@ -488,6 +488,18 @@ mod tasks_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn passthrough_trailing_only() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("syntax").await;
+            let task = tasks.get("passthrough-only").unwrap();
+
+            assert_eq!(task.command, "foo");
+            assert_eq!(task.args, ["--"]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn preserves_quotes() {
             let sandbox = create_sandbox("builder");
             let container = TasksBuilderContainer::new(sandbox.path());

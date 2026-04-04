@@ -397,7 +397,16 @@ impl WorkspaceProjectsBuilder {
                         self.ids_to_target_options
                             .entry(project.id.clone())
                             .or_default()
-                            .insert(task.target.clone(), task.options.clone());
+                            .insert(
+                                task.target.clone(),
+                                // Only copy fields needed for task deps resolution
+                                TaskOptions {
+                                    allow_failure: task.options.allow_failure,
+                                    run_in_ci: task.options.run_in_ci.clone(),
+                                    persistent: task.options.persistent,
+                                    ..Default::default()
+                                },
+                            );
                     }
 
                     self.insert_or_update_node(project);

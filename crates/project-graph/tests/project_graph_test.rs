@@ -54,13 +54,18 @@ pub fn create_workspace_mocker(root: &Path) -> WorkspaceMocker {
         .with_inherited_tasks()
 }
 
-pub async fn build_graph(root: &Path) -> WorkspaceGraph {
-    create_workspace_mocker(root).mock_workspace_graph().await
+pub async fn build_graph(root: &Path, sync: bool) -> WorkspaceGraph {
+    create_workspace_mocker(root)
+        .mock_workspace_graph_with_options(WorkspaceMockOptions {
+            sync,
+            ..Default::default()
+        })
+        .await
 }
 
 pub async fn build_graph_from_fixture(fixture: &str) -> (MoonSandbox, WorkspaceGraph) {
     let sandbox = create_moon_sandbox(fixture);
-    let graph = build_graph(sandbox.path()).await;
+    let graph = build_graph(sandbox.path(), fixture.contains("cycle")).await;
 
     (sandbox, graph)
 }
@@ -235,7 +240,7 @@ mod project_graph {
             sandbox.create_file(".moon/workspace.yml", "projects: ['*']");
             sandbox.enable_git();
 
-            let graph = build_graph(sandbox.path()).await;
+            let graph = build_graph(sandbox.path(), false).await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -248,7 +253,7 @@ mod project_graph {
             let sandbox = create_moon_sandbox("dependencies");
             sandbox.create_file(".foo/moon.yml", "");
 
-            let graph = build_graph(sandbox.path()).await;
+            let graph = build_graph(sandbox.path(), false).await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -263,7 +268,7 @@ mod project_graph {
             sandbox.create_file(".gitignore", "*-other");
             sandbox.enable_git();
 
-            let graph = build_graph(sandbox.path()).await;
+            let graph = build_graph(sandbox.path(), false).await;
 
             assert_eq!(
                 get_ids_from_projects(graph.get_projects().unwrap()),
@@ -1695,7 +1700,7 @@ mod project_graph {
         #[tokio::test(flavor = "multi_thread")]
         async fn can_load_by_new_id() {
             let sandbox = create_moon_sandbox("custom-id");
-            let graph = build_graph(sandbox.path()).await;
+            let graph = build_graph(sandbox.path(), false).await;
 
             assert_eq!(graph.get_project("foo").unwrap().id, "foo");
             assert_eq!(graph.get_project("bar-renamed").unwrap().id, "bar-renamed");
@@ -1705,7 +1710,7 @@ mod project_graph {
         #[tokio::test(flavor = "multi_thread")]
         async fn tasks_can_depend_on_new_id() {
             let sandbox = create_moon_sandbox("custom-id");
-            let graph = build_graph(sandbox.path()).await;
+            let graph = build_graph(sandbox.path(), false).await;
             let task = graph.get_task_from_project("foo", "noop").unwrap();
 
             assert_eq!(

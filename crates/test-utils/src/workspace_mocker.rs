@@ -443,7 +443,30 @@ impl WorkspaceMocker {
             .take()
             .unwrap_or_else(|| self.mock_workspace_builder_context());
 
-        // TODO
+        // let workspace_graph = if options.sync {
+        //     self.build_workspace_sync(context, &options).await
+        // } else {
+        //     self.build_workspace_async(context, &options).await
+        // };
+
+        let workspace_graph = self.build_workspace_sync(context, &options).await;
+
+        if options.ids.is_empty() {
+            workspace_graph.projects.get_all().unwrap();
+        } else {
+            for id in &options.ids {
+                workspace_graph.projects.get(id).unwrap();
+            }
+        }
+
+        workspace_graph
+    }
+
+    async fn build_workspace_async(
+        &self,
+        context: WorkspaceBuilderContext,
+        options: &WorkspaceMockOptions,
+    ) -> WorkspaceGraph {
         let mut builder = match &options.cache {
             Some(engine) => WorkspaceBuilderAsync::new_with_cache(context, engine)
                 .await
@@ -461,18 +484,31 @@ impl WorkspaceMocker {
         }
 
         builder.load_tasks().await.unwrap();
+        builder.build().await.unwrap()
+    }
 
-        let workspace_graph = builder.build().await.unwrap();
+    async fn build_workspace_sync(
+        &self,
+        context: WorkspaceBuilderContext,
+        options: &WorkspaceMockOptions,
+    ) -> WorkspaceGraph {
+        let mut builder = match &options.cache {
+            Some(engine) => WorkspaceBuilder::new_with_cache(context, engine)
+                .await
+                .unwrap(),
+            None => WorkspaceBuilder::new(context).await.unwrap(),
+        };
 
         if options.ids.is_empty() {
-            workspace_graph.projects.get_all().unwrap();
+            builder.load_projects().await.unwrap();
         } else {
             for id in &options.ids {
-                workspace_graph.projects.get(id).unwrap();
+                builder.load_project(id).await.unwrap();
             }
         }
 
-        workspace_graph
+        builder.load_tasks().await.unwrap();
+        builder.build().await.unwrap()
     }
 }
 
@@ -481,4 +517,5 @@ pub struct WorkspaceMockOptions {
     pub cache: Option<CacheEngine>,
     pub context: Option<WorkspaceBuilderContext>,
     pub ids: Vec<String>,
+    pub sync: bool,
 }

@@ -1,5 +1,6 @@
 use crate::projects_locator::locate_projects_with_globs;
 use crate::repo_type::RepoType;
+use crate::tasks_querent::WorkspaceTasksQuerent;
 use crate::workspace_builder::WorkspaceBuilderContext;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use daggy::{Dag, NodeIndex};
@@ -16,12 +17,15 @@ use moon_project::{Project, ProjectAlias};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 use moon_project_graph::ProjectGraphError;
+use moon_task::{Target, TaskOptions};
+use moon_task_builder::TaskDepsBuilder;
 use moon_task_graph::NodeState;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::mem;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
@@ -248,6 +252,9 @@ pub struct WorkspaceProjectsBuilder {
     /// Map of project IDs to their graph index.
     ids_to_indexes: FxHashMap<Id, NodeIndex>,
 
+    /// Map of project IDs to task options, indexed by target.
+    ids_to_target_options: FxHashMap<Id, FxHashMap<Target, TaskOptions>>,
+
     /// The project DAG.
     graph: ProjectDag,
 
@@ -312,6 +319,7 @@ impl WorkspaceProjectsBuilder {
             aliases_to_ids: FxHashMap::default(),
             config_paths: FxHashSet::default(),
             ids_to_indexes: FxHashMap::default(),
+            ids_to_target_options: FxHashMap::default(),
             graph: ProjectDag::default(),
             renamed_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
@@ -327,7 +335,13 @@ impl WorkspaceProjectsBuilder {
 
         self.determine_repo_type(&data)?;
         self.build_graph(data).await?;
+        self.resolve_task_deps()?;
         self.enforce_constraints()?;
+
+        // Free up some memory
+        mem::take(&mut self.ids_to_target_options);
+        mem::take(&mut self.renamed_ids);
+        mem::take(&mut self.tags_to_ids);
 
         Ok(())
     }
@@ -373,17 +387,13 @@ impl WorkspaceProjectsBuilder {
                             .push(project.id.clone());
                     }
 
-                    // Extract task build data
-                    // TODO
-                    // for task in project.tasks.values() {
-                    //     self.task_data.insert(
-                    //         task.target.clone(),
-                    //         TaskBuildData {
-                    //             options: task.options.clone(),
-                    //             ..Default::default()
-                    //         },
-                    //     );
-                    // }
+                    // Extract task data (this is heavy)
+                    for task in project.tasks.values() {
+                        self.ids_to_target_options
+                            .entry(project.id.clone())
+                            .or_default()
+                            .insert(task.target.clone(), task.options.clone());
+                    }
 
                     self.insert_or_update_node(project);
                 }
@@ -403,6 +413,36 @@ impl WorkspaceProjectsBuilder {
 
         // Ensure all background tasks have completed
         set.join_all().await;
+
+        Ok(())
+    }
+
+    fn resolve_task_deps(&mut self) -> miette::Result<()> {
+        for project_state in self.graph.node_weights_mut() {
+            let NodeState::Loaded(project) = project_state else {
+                continue;
+            };
+
+            for (id, mut task) in mem::take(&mut project.tasks) {
+                // Resolve the task dependencies so we can link edges
+                // correctly when building the task graph
+                if !task.deps.is_empty() {
+                    TaskDepsBuilder {
+                        querent: Box::new(WorkspaceTasksQuerent {
+                            aliases_to_ids: &self.aliases_to_ids,
+                            ids_to_target_options: &self.ids_to_target_options,
+                            tags_to_ids: &self.tags_to_ids,
+                        }),
+                        project: Some(project),
+                        root_project_id: self.root_id.as_ref(),
+                        task: &mut task,
+                    }
+                    .build()?;
+                }
+
+                project.tasks.insert(id, task);
+            }
+        }
 
         Ok(())
     }

@@ -22,6 +22,7 @@ pub struct TaskBuildData {
 }
 
 impl TaskBuildData {
+    // TODO deprecated
     pub fn resolve_target(
         target: &Target,
         project_data: &FxHashMap<Id, ProjectBuildData>,

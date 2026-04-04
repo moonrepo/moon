@@ -163,6 +163,9 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                     ExtensionCommands::Add(args) => {
                         commands::extension::add::add(session, args).await
                     }
+                    ExtensionCommands::Download(args) => {
+                        commands::extension::download::download(session, args).await
+                    }
                     ExtensionCommands::Info(args) => {
                         commands::extension::info::info(session, args).await
                     }
@@ -217,6 +220,9 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                 Commands::Toolchain { command } => match command {
                     ToolchainCommands::Add(args) => {
                         commands::toolchain::add::add(session, args).await
+                    }
+                    ToolchainCommands::Download(args) => {
+                        commands::toolchain::download::download(session, args).await
                     }
                     ToolchainCommands::Info(args) => {
                         commands::toolchain::info::info(session, args).await

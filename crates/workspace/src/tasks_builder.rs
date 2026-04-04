@@ -80,10 +80,10 @@ pub struct WorkspaceTasksBuilder {
     context: Option<Arc<WorkspaceBuilderContext>>,
 
     /// The task DAG.
-    graph: TaskDag,
+    pub graph: TaskDag,
 
     /// Map of task targets to their graph index.
-    targets_to_indexes: FxHashMap<Target, NodeIndex>,
+    pub targets_to_indexes: FxHashMap<Target, NodeIndex>,
 }
 
 impl WorkspaceTasksBuilder {

@@ -257,7 +257,6 @@ impl WorkspaceBuilder {
                         aliases: data.aliases.keys().cloned().collect(),
                         default,
                         index: data.node_index.unwrap_or_default(),
-                        original_id: data.original_id,
                         source: data.source,
                     },
                 )

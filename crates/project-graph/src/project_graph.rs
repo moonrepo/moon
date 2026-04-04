@@ -22,7 +22,6 @@ pub struct ProjectMetadata {
     pub aliases: FxHashSet<String>,
     pub default: bool,
     pub index: NodeIndex,
-    pub original_id: Option<Id>,
     pub source: WorkspaceRelativePathBuf,
 }
 

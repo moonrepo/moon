@@ -249,7 +249,7 @@ pub struct WorkspaceProjectsBuilder {
     config_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
     /// Map of project IDs to their graph index.
-    ids_to_indexes: FxHashMap<Id, NodeIndex>,
+    pub ids_to_indexes: FxHashMap<Id, NodeIndex>,
 
     /// Map of project IDs to task options, indexed by target.
     ids_to_target_options: FxHashMap<Id, FxHashMap<Target, TaskOptions>>,

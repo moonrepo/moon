@@ -4,10 +4,31 @@
 
 #### 🚀 Updates
 
+- **Affected**
+  - Added an experimental asynchronous version of the affected tracker, that is 100-150% faster.
+    - Enable with the `experiments.asyncAffectedTracking` setting in `.moon/workspace.config`.
+- 🆕 **Daemon**
+  - Added an unstable daemon that will run in the background and process heavy operations. To start,
+    it runs a file watcher on the workspace and invalidates caches.
+  - Added a `moon daemon` command with `start`, `stop`, and more subcommands to manage the daemon.
+  - Added an `unstable_daemon` setting to `.moon/workspace.config`.
+- **Plugin registry**
+  - Improved performance and memory consumption when loading plugins.
 - **Project graph**
   - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
 - **Task runner**
   - Improved performance of task output archiving, by no longer blocking the main thread pool.
+- 🆕 **Workspace**
+  - Added an experimental asynchronous version of the project and task graph builders, that utilizes
+    a background thread poo per project/task to build the graph. This can improve performance by
+    100-200% in large workspaces.
+    - Enable with the `experiments.asyncGraphBuilding` setting in `.moon/workspace.config`.
+    - Unlike the synchronous version, the async version does not support cycles, and will not cut
+      edges automatically to avoid cycles.
+
+#### 🐞 Fixes
+
+- Fixed an issue with VCS hooks generation that could leave around stale hooks.
 
 ## 2.1.4
 

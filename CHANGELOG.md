@@ -2,9 +2,18 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added `moon toolchain download` and `moon extension download` commands that will download all
+  configured toolchain/extension plugins. This allows you to prime the download cache.
+
 #### 🐞 Fixes
 
-- Potential fix for graph visaulizer commands failing with a JS error.
+- Fixed an "unrecognized subcommand moon" error that can occur when global and local moon binaries
+  exist.
+- Fixed an EPIPE error in streaming child processes.
+- Fixed trailing `--` in task commands being stripped.
+- Potential fix for graph visualizer commands failing with a JavaScript error.
 
 ## 2.1.3
 

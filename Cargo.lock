@@ -4599,6 +4599,7 @@ dependencies = [
  "clap",
  "criterion2",
  "miette 7.6.0",
+ "moon_bench_utils",
  "moon_common",
  "moon_config",
  "moon_env_var",
@@ -4737,6 +4738,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "moon_bench_utils"
+version = "0.0.1"
+dependencies = [
+ "starbase_sandbox",
 ]
 
 [[package]]

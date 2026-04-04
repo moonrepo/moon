@@ -15,6 +15,11 @@
 - Fixed trailing `--` in task commands being stripped.
 - Potential fix for graph visualizer commands failing with a JavaScript error.
 
+#### 🧰 Toolchains
+
+- **Go**
+  - Updated `go list` to not require `go.mod` file to run.
+
 ## 2.1.3
 
 #### 🧰 Toolchains

@@ -150,7 +150,7 @@ impl ToolchainsConfig {
         match id.as_str() {
             "bun" => Some(locate("bun_toolchain", "1.0.2")),
             "deno" => Some(locate("deno_toolchain", "1.0.3")),
-            "go" => Some(locate("go_toolchain", "1.1.2")),
+            "go" => Some(locate("go_toolchain", "1.2.0")),
             "javascript" => Some(locate("javascript_toolchain", "1.0.7")),
             "node" => Some(locate("node_toolchain", "1.0.2")),
             "npm" => Some(locate("node_depman_toolchain", "1.0.3")),

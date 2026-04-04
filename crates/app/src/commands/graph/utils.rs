@@ -11,9 +11,9 @@ use tokio::task::{JoinHandle, spawn};
 const INDEX_HTML: &str = include_str!("html.tera");
 
 #[derive(Debug, Serialize)]
-pub struct RenderContext {
-    pub page_title: String,
-    pub graph_data: String, // JSON
+pub struct RenderContext<'a> {
+    pub page_title: &'a str,
+    pub graph_data: &'a str, // JSON
     pub js_url: String,
 }
 
@@ -29,7 +29,7 @@ pub fn respond_to_request(
     req: Request,
     tera: &mut Tera,
     graph_data: &str,
-    page_title: String,
+    page_title: &str,
 ) -> miette::Result<()> {
     let response = match req.url() {
         "/graph-data" => {
@@ -42,7 +42,7 @@ pub fn respond_to_request(
         _ => {
             let context = RenderContext {
                 page_title,
-                graph_data: graph_data.into(),
+                graph_data,
                 js_url: get_js_url(),
             };
 
@@ -102,7 +102,7 @@ pub async fn run_server(
     let title = title.to_owned();
     let handle2: JoinHandle<miette::Result<()>> = spawn(async move {
         for req in server.incoming_requests() {
-            respond_to_request(req, &mut tera, &graph_data, title.clone())?;
+            respond_to_request(req, &mut tera, &graph_data, &title)?;
         }
 
         Ok(())

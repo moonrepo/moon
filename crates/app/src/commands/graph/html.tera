@@ -13,8 +13,9 @@
 		<script type="module" crossorigin src="{{ js_url }}"></script>
 	</head>
 	<body class="dark bg-slate-800 text-gray-50">
+		<script type="application/json" id="graph-data">{{ graph_data | safe }}</script>
 		<script>
-			window.GRAPH_DATA = '{{ graph_data | safe }}';
+			window.GRAPH_DATA = document.getElementById('graph-data').textContent;
 			window.PAGE_TITLE = '{{ page_title }}';
 		</script>
 		<div id="app"></div>

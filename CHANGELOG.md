@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Potential fix for graph visaulizer commands failing with a JS error.
+
 ## 2.1.3
 
 #### 🧰 Toolchains

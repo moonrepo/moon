@@ -52,7 +52,7 @@ fn limit_1000(c: &mut Criterion) {
 }
 
 fn limit_5000(c: &mut Criterion) {
-    do_limit(c, 5000);
+    do_limit(c, 2500);
 }
 
 // criterion_group!(benches, limit_100, limit_1000, limit_5000);

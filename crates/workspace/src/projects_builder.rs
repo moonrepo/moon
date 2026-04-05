@@ -17,7 +17,7 @@ use moon_project::{Project, ProjectAlias};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
 use moon_project_graph::ProjectGraphError;
-use moon_task::{Target, TaskOptions};
+use moon_task::{Target, Task, TaskOptions};
 use moon_task_builder::TaskDepsBuilder;
 use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
@@ -26,7 +26,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::mem;
 use std::sync::Arc;
-use tokio::sync::mpsc;
+use tokio::sync::{OwnedSemaphorePermit, Semaphore, mpsc};
 use tokio::task::JoinSet;
 use tracing::{debug, instrument, trace};
 
@@ -158,6 +158,7 @@ pub async fn build_project(
     root_id: Option<Id>,
     monorepo: bool,
     tx: mpsc::UnboundedSender<ProjectBuildEvent>,
+    permit: OwnedSemaphorePermit,
 ) -> miette::Result<()> {
     if !build_data.source.to_path(&context.workspace_root).exists() {
         return Err(
@@ -231,6 +232,8 @@ pub async fn build_project(
     // Send a final event for the project itself
     tx.send(ProjectBuildEvent::Node(Arc::new(project)))
         .map_err(|_| WorkspaceBuilderError::SendProjectEventFailed)?;
+
+    drop(permit);
 
     Ok(())
 }
@@ -333,15 +336,49 @@ impl WorkspaceProjectsBuilder {
 
         self.determine_repo_type(&data)?;
         self.build_graph(ids, data).await?;
-        self.resolve_task_deps()?;
         self.enforce_constraints()?;
+
+        Ok(())
+    }
+
+    // Extract all tasks from their respective project, as the data will live
+    // in the task graph and not the project graph!
+    #[instrument(skip(self))]
+    pub fn extract_tasks(&mut self) -> miette::Result<Vec<Task>> {
+        let mut tasks = vec![];
+
+        for project_state in self.graph.node_weights_mut() {
+            let NodeState::Loaded(project) = project_state else {
+                continue;
+            };
+
+            for (_, mut task) in mem::take(&mut project.tasks) {
+                // Resolve the task dependencies so we can link edges
+                // correctly when building the task graph
+                if !task.deps.is_empty() {
+                    TaskDepsBuilder {
+                        querent: Box::new(WorkspaceTasksQuerent {
+                            aliases_to_ids: &self.aliases_to_ids,
+                            ids_to_target_options: &self.ids_to_target_options,
+                            tags_to_ids: &self.tags_to_ids,
+                        }),
+                        project: Some(project),
+                        root_project_id: self.root_id.as_ref(),
+                        task: &mut task,
+                    }
+                    .build()?;
+                }
+
+                tasks.push(task);
+            }
+        }
 
         // Free up some memory
         mem::take(&mut self.ids_to_target_options);
         mem::take(&mut self.renamed_ids);
         mem::take(&mut self.tags_to_ids);
 
-        Ok(())
+        Ok(tasks)
     }
 
     #[instrument(skip(self))]
@@ -350,32 +387,46 @@ impl WorkspaceProjectsBuilder {
         ids: Option<Vec<Id>>,
         projects_data: ProjectBuildDataMap,
     ) -> miette::Result<()> {
-        let context = self.context();
-        let monorepo = self.repo_type.is_monorepo();
-        let mut set = JoinSet::new();
         let (tx, mut rx) = mpsc::unbounded_channel::<ProjectBuildEvent>();
 
         // Build each project in a separate task
-        for (id, build_data) in projects_data {
-            if ids.as_ref().is_some_and(|list| !list.contains(&id)) {
-                continue;
+        tokio::spawn({
+            let context = self.context();
+            let monorepo = self.repo_type.is_monorepo();
+            let root_id = self.root_id.clone();
+            let semaphore = Arc::new(Semaphore::new(num_cpus::get()));
+            let tx = tx.clone();
+
+            async move {
+                let mut set = JoinSet::new();
+
+                for (id, build_data) in projects_data {
+                    if ids.as_ref().is_some_and(|list| !list.contains(&id)) {
+                        continue;
+                    }
+
+                    debug!(
+                        project_id = id.as_str(),
+                        "Building project {}",
+                        color::id(&id)
+                    );
+
+                    let permit = semaphore.clone().acquire_owned().await.unwrap();
+
+                    set.spawn(Box::pin(build_project(
+                        Arc::clone(&context),
+                        build_data,
+                        id,
+                        root_id.clone(),
+                        monorepo,
+                        tx.clone(),
+                        permit,
+                    )));
+                }
+
+                set.join_all().await;
             }
-
-            debug!(
-                project_id = id.as_str(),
-                "Building project {}",
-                color::id(&id)
-            );
-
-            set.spawn(Box::pin(build_project(
-                Arc::clone(&context),
-                build_data,
-                id,
-                self.root_id.clone(),
-                monorepo,
-                tx.clone(),
-            )));
-        }
+        });
 
         // Receive events from each background task
         drop(tx);
@@ -428,39 +479,6 @@ impl WorkspaceProjectsBuilder {
                             target_id: to_id.to_string(),
                         })?;
                 }
-            }
-        }
-
-        // Ensure all background tasks have completed
-        set.join_all().await;
-
-        Ok(())
-    }
-
-    fn resolve_task_deps(&mut self) -> miette::Result<()> {
-        for project_state in self.graph.node_weights_mut() {
-            let NodeState::Loaded(project) = project_state else {
-                continue;
-            };
-
-            for (id, mut task) in mem::take(&mut project.tasks) {
-                // Resolve the task dependencies so we can link edges
-                // correctly when building the task graph
-                if !task.deps.is_empty() {
-                    TaskDepsBuilder {
-                        querent: Box::new(WorkspaceTasksQuerent {
-                            aliases_to_ids: &self.aliases_to_ids,
-                            ids_to_target_options: &self.ids_to_target_options,
-                            tags_to_ids: &self.tags_to_ids,
-                        }),
-                        project: Some(project),
-                        root_project_id: self.root_id.as_ref(),
-                        task: &mut task,
-                    }
-                    .build()?;
-                }
-
-                project.tasks.insert(id, task);
             }
         }
 
@@ -704,18 +722,14 @@ impl WorkspaceProjectsBuilder {
     ) -> miette::Result<()> {
         debug!("Extending project graph with plugins");
 
-        let context = self.context();
-        let project_sources = projects_data
-            .iter()
-            .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
-            .collect::<BTreeMap<_, _>>();
-
-        let outputs = tokio::spawn(Box::pin(extend_project_build_data_with_plugins(
-            context,
-            project_sources,
-        )))
-        .await
-        .into_diagnostic()??;
+        let outputs = extend_project_build_data_with_plugins(
+            self.context(),
+            projects_data
+                .iter()
+                .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
+                .collect::<BTreeMap<_, _>>(),
+        )
+        .await?;
 
         let context = self.context();
 

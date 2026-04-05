@@ -5732,6 +5732,7 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_vcs",
  "moon_workspace_graph",
+ "num_cpus",
  "petgraph",
  "proto_core",
  "rustc-hash",

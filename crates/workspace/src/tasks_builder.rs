@@ -1,4 +1,4 @@
-use crate::projects_builder::{ProjectBuildData, WorkspaceProjectsBuilder};
+use crate::projects_builder::ProjectBuildData;
 use crate::workspace_builder::WorkspaceBuilderContext;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use daggy::Dag;
@@ -10,7 +10,6 @@ use moon_task_graph::TaskGraphError;
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use std::mem;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
@@ -126,11 +125,10 @@ impl WorkspaceTasksBuilder {
     }
 
     /// Load and build all projects into the graph, as configured in the workspace.
-    #[instrument(skip(self, projects))]
-    pub async fn build(&mut self, projects: &mut WorkspaceProjectsBuilder) -> miette::Result<()> {
-        let tasks = self.extract_tasks(projects)?;
-
-        self.build_graph(tasks).await?;
+    #[instrument(skip(self, tasks))]
+    pub async fn build(&mut self, tasks: Vec<Task>) -> miette::Result<()> {
+        // self.build_graph(tasks).await?;
+        self.build_graph_inline(tasks)?;
 
         Ok(())
     }
@@ -175,26 +173,35 @@ impl WorkspaceTasksBuilder {
         }
 
         // Ensure all background tasks have completed
-        set.join_all().await;
+        set.shutdown().await;
 
         Ok(())
     }
 
-    // Extract all tasks from their respective project, as the data will live
-    // in the task graph and not the project graph!
-    pub fn extract_tasks(
-        &self,
-        projects: &mut WorkspaceProjectsBuilder,
-    ) -> miette::Result<Vec<Task>> {
-        let mut tasks = vec![];
+    #[instrument(skip(self))]
+    pub fn build_graph_inline(&mut self, tasks: Vec<Task>) -> miette::Result<()> {
+        for task in tasks {
+            for dep_config in &task.deps {
+                let from_index = self.get_or_insert_node(&task.target);
+                let to_index = self.get_or_insert_node(&dep_config.target);
+                let scope = if dep_config.optional.is_some_and(|v| v) {
+                    TaskDependencyType::Optional
+                } else {
+                    TaskDependencyType::Required
+                };
 
-        for state in projects.graph.node_weights_mut() {
-            if let NodeState::Loaded(project) = state {
-                tasks.extend(mem::take(&mut project.tasks).into_values());
+                self.graph
+                    .add_edge(from_index, to_index, scope)
+                    .map_err(|_| TaskGraphError::WouldCycle {
+                        source_target: task.target.to_string(),
+                        target_target: dep_config.target.to_string(),
+                    })?;
             }
+
+            self.insert_or_update_node(task);
         }
 
-        Ok(tasks)
+        Ok(())
     }
 
     fn context(&self) -> Arc<WorkspaceBuilderContext> {

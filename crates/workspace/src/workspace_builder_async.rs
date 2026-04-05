@@ -67,7 +67,7 @@ impl WorkspaceBuilderAsync {
     }
 
     pub async fn load_tasks(&mut self) -> miette::Result<()> {
-        self.tasks.build(&mut self.projects).await?;
+        self.tasks.build(self.projects.extract_tasks()?).await?;
 
         Ok(())
     }

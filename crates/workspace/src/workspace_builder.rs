@@ -845,8 +845,6 @@ impl WorkspaceBuilder {
                     color::id(id.as_str()),
                 );
 
-                build_data.original_id = Some(id.clone());
-
                 if renamed_ids.contains_key(&id) {
                     dupe_original_ids.insert(id.clone());
                 } else {

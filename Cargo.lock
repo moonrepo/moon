@@ -5710,7 +5710,6 @@ version = "0.0.1"
 dependencies = [
  "criterion2",
  "daggy",
- "indexmap",
  "miette 7.6.0",
  "moon_bench_utils",
  "moon_cache",

@@ -48,25 +48,26 @@ impl WorkspaceBuilderAsync {
         _cache_engine: &CacheEngine,
     ) -> miette::Result<Self> {
         let mut graph = Self::new(context).await?;
-        graph.load_projects().await?;
-        graph.load_tasks().await?;
+        graph.load_graphs().await?;
 
-        return Ok(graph);
+        Ok(graph)
     }
 
-    pub async fn load_projects(&mut self) -> miette::Result<()> {
+    pub async fn preload(&mut self) -> miette::Result<()> {
+        self.projects.preload().await?;
+
+        Ok(())
+    }
+
+    pub async fn load_graphs(&mut self) -> miette::Result<()> {
         self.projects.build(None).await?;
+        self.tasks.build(self.projects.extract_tasks()?)?;
 
         Ok(())
     }
 
-    pub async fn load_projects_for(&mut self, ids: Vec<Id>) -> miette::Result<()> {
+    pub async fn load_graphs_for(&mut self, ids: Vec<Id>) -> miette::Result<()> {
         self.projects.build(Some(ids)).await?;
-
-        Ok(())
-    }
-
-    pub async fn load_tasks(&mut self) -> miette::Result<()> {
         self.tasks.build(self.projects.extract_tasks()?)?;
 
         Ok(())
@@ -75,7 +76,10 @@ impl WorkspaceBuilderAsync {
     /// Build the project graph and return a new structure.
     #[instrument(name = "build_workspace_graph", skip_all)]
     pub async fn build(mut self) -> miette::Result<WorkspaceGraph> {
-        let context = self.context.take().unwrap();
+        let context = self
+            .context
+            .take()
+            .expect("Missing workspace graph builder context!");
 
         let mut graph_context = GraphExpanderContext {
             working_dir: context.working_dir.clone(),

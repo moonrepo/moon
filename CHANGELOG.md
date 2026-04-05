@@ -20,11 +20,11 @@
   - Improved performance of task output archiving, by no longer blocking the main thread pool.
 - 🆕 **Workspace**
   - Added an experimental asynchronous version of the project and task graph builders, that utilizes
-    a background thread poo per project/task to build the graph. This can improve performance by
-    100-200% in large workspaces.
+    a background thread pool per project to build the graph. This can improve performance by
+    100-170% in large workspaces.
     - Enable with the `experiments.asyncGraphBuilding` setting in `.moon/workspace.config`.
-    - Unlike the synchronous version, the async version does not support cycles, and will not cut
-      edges automatically to avoid cycles.
+    - Unlike the sync version, the async version does not support cycles, and will not cut edges
+      automatically to avoid cycles.
 
 #### 🐞 Fixes
 

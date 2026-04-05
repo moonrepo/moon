@@ -52,9 +52,6 @@ pub struct ProjectBuildData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_index: Option<NodeIndex>,
 
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub original_id: Option<Id>,
-
     pub source: WorkspaceRelativePathBuf,
 }
 
@@ -216,6 +213,9 @@ pub struct WorkspaceProjectsBuilder {
     /// Map of aliases to project IDs.
     aliases_to_ids: FxHashMap<String, Id>,
 
+    /// Cached projects build data.
+    build_data: ProjectBuildDataMap,
+
     /// List of config paths used in the hashing process.
     /// These are used for invalidation.
     config_paths: FxHashSet<WorkspaceRelativePathBuf>,
@@ -288,6 +288,7 @@ impl WorkspaceProjectsBuilder {
         Self {
             context: Some(context),
             aliases_to_ids: FxHashMap::default(),
+            build_data: ProjectBuildDataMap::default(),
             config_paths: FxHashSet::default(),
             ids_to_indexes: FxHashMap::default(),
             ids_to_target_options: FxHashMap::default(),
@@ -299,10 +300,22 @@ impl WorkspaceProjectsBuilder {
         }
     }
 
+    /// Preload projects and their configs for use within caching.
+    #[instrument(skip(self))]
+    pub async fn preload(&mut self) -> miette::Result<()> {
+        self.build_data = self.load().await?;
+
+        Ok(())
+    }
+
     /// Load and build all projects into the graph, as configured in the workspace.
     #[instrument(skip(self))]
     pub async fn build(&mut self, ids: Option<Vec<Id>>) -> miette::Result<()> {
-        let data = self.load().await?;
+        let data = if self.build_data.is_empty() {
+            self.load().await?
+        } else {
+            mem::take(&mut self.build_data)
+        };
 
         self.determine_repo_type(&data)?;
         self.build_graph(ids, data).await?;
@@ -345,7 +358,6 @@ impl WorkspaceProjectsBuilder {
 
         // Free up some memory
         mem::take(&mut self.ids_to_target_options);
-        mem::take(&mut self.renamed_ids);
         mem::take(&mut self.tags_to_ids);
 
         Ok(tasks)
@@ -583,7 +595,7 @@ impl WorkspaceProjectsBuilder {
         // Load projects and configs first
         let mut build_data = self.load_build_data(sources).await?;
 
-        // Then extend projects from toolchains
+        // Then extend projects with plugins
         self.extend_build_data(&mut build_data).await?;
 
         // Validate the default project exists
@@ -595,6 +607,9 @@ impl WorkspaceProjectsBuilder {
             }
             .into());
         }
+
+        // Free up some memory
+        mem::take(&mut self.renamed_ids);
 
         Ok(build_data)
     }
@@ -820,7 +835,6 @@ impl WorkspaceProjectsBuilder {
             self.renamed_ids.insert(old_id.clone(), new_id.clone());
         }
 
-        project_data.original_id = Some(old_id);
         project_data.id = Some(new_id);
     }
 

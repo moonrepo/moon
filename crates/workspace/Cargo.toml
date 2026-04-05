@@ -34,7 +34,6 @@ moon_vcs = { path = "../vcs" }
 moon_workspace_graph = { path = "../workspace-graph" }
 proto_core = { workspace = true }
 daggy = { workspace = true }
-indexmap = { workspace = true }
 miette = { workspace = true }
 num_cpus = { workspace = true }
 petgraph = { workspace = true }

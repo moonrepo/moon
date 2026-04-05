@@ -476,15 +476,14 @@ impl WorkspaceMocker {
         };
 
         if options.ids.is_empty() {
-            builder.load_projects().await.unwrap();
+            builder.load_graphs().await.unwrap();
         } else {
             builder
-                .load_projects_for(options.ids.iter().map(Id::raw).collect())
+                .load_graphs_for(options.ids.iter().map(Id::raw).collect())
                 .await
                 .unwrap();
         }
 
-        builder.load_tasks().await.unwrap();
         builder.build().await.unwrap()
     }
 

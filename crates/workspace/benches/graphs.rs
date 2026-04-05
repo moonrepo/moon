@@ -34,8 +34,7 @@ fn do_limit(c: &mut Criterion, max: u16) {
                 .await
                 .unwrap();
 
-            handle_unwrap(builder.load_projects().await);
-            handle_unwrap(builder.load_tasks().await);
+            handle_unwrap(builder.load_graphs().await);
             handle_unwrap(builder.build().await);
         })
     });

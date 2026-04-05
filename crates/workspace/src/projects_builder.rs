@@ -157,7 +157,7 @@ pub async fn build_project(
     id: Id,
     root_id: Option<Id>,
     monorepo: bool,
-    tx: mpsc::Sender<ProjectBuildEvent>,
+    tx: mpsc::UnboundedSender<ProjectBuildEvent>,
 ) -> miette::Result<()> {
     if !build_data.source.to_path(&context.workspace_root).exists() {
         return Err(
@@ -224,15 +224,13 @@ pub async fn build_project(
                 dep_config.id.clone(),
                 dep_config.scope,
             ))
-            .await
-            .expect("TODO");
+            .map_err(|_| WorkspaceBuilderError::SendProjectEventFailed)?;
         }
     }
 
     // Send a final event for the project itself
     tx.send(ProjectBuildEvent::Node(Arc::new(project)))
-        .await
-        .expect("TODO");
+        .map_err(|_| WorkspaceBuilderError::SendProjectEventFailed)?;
 
     Ok(())
 }
@@ -355,7 +353,7 @@ impl WorkspaceProjectsBuilder {
         let context = self.context();
         let monorepo = self.repo_type.is_monorepo();
         let mut set = JoinSet::new();
-        let (tx, mut rx) = mpsc::channel::<ProjectBuildEvent>(1000);
+        let (tx, mut rx) = mpsc::unbounded_channel::<ProjectBuildEvent>();
 
         // Build each project in a separate task
         for (id, build_data) in projects_data {

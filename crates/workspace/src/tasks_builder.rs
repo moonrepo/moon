@@ -1,5 +1,6 @@
 use crate::projects_builder::{ProjectBuildData, WorkspaceProjectsBuilder};
 use crate::workspace_builder::WorkspaceBuilderContext;
+use crate::workspace_builder_error::WorkspaceBuilderError;
 use daggy::Dag;
 use moon_common::{Id, color};
 use moon_config::TaskDependencyType;
@@ -50,7 +51,7 @@ pub enum TaskBuildEvent {
 pub async fn build_task(
     _context: Arc<WorkspaceBuilderContext>,
     task: Task,
-    tx: mpsc::Sender<TaskBuildEvent>,
+    tx: mpsc::UnboundedSender<TaskBuildEvent>,
 ) -> miette::Result<()> {
     // Send an event for each task-to-task relationship
     for dep_config in &task.deps {
@@ -63,14 +64,12 @@ pub async fn build_task(
                 TaskDependencyType::Required
             },
         ))
-        .await
-        .expect("TODO");
+        .map_err(|_| WorkspaceBuilderError::SendTaskEventFailed)?;
     }
 
     // Send a final event for the task itself
     tx.send(TaskBuildEvent::Node(Arc::new(task)))
-        .await
-        .expect("TODO");
+        .map_err(|_| WorkspaceBuilderError::SendTaskEventFailed)?;
 
     Ok(())
 }
@@ -140,7 +139,7 @@ impl WorkspaceTasksBuilder {
     pub async fn build_graph(&mut self, tasks: Vec<Task>) -> miette::Result<()> {
         let context = self.context();
         let mut set = JoinSet::new();
-        let (tx, mut rx) = mpsc::channel::<TaskBuildEvent>(1000);
+        let (tx, mut rx) = mpsc::unbounded_channel::<TaskBuildEvent>();
 
         // Build each task in a separate task
         for task in tasks {

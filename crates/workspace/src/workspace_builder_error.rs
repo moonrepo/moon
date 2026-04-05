@@ -22,4 +22,12 @@ pub enum WorkspaceBuilderError {
     #[diagnostic(code(project_graph::missing_source))]
     #[error("No project exists at source path {}.", .0.style(Style::File))]
     MissingProjectAtSource(String),
+
+    #[diagnostic(code(project_graph::send_event_failed))]
+    #[error("Failed to send project graph build event.")]
+    SendProjectEventFailed,
+
+    #[diagnostic(code(task_graph::send_event_failed))]
+    #[error("Failed to send task graph build event.")]
+    SendTaskEventFailed,
 }

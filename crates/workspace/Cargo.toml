@@ -8,6 +8,10 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
+[[bench]]
+name = "graphs"
+harness = false
+
 [dependencies]
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
@@ -38,6 +42,13 @@ starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+moon_bench_utils = { path = "../bench-utils" }
+moon_test_utils2 = { path = "../test-utils" }
+criterion2 = { workspace = true }
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }
 
 [lints]
 workspace = true

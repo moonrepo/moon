@@ -13,7 +13,8 @@ pub fn create_simple_workspace(max: u16) -> Sandbox {
             dir.join("moon.yml"),
             r#"
 tasks:
-    build: 'echo build'
+  build:
+    command: 'echo build'
 "#,
         )
         .unwrap();
@@ -24,6 +25,7 @@ tasks:
     fs::create_dir_all(&moon_dir).unwrap();
     fs::write(moon_dir.join("workspace.yml"), "projects: ['*']").unwrap();
 
+    fs::create_dir_all(moon_dir.join("tasks")).unwrap();
     fs::write(
         moon_dir.join("tasks/all.yml"),
         r#"

@@ -10,6 +10,59 @@ TODO
 
 <!--truncate-->
 
+## New experimental async graph building
+
+Project and task building is a critical piece of moon. In previous versions, graph building was
+implemented synchronously, which could lead to performance issues in larger workspaces, but was
+unnoticeable in smaller workspaces. With this release, graph building is now available with an
+experimental async implementation.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  asyncGraphBuilding: true
+```
+
+<table>
+  <tr>
+    <th>Benchmark</th>
+    <th colspan="2">Average time</th>
+    <th colspan="2">Total suite time</th>
+    <th>Speedup</th>
+  </tr>
+  <tr>
+    <td> </td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td> </td>
+  </tr>
+  <tr>
+    <td>100 projects / 400 tasks</td>
+    <td>78.9ms</td>
+    <td>52ms</td>
+    <td>12s</td>
+    <td>10s</td>
+    <td>43%</td>
+  </tr>
+  <tr>
+    <td>1,000 projects / 4,000 tasks</td>
+    <td>516.5ms</td>
+    <td>316.6ms</td>
+    <td>54.7s</td>
+    <td>45.7s</td>
+    <td>48%</td>
+  </tr>
+  <tr>
+    <td>5,000 projects / 20,000 tasks</td>
+    <td>6.6s</td>
+    <td> </td>
+    <td>599.9s</td>
+    <td> </td>
+    <td>%</td>
+  </tr>
+</table>
+
 ## New experimental async affected tracker
 
 The affected tracker is a core component of moon that determines which projects and tasks are

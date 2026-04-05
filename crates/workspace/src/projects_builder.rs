@@ -91,12 +91,6 @@ impl ProjectBuildData {
     }
 }
 
-#[derive(Debug)]
-pub enum ProjectBuildEvent {
-    Edge(Id, Id, DependencyScope),
-    Node(Arc<Project>),
-}
-
 pub fn load_project_build_data(
     context: Arc<WorkspaceBuilderContext>,
     id: Id,
@@ -157,7 +151,7 @@ pub async fn build_project(
     id: Id,
     root_id: Option<Id>,
     monorepo: bool,
-    tx: mpsc::UnboundedSender<ProjectBuildEvent>,
+    tx: mpsc::UnboundedSender<Project>,
     permit: OwnedSemaphorePermit,
 ) -> miette::Result<()> {
     if !build_data.source.to_path(&context.workspace_root).exists() {
@@ -216,21 +210,7 @@ pub async fn build_project(
 
     let project = builder.build().await?;
 
-    // Send an event for each project-to-project relationship,
-    // but don't link the root project to anything
-    for dep_config in &project.dependencies {
-        if !dep_config.is_root_scope() {
-            tx.send(ProjectBuildEvent::Edge(
-                id.clone(),
-                dep_config.id.clone(),
-                dep_config.scope,
-            ))
-            .map_err(|_| WorkspaceBuilderError::SendProjectEventFailed)?;
-        }
-    }
-
-    // Send a final event for the project itself
-    tx.send(ProjectBuildEvent::Node(Arc::new(project)))
+    tx.send(project)
         .map_err(|_| WorkspaceBuilderError::SendProjectEventFailed)?;
 
     drop(permit);
@@ -387,13 +367,13 @@ impl WorkspaceProjectsBuilder {
         ids: Option<Vec<Id>>,
         projects_data: ProjectBuildDataMap,
     ) -> miette::Result<()> {
-        let (tx, mut rx) = mpsc::unbounded_channel::<ProjectBuildEvent>();
+        let (tx, mut rx) = mpsc::unbounded_channel::<Project>();
 
-        // Build each project in a separate task
+        // Build each project in the background
         tokio::spawn({
-            let context = self.context();
             let monorepo = self.repo_type.is_monorepo();
             let root_id = self.root_id.clone();
+            let context = self.context();
             let semaphore = Arc::new(Semaphore::new(num_cpus::get()));
             let tx = tx.clone();
 
@@ -411,7 +391,9 @@ impl WorkspaceProjectsBuilder {
                         color::id(&id)
                     );
 
-                    let permit = semaphore.clone().acquire_owned().await.unwrap();
+                    let permit = semaphore.clone().acquire_owned().await.expect(
+                        "Failed to acquire semaphore permit while building the project graph!",
+                    );
 
                     set.spawn(Box::pin(build_project(
                         Arc::clone(&context),
@@ -431,55 +413,50 @@ impl WorkspaceProjectsBuilder {
         // Receive events from each background task
         drop(tx);
 
-        while let Some(event) = rx.recv().await {
-            match event {
-                ProjectBuildEvent::Node(project) => {
-                    let mut project = Arc::unwrap_or_clone(project);
+        while let Some(mut project) = rx.recv().await {
+            let from_index = self.get_or_insert_node(&project.id);
 
-                    // Resolve dependency IDs as they may be aliases
-                    for dep_config in &mut project.dependencies {
-                        dep_config.id = self.resolve_id(&dep_config.id);
-                    }
+            // Resolve dependency IDs as they may be aliases
+            for dep_config in &mut project.dependencies {
+                dep_config.id = self.resolve_id(&dep_config.id);
 
-                    // Extract tags and group projects
-                    for tag in &project.config.tags {
-                        self.tags_to_ids
-                            .entry(tag.to_owned())
-                            .or_default()
-                            .push(project.id.clone());
-                    }
+                // And then create edges
+                let to_index = self.get_or_insert_node(&dep_config.id);
 
-                    // Extract task data (this is heavy)
-                    for task in project.tasks.values() {
-                        self.ids_to_target_options
-                            .entry(project.id.clone())
-                            .or_default()
-                            .insert(
-                                task.target.clone(),
-                                // Only copy fields needed for task deps resolution
-                                TaskOptions {
-                                    allow_failure: task.options.allow_failure,
-                                    run_in_ci: task.options.run_in_ci.clone(),
-                                    persistent: task.options.persistent,
-                                    ..Default::default()
-                                },
-                            );
-                    }
-
-                    self.insert_or_update_node(project);
-                }
-                ProjectBuildEvent::Edge(from_id, to_id, scope) => {
-                    let from_index = self.get_or_insert_node(&from_id);
-                    let to_index = self.get_or_insert_node(&to_id);
-
-                    self.graph
-                        .add_edge(from_index, to_index, scope)
-                        .map_err(|_| ProjectGraphError::WouldCycle {
-                            source_id: from_id.to_string(),
-                            target_id: to_id.to_string(),
-                        })?;
-                }
+                self.graph
+                    .add_edge(from_index, to_index, dep_config.scope)
+                    .map_err(|_| ProjectGraphError::WouldCycle {
+                        source_id: project.id.to_string(),
+                        target_id: dep_config.id.to_string(),
+                    })?;
             }
+
+            // Extract tags and group projects
+            for tag in &project.config.tags {
+                self.tags_to_ids
+                    .entry(tag.to_owned())
+                    .or_default()
+                    .push(project.id.clone());
+            }
+
+            // Extract task data (this is heavy)
+            for task in project.tasks.values() {
+                self.ids_to_target_options
+                    .entry(project.id.clone())
+                    .or_default()
+                    .insert(
+                        task.target.clone(),
+                        // Only copy fields needed for task deps resolution
+                        TaskOptions {
+                            allow_failure: task.options.allow_failure,
+                            run_in_ci: task.options.run_in_ci.clone(),
+                            persistent: task.options.persistent,
+                            ..Default::default()
+                        },
+                    );
+            }
+
+            self.insert_or_update_node(project);
         }
 
         Ok(())

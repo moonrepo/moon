@@ -37,7 +37,7 @@ impl WorkspaceBuilderAsync {
         Ok(WorkspaceBuilderAsync {
             config_paths: FxHashSet::default(),
             projects: WorkspaceProjectsBuilder::new(Arc::clone(&context)),
-            tasks: WorkspaceTasksBuilder::new(Arc::clone(&context)),
+            tasks: WorkspaceTasksBuilder::new(),
             context: Some(context),
         })
     }
@@ -67,7 +67,7 @@ impl WorkspaceBuilderAsync {
     }
 
     pub async fn load_tasks(&mut self) -> miette::Result<()> {
-        self.tasks.build(self.projects.extract_tasks()?).await?;
+        self.tasks.build(self.projects.extract_tasks()?)?;
 
         Ok(())
     }

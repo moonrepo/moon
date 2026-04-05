@@ -462,6 +462,7 @@ impl WorkspaceMocker {
         workspace_graph
     }
 
+    #[allow(dead_code)]
     async fn build_workspace_async(
         &self,
         context: WorkspaceBuilderContext,

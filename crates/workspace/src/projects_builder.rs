@@ -23,10 +23,9 @@ use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::mem;
 use std::sync::Arc;
-use tokio::sync::{OwnedSemaphorePermit, Semaphore, mpsc};
 use tokio::task::JoinSet;
 use tracing::{debug, instrument, trace};
 
@@ -151,9 +150,7 @@ pub async fn build_project(
     id: Id,
     root_id: Option<Id>,
     monorepo: bool,
-    tx: mpsc::UnboundedSender<Project>,
-    permit: OwnedSemaphorePermit,
-) -> miette::Result<()> {
+) -> miette::Result<Project> {
     if !build_data.source.to_path(&context.workspace_root).exists() {
         return Err(
             WorkspaceBuilderError::MissingProjectAtSource(build_data.source.to_string()).into(),
@@ -208,14 +205,7 @@ pub async fn build_project(
             .collect(),
     );
 
-    let project = builder.build().await?;
-
-    tx.send(project)
-        .map_err(|_| WorkspaceBuilderError::SendProjectEventFailed)?;
-
-    drop(permit);
-
-    Ok(())
+    builder.build().await
 }
 
 #[derive(Deserialize, Serialize)]
@@ -367,68 +357,59 @@ impl WorkspaceProjectsBuilder {
         ids: Option<Vec<Id>>,
         projects_data: ProjectBuildDataMap,
     ) -> miette::Result<()> {
-        let (tx, mut rx) = mpsc::unbounded_channel::<Project>();
+        let concurrency = num_cpus::get();
+        let mut set = JoinSet::new();
+        let mut queue = projects_data
+            .into_iter()
+            .filter(|(id, _)| ids.as_ref().is_none_or(|list| list.contains(id)))
+            .collect::<VecDeque<_>>();
 
-        // Build each project in the background
-        tokio::spawn({
-            let monorepo = self.repo_type.is_monorepo();
-            let root_id = self.root_id.clone();
-            let context = self.context();
-            let semaphore = Arc::new(Semaphore::new(num_cpus::get()));
-            let tx = tx.clone();
+        loop {
+            // Build each project in the background
+            if let Some((id, build_data)) = queue.pop_front() {
+                debug!(
+                    project_id = id.as_str(),
+                    "Building project {}",
+                    color::id(&id)
+                );
 
-            async move {
-                let mut set = JoinSet::new();
-
-                for (id, build_data) in projects_data {
-                    if ids.as_ref().is_some_and(|list| !list.contains(&id)) {
-                        continue;
-                    }
-
-                    debug!(
-                        project_id = id.as_str(),
-                        "Building project {}",
-                        color::id(&id)
-                    );
-
-                    let permit = semaphore.clone().acquire_owned().await.expect(
-                        "Failed to acquire semaphore permit while building the project graph!",
-                    );
-
-                    set.spawn(Box::pin(build_project(
-                        Arc::clone(&context),
-                        build_data,
-                        id,
-                        root_id.clone(),
-                        monorepo,
-                        tx.clone(),
-                        permit,
-                    )));
-                }
-
-                set.join_all().await;
+                set.spawn(Box::pin(build_project(
+                    self.context(),
+                    build_data,
+                    id,
+                    self.root_id.clone(),
+                    self.repo_type.is_monorepo(),
+                )));
             }
-        });
 
-        // Receive events from each background task
-        drop(tx);
+            // Keep enqueuing projects until we hit the concurrency limit
+            if set.len() < concurrency && !queue.is_empty() {
+                continue;
+            }
 
-        while let Some(mut project) = rx.recv().await {
+            // If the queue is empty, break the loop
+            let Some(result) = set.join_next().await else {
+                break;
+            };
+
+            let mut project = result.into_diagnostic()??;
             let from_index = self.get_or_insert_node(&project.id);
 
             // Resolve dependency IDs as they may be aliases
             for dep_config in &mut project.dependencies {
                 dep_config.id = self.resolve_id(&dep_config.id);
 
-                // And then create edges
-                let to_index = self.get_or_insert_node(&dep_config.id);
+                // And then create edges but don't link the root project
+                if !dep_config.is_root_scope() {
+                    let to_index = self.get_or_insert_node(&dep_config.id);
 
-                self.graph
-                    .add_edge(from_index, to_index, dep_config.scope)
-                    .map_err(|_| ProjectGraphError::WouldCycle {
-                        source_id: project.id.to_string(),
-                        target_id: dep_config.id.to_string(),
-                    })?;
+                    self.graph
+                        .add_edge(from_index, to_index, dep_config.scope)
+                        .map_err(|_| ProjectGraphError::WouldCycle {
+                            source_id: project.id.to_string(),
+                            target_id: dep_config.id.to_string(),
+                        })?;
+                }
             }
 
             // Extract tags and group projects

@@ -14,9 +14,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-pub type ProjectGraphType = Dag<usize, DependencyScope>;
-pub type ProjectsCache = scc::HashMap<Id, Arc<Project>>;
-
 #[derive(Clone, Debug)]
 pub struct ProjectNode {
     pub index: NodeIndex,
@@ -33,8 +30,8 @@ pub struct ProjectGraph {
     /// ID of the default project.
     pub default_id: Option<Id>,
 
-    /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
-    pub graph: ProjectGraphType,
+    /// Directed-acyclic graph (DAG) of projects (by index) and their dependencies.
+    pub graph: Dag<usize, DependencyScope>,
 
     /// Map of node indexes to project IDs.
     pub indexes: FxHashMap<usize, Id>,
@@ -43,13 +40,12 @@ pub struct ProjectGraph {
     pub nodes: FxHashMap<Id, ProjectNode>,
 
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
-    fs_cache: scc::HashMap<PathBuf, Arc<String>>,
+    fs_cache: Arc<scc::HashMap<PathBuf, Arc<String>>>,
 
     /// Map of expanded projects by ID.
-    projects: ProjectsCache,
+    projects: Arc<scc::HashMap<Id, Arc<Project>>>,
 }
 
-// 264
 impl ProjectGraph {
     pub fn new(context: GraphExpanderContext) -> Self {
         debug!("Creating project graph");
@@ -143,24 +139,22 @@ impl ProjectGraph {
     /// Focus the graph for a specific project by ID.
     pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
+        let mut projects = FxHashMap::default();
         let graph = self.to_focused_graph(&project, with_dependents);
+        let (nodes, edges) = graph.into_nodes_edges();
 
-        // Copy over metadata
-        let mut metadata = FxHashMap::default();
-
-        for new_index in graph.node_indices() {
-            let project_id = &self.indexes[&new_index.index()];
+        for node in &nodes {
+            let project_id = &self.indexes[&node.weight];
 
             if let Some(old_node) = self.nodes.get(project_id) {
                 let mut new_node = old_node.to_owned();
-                new_node.index = new_index;
+                new_node.index = NodeIndex::new(node.weight);
 
-                metadata.insert(project_id.to_owned(), new_node);
+                projects.insert(project_id.to_owned(), new_node);
             }
         }
 
-        let mut dag = Dag::new();
-        let (nodes, edges) = graph.into_nodes_edges();
+        let mut dag = Dag::with_capacity(nodes.len(), edges.len());
 
         for node in nodes {
             dag.add_node(node.weight);
@@ -176,10 +170,10 @@ impl ProjectGraph {
             context: self.context.clone(),
             indexes: self.indexes.clone(),
             default_id: self.default_id.clone(),
-            fs_cache: scc::HashMap::new(),
+            fs_cache: Arc::new(scc::HashMap::new()),
             graph: dag,
-            nodes: metadata,
-            projects: self.projects.clone(),
+            nodes: projects,
+            projects: Arc::clone(&self.projects),
         })
     }
 

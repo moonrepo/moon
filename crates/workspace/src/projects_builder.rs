@@ -376,7 +376,7 @@ impl WorkspaceProjectsBuilder {
                     project_graph.nodes.insert(
                         project.id.clone(),
                         ProjectNode {
-                            index: ni.clone(),
+                            index: ni,
                             project: project.to_owned(),
                         },
                     );
@@ -390,8 +390,6 @@ impl WorkspaceProjectsBuilder {
         for (id, index) in self.ids_to_indexes {
             project_graph.indexes.insert(index.index(), id);
         }
-
-        dbg!("PROJECT GRAPH", std::mem::size_of_val(&project_graph));
 
         project_graph
     }

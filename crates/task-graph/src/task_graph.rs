@@ -12,9 +12,6 @@ use scc::hash_map::Entry;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-pub type TaskGraphType = Dag<usize, TaskDependencyType>;
-pub type TasksCache = scc::HashMap<Target, Arc<Task>>;
-
 #[derive(Clone, Debug, Default)]
 pub struct TaskNode {
     pub index: NodeIndex,
@@ -26,7 +23,7 @@ pub struct TaskGraph {
     pub context: GraphExpanderContext,
 
     /// Directed-acyclic graph (DAG) of non-expanded tasks and their relationships.
-    pub graph: TaskGraphType,
+    pub graph: Dag<usize, TaskDependencyType>,
 
     /// Map of node indexes to task targets.
     pub indexes: FxHashMap<usize, Target>,
@@ -38,10 +35,9 @@ pub struct TaskGraph {
     project_graph: Arc<ProjectGraph>,
 
     /// Map of expanded tasks by target.
-    tasks: TasksCache,
+    tasks: Arc<scc::HashMap<Target, Arc<Task>>>,
 }
 
-// 216
 impl TaskGraph {
     pub fn new(context: GraphExpanderContext, project_graph: Arc<ProjectGraph>) -> Self {
         debug!("Creating task graph");
@@ -116,24 +112,22 @@ impl TaskGraph {
     /// Focus the graph for a specific project by target.
     pub fn focus_for(&self, target: &Target, with_dependents: bool) -> miette::Result<Self> {
         let task = self.get(target)?;
+        let mut tasks = FxHashMap::default();
         let graph = self.to_focused_graph(&task, with_dependents);
+        let (nodes, edges) = graph.into_nodes_edges();
 
-        // Copy over metadata
-        let mut metadata = FxHashMap::default();
-
-        for new_index in graph.node_indices() {
-            let inner_target = &self.indexes[&new_index.index()];
+        for node in &nodes {
+            let inner_target = &self.indexes[&node.weight];
 
             if let Some(old_node) = self.nodes.get(inner_target) {
                 let mut new_node = old_node.to_owned();
-                new_node.index = new_index;
+                new_node.index = NodeIndex::new(node.weight);
 
-                metadata.insert(inner_target.to_owned(), new_node);
+                tasks.insert(inner_target.to_owned(), new_node);
             }
         }
 
-        let mut dag = Dag::new();
-        let (nodes, edges) = graph.into_nodes_edges();
+        let mut dag = Dag::with_capacity(nodes.len(), edges.len());
 
         for node in nodes {
             dag.add_node(node.weight);
@@ -148,7 +142,7 @@ impl TaskGraph {
             indexes: self.indexes.clone(),
             context: self.context.clone(),
             graph: dag,
-            nodes: metadata,
+            nodes: tasks,
             project_graph: self.project_graph.clone(),
             tasks: self.tasks.clone(),
         })

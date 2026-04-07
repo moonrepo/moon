@@ -128,7 +128,7 @@ impl WorkspaceTasksBuilder {
                     task_graph.nodes.insert(
                         task.target.clone(),
                         TaskNode {
-                            index: ni.clone(),
+                            index: ni,
                             task: task.to_owned(),
                         },
                     );
@@ -142,8 +142,6 @@ impl WorkspaceTasksBuilder {
         for (target, index) in self.targets_to_indexes {
             task_graph.indexes.insert(index.index(), target);
         }
-
-        dbg!("TASK GRAPH", std::mem::size_of_val(&task_graph));
 
         task_graph
     }

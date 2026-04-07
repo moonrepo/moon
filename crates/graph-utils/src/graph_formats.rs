@@ -6,6 +6,7 @@ use petgraph::visit::{EdgeRef, NodeRef};
 use serde::Serialize;
 use starbase_utils::json;
 use std::fmt::{Debug, Display};
+use std::hash::Hash;
 
 #[derive(Serialize)]
 pub struct GraphCache<'graph, N, E> {
@@ -17,16 +18,17 @@ fn should_use_compact_view() -> bool {
     is_test_env() || cfg!(debug_assertions)
 }
 
-pub trait GraphToDot<N: Debug + Display, E: Debug + Display, K: Display>:
-    GraphData<N, E, K>
+pub trait GraphToDot<N: Clone + Debug + Display, E: Clone + Debug + Display, K: Display + Hash + Eq>:
+    GraphConversions<N, E, K>
 {
     /// Format graph as a DOT string.
     fn to_dot(&self) -> String {
+        let graph = self.to_labeled_graph();
         let dot = Dot::with_attr_getters(
-            self.get_graph(),
+            &graph,
             &[Config::EdgeNoLabel, Config::NodeNoLabel],
             &|_, e| {
-                let label = e.weight().to_string();
+                let label = e.weight();
                 let prefix = format!("label=\"{label}\"");
 
                 if should_use_compact_view() {
@@ -38,7 +40,7 @@ pub trait GraphToDot<N: Debug + Display, E: Debug + Display, K: Display>:
                 }
             },
             &|_, n| {
-                let label = n.weight().to_string();
+                let label = n.weight();
                 let prefix = format!("label=\"{label}\"");
 
                 if should_use_compact_view() {

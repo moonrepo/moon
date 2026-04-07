@@ -156,6 +156,20 @@ impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
     }
 }
 
+impl GraphConnections<ActionNode, TaskDependencyType, String> for ActionGraph {
+    fn get_node_index(&self, node: &ActionNode) -> NodeIndex {
+        for (index, n) in &self.nodes {
+            if n == node {
+                return NodeIndex::new(*index);
+            }
+        }
+
+        panic!("Action node not found in graph!");
+    }
+}
+
+impl GraphConversions<ActionNode, TaskDependencyType, String> for ActionGraph {}
+
 impl GraphToDot<ActionNode, TaskDependencyType, String> for ActionGraph {}
 
 impl GraphToJson<ActionNode, TaskDependencyType, String> for ActionGraph {}

@@ -25,7 +25,7 @@ use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relation
 use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode};
 use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
-use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
+use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskNode};
 use moon_toolchain_plugin::ToolchainRegistry;
 use moon_vcs::BoxedVcs;
 use moon_workspace_graph::WorkspaceGraph;
@@ -241,57 +241,66 @@ impl WorkspaceBuilder {
             }
         }
 
-        let project_metadata = self
-            .project_data
-            .into_iter()
-            .map(|(id, data)| {
-                (
+        // Build the graphs
+        let mut project_graph = ProjectGraph::new(graph_context.clone());
+        project_graph.default_id = context.workspace_config.default_project.clone();
+        project_graph.aliases.extend(self.aliases);
+
+        for (id, build_data) in self.project_data {
+            if let Some(index) = build_data.node_index {
+                project_graph.indexes.insert(index.index(), id.clone());
+                project_graph.nodes.insert(
                     id,
                     ProjectNode {
-                        index: data.node_index.unwrap_or_default(),
-                        source: data.source,
+                        index,
+                        project: Default::default(),
                     },
-                )
-            })
-            .collect::<FxHashMap<_, _>>();
+                );
+            }
+        }
 
-        let project_graph = Arc::new(ProjectGraph::new(
-            self.project_graph.filter_map(
-                |_, node| match node {
-                    NodeState::Loading => None,
-                    NodeState::Loaded(project) => Some(project.to_owned()),
-                },
-                |_, edge| Some(*edge),
-            ),
-            project_metadata,
-            graph_context.clone(),
-        ));
+        project_graph.graph = self.project_graph.filter_map(
+            |ni, node| match node {
+                NodeState::Loading => None,
+                NodeState::Loaded(project) => {
+                    project_graph.nodes.get_mut(&project.id).unwrap().project = project.to_owned();
 
-        let task_metadata = self
-            .task_data
-            .into_iter()
-            .map(|(id, data)| {
-                (
-                    id,
-                    TaskMetadata {
-                        index: data.node_index.unwrap_or_default(),
+                    Some(ni.index())
+                }
+            },
+            |_, edge| Some(*edge),
+        );
+
+        let project_graph = Arc::new(project_graph);
+
+        let mut task_graph = TaskGraph::new(graph_context, Arc::clone(&project_graph));
+
+        for (target, build_data) in self.task_data {
+            if let Some(index) = build_data.node_index {
+                task_graph.indexes.insert(index.index(), target.clone());
+                task_graph.nodes.insert(
+                    target,
+                    TaskNode {
+                        index,
+                        task: Default::default(),
                     },
-                )
-            })
-            .collect::<FxHashMap<_, _>>();
+                );
+            }
+        }
 
-        let task_graph = Arc::new(TaskGraph::new(
-            self.task_graph.filter_map(
-                |_, node| match node {
-                    NodeState::Loading => None,
-                    NodeState::Loaded(task) => Some(task.to_owned()),
-                },
-                |_, edge| Some(*edge),
-            ),
-            task_metadata,
-            graph_context,
-            Arc::clone(&project_graph),
-        ));
+        task_graph.graph = self.task_graph.filter_map(
+            |ni, node| match node {
+                NodeState::Loading => None,
+                NodeState::Loaded(task) => {
+                    task_graph.nodes.get_mut(&task.target).unwrap().task = task.to_owned();
+
+                    Some(ni.index())
+                }
+            },
+            |_, edge| Some(*edge),
+        );
+
+        let task_graph = Arc::new(task_graph);
 
         Ok(WorkspaceGraph::new(
             project_graph,

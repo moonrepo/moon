@@ -8,55 +8,49 @@ use moon_task::Task;
 use moon_task_expander::TaskExpander;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
-use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use scc::hash_map::Entry;
+use std::sync::Arc;
 use tracing::{debug, instrument};
 
-pub type TaskGraphType = Dag<Task, TaskDependencyType>;
-pub type TasksCache = FxHashMap<Target, Arc<Task>>;
+pub type TaskGraphType = Dag<usize, TaskDependencyType>;
+pub type TasksCache = scc::HashMap<Target, Arc<Task>>;
 
 #[derive(Clone, Debug, Default)]
-pub struct TaskMetadata {
+pub struct TaskNode {
     pub index: NodeIndex,
+    pub task: Task,
 }
 
 #[derive(Default)]
 pub struct TaskGraph {
-    context: GraphExpanderContext,
+    pub context: GraphExpanderContext,
 
     /// Directed-acyclic graph (DAG) of non-expanded tasks and their relationships.
-    graph: TaskGraphType,
+    pub graph: TaskGraphType,
 
-    /// Task metadata, mapped by target.
-    metadata: FxHashMap<Target, TaskMetadata>,
+    /// Map of node indexes to task targets.
+    pub indexes: FxHashMap<usize, Target>,
+
+    /// Map of task nodes by target.
+    pub nodes: FxHashMap<Target, TaskNode>,
 
     /// Project graph, required for expansion.
     project_graph: Arc<ProjectGraph>,
 
-    /// Expanded tasks, mapped by target.
-    tasks: Arc<RwLock<TasksCache>>,
+    /// Map of expanded tasks by target.
+    tasks: TasksCache,
 }
 
+// 216
 impl TaskGraph {
-    pub fn new(
-        graph: TaskGraphType,
-        metadata: FxHashMap<Target, TaskMetadata>,
-        context: GraphExpanderContext,
-        project_graph: Arc<ProjectGraph>,
-    ) -> Self {
+    pub fn new(context: GraphExpanderContext, project_graph: Arc<ProjectGraph>) -> Self {
         debug!("Creating task graph");
 
-        let a = Self {
+        Self {
             context,
-            graph,
-            metadata,
             project_graph,
-            tasks: Arc::new(RwLock::new(FxHashMap::default())),
-        };
-
-        // 216
-        dbg!("TASK GRAPH", std::mem::size_of_val(&a));
-
-        a
+            ..Default::default()
+        }
     }
 
     /// Return a task with the provided target from the graph.
@@ -68,15 +62,15 @@ impl TaskGraph {
 
     /// Return an unexpanded task with the provided target from the graph.
     pub fn get_unexpanded(&self, target: &Target) -> miette::Result<&Task> {
-        let metadata = self
-            .metadata
+        let node = self
+            .nodes
             .get(target)
             .ok_or_else(|| ProjectError::UnknownTask {
                 task_id: target.task_id.to_string(),
                 project_id: target.get_project_id().unwrap().to_string(),
             })?;
 
-        Ok(self.graph.node_weight(metadata.index).unwrap())
+        Ok(&node.task)
     }
 
     /// Return all tasks from the graph.
@@ -84,7 +78,7 @@ impl TaskGraph {
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Task>>> {
         let mut all = vec![];
 
-        for target in self.metadata.keys() {
+        for target in self.nodes.keys() {
             all.push(self.internal_get(target)?);
         }
 
@@ -93,12 +87,7 @@ impl TaskGraph {
 
     /// Return all unexpanded tasks from the graph.
     pub fn get_all_unexpanded(&self) -> miette::Result<Vec<&Task>> {
-        Ok(self
-            .graph
-            .raw_nodes()
-            .iter()
-            .map(|node| &node.weight)
-            .collect())
+        Ok(self.nodes.values().map(|node| &node.task).collect())
     }
 
     /// Return many tasks from the graph by target.
@@ -133,9 +122,9 @@ impl TaskGraph {
         let mut metadata = FxHashMap::default();
 
         for new_index in graph.node_indices() {
-            let inner_target = &graph[new_index].target;
+            let inner_target = &self.indexes[&new_index.index()];
 
-            if let Some(old_node) = self.metadata.get(inner_target) {
+            if let Some(old_node) = self.nodes.get(inner_target) {
                 let mut new_node = old_node.to_owned();
                 new_node.index = new_index;
 
@@ -156,51 +145,49 @@ impl TaskGraph {
         }
 
         Ok(Self {
+            indexes: self.indexes.clone(),
             context: self.context.clone(),
             graph: dag,
-            metadata,
+            nodes: metadata,
             project_graph: self.project_graph.clone(),
             tasks: self.tasks.clone(),
         })
     }
 
     fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
-        if let Some(task) = self.read_cache().get(target) {
-            return Ok(Arc::clone(task));
-        }
+        let task = match self.tasks.entry_sync(target.to_owned()) {
+            Entry::Occupied(entry) => Arc::clone(entry.get()),
+            Entry::Vacant(entry) => {
+                let expander = TaskExpander::new(
+                    &self.project_graph,
+                    self.project_graph
+                        .get_unexpanded(target.get_project_id()?)?,
+                    &self.context,
+                );
 
-        let mut cache = self.write_cache();
+                let task = Arc::new(expander.expand(self.get_unexpanded(entry.key())?)?);
 
-        let expander = TaskExpander::new(
-            &self.project_graph,
-            self.project_graph
-                .get_unexpanded(target.get_project_id()?)?,
-            &self.context,
-        );
+                entry.insert_entry(Arc::clone(&task));
 
-        let task = Arc::new(expander.expand(self.get_unexpanded(target)?)?);
-
-        cache.insert(target.to_owned(), Arc::clone(&task));
+                task
+            }
+        };
 
         Ok(task)
-    }
-
-    fn read_cache(&self) -> RwLockReadGuard<'_, TasksCache> {
-        self.tasks
-            .read()
-            .expect("Failed to acquire read access to task graph!")
-    }
-
-    fn write_cache(&self) -> RwLockWriteGuard<'_, TasksCache> {
-        self.tasks
-            .write()
-            .expect("Failed to acquire write access to task graph!")
     }
 }
 
 impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
-    fn get_graph(&self) -> &DiGraph<Task, TaskDependencyType> {
+    fn get_graph(&self) -> &DiGraph<usize, TaskDependencyType> {
         self.graph.graph()
+    }
+
+    fn get_node_by_index(&self, index: usize) -> &Task {
+        &self
+            .nodes
+            .get(self.indexes.get(&index).unwrap())
+            .unwrap()
+            .task
     }
 
     fn get_node_key(&self, node: &Task) -> Target {
@@ -210,7 +197,7 @@ impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
 
 impl GraphConnections<Task, TaskDependencyType, Target> for TaskGraph {
     fn get_node_index(&self, node: &Task) -> NodeIndex {
-        self.metadata.get(&node.target).unwrap().index
+        self.nodes.get(&node.target).unwrap().index
     }
 }
 

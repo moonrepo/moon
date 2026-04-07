@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- The `--json` output for `moon action-graph`, `moon project-graph`, and `moon task-graph` commands
+  has changed. The `graph` nodes are now integers instead of objects, and the node data is instead
+  stored in a separate `data` object.
+
 #### 🚀 Updates
 
 - **Affected**
@@ -12,10 +18,12 @@
     it runs a file watcher on the workspace and invalidates caches.
   - Added a `moon daemon` command with `start`, `stop`, and more subcommands to manage the daemon.
   - Added an `unstable_daemon` setting to `.moon/workspace.config`.
+- **Graphs**
+  - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
+  - Greatly reduced memory footprint of the action, project, and task graphs. Nodes in the graph are
+    now integers instead of objects.
 - **Plugin registry**
   - Improved performance and memory consumption when loading plugins.
-- **Project graph**
-  - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
 - **Task runner**
   - Improved performance of task output archiving, by no longer blocking the main thread pool.
 - 🆕 **Workspace**

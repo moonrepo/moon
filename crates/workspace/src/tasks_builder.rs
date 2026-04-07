@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::projects_builder::ProjectBuildData;
 use daggy::Dag;
 use moon_common::Id;
@@ -11,6 +9,7 @@ use moon_task_graph::{TaskGraph, TaskGraphError, TaskNode};
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tracing::instrument;
 
 pub type TaskDag = Dag<NodeState<Task>, TaskDependencyType>;
@@ -120,7 +119,7 @@ impl WorkspaceTasksBuilder {
     ) -> TaskGraph {
         let mut task_graph = TaskGraph::new(context, project_graph);
 
-        // TODO switch to fitler_map_owned
+        // TODO switch to filter_map_owned
         task_graph.graph = self.graph.filter_map(
             |ni, node| match node {
                 NodeState::Loading => None,

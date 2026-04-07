@@ -18,7 +18,7 @@ pub struct TaskNode {
     pub task: Task,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct TaskGraph {
     pub context: GraphExpanderContext,
 
@@ -112,25 +112,31 @@ impl TaskGraph {
     /// Focus the graph for a specific project by target.
     pub fn focus_for(&self, target: &Target, with_dependents: bool) -> miette::Result<Self> {
         let task = self.get(target)?;
-        let mut tasks = FxHashMap::default();
         let graph = self.to_focused_graph(&task, with_dependents);
         let (nodes, edges) = graph.into_nodes_edges();
 
-        for node in &nodes {
-            let inner_target = &self.indexes[&node.weight];
-
-            if let Some(old_node) = self.nodes.get(inner_target) {
-                let mut new_node = old_node.to_owned();
-                new_node.index = node.weight;
-
-                tasks.insert(inner_target.to_owned(), new_node);
-            }
-        }
-
         let mut dag = Dag::with_capacity(nodes.len(), edges.len());
+        let mut indexes = FxHashMap::default();
+        let mut tasks = FxHashMap::default();
 
-        for node in nodes {
-            dag.add_node(node.weight);
+        // The focused graph has different node inndexes,
+        // so we need to update our internal structures to match
+        for (i, node) in nodes.into_iter().enumerate() {
+            let new_index = NodeIndex::from(i as u32);
+            let old_index = node.weight;
+            let target = &self.indexes[&old_index];
+
+            indexes.insert(new_index, target.to_owned());
+
+            tasks.insert(
+                target.to_owned(),
+                TaskNode {
+                    index: new_index,
+                    task: self.get_node_by_index(&old_index).to_owned(),
+                },
+            );
+
+            dag.add_node(new_index);
         }
 
         for edge in edges {
@@ -139,7 +145,7 @@ impl TaskGraph {
         }
 
         Ok(Self {
-            indexes: self.indexes.clone(),
+            indexes,
             context: self.context.clone(),
             graph: dag,
             nodes: tasks,
@@ -184,11 +190,7 @@ impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
     }
 
     fn get_node_by_index(&self, index: &NodeIndex) -> &Task {
-        &self
-            .nodes
-            .get(self.indexes.get(index).unwrap())
-            .unwrap()
-            .task
+        &self.nodes[&self.indexes[index]].task
     }
 
     fn get_node_key(&self, node: &Task) -> Target {
@@ -198,7 +200,7 @@ impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
 
 impl GraphConnections<Task, TaskDependencyType, Target> for TaskGraph {
     fn get_node_index(&self, node: &Task) -> NodeIndex {
-        self.nodes.get(&node.target).unwrap().index
+        self.nodes[&node.target].index
     }
 }
 

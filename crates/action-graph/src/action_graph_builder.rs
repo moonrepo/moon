@@ -185,6 +185,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         let mut nodes = FxHashMap::default();
 
+        // TODO switch to map_owned
         let graph = self.graph.map(
             |ni, node| {
                 nodes.insert(ni, node.clone());

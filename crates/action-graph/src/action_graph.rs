@@ -148,7 +148,7 @@ impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
     }
 
     fn get_node_by_index(&self, index: &NodeIndex) -> &ActionNode {
-        self.nodes.get(index).unwrap()
+        &self.nodes[index]
     }
 
     fn get_node_key(&self, node: &ActionNode) -> String {

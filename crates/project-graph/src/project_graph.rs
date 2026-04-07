@@ -20,7 +20,7 @@ pub struct ProjectNode {
     pub project: Project,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ProjectGraph {
     pub context: GraphExpanderContext,
 
@@ -139,25 +139,31 @@ impl ProjectGraph {
     /// Focus the graph for a specific project by ID.
     pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
-        let mut projects = FxHashMap::default();
         let graph = self.to_focused_graph(&project, with_dependents);
         let (nodes, edges) = graph.into_nodes_edges();
 
-        for node in &nodes {
-            let project_id = &self.indexes[&node.weight];
-
-            if let Some(old_node) = self.nodes.get(project_id) {
-                let mut new_node = old_node.to_owned();
-                new_node.index = node.weight;
-
-                projects.insert(project_id.to_owned(), new_node);
-            }
-        }
-
         let mut dag = Dag::with_capacity(nodes.len(), edges.len());
+        let mut indexes = FxHashMap::default();
+        let mut projects = FxHashMap::default();
 
-        for node in nodes {
-            dag.add_node(node.weight);
+        // The focused graph has different node inndexes,
+        // so we need to update our internal structures to match
+        for (i, node) in nodes.into_iter().enumerate() {
+            let new_index = NodeIndex::from(i as u32);
+            let old_index = node.weight;
+            let id = &self.indexes[&old_index];
+
+            indexes.insert(new_index, id.to_owned());
+
+            projects.insert(
+                id.to_owned(),
+                ProjectNode {
+                    index: new_index,
+                    project: self.get_node_by_index(&old_index).to_owned(),
+                },
+            );
+
+            dag.add_node(new_index);
         }
 
         for edge in edges {
@@ -165,12 +171,24 @@ impl ProjectGraph {
                 .unwrap();
         }
 
+        let aliases = self
+            .aliases
+            .iter()
+            .filter_map(|(alias, id)| {
+                if projects.contains_key(id) {
+                    Some((alias.to_owned(), id.to_owned()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
         Ok(Self {
-            aliases: self.aliases.clone(),
+            aliases,
             context: self.context.clone(),
-            indexes: self.indexes.clone(),
+            indexes,
             default_id: self.default_id.clone(),
-            fs_cache: Arc::new(scc::HashMap::new()),
+            fs_cache: Arc::clone(&self.fs_cache),
             graph: dag,
             nodes: projects,
             projects: Arc::clone(&self.projects),
@@ -272,11 +290,7 @@ impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
     }
 
     fn get_node_by_index(&self, index: &NodeIndex) -> &Project {
-        &self
-            .nodes
-            .get(self.indexes.get(index).unwrap())
-            .unwrap()
-            .project
+        &self.nodes[&self.indexes[index]].project
     }
 
     fn get_node_key(&self, node: &Project) -> Id {
@@ -286,7 +300,7 @@ impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
 
 impl GraphConnections<Project, DependencyScope, Id> for ProjectGraph {
     fn get_node_index(&self, node: &Project) -> NodeIndex {
-        self.nodes.get(&node.id).unwrap().index
+        self.nodes[&node.id].index
     }
 }
 

@@ -368,7 +368,7 @@ impl WorkspaceProjectsBuilder {
         project_graph.default_id = self.context().workspace_config.default_project.clone();
         project_graph.aliases.extend(self.aliases_to_ids);
 
-        // TODO switch to fitler_map_owned
+        // TODO switch to filter_map_owned
         project_graph.graph = self.graph.filter_map(
             |ni, node| match node {
                 NodeState::Loading => None,

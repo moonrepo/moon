@@ -9,15 +9,15 @@ use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use tracing::debug;
 
-pub type ActionGraphType = Dag<usize, TaskDependencyType>;
+pub type ActionGraphType = Dag<NodeIndex, TaskDependencyType>;
 
 pub struct ActionGraph {
     graph: ActionGraphType,
-    nodes: FxHashMap<usize, ActionNode>,
+    nodes: FxHashMap<NodeIndex, ActionNode>,
 }
 
 impl ActionGraph {
-    pub fn new(graph: ActionGraphType, nodes: FxHashMap<usize, ActionNode>) -> Self {
+    pub fn new(graph: ActionGraphType, nodes: FxHashMap<NodeIndex, ActionNode>) -> Self {
         debug!("Creating action graph");
 
         ActionGraph { graph, nodes }
@@ -31,12 +31,12 @@ impl ActionGraph {
         &self.graph
     }
 
-    pub fn get_inner_nodes(&self) -> &FxHashMap<usize, ActionNode> {
+    pub fn get_inner_nodes(&self) -> &FxHashMap<NodeIndex, ActionNode> {
         &self.nodes
     }
 
     pub fn get_node_from_index(&self, index: &NodeIndex) -> Option<&ActionNode> {
-        self.nodes.get(&index.index())
+        self.nodes.get(index)
     }
 
     pub fn get_nodes(&self) -> Vec<&ActionNode> {
@@ -56,9 +56,8 @@ impl ActionGraph {
         let mut normal = vec![];
         let mut low = vec![];
 
-        for index in topo_indices {
-            let node = self.get_node_by_index(index.index());
-            let node_index = index.index();
+        for node_index in topo_indices {
+            let node = self.get_node_by_index(&node_index);
             let priority = node.get_priority();
 
             match priority {
@@ -69,7 +68,10 @@ impl ActionGraph {
                 _ => {}
             };
 
-            groups.entry(priority).or_insert_with(Vec::new).push(index);
+            groups
+                .entry(priority)
+                .or_insert_with(Vec::new)
+                .push(node_index);
         }
 
         debug!(
@@ -99,7 +101,7 @@ impl ActionGraph {
                     .map(|index| {
                         self.graph
                             .node_weight(index)
-                            .map(|n| self.get_node_by_index(*n).label())
+                            .map(|n| self.get_node_by_index(n).label())
                             .unwrap_or_else(|| "(unknown)".into())
                     })
                     .collect::<Vec<_>>()
@@ -125,7 +127,7 @@ impl ActionGraph {
             Err(cycle) => Err(ActionGraphError::CycleDetected(
                 self.graph
                     .node_weight(cycle.node_id())
-                    .map(|n| self.get_node_by_index(*n).label())
+                    .map(|n| self.get_node_by_index(n).label())
                     .unwrap_or_else(|| "(unknown)".into()),
             )
             .into()),
@@ -134,19 +136,19 @@ impl ActionGraph {
 }
 
 impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
-    fn get_graph(&self) -> &DiGraph<usize, TaskDependencyType> {
+    fn get_graph(&self) -> &DiGraph<NodeIndex, TaskDependencyType> {
         self.graph.graph()
     }
 
-    fn get_nodes(&self) -> FxHashMap<usize, &ActionNode> {
+    fn get_nodes(&self) -> FxHashMap<NodeIndex, &ActionNode> {
         self.nodes
             .iter()
             .map(|(index, node)| (*index, node))
             .collect()
     }
 
-    fn get_node_by_index(&self, index: usize) -> &ActionNode {
-        self.nodes.get(&index).unwrap()
+    fn get_node_by_index(&self, index: &NodeIndex) -> &ActionNode {
+        self.nodes.get(index).unwrap()
     }
 
     fn get_node_key(&self, node: &ActionNode) -> String {
@@ -158,7 +160,7 @@ impl GraphConnections<ActionNode, TaskDependencyType, String> for ActionGraph {
     fn get_node_index(&self, node: &ActionNode) -> NodeIndex {
         for (index, n) in &self.nodes {
             if n == node {
-                return NodeIndex::new(*index);
+                return *index;
             }
         }
 

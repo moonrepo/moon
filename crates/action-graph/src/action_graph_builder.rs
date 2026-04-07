@@ -187,8 +187,8 @@ impl<'query> ActionGraphBuilder<'query> {
 
         let graph = self.graph.map(
             |ni, node| {
-                nodes.insert(ni.index(), node.clone());
-                ni.index()
+                nodes.insert(ni, node.clone());
+                ni
             },
             |_, edge| edge.to_owned(),
         );
@@ -1420,7 +1420,7 @@ mod tests {
         inner
             .graph()
             .node_indices()
-            .find(|index| nodes.get(&index.index()).is_some_and(&mut predicate))
+            .find(|index| nodes.get(index).is_some_and(&mut predicate))
             .unwrap()
     }
 

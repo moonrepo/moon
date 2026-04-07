@@ -1,7 +1,7 @@
 use crate::graph_traits::*;
 use moon_common::is_test_env;
 use petgraph::dot::{Config, Dot};
-use petgraph::graph::DiGraph;
+use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::{EdgeRef, NodeRef};
 use rustc_hash::FxHashMap;
 use serde::Serialize;
@@ -11,8 +11,8 @@ use std::hash::Hash;
 
 #[derive(Serialize)]
 pub struct GraphCache<'graph, N, E> {
-    graph: &'graph DiGraph<usize, E>,
-    data: FxHashMap<usize, &'graph N>,
+    graph: &'graph DiGraph<NodeIndex, E>,
+    data: FxHashMap<NodeIndex, &'graph N>,
 }
 
 fn should_use_compact_view() -> bool {

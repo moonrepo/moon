@@ -9,7 +9,7 @@ use tracing::trace;
 pub struct JobDispatcher<'graph> {
     context: JobContext,
     graph: &'graph ActionGraphType,
-    nodes: &'graph FxHashMap<usize, ActionNode>,
+    nodes: &'graph FxHashMap<NodeIndex, ActionNode>,
     groups: BTreeMap<u8, Vec<NodeIndex>>, // topo
     visited: FxHashSet<NodeIndex>,
 }
@@ -89,7 +89,7 @@ impl JobDispatcher<'_> {
                         continue;
                     };
 
-                    if let Some(node) = self.nodes.get(&index.index()) {
+                    if let Some(node) = self.nodes.get(&index) {
                         let id = node.get_id();
 
                         // If the same exact action is currently running,

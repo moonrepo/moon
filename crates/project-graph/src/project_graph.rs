@@ -31,10 +31,10 @@ pub struct ProjectGraph {
     pub default_id: Option<Id>,
 
     /// Directed-acyclic graph (DAG) of projects (by index) and their dependencies.
-    pub graph: Dag<usize, DependencyScope>,
+    pub graph: Dag<NodeIndex, DependencyScope>,
 
     /// Map of node indexes to project IDs.
-    pub indexes: FxHashMap<usize, Id>,
+    pub indexes: FxHashMap<NodeIndex, Id>,
 
     /// Map of project nodes by ID.
     pub nodes: FxHashMap<Id, ProjectNode>,
@@ -148,7 +148,7 @@ impl ProjectGraph {
 
             if let Some(old_node) = self.nodes.get(project_id) {
                 let mut new_node = old_node.to_owned();
-                new_node.index = NodeIndex::new(node.weight);
+                new_node.index = node.weight;
 
                 projects.insert(project_id.to_owned(), new_node);
             }
@@ -260,21 +260,21 @@ impl ProjectGraph {
 }
 
 impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
-    fn get_graph(&self) -> &DiGraph<usize, DependencyScope> {
+    fn get_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
         self.graph.graph()
     }
 
-    fn get_nodes(&self) -> FxHashMap<usize, &Project> {
+    fn get_nodes(&self) -> FxHashMap<NodeIndex, &Project> {
         self.nodes
             .values()
-            .map(|node| (node.index.index(), &node.project))
+            .map(|node| (node.index, &node.project))
             .collect()
     }
 
-    fn get_node_by_index(&self, index: usize) -> &Project {
+    fn get_node_by_index(&self, index: &NodeIndex) -> &Project {
         &self
             .nodes
-            .get(self.indexes.get(&index).unwrap())
+            .get(self.indexes.get(index).unwrap())
             .unwrap()
             .project
     }

@@ -381,14 +381,14 @@ impl WorkspaceProjectsBuilder {
                         },
                     );
 
-                    Some(ni.index())
+                    Some(ni)
                 }
             },
             |_, edge| Some(*edge),
         );
 
         for (id, index) in self.ids_to_indexes {
-            project_graph.indexes.insert(index.index(), id);
+            project_graph.indexes.insert(index, id);
         }
 
         project_graph

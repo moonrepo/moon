@@ -248,7 +248,7 @@ impl WorkspaceBuilder {
 
         for (id, build_data) in self.project_data {
             if let Some(index) = build_data.node_index {
-                project_graph.indexes.insert(index.index(), id.clone());
+                project_graph.indexes.insert(index, id.clone());
                 project_graph.nodes.insert(
                     id,
                     ProjectNode {
@@ -265,7 +265,7 @@ impl WorkspaceBuilder {
                 NodeState::Loaded(project) => {
                     project_graph.nodes.get_mut(&project.id).unwrap().project = project.to_owned();
 
-                    Some(ni.index())
+                    Some(ni)
                 }
             },
             |_, edge| Some(*edge),
@@ -277,7 +277,7 @@ impl WorkspaceBuilder {
 
         for (target, build_data) in self.task_data {
             if let Some(index) = build_data.node_index {
-                task_graph.indexes.insert(index.index(), target.clone());
+                task_graph.indexes.insert(index, target.clone());
                 task_graph.nodes.insert(
                     target,
                     TaskNode {
@@ -294,7 +294,7 @@ impl WorkspaceBuilder {
                 NodeState::Loaded(task) => {
                     task_graph.nodes.get_mut(&task.target).unwrap().task = task.to_owned();
 
-                    Some(ni.index())
+                    Some(ni)
                 }
             },
             |_, edge| Some(*edge),

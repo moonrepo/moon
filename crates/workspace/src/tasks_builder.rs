@@ -133,14 +133,14 @@ impl WorkspaceTasksBuilder {
                         },
                     );
 
-                    Some(ni.index())
+                    Some(ni)
                 }
             },
             |_, edge| Some(*edge),
         );
 
         for (target, index) in self.targets_to_indexes {
-            task_graph.indexes.insert(index.index(), target);
+            task_graph.indexes.insert(index, target);
         }
 
         task_graph

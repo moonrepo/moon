@@ -23,10 +23,10 @@ pub struct TaskGraph {
     pub context: GraphExpanderContext,
 
     /// Directed-acyclic graph (DAG) of non-expanded tasks and their relationships.
-    pub graph: Dag<usize, TaskDependencyType>,
+    pub graph: Dag<NodeIndex, TaskDependencyType>,
 
     /// Map of node indexes to task targets.
-    pub indexes: FxHashMap<usize, Target>,
+    pub indexes: FxHashMap<NodeIndex, Target>,
 
     /// Map of task nodes by target.
     pub nodes: FxHashMap<Target, TaskNode>,
@@ -121,7 +121,7 @@ impl TaskGraph {
 
             if let Some(old_node) = self.nodes.get(inner_target) {
                 let mut new_node = old_node.to_owned();
-                new_node.index = NodeIndex::new(node.weight);
+                new_node.index = node.weight;
 
                 tasks.insert(inner_target.to_owned(), new_node);
             }
@@ -172,21 +172,21 @@ impl TaskGraph {
 }
 
 impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
-    fn get_graph(&self) -> &DiGraph<usize, TaskDependencyType> {
+    fn get_graph(&self) -> &DiGraph<NodeIndex, TaskDependencyType> {
         self.graph.graph()
     }
 
-    fn get_nodes(&self) -> FxHashMap<usize, &Task> {
+    fn get_nodes(&self) -> FxHashMap<NodeIndex, &Task> {
         self.nodes
             .values()
-            .map(|node| (node.index.index(), &node.task))
+            .map(|node| (node.index, &node.task))
             .collect()
     }
 
-    fn get_node_by_index(&self, index: usize) -> &Task {
+    fn get_node_by_index(&self, index: &NodeIndex) -> &Task {
         &self
             .nodes
-            .get(self.indexes.get(&index).unwrap())
+            .get(self.indexes.get(index).unwrap())
             .unwrap()
             .task
     }

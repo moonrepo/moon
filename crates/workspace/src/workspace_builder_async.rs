@@ -4,7 +4,7 @@ use crate::workspace_builder::*;
 use moon_cache::CacheEngine;
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_graph_utils::{GraphExpanderContext, NodeState};
-use moon_project_graph::{ProjectGraph, ProjectMetadata};
+use moon_project_graph::{ProjectGraph, ProjectNode};
 use moon_task_graph::{TaskGraph, TaskMetadata};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -114,13 +114,7 @@ impl WorkspaceBuilderAsync {
 
                 Some((
                     project.id.clone(),
-                    ProjectMetadata {
-                        aliases: project.aliases.iter().map(|al| al.alias.clone()).collect(),
-                        default: context
-                            .workspace_config
-                            .default_project
-                            .as_ref()
-                            .is_some_and(|def_id| def_id == &project.id),
+                    ProjectNode {
                         index: self
                             .projects
                             .ids_to_indexes

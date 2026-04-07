@@ -31,6 +31,8 @@
 - Fixed an issue with VCS hooks generation that could leave around stale hooks.
 - Fixed an issue where toolchains not managed by proto directly (like Rust) would consistently
   re-install itself.
+- Fixed an issue where OS based tasks would error while executing if they defined `outputs`, and
+  you're on a different OS.
 
 ## 2.1.4
 

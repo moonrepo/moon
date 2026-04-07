@@ -45,13 +45,18 @@ impl TaskGraph {
     ) -> Self {
         debug!("Creating task graph");
 
-        Self {
+        let a = Self {
             context,
             graph,
             metadata,
             project_graph,
             tasks: Arc::new(RwLock::new(FxHashMap::default())),
-        }
+        };
+
+        // 216
+        dbg!("TASK GRAPH", std::mem::size_of_val(&a));
+
+        a
     }
 
     /// Return a task with the provided target from the graph.

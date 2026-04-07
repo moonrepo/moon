@@ -22,7 +22,7 @@ use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
 use moon_project::{Project, ProjectAlias, ProjectError};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectMetadata};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode};
 use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
 use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskMetadata};
@@ -245,17 +245,9 @@ impl WorkspaceBuilder {
             .project_data
             .into_iter()
             .map(|(id, data)| {
-                let default = context
-                    .workspace_config
-                    .default_project
-                    .as_ref()
-                    .is_some_and(|def_id| def_id == &id);
-
                 (
                     id,
-                    ProjectMetadata {
-                        aliases: data.aliases.keys().cloned().collect(),
-                        default,
+                    ProjectNode {
                         index: data.node_index.unwrap_or_default(),
                         source: data.source,
                     },

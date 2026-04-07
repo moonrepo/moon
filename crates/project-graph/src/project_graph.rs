@@ -7,85 +7,75 @@ use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
 use petgraph::graph::{DiGraph, NodeIndex};
-use rustc_hash::{FxHashMap, FxHashSet};
-use scc::HashMap;
+use rustc_hash::FxHashMap;
+use scc::hash_map::Entry;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::Arc;
 use tracing::{debug, instrument};
 
 pub type ProjectGraphType = Dag<Project, DependencyScope>;
-pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
+pub type ProjectsCache = scc::HashMap<Id, Arc<Project>>;
 
-#[derive(Clone, Debug, Default)]
-pub struct ProjectMetadata {
-    pub aliases: FxHashSet<String>,
-    pub default: bool,
+#[derive(Clone, Debug)]
+pub struct ProjectNode {
     pub index: NodeIndex,
     pub source: WorkspaceRelativePathBuf,
 }
 
-impl ProjectMetadata {
-    pub fn new(index: usize) -> Self {
-        ProjectMetadata {
-            index: NodeIndex::new(index),
-            ..ProjectMetadata::default()
-        }
-    }
-}
-
 #[derive(Default)]
 pub struct ProjectGraph {
-    context: GraphExpanderContext,
+    pub context: GraphExpanderContext,
 
-    /// Identifier for the default project.
-    default_id: Option<Id>,
+    /// Map of aliases to project IDs.
+    pub aliases_to_ids: FxHashMap<String, Id>,
 
-    /// Cache of file path lookups, mapped by starting path to project ID (as a string).
-    fs_cache: HashMap<PathBuf, Arc<String>>,
+    /// ID of the default project.
+    pub default_id: Option<Id>,
 
     /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
-    graph: ProjectGraphType,
+    pub graph: ProjectGraphType,
 
-    /// Project metadata, mapped by project ID.
-    metadata: FxHashMap<Id, ProjectMetadata>,
+    /// Map of project metadata by ID.
+    pub metadata: FxHashMap<Id, ProjectNode>,
 
-    /// Expanded projects, mapped by project ID.
-    projects: Arc<RwLock<ProjectsCache>>,
+    /// Cache of file path lookups, mapped by starting path to project ID (as a string).
+    fs_cache: scc::HashMap<PathBuf, Arc<String>>,
+
+    /// Map of expanded projects by ID.
+    projects: ProjectsCache,
 }
 
 impl ProjectGraph {
     pub fn new(
         graph: ProjectGraphType,
-        metadata: FxHashMap<Id, ProjectMetadata>,
+        metadata: FxHashMap<Id, ProjectNode>,
         context: GraphExpanderContext,
     ) -> Self {
         debug!("Creating project graph");
 
-        Self {
+        let a = Self {
+            aliases_to_ids: FxHashMap::default(),
             context,
-            default_id: metadata
-                .iter()
-                .find(|(_, meta)| meta.default)
-                .map(|inner| inner.0.to_owned()),
+            default_id: None,
             graph,
             metadata,
-            projects: Arc::new(RwLock::new(FxHashMap::default())),
-            fs_cache: HashMap::new(),
-        }
+            projects: scc::HashMap::new(),
+            fs_cache: scc::HashMap::new(),
+        };
+
+        // 264
+        dbg!("PROJECT GRAPH", std::mem::size_of_val(&a));
+
+        a
     }
 
     /// Return a map of aliases to their project IDs. Projects without aliases are omitted.
     pub fn aliases(&self) -> FxHashMap<&str, &Id> {
-        let mut map = FxHashMap::default();
-
-        for (id, metadata) in &self.metadata {
-            for alias in &metadata.aliases {
-                map.insert(alias.as_str(), id);
-            }
-        }
-
-        map
+        self.aliases_to_ids
+            .iter()
+            .map(|(alias, id)| (alias.as_str(), id))
+            .collect()
     }
 
     /// Return a project with the provided ID or alias from the graph.
@@ -196,9 +186,10 @@ impl ProjectGraph {
         }
 
         Ok(Self {
+            aliases_to_ids: self.aliases_to_ids.clone(),
             context: self.context.clone(),
             default_id: self.default_id.clone(),
-            fs_cache: HashMap::new(),
+            fs_cache: scc::HashMap::new(),
             graph: dag,
             metadata,
             projects: self.projects.clone(),
@@ -208,20 +199,21 @@ impl ProjectGraph {
     fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
         let id = self.resolve_id(id_or_alias);
 
-        if let Some(project) = self.read_cache().get(&id) {
-            return Ok(Arc::clone(project));
-        }
+        let project = match self.projects.entry_sync(id) {
+            Entry::Occupied(entry) => Arc::clone(entry.get()),
+            Entry::Vacant(entry) => {
+                let expander = ProjectExpander::new(ProjectExpanderContext {
+                    aliases: self.aliases(),
+                    workspace_root: &self.context.workspace_root,
+                });
 
-        let mut cache = self.write_cache();
+                let project = Arc::new(expander.expand(self.get_unexpanded(entry.key())?)?);
 
-        let expander = ProjectExpander::new(ProjectExpanderContext {
-            aliases: self.aliases(),
-            workspace_root: &self.context.workspace_root,
-        });
+                entry.insert_entry(Arc::clone(&project));
 
-        let project = Arc::new(expander.expand(self.get_unexpanded(&id)?)?);
-
-        cache.insert(id.clone(), Arc::clone(&project));
+                project
+            }
+        };
 
         Ok(project)
     }
@@ -274,30 +266,11 @@ impl ProjectGraph {
     pub fn resolve_id(&self, id_or_alias: &str) -> Id {
         Id::raw(if self.metadata.contains_key(id_or_alias) {
             id_or_alias
+        } else if let Some(id) = self.aliases_to_ids.get(id_or_alias) {
+            id.as_str()
         } else {
-            self.metadata
-                .iter()
-                .find_map(|(id, metadata)| {
-                    if metadata.aliases.contains(id_or_alias) {
-                        Some(id.as_str())
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or(id_or_alias)
+            id_or_alias
         })
-    }
-
-    fn read_cache(&self) -> RwLockReadGuard<'_, ProjectsCache> {
-        self.projects
-            .read()
-            .expect("Failed to acquire read access to project graph!")
-    }
-
-    fn write_cache(&self) -> RwLockWriteGuard<'_, ProjectsCache> {
-        self.projects
-            .write()
-            .expect("Failed to acquire write access to project graph!")
     }
 }
 

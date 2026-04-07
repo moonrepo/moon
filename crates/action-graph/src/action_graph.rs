@@ -35,25 +35,16 @@ impl ActionGraph {
         &self.nodes
     }
 
-    pub fn get_nodes(&self) -> Vec<&ActionNode> {
-        self.nodes.values().collect()
-    }
-
     pub fn get_node_from_index(&self, index: &NodeIndex) -> Option<&ActionNode> {
         self.nodes.get(&index.index())
     }
 
-    pub fn get_node_count(&self) -> usize {
-        self.nodes.len()
+    pub fn get_nodes(&self) -> Vec<&ActionNode> {
+        self.nodes.values().collect()
     }
 
-    pub fn labeled_graph(&self) -> DiGraph<String, String> {
-        self.graph
-            .map(
-                |_, n| self.get_node_by_index(*n).label(),
-                |_, _| String::new(),
-            )
-            .into_graph()
+    pub fn get_node_count(&self) -> usize {
+        self.nodes.len()
     }
 
     pub fn group_priorities(&self, topo_indices: Vec<NodeIndex>) -> BTreeMap<u8, Vec<NodeIndex>> {

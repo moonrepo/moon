@@ -517,7 +517,9 @@ impl ToolchainPlugin {
                 if !tool.is_installed(&spec) {
                     on_setup()?;
 
-                    output.installed = Manager::new(&mut tool)
+                    let mut manager = Manager::new(&mut tool);
+
+                    output.installed = manager
                         .install(
                             &mut spec,
                             InstallOptions {
@@ -528,6 +530,10 @@ impl ToolchainPlugin {
                         )
                         .await?
                         .is_some();
+
+                    // We must sync the manifest for tool's not managed by
+                    // proto, like Rust (via rustup)
+                    manager.sync_manifest().await?;
                 }
             }
 

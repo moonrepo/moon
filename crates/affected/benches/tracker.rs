@@ -1,53 +1,12 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use moon_affected::AffectedTracker;
+use moon_bench_utils::create_simple_workspace;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_test_utils2::WorkspaceMocker;
 use rustc_hash::FxHashSet;
-use starbase_sandbox::{Sandbox, create_empty_sandbox};
-use starbase_utils::fs;
+use starbase_sandbox::Sandbox;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-
-fn create_sandbox(max: u16) -> Sandbox {
-    let sandbox = create_empty_sandbox();
-    sandbox.enable_git();
-
-    for i in 0..=max {
-        let dir = sandbox.path().join(format!("p{i}"));
-
-        fs::write_file(dir.join("moon.yml"), "{}").unwrap();
-    }
-
-    fs::write_file(
-        sandbox.path().join(".moon/workspace.yml"),
-        "projects: ['*']",
-    )
-    .unwrap();
-
-    fs::write_file(
-        sandbox.path().join(".moon/tasks/all.yml"),
-        r#"
-tasks:
-  test1:
-    command: 'echo 1'
-  test2:
-    command: 'echo 2'
-  test3:
-    command: 'echo 3'
-"#,
-    )
-    .unwrap();
-
-    sandbox.run_git(|cmd| {
-        cmd.args(["add", "--all"]);
-    });
-
-    sandbox.run_git(|cmd| {
-        cmd.args(["commit", "-m", "Initial commit"]);
-    });
-
-    sandbox
-}
 
 fn create_changed_files(max: u16) -> FxHashSet<WorkspaceRelativePathBuf> {
     let mut set = FxHashSet::default();
@@ -65,7 +24,7 @@ fn create_workspace_mocker(sandbox: &Sandbox) -> WorkspaceMocker {
 
 fn do_limit(c: &mut Criterion, max: u16) {
     let mut group = c.benchmark_group(format!("{max}"));
-    let sandbox = create_sandbox(max);
+    let sandbox = create_simple_workspace(max);
     let files = create_changed_files(max);
     let mocker = create_workspace_mocker(&sandbox);
 

@@ -346,7 +346,7 @@ async fn hash_manifest_contents<'action>(
             fingerprint.manifest_paths.insert(rel_path);
         }
 
-        futures.push_back(tokio::spawn(async move {
+        futures.push_back(tokio::spawn(Box::pin(async move {
             toolchain
                 .parse_manifest(ParseManifestInput {
                     context: app_context.toolchain_registry.create_context(),
@@ -354,7 +354,7 @@ async fn hash_manifest_contents<'action>(
                     root: toolchain.to_virtual_path(deps_root),
                 })
                 .await
-        }));
+        })));
     }
 
     // Inject the manifest deps into the hash

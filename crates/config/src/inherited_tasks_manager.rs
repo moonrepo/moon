@@ -6,13 +6,13 @@ use rustc_hash::FxHashMap;
 use schematic::schema::indexmap::IndexMap;
 use std::path::Path;
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct InheritedTasksEntry {
     pub input: WorkspaceRelativePathBuf,
     pub config: InheritedTasksConfig,
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct InheritedTasksManager {
     pub configs: Vec<InheritedTasksEntry>,
 }

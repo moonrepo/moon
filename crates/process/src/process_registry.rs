@@ -6,7 +6,7 @@ use std::sync::{Arc, OnceLock};
 use tokio::process::Child;
 use tokio::sync::RwLock;
 use tokio::sync::broadcast::{self, Receiver, Sender};
-use tokio::task::JoinHandle;
+use tokio::task::{JoinHandle, JoinSet};
 use tokio::time::sleep;
 use tracing::{debug, trace, warn};
 
@@ -142,12 +142,12 @@ async fn shutdown_processes_from_signal(
         children.len()
     );
 
-    let mut futures = vec![];
+    let mut set = JoinSet::new();
 
     for (pid, child) in children {
         let running = processes.clone();
 
-        futures.push(tokio::spawn(async move {
+        set.spawn(async move {
             if threshold == 0 {
                 trace!(pid, "Waiting on child process");
 
@@ -163,24 +163,22 @@ async fn shutdown_processes_from_signal(
             }
 
             running.write().await.remove(&pid);
-        }));
+        });
     }
 
     // Otherwise force kill running processes after the threshold
     let running = processes.clone();
 
-    futures.push(tokio::spawn(async move {
+    set.spawn(async move {
         if threshold > 0 {
             sleep(Duration::from_millis(threshold as u64)).await;
 
             kill_processes(running).await
         }
-    }));
+    });
 
     // Wait for things to finish
-    for future in futures {
-        let _ = future.await;
-    }
+    set.join_all().await;
 }
 
 async fn kill_processes(processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>) {

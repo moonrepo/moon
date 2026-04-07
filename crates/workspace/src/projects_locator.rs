@@ -71,7 +71,7 @@ where
     // Glob for all other projects
     let config_names = context.config_loader.get_project_file_names();
     let mut potential_projects = glob::walk_fast_with_options(
-        context.workspace_root,
+        &context.workspace_root,
         locate_globs,
         GlobWalkOptions::default().log_results(),
     )?;
@@ -112,7 +112,7 @@ where
             }
 
             let project_source =
-                to_virtual_string(project_root.strip_prefix(context.workspace_root).unwrap())?;
+                to_virtual_string(project_root.strip_prefix(&context.workspace_root).unwrap())?;
 
             if project_source.starts_with(".moon") || project_source.starts_with(".config/moon") {
                 continue;
@@ -143,7 +143,7 @@ where
 
     if add_root_level && !has_root_level {
         sources.push((
-            Id::clean(fs::file_name(context.workspace_root))?,
+            Id::clean(fs::file_name(&context.workspace_root))?,
             WorkspaceRelativePathBuf::from("."),
         ));
     }

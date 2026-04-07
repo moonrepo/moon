@@ -16,7 +16,7 @@ pub async fn mcp(session: MoonSession, _args: McpArgs) -> AppResult {
     let workspace_graph = session.get_workspace_graph().await?;
 
     let handle_server: JoinHandle<SdkResult<()>> =
-        tokio::spawn(async move { run_mcp(app_context, workspace_graph).await });
+        tokio::spawn(run_mcp(app_context, workspace_graph));
 
     let handle: JoinHandle<miette::Result<()>> = tokio::spawn(async move {
         let mut listener = ProcessRegistry::instance().receive_signal();

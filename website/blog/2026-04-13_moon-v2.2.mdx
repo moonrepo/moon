@@ -10,6 +10,84 @@ TODO
 
 <!--truncate-->
 
+## New experimental async graph building
+
+Project and task building is a critical piece of moon. In previous versions, graph building was
+implemented synchronously, which could lead to performance issues in larger workspaces, but was
+unnoticeable in smaller workspaces. With this release, graph building is now available with an
+experimental async implementation, which must be enabled.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  asyncGraphBuilding: true
+```
+
+To demonstrate the performance improvements, take the following benchmark results for example. For
+every benchmark, we had N projects with 4 tasks per project, iterated 100 times. The "average time"
+columns show the average time taken across all iterations, while the "total suite time" columns show
+the total time taken for all iterations. The "speedup" column shows the percentage improvement of
+the async builder compared to the sync builder.
+
+As you can clearly see, as the number of projects and tasks increase, the performance improvement
+becomes more significant, with a speedup of 40-170%. Over time, and with the introducion of the
+daemon, this will only get better!
+
+<table>
+  <tr>
+    <th>Benchmark</th>
+    <th colspan="2">Average time</th>
+    <th colspan="2">Total suite time</th>
+    <th>Speedup</th>
+  </tr>
+  <tr>
+    <td> </td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td> </td>
+  </tr>
+  <tr>
+    <td>100 projects / 400 tasks</td>
+    <td>78ms</td>
+    <td>51ms</td>
+    <td>9.7s</td>
+    <td>5.1s</td>
+    <td>41.8%</td>
+  </tr>
+  <tr>
+    <td>1,000 projects / 4,000 tasks</td>
+    <td>514.5ms</td>
+    <td>119ms</td>
+    <td>57.4s</td>
+    <td>12s</td>
+    <td>125%</td>
+  </tr>
+  <tr>
+    <td>5,000 projects / 20,000 tasks</td>
+    <td>5.7s</td>
+    <td>457ms</td>
+    <td>602.6s</td>
+    <td>46s</td>
+    <td>170%</td>
+  </tr>
+</table>
+
+### Caveats
+
+While the async graph builder is faster, there are some caveats to be aware of.
+
+- Since this is experimental, it is not enabled by default. You must enable it in your workspace
+  configuration to take advantage of the performance improvements.
+- The async graph builder does not cache the built graph as this time, so it will be built from
+  scratch every `moon` invocation. This is a temporary limitation that we plan to address in the
+  future, as caching is a critical piece of the puzzle for performance. With that said, even without
+  caching, the async builder is still significantly faster than the sync builder, especially for
+  larger workspaces.
+- The async graph builder does not support cycles, and will hard error if a cycle is detected. In
+  the sync builder, we would attempt to cut edges between nodes when a cycle was detected, which
+  could lead to incorrect results, but would not error.
+
 ## New experimental async affected tracker
 
 The affected tracker is a core component of moon that determines which projects and tasks are
@@ -125,3 +203,7 @@ parallelize the work.
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.2.0) for a full list of
 changes.
+
+- Improved plugin registry performance and memory consumption when loading plugins.
+- Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
+- Improved performance of task output archiving, by no longer blocking the main thread pool.

@@ -222,7 +222,7 @@ impl ToolchainRegistry {
                 let input = input_factory(self, &toolchain);
                 let future = output_factory(toolchain.clone(), input);
 
-                futures.push_back(Box::pin(async move {
+                futures.push_back(tokio::spawn(Box::pin(async move {
                     let result = future.await;
 
                     operation.finish_with_result(&result);
@@ -233,12 +233,12 @@ impl ToolchainRegistry {
                         output: result?,
                         plugin: toolchain,
                     })
-                }));
+                })));
             }
         }
 
         while let Some(result) = futures.next().await {
-            results.push(result?);
+            results.push(result.into_diagnostic()??);
         }
 
         Ok(results)

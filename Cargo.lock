@@ -4599,6 +4599,7 @@ dependencies = [
  "clap",
  "criterion2",
  "miette 7.6.0",
+ "moon_bench_utils",
  "moon_common",
  "moon_config",
  "moon_env_var",
@@ -4737,6 +4738,13 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "moon_bench_utils"
+version = "0.0.1"
+dependencies = [
+ "starbase_sandbox",
 ]
 
 [[package]]
@@ -5700,14 +5708,17 @@ dependencies = [
 name = "moon_workspace"
 version = "0.0.1"
 dependencies = [
+ "criterion2",
  "daggy",
  "miette 7.6.0",
+ "moon_bench_utils",
  "moon_cache",
  "moon_common",
  "moon_config",
  "moon_env_var",
  "moon_extension_plugin",
  "moon_feature_flags",
+ "moon_graph_utils",
  "moon_hash",
  "moon_pdk_api",
  "moon_project",
@@ -5717,15 +5728,19 @@ dependencies = [
  "moon_task",
  "moon_task_builder",
  "moon_task_graph",
+ "moon_test_utils2",
  "moon_toolchain_plugin",
  "moon_vcs",
  "moon_workspace_graph",
+ "num_cpus",
  "petgraph",
  "proto_core",
  "rustc-hash",
  "serde",
+ "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
+ "tokio",
  "tracing",
 ]
 

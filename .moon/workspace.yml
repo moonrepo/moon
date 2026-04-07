@@ -24,6 +24,7 @@ pipeline:
 
 experiments:
   asyncAffectedTracking: true
+  asyncGraphBuilding: true
 
 vcs:
   defaultBranch: 'master'

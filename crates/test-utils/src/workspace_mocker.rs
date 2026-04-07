@@ -401,23 +401,23 @@ impl WorkspaceMocker {
         )
     }
 
-    pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext<'_> {
+    pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext {
         WorkspaceBuilderContext {
-            config_loader: &self.config_loader,
+            config_loader: self.config_loader.clone(),
             enabled_toolchains: self.toolchains_config.get_enabled(),
-            extensions_config: &self.extensions_config,
+            extensions_config: Arc::new(self.extensions_config.clone()),
             extension_registry: Arc::new(self.mock_extension_registry()),
-            inherited_tasks: &self.inherited_tasks,
-            toolchains_config: &self.toolchains_config,
+            inherited_tasks: Arc::new(self.inherited_tasks.clone()),
+            toolchains_config: Arc::new(self.toolchains_config.clone()),
             toolchain_registry: Arc::new(self.mock_toolchain_registry()),
             vcs: if self.workspace_root.join(".git").exists() {
                 Some(Arc::new(self.mock_vcs_adapter()))
             } else {
                 None
             },
-            working_dir: &self.working_dir,
-            workspace_config: &self.workspace_config,
-            workspace_root: &self.workspace_root,
+            working_dir: self.working_dir.clone(),
+            workspace_config: Arc::new(self.workspace_config.clone()),
+            workspace_root: self.workspace_root.clone(),
         }
     }
 
@@ -436,13 +436,62 @@ impl WorkspaceMocker {
 
     pub async fn mock_workspace_graph_with_options(
         &self,
-        mut options: WorkspaceMockOptions<'_>,
+        mut options: WorkspaceMockOptions,
     ) -> WorkspaceGraph {
         let context = options
             .context
             .take()
             .unwrap_or_else(|| self.mock_workspace_builder_context());
 
+        // let workspace_graph = if options.sync {
+        //     self.build_workspace_sync(context, &options).await
+        // } else {
+        //     self.build_workspace_async(context, &options).await
+        // };
+
+        let workspace_graph = self.build_workspace_sync(context, &options).await;
+
+        if options.ids.is_empty() {
+            workspace_graph.projects.get_all().unwrap();
+        } else {
+            for id in &options.ids {
+                workspace_graph.projects.get(id).unwrap();
+            }
+        }
+
+        workspace_graph
+    }
+
+    #[allow(dead_code)]
+    async fn build_workspace_async(
+        &self,
+        context: WorkspaceBuilderContext,
+        options: &WorkspaceMockOptions,
+    ) -> WorkspaceGraph {
+        let mut builder = match &options.cache {
+            Some(engine) => WorkspaceBuilderAsync::new_with_cache(context, engine)
+                .await
+                .unwrap(),
+            None => WorkspaceBuilderAsync::new(context).await.unwrap(),
+        };
+
+        if options.ids.is_empty() {
+            builder.load_graphs().await.unwrap();
+        } else {
+            builder
+                .load_graphs_for(options.ids.iter().map(Id::raw).collect())
+                .await
+                .unwrap();
+        }
+
+        builder.build().await.unwrap()
+    }
+
+    async fn build_workspace_sync(
+        &self,
+        context: WorkspaceBuilderContext,
+        options: &WorkspaceMockOptions,
+    ) -> WorkspaceGraph {
         let mut builder = match &options.cache {
             Some(engine) => WorkspaceBuilder::new_with_cache(context, engine)
                 .await
@@ -459,24 +508,14 @@ impl WorkspaceMocker {
         }
 
         builder.load_tasks().await.unwrap();
-
-        let workspace_graph = builder.build().await.unwrap();
-
-        if options.ids.is_empty() {
-            workspace_graph.projects.get_all().unwrap();
-        } else {
-            for id in &options.ids {
-                workspace_graph.projects.get(id).unwrap();
-            }
-        }
-
-        workspace_graph
+        builder.build().await.unwrap()
     }
 }
 
 #[derive(Default)]
-pub struct WorkspaceMockOptions<'l> {
+pub struct WorkspaceMockOptions {
     pub cache: Option<CacheEngine>,
-    pub context: Option<WorkspaceBuilderContext<'l>>,
+    pub context: Option<WorkspaceBuilderContext>,
     pub ids: Vec<String>,
+    pub sync: bool,
 }

@@ -177,7 +177,7 @@ impl ExtensionRegistry {
                 let input = input_factory(self, &extension);
                 let future = output_factory(extension.clone(), input);
 
-                futures.push_back(Box::pin(async move {
+                futures.push_back(tokio::spawn(Box::pin(async move {
                     let result = future.await;
 
                     operation.finish_with_result(&result);
@@ -188,12 +188,12 @@ impl ExtensionRegistry {
                         output: result?,
                         plugin: extension,
                     })
-                }));
+                })));
             }
         }
 
         while let Some(result) = futures.next().await {
-            results.push(result?);
+            results.push(result.into_diagnostic()??);
         }
 
         Ok(results)

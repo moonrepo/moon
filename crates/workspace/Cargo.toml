@@ -8,6 +8,10 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
+[[bench]]
+name = "graphs"
+harness = false
+
 [dependencies]
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
@@ -15,6 +19,7 @@ moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_feature_flags = { path = "../feature-flags" }
+moon_graph_utils = { path = "../graph-utils" }
 moon_hash = { path = "../hash" }
 moon_pdk_api = { path = "../pdk-api" }
 moon_project = { path = "../project" }
@@ -30,12 +35,21 @@ moon_workspace_graph = { path = "../workspace-graph" }
 proto_core = { workspace = true }
 daggy = { workspace = true }
 miette = { workspace = true }
+num_cpus = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+moon_bench_utils = { path = "../bench-utils" }
+moon_test_utils2 = { path = "../test-utils" }
+criterion2 = { workspace = true }
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }
 
 [lints]
 workspace = true

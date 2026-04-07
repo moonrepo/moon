@@ -131,7 +131,7 @@ pub async fn create_progress_loader(
     let reporter_clone = OwnedOrShared::Shared(reporter.clone());
     let message = message.as_ref().to_owned();
 
-    let handle = tokio::task::spawn(async move {
+    let handle = tokio::spawn(async move {
         console
             .render_prompt(element! {
                 Progress(

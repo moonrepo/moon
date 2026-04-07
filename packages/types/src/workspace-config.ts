@@ -149,6 +149,8 @@ export interface DockerConfig {
 export interface ExperimentsConfig {
 	/** Track and determine affected projects and tasks asynchronously. */
 	asyncAffectedTracking: boolean;
+	/** Build the project and task graphs asynchronously. */
+	asyncGraphBuilding: boolean;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -770,6 +772,8 @@ export interface PartialDockerConfig {
 export interface PartialExperimentsConfig {
 	/** Track and determine affected projects and tasks asynchronously. */
 	asyncAffectedTracking?: boolean | null;
+	/** Build the project and task graphs asynchronously. */
+	asyncGraphBuilding?: boolean | null;
 }
 
 /** Configures the generator for scaffolding from templates. */

@@ -430,6 +430,11 @@
           "title": "asyncAffectedTracking",
           "description": "Track and determine affected projects and tasks asynchronously.",
           "type": "boolean"
+        },
+        "asyncGraphBuilding": {
+          "title": "asyncGraphBuilding",
+          "description": "Build the project and task graphs asynchronously.",
+          "type": "boolean"
         }
       },
       "additionalProperties": false

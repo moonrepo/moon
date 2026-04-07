@@ -22,5 +22,6 @@ export interface Graph<Node, Edge> {
 }
 
 export interface GraphContainer<Node, Edge> {
-	graph: Graph<Node, Edge>;
+	graph: Graph<number, Edge>;
+	data: Record<number, Node>;
 }

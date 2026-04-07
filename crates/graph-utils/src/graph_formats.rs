@@ -3,6 +3,7 @@ use moon_common::is_test_env;
 use petgraph::dot::{Config, Dot};
 use petgraph::graph::DiGraph;
 use petgraph::visit::{EdgeRef, NodeRef};
+use rustc_hash::FxHashMap;
 use serde::Serialize;
 use starbase_utils::json;
 use std::fmt::{Debug, Display};
@@ -10,8 +11,8 @@ use std::hash::Hash;
 
 #[derive(Serialize)]
 pub struct GraphCache<'graph, N, E> {
-    graph: &'graph DiGraph<N, E>,
-    // data: &'graph FxHashMap<K, N>,
+    graph: &'graph DiGraph<usize, E>,
+    data: FxHashMap<usize, &'graph N>,
 }
 
 fn should_use_compact_view() -> bool {
@@ -61,7 +62,7 @@ pub trait GraphToJson<N: Serialize, E: Serialize, K>: GraphData<N, E, K> {
         Ok(json::format(
             &GraphCache {
                 graph: self.get_graph(),
-                // data: self.get_nodes(),
+                data: self.get_nodes(),
             },
             pretty,
         )?)

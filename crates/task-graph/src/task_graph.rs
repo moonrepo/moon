@@ -176,6 +176,13 @@ impl GraphData<Task, TaskDependencyType, Target> for TaskGraph {
         self.graph.graph()
     }
 
+    fn get_nodes(&self) -> FxHashMap<usize, &Task> {
+        self.nodes
+            .values()
+            .map(|node| (node.index.index(), &node.task))
+            .collect()
+    }
+
     fn get_node_by_index(&self, index: usize) -> &Task {
         &self
             .nodes

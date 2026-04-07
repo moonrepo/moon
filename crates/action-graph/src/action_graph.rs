@@ -147,6 +147,13 @@ impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
         self.graph.graph()
     }
 
+    fn get_nodes(&self) -> FxHashMap<usize, &ActionNode> {
+        self.nodes
+            .iter()
+            .map(|(index, node)| (*index, node))
+            .collect()
+    }
+
     fn get_node_by_index(&self, index: usize) -> &ActionNode {
         self.nodes.get(&index).unwrap()
     }

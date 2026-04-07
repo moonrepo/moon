@@ -6,6 +6,7 @@ use std::hash::Hash;
 
 pub trait GraphData<N, E, K> {
     fn get_graph(&self) -> &DiGraph<usize, E>;
+    fn get_nodes(&self) -> FxHashMap<usize, &N>;
     fn get_node_by_index(&self, index: usize) -> &N;
     fn get_node_key(&self, node: &N) -> K;
 }

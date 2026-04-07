@@ -264,6 +264,13 @@ impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
         self.graph.graph()
     }
 
+    fn get_nodes(&self) -> FxHashMap<usize, &Project> {
+        self.nodes
+            .values()
+            .map(|node| (node.index.index(), &node.project))
+            .collect()
+    }
+
     fn get_node_by_index(&self, index: usize) -> &Project {
         &self
             .nodes

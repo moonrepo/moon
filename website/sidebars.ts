@@ -227,6 +227,7 @@ const sidebars: SidebarsConfig = {
 		'guides/ci',
 		'guides/codegen',
 		'guides/codeowners',
+		'guides/daemon',
 		'guides/debug-task',
 		'guides/docker',
 		'guides/exec-plan',

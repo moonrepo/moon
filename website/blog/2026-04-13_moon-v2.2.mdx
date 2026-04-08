@@ -1,6 +1,6 @@
 ---
 slug: moon-v2.2
-title: moon v2.2
+title: moon v2.2 - Daemon, async graph building, async affected tracking, and more
 authors: [milesj]
 tags: []
 # image: ./img/moon/v2.1.png
@@ -9,6 +9,37 @@ tags: []
 TODO
 
 <!--truncate-->
+
+## New unstable daemon
+
+Continuing the theme of performance, this release introduces an unstable background daemon. The
+daemon is a long-lived server process that keeps the workspace graph hot in memory and watches for
+file system changes, rebuilding the graph asynchronously only when configuration files change. This
+means that after the first `moon` invocation, subsequent commands can skip graph building entirely
+and connect to the running daemon instead.
+
+To try it out by enabling it in your workspace configuration:
+
+```yaml title=".moon/workspace.yml"
+unstable_daemon: true
+```
+
+Or test it with an environment variable first:
+
+```shell
+MOON_DAEMON=true moon run :build
+```
+
+When enabled, the daemon starts automatically on the first CLI command and stays running in the
+background. You can manage it with [`moon daemon start`](/docs/commands/daemon/start),
+[`stop`](/docs/commands/daemon/stop), [`restart`](/docs/commands/daemon/restart),
+[`status`](/docs/commands/daemon/status), and [`logs`](/docs/commands/daemon/logs) commands. If the
+daemon is unavailable for any reason, the CLI falls back to building graphs in-process — so there's
+no risk in enabling it.
+
+Since this is unstable, behavior and configuration may change in future releases. Check out the
+[daemon guide](/docs/guides/daemon) for full details on how it works, what files are watched, and
+troubleshooting tips.
 
 ## New experimental async graph building
 
@@ -197,13 +228,14 @@ parallelize the work.
     <td>+146%</td>
   </tr>
 </table>
-​
 
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.2.0) for a full list of
 changes.
 
+- Greatly reduced memory footprint of the action, project, and task graphs. Nodes in the graph are
+  now integers instead of objects.
 - Improved plugin registry performance and memory consumption when loading plugins.
 - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
 - Improved performance of task output archiving, by no longer blocking the main thread pool.

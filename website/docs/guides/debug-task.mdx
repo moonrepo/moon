@@ -2,10 +2,44 @@
 title: Debugging a task
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 Running [tasks](../concepts/task) is the most common way to interact with moon, so what do you do
 when your task isn't working as expected? Diagnose it of course! Diagnosing the root cause of a
 broken task can be quite daunting, but do not fret, as the following steps will help guide you in
 this endeavor.
+
+## Using an AI skill<VersionLabel version="2.2.0" />
+
+We provide an AI agent skill called `debug-task` that helps you systematically diagnose failing or
+misbehaving moon tasks. If you've ever spent time hunting down why a task is producing stale
+results, getting unexpected cache misses, or behaving differently in CI, this skill is for you.
+
+To install this skill, run the following command:
+
+```shell
+$ npx skills add moonrepo/moon --skill debug-task
+```
+
+The skill walks you through a 5-step diagnostic workflow:
+
+1. Inspect the resolved task configuration (after inheritance merging)
+2. Run with maximum verbosity to see exactly what moon is doing
+3. Inspect cache state and hash manifests
+4. Match symptoms to root causes using a built-in decision tree
+5. Validate that the fix actually resolves the issue
+
+It covers 15+ specific problem types across cache issues, configuration mistakes, execution
+problems, and CI vs local discrepancies. Most issues resolve by step 3, with deeper reference
+material available on demand.
+
+To use it, simply describe your task problem in Claude Code, Codex, OpenCode, or another compatible
+AI agent — mention the task target, what you expected, and what actually happened. The skill will
+take it from there.
+
+```shell
+/debug-task Help me debug why the `app:build` task is not being cached
+```
 
 ## Verify configuration
 

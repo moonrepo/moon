@@ -68,7 +68,7 @@ The following directories are always ignored by the watcher:
 
 Changes to the following files and directories trigger an asynchronous graph rebuild:
 
-- [`.prototools`](/proto/config) — reloads toolchain configuration
+- [`.prototools`](../proto/config) — reloads toolchain configuration
 - `.moon/workspace.*` — reloads workspace settings
 - `.moon/toolchains.*` — reloads toolchain plugins
 - `.moon/extensions.*` — reloads extension plugins
@@ -140,8 +140,9 @@ log file is located at `.moon/cache/daemon/server.log` and contains detailed tra
 
 ### The daemon won't start
 
-- Verify the daemon is enabled: check that `unstable_daemon: true` is set in `.moon/workspace.yml`,
-  or that the `MOON_DAEMON` environment variable is set.
+- Verify the daemon is enabled: check that `unstable_daemon: true` is set in
+  [`.moon/workspace.yml`](../config/workspace), or that the `MOON_DAEMON` environment variable is
+  set.
 - Check if a daemon is already running with [`moon daemon status`](../commands/daemon/status).
 - If the daemon crashed previously, a stale PID file may be blocking startup. Delete
   `.moon/cache/daemon` and try again.

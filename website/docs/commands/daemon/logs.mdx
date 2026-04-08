@@ -1,0 +1,28 @@
+---
+title: daemon logs
+sidebar_label: logs
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon logs` command tails the daemon's log file in real time, streaming new entries as
+they are written. The daemon must be running for this command to work.
+
+```shell
+$ moon daemon logs
+```
+
+The log file is located at `.moon/cache/daemon/server.log` and contains detailed trace-level output,
+including file watcher events, graph rebuilds, and RPC requests.
+
+:::info
+
+On macOS/Linux this command uses `tail -f` under the hood. On Windows it uses PowerShell's
+`Get-Content -Wait`.
+
+:::
+
+If the daemon is not running or the log file does not exist, a warning is displayed and no action is
+taken.

@@ -1,0 +1,29 @@
+---
+title: daemon restart
+sidebar_label: restart
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon restart` command will stop the currently running daemon process and start a new
+one. This is useful after manual configuration changes, when the cached state seems stale, or after
+upgrading moon to a new version.
+
+```shell
+$ moon daemon restart
+```
+
+:::caution
+
+The daemon must be enabled in your [workspace configuration](../../config/workspace) before it can
+be restarted. If the `daemon` setting is not enabled, this command will display a warning and exit.
+
+:::
+
+:::info
+
+View the official [daemon guide](../../guides/daemon) for more information on how the daemon works.
+
+:::

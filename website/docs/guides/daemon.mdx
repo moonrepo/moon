@@ -82,9 +82,9 @@ connections while a rebuild is in progress.
 
 ## Managing the daemon
 
-The `moon daemon` command provides subcommands for managing the daemon's lifecycle. In most cases
-you won't need these — the daemon starts automatically and stays out of the way — but they're useful
-for debugging or manual control.
+The [`moon daemon`](../commands/daemon) command provides subcommands for managing the daemon's
+lifecycle. In most cases you won't need these — the daemon starts automatically and stays out of the
+way — but they're useful for debugging or manual control.
 
 ### Starting
 
@@ -94,7 +94,8 @@ $ moon daemon start
 
 Starts the daemon if it's not already running. If a daemon is already running for this workspace,
 the existing process is reused. You typically don't need to run this manually, as the daemon
-auto-starts with any `moon` command when enabled.
+auto-starts with any `moon` command when enabled. See
+[`moon daemon start`](../commands/daemon/start).
 
 ### Stopping
 
@@ -103,7 +104,8 @@ $ moon daemon stop
 ```
 
 Stops the daemon gracefully. If the daemon does not shut down within a few seconds, it will be
-forcefully killed. Daemon files (PID, socket) are cleaned up automatically.
+forcefully killed. Daemon files (PID, socket) are cleaned up automatically. See
+[`moon daemon stop`](../commands/daemon/stop).
 
 ### Restarting
 
@@ -112,7 +114,7 @@ $ moon daemon restart
 ```
 
 Stops the running daemon and starts a new one. This is useful after manual configuration changes, or
-if the daemon's cached state seems stale.
+if the daemon's cached state seems stale. See [`moon daemon restart`](../commands/daemon/restart).
 
 ### Checking status
 
@@ -121,7 +123,8 @@ $ moon daemon status
 ```
 
 Displays information about the running daemon, including its process ID, uptime, socket/pipe
-endpoint, and file paths for the PID and log files.
+endpoint, and file paths for the PID and log files. See
+[`moon daemon status`](../commands/daemon/status).
 
 ### Viewing logs
 
@@ -130,7 +133,8 @@ $ moon daemon logs
 ```
 
 Tails the daemon's log file in real time. The daemon must be running for this command to work. The
-log file is located at `.moon/cache/daemon/server.log` and contains detailed trace-level output.
+log file is located at `.moon/cache/daemon/server.log` and contains detailed trace-level output. See
+[`moon daemon logs`](../commands/daemon/logs).
 
 ## Troubleshooting
 
@@ -138,25 +142,26 @@ log file is located at `.moon/cache/daemon/server.log` and contains detailed tra
 
 - Verify the daemon is enabled: check that `unstable_daemon: true` is set in `.moon/workspace.yml`,
   or that the `MOON_DAEMON` environment variable is set.
-- Check if a daemon is already running with `moon daemon status`.
+- Check if a daemon is already running with [`moon daemon status`](../commands/daemon/status).
 - If the daemon crashed previously, a stale PID file may be blocking startup. Delete
   `.moon/cache/daemon` and try again.
 
 ### The graph seems stale
 
 If tasks or projects appear to be missing or outdated despite config changes, the file watcher may
-have missed an event. Run `moon daemon restart` to force a fresh graph build.
+have missed an event. Run [`moon daemon restart`](../commands/daemon/restart) to force a fresh graph
+build.
 
 ### Where are the logs?
 
-The daemon writes detailed logs to `.moon/cache/daemon/server.log`. Use `moon daemon logs` to tail
-this file, or open it directly in an editor.
+The daemon writes detailed logs to `.moon/cache/daemon/server.log`. Use
+[`moon daemon logs`](../commands/daemon/logs) to tail this file, or open it directly in an editor.
 
 ### After upgrading moon
 
-After upgrading moon to a new version, restart the daemon with `moon daemon restart`. A running
-daemon from a previous version may behave unexpectedly or return stale data. We'll attempt to
-automate this when applicable.
+After upgrading moon to a new version, restart the daemon with
+[`moon daemon restart`](../commands/daemon/restart). A running daemon from a previous version may
+behave unexpectedly or return stale data. We'll attempt to automate this when applicable.
 
 ### CI environments
 

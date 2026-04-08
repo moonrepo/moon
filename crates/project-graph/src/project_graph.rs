@@ -7,85 +7,61 @@ use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
 use petgraph::graph::{DiGraph, NodeIndex};
-use rustc_hash::{FxHashMap, FxHashSet};
-use scc::HashMap;
+use rustc_hash::FxHashMap;
+use scc::hash_map::Entry;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::Arc;
 use tracing::{debug, instrument};
 
-pub type ProjectGraphType = Dag<Project, DependencyScope>;
-pub type ProjectsCache = FxHashMap<Id, Arc<Project>>;
-
-#[derive(Clone, Debug, Default)]
-pub struct ProjectMetadata {
-    pub aliases: FxHashSet<String>,
-    pub default: bool,
+#[derive(Clone, Debug)]
+pub struct ProjectNode {
     pub index: NodeIndex,
-    pub source: WorkspaceRelativePathBuf,
+    pub project: Project,
 }
 
-impl ProjectMetadata {
-    pub fn new(index: usize) -> Self {
-        ProjectMetadata {
-            index: NodeIndex::new(index),
-            ..ProjectMetadata::default()
-        }
-    }
-}
-
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ProjectGraph {
-    context: GraphExpanderContext,
+    pub context: GraphExpanderContext,
 
-    /// Identifier for the default project.
-    default_id: Option<Id>,
+    /// Map of aliases to project IDs.
+    pub aliases: FxHashMap<String, Id>,
+
+    /// ID of the default project.
+    pub default_id: Option<Id>,
+
+    /// Directed-acyclic graph (DAG) of projects (by index) and their dependencies.
+    pub graph: Dag<NodeIndex, DependencyScope>,
+
+    /// Map of node indexes to project IDs.
+    pub indexes: FxHashMap<NodeIndex, Id>,
+
+    /// Map of project nodes by ID.
+    pub nodes: FxHashMap<Id, ProjectNode>,
 
     /// Cache of file path lookups, mapped by starting path to project ID (as a string).
-    fs_cache: HashMap<PathBuf, Arc<String>>,
+    fs_cache: Arc<scc::HashMap<PathBuf, Arc<String>>>,
 
-    /// Directed-acyclic graph (DAG) of non-expanded projects and their dependencies.
-    graph: ProjectGraphType,
-
-    /// Project metadata, mapped by project ID.
-    metadata: FxHashMap<Id, ProjectMetadata>,
-
-    /// Expanded projects, mapped by project ID.
-    projects: Arc<RwLock<ProjectsCache>>,
+    /// Map of expanded projects by ID.
+    projects: Arc<scc::HashMap<Id, Arc<Project>>>,
 }
 
 impl ProjectGraph {
-    pub fn new(
-        graph: ProjectGraphType,
-        metadata: FxHashMap<Id, ProjectMetadata>,
-        context: GraphExpanderContext,
-    ) -> Self {
+    pub fn new(context: GraphExpanderContext) -> Self {
         debug!("Creating project graph");
 
         Self {
             context,
-            default_id: metadata
-                .iter()
-                .find(|(_, meta)| meta.default)
-                .map(|inner| inner.0.to_owned()),
-            graph,
-            metadata,
-            projects: Arc::new(RwLock::new(FxHashMap::default())),
-            fs_cache: HashMap::new(),
+            ..Default::default()
         }
     }
 
     /// Return a map of aliases to their project IDs. Projects without aliases are omitted.
     pub fn aliases(&self) -> FxHashMap<&str, &Id> {
-        let mut map = FxHashMap::default();
-
-        for (id, metadata) in &self.metadata {
-            for alias in &metadata.aliases {
-                map.insert(alias.as_str(), id);
-            }
-        }
-
-        map
+        self.aliases
+            .iter()
+            .map(|(alias, id)| (alias.as_str(), id))
+            .collect()
     }
 
     /// Return a project with the provided ID or alias from the graph.
@@ -99,12 +75,12 @@ impl ProjectGraph {
     pub fn get_unexpanded(&self, id_or_alias: &str) -> miette::Result<&Project> {
         let id = self.resolve_id(id_or_alias);
 
-        let metadata = self
-            .metadata
+        let node = self
+            .nodes
             .get(&id)
             .ok_or_else(|| ProjectGraphError::UnconfiguredID { id: id.to_string() })?;
 
-        Ok(self.graph.node_weight(metadata.index).unwrap())
+        Ok(&node.project)
     }
 
     /// Return all projects from the graph.
@@ -112,7 +88,7 @@ impl ProjectGraph {
     pub fn get_all(&self) -> miette::Result<Vec<Arc<Project>>> {
         let mut all = vec![];
 
-        for id in self.metadata.keys() {
+        for id in self.nodes.keys() {
             all.push(self.internal_get(id)?);
         }
 
@@ -121,11 +97,7 @@ impl ProjectGraph {
 
     /// Return all unexpanded projects from the graph.
     pub fn get_all_unexpanded(&self) -> Vec<&Project> {
-        self.graph
-            .raw_nodes()
-            .iter()
-            .map(|node| &node.weight)
-            .collect()
+        self.nodes.values().map(|node| &node.project).collect()
     }
 
     /// Return the default project if it has been configured and exists.
@@ -158,9 +130,9 @@ impl ProjectGraph {
 
     /// Return a map of project IDs to their file source paths.
     pub fn sources(&self) -> FxHashMap<&Id, &WorkspaceRelativePathBuf> {
-        self.metadata
+        self.nodes
             .iter()
-            .map(|(id, metadata)| (id, &metadata.source))
+            .map(|(id, node)| (id, &node.project.source))
             .collect()
     }
 
@@ -168,26 +140,30 @@ impl ProjectGraph {
     pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
         let graph = self.to_focused_graph(&project, with_dependents);
-
-        // Copy over metadata
-        let mut metadata = FxHashMap::default();
-
-        for new_index in graph.node_indices() {
-            let project_id = &graph[new_index].id;
-
-            if let Some(old_node) = self.metadata.get(project_id) {
-                let mut new_node = old_node.to_owned();
-                new_node.index = new_index;
-
-                metadata.insert(project_id.to_owned(), new_node);
-            }
-        }
-
-        let mut dag = Dag::new();
         let (nodes, edges) = graph.into_nodes_edges();
 
-        for node in nodes {
-            dag.add_node(node.weight);
+        let mut dag = Dag::with_capacity(nodes.len(), edges.len());
+        let mut indexes = FxHashMap::default();
+        let mut projects = FxHashMap::default();
+
+        // The focused graph has different node inndexes,
+        // so we need to update our internal structures to match
+        for (i, node) in nodes.into_iter().enumerate() {
+            let new_index = NodeIndex::from(i as u32);
+            let old_index = node.weight;
+            let id = &self.indexes[&old_index];
+
+            indexes.insert(new_index, id.to_owned());
+
+            projects.insert(
+                id.to_owned(),
+                ProjectNode {
+                    index: new_index,
+                    project: self.get_node_by_index(&old_index).to_owned(),
+                },
+            );
+
+            dag.add_node(new_index);
         }
 
         for edge in edges {
@@ -195,33 +171,48 @@ impl ProjectGraph {
                 .unwrap();
         }
 
+        let aliases = self
+            .aliases
+            .iter()
+            .filter_map(|(alias, id)| {
+                if projects.contains_key(id) {
+                    Some((alias.to_owned(), id.to_owned()))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
         Ok(Self {
+            aliases,
             context: self.context.clone(),
+            indexes,
             default_id: self.default_id.clone(),
-            fs_cache: HashMap::new(),
+            fs_cache: Arc::clone(&self.fs_cache),
             graph: dag,
-            metadata,
-            projects: self.projects.clone(),
+            nodes: projects,
+            projects: Arc::clone(&self.projects),
         })
     }
 
     fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
         let id = self.resolve_id(id_or_alias);
 
-        if let Some(project) = self.read_cache().get(&id) {
-            return Ok(Arc::clone(project));
-        }
+        let project = match self.projects.entry_sync(id) {
+            Entry::Occupied(entry) => Arc::clone(entry.get()),
+            Entry::Vacant(entry) => {
+                let expander = ProjectExpander::new(ProjectExpanderContext {
+                    aliases: self.aliases(),
+                    workspace_root: &self.context.workspace_root,
+                });
 
-        let mut cache = self.write_cache();
+                let project = Arc::new(expander.expand(self.get_unexpanded(entry.key())?)?);
 
-        let expander = ProjectExpander::new(ProjectExpanderContext {
-            aliases: self.aliases(),
-            workspace_root: &self.context.workspace_root,
-        });
+                entry.insert_entry(Arc::clone(&project));
 
-        let project = Arc::new(expander.expand(self.get_unexpanded(&id)?)?);
-
-        cache.insert(id.clone(), Arc::clone(&project));
+                project
+            }
+        };
 
         Ok(project)
     }
@@ -229,81 +220,77 @@ impl ProjectGraph {
     fn internal_search(&self, search: &Path) -> miette::Result<Arc<String>> {
         let cache_key = search.to_path_buf();
 
-        if let Some(cache) = self.fs_cache.read_sync(&cache_key, |_, v| v.clone()) {
-            return Ok(cache);
-        }
+        let cache = match self.fs_cache.entry_sync(cache_key) {
+            Entry::Occupied(entry) => Arc::clone(entry.get()),
+            Entry::Vacant(entry) => {
+                // Find the deepest matching path in case sub-projects are being used
+                let mut remaining_length = 1000; // Start with a really fake number
+                let mut possible_id = String::new();
 
-        // Find the deepest matching path in case sub-projects are being used
-        let mut remaining_length = 1000; // Start with a really fake number
-        let mut possible_id = String::new();
+                for (id, node) in &self.nodes {
+                    if !search.starts_with(node.project.source.as_str()) {
+                        continue;
+                    }
 
-        for (id, metadata) in &self.metadata {
-            if !search.starts_with(metadata.source.as_str()) {
-                continue;
-            }
+                    if let Ok(diff) = search.relative_to(node.project.source.as_str()) {
+                        let diff_comps = diff.components().count();
 
-            if let Ok(diff) = search.relative_to(metadata.source.as_str()) {
-                let diff_comps = diff.components().count();
+                        // Exact match, abort
+                        if diff_comps == 0 {
+                            possible_id = id.as_str().to_owned();
+                            break;
+                        }
 
-                // Exact match, abort
-                if diff_comps == 0 {
-                    possible_id = id.as_str().to_owned();
-                    break;
+                        if diff_comps < remaining_length {
+                            remaining_length = diff_comps;
+                            possible_id = id.as_str().to_owned();
+                        }
+                    }
                 }
 
-                if diff_comps < remaining_length {
-                    remaining_length = diff_comps;
-                    possible_id = id.as_str().to_owned();
+                if possible_id.is_empty() {
+                    return Err(ProjectGraphError::MissingFromPath {
+                        dir: search.to_path_buf(),
+                    }
+                    .into());
                 }
+
+                let id = Arc::new(possible_id);
+
+                entry.insert_entry(Arc::clone(&id));
+
+                id
             }
-        }
+        };
 
-        if possible_id.is_empty() {
-            return Err(ProjectGraphError::MissingFromPath {
-                dir: search.to_path_buf(),
-            }
-            .into());
-        }
-
-        let id = Arc::new(possible_id);
-        let _ = self.fs_cache.insert_sync(cache_key, Arc::clone(&id));
-
-        Ok(id)
+        Ok(cache)
     }
 
     pub fn resolve_id(&self, id_or_alias: &str) -> Id {
-        Id::raw(if self.metadata.contains_key(id_or_alias) {
+        Id::raw(if self.nodes.contains_key(id_or_alias) {
             id_or_alias
+        } else if let Some(id) = self.aliases.get(id_or_alias) {
+            id.as_str()
         } else {
-            self.metadata
-                .iter()
-                .find_map(|(id, metadata)| {
-                    if metadata.aliases.contains(id_or_alias) {
-                        Some(id.as_str())
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or(id_or_alias)
+            id_or_alias
         })
-    }
-
-    fn read_cache(&self) -> RwLockReadGuard<'_, ProjectsCache> {
-        self.projects
-            .read()
-            .expect("Failed to acquire read access to project graph!")
-    }
-
-    fn write_cache(&self) -> RwLockWriteGuard<'_, ProjectsCache> {
-        self.projects
-            .write()
-            .expect("Failed to acquire write access to project graph!")
     }
 }
 
 impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
-    fn get_graph(&self) -> &DiGraph<Project, DependencyScope> {
+    fn get_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
         self.graph.graph()
+    }
+
+    fn get_nodes(&self) -> FxHashMap<NodeIndex, &Project> {
+        self.nodes
+            .values()
+            .map(|node| (node.index, &node.project))
+            .collect()
+    }
+
+    fn get_node_by_index(&self, index: &NodeIndex) -> &Project {
+        &self.nodes[&self.indexes[index]].project
     }
 
     fn get_node_key(&self, node: &Project) -> Id {
@@ -313,7 +300,7 @@ impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
 
 impl GraphConnections<Project, DependencyScope, Id> for ProjectGraph {
     fn get_node_index(&self, node: &Project) -> NodeIndex {
-        self.metadata.get(&node.id).unwrap().index
+        self.nodes[&node.id].index
     }
 }
 

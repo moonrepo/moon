@@ -5502,6 +5502,7 @@ dependencies = [
  "moon_task_expander",
  "petgraph",
  "rustc-hash",
+ "scc 3.6.12",
  "thiserror 2.0.18",
  "tracing",
 ]

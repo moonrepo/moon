@@ -21,6 +21,7 @@ daggy = { workspace = true }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
+scc = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 

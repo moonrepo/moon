@@ -5,20 +5,22 @@ use moon_action::ActionNode;
 use moon_config::TaskDependencyType;
 use moon_graph_utils::*;
 use petgraph::prelude::*;
+use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use tracing::debug;
 
-pub type ActionGraphType = Dag<ActionNode, TaskDependencyType>;
+pub type ActionGraphType = Dag<NodeIndex, TaskDependencyType>;
 
 pub struct ActionGraph {
     graph: ActionGraphType,
+    nodes: FxHashMap<NodeIndex, ActionNode>,
 }
 
 impl ActionGraph {
-    pub fn new(graph: ActionGraphType) -> Self {
+    pub fn new(graph: ActionGraphType, nodes: FxHashMap<NodeIndex, ActionNode>) -> Self {
         debug!("Creating action graph");
 
-        ActionGraph { graph }
+        ActionGraph { graph, nodes }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -29,22 +31,20 @@ impl ActionGraph {
         &self.graph
     }
 
-    pub fn get_nodes(&self) -> Vec<&ActionNode> {
-        self.graph.graph().node_weights().collect()
-    }
-
-    pub fn get_node_count(&self) -> usize {
-        self.graph.node_count()
+    pub fn get_inner_nodes(&self) -> &FxHashMap<NodeIndex, ActionNode> {
+        &self.nodes
     }
 
     pub fn get_node_from_index(&self, index: &NodeIndex) -> Option<&ActionNode> {
-        self.graph.node_weight(*index)
+        self.nodes.get(index)
     }
 
-    pub fn labeled_graph(&self) -> DiGraph<String, String> {
-        self.graph
-            .map(|_, n| n.label(), |_, _| String::new())
-            .into_graph()
+    pub fn get_nodes(&self) -> Vec<&ActionNode> {
+        self.nodes.values().collect()
+    }
+
+    pub fn get_node_count(&self) -> usize {
+        self.nodes.len()
     }
 
     pub fn group_priorities(&self, topo_indices: Vec<NodeIndex>) -> BTreeMap<u8, Vec<NodeIndex>> {
@@ -56,9 +56,8 @@ impl ActionGraph {
         let mut normal = vec![];
         let mut low = vec![];
 
-        for index in topo_indices {
-            let node = self.graph.node_weight(index).unwrap();
-            let node_index = index.index();
+        for node_index in topo_indices {
+            let node = self.get_node_by_index(&node_index);
             let priority = node.get_priority();
 
             match priority {
@@ -69,7 +68,10 @@ impl ActionGraph {
                 _ => {}
             };
 
-            groups.entry(priority).or_insert_with(Vec::new).push(index);
+            groups
+                .entry(priority)
+                .or_insert_with(Vec::new)
+                .push(node_index);
         }
 
         debug!(
@@ -99,7 +101,7 @@ impl ActionGraph {
                     .map(|index| {
                         self.graph
                             .node_weight(index)
-                            .map(|n| n.label())
+                            .map(|n| self.get_node_by_index(n).label())
                             .unwrap_or_else(|| "(unknown)".into())
                     })
                     .collect::<Vec<_>>()
@@ -125,7 +127,7 @@ impl ActionGraph {
             Err(cycle) => Err(ActionGraphError::CycleDetected(
                 self.graph
                     .node_weight(cycle.node_id())
-                    .map(|n| n.label())
+                    .map(|n| self.get_node_by_index(n).label())
                     .unwrap_or_else(|| "(unknown)".into()),
             )
             .into()),
@@ -134,14 +136,39 @@ impl ActionGraph {
 }
 
 impl GraphData<ActionNode, TaskDependencyType, String> for ActionGraph {
-    fn get_graph(&self) -> &DiGraph<ActionNode, TaskDependencyType> {
+    fn get_graph(&self) -> &DiGraph<NodeIndex, TaskDependencyType> {
         self.graph.graph()
+    }
+
+    fn get_nodes(&self) -> FxHashMap<NodeIndex, &ActionNode> {
+        self.nodes
+            .iter()
+            .map(|(index, node)| (*index, node))
+            .collect()
+    }
+
+    fn get_node_by_index(&self, index: &NodeIndex) -> &ActionNode {
+        &self.nodes[index]
     }
 
     fn get_node_key(&self, node: &ActionNode) -> String {
         node.label()
     }
 }
+
+impl GraphConnections<ActionNode, TaskDependencyType, String> for ActionGraph {
+    fn get_node_index(&self, node: &ActionNode) -> NodeIndex {
+        for (index, n) in &self.nodes {
+            if n == node {
+                return *index;
+            }
+        }
+
+        panic!("Action node not found in graph!");
+    }
+}
+
+impl GraphConversions<ActionNode, TaskDependencyType, String> for ActionGraph {}
 
 impl GraphToDot<ActionNode, TaskDependencyType, String> for ActionGraph {}
 

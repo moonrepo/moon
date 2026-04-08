@@ -2,12 +2,14 @@ use crate::projects_builder::ProjectBuildData;
 use daggy::Dag;
 use moon_common::Id;
 use moon_config::TaskDependencyType;
-use moon_graph_utils::NodeState;
+use moon_graph_utils::{GraphExpanderContext, NodeState};
+use moon_project_graph::ProjectGraph;
 use moon_task::{Target, Task, TaskOptions};
-use moon_task_graph::TaskGraphError;
+use moon_task_graph::{TaskGraph, TaskGraphError, TaskNode};
 use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tracing::instrument;
 
 pub type TaskDag = Dag<NodeState<Task>, TaskDependencyType>;
@@ -108,5 +110,38 @@ impl WorkspaceTasksBuilder {
         }
 
         Ok(())
+    }
+
+    pub fn finalize(
+        self,
+        context: GraphExpanderContext,
+        project_graph: Arc<ProjectGraph>,
+    ) -> TaskGraph {
+        let mut task_graph = TaskGraph::new(context, project_graph);
+
+        // TODO switch to filter_map_owned
+        task_graph.graph = self.graph.filter_map(
+            |ni, node| match node {
+                NodeState::Loading => None,
+                NodeState::Loaded(task) => {
+                    task_graph.nodes.insert(
+                        task.target.clone(),
+                        TaskNode {
+                            index: ni,
+                            task: task.to_owned(),
+                        },
+                    );
+
+                    Some(ni)
+                }
+            },
+            |_, edge| Some(*edge),
+        );
+
+        for (target, index) in self.targets_to_indexes {
+            task_graph.indexes.insert(index, target);
+        }
+
+        task_graph
     }
 }

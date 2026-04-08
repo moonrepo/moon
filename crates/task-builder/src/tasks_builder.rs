@@ -581,6 +581,7 @@ impl<'proj> TasksBuilder<'proj> {
 
                 task.command = TaskArg::new_unquoted("noop");
                 task.args.clear();
+                task.outputs.clear();
                 task.script = None;
             }
         }

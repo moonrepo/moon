@@ -1,13 +1,15 @@
 use crate::job_context::JobContext;
+use moon_action::ActionNode;
 use moon_action_graph::{ActionGraph, ActionGraphType};
 use petgraph::prelude::*;
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use tracing::trace;
 
 pub struct JobDispatcher<'graph> {
     context: JobContext,
     graph: &'graph ActionGraphType,
+    nodes: &'graph FxHashMap<NodeIndex, ActionNode>,
     groups: BTreeMap<u8, Vec<NodeIndex>>, // topo
     visited: FxHashSet<NodeIndex>,
 }
@@ -21,6 +23,7 @@ impl<'graph> JobDispatcher<'graph> {
         Self {
             context,
             graph: action_graph.get_inner_graph(),
+            nodes: action_graph.get_inner_nodes(),
             groups,
             visited: FxHashSet::default(),
         }
@@ -86,7 +89,7 @@ impl JobDispatcher<'_> {
                         continue;
                     };
 
-                    if let Some(node) = self.graph.node_weight(index) {
+                    if let Some(node) = self.nodes.get(&index) {
                         let id = node.get_id();
 
                         // If the same exact action is currently running,

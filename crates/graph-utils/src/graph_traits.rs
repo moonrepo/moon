@@ -5,7 +5,9 @@ use std::fmt::Display;
 use std::hash::Hash;
 
 pub trait GraphData<N, E, K> {
-    fn get_graph(&self) -> &DiGraph<N, E>;
+    fn get_graph(&self) -> &DiGraph<NodeIndex, E>;
+    fn get_nodes(&self) -> FxHashMap<NodeIndex, &N>;
+    fn get_node_by_index(&self, index: &NodeIndex) -> &N;
     fn get_node_key(&self, node: &N) -> K;
 }
 
@@ -41,7 +43,15 @@ fn traverse_deep<N, E, K: Hash + Eq, G: GraphConnections<N, E, K> + ?Sized>(
 
         let dep_nodes = graph
             .node_weights()
-            .filter(|weight| dep_keys.contains(&graph_impl.get_node_key(weight)))
+            .filter_map(|index| {
+                let dep_node = graph_impl.get_node_by_index(index);
+
+                if dep_keys.contains(&graph_impl.get_node_key(dep_node)) {
+                    Some(dep_node)
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
 
         queue.extend(dep_nodes);
@@ -73,7 +83,7 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
 
         graph
             .neighbors_directed(self.get_node_index(node), Direction::Outgoing)
-            .map(|idx| self.get_node_key(graph.node_weight(idx).unwrap()))
+            .map(|idx| self.get_node_key(self.get_node_by_index(&idx)))
             .collect()
     }
 
@@ -88,7 +98,7 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
 
         graph
             .neighbors_directed(self.get_node_index(node), Direction::Incoming)
-            .map(|idx| self.get_node_key(graph.node_weight(idx).unwrap()))
+            .map(|idx| self.get_node_key(self.get_node_by_index(&idx)))
             .collect()
     }
 
@@ -102,7 +112,7 @@ pub trait GraphConnections<N, E, K: Hash + Eq>: GraphData<N, E, K> {
         self.get_graph()
             .raw_nodes()
             .iter()
-            .map(|n| self.get_node_key(&n.weight))
+            .map(|ni| self.get_node_key(self.get_node_by_index(&ni.weight)))
             .collect()
     }
 }
@@ -112,13 +122,15 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: Hash + Eq>
 {
     /// Return the graph with display labels.
     fn to_labeled_graph(&self) -> DiGraph<String, String> {
-        self.get_graph()
-            .map(|_, node| node.to_string(), |_, edge| edge.to_string())
+        self.get_graph().map(
+            |ni, _| self.get_node_by_index(&ni).to_string(),
+            |_, edge| edge.to_string(),
+        )
     }
 
     /// Return the graph focused for the provided node, and only include
     /// dependents or dependencies.
-    fn to_focused_graph(&self, focus_node: &N, with_dependents: bool) -> DiGraph<N, E> {
+    fn to_focused_graph(&self, focus_node: &N, with_dependents: bool) -> DiGraph<NodeIndex, E> {
         let upstream = FxHashSet::from_iter(self.deep_dependencies_of(focus_node));
         let downstream = FxHashSet::from_iter(if with_dependents {
             self.deep_dependents_of(focus_node)
@@ -129,7 +141,7 @@ pub trait GraphConversions<N: Clone + Display, E: Clone + Display, K: Hash + Eq>
 
         self.get_graph().filter_map(
             |_, node| {
-                let node_key = self.get_node_key(node);
+                let node_key = self.get_node_key(self.get_node_by_index(node));
 
                 if
                 // Self

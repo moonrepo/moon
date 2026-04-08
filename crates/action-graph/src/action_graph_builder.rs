@@ -1,4 +1,4 @@
-use crate::action_graph::{ActionGraph, ActionGraphType};
+use crate::action_graph::ActionGraph;
 use crate::action_graph_error::ActionGraphError;
 use daggy::Dag;
 use miette::IntoDiagnostic;
@@ -122,7 +122,7 @@ impl ActionGraphBuilderOptions {
 pub struct ActionGraphBuilder<'query> {
     all_query: Option<Criteria<'query>>,
     app_context: Arc<AppContext>,
-    graph: ActionGraphType,
+    graph: Dag<ActionNode, TaskDependencyType>,
     nodes: FxHashMap<ActionNode, NodeIndex>,
     options: ActionGraphBuilderOptions,
     workspace_graph: Arc<WorkspaceGraph>,
@@ -183,7 +183,18 @@ impl<'query> ActionGraphBuilder<'query> {
             self.graph.transitive_reduce(vec![index]);
         }
 
-        (context, ActionGraph::new(self.graph))
+        let mut nodes = FxHashMap::default();
+
+        // TODO switch to map_owned
+        let graph = self.graph.map(
+            |ni, node| {
+                nodes.insert(ni, node.clone());
+                ni
+            },
+            |_, edge| edge.to_owned(),
+        );
+
+        (context, ActionGraph::new(graph, nodes))
     }
 
     pub fn get_spec(&self, toolchain_id: &Id, project: Option<&Project>) -> Option<ToolchainSpec> {
@@ -1405,11 +1416,12 @@ mod tests {
         mut predicate: impl FnMut(&ActionNode) -> bool,
     ) -> NodeIndex {
         let inner = graph.get_inner_graph();
+        let nodes = graph.get_inner_nodes();
 
         inner
             .graph()
             .node_indices()
-            .find(|index| inner.node_weight(*index).is_some_and(&mut predicate))
+            .find(|index| nodes.get(index).is_some_and(&mut predicate))
             .unwrap()
     }
 

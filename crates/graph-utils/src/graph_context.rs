@@ -1,6 +1,6 @@
 use std::{path::PathBuf, sync::Arc};
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct GraphExpanderContext {
     /// The current VCS branch.
     pub vcs_branch: Arc<String>,

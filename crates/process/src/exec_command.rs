@@ -634,7 +634,7 @@ impl Command {
 
         debug!(
             pid = child.id(),
-            shell = self.shell.as_ref().map(|sh| &sh.bin_name),
+            shell = self.shell.as_ref().map(|sh| sh.to_string()),
             env = ?env_vars,
             cwd = ?working_dir,
             input_size,

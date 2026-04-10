@@ -1,8 +1,9 @@
-use crate::shell::Shell;
+use crate::shell::get_default_shell;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
+use starbase_shell::ShellType;
 use std::collections::VecDeque;
 use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
@@ -151,7 +152,7 @@ pub struct Command {
     pub print_command: bool,
 
     /// Shell to wrap executing commands in
-    pub shell: Option<Shell>,
+    pub shell: Option<ShellType>,
 
     /// Console to write output to
     pub console: Option<Arc<Console>>,
@@ -173,7 +174,7 @@ impl Command {
             paths: VecDeque::new(),
             prefix: None,
             print_command: false,
-            shell: Some(Shell::default()),
+            shell: Some(get_default_shell()),
             console: None,
         }
     }
@@ -509,14 +510,14 @@ impl Command {
 
     pub fn set_script<T: AsRef<OsStr>>(&mut self, script: T) -> &mut Self {
         if self.shell.is_none() {
-            self.shell = Some(Shell::default());
+            self.shell = Some(get_default_shell());
         }
 
         self.exe = CommandExecutable::Script(script.as_ref().to_os_string());
         self
     }
 
-    pub fn set_shell(&mut self, shell: Shell) -> &mut Self {
+    pub fn set_shell(&mut self, shell: ShellType) -> &mut Self {
         self.shell = Some(shell);
         self
     }

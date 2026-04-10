@@ -26,7 +26,7 @@ impl CommandLine {
         // must be placed at the start of the line
         if let Some(shell) = &command.shell {
             in_shell = true;
-            command_line.push(shell.bin.as_os_str().to_owned());
+            command_line.push(OsString::from(shell.to_string()));
             command_line.push(OsString::from("-c"));
 
             // Within a shell, the command is a string. For arguments,
@@ -35,6 +35,8 @@ impl CommandLine {
 
             match &command.exe {
                 CommandExecutable::Binary(bin) => {
+                    let instance = shell.build();
+
                     let mut args = vec![bin];
                     args.extend(&command.args);
 
@@ -48,7 +50,7 @@ impl CommandLine {
                         } else if let Some(value) = arg.value.to_str()
                             && should_quote(value)
                         {
-                            shell_command.push(shell.instance.quote(value));
+                            shell_command.push(instance.quote(value));
                         } else {
                             shell_command.push(&arg.value);
                         }

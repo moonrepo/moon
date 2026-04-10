@@ -725,7 +725,7 @@ mod command_builder {
                 })
                 .await;
 
-            assert!(command.shell.unwrap().bin.to_string_lossy().contains("elv"));
+            assert!(command.shell.unwrap().to_string().contains("elv"));
         }
 
         #[cfg(windows)]
@@ -739,14 +739,7 @@ mod command_builder {
                 })
                 .await;
 
-            assert!(
-                command
-                    .shell
-                    .unwrap()
-                    .bin
-                    .to_string_lossy()
-                    .contains("bash")
-            );
+            assert!(command.shell.unwrap().to_string().contains("bash"));
         }
     }
 

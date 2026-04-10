@@ -20,6 +20,9 @@ getCorePackageFromTriple() {
     aarch64-unknown-linux-musl)
       echo "core-linux-arm64-musl"
       ;;
+    x86_64-apple-darwin)
+      echo "core-macos-x64"
+      ;;
     x86_64-unknown-linux-gnu)
       echo "core-linux-x64-gnu"
       ;;

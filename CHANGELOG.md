@@ -10,6 +10,7 @@
 
 #### 🚀 Updates
 
+- Temporarily brought back `x86_64-apple-darwin` (Apple Intel) as a supported operating system.
 - **Affected**
   - Added an experimental asynchronous version of the affected tracker, that is 100-150% faster.
     - Enable with the `experiments.asyncAffectedTracking` setting in `.moon/workspace.config`.

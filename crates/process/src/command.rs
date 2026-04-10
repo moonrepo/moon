@@ -113,6 +113,13 @@ impl CommandExecutable {
             Self::Script(inner) => inner,
         }
     }
+
+    pub fn requires_shell(&self) -> bool {
+        match self {
+            Self::Binary(_) => false,
+            Self::Script(_) => true,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -501,6 +508,10 @@ impl Command {
     }
 
     pub fn set_script<T: AsRef<OsStr>>(&mut self, script: T) -> &mut Self {
+        if self.shell.is_none() {
+            self.shell = Some(Shell::default());
+        }
+
         self.exe = CommandExecutable::Script(script.as_ref().to_os_string());
         self
     }
@@ -514,14 +525,7 @@ impl Command {
         self.error_on_nonzero
     }
 
-    pub fn should_pass_args_stdin(&self) -> bool {
-        self.shell
-            .as_ref()
-            .map(|shell| shell.command.pass_args_stdin)
-            .unwrap_or(false)
-    }
-
     pub fn should_pass_stdin(&self) -> bool {
-        !self.input.is_empty() || self.should_pass_args_stdin()
+        !self.input.is_empty()
     }
 }

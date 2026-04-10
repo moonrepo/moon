@@ -27,7 +27,7 @@ impl CommandLine {
         if let Some(shell) = &command.shell {
             in_shell = true;
             command_line.push(shell.bin.as_os_str().to_owned());
-            command_line.extend(shell.command.shell_args.clone());
+            command_line.push(OsString::from("-c"));
 
             // Within a shell, the command is a string. For arguments,
             // use the original quoted value if available!
@@ -59,16 +59,9 @@ impl CommandLine {
                 }
             };
 
-            // If the main command should be passed via stdin,
-            // then append the input line instead of the command line
-            if shell.command.pass_args_stdin {
-                input_line.push(shell_command);
-            }
-            // Otherwise append as a *single* argument. This typically
+            // Append as a *single* argument. This typically
             // appears after a "-c" argument (should come from shell)
-            else {
-                command_line.push(shell_command);
-            }
+            command_line.push(shell_command);
         }
         // Otherwise we have a normal command and arguments
         else {
@@ -84,12 +77,12 @@ impl CommandLine {
                     command_line.push(script.clone());
                 }
             };
+        }
 
-            // That also may have input
-            if !command.input.is_empty() {
-                for input in &command.input {
-                    input_line.push(input.to_owned());
-                }
+        // That also may have input
+        if !command.input.is_empty() {
+            for input in &command.input {
+                input_line.push(input.to_owned());
             }
         }
 

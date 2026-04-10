@@ -1,5 +1,4 @@
 use starbase_utils::{dirs, envx};
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use tracing::debug;
 
@@ -54,12 +53,12 @@ impl MoonEnvironment {
         env
     }
 
-    pub fn get_virtual_paths(&self) -> BTreeMap<PathBuf, PathBuf> {
-        BTreeMap::from_iter([
+    pub fn get_virtual_paths(&self) -> Vec<(PathBuf, PathBuf)> {
+        vec![
             (self.store_root.clone(), "/moon".into()),
             (self.home_dir.clone(), "/userhome".into()),
             (self.workspace_root.clone(), "/workspace".into()),
-        ])
+        ]
     }
 }
 

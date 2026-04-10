@@ -480,13 +480,21 @@ impl Command {
 
         if with_shell && self.shell.is_some() {
             line.push(shell.to_string());
-            line.push(" -c - ");
+            line.push(" -c “");
         }
 
-        line.push(match &self.exe {
-            CommandExecutable::Binary(bin) => join_exe_args(&shell, bin, &self.args, false),
-            CommandExecutable::Script(script) => script.to_owned(),
-        });
+        match &self.exe {
+            CommandExecutable::Binary(bin) => {
+                line.push(join_exe_args(&shell, bin, &self.args, false));
+            }
+            CommandExecutable::Script(script) => {
+                line.push(script);
+            }
+        };
+
+        if with_shell && self.shell.is_some() {
+            line.push("”");
+        }
 
         if with_input && !self.input.is_empty() {
             let debug_input = GlobalEnvBag::instance().should_debug_process_input();

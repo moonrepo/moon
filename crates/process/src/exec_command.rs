@@ -587,19 +587,18 @@ impl Command {
 
     fn pre_log_command(&self, child: &SharedChild) {
         let bag = GlobalEnvBag::instance();
+        let key = OsString::from("MOON_WORKSPACE_ROOT");
 
         // Determine workspace root and working dir
-        let workspace_env_key = OsString::from("MOON_WORKSPACE_ROOT");
-        let workspace_root = if let Some(var) = self.env.get(&workspace_env_key)
-            && let Some(value) = var.get_value()
+        let workspace_root = if let Some(root) = self.env.get(&key).and_then(|var| var.get_value())
         {
-            PathBuf::from(value)
+            PathBuf::from(root)
+        } else if let Some(root) = bag.get(&key) {
+            PathBuf::from(root)
         } else {
-            bag.get(&workspace_env_key).map_or_else(
-                || env::current_dir().unwrap_or(PathBuf::from(".")),
-                PathBuf::from,
-            )
+            env::current_dir().unwrap_or_default()
         };
+
         let working_dir = PathBuf::from(self.cwd.as_deref().unwrap_or(workspace_root.as_os_str()));
 
         // Print the command line to the console

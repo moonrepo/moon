@@ -1,9 +1,9 @@
-use crate::shell::get_default_shell;
+use crate::helpers::get_default_shell;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
-use starbase_shell::ShellType;
+use starbase_shell::{ShellType, join_exe_args};
 use std::collections::VecDeque;
 use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
@@ -39,6 +39,18 @@ pub struct CommandArg {
 
     // Not in shells: value
     pub value: OsString,
+}
+
+impl CommandArg {
+    pub fn as_os_str(&self) -> &OsStr {
+        self.quoted_value.as_ref().unwrap_or(&self.value)
+    }
+}
+
+impl AsRef<OsStr> for CommandArg {
+    fn as_ref(&self) -> &OsStr {
+        self.as_os_str()
+    }
 }
 
 impl From<&str> for CommandArg {
@@ -462,13 +474,43 @@ impl Command {
         format!("{}", hasher.finish())
     }
 
+    pub fn get_command_line(&self, with_shell: bool, with_input: bool) -> String {
+        let shell = self.shell.unwrap_or_default().build();
+        let mut line = OsString::new();
+
+        if with_shell && self.shell.is_some() {
+            line.push(shell.to_string());
+            line.push(" -c - ");
+        }
+
+        line.push(match &self.exe {
+            CommandExecutable::Binary(bin) => join_exe_args(&shell, bin, &self.args, false),
+            CommandExecutable::Script(script) => script.to_owned(),
+        });
+
+        if with_input && !self.input.is_empty() {
+            let debug_input = GlobalEnvBag::instance().should_debug_process_input();
+            let input = self.input.join(OsStr::new(" "));
+
+            line.push(" - ");
+
+            if input.len() > 200 && !debug_input {
+                line.push(format!("(truncated input, {} total bytes)", input.len()));
+            } else {
+                line.push(input);
+            }
+        }
+
+        line.to_string_lossy().to_string()
+    }
+
     pub fn get_prefix(&self) -> Option<&str> {
         self.prefix.as_deref()
     }
 
     pub fn get_script(&self) -> String {
         match &self.exe {
-            CommandExecutable::Binary(_) => String::new(),
+            CommandExecutable::Binary(bin) => bin.value.to_string_lossy().to_string(),
             CommandExecutable::Script(script) => script.to_string_lossy().to_string(),
         }
     }

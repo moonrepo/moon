@@ -1,19 +1,18 @@
 mod command;
-mod command_line;
 mod exec_command;
 mod output;
 // mod output_stream;
+mod helpers;
 mod process_error;
 mod process_registry;
 mod shared_child;
-mod shell;
 mod signal;
 
 pub use command::*;
-pub use command_line::*;
+pub use helpers::*;
 pub use output::*;
 pub use process_error::*;
 pub use process_registry::*;
 pub use shared_child::*;
-pub use shell::*;
 pub use signal::*;
+pub use starbase_shell::{BoxedShell, ShellType};

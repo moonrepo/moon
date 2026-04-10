@@ -4,7 +4,7 @@ use moon_app_context::AppContext;
 use moon_common::is_ci_env;
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{Command, CommandLine, Output};
+use moon_process::{Command, Output, format_command_line};
 use moon_project::Project;
 use moon_task::Task;
 use std::time::Duration;
@@ -80,7 +80,7 @@ impl<'task> CommandExecutor<'task> {
         self.monitor_running_status();
 
         // Execute the command on a loop as an attempt for every retry count we have
-        let command_line = self.get_command_line(context);
+        let command_line = self.command.get_command_line(false, false);
 
         let execution_error: Option<miette::Report> = loop {
             let mut attempt = Operation::task_execution(&command_line);
@@ -318,19 +318,6 @@ impl<'task> CommandExecutor<'task> {
         report_item.primary = is_primary;
     }
 
-    fn get_command_line(&self, context: &ActionContext) -> String {
-        let mut line = self.task.get_command_line();
-
-        if self.task.script.is_none() && context.should_inherit_args(&self.task.target) {
-            for arg in &context.passthrough_args {
-                line.push(' ');
-                line.push_str(arg);
-            }
-        }
-
-        line
-    }
-
     // We don't use `Command::print_command` because we need to explicitly
     // control the workspace root and working directory!
     fn print_command_line(&self, command_line: &str) -> miette::Result<()> {
@@ -345,7 +332,7 @@ impl<'task> CommandExecutor<'task> {
             &self.project.root
         };
 
-        self.app.console.out.write_line(CommandLine::format(
+        self.app.console.out.write_line(format_command_line(
             command_line,
             workspace_root,
             working_dir,

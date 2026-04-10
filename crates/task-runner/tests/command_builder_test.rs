@@ -8,7 +8,7 @@ use moon_affected::Affected;
 use moon_common::is_ci;
 use moon_config::TaskOptionAffectedFilesPattern;
 use moon_env_var::GlobalEnvBag;
-use moon_process::{Command, EnvBehavior};
+use moon_process::{Command, Env};
 use moon_task::{Target, TargetLocator, TaskOptionAffectedFiles};
 use std::env;
 use std::ffi::OsString;
@@ -357,7 +357,7 @@ mod command_builder {
 
             assert_eq!(
                 command.env.get(&OsString::from("KEY1")).unwrap(),
-                &EnvBehavior::SetIfMissing(OsString::from("value1"))
+                &Env::SetIfMissing(OsString::from("value1"))
             );
         }
 
@@ -372,7 +372,7 @@ mod command_builder {
                     .env
                     .get(&OsString::from("UNSET_SYSTEM_LOCAL"))
                     .unwrap(),
-                &EnvBehavior::Unset
+                &Env::Unset
             );
         }
         #[tokio::test(flavor = "multi_thread")]
@@ -386,7 +386,7 @@ mod command_builder {
                     .env
                     .get(&OsString::from("UNSET_SYSTEM_FILE"))
                     .unwrap(),
-                &EnvBehavior::Unset
+                &Env::Unset
             );
         }
 
@@ -539,7 +539,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    EnvBehavior::Unset
+                    Env::Unset
                 );
             }
 
@@ -551,7 +551,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    EnvBehavior::Unset
+                    Env::Unset
                 );
             }
 
@@ -628,7 +628,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    EnvBehavior::Unset
+                    Env::Unset
                 );
             }
 
@@ -640,7 +640,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    EnvBehavior::Unset
+                    Env::Unset
                 );
             }
 

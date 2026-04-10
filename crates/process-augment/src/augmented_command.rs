@@ -5,7 +5,7 @@ use moon_pdk_api::{
     ExecCommandInput, Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput,
     ExtendTaskScriptInput, ExtendTaskScriptOutput,
 };
-use moon_process::{Command, CommandArg, EnvBehavior};
+use moon_process::{Command, CommandArg, Env};
 use moon_project::Project;
 use moon_task::Task;
 use moon_toolchain::{
@@ -84,9 +84,9 @@ impl<'app> AugmentedCommand<'app> {
                 key,
                 match value {
                     // Only set if system var not set
-                    Some(val) => EnvBehavior::SetIfMissing(OsString::from(val)),
+                    Some(val) => Env::SetIfMissing(OsString::from(val)),
                     // Don't inherit system var
-                    None => EnvBehavior::Unset,
+                    None => Env::Unset,
                 },
             );
         }

@@ -1,4 +1,4 @@
-use crate::command::{Command, CommandExecutable, EnvBehavior};
+use crate::command::{Command, CommandExecutable, Env};
 use crate::helpers::format_command_line;
 // use crate::output_stream::capture_stream;
 use crate::output::Output;
@@ -542,15 +542,15 @@ impl Command {
         // Then set explicit vars
         for (key, value) in &self.env {
             match value {
-                EnvBehavior::Set(value) => {
+                Env::Set(value) => {
                     command.env(key, value);
                 }
-                EnvBehavior::SetIfMissing(value) => {
+                Env::SetIfMissing(value) => {
                     if !bag.has(key) {
                         command.env(key, value);
                     }
                 }
-                EnvBehavior::Unset => {
+                Env::Unset => {
                     command.env_remove(key);
                 }
             };
@@ -625,7 +625,7 @@ impl Command {
             .env
             .iter()
             .filter_map(|(key, value)| {
-                if value == &EnvBehavior::Unset {
+                if value == &Env::Unset {
                     None
                 } else if debug_env || key.to_str().is_some_and(|k| k.starts_with("MOON_")) {
                     Some((key, value.get_value().unwrap()))
@@ -635,20 +635,18 @@ impl Command {
             })
             .collect();
 
-        let input_size: Option<usize> = if self.input.is_empty() {
-            None
-        } else {
-            Some(self.input.iter().map(|i| i.len()).sum())
-        };
+        let shell = self.shell.as_ref().map(|sh| sh.to_string());
+        let input_size = (!self.input.is_empty()).then(|| self.get_input_size());
+        let command_line = self.get_command_line(true, true);
 
         debug!(
             pid = child.id(),
-            shell = self.shell.as_ref().map(|sh| sh.to_string()),
+            shell,
             env = ?env_vars,
             cwd = ?working_dir,
             input_size,
             "Running command {}",
-            color::shell(self.get_command_line(true, true))
+            color::shell(command_line)
         );
     }
 

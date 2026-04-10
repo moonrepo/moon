@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[derive(Debug, PartialEq)]
-pub enum EnvBehavior {
+pub enum Env {
     /// Always set and overwrite system var
     Set(OsString),
 
@@ -22,12 +22,12 @@ pub enum EnvBehavior {
     Unset,
 }
 
-impl EnvBehavior {
+impl Env {
     pub fn get_value(&self) -> Option<&OsString> {
         match self {
-            EnvBehavior::Set(value) => Some(value),
-            EnvBehavior::SetIfMissing(value) => Some(value),
-            EnvBehavior::Unset => None,
+            Env::Set(value) => Some(value),
+            Env::SetIfMissing(value) => Some(value),
+            Env::Unset => None,
         }
     }
 }
@@ -144,7 +144,7 @@ pub struct Command {
 
     pub cwd: Option<OsString>,
 
-    pub env: FxHashMap<OsString, EnvBehavior>,
+    pub env: FxHashMap<OsString, Env>,
 
     pub exe: CommandExecutable,
 
@@ -268,8 +268,8 @@ impl Command {
         self.env_with_behavior(
             key,
             match value {
-                Some(v) => EnvBehavior::Set(v.as_ref().to_os_string()),
-                None => EnvBehavior::Unset,
+                Some(v) => Env::Set(v.as_ref().to_os_string()),
+                None => Env::Unset,
             },
         )
     }
@@ -278,10 +278,10 @@ impl Command {
     where
         K: AsRef<OsStr>,
     {
-        self.env_with_behavior(key, EnvBehavior::Unset)
+        self.env_with_behavior(key, Env::Unset)
     }
 
-    pub fn env_with_behavior<K>(&mut self, key: K, value: EnvBehavior) -> &mut Self
+    pub fn env_with_behavior<K>(&mut self, key: K, value: Env) -> &mut Self
     where
         K: AsRef<OsStr>,
     {
@@ -444,9 +444,9 @@ impl Command {
             write(key);
 
             match value {
-                EnvBehavior::Set(value) => write(value),
-                EnvBehavior::SetIfMissing(value) => write(value),
-                EnvBehavior::Unset => {}
+                Env::Set(value) => write(value),
+                Env::SetIfMissing(value) => write(value),
+                Env::Unset => {}
             };
         }
 
@@ -476,9 +476,10 @@ impl Command {
 
     pub fn get_command_line(&self, with_shell: bool, with_input: bool) -> String {
         let shell = self.shell.unwrap_or_default().build();
+        let use_shell = with_shell && (self.shell.is_some() || self.exe.requires_shell());
         let mut line = OsString::new();
 
-        if with_shell && self.shell.is_some() {
+        if use_shell {
             line.push(shell.to_string());
             line.push(" -c “");
         }
@@ -492,7 +493,7 @@ impl Command {
             }
         };
 
-        if with_shell && self.shell.is_some() {
+        if use_shell {
             line.push("”");
         }
 
@@ -503,13 +504,20 @@ impl Command {
             line.push(" - ");
 
             if input.len() > 200 && !debug_input {
-                line.push(format!("(truncated input, {} total bytes)", input.len()));
+                line.push(format!(
+                    "(truncated input, {} total bytes)",
+                    self.get_input_size()
+                ));
             } else {
                 line.push(input);
             }
         }
 
-        line.to_string_lossy().to_string()
+        line.to_string_lossy().trim().replace('\n', " ")
+    }
+
+    pub fn get_input_size(&self) -> usize {
+        self.input.iter().map(|i| i.len()).sum()
     }
 
     pub fn get_prefix(&self) -> Option<&str> {

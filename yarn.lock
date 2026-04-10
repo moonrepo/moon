@@ -4153,6 +4153,12 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@moonrepo/core-macos-x64@workspace:packages/core-macos-x64":
+  version: 0.0.0-use.local
+  resolution: "@moonrepo/core-macos-x64@workspace:packages/core-macos-x64"
+  languageName: unknown
+  linkType: soft
+
 "@moonrepo/core-windows-x64-msvc@npm:2.1.4, @moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc":
   version: 0.0.0-use.local
   resolution: "@moonrepo/core-windows-x64-msvc@workspace:packages/core-windows-x64-msvc"

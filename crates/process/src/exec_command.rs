@@ -28,7 +28,8 @@ impl Command {
         }
 
         let registry = ProcessRegistry::instance();
-        let (mut command, instant) = self.create_async_command()?;
+        let instant = Instant::now();
+        let mut command = self.create_async_command()?;
 
         let child = if self.should_pass_stdin() {
             command
@@ -78,7 +79,8 @@ impl Command {
 
     pub async fn exec_capture_continuous_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, instant) = self.create_async_command()?;
+        let instant = Instant::now();
+        let mut command = self.create_async_command()?;
 
         command
             .stdin(Stdio::piped())
@@ -192,7 +194,8 @@ impl Command {
 
     pub async fn exec_stream_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, instant) = self.create_async_command()?;
+        let instant = Instant::now();
+        let mut command = self.create_async_command()?;
 
         let child = if self.should_pass_stdin() {
             command.stdin(Stdio::piped());
@@ -242,7 +245,8 @@ impl Command {
 
     pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, instant) = self.create_async_command()?;
+        let instant = Instant::now();
+        let mut command = self.create_async_command()?;
 
         command
             .stdin(if self.should_pass_stdin() {
@@ -500,11 +504,11 @@ impl Command {
     //     Ok(output)
     // }
 
-    fn create_base_command(&self) -> miette::Result<StdCommand> {
+    fn create_sync_command(&self) -> miette::Result<StdCommand> {
         // When the command is wrapped in a shell, we need to create a single
         // string of the full command line with args quoted correctly, as
         // it's passed as a single argument to the shell: `bash -c "command line"`
-        if self.shell.is_some() || self.exe.requires_shell() {
+        let mut command = if self.shell.is_some() || self.exe.requires_shell() {
             let shell = self.shell.unwrap_or_default().build();
 
             let script = match &self.exe {
@@ -512,25 +516,23 @@ impl Command {
                 CommandExecutable::Script(script) => script.to_owned(),
             };
 
-            return Ok(shell.create_wrapped_command_with(script));
+            shell.create_wrapped_command_with(script)
         }
-
         // When the command is not in a shell, we can create a standard command
         // and pass the non-quoted args separately
-        let mut command = StdCommand::new(self.exe.as_os_str());
+        else {
+            let mut command = StdCommand::new(self.exe.as_os_str());
 
-        for arg in &self.args {
-            command.arg(&arg.value);
-        }
+            for arg in &self.args {
+                command.arg(&arg.value);
+            }
 
-        Ok(command)
-    }
-
-    fn create_async_command(&self) -> miette::Result<(TokioCommand, Instant)> {
-        let mut command = TokioCommand::from(self.create_base_command()?);
-        let bag = GlobalEnvBag::instance();
+            command
+        };
 
         // Inherit added/removed vars first
+        let bag = GlobalEnvBag::instance();
+
         bag.list_added(|key, value| {
             command.env(key, value);
         });
@@ -574,7 +576,11 @@ impl Command {
             command.env(path_key, env::join_paths(paths).into_diagnostic()?);
         }
 
-        Ok((command, Instant::now()))
+        Ok(command)
+    }
+
+    fn create_async_command(&self) -> miette::Result<TokioCommand> {
+        Ok(TokioCommand::from(self.create_sync_command()?))
     }
 
     fn handle_nonzero_status(&mut self, output: &Output, with_message: bool) -> miette::Result<()> {

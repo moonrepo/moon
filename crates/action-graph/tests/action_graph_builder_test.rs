@@ -6,8 +6,8 @@ use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements}
 use moon_affected::{AffectedBy, DownstreamScope, UpstreamScope};
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    EnvMap, PipelineActionSwitch, SemVer, TaskDependencyConfig, TaskOptionRunInCI,
-    UnresolvedVersionSpec, Version, VersionSpec,
+    EnvMap, PROTO_CLI_VERSION, PipelineActionSwitch, SemVer, TaskDependencyConfig,
+    TaskOptionRunInCI, UnresolvedVersionSpec, Version, VersionSpec,
 };
 use moon_exec_plan::{ExecutionPlan, GraphBlock, TargetsBlock};
 use moon_graph_utils::*;
@@ -27,7 +27,7 @@ fn create_task(project: &str, id: &str) -> Task {
 }
 
 fn create_proto_version() -> VersionSpec {
-    VersionSpec::parse("0.55.4").unwrap()
+    VersionSpec::parse(PROTO_CLI_VERSION).unwrap()
 }
 
 fn create_unresolved_version(version: Version) -> UnresolvedVersionSpec {

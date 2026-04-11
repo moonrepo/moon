@@ -43,6 +43,11 @@
 - Fixed an issue where OS based tasks would error while executing if they defined `outputs`, and
   you're on a different OS.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.56.1](https://github.com/moonrepo/proto/releases/tag/v0.56.0) from 0.55.4.
+- Updated dependencies.
+
 ## 2.1.4
 
 #### 🚀 Updates

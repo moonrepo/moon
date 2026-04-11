@@ -1,8 +1,9 @@
-use crate::shell::Shell;
+use crate::helpers::get_default_shell;
 use moon_common::{color, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
+use starbase_shell::{ShellType, join_exe_args};
 use std::collections::VecDeque;
 use std::ffi::{OsStr, OsString};
 use std::hash::Hasher;
@@ -10,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[derive(Debug, PartialEq)]
-pub enum EnvBehavior {
+pub enum Env {
     /// Always set and overwrite system var
     Set(OsString),
 
@@ -21,12 +22,12 @@ pub enum EnvBehavior {
     Unset,
 }
 
-impl EnvBehavior {
+impl Env {
     pub fn get_value(&self) -> Option<&OsString> {
         match self {
-            EnvBehavior::Set(value) => Some(value),
-            EnvBehavior::SetIfMissing(value) => Some(value),
-            EnvBehavior::Unset => None,
+            Env::Set(value) => Some(value),
+            Env::SetIfMissing(value) => Some(value),
+            Env::Unset => None,
         }
     }
 }
@@ -38,6 +39,18 @@ pub struct CommandArg {
 
     // Not in shells: value
     pub value: OsString,
+}
+
+impl CommandArg {
+    pub fn as_os_str(&self) -> &OsStr {
+        self.quoted_value.as_ref().unwrap_or(&self.value)
+    }
+}
+
+impl AsRef<OsStr> for CommandArg {
+    fn as_ref(&self) -> &OsStr {
+        self.as_os_str()
+    }
 }
 
 impl From<&str> for CommandArg {
@@ -113,6 +126,13 @@ impl CommandExecutable {
             Self::Script(inner) => inner,
         }
     }
+
+    pub fn requires_shell(&self) -> bool {
+        match self {
+            Self::Binary(_) => false,
+            Self::Script(_) => true,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -124,7 +144,7 @@ pub struct Command {
 
     pub cwd: Option<OsString>,
 
-    pub env: FxHashMap<OsString, EnvBehavior>,
+    pub env: FxHashMap<OsString, Env>,
 
     pub exe: CommandExecutable,
 
@@ -144,7 +164,7 @@ pub struct Command {
     pub print_command: bool,
 
     /// Shell to wrap executing commands in
-    pub shell: Option<Shell>,
+    pub shell: Option<ShellType>,
 
     /// Console to write output to
     pub console: Option<Arc<Console>>,
@@ -166,7 +186,7 @@ impl Command {
             paths: VecDeque::new(),
             prefix: None,
             print_command: false,
-            shell: Some(Shell::default()),
+            shell: Some(get_default_shell()),
             console: None,
         }
     }
@@ -248,8 +268,8 @@ impl Command {
         self.env_with_behavior(
             key,
             match value {
-                Some(v) => EnvBehavior::Set(v.as_ref().to_os_string()),
-                None => EnvBehavior::Unset,
+                Some(v) => Env::Set(v.as_ref().to_os_string()),
+                None => Env::Unset,
             },
         )
     }
@@ -258,10 +278,10 @@ impl Command {
     where
         K: AsRef<OsStr>,
     {
-        self.env_with_behavior(key, EnvBehavior::Unset)
+        self.env_with_behavior(key, Env::Unset)
     }
 
-    pub fn env_with_behavior<K>(&mut self, key: K, value: EnvBehavior) -> &mut Self
+    pub fn env_with_behavior<K>(&mut self, key: K, value: Env) -> &mut Self
     where
         K: AsRef<OsStr>,
     {
@@ -424,9 +444,9 @@ impl Command {
             write(key);
 
             match value {
-                EnvBehavior::Set(value) => write(value),
-                EnvBehavior::SetIfMissing(value) => write(value),
-                EnvBehavior::Unset => {}
+                Env::Set(value) => write(value),
+                Env::SetIfMissing(value) => write(value),
+                Env::Unset => {}
             };
         }
 
@@ -454,13 +474,59 @@ impl Command {
         format!("{}", hasher.finish())
     }
 
+    pub fn get_command_line(&self, with_shell: bool, with_input: bool) -> String {
+        let shell = self.shell.unwrap_or_default().build();
+        let use_shell = with_shell && (self.shell.is_some() || self.exe.requires_shell());
+        let mut line = OsString::new();
+
+        if use_shell {
+            line.push(shell.to_string());
+            line.push(" -c “");
+        }
+
+        match &self.exe {
+            CommandExecutable::Binary(bin) => {
+                line.push(join_exe_args(&shell, bin, &self.args, false));
+            }
+            CommandExecutable::Script(script) => {
+                line.push(script);
+            }
+        };
+
+        if use_shell {
+            line.push("”");
+        }
+
+        if with_input && !self.input.is_empty() {
+            let debug_input = GlobalEnvBag::instance().should_debug_process_input();
+            let input = self.input.join(OsStr::new(" "));
+
+            line.push(" - ");
+
+            if input.len() > 200 && !debug_input {
+                line.push(format!(
+                    "(truncated input, {} total bytes)",
+                    self.get_input_size()
+                ));
+            } else {
+                line.push(input);
+            }
+        }
+
+        line.to_string_lossy().trim().replace('\n', " ")
+    }
+
+    pub fn get_input_size(&self) -> usize {
+        self.input.iter().map(|i| i.len()).sum()
+    }
+
     pub fn get_prefix(&self) -> Option<&str> {
         self.prefix.as_deref()
     }
 
     pub fn get_script(&self) -> String {
         match &self.exe {
-            CommandExecutable::Binary(_) => String::new(),
+            CommandExecutable::Binary(bin) => bin.value.to_string_lossy().to_string(),
             CommandExecutable::Script(script) => script.to_string_lossy().to_string(),
         }
     }
@@ -501,11 +567,15 @@ impl Command {
     }
 
     pub fn set_script<T: AsRef<OsStr>>(&mut self, script: T) -> &mut Self {
+        if self.shell.is_none() {
+            self.shell = Some(get_default_shell());
+        }
+
         self.exe = CommandExecutable::Script(script.as_ref().to_os_string());
         self
     }
 
-    pub fn set_shell(&mut self, shell: Shell) -> &mut Self {
+    pub fn set_shell(&mut self, shell: ShellType) -> &mut Self {
         self.shell = Some(shell);
         self
     }
@@ -514,14 +584,7 @@ impl Command {
         self.error_on_nonzero
     }
 
-    pub fn should_pass_args_stdin(&self) -> bool {
-        self.shell
-            .as_ref()
-            .map(|shell| shell.command.pass_args_stdin)
-            .unwrap_or(false)
-    }
-
     pub fn should_pass_stdin(&self) -> bool {
-        !self.input.is_empty() || self.should_pass_args_stdin()
+        !self.input.is_empty()
     }
 }

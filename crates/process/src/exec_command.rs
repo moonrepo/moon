@@ -1,5 +1,5 @@
-use crate::command::{Command, EnvBehavior};
-use crate::command_line::CommandLine;
+use crate::command::{Command, CommandExecutable, Env};
+use crate::helpers::format_command_line;
 // use crate::output_stream::capture_stream;
 use crate::output::Output;
 use crate::process_error::ProcessError;
@@ -9,10 +9,11 @@ use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::FxHashMap;
+use starbase_shell::join_exe_args;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
-use std::process::Stdio;
+use std::process::{Command as StdCommand, Stdio};
 use std::sync::{Arc, RwLock};
 use std::time::Instant;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -27,7 +28,8 @@ impl Command {
         }
 
         let registry = ProcessRegistry::instance();
-        let (mut command, line, instant) = self.create_async_command()?;
+        let instant = Instant::now();
+        let mut command = self.create_async_command()?;
 
         let child = if self.should_pass_stdin() {
             command
@@ -40,7 +42,7 @@ impl Command {
                 error: Box::new(error),
             })?;
 
-            self.write_input_to_child(&mut child, &line).await?;
+            self.write_input_to_child(&mut child).await?;
 
             child
         } else {
@@ -54,7 +56,7 @@ impl Command {
 
         let shared_child = registry.add_running(child).await;
 
-        self.pre_log_command(&line, &shared_child);
+        self.pre_log_command(&shared_child);
 
         let result = shared_child
             .wait_with_output()
@@ -64,7 +66,7 @@ impl Command {
                 error: Box::new(error),
             });
 
-        self.post_log_command(instant, &shared_child);
+        self.post_log_command(&shared_child, instant);
 
         registry.remove_running(shared_child).await;
 
@@ -77,7 +79,8 @@ impl Command {
 
     pub async fn exec_capture_continuous_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line, instant) = self.create_async_command()?;
+        let instant = Instant::now();
+        let mut command = self.create_async_command()?;
 
         command
             .stdin(Stdio::piped())
@@ -94,7 +97,7 @@ impl Command {
         let stdout = shared_child.take_stdout().await;
         let stderr = shared_child.take_stderr().await;
 
-        self.pre_log_command(&line, &shared_child);
+        self.pre_log_command(&shared_child);
 
         let items = self.input.drain(..).collect::<Vec<_>>();
         let bin_name = self.get_bin_name();
@@ -162,7 +165,7 @@ impl Command {
                 error: Box::new(error),
             });
 
-        self.post_log_command(instant, &shared_child);
+        self.post_log_command(&shared_child, instant);
 
         registry.remove_running(shared_child).await;
 
@@ -191,7 +194,8 @@ impl Command {
 
     pub async fn exec_stream_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line, instant) = self.create_async_command()?;
+        let instant = Instant::now();
+        let mut command = self.create_async_command()?;
 
         let child = if self.should_pass_stdin() {
             command.stdin(Stdio::piped());
@@ -201,7 +205,7 @@ impl Command {
                 error: Box::new(error),
             })?;
 
-            self.write_input_to_child(&mut child, &line).await?;
+            self.write_input_to_child(&mut child).await?;
 
             child
         } else {
@@ -213,7 +217,7 @@ impl Command {
 
         let shared_child = registry.add_running(child).await;
 
-        self.pre_log_command(&line, &shared_child);
+        self.pre_log_command(&shared_child);
 
         let result = shared_child
             .wait()
@@ -223,7 +227,7 @@ impl Command {
                 error: Box::new(error),
             });
 
-        self.post_log_command(instant, &shared_child);
+        self.post_log_command(&shared_child, instant);
 
         registry.remove_running(shared_child).await;
 
@@ -241,7 +245,8 @@ impl Command {
 
     pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
-        let (mut command, line, instant) = self.create_async_command()?;
+        let instant = Instant::now();
+        let mut command = self.create_async_command()?;
 
         command
             .stdin(if self.should_pass_stdin() {
@@ -260,7 +265,7 @@ impl Command {
             })?;
 
         if self.should_pass_stdin() {
-            self.write_input_to_child(&mut child, &line).await?;
+            self.write_input_to_child(&mut child).await?;
         }
 
         let shared_child = registry.add_running(child).await;
@@ -367,7 +372,7 @@ impl Command {
             let _ = handle.await;
         }
 
-        self.pre_log_command(&line, &shared_child);
+        self.pre_log_command(&shared_child);
 
         // Attempt to create the child output
         let result = shared_child
@@ -378,7 +383,7 @@ impl Command {
                 error: Box::new(error),
             });
 
-        self.post_log_command(instant, &shared_child);
+        self.post_log_command(&shared_child, instant);
 
         registry.remove_running(shared_child).await;
 
@@ -499,14 +504,35 @@ impl Command {
     //     Ok(output)
     // }
 
-    fn create_async_command(&self) -> miette::Result<(TokioCommand, CommandLine, Instant)> {
-        let command_line = self.create_command_line();
-        let bag = GlobalEnvBag::instance();
+    fn create_sync_command(&self) -> miette::Result<StdCommand> {
+        // When the command is wrapped in a shell, we need to create a single
+        // string of the full command line with args quoted correctly, as
+        // it's passed as a single argument to the shell: `bash -c "command line"`
+        let mut command = if self.shell.is_some() || self.exe.requires_shell() {
+            let shell = self.shell.unwrap_or_default().build();
 
-        let mut command = TokioCommand::new(&command_line.command[0]);
-        command.args(&command_line.command[1..]);
+            let script = match &self.exe {
+                CommandExecutable::Binary(bin) => join_exe_args(&shell, bin, &self.args, false),
+                CommandExecutable::Script(script) => script.to_owned(),
+            };
+
+            shell.create_wrapped_command_with(script)
+        }
+        // When the command is not in a shell, we can create a standard command
+        // and pass the non-quoted args separately
+        else {
+            let mut command = StdCommand::new(self.exe.as_os_str());
+
+            for arg in &self.args {
+                command.arg(&arg.value);
+            }
+
+            command
+        };
 
         // Inherit added/removed vars first
+        let bag = GlobalEnvBag::instance();
+
         bag.list_added(|key, value| {
             command.env(key, value);
         });
@@ -518,15 +544,15 @@ impl Command {
         // Then set explicit vars
         for (key, value) in &self.env {
             match value {
-                EnvBehavior::Set(value) => {
+                Env::Set(value) => {
                     command.env(key, value);
                 }
-                EnvBehavior::SetIfMissing(value) => {
+                Env::SetIfMissing(value) => {
                     if !bag.has(key) {
                         command.env(key, value);
                     }
                 }
-                EnvBehavior::Unset => {
+                Env::Unset => {
                     command.env_remove(key);
                 }
             };
@@ -550,11 +576,11 @@ impl Command {
             command.env(path_key, env::join_paths(paths).into_diagnostic()?);
         }
 
-        Ok((command, command_line, Instant::now()))
+        Ok(command)
     }
 
-    fn create_command_line(&self) -> CommandLine {
-        CommandLine::new(self)
+    fn create_async_command(&self) -> miette::Result<TokioCommand> {
+        Ok(TokioCommand::from(self.create_sync_command()?))
     }
 
     fn handle_nonzero_status(&mut self, output: &Output, with_message: bool) -> miette::Result<()> {
@@ -565,28 +591,31 @@ impl Command {
         Ok(())
     }
 
-    fn pre_log_command(&self, line: &CommandLine, child: &SharedChild) {
+    fn pre_log_command(&self, child: &SharedChild) {
         let bag = GlobalEnvBag::instance();
+        let key = OsString::from("MOON_WORKSPACE_ROOT");
 
-        let workspace_env_key = OsString::from("MOON_WORKSPACE_ROOT");
-        let workspace_root = if let Some(var) = self.env.get(&workspace_env_key)
-            && let Some(value) = var.get_value()
+        // Determine workspace root and working dir
+        let workspace_root = if let Some(root) = self.env.get(&key).and_then(|var| var.get_value())
         {
-            PathBuf::from(value)
+            PathBuf::from(root)
+        } else if let Some(root) = bag.get(&key) {
+            PathBuf::from(root)
         } else {
-            bag.get(&workspace_env_key).map_or_else(
-                || env::current_dir().unwrap_or(PathBuf::from(".")),
-                PathBuf::from,
-            )
+            env::current_dir().unwrap_or_default()
         };
+
         let working_dir = PathBuf::from(self.cwd.as_deref().unwrap_or(workspace_root.as_os_str()));
 
+        // Print the command line to the console
         if let Some(console) = self.console.as_ref()
             && self.print_command
             && !console.out.is_quiet()
         {
-            let _ = console.out.write_line(CommandLine::format(
-                &line.get_line(false, false),
+            let command_line = self.get_command_line(false, false);
+
+            let _ = console.out.write_line(format_command_line(
+                &command_line,
                 &workspace_root,
                 &working_dir,
             ));
@@ -602,14 +631,9 @@ impl Command {
             .env
             .iter()
             .filter_map(|(key, value)| {
-                if value == &EnvBehavior::Unset {
+                if value == &Env::Unset {
                     None
-                } else if debug_env
-                    || key
-                        .to_str()
-                        .map(|k| k.starts_with("MOON_"))
-                        .unwrap_or_default()
-                {
+                } else if debug_env || key.to_str().is_some_and(|k| k.starts_with("MOON_")) {
                     Some((key, value.get_value().unwrap()))
                 } else {
                     None
@@ -617,45 +641,30 @@ impl Command {
             })
             .collect();
 
-        let debug_input = bag.should_debug_process_input();
-        let input_size: Option<usize> = if self.input.is_empty() {
-            None
-        } else {
-            Some(self.input.iter().map(|i| i.len()).sum())
-        };
-
-        let mut line = line.to_string();
-        let line_size = line.len();
-
-        if line_size > 1000 && !debug_input {
-            line.truncate(1000);
-            line.push_str(&format!(" ... (and {} more bytes)", line_size - 1000));
-        }
+        let shell = self.shell.as_ref().map(|sh| sh.to_string());
+        let input_size = (!self.input.is_empty()).then(|| self.get_input_size());
+        let command_line = self.get_command_line(true, true);
 
         debug!(
             pid = child.id(),
-            shell = self.shell.as_ref().map(|sh| &sh.bin_name),
+            shell,
             env = ?env_vars,
             cwd = ?working_dir,
             input_size,
             "Running command {}",
-            color::shell(line)
+            color::shell(command_line)
         );
     }
 
-    fn post_log_command(&self, instant: Instant, child: &SharedChild) {
+    fn post_log_command(&self, child: &SharedChild, instant: Instant) {
         trace!(pid = child.id(), "Ran command in {:?}", instant.elapsed());
     }
 
-    async fn write_input_to_child(
-        &self,
-        child: &mut Child,
-        line: &CommandLine,
-    ) -> miette::Result<()> {
+    async fn write_input_to_child(&self, child: &mut Child) -> miette::Result<()> {
         let mut stdin = child.stdin.take().expect("Unable to write stdin!");
 
         stdin
-            .write_all(line.input.join(OsStr::new(" ")).as_encoded_bytes())
+            .write_all(self.input.join(OsStr::new(" ")).as_encoded_bytes())
             .await
             .map_err(|error| ProcessError::WriteInput {
                 bin: self.get_bin_name(),

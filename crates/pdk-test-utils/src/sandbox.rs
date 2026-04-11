@@ -9,7 +9,6 @@ use moon_pdk_api::{
 use proto_core::{ProtoEnvironment, Tool, ToolContext, inject_proto_manifest_config};
 use proto_pdk_test_utils::WasmTestWrapper as ToolTestWrapper;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
-use std::collections::BTreeMap;
 use std::fmt;
 use std::fs;
 use std::ops::Deref;
@@ -169,20 +168,20 @@ impl MoonWasmSandbox {
         mut manifest: PluginManifest,
         with_proto: bool,
     ) -> PluginContainer {
-        let virtual_paths = BTreeMap::<PathBuf, PathBuf>::from_iter([
+        let virtual_paths = vec![
             (self.root.clone(), "/workspace".into()),
             (self.home_dir.clone(), "/userhome".into()),
             (self.moon_dir.clone(), "/moon".into()),
             (self.proto_dir.clone(), "/proto".into()),
-        ]);
+        ];
 
         manifest.timeout_ms = None;
         manifest = manifest.with_allowed_host("*");
-        manifest = manifest.with_allowed_paths(
-            virtual_paths
-                .iter()
-                .map(|(key, value)| (key.to_string_lossy().to_string(), value.to_owned())),
-        );
+        manifest = manifest.with_allowed_paths(virtual_paths.iter().map(
+            |(key, value): &(PathBuf, PathBuf)| {
+                (key.to_string_lossy().to_string(), value.to_owned())
+            },
+        ));
 
         inject_default_manifest_config(&id, &self.home_dir, &mut manifest).unwrap();
 
@@ -195,7 +194,7 @@ impl MoonWasmSandbox {
         PluginContainer::new(id, manifest, self.create_host_funcs(virtual_paths)).unwrap()
     }
 
-    fn create_host_funcs(&self, virtual_paths: BTreeMap<PathBuf, PathBuf>) -> Vec<Function> {
+    fn create_host_funcs(&self, virtual_paths: Vec<(PathBuf, PathBuf)>) -> Vec<Function> {
         let loader = PluginLoader::new(self.moon_dir.join("plugins"), self.moon_dir.join("temp"));
 
         let host_data = HostData {

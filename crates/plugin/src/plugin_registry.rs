@@ -12,6 +12,7 @@ use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument};
+use warpgate::sort_virtual_paths;
 use warpgate::{
     PluginContainer, PluginLoader, PluginLocator, PluginManifest, VirtualPath, Wasm,
     from_virtual_path, host::HostData, inject_default_manifest_config, to_virtual_path,
@@ -23,7 +24,7 @@ pub struct PluginRegistry<T: Plugin> {
     loader: PluginLoader,
     plugins: Arc<scc::HashMap<Id, Arc<T>>>,
     type_of: PluginType,
-    virtual_paths: BTreeMap<PathBuf, PathBuf>,
+    virtual_paths: Vec<(PathBuf, PathBuf)>,
 }
 
 impl<T: Plugin> PluginRegistry<T> {
@@ -45,6 +46,10 @@ impl<T: Plugin> PluginRegistry<T> {
         let mut paths = BTreeMap::new();
         paths.extend(host_data.proto_env.get_virtual_paths());
         paths.extend(host_data.moon_env.get_virtual_paths());
+
+        let mut paths = paths.into_iter().collect::<Vec<_>>();
+
+        sort_virtual_paths(&mut paths);
 
         Self {
             loader,
@@ -93,7 +98,7 @@ impl<T: Plugin> PluginRegistry<T> {
 
         // Ensure virtual host paths exist, otherwise WASI (via extism)
         // will throw a cryptic file/directory not found error.
-        for host_path in self.virtual_paths.keys() {
+        for (host_path, _) in &self.virtual_paths {
             fs::create_dir_all(host_path)?;
         }
 
@@ -104,7 +109,7 @@ impl<T: Plugin> PluginRegistry<T> {
         Arc::clone(&self.plugins)
     }
 
-    pub fn get_virtual_paths(&self) -> &BTreeMap<PathBuf, PathBuf> {
+    pub fn get_virtual_paths(&self) -> &Vec<(PathBuf, PathBuf)> {
         &self.virtual_paths
     }
 

@@ -6,7 +6,7 @@ use moon_common::is_ci;
 use moon_common::path::PathExt;
 use moon_config::{Input, TaskOptionAffectedFilesPattern};
 use moon_env_var::{DotEnv, GlobalEnvBag};
-use moon_process::{Command, Shell, ShellType};
+use moon_process::{Command, ShellType};
 use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
 use moon_task::Task;
@@ -262,16 +262,16 @@ impl<'task> CommandBuilder<'task> {
                 use moon_config::TaskUnixShell;
 
                 self.command.set_shell(match self.task.options.unix_shell {
-                    TaskUnixShell::Bash => Shell::new(ShellType::Bash),
-                    TaskUnixShell::Elvish => Shell::new(ShellType::Elvish),
-                    TaskUnixShell::Fish => Shell::new(ShellType::Fish),
-                    TaskUnixShell::Ion => Shell::new(ShellType::Ion),
-                    TaskUnixShell::Murex => Shell::new(ShellType::Murex),
-                    TaskUnixShell::Nu => Shell::new(ShellType::Nu),
-                    TaskUnixShell::Pwsh => Shell::new(ShellType::Pwsh),
-                    TaskUnixShell::Sh => Shell::new(ShellType::Sh),
-                    TaskUnixShell::Xonsh => Shell::new(ShellType::Xonsh),
-                    TaskUnixShell::Zsh => Shell::new(ShellType::Zsh),
+                    TaskUnixShell::Bash => ShellType::Bash,
+                    TaskUnixShell::Elvish => ShellType::Elvish,
+                    TaskUnixShell::Fish => ShellType::Fish,
+                    TaskUnixShell::Ion => ShellType::Ion,
+                    TaskUnixShell::Murex => ShellType::Murex,
+                    TaskUnixShell::Nu => ShellType::Nu,
+                    TaskUnixShell::Pwsh => ShellType::Pwsh,
+                    TaskUnixShell::Sh => ShellType::Sh,
+                    TaskUnixShell::Xonsh => ShellType::Xonsh,
+                    TaskUnixShell::Zsh => ShellType::Zsh,
                 });
             }
 
@@ -281,14 +281,14 @@ impl<'task> CommandBuilder<'task> {
 
                 self.command
                     .set_shell(match self.task.options.windows_shell {
-                        TaskWindowsShell::Bash => Shell::new(ShellType::Bash),
-                        TaskWindowsShell::Elvish => Shell::new(ShellType::Elvish),
-                        TaskWindowsShell::Fish => Shell::new(ShellType::Fish),
-                        TaskWindowsShell::Murex => Shell::new(ShellType::Murex),
-                        TaskWindowsShell::Nu => Shell::new(ShellType::Nu),
-                        TaskWindowsShell::Pwsh => Shell::new(ShellType::Pwsh),
-                        TaskWindowsShell::PowerShell => Shell::new(ShellType::PowerShell),
-                        TaskWindowsShell::Xonsh => Shell::new(ShellType::Xonsh),
+                        TaskWindowsShell::Bash => ShellType::Bash,
+                        TaskWindowsShell::Elvish => ShellType::Elvish,
+                        TaskWindowsShell::Fish => ShellType::Fish,
+                        TaskWindowsShell::Murex => ShellType::Murex,
+                        TaskWindowsShell::Nu => ShellType::Nu,
+                        TaskWindowsShell::Pwsh => ShellType::Pwsh,
+                        TaskWindowsShell::PowerShell => ShellType::PowerShell,
+                        TaskWindowsShell::Xonsh => ShellType::Xonsh,
                     });
             }
         } else {
@@ -396,10 +396,7 @@ impl<'task> CommandBuilder<'task> {
                         if arg.contains(['*', '$', '+', '[', ']']) {
                             format!("\"{arg}\"")
                         } else {
-                            match &self.command.shell {
-                                Some(shell) => shell.instance.quote(&arg),
-                                None => arg,
-                            }
+                            arg
                         }
                     })
                     .collect::<Vec<_>>();

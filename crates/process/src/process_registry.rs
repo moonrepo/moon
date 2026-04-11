@@ -194,21 +194,18 @@ async fn kill_processes(processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>) {
         children.len()
     );
 
-    let mut futures = vec![];
+    let mut set = JoinSet::new();
 
     for (pid, child) in children {
-        futures.push(tokio::spawn(async move {
+        set.spawn(async move {
             trace!(pid, "Killing child process");
 
             if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
                 warn!(pid, "Failed to kill child process: {error}");
             }
-        }));
+        });
     }
 
     processes.write().await.clear();
-
-    for future in futures {
-        let _ = future.await;
-    }
+    set.join_all().await;
 }

@@ -11,7 +11,7 @@ use moon_pdk_api::SyncWorkspaceInput;
 use moon_remote::RemoteService;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
-use tokio::task;
+use tokio::task::JoinSet;
 use tracing::warn;
 use tracing::{debug, instrument};
 
@@ -47,14 +47,14 @@ pub async fn sync_workspace(
     debug!("Syncing workspace");
 
     // Run operations in parallel
-    let mut operation_futures: Vec<task::JoinHandle<miette::Result<Vec<Operation>>>> = vec![];
+    let mut set = JoinSet::<miette::Result<Vec<Operation>>>::new();
 
     {
         debug!("Syncing config schemas");
 
         let app_context = Arc::clone(&app_context);
 
-        operation_futures.push(task::spawn(async move {
+        set.spawn(async move {
             Ok(vec![
                 Operation::sync_operation("config-schemas")?
                     .track_async_with_check(
@@ -63,7 +63,7 @@ pub async fn sync_workspace(
                     )
                     .await?,
             ])
-        }));
+        });
     }
 
     if app_context.workspace_config.codeowners.sync {
@@ -74,7 +74,7 @@ pub async fn sync_workspace(
 
         let app_context = Arc::clone(&app_context);
 
-        operation_futures.push(task::spawn(async move {
+        set.spawn(async move {
             Ok(vec![
                 Operation::sync_operation("codeowners")?
                     .track_async_with_check(
@@ -83,7 +83,7 @@ pub async fn sync_workspace(
                     )
                     .await?,
             ])
-        }));
+        });
     }
 
     if app_context.workspace_config.vcs.sync {
@@ -95,13 +95,13 @@ pub async fn sync_workspace(
 
         let app_context = Arc::clone(&app_context);
 
-        operation_futures.push(task::spawn(async move {
+        set.spawn(async move {
             Ok(vec![
                 Operation::sync_operation("vcs-hooks")?
                     .track_async_with_check(|| sync_vcs_hooks(&app_context, false), |result| result)
                     .await?,
             ])
-        }));
+        });
     }
 
     if app_context.toolchain_registry.has_plugin_configs() {
@@ -109,7 +109,7 @@ pub async fn sync_workspace(
 
         let app_context = Arc::clone(&app_context);
 
-        operation_futures.push(task::spawn(async move {
+        set.spawn(async move {
             let mut ops = vec![];
 
             for sync_result in app_context
@@ -125,7 +125,7 @@ pub async fn sync_workspace(
             }
 
             Ok(ops)
-        }));
+        });
     }
 
     if app_context.extension_registry.has_plugin_configs() {
@@ -133,7 +133,7 @@ pub async fn sync_workspace(
 
         let app_context = Arc::clone(&app_context);
 
-        operation_futures.push(task::spawn(async move {
+        set.spawn(async move {
             let mut ops = vec![];
 
             for sync_result in app_context
@@ -149,11 +149,11 @@ pub async fn sync_workspace(
             }
 
             Ok(ops)
-        }));
+        });
     }
 
-    for future in operation_futures {
-        action.operations.extend(future.await.into_diagnostic()??);
+    while let Some(result) = set.join_next().await {
+        action.operations.extend(result.into_diagnostic()??);
     }
 
     // If files have been modified in CI, we should update the status to warning,

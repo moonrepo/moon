@@ -45,7 +45,7 @@ fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
     );
 
     // These must exist or extism errors
-    for host_path in registry.get_virtual_paths().keys() {
+    for (host_path, _) in registry.get_virtual_paths() {
         fs::create_dir_all(host_path).unwrap();
     }
 
@@ -61,7 +61,7 @@ mod plugin_registry {
         let registry = create_registry(sandbox.path());
         let mut count = 0;
 
-        for guest in registry.get_virtual_paths().values() {
+        for (_, guest) in registry.get_virtual_paths() {
             if guest.to_str().unwrap() == "/workspace" {
                 count += 1;
             }

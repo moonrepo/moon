@@ -8,7 +8,7 @@ use moon_affected::Affected;
 use moon_common::is_ci;
 use moon_config::TaskOptionAffectedFilesPattern;
 use moon_env_var::GlobalEnvBag;
-use moon_process::{Command, EnvBehavior};
+use moon_process::{Command, Env};
 use moon_task::{Target, TargetLocator, TaskOptionAffectedFiles};
 use std::env;
 use std::ffi::OsString;
@@ -357,7 +357,7 @@ mod command_builder {
 
             assert_eq!(
                 command.env.get(&OsString::from("KEY1")).unwrap(),
-                &EnvBehavior::SetIfMissing(OsString::from("value1"))
+                &Env::SetIfMissing(OsString::from("value1"))
             );
         }
 
@@ -372,7 +372,7 @@ mod command_builder {
                     .env
                     .get(&OsString::from("UNSET_SYSTEM_LOCAL"))
                     .unwrap(),
-                &EnvBehavior::Unset
+                &Env::Unset
             );
         }
         #[tokio::test(flavor = "multi_thread")]
@@ -386,7 +386,7 @@ mod command_builder {
                     .env
                     .get(&OsString::from("UNSET_SYSTEM_FILE"))
                     .unwrap(),
-                &EnvBehavior::Unset
+                &Env::Unset
             );
         }
 
@@ -539,7 +539,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    EnvBehavior::Unset
+                    Env::Unset
                 );
             }
 
@@ -551,7 +551,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    EnvBehavior::Unset
+                    Env::Unset
                 );
             }
 
@@ -628,7 +628,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    EnvBehavior::Unset
+                    Env::Unset
                 );
             }
 
@@ -640,7 +640,7 @@ mod command_builder {
 
                 assert_eq!(
                     *command.env.get(&OsString::from("REMOVE_VAR")).unwrap(),
-                    EnvBehavior::Unset
+                    Env::Unset
                 );
             }
 
@@ -725,7 +725,7 @@ mod command_builder {
                 })
                 .await;
 
-            assert!(command.shell.unwrap().bin.to_string_lossy().contains("elv"));
+            assert!(command.shell.unwrap().to_string().contains("elv"));
         }
 
         #[cfg(windows)]
@@ -739,14 +739,7 @@ mod command_builder {
                 })
                 .await;
 
-            assert!(
-                command
-                    .shell
-                    .unwrap()
-                    .bin
-                    .to_string_lossy()
-                    .contains("bash")
-            );
+            assert!(command.shell.unwrap().to_string().contains("bash"));
         }
     }
 
@@ -778,14 +771,7 @@ mod command_builder {
                 })
                 .await;
 
-            assert_eq!(
-                get_args(&command),
-                if cfg!(windows) {
-                    vec!["arg", "--opt", "'./file.txt'"]
-                } else {
-                    vec!["arg", "--opt", "./file.txt"]
-                }
-            );
+            assert_eq!(get_args(&command), vec!["arg", "--opt", "./file.txt"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -808,11 +794,7 @@ mod command_builder {
 
             assert_eq!(
                 get_args(&command),
-                if cfg!(windows) {
-                    vec!["arg", "--opt", "'./project/file.txt'"]
-                } else {
-                    vec!["arg", "--opt", "./project/file.txt"]
-                }
+                vec!["arg", "--opt", "./project/file.txt"]
             );
         }
 
@@ -936,14 +918,7 @@ mod command_builder {
                 })
                 .await;
 
-            assert_eq!(
-                get_args(&command),
-                if cfg!(windows) {
-                    vec!["arg", "--opt", "'./input.txt'"]
-                } else {
-                    vec!["arg", "--opt", "./input.txt"]
-                }
-            );
+            assert_eq!(get_args(&command), vec!["arg", "--opt", "./input.txt"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -967,11 +942,7 @@ mod command_builder {
 
             assert_eq!(
                 get_args(&command),
-                if cfg!(windows) {
-                    vec!["arg", "--opt", "'./input.txt'", "'../shared/config.json'"]
-                } else {
-                    vec!["arg", "--opt", "./input.txt", "../shared/config.json"]
-                }
+                vec!["arg", "--opt", "./input.txt", "../shared/config.json"]
             );
         }
 
@@ -994,14 +965,7 @@ mod command_builder {
                 })
                 .await;
 
-            assert_eq!(
-                get_args(&command),
-                if cfg!(windows) {
-                    vec!["arg", "--opt", "'./file.json'"]
-                } else {
-                    vec!["arg", "--opt", "./file.json"]
-                }
-            );
+            assert_eq!(get_args(&command), vec!["arg", "--opt", "./file.json"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1027,11 +991,7 @@ mod command_builder {
 
             assert_eq!(
                 get_args(&command),
-                if cfg!(windows) {
-                    vec!["arg", "--opt", "'./file.json'", "'../shared/config.json'"]
-                } else {
-                    vec!["arg", "--opt", "./file.json", "../shared/config.json"]
-                }
+                vec!["arg", "--opt", "./file.json", "../shared/config.json"]
             );
         }
 
@@ -1064,27 +1024,15 @@ mod command_builder {
 
             assert_eq!(
                 get_args(&command),
-                if cfg!(windows) {
-                    vec![
-                        "arg",
-                        "--opt",
-                        "'./file.txt'",
-                        "\"./routes/$slug.tsx\"",
-                        "\"./routes/*.ts\"",
-                        "\"./routes/+page.svelte\"",
-                        "\"./routes/[id].ts\"",
-                    ]
-                } else {
-                    vec![
-                        "arg",
-                        "--opt",
-                        "./file.txt",
-                        "\"./routes/$slug.tsx\"",
-                        "\"./routes/*.ts\"",
-                        "\"./routes/+page.svelte\"",
-                        "\"./routes/[id].ts\"",
-                    ]
-                }
+                vec![
+                    "arg",
+                    "--opt",
+                    "./file.txt",
+                    "\"./routes/$slug.tsx\"",
+                    "\"./routes/*.ts\"",
+                    "\"./routes/+page.svelte\"",
+                    "\"./routes/[id].ts\"",
+                ]
             );
         }
     }

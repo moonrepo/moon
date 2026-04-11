@@ -10,6 +10,7 @@
 
 #### 🚀 Updates
 
+- Temporarily brought back `x86_64-apple-darwin` (Apple Intel) as a supported operating system.
 - **Affected**
   - Added an experimental asynchronous version of the affected tracker, that is 100-150% faster.
     - Enable with the `experiments.asyncAffectedTracking` setting in `.moon/workspace.config`.
@@ -41,6 +42,11 @@
   re-install itself.
 - Fixed an issue where OS based tasks would error while executing if they defined `outputs`, and
   you're on a different OS.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.56.1](https://github.com/moonrepo/proto/releases/tag/v0.56.0) from 0.55.4.
+- Updated dependencies.
 
 ## 2.1.4
 

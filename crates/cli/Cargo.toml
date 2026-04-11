@@ -31,7 +31,7 @@ moon_common = { path = "../common" }
 moon_env_var = { path = "../env-var" }
 clap = { workspace = true }
 mimalloc = { version = "0.1.48", default-features = false }
-proto_shim = "0.8.0"
+proto_shim = { workspace = true }
 sigpipe = "0.1.3"
 starbase = { workspace = true }
 starbase_styles = { workspace = true }
@@ -44,12 +44,12 @@ tracing = { workspace = true }
 
 # For extism/wastime (keep in sync with proto)
 extism = { workspace = true }
-wasmtime = "~37.0.3"
-wasi-common = "~37.0.3"
-wiggle = "~37.0.3"
+wasmtime = "~41.0.4"
+wasi-common = "~41.0.4"
+wiggle = "~41.0.4"
 
 # Overrides
-liblzma = { version = "0.4.5", features = ["static"] }
+liblzma = { version = "0.4.6", features = ["static"] }
 
 [dev-dependencies]
 moon_affected = { path = "../affected" }

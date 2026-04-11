@@ -12,7 +12,7 @@ use starbase_archive::Archiver;
 use starbase_utils::{fs, glob, net, yaml};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tokio::task::spawn;
+use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 use url::Url;
 
@@ -196,7 +196,7 @@ impl<'app> CodeGenerator<'app> {
     #[instrument(skip_all)]
     async fn resolve_template_locations(&mut self) -> miette::Result<()> {
         let mut locations = vec![];
-        let mut futures = vec![];
+        let mut set = JoinSet::new();
         let config_file_names = ConfigLoader::default().get_template_file_names();
 
         debug!("Resolving template locations to absolute file paths");
@@ -251,11 +251,11 @@ impl<'app> CodeGenerator<'app> {
                         .join(file_prefix);
                     let temp_file = self.moon_env.temp_dir.join(file_name);
 
-                    futures.push(spawn(download_and_unpack_archive(
+                    set.spawn(download_and_unpack_archive(
                         base_url.to_owned(),
                         template_location.clone(),
                         temp_file,
-                    )));
+                    ));
 
                     locations.push(template_location);
                 }
@@ -266,11 +266,11 @@ impl<'app> CodeGenerator<'app> {
                     let base_url = remote_url.trim_start_matches('/');
                     let template_location = self.moon_env.templates_dir.join("git").join(base_url);
 
-                    futures.push(spawn(clone_and_checkout_git_repository(
+                    set.spawn(clone_and_checkout_git_repository(
                         format!("https://{base_url}"),
                         revision.to_owned(),
                         template_location.clone(),
-                    )));
+                    ));
 
                     locations.push(template_location);
                 }
@@ -288,20 +288,20 @@ impl<'app> CodeGenerator<'app> {
                         .temp_dir
                         .join(format!("{package_slug}_{version_string}.tgz"));
 
-                    futures.push(spawn(download_and_unpack_npm_archive(
+                    set.spawn(download_and_unpack_npm_archive(
                         package.to_owned(),
                         version_string,
                         template_location.clone(),
                         temp_file,
-                    )));
+                    ));
 
                     locations.push(template_location);
                 }
             }
         }
 
-        for future in futures {
-            future.await.into_diagnostic()??;
+        while let Some(future) = set.join_next().await {
+            future.into_diagnostic()??;
         }
 
         self.template_locations = locations;

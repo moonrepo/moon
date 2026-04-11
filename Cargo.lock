@@ -795,7 +795,7 @@ dependencies = [
  "serde_json",
  "syn 2.0.117",
  "tempfile",
- "toml",
+ "toml 0.9.12+spec-1.1.0",
 ]
 
 [[package]]
@@ -940,9 +940,9 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.6.0"
+version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "19c9f1dde76b736e3681f28cec9d5a61299cbaae0fce80a68e43724ad56031eb"
+checksum = "406e68b4de5c59cfb8f750a7cbd4d31ae153788b8352167c1e5f4fc26e8c91e9"
 dependencies = [
  "clap",
 ]
@@ -1942,7 +1942,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "toml",
+ "toml 0.9.12+spec-1.1.0",
  "tracing",
  "tracing-subscriber",
  "ureq",
@@ -7906,9 +7906,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.19.6"
+version = "0.19.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc12ebacdd2b93bc506fffc0376c1d8b04b35bce54e5ed6f3228c6e41d346921"
+checksum = "4c81261f36caa45c87762df18f5e9a834376686b35742e65fe5ed1c7093e1d3e"
 dependencies = [
  "convert_case 0.10.0",
  "garde",
@@ -7930,7 +7930,7 @@ dependencies = [
  "serde_path_to_error",
  "starbase_styles",
  "thiserror 2.0.18",
- "toml",
+ "toml 1.1.2+spec-1.1.0",
  "tracing",
 ]
 
@@ -7949,9 +7949,9 @@ dependencies = [
 
 [[package]]
 name = "schematic_types"
-version = "0.11.4"
+version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87f45f7fb23e4533d3a0a9f5b27a8bb897a7b3b410730f0c1ee99025bf8b06aa"
+checksum = "aec5d2af995a99a7a347ff2cb4644abb95c9eb0d09f6472d48e5b1cd05326e8f"
 dependencies = [
  "indexmap",
  "regex",
@@ -7960,7 +7960,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "toml",
+ "toml 1.1.2+spec-1.1.0",
  "url",
 ]
 
@@ -8445,9 +8445,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.12.5"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a12650d1a71d59471adcb7026cd5ff783e0c47af0ee3ec89ef653a56adc6f15b"
+checksum = "eca203f28d36df38c61257b9e6640bfdfb4bb8c4aefa884b77f46f7dfbb85755"
 dependencies = [
  "binstall-tar",
  "bzip2",
@@ -8465,9 +8465,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_args"
-version = "0.1.9"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f221116b05d4049efc6b36cd530474c07e6719cdc0e92db426deacda7c8b02c6"
+checksum = "f628f99902939db8ccc40e110f4577ba4287b23e9dd293f90ac8c9b57dd31e2a"
 dependencies = [
  "pest",
  "pest_derive",
@@ -8505,9 +8505,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_sandbox"
-version = "0.10.6"
+version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7693caf2e3efcf055f6ba7ae95e2c8596828c736ae0a1e53a2822087e3b80409"
+checksum = "bfc48e15d92211d3e2b2ace7a1d8a8bd448f38128711d41550d7d32a0a7a4e23"
 dependencies = [
  "assert_cmd",
  "assert_fs",
@@ -8519,9 +8519,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.12.0"
+version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0bf785eeca48faf2326b0799b611a21b0a6dfae3b9a4eb641ef59562b1b69efa"
+checksum = "30265932d46e4f0e73418ccfcb8792c10601e6108f6384965bca2ef59eedd456"
 dependencies = [
  "miette 7.6.0",
  "regex",
@@ -8546,9 +8546,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.12.8"
+version = "0.12.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ef9bf7e986c862fc93e506efa1e6bbc5c76798e66c19e853516930e7a41e4c9"
+checksum = "e939a50874d4a6ffca941be181f73a75b4efbc31b6305f29ab27dd34863e1e2f"
 dependencies = [
  "async-trait",
  "dirs",
@@ -8564,7 +8564,7 @@ dependencies = [
  "serde_norway",
  "starbase_styles",
  "thiserror 2.0.18",
- "toml",
+ "toml 1.1.2+spec-1.1.0",
  "tracing",
  "url",
  "wax",
@@ -9033,6 +9033,21 @@ dependencies = [
  "toml_parser",
  "toml_writer",
  "winnow 0.7.15",
+]
+
+[[package]]
+name = "toml"
+version = "1.1.2+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81f3d15e84cbcd896376e6730314d59fb5a87f31e4b038454184435cd57defee"
+dependencies = [
+ "indexmap",
+ "serde_core",
+ "serde_spanned",
+ "toml_datetime 1.1.1+spec-1.1.0",
+ "toml_parser",
+ "toml_writer",
+ "winnow 1.0.1",
 ]
 
 [[package]]
@@ -9952,7 +9967,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "sha2",
- "toml",
+ "toml 0.9.12+spec-1.1.0",
  "wasmtime-environ",
  "windows-sys 0.61.2",
  "zstd",

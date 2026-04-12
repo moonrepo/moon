@@ -13,12 +13,12 @@
 - Temporarily brought back `x86_64-apple-darwin` (Apple Intel) as a supported operating system.
 - **Affected**
   - Added an experimental asynchronous version of the affected tracker, that is 100-150% faster.
-    - Enable with the `experiments.asyncAffectedTracking` setting in `.moon/workspace.config`.
+    - Enable with the `experiments.asyncAffectedTracking` setting in `.moon/workspace.*`.
 - 🆕 **Daemon**
   - Added an unstable daemon that will run in the background and process heavy operations. To start,
     it runs a file watcher on the workspace and invalidates caches.
   - Added a `moon daemon` command with `start`, `stop`, and more subcommands to manage the daemon.
-  - Added an `unstable_daemon` setting to `.moon/workspace.config`.
+  - Added an `unstable_daemon` setting to `.moon/workspace.*`.
 - **Graphs**
   - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
   - Greatly reduced memory footprint of the action, project, and task graphs. Nodes in the graph are
@@ -31,7 +31,7 @@
   - Added an experimental asynchronous version of the project and task graph builders, that utilizes
     a background thread pool per project to build the graph. This can improve performance by
     100-170% in large workspaces.
-    - Enable with the `experiments.asyncGraphBuilding` setting in `.moon/workspace.config`.
+    - Enable with the `experiments.asyncGraphBuilding` setting in `.moon/workspace.*`.
     - Unlike the sync version, the async version does not support cycles, and will not cut edges
       automatically to avoid cycles.
 

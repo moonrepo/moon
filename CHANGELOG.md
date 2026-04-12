@@ -34,6 +34,9 @@
   - Improved performance and memory consumption when loading plugins.
 - **Task runner**
   - Improved performance of task output archiving, by no longer blocking the main thread pool.
+- **Toolchains**
+  - Updated the system toolchain to be built-in instead of an external WASM plugin that needs to be
+    downloaded.
 - 🆕 **Workspace**
   - Added an experimental asynchronous version of the project and task graph builders, that utilizes
     a background thread pool per project to build the graph. This can improve performance by

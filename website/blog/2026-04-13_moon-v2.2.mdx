@@ -2,8 +2,8 @@
 slug: moon-v2.2
 title: moon v2.2 - Daemon, AI skills, async graph building, async affected tracking, and more
 authors: [milesj]
-tags: [daemon, performance, async, graph, affected, workspace]
-# image: ./img/moon/v2.1.png
+tags: [daemon, performance, async, graph, affected, workspace, ai, agent, skill, debug, tasks]
+image: ./img/moon/v2.2.png
 ---
 
 In this release, we focused entirely on performance improvements, with the introduction of a daemon,
@@ -270,8 +270,11 @@ parallelize the work.
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.2.0) for a full list of
 changes.
 
+- Temporarily brought back `x86_64-apple-darwin` (Apple Intel) as a supported operating system.
 - Greatly reduced memory footprint of the action, project, and task graphs. Nodes in the graph are
   now integers instead of objects.
 - Improved plugin registry performance and memory consumption when loading plugins.
 - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
 - Improved performance of task output archiving, by no longer blocking the main thread pool.
+- Updated the system toolchain to be built-in instead of an external WASM plugin that needs to be
+  downloaded.

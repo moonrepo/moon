@@ -1,16 +1,83 @@
 ---
 slug: moon-v2.2
-title: moon v2.2
+title: moon v2.2 - Daemon, AI skills, async graph building, async affected tracking, and more
 authors: [milesj]
-tags: []
-# image: ./img/moon/v2.1.png
+tags: [daemon, performance, async, graph, affected, workspace, ai, agent, skill, debug, tasks]
+image: ./img/moon/v2.2.png
 ---
 
-TODO
+In this release, we focused entirely on performance improvements, with the introduction of a daemon,
+and refactoring core components to be asynchronous.
 
 <!--truncate-->
 
-## New experimental async graph building
+## New `debug-task` AI agent skill
+
+We're shipping a new AI agent skill called `debug-task` that helps you systematically diagnose
+failing or misbehaving moon tasks. If you've ever spent time hunting down why a task is producing
+stale results, getting unexpected cache misses, or behaving differently in CI, this skill is for
+you.
+
+To install this skill, run the following command:
+
+```shell
+$ npx skills add moonrepo/moon --skill debug-task
+```
+
+The skill walks you through a 5-step diagnostic workflow:
+
+1. Inspect the resolved task configuration (after inheritance merging)
+2. Run with maximum verbosity to see exactly what moon is doing
+3. Inspect cache state and hash manifests
+4. Match symptoms to root causes using a built-in decision tree
+5. Validate that the fix actually resolves the issue
+
+It covers 15+ specific problem types across cache issues, configuration mistakes, execution
+problems, and CI vs local discrepancies. Most issues resolve by step 3, with deeper reference
+material available on demand.
+
+To use it, simply describe your task problem in Claude Code, Codex, OpenCode, or another compatible
+AI agent — mention the task target, what you expected, and what actually happened. The skill will
+take it from there.
+
+```shell
+/debug-task Help me debug why the `app:build` task is not being cached
+```
+
+> Thanks to [Yuzu02](https://github.com/Yuzu02) for the amazing contribution!
+
+## Unstable daemon
+
+Continuing the theme of performance, this release introduces an unstable background daemon. The
+daemon is a long-lived server process that keeps the workspace graph hot in memory and watches for
+file system changes, rebuilding the graph asynchronously only when configuration files change. This
+means that after the first `moon` invocation, subsequent commands can skip graph building entirely
+and connect to the running daemon instead.
+
+To try it out by enabling it in your workspace configuration:
+
+```yaml title=".moon/workspace.yml"
+unstable_daemon: true
+```
+
+Or test it with an environment variable first:
+
+```shell
+MOON_DAEMON=true moon run :build
+```
+
+When enabled, the daemon starts automatically on the first CLI command and stays running in the
+background. You can manage it with [`moon daemon start`](/docs/commands/daemon/start),
+[`stop`](/docs/commands/daemon/stop), [`restart`](/docs/commands/daemon/restart),
+[`status`](/docs/commands/daemon/status), and [`logs`](/docs/commands/daemon/logs) commands. If the
+daemon is unavailable for any reason, the CLI falls back to building graphs in-process — so there's
+no risk in enabling it.
+
+Since this is unstable, behavior and configuration may change in future releases. Check out the
+[daemon guide](/docs/guides/daemon) for full details on how it works, what files are watched, and
+troubleshooting tips.
+
+## Experimental async graph building
 
 Project and task building is a critical piece of moon. In previous versions, graph building was
 implemented synchronously, which could lead to performance issues in larger workspaces, but was
@@ -88,7 +155,7 @@ While the async graph builder is faster, there are some caveats to be aware of.
   the sync builder, we would attempt to cut edges between nodes when a cycle was detected, which
   could lead to incorrect results, but would not error.
 
-## New experimental async affected tracker
+## Experimental async affected tracker
 
 The affected tracker is a core component of moon that determines which projects and tasks are
 affected by changes in the codebase. In previous versions, the tracker was implemented
@@ -197,13 +264,17 @@ parallelize the work.
     <td>+146%</td>
   </tr>
 </table>
-​
 
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.2.0) for a full list of
 changes.
 
+- Temporarily brought back `x86_64-apple-darwin` (Apple Intel) as a supported operating system.
+- Greatly reduced memory footprint of the action, project, and task graphs. Nodes in the graph are
+  now integers instead of objects.
 - Improved plugin registry performance and memory consumption when loading plugins.
 - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
 - Improved performance of task output archiving, by no longer blocking the main thread pool.
+- Updated the system toolchain to be built-in instead of an external WASM plugin that needs to be
+  downloaded.

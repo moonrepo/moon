@@ -5,7 +5,7 @@ use moon_common::is_test_env;
 use moon_common::path::exe_name;
 use moon_console::Checkpoint;
 use moon_env_var::GlobalEnvBag;
-use moon_toolchain::is_using_global_toolchains;
+use moon_toolchain::requires_proto;
 use proto_core::flow::install::{InstallOptions, ProtoInstallError};
 use proto_core::flow::manage::Manager;
 use proto_core::flow::resolve::Resolver;
@@ -45,7 +45,7 @@ pub async fn setup_proto(
         return Ok(ActionStatus::Skipped);
     }
 
-    if is_using_global_toolchains(bag) || !app_context.toolchains_config.requires_proto() {
+    if !requires_proto(bag, &app_context.toolchains_config) {
         debug!("Skipping proto install as the toolchain has been disabled or is not necessary");
 
         return Ok(ActionStatus::Skipped);

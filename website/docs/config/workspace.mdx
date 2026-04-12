@@ -304,7 +304,7 @@ docker:
       - '**/package.json'
 ```
 
-## `experiments`<VersionLabel version="1.11.0" />
+## `experiments`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#experiments" />
 
@@ -316,30 +316,33 @@ Experiments are a work in progress and may be buggy. Please report any issues yo
 
 :::
 
-### `fasterGlobWalk`<VersionLabel version="1.34.0" />
+### `asyncAffectedTracking`<VersionLabel version="2.2.0" />
 
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#fasterGlobWalk" />
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncAffectedTracking" />
 
-Utilizes a new concurrent glob walking implementation that is on average, 1.5-2x faster than the
-current implementation. Additionally, common globs are now cached for the duration of the process.
-Defaults to `true`.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  fasterGlobWalk: true
-```
-
-### `gitV2`<VersionLabel version="1.34.0" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#gitV2" />
-
-Utilizes a Git implementation, that has better support for submodules, subtrees, and workspaces.
-Additionally, processes are parallized when applicable. Defaults to `true`.
+Utilizes a new asynchronous implementation of the affected tracker that can improve performance by
+100-150%. Defaults to `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
-  gitV2: true
+  asyncAffectedTracking: true
 ```
+
+Can also be enabled with the `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable.
+
+### `asyncGraphBuilding`<VersionLabel version="2.2.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncGraphBuilding" />
+
+Utilizes an asynchronous graph building implementation that can improve performance by 100-170% in
+large workspaces. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  asyncGraphBuilding: true
+```
+
+Can also be enabled with the `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING` environment variable.
 
 ## `generator`
 

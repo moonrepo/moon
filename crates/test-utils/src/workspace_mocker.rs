@@ -4,6 +4,7 @@ use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
 use moon_config::*;
+use moon_config_loader::{ConfigLoader, ExtensionsConfigExt, ToolchainsConfigExt};
 use moon_console::{Console, MoonReporter};
 use moon_env::MoonEnvironment;
 use moon_extension_plugin::ExtensionRegistry;
@@ -53,14 +54,14 @@ impl WorkspaceMocker {
             workspace_root: root.to_path_buf(),
             extensions_config: {
                 let mut config = ExtensionsConfig::default();
-                config.inherit_default_plugins();
-                config.inherit_plugin_locators().unwrap();
+                ExtensionsConfigExt::inherit_default_plugins(&mut config);
+                ExtensionsConfigExt::inherit_plugin_locators(&mut config).unwrap();
                 config
             },
             toolchains_config: {
                 let mut config = ToolchainsConfig::default();
-                config.inherit_default_plugins();
-                config.inherit_plugin_locators().unwrap();
+                ToolchainsConfigExt::inherit_default_plugins(&mut config);
+                ToolchainsConfigExt::inherit_plugin_locators(&mut config).unwrap();
                 config
             },
             ..Default::default()
@@ -124,15 +125,15 @@ impl WorkspaceMocker {
 
     pub fn update_extensions_config(mut self, mut op: impl FnMut(&mut ExtensionsConfig)) -> Self {
         op(&mut self.extensions_config);
-        self.extensions_config.inherit_default_plugins();
-        self.extensions_config.inherit_plugin_locators().unwrap();
+        ExtensionsConfigExt::inherit_default_plugins(&mut self.extensions_config);
+        ExtensionsConfigExt::inherit_plugin_locators(&mut self.extensions_config).unwrap();
         self
     }
 
     pub fn update_toolchains_config(mut self, mut op: impl FnMut(&mut ToolchainsConfig)) -> Self {
         op(&mut self.toolchains_config);
-        self.toolchains_config.inherit_default_plugins();
-        self.toolchains_config.inherit_plugin_locators().unwrap();
+        ToolchainsConfigExt::inherit_default_plugins(&mut self.toolchains_config);
+        ToolchainsConfigExt::inherit_plugin_locators(&mut self.toolchains_config).unwrap();
         self
     }
 
@@ -169,19 +170,19 @@ impl WorkspaceMocker {
 
     pub fn with_all_toolchains(self) -> Self {
         self.update_toolchains_config(|config| {
-            config.inherit_test_builtin_plugins().unwrap();
+            ToolchainsConfigExt::inherit_test_builtin_plugins(config).unwrap();
         })
     }
 
     pub fn with_test_extensions(self) -> Self {
         self.update_extensions_config(|config| {
-            config.inherit_test_plugins().unwrap();
+            ExtensionsConfigExt::inherit_test_plugins(config).unwrap();
         })
     }
 
     pub fn with_test_toolchains(self) -> Self {
         self.update_toolchains_config(|config| {
-            config.inherit_test_plugins().unwrap();
+            ToolchainsConfigExt::inherit_test_plugins(config).unwrap();
         })
     }
 

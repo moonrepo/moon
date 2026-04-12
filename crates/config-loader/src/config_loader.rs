@@ -1,14 +1,14 @@
 use crate::config_cache::ConfigCache;
 use crate::config_finder::ConfigFinder;
-use crate::extensions_config::ExtensionsConfig;
+use crate::extensions_config_ext::ExtensionsConfigExt;
 use crate::formats::hcl::HclFormat;
-use crate::inherited_tasks_config::InheritedTasksConfig;
-use crate::inherited_tasks_manager::InheritedTasksManager;
-use crate::project_config::{PartialProjectConfig, ProjectConfig};
-use crate::template_config::TemplateConfig;
-use crate::toolchains_config::ToolchainsConfig;
-use crate::workspace_config::WorkspaceConfig;
+use crate::toolchains_config_ext::ToolchainsConfigExt;
 use moon_common::color;
+use moon_config::{
+    ExtensionsConfig, InheritedTasksConfig, InheritedTasksManager, PartialProjectConfig,
+    ProjectConfig, TemplateConfig, TemplateFrontmatterConfig, ToolchainsConfig, WorkspaceConfig,
+};
+use proto_core::{PluginLocator, ProtoConfig};
 use schematic::{Config, ConfigLoader as Loader};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -151,23 +151,18 @@ impl ConfigLoader {
     ) -> miette::Result<ExtensionsConfig> {
         let mut result = self.create_extensions_loader(workspace_root)?.load()?;
 
-        #[cfg(feature = "proto")]
-        {
-            use proto_core::PluginLocator;
+        ExtensionsConfigExt::inherit_defaults(&mut result.config)?;
 
-            result.config.inherit_defaults()?;
+        // Resolve plugin file locations
+        for config in result.config.plugins.values_mut() {
+            if let Some(PluginLocator::File(file)) = &mut config.plugin {
+                let file_path = file.get_unresolved_path();
 
-            // Resolve plugin file locations
-            for config in result.config.plugins.values_mut() {
-                if let Some(PluginLocator::File(file)) = &mut config.plugin {
-                    let file_path = file.get_unresolved_path();
-
-                    file.path = Some(if file_path.is_absolute() {
-                        file_path
-                    } else {
-                        self.dir.join(file_path)
-                    });
-                }
+                file.path = Some(if file_path.is_absolute() {
+                    file_path
+                } else {
+                    self.dir.join(file_path)
+                });
             }
         }
 
@@ -264,28 +259,23 @@ impl ConfigLoader {
     pub fn load_toolchains_config<P: AsRef<Path>>(
         &self,
         workspace_root: P,
-        #[cfg(feature = "proto")] proto_config: &proto_core::ProtoConfig,
+        proto_config: &ProtoConfig,
     ) -> miette::Result<ToolchainsConfig> {
         let mut result = self.create_toolchains_loader(workspace_root)?.load()?;
         result.config.inherit_versions_from_env_vars()?;
 
-        #[cfg(feature = "proto")]
-        {
-            use proto_core::PluginLocator;
+        ToolchainsConfigExt::inherit_defaults(&mut result.config, proto_config)?;
 
-            result.config.inherit_defaults(proto_config)?;
+        // Resolve plugin file locations
+        for config in result.config.plugins.values_mut() {
+            if let Some(PluginLocator::File(file)) = &mut config.plugin {
+                let file_path = file.get_unresolved_path();
 
-            // Resolve plugin file locations
-            for config in result.config.plugins.values_mut() {
-                if let Some(PluginLocator::File(file)) = &mut config.plugin {
-                    let file_path = file.get_unresolved_path();
-
-                    file.path = Some(if file_path.is_absolute() {
-                        file_path
-                    } else {
-                        self.dir.join(file_path)
-                    });
-                }
+                file.path = Some(if file_path.is_absolute() {
+                    file_path
+                } else {
+                    self.dir.join(file_path)
+                });
             }
         }
 
@@ -297,6 +287,25 @@ impl ConfigLoader {
         workspace_root: P,
     ) -> miette::Result<WorkspaceConfig> {
         let result = self.create_workspace_loader(workspace_root)?.load()?;
+
+        Ok(result.config)
+    }
+
+    pub fn parse_template_frontmatter_config<T: AsRef<str>>(
+        content: T,
+    ) -> miette::Result<TemplateFrontmatterConfig> {
+        let mut content = content.as_ref();
+
+        if content.is_empty() {
+            content = "{}";
+        }
+
+        let result = Loader::<TemplateFrontmatterConfig>::new()
+            .set_help(color::muted_light(
+                "https://moonrepo.dev/docs/config/template",
+            ))
+            .code(content, "frontmatter.yml")?
+            .load()?;
 
         Ok(result.config)
     }

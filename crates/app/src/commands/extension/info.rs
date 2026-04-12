@@ -4,7 +4,7 @@ use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_common::{Id, is_test_env};
-use moon_config::ExtensionsConfig;
+use moon_config_loader::ExtensionsConfigExt;
 use moon_console::ui::*;
 use moon_extension_plugin::ExtensionPlugin;
 use proto_core::PluginLocator;
@@ -24,7 +24,7 @@ pub struct ExtensionInfoArgs {
 pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> AppResult {
     let Some(locator) = args
         .plugin
-        .or_else(|| ExtensionsConfig::get_plugin_locator(&args.id))
+        .or_else(|| ExtensionsConfigExt::get_plugin_locator(&args.id))
     else {
         return Err(AppError::PluginLocatorRequired.into());
     };

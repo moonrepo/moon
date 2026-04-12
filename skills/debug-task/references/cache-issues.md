@@ -1,12 +1,11 @@
-# Cache Issues: Diagnosis and Fixes
+# Cache issues: Diagnosis and fixes
 
-moon's cache is powered by content-based hashing. Every task run generates a
-hash from multiple sources (command, args, inputs, outputs, env, dependencies).
-If the hash matches a previous run, moon skips execution and restores the cached
-output.
+moon's cache is powered by content-based hashing. Every task run generates a hash from multiple
+sources (command, args, inputs, outputs, env, dependencies, etc). If the hash matches a previous
+run, moon skips execution and restores the cached output.
 
-When the cache behaves unexpectedly, it's almost always because the inputs to
-the hash don't match what you think they should.
+When the cache behaves unexpectedly, it's almost always because the inputs to the hash don't match
+what you think they should.
 
 ---
 
@@ -21,8 +20,8 @@ the hash don't match what you think they should.
 
 ## Unexpected cache hit
 
-**Symptom:** The task returns cached results when it should re-run. A source
-file changed, but moon says "cached" and serves old output.
+**Symptom:** The task returns cached results when it should re-run. A source file changed, but moon
+says "cached" and serves old output.
 
 **Root cause:** The changed file isn't covered by the task's `inputs`.
 
@@ -36,8 +35,8 @@ cat .moon/cache/states/<project>/<task>/lastRun.json
 moon hash <hash>
 ```
 
-The hash manifest shows every source that contributed to the hash. If the file
-you changed isn't listed, it's not in `inputs`.
+The hash manifest shows every source that contributed to the hash. If the file you changed isn't
+listed, it's not in `inputs`.
 
 ### Common causes
 
@@ -56,8 +55,8 @@ inputs:
 
 **Undeclared task dependency:**
 
-If task A depends on the output of task B, but `deps` doesn't include B, then
-B's outputs won't be factored into A's hash.
+If task A depends on the output of task B, but `deps` doesn't include B, then B's outputs won't be
+factored into A's hash.
 
 ```yaml
 # FIX: declare the dependency
@@ -70,8 +69,8 @@ tasks:
 
 **Environment variable not included:**
 
-If the task's behavior changes based on an env var (like `NODE_ENV`), but that
-var isn't declared in the task's `env` config, it won't affect the hash.
+If the task's behavior changes based on an env var (like `NODE_ENV`), but that var isn't declared in
+the task's `env` config, it won't affect the hash.
 
 ```yaml
 # FIX: declare env vars that affect the output
@@ -87,7 +86,7 @@ Alternatively, you can track an env var in `inputs` using the `$` prefix:
 ```yaml
 inputs:
   - 'src/**/*'
-  - '$NODE_ENV'  # env var value is included in the hash
+  - '$NODE_ENV'
 ```
 
 ### Quick fix
@@ -95,20 +94,20 @@ inputs:
 ```bash
 # Force a fresh run to confirm the problem is cache-related
 moon run <project>:<task> --force
-
-# If --force produces the correct output, the cache is stale
-# Expand inputs to cover the missing files
 ```
+
+If `--force` produces the correct output, the cache is stale. Expand inputs to cover the missing
+files.
 
 ---
 
 ## Unexpected cache miss
 
-**Symptom:** The task re-runs from scratch every time, even though nothing
-meaningful changed. You never see "cached" in the output.
+**Symptom:** The task re-runs from scratch every time, even though nothing meaningful changed. You
+never see "cached" in the output.
 
-**Root cause:** Something in the hash changes on every run — either the inputs
-are too broad, or the outputs include volatile files.
+**Root cause:** Something in the hash changes on every run — either the inputs are too broad, or the
+outputs include volatile files.
 
 ### Diagnosis
 
@@ -125,16 +124,17 @@ cat .moon/cache/states/<project>/<task>/lastRun.json
 moon hash <hash1> <hash2>
 ```
 
-The diff highlights exactly which fields differ between runs. This tells you
-what's causing the cache miss.
+The diff highlights exactly which fields differ between runs. This tells you what's causing the
+cache miss.
 
 ### Common causes
 
 **Inputs too broad:**
 
+Common folders like `node_modules` and `.git` are globally ignored, but everything else matches.
+
 ```yaml
 # PROBLEM: **/* matches too many irrelevant files in the project directory
-# (node_modules and .git are globally ignored, but everything else matches)
 inputs:
   - '**/*'
 
@@ -147,21 +147,19 @@ inputs:
 
 **Outputs include volatile files:**
 
-Files that change on every build — timestamps in generated files, sourcemaps
-with absolute paths, build manifests with dates — cause the hash to differ even
-when the source hasn't changed.
+Files that change on every build — timestamps in generated files, sourcemaps with absolute paths,
+build manifests with dates — cause the hash to differ even when the source hasn't changed.
 
 **Lockfile changes:**
 
-If `package-lock.json` or `yarn.lock` is in `inputs` (it is by default for
-node toolchain tasks), any dependency change invalidates the cache for every
-task. This is usually correct behavior, but can be surprising.
+If `package-lock.json`, `yarn.lock`, etc, is in `inputs`, any dependency change invalidates the
+cache for every task. This is usually correct behavior, but can be surprising.
 
 **Git-ignored files leaking in:**
 
-moon filters VCS-ignored files from `inputs` (including `node_modules` and
-`.git` which are globally ignored), but edge cases exist. If you
-see unexpected files in the hash manifest, check `.gitignore` coverage.
+moon filters VCS-ignored files from `inputs` (including `node_modules` and `.git` which are globally
+ignored), but edge cases exist. If you see unexpected files in the hash manifest, check `.gitignore`
+coverage.
 
 ### Quick fix
 
@@ -175,11 +173,11 @@ see unexpected files in the hash manifest, check `.gitignore` coverage.
 
 ## Outputs not restored
 
-**Symptom:** moon says "cached" (cache hit), but the expected output files
-don't appear in the project directory.
+**Symptom:** moon says "cached" (cache hit), but the expected output files don't appear in the
+project directory.
 
-**Root cause:** The `outputs` configuration doesn't match the actual files the
-task produces, or the archive is missing.
+**Root cause:** The `outputs` configuration doesn't match the actual files the task produces, or the
+archive is missing.
 
 ### Diagnosis
 
@@ -199,29 +197,28 @@ tar tzf .moon/cache/outputs/<hash>.tar.gz
 
 **Outputs misconfigured — path relativity:**
 
-Output paths can be project-relative or workspace-relative. By default they
-are project-relative, but you can use workspace-relative paths directly in
-the `outputs` config. If the build tool writes to an unexpected location,
-the paths won't match.
+Output paths can be project-relative or workspace-relative. By default they are project-relative,
+but you can use workspace-relative paths directly in the `outputs` config. If the build tool writes
+to an unexpected location, the paths won't match.
 
 ```yaml
 # PROBLEM: build writes to <workspace>/dist, not <project>/dist
 outputs:
-  - 'dist'  # relative to project root
+  - 'dist' # relative to project root
+
 
 # FIX: adjust the path or the build tool's output directory
 ```
 
 **Glob outputs + extra files:**
 
-If `outputs` uses a glob like `dist/**/*`, and the build produces files outside
-that glob, those files won't be archived. On hydration, only the archived files
-are restored.
+If `outputs` uses a glob like `dist/**/*`, and the build produces files outside that glob, those
+files won't be archived. On hydration, only the archived files are restored.
 
 **Archive doesn't exist:**
 
-If the task has never completed successfully with caching enabled, there's no
-archive to restore. This happens when:
+If the task has never completed successfully with caching enabled, there's no archive to restore.
+This happens when:
 
 - The task was previously run with `--cache off`
 - The task errored on the run that generated this hash
@@ -287,10 +284,10 @@ moon run <project>:<task> --cache write  # write but don't read
 
 These are different:
 
-| Flag | Reads cache | Writes cache | Use when |
-|------|------------|-------------|----------|
-| `--force` | No | Yes | You want a fresh run but still want to populate the cache |
-| `--cache off` | No | No | You want to completely bypass caching (e.g., debugging) |
-| `--cache read` | Yes | No | You want to use existing cache but not pollute it |
-| `--cache write` | No | Yes | Same as `--force` but more explicit |
-| (default) | Yes | Yes | Normal operation |
+| Flag            | Reads cache | Writes cache | Use when                                                   |
+| --------------- | ----------- | ------------ | ---------------------------------------------------------- |
+| `--force`       | No          | Yes          | You want a fresh run but still want to populate the cache. |
+| `--cache off`   | No          | No           | You want to completely bypass caching (e.g., debugging).   |
+| `--cache read`  | Yes         | No           | You want to use existing cache but not pollute it.         |
+| `--cache write` | No          | Yes          | Same as `--force` but more explicit.                       |
+| (default)       | Yes         | Yes          | Normal operation.                                          |

@@ -1,9 +1,9 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
-    ConfigLoader, DependencySource, InheritFor, InheritedTasks, InheritedTasksManager,
-    LanguageType, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig,
-    ToolchainsConfig,
+    DependencySource, InheritFor, InheritedTasks, InheritedTasksManager, LanguageType,
+    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig, ToolchainsConfig,
 };
+use moon_config_loader::ConfigLoader;
 use moon_file_group::FileGroup;
 use moon_project::{Project, ProjectAlias};
 use moon_task::Task;

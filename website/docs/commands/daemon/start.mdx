@@ -1,0 +1,29 @@
+---
+title: daemon start
+sidebar_label: start
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon start` command will start the daemon background process if it's not already
+running. If a daemon is already running for this workspace, the existing process is reused.
+
+```shell
+$ moon daemon start
+```
+
+:::info
+
+You typically don't need to run this command manually. When the daemon is
+[enabled](../../guides/daemon#enabling-the-daemon), it starts automatically with any `moon` command.
+
+:::
+
+:::caution
+
+The daemon must be enabled in your [workspace configuration](../../config/workspace) before it can
+be started. If the `daemon` setting is not enabled, this command will display a warning and exit.
+
+:::

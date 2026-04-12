@@ -107,6 +107,24 @@ const sidebars: SidebarsConfig = {
 				'commands/completions',
 				{
 					type: 'category',
+					label: 'daemon',
+					items: [
+						'commands/daemon/logs',
+						'commands/daemon/restart',
+						'commands/daemon/start',
+						'commands/daemon/status',
+						'commands/daemon/stop',
+					],
+					link: {
+						type: 'generated-index',
+						title: 'daemon',
+						description: 'Manage the background daemon process.',
+						slug: '/commands/daemon',
+						keywords: ['cli', 'commands', 'daemon'],
+					},
+				},
+				{
+					type: 'category',
 					label: 'docker',
 					items: [
 						'commands/docker/file',
@@ -227,6 +245,7 @@ const sidebars: SidebarsConfig = {
 		'guides/ci',
 		'guides/codegen',
 		'guides/codeowners',
+		'guides/daemon',
 		'guides/debug-task',
 		'guides/docker',
 		'guides/exec-plan',

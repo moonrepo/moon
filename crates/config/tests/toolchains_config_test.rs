@@ -1,7 +1,8 @@
 mod utils;
 
 use httpmock::prelude::*;
-use moon_config::{ConfigLoader, ToolchainsConfig};
+use moon_config::ToolchainsConfig;
+use moon_config_loader::ConfigLoader;
 use proto_core::{Id, ProtoConfig, ToolContext, UnresolvedVersionSpec};
 use schematic::ConfigLoader as BaseLoader;
 use serde_json::Value;

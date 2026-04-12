@@ -13,12 +13,19 @@
 - Temporarily brought back `x86_64-apple-darwin` (Apple Intel) as a supported operating system.
 - **Affected**
   - Added an experimental asynchronous version of the affected tracker, that is 100-150% faster.
-    - Enable with the `experiments.asyncAffectedTracking` setting in `.moon/workspace.config`.
+    - Enable with the `experiments.asyncAffectedTracking` setting in `.moon/workspace.*`.
+- **Config**
+  - Added `MOON_PIPELINE_AUTO_CLEAN_CACHE` environment variable support for the
+    `pipeline.autoCleanCache` setting.
+  - Added `MOON_PIPELINE_CACHE_LIFETIME` environment variable support for the
+    `pipeline.cacheLifetime` setting.
+  - Added `MOON_PIPELINE_KILL_PROCESS_THRESHOLD` environment variable support for the
+    `pipeline.killProcessThreshold` setting.
 - 🆕 **Daemon**
   - Added an unstable daemon that will run in the background and process heavy operations. To start,
     it runs a file watcher on the workspace and invalidates caches.
   - Added a `moon daemon` command with `start`, `stop`, and more subcommands to manage the daemon.
-  - Added an `unstable_daemon` setting to `.moon/workspace.config`.
+  - Added an `unstable_daemon` setting to `.moon/workspace.*`.
 - **Graphs**
   - Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
   - Greatly reduced memory footprint of the action, project, and task graphs. Nodes in the graph are
@@ -27,11 +34,14 @@
   - Improved performance and memory consumption when loading plugins.
 - **Task runner**
   - Improved performance of task output archiving, by no longer blocking the main thread pool.
+- **Toolchains**
+  - Updated the system toolchain to be built-in instead of an external WASM plugin that needs to be
+    downloaded.
 - 🆕 **Workspace**
   - Added an experimental asynchronous version of the project and task graph builders, that utilizes
     a background thread pool per project to build the graph. This can improve performance by
     100-170% in large workspaces.
-    - Enable with the `experiments.asyncGraphBuilding` setting in `.moon/workspace.config`.
+    - Enable with the `experiments.asyncGraphBuilding` setting in `.moon/workspace.*`.
     - Unlike the sync version, the async version does not support cycles, and will not cut edges
       automatically to avoid cycles.
 
@@ -42,6 +52,8 @@
   re-install itself.
 - Fixed an issue where OS based tasks would error while executing if they defined `outputs`, and
   you're on a different OS.
+- Fixed an issue where proto would be installed even when toolchains were disabled with
+  `MOON_TOOLCHAIN_FORCE_GLOBALS`.
 
 #### ⚙️ Internal
 

@@ -1,6 +1,6 @@
 use crate::{config_enum, config_struct, is_false};
 use moon_common::Id;
-use schematic::Config;
+use schematic::{Config, env};
 
 config_enum!(
     /// Toggles the state of actions within the pipeline.
@@ -43,11 +43,11 @@ config_struct!(
     pub struct PipelineConfig {
         /// Automatically clean the cache after every task run.
         /// @since 1.24.0
-        #[setting(default = true)]
+        #[setting(default = true, env = "MOON_PIPELINE_AUTO_CLEAN_CACHE", parse_env = env::parse_bool)]
         pub auto_clean_cache: bool,
 
         /// The lifetime in which task outputs will be cached.
-        #[setting(default = "7 days")]
+        #[setting(default = "7 days", env = "MOON_PIPELINE_CACHE_LIFETIME")]
         pub cache_lifetime: String,
 
         /// Automatically inherit color settings for all tasks being ran.
@@ -63,7 +63,7 @@ config_struct!(
         /// A threshold in milliseconds in which to force kill running child
         /// processes after the pipeline receives an external signal. A value
         /// of 0 will not kill the process and let them run to completion.
-        #[setting(default = 2000)]
+        #[setting(default = 2000, env = "MOON_PIPELINE_KILL_PROCESS_THRESHOLD")]
         pub kill_process_threshold: u32,
 
         /// Logs the task's command and arguments when running the task.

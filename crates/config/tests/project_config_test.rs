@@ -2,10 +2,11 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, DependencyScope, GlobPath, Input, LanguageType, LayerType, OwnersPaths,
-    PortablePath, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry,
-    TaskArgs, ToolchainPluginConfig,
+    DependencyScope, GlobPath, Input, LanguageType, LayerType, OwnersPaths, PortablePath,
+    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
+    ToolchainPluginConfig,
 };
+use moon_config_loader::ConfigLoader;
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 use schematic::schema::IndexMap;

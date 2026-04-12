@@ -13,10 +13,11 @@ use moon_common::{
     path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, DependencyScope, ExtensionsConfig, InheritedTasksManager,
-    ProjectDependencyConfig, TaskDependencyType, ToolchainsConfig, WorkspaceConfig,
-    WorkspaceProjectGlobFormat, WorkspaceProjects, finalize_config,
+    DependencyScope, ExtensionsConfig, InheritedTasksManager, ProjectDependencyConfig,
+    TaskDependencyType, ToolchainsConfig, WorkspaceConfig, WorkspaceProjectGlobFormat,
+    WorkspaceProjects, finalize_config,
 };
+use moon_config_loader::ConfigLoader;
 use moon_extension_plugin::ExtensionRegistry;
 use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
 use moon_project::{Project, ProjectAlias, ProjectError};

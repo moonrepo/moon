@@ -17,7 +17,8 @@ moon_app_macros = { path = "../app-macros" }
 moon_cache = { path = "../cache" }
 moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
-moon_config = { path = "../config", features = ["loader", "proto", "tracing"] }
+moon_config = { path = "../config" }
+moon_config_loader = { path = "../config-loader" }
 moon_console = { path = "../console" }
 moon_daemon = { path = "../daemon" }
 moon_docker = { path = "../docker" }

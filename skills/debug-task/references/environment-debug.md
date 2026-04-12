@@ -1,7 +1,7 @@
-# Environment and Debug Tools
+# Environment and debug Tools
 
-This reference covers the debug environment variables, log levels, and
-inspection tools available for deep debugging of moon tasks.
+This reference covers the debug environment variables, log levels, and inspection tools available
+for deep debugging of moon tasks.
 
 ---
 
@@ -18,16 +18,17 @@ inspection tools available for deep debugging of moon tasks.
 
 ## Debug environment variables
 
-moon provides several environment variables that reveal internal state during
-task execution. Set them before running `moon run`:
+moon provides several environment variables that reveal internal state during task execution. Set
+them before running `moon run`:
 
-| Variable | What it reveals |
-|----------|----------------|
-| `MOON_DEBUG_PROCESS_ENV` | All environment variables passed to the child process. By default moon hides these to avoid leaking secrets. |
-| `MOON_DEBUG_PROCESS_INPUT` | Full stdin passed to the child process. By default moon truncates this. |
-| `MOON_DEBUG_MCP` | Debug output from MCP server interactions. |
-| `MOON_DEBUG_REMOTE` | Debug output from remote caching — connection errors, sync status. |
-| `MOON_DEBUG_WASM` | Debug output from WASM plugins — loading, execution, memory profiles. |
+| Variable                   | What it reveals                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `MOON_DEBUG_DAEMON`        | Debug output from the daemon server.                                                                         |
+| `MOON_DEBUG_MCP`           | Debug output from MCP server interactions.                                                                   |
+| `MOON_DEBUG_PROCESS_ENV`   | All environment variables passed to the child process. By default moon hides these to avoid leaking secrets. |
+| `MOON_DEBUG_PROCESS_INPUT` | Full stdin passed to the child process. By default moon truncates this.                                      |
+| `MOON_DEBUG_REMOTE`        | Debug output from remote caching — connection errors, sync status.                                           |
+| `MOON_DEBUG_WASM`          | Debug output from WASM plugins — loading, execution, memory profiles.                                        |
 
 ### Usage
 
@@ -58,38 +59,37 @@ tasks:
       NODE_ENV: 'production'
 ```
 
-Env vars declared in `env` are included in the hash. If you change `NODE_ENV`
-from `production` to `development`, the hash changes and the cache misses.
+Env vars declared in `env` are included in the hash. If you change `NODE_ENV` from `production` to
+`development`, the hash changes and the cache misses.
 
-Env vars **not** declared in `env` (but present in the shell) are still passed
-to the process, but they don't affect the hash. This means a different
-`NODE_ENV` in your shell won't trigger a cache miss unless it's in the config.
+Env vars **not** declared in `env` (but present in the shell) are still passed to the process, but
+they don't affect the hash. This means a different `NODE_ENV` in your shell won't trigger a cache
+miss unless it's in the config.
 
 ---
 
 ## Log levels
 
-Control verbosity with the `--log` global option or `MOON_LOG` environment
-variable.
+Control verbosity with the `--log` global option or `MOON_LOG` environment variable.
 
-| Level | What you see |
-|-------|-------------|
-| `off` | Nothing |
-| `error` | Only errors |
-| `warn` | Warnings and above |
-| `info` | (default) Status messages, task output |
-| `debug` | Internal decisions — hash generation, cache checks, toolchain resolution |
-| `trace` | Everything — network requests, child process details, file system operations |
-| `verbose` | Like `trace` plus span information (timing, nesting) |
+| Level     | What you see                                                                 |
+| --------- | ---------------------------------------------------------------------------- |
+| `off`     | Nothing                                                                      |
+| `error`   | Only errors                                                                  |
+| `warn`    | Warnings and above                                                           |
+| `info`    | (default) Status messages, task output                                       |
+| `debug`   | Internal decisions — hash generation, cache checks, toolchain resolution     |
+| `trace`   | Everything — network requests, child process details, file system operations |
+| `verbose` | Like `trace` plus span information (timing, nesting)                         |
 
 ### Recommendations
 
-- **Start with `debug`** for most issues. It shows why moon made each decision
-  without drowning you in noise.
-- **Escalate to `trace`** only if `debug` doesn't reveal the problem. Trace
-  output is voluminous — pipe it to a file.
-- **Use `verbose`** for performance profiling. The span information shows exactly
-  how long each operation took.
+- **Start with `debug`** for most issues. It shows why moon made each decision without drowning you
+  in noise.
+- **Escalate to `trace`** only if `debug` doesn't reveal the problem. Trace output is voluminous —
+  pipe it to a file.
+- **Use `verbose`** for performance profiling. The span information shows exactly how long each
+  operation took.
 
 ```bash
 # Debug level (recommended starting point)
@@ -121,12 +121,11 @@ moon task <project>:<task>
 moon task <project>:<task> --json
 ```
 
-Shows the fully resolved task configuration after inheritance, merging, and
-token resolution. This is the single most useful debugging command — always
-start here.
+Shows the fully resolved task configuration after inheritance, merging, and token resolution. This
+is the single most useful debugging command — always start here.
 
-**Tip:** Running `moon task <project>:<task>` without `--json` also displays
-all available `PATH`s for the resolved toolchain.
+**Tip:** Running `moon task <project>:<task>` without `--json` also displays all available `PATH`s
+for the resolved toolchain.
 
 ### `moon project` — inspect project metadata
 
@@ -138,21 +137,23 @@ moon project <project>
 moon project <project> --json
 ```
 
-Shows project metadata: language, toolchain, stack, layer, tags, dependencies,
-file groups, and all configured tasks.
+Shows project metadata: language, toolchain, stack, layer, tags, dependencies, file groups, and all
+configured tasks.
 
 ### `moon task-graph` / `moon project-graph` — visualize graphs
 
 ```bash
 # Visualize the task dependency graph
 moon task-graph <project>:<task>
+# --dot, or --json for external analysis
 
 # Visualize the project dependency graph
 moon project-graph <project>
+# --dot, or --json for external analysis
 ```
 
-These show task-level and project-level dependency relationships respectively,
-complementing the lower-level action graph below.
+These show task-level and project-level dependency relationships respectively, complementing the
+lower-level action graph below.
 
 ### `moon action-graph` — visualize the dependency graph
 
@@ -168,9 +169,8 @@ moon action-graph <project>:<task> --dot > graph.dot
 moon action-graph <project>:<task> --json > graph.json
 ```
 
-The action graph shows every action moon will take to run a target: toolchain
-setup, dependency installation, project sync, and task execution. It's the
-best tool for diagnosing:
+The action graph shows every action moon will take to run a target: toolchain setup, dependency
+installation, project sync, and task execution. It's the best tool for diagnosing:
 
 - Why a task depends on something unexpected
 - Why a task is blocked (look for persistent nodes)
@@ -227,8 +227,8 @@ The trace shows:
 - Process execution time
 - Cache read/write time
 
-This is the most granular debugging tool. Use it when you know something is
-slow but can't tell what from the logs alone.
+This is the most granular debugging tool. Use it when you know something is slow but can't tell what
+from the logs alone.
 
 ---
 
@@ -238,6 +238,7 @@ Quick reference for where moon stores internal state:
 
 ```
 .moon/cache/
+  daemon/                         # Daemon server state and logs
   hashes/<hash>.json              # Hash manifest — what was hashed
   outputs/<hash>.tar.gz           # Archived task outputs
   states/<project>/
@@ -248,8 +249,7 @@ Quick reference for where moon stores internal state:
       stderr.log                  # Captured stderr from last run
 ```
 
-All paths are relative to the workspace root. The `.moon/cache/` directory
-should be git-ignored.
+All paths are relative to the workspace root. The `.moon/cache/` directory should be git-ignored.
 
 ---
 

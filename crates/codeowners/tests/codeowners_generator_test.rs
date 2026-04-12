@@ -1,5 +1,6 @@
 use moon_codeowners::CodeownersGenerator;
-use moon_config::{ConfigLoader, VcsProvider};
+use moon_config::VcsProvider;
+use moon_config_loader::ConfigLoader;
 use starbase_sandbox::{Sandbox, assert_snapshot, create_empty_sandbox, locate_fixture};
 use std::fs;
 

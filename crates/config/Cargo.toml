@@ -8,14 +8,10 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = true
 
-[package.metadata.docs.rs]
-features = ["loader"]
-
 [dependencies]
 moon_common = { version = "2.0.4", path = "../common" }
 moon_target = { version = "2.1.0", path = "../target" }
 deserialize_untagged_verbose_error = "0.1.5"
-hcl-rs = "0.19.6"
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
@@ -39,25 +35,18 @@ schematic = { workspace = true, features = [
 semver = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_path_to_error = "0.1.20"
 version_spec = { workspace = true, features = ["schematic"] }
 warpgate_api = { workspace = true, features = ["schematic"] }
 
-# Optional
-proto_core = { workspace = true, optional = true }
-tracing = { workspace = true, optional = true }
-
 [dev-dependencies]
-moon_config = { path = ".", features = ["proto", "tracing"] }
+moon_config_loader = { path = "../config-loader" }
 httpmock = "0.8.3"
+proto_core = { workspace = true }
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [features]
 default = []
-loader = ["schematic/url"]
-proto = ["loader", "tracing", "dep:proto_core"]
-tracing = ["dep:tracing"]
 
 [lints]
 workspace = true

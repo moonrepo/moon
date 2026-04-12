@@ -4967,6 +4967,7 @@ dependencies = [
  "moon_codegen",
  "moon_common",
  "moon_config",
+ "moon_config_loader",
  "moon_console",
  "moon_daemon",
  "moon_docker",
@@ -5125,6 +5126,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_common",
  "moon_config",
+ "moon_config_loader",
  "moon_env",
  "moon_process",
  "moon_time",
@@ -5147,6 +5149,7 @@ version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
  "moon_config",
+ "moon_config_loader",
  "moon_hash",
  "serde",
  "starbase_sandbox",
@@ -5174,12 +5177,11 @@ name = "moon_config"
 version = "2.0.9"
 dependencies = [
  "deserialize_untagged_verbose_error",
- "hcl-rs",
  "httpmock",
  "indexmap",
  "miette 7.6.0",
  "moon_common",
- "moon_config",
+ "moon_config_loader",
  "moon_target",
  "proto_core",
  "regex",
@@ -5189,12 +5191,26 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "serde_path_to_error",
  "serial_test",
  "starbase_sandbox",
- "tracing",
  "version_spec",
  "warpgate_api",
+]
+
+[[package]]
+name = "moon_config_loader"
+version = "0.0.1"
+dependencies = [
+ "hcl-rs",
+ "miette 7.6.0",
+ "moon_common",
+ "moon_config",
+ "proto_core",
+ "rustc-hash",
+ "schematic",
+ "serde",
+ "serde_path_to_error",
+ "tracing",
 ]
 
 [[package]]
@@ -5598,6 +5614,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_common",
  "moon_config",
+ "moon_config_loader",
  "moon_file_group",
  "moon_project",
  "moon_task",
@@ -5747,6 +5764,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_common",
  "moon_config",
+ "moon_config_loader",
  "moon_env_var",
  "moon_project",
  "moon_target",
@@ -5899,6 +5917,7 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
+ "moon_config_loader",
  "moon_console",
  "moon_env",
  "moon_extension_plugin",
@@ -6017,6 +6036,7 @@ dependencies = [
  "moon_cache",
  "moon_common",
  "moon_config",
+ "moon_config_loader",
  "moon_env_var",
  "moon_extension_plugin",
  "moon_feature_flags",

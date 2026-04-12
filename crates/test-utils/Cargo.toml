@@ -14,7 +14,8 @@ moon_action_graph = { path = "../action-graph" }
 moon_action_pipeline = { path = "../action-pipeline" }
 moon_cache = { path = "../cache" }
 moon_common = { path = "../common" }
-moon_config = { path = "../config", features = ["loader", "proto"] }
+moon_config = { path = "../config" }
+moon_config_loader = { path = "../config-loader" }
 moon_console = { path = "../console" }
 moon_env = { path = "../env" }
 moon_extension_plugin = { path = "../extension-plugin" }

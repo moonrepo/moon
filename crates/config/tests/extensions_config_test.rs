@@ -1,6 +1,7 @@
 mod utils;
 
-use moon_config::{ConfigLoader, ExtensionPluginConfig, ExtensionsConfig};
+use moon_config::{ExtensionPluginConfig, ExtensionsConfig};
+use moon_config_loader::ConfigLoader;
 use proto_core::warpgate::{PluginLocator, UrlLocator};
 use rustc_hash::FxHashMap;
 use std::path::Path;

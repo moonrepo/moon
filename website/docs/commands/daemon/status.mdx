@@ -1,0 +1,30 @@
+---
+title: daemon status
+sidebar_label: status
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon status` command displays information about the running daemon process.
+
+```shell
+$ moon daemon status
+```
+
+When the daemon is running, the following information is displayed:
+
+- **PID** — The process ID of the daemon.
+- **Socket** (macOS/Linux) or **Named pipe** (Windows) — The IPC endpoint used for communication.
+- **Uptime** — How long the daemon has been running.
+- **PID file** — Path to the PID file (`.moon/cache/daemon/moond.pid`).
+- **Log file** — Path to the log file (`.moon/cache/daemon/server.log`).
+
+If the daemon is not running, a warning is displayed instead.
+
+:::info
+
+View the official [daemon guide](../../guides/daemon) for more information on how the daemon works.
+
+:::

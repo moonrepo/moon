@@ -1,9 +1,8 @@
 use crate::app_error::AppError;
 use miette::IntoDiagnostic;
 use moon_common::path::locate_config_dir;
-use moon_config::{
-    ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
-};
+use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
+use moon_config_loader::ConfigLoader;
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_feature_flags::FeatureFlags;

@@ -8,7 +8,7 @@ use moon_config::{
     ExtensionsConfig, InheritedTasksConfig, InheritedTasksManager, PartialProjectConfig,
     ProjectConfig, TemplateConfig, TemplateFrontmatterConfig, ToolchainsConfig, WorkspaceConfig,
 };
-use proto_core::PluginLocator;
+use proto_core::{PluginLocator, ProtoConfig};
 use schematic::{Config, ConfigLoader as Loader};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
@@ -259,7 +259,7 @@ impl ConfigLoader {
     pub fn load_toolchains_config<P: AsRef<Path>>(
         &self,
         workspace_root: P,
-        proto_config: &proto_core::ProtoConfig,
+        proto_config: &ProtoConfig,
     ) -> miette::Result<ToolchainsConfig> {
         let mut result = self.create_toolchains_loader(workspace_root)?.load()?;
         result.config.inherit_versions_from_env_vars()?;

@@ -1,6 +1,6 @@
 use crate::{config_enum, config_struct, is_false};
 use moon_common::Id;
-use schematic::Config;
+use schematic::{Config, env};
 
 config_enum!(
     /// Toggles the state of actions within the pipeline.
@@ -43,7 +43,7 @@ config_struct!(
     pub struct PipelineConfig {
         /// Automatically clean the cache after every task run.
         /// @since 1.24.0
-        #[setting(default = true, env = "MOON_PIPELINE_AUTO_CLEAN_CACHE")]
+        #[setting(default = true, env = "MOON_PIPELINE_AUTO_CLEAN_CACHE", parse_env = env::parse_bool)]
         pub auto_clean_cache: bool,
 
         /// The lifetime in which task outputs will be cached.

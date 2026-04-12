@@ -147,9 +147,17 @@ export interface DockerConfig {
 
 /** Configures experiments across the entire moon workspace. */
 export interface ExperimentsConfig {
-	/** Track and determine affected projects and tasks asynchronously. */
+	/**
+	 * Track and determine affected projects and tasks asynchronously.
+	 *
+	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
+	 */
 	asyncAffectedTracking: boolean;
-	/** Build the project and task graphs asynchronously. */
+	/**
+	 * Build the project and task graphs asynchronously.
+	 *
+	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
+	 */
 	asyncGraphBuilding: boolean;
 }
 
@@ -236,12 +244,14 @@ export interface PipelineConfig {
 	 * @since 1.24.0
 	 *
 	 * @default true
+	 * @env MOON_PIPELINE_AUTO_CLEAN_CACHE
 	 */
 	autoCleanCache?: boolean;
 	/**
 	 * The lifetime in which task outputs will be cached.
 	 *
 	 * @default '7 days'
+	 * @env MOON_PIPELINE_CACHE_LIFETIME
 	 */
 	cacheLifetime?: string;
 	/**
@@ -262,6 +272,7 @@ export interface PipelineConfig {
 	 * of 0 will not kill the process and let them run to completion.
 	 *
 	 * @default 2000
+	 * @env MOON_PIPELINE_KILL_PROCESS_THRESHOLD
 	 */
 	killProcessThreshold?: number;
 	/** Logs the task's command and arguments when running the task. */
@@ -770,9 +781,17 @@ export interface PartialDockerConfig {
 
 /** Configures experiments across the entire moon workspace. */
 export interface PartialExperimentsConfig {
-	/** Track and determine affected projects and tasks asynchronously. */
+	/**
+	 * Track and determine affected projects and tasks asynchronously.
+	 *
+	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
+	 */
 	asyncAffectedTracking?: boolean | null;
-	/** Build the project and task graphs asynchronously. */
+	/**
+	 * Build the project and task graphs asynchronously.
+	 *
+	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
+	 */
 	asyncGraphBuilding?: boolean | null;
 }
 
@@ -848,12 +867,14 @@ export interface PartialPipelineConfig {
 	 * @since 1.24.0
 	 *
 	 * @default true
+	 * @env MOON_PIPELINE_AUTO_CLEAN_CACHE
 	 */
 	autoCleanCache?: boolean | null;
 	/**
 	 * The lifetime in which task outputs will be cached.
 	 *
 	 * @default '7 days'
+	 * @env MOON_PIPELINE_CACHE_LIFETIME
 	 */
 	cacheLifetime?: string | null;
 	/**
@@ -874,6 +895,7 @@ export interface PartialPipelineConfig {
 	 * of 0 will not kill the process and let them run to completion.
 	 *
 	 * @default 2000
+	 * @env MOON_PIPELINE_KILL_PROCESS_THRESHOLD
 	 */
 	killProcessThreshold?: number | null;
 	/** Logs the task's command and arguments when running the task. */

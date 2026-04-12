@@ -1,11 +1,43 @@
 mod spec;
 
+use indexmap::IndexSet;
+use moon_common::{Id, IdExt};
+use moon_config::ToolchainsConfig;
+use moon_env_var::{GlobalEnvBag, as_bool};
+
 pub use moon_config::{UnresolvedVersionSpec, VersionSpec};
 pub use spec::*;
 
-use indexmap::IndexSet;
-use moon_common::{Id, IdExt};
-use moon_env_var::{GlobalEnvBag, as_bool};
+pub fn requires_proto(bag: &GlobalEnvBag, config: &ToolchainsConfig) -> bool {
+    let Some(force_globals) = bag.get("MOON_TOOLCHAIN_FORCE_GLOBALS") else {
+        return config.requires_proto();
+    };
+
+    if force_globals.is_empty() {
+        return config.requires_proto();
+    }
+
+    if check_enabled(&force_globals) {
+        return false;
+    }
+
+    let mut count = 0;
+    let force_globals = force_globals.split(',').collect::<Vec<_>>();
+
+    for id in config.plugins.keys() {
+        let (stable_id, unstable_id) = Id::stable_and_unstable(id);
+
+        if force_globals.contains(&stable_id.as_str())
+            || force_globals.contains(&unstable_id.as_str())
+        {
+            continue;
+        } else {
+            count += 1;
+        }
+    }
+
+    count > 0
+}
 
 pub fn is_using_global_toolchains(bag: &GlobalEnvBag) -> bool {
     bag.get_as("MOON_TOOLCHAIN_FORCE_GLOBALS", as_bool)
@@ -17,12 +49,7 @@ pub fn is_using_global_toolchain(bag: &GlobalEnvBag, id: impl AsRef<str>) -> boo
 
     bag.get("MOON_TOOLCHAIN_FORCE_GLOBALS")
         .is_some_and(|value| {
-            if value == "1"
-                || value == "true"
-                || value == "on"
-                || value == "*"
-                || value == stable_id.as_str()
-                || value == unstable_id.as_str()
+            if check_enabled(&value) || value == stable_id.as_str() || value == unstable_id.as_str()
             {
                 true
             } else if value.contains(",") {
@@ -33,6 +60,10 @@ pub fn is_using_global_toolchain(bag: &GlobalEnvBag, id: impl AsRef<str>) -> boo
                 false
             }
         })
+}
+
+fn check_enabled(value: &str) -> bool {
+    value == "1" || value == "true" || value == "on" || value == "*"
 }
 
 pub fn get_version_env_key(id: impl AsRef<str>) -> String {

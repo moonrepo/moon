@@ -14,6 +14,13 @@
 - **Affected**
   - Added an experimental asynchronous version of the affected tracker, that is 100-150% faster.
     - Enable with the `experiments.asyncAffectedTracking` setting in `.moon/workspace.*`.
+- **Config**
+  - Added `MOON_PIPELINE_AUTO_CLEAN_CACHE` environment variable support for the
+    `pipeline.autoCleanCache` setting.
+  - Added `MOON_PIPELINE_CACHE_LIFETIME` environment variable support for the
+    `pipeline.cacheLifetime` setting.
+  - Added `MOON_PIPELINE_KILL_PROCESS_THRESHOLD` environment variable support for the
+    `pipeline.killProcessThreshold` setting.
 - 🆕 **Daemon**
   - Added an unstable daemon that will run in the background and process heavy operations. To start,
     it runs a file watcher on the workspace and invalidates caches.
@@ -42,6 +49,8 @@
   re-install itself.
 - Fixed an issue where OS based tasks would error while executing if they defined `outputs`, and
   you're on a different OS.
+- Fixed an issue where proto would be installed even when toolchains were disabled with
+  `MOON_TOOLCHAIN_FORCE_GLOBALS`.
 
 #### ⚙️ Internal
 

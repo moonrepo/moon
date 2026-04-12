@@ -110,6 +110,7 @@ impl Deref for MoonSandbox {
 
 fn apply_settings(sandbox: &mut Sandbox) {
     let moon_dir = sandbox.path().join(".moon");
+    let proto_dir = sandbox.path().join(".proto");
 
     let mut env = HashMap::new();
     env.insert("RUST_BACKTRACE", "1");
@@ -118,7 +119,8 @@ fn apply_settings(sandbox: &mut Sandbox) {
     env.insert("COLUMNS", "150");
     // Store plugins in the sandbox
     env.insert("MOON_HOME", moon_dir.to_str().unwrap());
-    // env.insert("PROTO_HOME", path.join(".proto"));
+    // Isolate proto home to prevent parallel test races on tool installation
+    env.insert("PROTO_HOME", proto_dir.to_str().unwrap());
     // Let our code know we're running tests
     env.insert("MOON_TEST", "true");
     env.insert("STARBASE_TEST", "true");

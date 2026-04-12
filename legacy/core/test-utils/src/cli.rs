@@ -15,6 +15,8 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     cmd.env("NO_COLOR", "1");
     // Store plugins in the sandbox
     cmd.env("MOON_HOME", path.join(".moon-home"));
+    // Isolate proto home to prevent parallel test races on node installation
+    cmd.env("PROTO_HOME", path.join(".proto-home"));
     // Let our code know we're running tests
     cmd.env("MOON_TEST", "true");
     cmd.env("STARBASE_TEST", "true");

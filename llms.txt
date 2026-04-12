@@ -13,6 +13,11 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [ci](https://moonrepo.dev/docs/commands/ci): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [clean](https://moonrepo.dev/docs/commands/clean): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [completions](https://moonrepo.dev/docs/commands/completions): import Tabs from '@theme/Tabs';
+- [daemon logs](https://moonrepo.dev/docs/commands/daemon/logs): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [daemon restart](https://moonrepo.dev/docs/commands/daemon/restart): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [daemon start](https://moonrepo.dev/docs/commands/daemon/start): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [daemon status](https://moonrepo.dev/docs/commands/daemon/status): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [daemon stop](https://moonrepo.dev/docs/commands/daemon/stop): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [docker file](https://moonrepo.dev/docs/commands/docker/file): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [docker prune](https://moonrepo.dev/docs/commands/docker/prune): The `moon docker prune` command will reduce the overall filesize of the Docker environment by
 - [docker scaffold](https://moonrepo.dev/docs/commands/docker/scaffold): The `moon docker scaffold <...projects>` command creates multiple repository skeletons for use
@@ -75,7 +80,8 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Continuous integration (CI)](https://moonrepo.dev/docs/guides/ci): import Tabs from '@theme/Tabs';
 - [Code generation](https://moonrepo.dev/docs/guides/codegen): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Code owners](https://moonrepo.dev/docs/guides/codeowners): import Tabs from '@theme/Tabs';
-- [Debugging a task](https://moonrepo.dev/docs/guides/debug-task): Running [tasks](../concepts/task) is the most common way to interact with moon, so what do you do
+- [Daemon](https://moonrepo.dev/docs/guides/daemon): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Debugging a task](https://moonrepo.dev/docs/guides/debug-task): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Docker integration](https://moonrepo.dev/docs/guides/docker): import Tabs from '@theme/Tabs';
 - [Angular example](https://moonrepo.dev/docs/guides/examples/angular): import AddDepsTabs from '@site/src/components/AddDepsTabs';
 - [Astro example](https://moonrepo.dev/docs/guides/examples/astro): import AddDepsTabs from '@site/src/components/AddDepsTabs';
@@ -273,3 +279,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Release Candidate of moon v2 now available!](https://moonrepo.dev/blog/2026-01-26_moon-v2-rc): About two weeks ago we announced the [beta release of moon v2](/blog/moon-v2-alpha), and today we
 - [moon v2.0 - Official "Phobos" release!](https://moonrepo.dev/blog/2026-02-18_moon-v2.0): We're very excited to announce the release of moon v2.0, codenamed "Phobos", after one of Mars'
 - [moon v2.1 - Execution plans, target deps scopes, toolchain/task settings, and more](https://moonrepo.dev/blog/2026-03-16_moon-v2.1): It's been about a month since our major v2.0 release, and we're back with a smaller, but still
+- [moon v2.2 - Daemon, AI skills, async graph building, async affected tracking, and more](https://moonrepo.dev/blog/2026-04-13_moon-v2.2): In this release, we focused entirely on performance improvements, with the introduction of a daemon,

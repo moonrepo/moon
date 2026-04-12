@@ -2,11 +2,142 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-03-16T00:00:00.000Z</updated>
+    <updated>2026-04-13T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v2.2 - Daemon, AI skills, async graph building, async affected tracking, and more]]></title>
+        <id>https://moonrepo.dev/blog/moon-v2.2</id>
+        <link href="https://moonrepo.dev/blog/moon-v2.2"/>
+        <updated>2026-04-13T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we focused entirely on performance improvements, with the introduction of a daemon,]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we focused entirely on performance improvements, with the introduction of a daemon,
+and refactoring core components to be asynchronous.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-debug-task-ai-agent-skill">New <code>debug-task</code> AI agent skill<a href="https://moonrepo.dev/blog/moon-v2.2#new-debug-task-ai-agent-skill" class="hash-link" aria-label="Direct link to new-debug-task-ai-agent-skill" title="Direct link to new-debug-task-ai-agent-skill" translate="no">​</a></h2>
+<p>We're shipping a new AI agent skill called <code>debug-task</code> that helps you systematically diagnose
+failing or misbehaving moon tasks. If you've ever spent time hunting down why a task is producing
+stale results, getting unexpected cache misses, or behaving differently in CI, this skill is for
+you.</p>
+<p>To install this skill, run the following command:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ npx skills </span><span class="token function" style="color:#ff94ff;font-weight:bold">add</span><span class="token plain"> moonrepo/moon </span><span class="token parameter variable" style="color:#fef9c3">--skill</span><span class="token plain"> debug-task</span><br></span></code></pre></div></div>
+<p>The skill walks you through a 5-step diagnostic workflow:</p>
+<ol>
+<li class="">Inspect the resolved task configuration (after inheritance merging)</li>
+<li class="">Run with maximum verbosity to see exactly what moon is doing</li>
+<li class="">Inspect cache state and hash manifests</li>
+<li class="">Match symptoms to root causes using a built-in decision tree</li>
+<li class="">Validate that the fix actually resolves the issue</li>
+</ol>
+<p>It covers 15+ specific problem types across cache issues, configuration mistakes, execution
+problems, and CI vs local discrepancies. Most issues resolve by step 3, with deeper reference
+material available on demand.</p>
+<p>To use it, simply describe your task problem in Claude Code, Codex, OpenCode, or another compatible
+AI agent — mention the task target, what you expected, and what actually happened. The skill will
+take it from there.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">/debug-task Help me debug why the </span><span class="token variable" style="color:#fef9c3">`</span><span class="token variable" style="color:#fef9c3">app:build</span><span class="token variable" style="color:#fef9c3">`</span><span class="token plain"> task is not being cached</span><br></span></code></pre></div></div>
+<blockquote>
+<p>Thanks to <a href="https://github.com/Yuzu02" target="_blank" rel="noopener noreferrer" class="">Yuzu02</a> for the amazing contribution!</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="unstable-daemon">Unstable daemon<a href="https://moonrepo.dev/blog/moon-v2.2#unstable-daemon" class="hash-link" aria-label="Direct link to Unstable daemon" title="Direct link to Unstable daemon" translate="no">​</a></h2>
+<p>Continuing the theme of performance, this release introduces an unstable background daemon. The
+daemon is a long-lived server process that keeps the workspace graph hot in memory and watches for
+file system changes, rebuilding the graph asynchronously only when configuration files change. This
+means that after the first <code>moon</code> invocation, subsequent commands can skip graph building entirely
+and connect to the running daemon instead.</p>
+<p>To try it out by enabling it in your workspace configuration:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_daemon</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<p>Or test it with an environment variable first:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token assign-left variable" style="color:#fef9c3">MOON_DAEMON</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">true moon run :build</span><br></span></code></pre></div></div>
+<p>When enabled, the daemon starts automatically on the first CLI command and stays running in the
+background. You can manage it with <a class="" href="https://moonrepo.dev/docs/commands/daemon/start"><code>moon daemon start</code></a>,
+<a class="" href="https://moonrepo.dev/docs/commands/daemon/stop"><code>stop</code></a>, <a class="" href="https://moonrepo.dev/docs/commands/daemon/restart"><code>restart</code></a>,
+<a class="" href="https://moonrepo.dev/docs/commands/daemon/status"><code>status</code></a>, and <a class="" href="https://moonrepo.dev/docs/commands/daemon/logs"><code>logs</code></a> commands. If the
+daemon is unavailable for any reason, the CLI falls back to building graphs in-process — so there's
+no risk in enabling it.</p>
+<p>Since this is unstable, behavior and configuration may change in future releases. Check out the
+<a class="" href="https://moonrepo.dev/docs/guides/daemon">daemon guide</a> for full details on how it works, what files are watched, and
+troubleshooting tips.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="experimental-async-graph-building">Experimental async graph building<a href="https://moonrepo.dev/blog/moon-v2.2#experimental-async-graph-building" class="hash-link" aria-label="Direct link to Experimental async graph building" title="Direct link to Experimental async graph building" translate="no">​</a></h2>
+<p>Project and task building is a critical piece of moon. In previous versions, graph building was
+implemented synchronously, which could lead to performance issues in larger workspaces, but was
+unnoticeable in smaller workspaces. With this release, graph building is now available with an
+experimental async implementation, which must be enabled.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">asyncGraphBuilding</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<p>To demonstrate the performance improvements, take the following benchmark results for example. For
+every benchmark, we had N projects with 4 tasks per project, iterated 100 times. The "average time"
+columns show the average time taken across all iterations, while the "total suite time" columns show
+the total time taken for all iterations. The "speedup" column shows the percentage improvement of
+the async builder compared to the sync builder.</p>
+<p>As you can clearly see, as the number of projects and tasks increase, the performance improvement
+becomes more significant, with a speedup of 40-170%. Over time, and with the introducion of the
+daemon, this will only get better!</p>
+<table><tbody><tr><th>Benchmark</th><th colspan="2">Average time</th><th colspan="2">Total suite time</th><th>Speedup</th></tr><tr><td></td><td>Sync</td><td>Async</td><td>Sync</td><td>Async</td><td></td></tr><tr><td>100 projects / 400 tasks</td><td>78ms</td><td>51ms</td><td>9.7s</td><td>5.1s</td><td>41.8%</td></tr><tr><td>1,000 projects / 4,000 tasks</td><td>514.5ms</td><td>119ms</td><td>57.4s</td><td>12s</td><td>125%</td></tr><tr><td>5,000 projects / 20,000 tasks</td><td>5.7s</td><td>457ms</td><td>602.6s</td><td>46s</td><td>170%</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="caveats">Caveats<a href="https://moonrepo.dev/blog/moon-v2.2#caveats" class="hash-link" aria-label="Direct link to Caveats" title="Direct link to Caveats" translate="no">​</a></h3>
+<p>While the async graph builder is faster, there are some caveats to be aware of.</p>
+<ul>
+<li class="">Since this is experimental, it is not enabled by default. You must enable it in your workspace
+configuration to take advantage of the performance improvements.</li>
+<li class="">The async graph builder does not cache the built graph as this time, so it will be built from
+scratch every <code>moon</code> invocation. This is a temporary limitation that we plan to address in the
+future, as caching is a critical piece of the puzzle for performance. With that said, even without
+caching, the async builder is still significantly faster than the sync builder, especially for
+larger workspaces.</li>
+<li class="">The async graph builder does not support cycles, and will hard error if a cycle is detected. In
+the sync builder, we would attempt to cut edges between nodes when a cycle was detected, which
+could lead to incorrect results, but would not error.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="experimental-async-affected-tracker">Experimental async affected tracker<a href="https://moonrepo.dev/blog/moon-v2.2#experimental-async-affected-tracker" class="hash-link" aria-label="Direct link to Experimental async affected tracker" title="Direct link to Experimental async affected tracker" translate="no">​</a></h2>
+<p>The affected tracker is a core component of moon that determines which projects and tasks are
+affected by changes in the codebase. In previous versions, the tracker was implemented
+synchronously, which could lead to performance issues for larger projects with many tasks. With this
+release, the affected tracker is now available with an experimental async implementation. This new
+version is designed to be faster and more efficient (up to 150%), especially for large repositories
+with many tasks.</p>
+<p>Since this is experimental, it is not enabled by default. To enable the async tracker, you can
+configure the following in <code>.moon/workspace.yml</code>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">asyncAffectedTracking</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<p>To demonstrate the performance improvements, take the following benchmark results for example. For
+every benchmark, we had N projects with 3 tasks per project, iterated 100 times. The "average time"
+columns show the average time taken across all iterations, while the "total suite time" columns show
+the total time taken for all iterations. The "speedup" column shows the percentage improvement of
+the async tracker compared to the sync tracker.</p>
+<p>If you'll notice, the improvement for projects is negligible, which is expected as project tracking
+is very simple. However, for tasks, the async tracker shows significant improvements as the number
+of tasks increases, with a speedup of 50-150%. With that said, we believe that after 5,000 tasks,
+the increments diminish, as we're most likely hitting the upper limits of how much we can
+parallelize the work.</p>
+<table><tbody><tr><th>Benchmark</th><th colspan="2">Average time</th><th colspan="2">Total suite time</th><th>Speedup</th></tr><tr><td></td><td>Sync</td><td>Async</td><td>Sync</td><td>Async</td><td></td></tr><tr><td>10 projects</td><td>47.9ms</td><td>47.3ms</td><td>4.2s</td><td>4.2s</td><td>0%</td></tr><tr><td>30 tasks</td><td>105.08ms</td><td>61.75ms</td><td>10.4s</td><td>5.6s</td><td>+51.9%</td></tr><tr><td>100 projects</td><td>60.02ms</td><td>60.41ms</td><td>6s</td><td>6s</td><td>0%</td></tr><tr><td>300 tasks</td><td>585.62ms</td><td>131.43ms</td><td>58.6s</td><td>13.1s</td><td>+126.6%</td></tr><tr><td>1,000 projects</td><td>202.14ms</td><td>199.52ms</td><td>21.6s</td><td>20s</td><td>+1.3%</td></tr><tr><td>3,000 tasks</td><td>5.5s</td><td>901ms</td><td>553.4s</td><td>88.5s</td><td>+143.75%</td></tr><tr><td>5,000 projects</td><td>1.1s</td><td>1s</td><td>127.8s</td><td>111.3s</td><td>+13.8%</td></tr><tr><td>15,000 tasks</td><td>29s</td><td>4.5s</td><td>2,866s (47m)</td><td>476s (7.9m)</td><td>+146%</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v2.2#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v2.2.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list of
+changes.</p>
+<ul>
+<li class="">Temporarily brought back <code>x86_64-apple-darwin</code> (Apple Intel) as a supported operating system.</li>
+<li class="">Greatly reduced memory footprint of the action, project, and task graphs. Nodes in the graph are
+now integers instead of objects.</li>
+<li class="">Improved plugin registry performance and memory consumption when loading plugins.</li>
+<li class="">Improved performance of <code>taskToolchains</code> and <code>taskType</code> fields when querying the project graph.</li>
+<li class="">Improved performance of task output archiving, by no longer blocking the main thread pool.</li>
+<li class="">Updated the system toolchain to be built-in instead of an external WASM plugin that needs to be
+downloaded.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="daemon" term="daemon"/>
+        <category label="performance" term="performance"/>
+        <category label="async" term="async"/>
+        <category label="graph" term="graph"/>
+        <category label="affected" term="affected"/>
+        <category label="workspace" term="workspace"/>
+        <category label="ai" term="ai"/>
+        <category label="agent" term="agent"/>
+        <category label="skill" term="skill"/>
+        <category label="debug" term="debug"/>
+        <category label="tasks" term="tasks"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v2.1 - Execution plans, target deps scopes, toolchain/task settings, and more]]></title>
         <id>https://moonrepo.dev/blog/moon-v2.1</id>
@@ -1927,70 +2058,5 @@ set, and will fallback to <code>$HOME/.moon</code>.</li>
         <category label="plugin" term="plugin"/>
         <category label="moonx" term="moonx"/>
         <category label="schema" term="schema"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.47 - New backend system & asdf support]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.47</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.47"/>
-        <updated>2025-02-25T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're stoked to release backends, a new type of plugin that enables the use of]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're stoked to release backends, a new type of plugin that enables the use of
-3rd-party plugins.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-backend-asdf">New backend: <code>asdf</code><a href="https://moonrepo.dev/blog/proto-v0.47#new-backend-asdf" class="hash-link" aria-label="Direct link to new-backend-asdf" title="Direct link to new-backend-asdf" translate="no">​</a></h2>
-<p>Since proto's inception, we've been asked the question "how's this different than asdf?", or "why
-not just use asdf?". The answer to both of these questions is still the same 3 things:</p>
-<ul>
-<li class="">To start, asdf isn't multi-platform, it's Unix only and doesn't support Windows (proto does).</li>
-<li class="">Secondly, asdf is powered by Bash scripts, which means a bash-compatible interpreter or shell is
-required (proto uses WASM).</li>
-<li class="">And lastly, proto is built on Rust, so it's extremely fast and reliable.</li>
-</ul>
-<p>With all that said, asdf has a massive <a href="https://github.com/asdf-vm/asdf-plugins" target="_blank" rel="noopener noreferrer" class="">plugin registry</a>
-compared to proto's, and it would take a really long time for proto to reach parity. Because of
-this, we've been working on a new plugin type called a "<a class="" href="https://moonrepo.dev/docs/proto/tool-spec#backends">backend</a>",
-which allows 3rd-party plugins to be utilized within proto for downloading and installing tools,
-locating executables, and more.</p>
-<p>Of course, our first backend is <a href="https://asdf-vm.com/" target="_blank" rel="noopener noreferrer" class="">asdf</a>. To install a tool from asdf's
-registry, prefix the version in <code>.prototools</code> with <a class="" href="https://moonrepo.dev/docs/proto/tool-spec#backends"><code>asdf:</code></a>, or
-configure the <a class="" href="https://moonrepo.dev/docs/proto/config#backend"><code>backend</code></a> setting.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># For this single version</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">zig</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"asdf:0.13.0"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># For all versions</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">zig</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"0.13.0"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.zig</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">backend</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"asdf"</span><br></span></code></pre></div></div>
-<p>This backend implementation <em>does not</em> use the <code>asdf</code> binary itself, and instead emulates the
-environment as best we can. Because of this, some tools may not be usable through proto, especially
-those that rely on <code>asdf</code> itself. Furthermore, the 2 bullet points above are unfortunately still
-restrictions: This is Unix only and requires Bash.</p>
-<blockquote>
-<p>In the next release, we'll investigate the use of Scoop or Chocolatey as a potential backend for
-Windows users. If you're interested in this endeavor, send us a message in Discord!</p>
-</blockquote>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-built-in-tool-poetry">New built-in tool: <code>poetry</code><a href="https://moonrepo.dev/blog/proto-v0.47#new-built-in-tool-poetry" class="hash-link" aria-label="Direct link to new-built-in-tool-poetry" title="Direct link to new-built-in-tool-poetry" translate="no">​</a></h2>
-<p>In <a class="" href="https://moonrepo.dev/blog/proto-v0.45">v0.45</a> we introduced 3 new tools, and in this release, we're releasing 1 more! We
-want to expand our Python support, and since we already support pip and uv, we wanted to also
-support Poetry, which has been requested by the community many times now. Poetry installation works
-quite differently than other tools, so please report any issues or improvements.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> poetry</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="proto-now-shims-itself">proto now shims itself<a href="https://moonrepo.dev/blog/proto-v0.47#proto-now-shims-itself" class="hash-link" aria-label="Direct link to proto now shims itself" title="Direct link to proto now shims itself" translate="no">​</a></h2>
-<p>Until now, proto was a stand-alone binary that existed on <code>PATH</code> and was not coupled to proto's
-store (<code>~/.proto</code>) outside of possibly existing in <code>~/.proto/bin</code> for convenience. Over the past
-couple of releases, we've been working on supporting proto as an
-<a href="https://github.com/moonrepo/plugins/tree/master/tools/proto" target="_blank" rel="noopener noreferrer" class="">official tool</a> within proto, so
-commands like <code>proto install proto</code> and <code>proto pin proto 0.45</code> actually function correctly.</p>
-<p>Starting in this release, when proto is installed via proto, either through <code>proto install</code> or
-<code>proto upgrade</code>, a shim will be created at <code>~/.proto/shims/proto</code>, allowing for runtime version
-detection and pinning. This basically means you can now pin a project to a certain version of proto
-like any other tool, for example:</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">proto</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"0.46"</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.47#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.47.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Updated offline connection checks to also ping IPv6 addresses for Google &amp; CloudFlare DNS.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="backend" term="backend"/>
-        <category label="plugin" term="plugin"/>
-        <category label="asdf" term="asdf"/>
     </entry>
 </feed>

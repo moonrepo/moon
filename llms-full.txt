@@ -472,6 +472,136 @@ omz reload
 
 ---
 
+## daemon logs
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon logs` command tails the daemon's log file in real time, streaming new entries as
+they are written. The daemon must be running for this command to work.
+
+```shell
+$ moon daemon logs
+```
+
+The log file is located at `.moon/cache/daemon/server.log` and contains detailed trace-level output,
+including file watcher events, graph rebuilds, and RPC requests.
+
+:::info
+
+On macOS/Linux this command uses `tail -f` under the hood. On Windows it uses PowerShell's
+`Get-Content -Wait`.
+
+:::
+
+If the daemon is not running or the log file does not exist, a warning is displayed and no action is
+taken.
+
+---
+
+## daemon restart
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon restart` command will stop the currently running daemon process and start a new
+one. This is useful after manual configuration changes, when the cached state seems stale, or after
+upgrading moon to a new version.
+
+```shell
+$ moon daemon restart
+```
+
+:::caution
+
+The daemon must be enabled in your [workspace configuration](../../config/workspace) before it can
+be restarted. If the `daemon` setting is not enabled, this command will display a warning and exit.
+
+:::
+
+:::info
+
+View the official [daemon guide](../../guides/daemon) for more information on how the daemon works.
+
+:::
+
+---
+
+## daemon start
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon start` command will start the daemon background process if it's not already
+running. If a daemon is already running for this workspace, the existing process is reused.
+
+```shell
+$ moon daemon start
+```
+
+:::info
+
+You typically don't need to run this command manually. When the daemon is
+[enabled](../../guides/daemon#enabling-the-daemon), it starts automatically with any `moon` command.
+
+:::
+
+:::caution
+
+The daemon must be enabled in your [workspace configuration](../../config/workspace) before it can
+be started. If the `daemon` setting is not enabled, this command will display a warning and exit.
+
+:::
+
+---
+
+## daemon status
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon status` command displays information about the running daemon process.
+
+```shell
+$ moon daemon status
+```
+
+When the daemon is running, the following information is displayed:
+
+- **PID** — The process ID of the daemon.
+- **Socket** (macOS/Linux) or **Named pipe** (Windows) — The IPC endpoint used for communication.
+- **Uptime** — How long the daemon has been running.
+- **PID file** — Path to the PID file (`.moon/cache/daemon/moond.pid`).
+- **Log file** — Path to the log file (`.moon/cache/daemon/server.log`).
+
+If the daemon is not running, a warning is displayed instead.
+
+:::info
+
+View the official [daemon guide](../../guides/daemon) for more information on how the daemon works.
+
+:::
+
+---
+
+## daemon stop
+
+<VersionLabel version="2.2.0" header />
+
+The `moon daemon stop` command will stop the running daemon process. It first attempts a graceful
+shutdown, and if the daemon does not exit within a few seconds, it will be forcefully killed. Daemon
+files (PID, socket) are cleaned up automatically.
+
+```shell
+$ moon daemon stop
+```
+
+If the daemon is not running, a warning is displayed and no action is taken.
+
+:::info
+
+View the official [daemon guide](../../guides/daemon) for more information on how the daemon works.
+
+:::
+
+---
+
 ## docker file
 
 <VersionLabel version="1.27.0" header />
@@ -7098,7 +7228,7 @@ docker:
       - '**/package.json'
 ```
 
-## `experiments`<VersionLabel version="1.11.0" />
+## `experiments`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#experiments" />
 
@@ -7110,30 +7240,33 @@ Experiments are a work in progress and may be buggy. Please report any issues yo
 
 :::
 
-### `fasterGlobWalk`<VersionLabel version="1.34.0" />
+### `asyncAffectedTracking`<VersionLabel version="2.2.0" />
 
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#fasterGlobWalk" />
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncAffectedTracking" />
 
-Utilizes a new concurrent glob walking implementation that is on average, 1.5-2x faster than the
-current implementation. Additionally, common globs are now cached for the duration of the process.
-Defaults to `true`.
-
-```yaml title=".moon/workspace.yml" {2}
-experiments:
-  fasterGlobWalk: true
-```
-
-### `gitV2`<VersionLabel version="1.34.0" />
-
-<HeadingApiLink to="/api/types/interface/ExperimentsConfig#gitV2" />
-
-Utilizes a Git implementation, that has better support for submodules, subtrees, and workspaces.
-Additionally, processes are parallized when applicable. Defaults to `true`.
+Utilizes a new asynchronous implementation of the affected tracker that can improve performance by
+100-150%. Defaults to `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
-  gitV2: true
+  asyncAffectedTracking: true
 ```
+
+Can also be enabled with the `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environment variable.
+
+### `asyncGraphBuilding`<VersionLabel version="2.2.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncGraphBuilding" />
+
+Utilizes an asynchronous graph building implementation that can improve performance by 100-170% in
+large workspaces. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  asyncGraphBuilding: true
+```
+
+Can also be enabled with the `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING` environment variable.
 
 ## `generator`
 
@@ -9775,12 +9908,222 @@ best to define owners in `moon.*` instead for the following reasons:
 
 ---
 
+## Daemon
+
+<VersionLabel version="2.2.0" header />
+
+As workspaces grow in size, the time spent building
+[project and task graphs](../how-it-works/project-graph) becomes a noticeable bottleneck. Every
+`moon` CLI invocation rebuilds these graphs from scratch, even when nothing has changed since the
+last run. The daemon solves this by running a background server process that keeps the workspace
+graph hot in memory, watches for file changes, and rebuilds only when necessary. This eliminates
+redundant work and significantly improves CLI response times, especially in larger workspaces with
+hundreds or thousands of projects/tasks.
+
+:::caution
+
+This feature is currently **unstable** and must be explicitly enabled. Its behavior and
+configuration may change in future releases.
+
+:::
+
+## Enabling the daemon
+
+To enable the daemon, set the [`unstable_daemon`](../config/workspace#daemon) setting in
+[`.moon/workspace.yml`](../config/workspace).
+
+```yaml title=".moon/workspace.yml"
+unstable_daemon: true
+```
+
+Alternatively, you can enable it via the `MOON_DAEMON` environment variable without modifying your
+configuration. This is useful for trying it out before committing to the change.
+
+```shell
+MOON_DAEMON=true moon run :build
+```
+
+## How it works
+
+### Background server
+
+When the daemon is enabled, the first `moon` CLI command you run automatically spawns a background
+server process. This process detaches from the terminal and continues running after the command
+completes. Subsequent CLI invocations connect to the running daemon instead of starting fresh.
+
+The daemon communicates with CLI processes over a local IPC channel — Unix domain sockets on
+macOS/Linux, and named pipes on Windows. All daemon files (PID, socket, and logs) are stored in
+`.moon/cache/daemon`.
+
+If the daemon fails to start or is unavailable, the CLI falls back to building graphs in-process as
+it normally would without the daemon. You won't see an error — the CLI simply proceeds without the
+performance benefit.
+
+### File watching
+
+To keep the in-memory graph up to date, the daemon watches the workspace root recursively for file
+system changes. Events are debounced (coalesced within a short window) to avoid redundant rebuilds
+during rapid edits.
+
+The following directories are always ignored by the watcher:
+
+- `.git`, `.svn`, `node_modules`
+- `.moon/cache`, `.moon/docker`
+
+Changes to the following files and directories trigger an asynchronous graph rebuild:
+
+- [`.prototools`](../proto/config) — reloads toolchain configuration
+- `.moon/workspace.*` — reloads workspace settings
+- `.moon/toolchains.*` — reloads toolchain plugins
+- `.moon/extensions.*` — reloads extension plugins
+- `.moon/tasks/**/*` — reloads task inheritance
+- `moon.*` config files in project directories — reloads project configuration
+- Creation or removal of project directories matching configured
+  [project sources](../config/workspace#projects)
+
+Because rebuilds happen asynchronously in the background, the daemon remains responsive to new CLI
+connections while a rebuild is in progress.
+
+## Managing the daemon
+
+The [`moon daemon`](../commands/daemon) command provides subcommands for managing the daemon's
+lifecycle. In most cases you won't need these — the daemon starts automatically and stays out of the
+way — but they're useful for debugging or manual control.
+
+### Starting
+
+```shell
+$ moon daemon start
+```
+
+Starts the daemon if it's not already running. If a daemon is already running for this workspace,
+the existing process is reused. You typically don't need to run this manually, as the daemon
+auto-starts with any `moon` command when enabled. See
+[`moon daemon start`](../commands/daemon/start).
+
+### Stopping
+
+```shell
+$ moon daemon stop
+```
+
+Stops the daemon gracefully. If the daemon does not shut down within a few seconds, it will be
+forcefully killed. Daemon files (PID, socket) are cleaned up automatically. See
+[`moon daemon stop`](../commands/daemon/stop).
+
+### Restarting
+
+```shell
+$ moon daemon restart
+```
+
+Stops the running daemon and starts a new one. This is useful after manual configuration changes, or
+if the daemon's cached state seems stale. See [`moon daemon restart`](../commands/daemon/restart).
+
+### Checking status
+
+```shell
+$ moon daemon status
+```
+
+Displays information about the running daemon, including its process ID, uptime, socket/pipe
+endpoint, and file paths for the PID and log files. See
+[`moon daemon status`](../commands/daemon/status).
+
+### Viewing logs
+
+```shell
+$ moon daemon logs
+```
+
+Tails the daemon's log file in real time. The daemon must be running for this command to work. The
+log file is located at `.moon/cache/daemon/server.log` and contains detailed trace-level output. See
+[`moon daemon logs`](../commands/daemon/logs).
+
+## Troubleshooting
+
+### The daemon won't start
+
+- Verify the daemon is enabled: check that `unstable_daemon: true` is set in
+  [`.moon/workspace.yml`](../config/workspace), or that the `MOON_DAEMON` environment variable is
+  set.
+- Check if a daemon is already running with [`moon daemon status`](../commands/daemon/status).
+- If the daemon crashed previously, a stale PID file may be blocking startup. Delete
+  `.moon/cache/daemon` and try again.
+
+### The graph seems stale
+
+If tasks or projects appear to be missing or outdated despite config changes, the file watcher may
+have missed an event. Run [`moon daemon restart`](../commands/daemon/restart) to force a fresh graph
+build.
+
+### Where are the logs?
+
+The daemon writes detailed logs to `.moon/cache/daemon/server.log`. Use
+[`moon daemon logs`](../commands/daemon/logs) to tail this file, or open it directly in an editor.
+
+### After upgrading moon
+
+After upgrading moon to a new version, restart the daemon with
+[`moon daemon restart`](../commands/daemon/restart). A running daemon from a previous version may
+behave unexpectedly or return stale data. We'll attempt to automate this when applicable.
+
+### CI environments
+
+The daemon is designed for local development where a persistent background process can be reused
+across multiple CLI invocations. In CI environments, where each run starts fresh, the daemon
+provides no benefit since there's no long-lived process to connect to. Enabling it in CI won't cause
+harm, but it won't improve performance either.
+
+## Limitations
+
+- This feature is **unstable** and may change in future releases. Behavior, configuration, and CLI
+  commands are subject to change.
+- Each workspace runs its own daemon process. If you work across multiple workspaces, each will have
+  a separate daemon.
+- On Windows, the daemon uses named pipes instead of Unix domain sockets. The behavior is
+  equivalent, but the underlying IPC mechanism differs.
+
+---
+
 ## Debugging a task
 
 Running [tasks](../concepts/task) is the most common way to interact with moon, so what do you do
 when your task isn't working as expected? Diagnose it of course! Diagnosing the root cause of a
 broken task can be quite daunting, but do not fret, as the following steps will help guide you in
 this endeavor.
+
+## Using an AI skill<VersionLabel version="2.2.0" />
+
+We provide an AI agent skill called `debug-task` that helps you systematically diagnose failing or
+misbehaving moon tasks. If you've ever spent time hunting down why a task is producing stale
+results, getting unexpected cache misses, or behaving differently in CI, this skill is for you.
+
+To install this skill, run the following command:
+
+```shell
+$ npx skills add moonrepo/moon --skill debug-task
+```
+
+The skill walks you through a 5-step diagnostic workflow:
+
+1. Inspect the resolved task configuration (after inheritance merging)
+2. Run with maximum verbosity to see exactly what moon is doing
+3. Inspect cache state and hash manifests
+4. Match symptoms to root causes using a built-in decision tree
+5. Validate that the fix actually resolves the issue
+
+It covers 15+ specific problem types across cache issues, configuration mistakes, execution
+problems, and CI vs local discrepancies. Most issues resolve by step 3, with deeper reference
+material available on demand.
+
+To use it, simply describe your task problem in Claude Code, Codex, OpenCode, or another compatible
+AI agent — mention the task target, what you expected, and what actually happened. The skill will
+take it from there.
+
+```shell
+/debug-task Help me debug why the `app:build` task is not being cached
+```
 
 ## Verify configuration
 
@@ -17256,6 +17599,7 @@ currently:
 
 | Operating system | Architecture | Target                       |
 | :--------------- | :----------- | :--------------------------- |
+| macOS 64-bit     | Intel        | `x86_64-apple-darwin`        |
 | macOS 64-bit     | ARM          | `aarch64-apple-darwin`       |
 | Linux 64-bit     | Intel GNU    | `x86_64-unknown-linux-gnu`   |
 | Linux 64-bit     | Intel musl   | `x86_64-unknown-linux-musl`  |
@@ -17323,8 +17667,6 @@ $ moon migrate v2
 
 ## CLI
 
-- Removed `x86_64-apple-darwin` (Apple Intel) as a supported operating system. Only
-  `aarch64-apple-darwin` (Apple Silicon) is now supported.
 - Removed canary and nightly releases.
 
 ### Commands
@@ -34286,3 +34628,276 @@ changes.
 - **TypeScript**
   - Added a `pruneProjectReferences` setting that prunes non-moon managed project references when
     syncing.
+
+---
+
+## moon v2.2 - Daemon, AI skills, async graph building, async affected tracking, and more
+
+In this release, we focused entirely on performance improvements, with the introduction of a daemon,
+and refactoring core components to be asynchronous.
+
+<!--truncate-->
+
+## New `debug-task` AI agent skill
+
+We're shipping a new AI agent skill called `debug-task` that helps you systematically diagnose
+failing or misbehaving moon tasks. If you've ever spent time hunting down why a task is producing
+stale results, getting unexpected cache misses, or behaving differently in CI, this skill is for
+you.
+
+To install this skill, run the following command:
+
+```shell
+$ npx skills add moonrepo/moon --skill debug-task
+```
+
+The skill walks you through a 5-step diagnostic workflow:
+
+1. Inspect the resolved task configuration (after inheritance merging)
+2. Run with maximum verbosity to see exactly what moon is doing
+3. Inspect cache state and hash manifests
+4. Match symptoms to root causes using a built-in decision tree
+5. Validate that the fix actually resolves the issue
+
+It covers 15+ specific problem types across cache issues, configuration mistakes, execution
+problems, and CI vs local discrepancies. Most issues resolve by step 3, with deeper reference
+material available on demand.
+
+To use it, simply describe your task problem in Claude Code, Codex, OpenCode, or another compatible
+AI agent — mention the task target, what you expected, and what actually happened. The skill will
+take it from there.
+
+```shell
+/debug-task Help me debug why the `app:build` task is not being cached
+```
+
+> Thanks to [Yuzu02](https://github.com/Yuzu02) for the amazing contribution!
+
+## Unstable daemon
+
+Continuing the theme of performance, this release introduces an unstable background daemon. The
+daemon is a long-lived server process that keeps the workspace graph hot in memory and watches for
+file system changes, rebuilding the graph asynchronously only when configuration files change. This
+means that after the first `moon` invocation, subsequent commands can skip graph building entirely
+and connect to the running daemon instead.
+
+To try it out by enabling it in your workspace configuration:
+
+```yaml title=".moon/workspace.yml"
+unstable_daemon: true
+```
+
+Or test it with an environment variable first:
+
+```shell
+MOON_DAEMON=true moon run :build
+```
+
+When enabled, the daemon starts automatically on the first CLI command and stays running in the
+background. You can manage it with [`moon daemon start`](/docs/commands/daemon/start),
+[`stop`](/docs/commands/daemon/stop), [`restart`](/docs/commands/daemon/restart),
+[`status`](/docs/commands/daemon/status), and [`logs`](/docs/commands/daemon/logs) commands. If the
+daemon is unavailable for any reason, the CLI falls back to building graphs in-process — so there's
+no risk in enabling it.
+
+Since this is unstable, behavior and configuration may change in future releases. Check out the
+[daemon guide](/docs/guides/daemon) for full details on how it works, what files are watched, and
+troubleshooting tips.
+
+## Experimental async graph building
+
+Project and task building is a critical piece of moon. In previous versions, graph building was
+implemented synchronously, which could lead to performance issues in larger workspaces, but was
+unnoticeable in smaller workspaces. With this release, graph building is now available with an
+experimental async implementation, which must be enabled.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  asyncGraphBuilding: true
+```
+
+To demonstrate the performance improvements, take the following benchmark results for example. For
+every benchmark, we had N projects with 4 tasks per project, iterated 100 times. The "average time"
+columns show the average time taken across all iterations, while the "total suite time" columns show
+the total time taken for all iterations. The "speedup" column shows the percentage improvement of
+the async builder compared to the sync builder.
+
+As you can clearly see, as the number of projects and tasks increase, the performance improvement
+becomes more significant, with a speedup of 40-170%. Over time, and with the introducion of the
+daemon, this will only get better!
+
+  
+    Benchmark
+    Average time
+    Total suite time
+    Speedup
+  
+  
+     
+    Sync
+    Async
+    Sync
+    Async
+     
+  
+  
+    100 projects / 400 tasks
+    78ms
+    51ms
+    9.7s
+    5.1s
+    41.8%
+  
+  
+    1,000 projects / 4,000 tasks
+    514.5ms
+    119ms
+    57.4s
+    12s
+    125%
+  
+  
+    5,000 projects / 20,000 tasks
+    5.7s
+    457ms
+    602.6s
+    46s
+    170%
+  
+
+### Caveats
+
+While the async graph builder is faster, there are some caveats to be aware of.
+
+- Since this is experimental, it is not enabled by default. You must enable it in your workspace
+  configuration to take advantage of the performance improvements.
+- The async graph builder does not cache the built graph as this time, so it will be built from
+  scratch every `moon` invocation. This is a temporary limitation that we plan to address in the
+  future, as caching is a critical piece of the puzzle for performance. With that said, even without
+  caching, the async builder is still significantly faster than the sync builder, especially for
+  larger workspaces.
+- The async graph builder does not support cycles, and will hard error if a cycle is detected. In
+  the sync builder, we would attempt to cut edges between nodes when a cycle was detected, which
+  could lead to incorrect results, but would not error.
+
+## Experimental async affected tracker
+
+The affected tracker is a core component of moon that determines which projects and tasks are
+affected by changes in the codebase. In previous versions, the tracker was implemented
+synchronously, which could lead to performance issues for larger projects with many tasks. With this
+release, the affected tracker is now available with an experimental async implementation. This new
+version is designed to be faster and more efficient (up to 150%), especially for large repositories
+with many tasks.
+
+Since this is experimental, it is not enabled by default. To enable the async tracker, you can
+configure the following in `.moon/workspace.yml`.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  asyncAffectedTracking: true
+```
+
+To demonstrate the performance improvements, take the following benchmark results for example. For
+every benchmark, we had N projects with 3 tasks per project, iterated 100 times. The "average time"
+columns show the average time taken across all iterations, while the "total suite time" columns show
+the total time taken for all iterations. The "speedup" column shows the percentage improvement of
+the async tracker compared to the sync tracker.
+
+If you'll notice, the improvement for projects is negligible, which is expected as project tracking
+is very simple. However, for tasks, the async tracker shows significant improvements as the number
+of tasks increases, with a speedup of 50-150%. With that said, we believe that after 5,000 tasks,
+the increments diminish, as we're most likely hitting the upper limits of how much we can
+parallelize the work.
+
+  
+    Benchmark
+    Average time
+    Total suite time
+    Speedup
+  
+  
+     
+    Sync
+    Async
+    Sync
+    Async
+     
+  
+  
+    10 projects
+    47.9ms
+    47.3ms
+    4.2s
+    4.2s
+    0%
+  
+  
+    30 tasks
+    105.08ms
+    61.75ms
+    10.4s
+    5.6s
+    +51.9%
+  
+  
+    100 projects
+    60.02ms
+    60.41ms
+    6s
+    6s
+    0%
+  
+  
+    300 tasks
+    585.62ms
+    131.43ms
+    58.6s
+    13.1s
+    +126.6%
+  
+  
+    1,000 projects
+    202.14ms
+    199.52ms
+    21.6s
+    20s
+    +1.3%
+  
+  
+    3,000 tasks
+    5.5s
+    901ms
+    553.4s
+    88.5s
+    +143.75%
+  
+  
+    5,000 projects
+    1.1s
+    1s
+    127.8s
+    111.3s
+    +13.8%
+  
+  
+    15,000 tasks
+    29s
+    4.5s
+    2,866s (47m)
+    476s (7.9m)
+    +146%
+  
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.2.0) for a full list of
+changes.
+
+- Temporarily brought back `x86_64-apple-darwin` (Apple Intel) as a supported operating system.
+- Greatly reduced memory footprint of the action, project, and task graphs. Nodes in the graph are
+  now integers instead of objects.
+- Improved plugin registry performance and memory consumption when loading plugins.
+- Improved performance of `taskToolchains` and `taskType` fields when querying the project graph.
+- Improved performance of task output archiving, by no longer blocking the main thread pool.
+- Updated the system toolchain to be built-in instead of an external WASM plugin that needs to be
+  downloaded.

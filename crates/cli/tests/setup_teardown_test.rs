@@ -2,7 +2,6 @@ use moon_common::Id;
 use moon_config::PartialToolchainPluginConfig;
 use moon_test_utils2::{create_empty_moon_sandbox, predicates::prelude::*};
 use proto_core::UnresolvedVersionSpec;
-use starbase_utils::dirs;
 
 mod setup {
     use super::*;
@@ -37,8 +36,7 @@ mod setup_teardown {
             );
         });
 
-        let proto_dir = dirs::home_dir().unwrap().join(".proto");
-        let node_dir = proto_dir.join("tools/node/21.0.0");
+        let node_dir = sandbox.path().join(".proto/tools/node/21.0.0");
 
         sandbox
             .run_bin(|cmd| {

@@ -119,7 +119,7 @@ fn apply_settings(sandbox: &mut Sandbox) {
     env.insert("COLUMNS", "150");
     // Store plugins in the sandbox
     env.insert("MOON_HOME", moon_dir.to_str().unwrap());
-    // Isolate proto home to prevent parallel test races on node installation
+    // Isolate proto home to prevent parallel test races on tool installation
     env.insert("PROTO_HOME", proto_dir.to_str().unwrap());
     // Let our code know we're running tests
     env.insert("MOON_TEST", "true");

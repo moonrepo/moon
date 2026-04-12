@@ -7,12 +7,13 @@ use moon_common::{
     path::{WorkspaceRelativePath, encode_component, is_root_level_source},
 };
 use moon_config::{
-    ConfigLoader, EnvMap, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig,
-    ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
+    EnvMap, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig, ProjectInput,
+    ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
     TaskDependencyConfig, TaskMergeStrategy, TaskOptionAffectedFilesEntry, TaskOptionCache,
     TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
     ToolchainsConfig, is_glob_like,
 };
+use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
 use moon_target::{Target, TargetScope};
 use moon_task::{

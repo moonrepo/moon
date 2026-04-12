@@ -10,7 +10,8 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
-moon_config = { path = "../config", features = ["loader"] }
+moon_config = { path = "../config" }
+moon_config_loader = { path = "../config-loader" }
 moon_env = { path = "../env" }
 moon_process = { path = "../process" }
 moon_time = { path = "../time" }

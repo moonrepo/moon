@@ -1,6 +1,7 @@
 mod utils;
 
 use moon_config::*;
+use moon_config_loader::ConfigLoader;
 use rustc_hash::FxHashMap;
 use serde_json::Value as JsonValue;
 use std::path::Path;

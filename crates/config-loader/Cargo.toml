@@ -1,25 +1,24 @@
 [package]
-name = "moon_codeowners"
+name = "moon_config_loader"
 version = "0.0.1"
 edition = "2024"
 license = "MIT"
-description = "CODEOWNERS management."
+description = "Config finder and loader."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_common = { path = "../common" }
 moon_config = { path = "../config" }
-moon_hash = { path = "../hash" }
+hcl-rs = "0.19.6"
 miette = { workspace = true }
+proto_core = { workspace = true }
+rustc-hash = { workspace = true }
+schematic = { workspace = true, features = ["url"] }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+serde_path_to_error = "0.1.20"
 tracing = { workspace = true }
-
-[dev-dependencies]
-moon_config = { path = "../config" }
-moon_config_loader = { path = "../config-loader" }
-starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

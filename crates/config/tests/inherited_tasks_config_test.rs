@@ -4,6 +4,7 @@ use httpmock::prelude::*;
 use indexmap::IndexMap;
 use moon_common::Id;
 use moon_config::*;
+use moon_config_loader::ConfigLoader;
 use moon_target::Target;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};

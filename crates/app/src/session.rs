@@ -8,9 +8,8 @@ use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_codegen::CodeGenerator;
 use moon_common::is_formatted_output;
-use moon_config::{
-    ConfigLoader, ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig,
-};
+use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
+use moon_config_loader::ConfigLoader;
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_daemon::{DaemonClient, DaemonConnector};
 use moon_env::MoonEnvironment;

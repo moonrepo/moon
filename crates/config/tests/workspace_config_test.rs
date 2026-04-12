@@ -3,9 +3,10 @@ mod utils;
 use httpmock::prelude::*;
 use moon_common::Id;
 use moon_config::{
-    ConfigLoader, FilePath, GlobPath, TemplateLocator, VcsProvider, WorkspaceConfig,
-    WorkspaceProjectGlobFormat, WorkspaceProjects,
+    FilePath, GlobPath, TemplateLocator, VcsProvider, WorkspaceConfig, WorkspaceProjectGlobFormat,
+    WorkspaceProjects,
 };
+use moon_config_loader::ConfigLoader;
 use rustc_hash::FxHashMap;
 use schematic::ConfigLoader as BaseLoader;
 use semver::Version;

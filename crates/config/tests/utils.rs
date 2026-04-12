@@ -4,6 +4,7 @@ use indexmap::IndexMap;
 use moon_common::Id;
 pub use moon_config::test_utils::*;
 use moon_config::*;
+use moon_config_loader::ConfigLoader;
 use moon_target::Target;
 use proto_core::{FileLocator, PluginLocator};
 use rustc_hash::FxHashMap;

@@ -5,7 +5,8 @@ use crate::session::MoonSession;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_common::Id;
-use moon_config::{PartialToolchainPluginConfig, ToolchainsConfig};
+use moon_config::PartialToolchainPluginConfig;
+use moon_config_loader::ToolchainsConfigExt;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_pdk_api::InitializeToolchainInput;
 use moon_toolchain_plugin::{ToolchainPlugin, ToolchainRegistry};
@@ -33,7 +34,7 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> AppResult {
     let Some(locator) = args
         .plugin
         .clone()
-        .or_else(|| ToolchainsConfig::get_plugin_locator(&args.id))
+        .or_else(|| ToolchainsConfigExt::get_plugin_locator(&args.id))
     else {
         return Err(AppError::PluginLocatorRequired.into());
     };

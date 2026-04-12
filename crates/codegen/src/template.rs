@@ -1,10 +1,12 @@
 use crate::asset_file::AssetFile;
+use crate::codegen_error::CodegenError;
 use crate::template_file::{FileState, MergeType, TemplateFile};
-use crate::{CodegenError, filters, funcs};
+use crate::{filters, funcs};
 use miette::IntoDiagnostic;
 use moon_common::Id;
 use moon_common::path::{RelativePathBuf, to_virtual_string};
-use moon_config::{ConfigLoader, TemplateConfig, schematic::helpers::strip_bom};
+use moon_config::{TemplateConfig, schematic::helpers::strip_bom};
+use moon_config_loader::ConfigLoader;
 use regex::Regex;
 use serde::Serialize;
 use starbase_utils::{fs, json, yaml};

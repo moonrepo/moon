@@ -1,5 +1,6 @@
 use moon_common::path::RelativePathBuf;
 use moon_config::TemplateFrontmatterConfig;
+use moon_config_loader::ConfigLoader;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use tracing::debug;
@@ -100,7 +101,8 @@ impl TemplateFile {
 
             if let Some(fm_end) = &content[4..].find("---") {
                 let end_index = fm_end + 4;
-                let config = TemplateFrontmatterConfig::parse(&content[4..end_index])?;
+                let config =
+                    ConfigLoader::parse_template_frontmatter_config(&content[4..end_index])?;
 
                 if let Some(to) = &config.to {
                     self.dest_path = dest.join(to);

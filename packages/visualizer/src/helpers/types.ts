@@ -26,7 +26,8 @@ export type GraphEdgeV2 = [number, number, string];
 
 export interface GraphInfoV2 {
 	graph: {
-		nodes: GraphNodeV2[];
+		nodes: (number | GraphNodeV2)[];
 		edges: GraphEdgeV2[];
 	};
+	data: Record<number, GraphNodeV2>;
 }

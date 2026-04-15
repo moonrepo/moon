@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed issues with graph visualizer commands failing with a JavaScript error after the v2.2 graph
+  changes.
+- Fixed an issue where checking the remote cache for an entry _before the task execution_ could
+  cause the task to fail if the remote cache check errored. We now treat remote cache errors as
+  cache misses, and allow the task to execute.
+
 ## 2.2.0
 
 #### 💥 Breaking

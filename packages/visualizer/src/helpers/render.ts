@@ -81,7 +81,12 @@ function getShortDepLabel(label: string) {
 function extractNodes(data: GraphInfo) {
 	// v2
 	if ('graph' in data) {
-		return data.graph.nodes.map((node, index) => {
+		return data.graph.nodes.map((nodeOrIndex, arrayIndex) => {
+			let [node, index] =
+				typeof nodeOrIndex === 'number'
+					? [data.data[nodeOrIndex], nodeOrIndex]
+					: [nodeOrIndex, arrayIndex];
+
 			let row = { id: String(index), label: '', type: 'unknown' };
 
 			if ('action' in node) {

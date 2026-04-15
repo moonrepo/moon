@@ -307,7 +307,8 @@ impl<'task> TaskRunner<'task> {
         // Check if the outputs have been cached in the remote service
         if self.task.options.cache.is_remote_enabled()
             && let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session())
-            && let Some(result) = remote.is_action_cached(state).await?
+            // Don't bubble up errors from the remote cache check, just treat them as cache misses
+            && let Ok(Some(result)) = remote.is_action_cached(state).await
         {
             debug!(
                 task_target = self.task.target.as_str(),

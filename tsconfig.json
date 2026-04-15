@@ -3,16 +3,16 @@
   "files": [],
   "references": [
     {
-      "path": "packages/report"
+      "path": "./packages/report"
     },
     {
-      "path": "packages/types"
+      "path": "./packages/types"
     },
     {
-      "path": "packages/visualizer"
+      "path": "./packages/visualizer"
     },
     {
-      "path": "website"
+      "path": "./website"
     }
   ]
 }

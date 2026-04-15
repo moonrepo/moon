@@ -10,6 +10,15 @@
   cause the task to fail if the remote cache check errored. We now treat remote cache errors as
   cache misses, and allow the task to execute.
 
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Fixed `pnpm-lock.yaml` parsing for pnpm v10's multi-document lockfiles, which are written when
+    `managePackageManagerVersions` is enabled (the default).
+- **TypeScript**
+  - Updated project references to start with `./` in preparation for the removal of `baseUrl` in
+    TypeScript v7.
+
 ## 2.2.0
 
 #### 💥 Breaking

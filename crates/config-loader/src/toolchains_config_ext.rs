@@ -2,8 +2,8 @@ use moon_common::Id;
 use moon_common::color;
 use moon_config::{ToolchainPluginVersionFrom, ToolchainsConfig};
 use proto_core::{
-    PluginLocator, ProtoConfig, ToolContext, UnresolvedVersionSpec,
-    warpgate::{DataLocator, find_debug_locator, find_debug_locator_with_url_fallback as locate},
+    PluginLocator, ProtoConfig, ToolContext,
+    warpgate::{DataLocator, find_debug_locator_with_url_fallback as locate},
 };
 use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 use tracing::trace;
@@ -16,12 +16,12 @@ impl ToolchainsConfigExt {
             "bun" => Some(locate("bun_toolchain", "1.0.2")),
             "deno" => Some(locate("deno_toolchain", "1.0.3")),
             "go" => Some(locate("go_toolchain", "1.2.0")),
-            "javascript" => Some(locate("javascript_toolchain", "1.0.7")),
+            "javascript" => Some(locate("javascript_toolchain", "1.0.8")),
             "node" => Some(locate("node_toolchain", "1.0.2")),
             "npm" => Some(locate("node_depman_toolchain", "1.0.3")),
             "pnpm" => Some(locate("node_depman_toolchain", "1.0.3")),
             "rust" => Some(locate("rust_toolchain", "1.0.5")),
-            "typescript" => Some(locate("typescript_toolchain", "1.1.1")),
+            "typescript" => Some(locate("typescript_toolchain", "1.1.3")),
             "unstable_python" => Some(locate("python_toolchain", "0.1.6")),
             "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.2")),
             "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.2")),
@@ -135,6 +135,8 @@ impl ToolchainsConfigExt {
                 #[cfg(debug_assertions)]
                 "tc-tier1" | "tc-tier2" | "tc-tier2-reqs" | "tc-tier2-setup-env" | "tc-tier3"
                 | "tc-tier3-reqs" => {
+                    use proto_core::{UnresolvedVersionSpec, warpgate::find_debug_locator};
+
                     config.plugin = Some(
                         find_debug_locator(&id.replace("-", "_"))
                             .expect("Development plugins missing, build with `just build-wasm`!"),

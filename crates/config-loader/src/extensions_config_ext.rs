@@ -1,9 +1,6 @@
 use moon_common::Id;
 use moon_config::ExtensionsConfig;
-use proto_core::{
-    PluginLocator,
-    warpgate::{find_debug_locator, find_debug_locator_with_url_fallback as locate},
-};
+use proto_core::{PluginLocator, warpgate::find_debug_locator_with_url_fallback as locate};
 use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 
 pub struct ExtensionsConfigExt;
@@ -56,6 +53,8 @@ impl ExtensionsConfigExt {
                 }
                 #[cfg(debug_assertions)]
                 "ext-sync" | "ext-task" => {
+                    use proto_core::warpgate::find_debug_locator;
+
                     config.plugin = Some(
                         find_debug_locator(&id.replace("-", "_"))
                             .expect("Development plugins missing, build with `just build-wasm`!"),

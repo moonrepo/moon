@@ -246,25 +246,13 @@ impl WorkspaceBuilder {
         let mut project_graph = ProjectGraph::new(graph_context.clone());
         project_graph.default_id = context.workspace_config.default_project.clone();
         project_graph.aliases.extend(self.aliases);
-
-        for (id, build_data) in self.project_data {
-            if let Some(index) = build_data.node_index {
-                project_graph.indexes.insert(index, id.clone());
-                project_graph.nodes.insert(
-                    id,
-                    ProjectNode {
-                        index,
-                        project: Default::default(),
-                    },
-                );
-            }
-        }
+        let mut loaded_projects = FxHashMap::default();
 
         project_graph.graph = self.project_graph.filter_map(
             |ni, node| match node {
                 NodeState::Loading => None,
                 NodeState::Loaded(project) => {
-                    project_graph.nodes.get_mut(&project.id).unwrap().project = project.to_owned();
+                    loaded_projects.insert(ni, project.to_owned());
 
                     Some(ni)
                 }
@@ -272,34 +260,42 @@ impl WorkspaceBuilder {
             |_, edge| Some(*edge),
         );
 
+        for index in project_graph.graph.graph().node_indices() {
+            let old_index = *project_graph.graph.node_weight(index).unwrap();
+            let project = loaded_projects.remove(&old_index).unwrap();
+            let id = project.id.clone();
+
+            project_graph.indexes.insert(index, id.clone());
+            project_graph
+                .nodes
+                .insert(id, ProjectNode { index, project });
+        }
+
         let project_graph = Arc::new(project_graph);
 
         let mut task_graph = TaskGraph::new(graph_context, Arc::clone(&project_graph));
-
-        for (target, build_data) in self.task_data {
-            if let Some(index) = build_data.node_index {
-                task_graph.indexes.insert(index, target.clone());
-                task_graph.nodes.insert(
-                    target,
-                    TaskNode {
-                        index,
-                        task: Default::default(),
-                    },
-                );
-            }
-        }
+        let mut loaded_tasks = FxHashMap::default();
 
         task_graph.graph = self.task_graph.filter_map(
             |ni, node| match node {
                 NodeState::Loading => None,
                 NodeState::Loaded(task) => {
-                    task_graph.nodes.get_mut(&task.target).unwrap().task = task.to_owned();
+                    loaded_tasks.insert(ni, task.to_owned());
 
                     Some(ni)
                 }
             },
             |_, edge| Some(*edge),
         );
+
+        for index in task_graph.graph.graph().node_indices() {
+            let old_index = *task_graph.graph.node_weight(index).unwrap();
+            let task = loaded_tasks.remove(&old_index).unwrap();
+            let target = task.target.clone();
+
+            task_graph.indexes.insert(index, target.clone());
+            task_graph.nodes.insert(target, TaskNode { index, task });
+        }
 
         let task_graph = Arc::new(task_graph);
 
@@ -1044,5 +1040,138 @@ impl WorkspaceBuilder {
                 .as_ref()
                 .expect("Missing workspace builder context!"),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_extension_plugin::ExtensionRegistry;
+    use moon_graph_utils::GraphConnections;
+    use moon_test_utils2::create_empty_moon_sandbox;
+    use moon_toolchain_plugin::ToolchainRegistry;
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn reindexes_project_graph_after_filtering_loading_nodes() {
+        let sandbox = create_empty_moon_sandbox();
+        let context = WorkspaceBuilderContext {
+            config_loader: ConfigLoader::default(),
+            enabled_toolchains: vec![],
+            extensions_config: Arc::new(ExtensionsConfig::default()),
+            extension_registry: Arc::new(ExtensionRegistry::default()),
+            inherited_tasks: Arc::new(InheritedTasksManager::default()),
+            toolchains_config: Arc::new(ToolchainsConfig::default()),
+            toolchain_registry: Arc::new(ToolchainRegistry::default()),
+            vcs: None,
+            working_dir: sandbox.path().to_path_buf(),
+            workspace_config: Arc::new(WorkspaceConfig::default()),
+            workspace_root: sandbox.path().to_path_buf(),
+        };
+
+        let mut project_graph = Dag::new();
+        let _ghost = project_graph.add_node(NodeState::Loading);
+        let app_index = project_graph.add_node(NodeState::Loaded(Project {
+            id: Id::raw("app"),
+            ..Project::default()
+        }));
+        let dep_index = project_graph.add_node(NodeState::Loaded(Project {
+            id: Id::raw("dep"),
+            ..Project::default()
+        }));
+
+        project_graph
+            .add_edge(app_index, dep_index, DependencyScope::Build)
+            .unwrap();
+
+        let graph = WorkspaceBuilder {
+            context: Some(Arc::new(context)),
+            config_paths: vec![],
+            aliases: FxHashMap::default(),
+            projects_by_tag: FxHashMap::default(),
+            project_data: FxHashMap::default(),
+            project_graph,
+            renamed_project_ids: FxHashMap::default(),
+            repo_type: RepoType::Monorepo,
+            root_project_id: None,
+            task_data: FxHashMap::default(),
+            task_graph: Dag::new(),
+        }
+        .build()
+        .await
+        .unwrap();
+
+        let app = graph.get_project("app").unwrap();
+
+        assert_eq!(
+            graph.projects.dependencies_of(app.as_ref()),
+            vec![Id::raw("dep")]
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn reindexes_task_graph_after_filtering_loading_nodes() {
+        let sandbox = create_empty_moon_sandbox();
+        let context = WorkspaceBuilderContext {
+            config_loader: ConfigLoader::default(),
+            enabled_toolchains: vec![],
+            extensions_config: Arc::new(ExtensionsConfig::default()),
+            extension_registry: Arc::new(ExtensionRegistry::default()),
+            inherited_tasks: Arc::new(InheritedTasksManager::default()),
+            toolchains_config: Arc::new(ToolchainsConfig::default()),
+            toolchain_registry: Arc::new(ToolchainRegistry::default()),
+            vcs: None,
+            working_dir: sandbox.path().to_path_buf(),
+            workspace_config: Arc::new(WorkspaceConfig::default()),
+            workspace_root: sandbox.path().to_path_buf(),
+        };
+
+        let mut project_graph = Dag::new();
+        project_graph.add_node(NodeState::Loaded(Project {
+            id: Id::raw("app"),
+            ..Project::default()
+        }));
+
+        let mut task_graph = Dag::new();
+        let _ghost = task_graph.add_node(NodeState::Loading);
+        let build_target = Target::parse("app:build").unwrap();
+        let lint_target = Target::parse("app:lint").unwrap();
+        let build_index = task_graph.add_node(NodeState::Loaded(Task {
+            id: Id::raw("build"),
+            target: build_target.clone(),
+            ..Task::default()
+        }));
+        let lint_index = task_graph.add_node(NodeState::Loaded(Task {
+            id: Id::raw("lint"),
+            target: lint_target.clone(),
+            ..Task::default()
+        }));
+
+        task_graph
+            .add_edge(build_index, lint_index, TaskDependencyType::Required)
+            .unwrap();
+
+        let graph = WorkspaceBuilder {
+            context: Some(Arc::new(context)),
+            config_paths: vec![],
+            aliases: FxHashMap::default(),
+            projects_by_tag: FxHashMap::default(),
+            project_data: FxHashMap::default(),
+            project_graph,
+            renamed_project_ids: FxHashMap::default(),
+            repo_type: RepoType::Monorepo,
+            root_project_id: None,
+            task_data: FxHashMap::default(),
+            task_graph,
+        }
+        .build()
+        .await
+        .unwrap();
+
+        let build_task = graph.get_task(&build_target).unwrap();
+
+        assert_eq!(
+            graph.tasks.dependencies_of(build_task.as_ref()),
+            vec![lint_target]
+        );
     }
 }

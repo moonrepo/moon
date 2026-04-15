@@ -118,19 +118,14 @@ impl WorkspaceTasksBuilder {
         project_graph: Arc<ProjectGraph>,
     ) -> TaskGraph {
         let mut task_graph = TaskGraph::new(context, project_graph);
+        let mut loaded_tasks = FxHashMap::default();
 
         // TODO switch to filter_map_owned
         task_graph.graph = self.graph.filter_map(
             |ni, node| match node {
                 NodeState::Loading => None,
                 NodeState::Loaded(task) => {
-                    task_graph.nodes.insert(
-                        task.target.clone(),
-                        TaskNode {
-                            index: ni,
-                            task: task.to_owned(),
-                        },
-                    );
+                    loaded_tasks.insert(ni, task.to_owned());
 
                     Some(ni)
                 }
@@ -138,8 +133,13 @@ impl WorkspaceTasksBuilder {
             |_, edge| Some(*edge),
         );
 
-        for (target, index) in self.targets_to_indexes {
-            task_graph.indexes.insert(index, target);
+        for index in task_graph.graph.graph().node_indices() {
+            let old_index = *task_graph.graph.node_weight(index).unwrap();
+            let task = loaded_tasks.remove(&old_index).unwrap();
+            let target = task.target.clone();
+
+            task_graph.indexes.insert(index, target.clone());
+            task_graph.nodes.insert(target, TaskNode { index, task });
         }
 
         task_graph

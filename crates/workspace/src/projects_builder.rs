@@ -367,19 +367,14 @@ impl WorkspaceProjectsBuilder {
         let mut project_graph = ProjectGraph::new(context);
         project_graph.default_id = self.context().workspace_config.default_project.clone();
         project_graph.aliases.extend(self.aliases_to_ids);
+        let mut loaded_projects = FxHashMap::default();
 
         // TODO switch to filter_map_owned
         project_graph.graph = self.graph.filter_map(
             |ni, node| match node {
                 NodeState::Loading => None,
                 NodeState::Loaded(project) => {
-                    project_graph.nodes.insert(
-                        project.id.clone(),
-                        ProjectNode {
-                            index: ni,
-                            project: project.to_owned(),
-                        },
-                    );
+                    loaded_projects.insert(ni, project.to_owned());
 
                     Some(ni)
                 }
@@ -387,8 +382,15 @@ impl WorkspaceProjectsBuilder {
             |_, edge| Some(*edge),
         );
 
-        for (id, index) in self.ids_to_indexes {
-            project_graph.indexes.insert(index, id);
+        for index in project_graph.graph.graph().node_indices() {
+            let old_index = *project_graph.graph.node_weight(index).unwrap();
+            let project = loaded_projects.remove(&old_index).unwrap();
+            let id = project.id.clone();
+
+            project_graph.indexes.insert(index, id.clone());
+            project_graph
+                .nodes
+                .insert(id, ProjectNode { index, project });
         }
 
         project_graph

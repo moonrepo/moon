@@ -1001,11 +1001,15 @@ mod project_graph {
                 let mock = create_workspace_mocker(sandbox.path());
 
                 let graph = mock.mock_workspace_graph_for(&["some-depends-on"]).await;
+                let project = graph.get_project("some-depends-on").unwrap();
+                let mut direct_deps = map_ids(graph.projects.dependencies_of(&project));
+                direct_deps.sort();
 
                 assert_eq!(
                     map_ids(graph.projects.get_node_keys()),
                     ["some-depends-on", "a", "c"]
                 );
+                assert_eq!(direct_deps, ["a", "c"]);
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -1014,10 +1018,28 @@ mod project_graph {
                 let mock = create_workspace_mocker(sandbox.path());
 
                 let graph = mock.mock_workspace_graph_for(&["from-task-deps"]).await;
+                let project = graph.get_project("from-task-deps").unwrap();
+                let build = graph
+                    .get_task_from_project("from-task-deps", "build")
+                    .unwrap();
+                let check = graph
+                    .get_task_from_project("from-task-deps", "check")
+                    .unwrap();
+                let mut direct_deps = map_ids(graph.projects.dependencies_of(&project));
+                direct_deps.sort();
 
                 assert_eq!(
                     map_ids(graph.projects.get_node_keys()),
                     ["from-task-deps", "b", "c"]
+                );
+                assert_eq!(direct_deps, ["b", "c"]);
+                assert_eq!(
+                    graph.tasks.dependencies_of(&build),
+                    vec![Target::parse("b:build").unwrap()]
+                );
+                assert_eq!(
+                    graph.tasks.dependencies_of(&check),
+                    vec![Target::parse("c:check").unwrap()]
                 );
 
                 let deps = &graph.get_project("from-task-deps").unwrap().dependencies;
@@ -1034,10 +1056,17 @@ mod project_graph {
                 let graph = mock
                     .mock_workspace_graph_for(&["from-root-task-deps"])
                     .await;
+                let build = graph
+                    .get_task_from_project("from-root-task-deps", "build")
+                    .unwrap();
 
                 assert_eq!(
                     map_ids(graph.projects.get_node_keys()),
                     ["from-root-task-deps", "root"]
+                );
+                assert_eq!(
+                    graph.tasks.dependencies_of(&build),
+                    vec![Target::parse("root:noop").unwrap()]
                 );
 
                 let deps = &graph

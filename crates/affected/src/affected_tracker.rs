@@ -1,7 +1,7 @@
 use crate::affected::*;
 use crate::project_tracker::ProjectTracker;
 use crate::task_tracker::TaskTracker;
-use miette::IntoDiagnostic;
+use moon_async_utils::run_pooled_tasks;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, color};
 use moon_env_var::GlobalEnvBag;
@@ -10,9 +10,9 @@ use moon_task::{Target, Task, TaskOptionRunInCI};
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::fs;
+use std::collections::VecDeque;
 use std::fmt;
 use std::sync::Arc;
-use tokio::task::JoinSet;
 use tracing::{debug, trace};
 
 pub struct AffectedTracker {
@@ -157,15 +157,13 @@ impl AffectedTracker {
         let downstream = self.project_downstream;
         let upstream = self.project_upstream;
 
-        // Spawn one task per project
-        let mut set = JoinSet::new();
+        run_pooled_tasks(
+            VecDeque::from_iter(self.workspace_graph.get_projects()?),
+            |project| {
+                let changed_files = Arc::clone(&self.changed_files);
+                let workspace_graph = Arc::clone(&self.workspace_graph);
 
-        for project in self.workspace_graph.get_projects()? {
-            let changed_files = Arc::clone(&self.changed_files);
-            let workspace_graph = Arc::clone(&self.workspace_graph);
-
-            set.spawn(async move {
-                ProjectTracker {
+                Ok(ProjectTracker {
                     changed_files,
                     downstream,
                     project,
@@ -173,22 +171,20 @@ impl AffectedTracker {
                     upstream,
                     workspace_graph,
                 }
-                .track()
-                .await
-            });
-        }
+                .track())
+            },
+            |tracker| {
+                for (project_id, affected) in tracker.tracked {
+                    self.projects
+                        .entry(project_id)
+                        .or_default()
+                        .extend(affected);
+                }
 
-        // Collect tracker results
-        while let Some(result) = set.join_next().await {
-            let tracker = result.into_diagnostic()??;
-
-            for (project_id, affected) in tracker.tracked {
-                self.projects
-                    .entry(project_id)
-                    .or_default()
-                    .extend(affected);
-            }
-        }
+                Ok(())
+            },
+        )
+        .await?;
 
         Ok(self)
     }
@@ -395,17 +391,15 @@ impl AffectedTracker {
         let downstream = self.task_downstream;
         let upstream = self.task_upstream;
 
-        // Spawn one task per project
-        let mut set = JoinSet::new();
-
         // Include internal since they can trigger affected for any dependents!
-        for task in tasks {
-            let task = Arc::clone(task);
-            let changed_files = Arc::clone(&self.changed_files);
-            let workspace_graph = Arc::clone(&self.workspace_graph);
+        run_pooled_tasks(
+            VecDeque::from_iter(tasks),
+            |task| {
+                let task = Arc::clone(task);
+                let changed_files = Arc::clone(&self.changed_files);
+                let workspace_graph = Arc::clone(&self.workspace_graph);
 
-            set.spawn(async move {
-                TaskTracker {
+                Ok(TaskTracker {
                     changed_files,
                     ci,
                     downstream,
@@ -415,26 +409,24 @@ impl AffectedTracker {
                     upstream,
                     workspace_graph,
                 }
-                .track()
-                .await
-            });
-        }
+                .track())
+            },
+            |tracker| {
+                for (task_target, affected) in tracker.tracked {
+                    self.tasks.entry(task_target).or_default().extend(affected);
+                }
 
-        // Collect tracker results
-        while let Some(result) = set.join_next().await {
-            let tracker = result.into_diagnostic()??;
+                for (project_id, affected) in tracker.tracked_projects {
+                    self.projects
+                        .entry(project_id)
+                        .or_default()
+                        .extend(affected);
+                }
 
-            for (task_target, affected) in tracker.tracked {
-                self.tasks.entry(task_target).or_default().extend(affected);
-            }
-
-            for (project_id, affected) in tracker.tracked_projects {
-                self.projects
-                    .entry(project_id)
-                    .or_default()
-                    .extend(affected);
-            }
-        }
+                Ok(())
+            },
+        )
+        .await?;
 
         Ok(())
     }

@@ -4899,6 +4899,7 @@ dependencies = [
  "clap",
  "criterion2",
  "miette 7.6.0",
+ "moon_async_utils",
  "moon_bench_utils",
  "moon_common",
  "moon_config",
@@ -5039,6 +5040,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "moon_async_utils"
+version = "0.0.1"
+dependencies = [
+ "miette 7.6.0",
+ "num_cpus",
+ "tokio",
 ]
 
 [[package]]
@@ -6031,6 +6041,7 @@ dependencies = [
  "criterion2",
  "daggy",
  "miette 7.6.0",
+ "moon_async_utils",
  "moon_bench_utils",
  "moon_cache",
  "moon_common",
@@ -6053,7 +6064,6 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_vcs",
  "moon_workspace_graph",
- "num_cpus",
  "petgraph 0.8.3",
  "proto_core",
  "rustc-hash",

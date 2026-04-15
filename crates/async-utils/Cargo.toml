@@ -1,0 +1,13 @@
+[package]
+name = "moon_async_utils"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+miette = { workspace = true }
+num_cpus = { workspace = true }
+tokio = { workspace = true }
+
+[lints]
+workspace = true

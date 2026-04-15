@@ -13,6 +13,7 @@ name = "tracker"
 harness = false
 
 [dependencies]
+moon_async_utils = { path = "../async-utils" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }

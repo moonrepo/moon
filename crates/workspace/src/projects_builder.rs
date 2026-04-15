@@ -5,6 +5,7 @@ use crate::workspace_builder::WorkspaceBuilderContext;
 use crate::workspace_builder_error::WorkspaceBuilderError;
 use daggy::{Dag, NodeIndex};
 use miette::IntoDiagnostic;
+use moon_async_utils::run_pooled_tasks;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
 use moon_common::{Id, color};
 use moon_config::{
@@ -402,88 +403,82 @@ impl WorkspaceProjectsBuilder {
         ids: Option<Vec<Id>>,
         projects_data: ProjectBuildDataMap,
     ) -> miette::Result<()> {
-        let concurrency = num_cpus::get();
-        let mut set = JoinSet::new();
-        let mut queue = projects_data
+        let queue = projects_data
             .into_iter()
             .filter(|(id, _)| ids.as_ref().is_none_or(|list| list.contains(id)))
             .collect::<VecDeque<_>>();
+        let context = self.context();
+        let root_id = self.root_id.clone();
+        let monorepo = self.repo_type.is_monorepo();
 
-        loop {
-            // Build each project in the background
-            if let Some((id, build_data)) = queue.pop_front() {
+        run_pooled_tasks(
+            queue,
+            |(id, build_data)| {
                 debug!(
                     project_id = id.as_str(),
                     "Building project {}",
                     color::id(&id)
                 );
 
-                set.spawn(Box::pin(build_project(
-                    self.context(),
+                Ok(build_project(
+                    Arc::clone(&context),
                     build_data,
                     id,
-                    self.root_id.clone(),
-                    self.repo_type.is_monorepo(),
-                )));
-            }
+                    root_id.clone(),
+                    monorepo,
+                ))
+            },
+            |mut project| {
+                let from_index = self.get_or_insert_node(&project.id);
 
-            // Keep enqueuing projects until we hit the concurrency limit
-            if set.len() < concurrency && !queue.is_empty() {
-                continue;
-            }
+                // Resolve dependency IDs as they may be aliases
+                for dep_config in &mut project.dependencies {
+                    dep_config.id = self.resolve_id(&dep_config.id);
 
-            // If the queue is empty, break the loop
-            let Some(result) = set.join_next().await else {
-                break;
-            };
+                    // And then create edges but don't link the root project
+                    if !dep_config.is_root_scope() {
+                        let to_index = self.get_or_insert_node(&dep_config.id);
 
-            let mut project = result.into_diagnostic()??;
-            let from_index = self.get_or_insert_node(&project.id);
-
-            // Resolve dependency IDs as they may be aliases
-            for dep_config in &mut project.dependencies {
-                dep_config.id = self.resolve_id(&dep_config.id);
-
-                // And then create edges but don't link the root project
-                if !dep_config.is_root_scope() {
-                    let to_index = self.get_or_insert_node(&dep_config.id);
-
-                    self.graph
-                        .add_edge(from_index, to_index, dep_config.scope)
-                        .map_err(|_| ProjectGraphError::WouldCycle {
-                            source_id: project.id.to_string(),
-                            target_id: dep_config.id.to_string(),
-                        })?;
+                        self.graph
+                            .add_edge(from_index, to_index, dep_config.scope)
+                            .map_err(|_| ProjectGraphError::WouldCycle {
+                                source_id: project.id.to_string(),
+                                target_id: dep_config.id.to_string(),
+                            })?;
+                    }
                 }
-            }
 
-            // Extract tags and group projects
-            for tag in &project.config.tags {
-                self.tags_to_ids
-                    .entry(tag.to_owned())
-                    .or_default()
-                    .push(project.id.clone());
-            }
+                // Extract tags and group projects
+                for tag in &project.config.tags {
+                    self.tags_to_ids
+                        .entry(tag.to_owned())
+                        .or_default()
+                        .push(project.id.clone());
+                }
 
-            // Extract task data (this is heavy)
-            for task in project.tasks.values() {
-                self.ids_to_target_options
-                    .entry(project.id.clone())
-                    .or_default()
-                    .insert(
-                        task.target.clone(),
-                        // Only copy fields needed for task deps resolution
-                        TaskOptions {
-                            allow_failure: task.options.allow_failure,
-                            run_in_ci: task.options.run_in_ci.clone(),
-                            persistent: task.options.persistent,
-                            ..Default::default()
-                        },
-                    );
-            }
+                // Extract task data (this is heavy)
+                for task in project.tasks.values() {
+                    self.ids_to_target_options
+                        .entry(project.id.clone())
+                        .or_default()
+                        .insert(
+                            task.target.clone(),
+                            // Only copy fields needed for task deps resolution
+                            TaskOptions {
+                                allow_failure: task.options.allow_failure,
+                                run_in_ci: task.options.run_in_ci.clone(),
+                                persistent: task.options.persistent,
+                                ..Default::default()
+                            },
+                        );
+                }
 
-            self.insert_or_update_node(project);
-        }
+                self.insert_or_update_node(project);
+
+                Ok(())
+            },
+        )
+        .await?;
 
         Ok(())
     }

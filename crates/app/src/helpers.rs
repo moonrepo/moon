@@ -92,9 +92,12 @@ pub async fn run_action_pipeline(
                 .clone()
                 .map(|sum| sum.unwrap_or_default().to_level());
         }
-        Commands::Ci(_) => {
+        Commands::Ci(cmd) => {
             pipeline.report_name = "ciReport.json".into();
-            pipeline.summary = Some(Level::Three);
+            pipeline.summary = cmd
+                .summary
+                .clone()
+                .map(|sum| sum.unwrap_or_default().to_level());
         }
         Commands::Exec(cmd) => {
             pipeline.bail = cmd.on_failure == OnFailure::Bail;

@@ -11,6 +11,7 @@
 
 #### 🐞 Fixes
 
+- Fixed `--summary` not being respected in `moon ci`.
 - Fixed issues with graph visualizer commands failing with a JavaScript error after the v2.2 graph
   changes.
 - Fixed an issue where checking the remote cache for an entry _before the task execution_ could

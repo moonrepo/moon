@@ -6,6 +6,7 @@
 
 - Added request retry support (via proto), that will retry up to 3 times with exponential backoff
   for transient errors (network issues, rate limits, etc).
+- Improved async affected tracking by another 5-10%.
 - Updated PowerShell commands to use `-EncodedCommand` instead of `-Command` to avoid
   quoting/escaping issues. Let us know if you run into any issues with this change.
 

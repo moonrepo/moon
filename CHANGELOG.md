@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added request retry support (via proto), that will retry up to 3 times with exponential backoff
+  for transient errors (network issues, rate limits, etc).
+- Updated PowerShell commands to use `-EncodedCommand` instead of `-Command` to avoid
+  quoting/escaping issues. Let us know if you run into any issues with this change.
+
 #### 🐞 Fixes
 
 - Fixed issues with graph visualizer commands failing with a JavaScript error after the v2.2 graph
@@ -18,6 +25,11 @@
 - **TypeScript**
   - Updated project references to start with `./` in preparation for the removal of `baseUrl` in
     TypeScript v7.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.56.2](https://github.com/moonrepo/proto/releases/tag/v0.56.2) from 0.56.1.
+- Updated dependencies.
 
 ## 2.2.0
 

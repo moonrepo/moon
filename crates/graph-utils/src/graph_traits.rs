@@ -68,7 +68,7 @@ fn traverse_deep<N, E, K: Hash + Eq, G: GraphConnections<N, E, K> + ?Sized>(
 
     // Sort keys by insertion order
     let mut deps = deps.into_iter().collect::<Vec<_>>();
-    deps.sort_by(|a, d| a.1.cmp(&d.1));
+    deps.sort_by_key(|a| a.1);
 
     // Then map and only return the keys
     deps.into_iter().map(|dep| dep.0).collect()

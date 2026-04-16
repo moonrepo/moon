@@ -31,6 +31,7 @@
 #### ⚙️ Internal
 
 - Updated proto to [v0.56.2](https://github.com/moonrepo/proto/releases/tag/v0.56.2) from 0.56.1.
+- Updated Rust to v1.95.0.
 - Updated dependencies.
 
 ## 2.2.0

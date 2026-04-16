@@ -539,7 +539,7 @@ pub async fn gather_variables(
     let skip_prompts = args.defaults || !console.out.is_terminal();
 
     // Sort variables so prompting happens in the correct order
-    variables.sort_by(|a, d| a.1.get_order().cmp(&d.1.get_order()));
+    variables.sort_by_key(|a| a.1.get_order());
 
     for (name, config) in variables {
         if context.contains_key(name) {

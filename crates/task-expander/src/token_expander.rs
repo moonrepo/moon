@@ -706,10 +706,8 @@ impl<'graph> TokenExpander<'graph> {
                     .files
                     .extend(group.dirs(&self.context.workspace_root, loose_check)?);
             }
-            "envs" => {
-                if self.scope == TokenScope::Inputs {
-                    result.env.extend(group.env.clone());
-                }
+            "envs" if self.scope == TokenScope::Inputs => {
+                result.env.extend(group.env.clone());
             }
             "files" => {
                 result

@@ -7107,9 +7107,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.56.2"
+version = "0.56.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb194404c53482d36d3da00efd9684a1a54c5f09b6b61852eff50927b521165d"
+checksum = "8225ee58a49590fb6198e461c2cfca6036e82a22e9230a316c6533989d192d03"
 dependencies = [
  "convert_case 0.11.0",
  "docker_credential",
@@ -8615,9 +8615,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.12.9"
+version = "0.12.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e939a50874d4a6ffca941be181f73a75b4efbc31b6305f29ab27dd34863e1e2f"
+checksum = "34fea0f809a215e4ee5ef128fc8874d97b1f359bca71d6d11e76d47cb137153a"
 dependencies = [
  "async-trait",
  "dirs",
@@ -9548,9 +9548,9 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.23.0"
+version = "1.23.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ac8b6f42ead25368cf5b098aeb3dc8a1a2c05a3eee8a9a1a68c640edbfc79d9"
+checksum = "ddd74a9687298c6858e9b88ec8935ec45d22e8fd5e6394fa1bd4e99a87789c76"
 dependencies = [
  "getrandom 0.4.2",
  "js-sys",
@@ -9646,9 +9646,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.30.3"
+version = "0.30.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be7df58c28f2225b73c60c648be23c70e1da6343499d215aacb60b4a5af75474"
+checksum = "bfab6db5835945c5fb72df1a7ff3b60e569d513d4a06591db382ddd808268298"
 dependencies = [
  "async-trait",
  "base64 0.22.1",

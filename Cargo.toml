@@ -69,7 +69,7 @@ starbase_id = { version = "0.3.2", features = ["miette", "schematic"] }
 starbase_sandbox = "0.10.7"
 starbase_shell = "0.12.3"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.12.9", default-features = false, features = [
+starbase_utils = { version = "0.12.10", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",
@@ -92,18 +92,18 @@ tonic-prost = "0.14.5"
 tower = "0.5.3"
 tracing = "0.1.44"
 url = "2.5.8"
-uuid = { version = "1.22.0", features = ["v4"] }
+uuid = { version = "1.23.1", features = ["v4"] }
 
 # proto/plugin related
 extism = "=1.21.0"
 extism-pdk = "1.4.1"
-proto_core = "0.56.2"
+proto_core = "0.56.3"
 proto_pdk_api = "0.31.11"
 proto_pdk_test_utils = "0.44.1"
 proto_shim = "0.8.1"
 system_env = "0.10.0"
 version_spec = "0.10.3"
-warpgate = "0.30.3"
+warpgate = "0.30.4"
 warpgate_api = "0.17.4"
 warpgate_pdk = "0.16.3"
 

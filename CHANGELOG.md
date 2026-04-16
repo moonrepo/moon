@@ -18,6 +18,7 @@
 - Fixed an issue where checking the remote cache for an entry _before the task execution_ could
   cause the task to fail if the remote cache check errored. We now treat remote cache errors as
   cache misses, and allow the task to execute.
+- Fixed an issue where filtered graphs would point to the wrong data because indexes changed.
 
 #### 🧰 Toolchains
 
@@ -30,7 +31,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.56.2](https://github.com/moonrepo/proto/releases/tag/v0.56.2) from 0.56.1.
+- Updated proto to [v0.56.3](https://github.com/moonrepo/proto/releases/tag/v0.56.3) from 0.56.1.
 - Updated Rust to v1.95.0.
 - Updated dependencies.
 

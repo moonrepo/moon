@@ -14,12 +14,14 @@ jobs:
       - run: echo ${{ github.event.pull_request.head.sha }}
       - name: Get PR SHA
         id: sha
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           result-encoding: string
           script: |
             const response = await github.request(context.payload.issue.pull_request.url);
             return response.data.head.sha;
+
+      # Run on current branch
       - name: Checkout PR branch
         uses: actions/checkout@v6
         with:
@@ -28,7 +30,7 @@ jobs:
           # ref: ${{ github.event.pull_request.head.sha }}
       - uses: moonrepo/setup-rust@v1
       - name: Run benchmarks
-        run: cargo bench --workspace --bench tracker -- --save-baseline head-sha
+        run: cargo bench --workspace --no-fail-fast -- --save-baseline head-sha
 
       # Run on base branch to get a baseline
       - name: Checkout base branch
@@ -37,7 +39,7 @@ jobs:
           clean: false
           ref: ${{ github.event.pull_request.base.sha }}
       - name: Run benchmarks
-        run: cargo bench --workspace --bench tracker -- --save-baseline base-sha
+        run: cargo bench --workspace --no-fail-fast -- --save-baseline base-sha
 
       # Compare diffs
       - name: Install critcmp
@@ -55,7 +57,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Add comment
-        uses: peter-evans/create-or-update-comment@v2
+        uses: peter-evans/create-or-update-comment@v5
         continue-on-error: true
         with:
           issue-number: ${{ github.event.issue.number }}

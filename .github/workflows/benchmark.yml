@@ -1,67 +1,44 @@
 name: Benchmark
+
 on:
-  issue_comment:
-    types: [created]
-  # pull_request:
+  push:
+    branches:
+      - master
+      - develop-*
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
 env:
   RUST_LOG: info
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Limit parallel compilation jobs to reduce peak memory usage.
+  # The bench profile inherits from release (LTO + codegen-units=1),
+  # which is very memory-intensive.
+  CARGO_BUILD_JOBS: 2
+
 jobs:
   bench:
     name: Bench
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     runs-on: ubuntu-latest
     steps:
-      - run: echo ${{ github.event.pull_request.head.sha }}
-      - name: Get PR SHA
-        id: sha
-        uses: actions/github-script@v9
-        with:
-          result-encoding: string
-          script: |
-            const response = await github.request(context.payload.issue.pull_request.url);
-            return response.data.head.sha;
+      - uses: actions/checkout@v6
 
-      # Run on current branch
-      - name: Checkout PR branch
-        uses: actions/checkout@v6
-        with:
-          submodules: false
-          ref: ${{ steps.sha.outputs.result }}
-          # ref: ${{ github.event.pull_request.head.sha }}
       - uses: moonrepo/setup-rust@v1
-      - name: Run benchmarks
-        run: cargo bench -p moon_affected -p moon_workspace --no-fail-fast -- --save-baseline head-sha
-
-      # Run on base branch to get a baseline
-      - name: Checkout base branch
-        uses: actions/checkout@v6
         with:
-          clean: false
-          ref: ${{ github.event.pull_request.base.sha }}
-      - name: Run benchmarks
-        run: cargo bench -p moon_affected -p moon_workspace --no-fail-fast -- --save-baseline base-sha
+          bins: cargo-codspeed
 
-      # Compare diffs
-      - name: Install critcmp
-        run: cargo install critcmp
+      - name: Build the benchmark targets
+        run: cargo codspeed build -p moon_affected -p moon_workspace
 
-      - name: Compare benchmarks
-        id: bench_comparison
-        shell: bash
-        run: |
-          echo "comment<<EOF" >> $GITHUB_OUTPUT
-          echo "### Benchmark results" >> $GITHUB_OUTPUT
-          echo "\`\`\`" >> $GITHUB_OUTPUT
-          critcmp base-sha head-sha >> $GITHUB_OUTPUT
-          echo "\`\`\`" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-      - name: Add comment
-        uses: peter-evans/create-or-update-comment@v5
-        continue-on-error: true
+      - name: Run the benchmarks
+        uses: CodSpeedHQ/action@v4
         with:
-          issue-number: ${{ github.event.issue.number }}
-          body: ${{ steps.bench_comparison.outputs.comment }}
-
-      - name: Remove artifacts
-        run: rm -rf ./target/criterion
+          mode: simulation
+          run: cargo codspeed run

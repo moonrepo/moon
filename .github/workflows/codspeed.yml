@@ -27,6 +27,10 @@ permissions:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # Limit parallel compilation jobs to reduce peak memory usage.
+  # The bench profile inherits from release (LTO + codegen-units=1),
+  # which is very memory-intensive.
+  CARGO_BUILD_JOBS: 2
 
 jobs:
   codspeed:
@@ -38,7 +42,7 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           bins: cargo-codspeed
-          cache: false
+          cache-target: release
 
       - name: Build the benchmark targets
         run: cargo codspeed build -p moon_affected -p moon_workspace

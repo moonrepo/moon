@@ -1,5 +1,7 @@
 # moon
 
+[![CodSpeed](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/moonrepo/moon?utm_source=badge)
+
 moon is a repository **_m_**anagement, **_o_**rganization, **_o_**rchestration, and
 **_n_**otification tool for the web ecosystem, written in Rust. Many of the concepts within moon are
 heavily inspired from Bazel and other popular build systems.

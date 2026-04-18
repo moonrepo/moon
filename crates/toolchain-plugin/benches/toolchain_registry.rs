@@ -15,7 +15,10 @@ fn load_all(c: &mut Criterion) {
 
     group.bench_function(id("load_all"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            handle_unwrap(mocker.mock_toolchain_registry().load_all().await);
+            let registry = mocker.mock_toolchain_registry();
+
+            handle_unwrap(registry.load_all().await);
+            drop(registry);
         })
     });
 
@@ -29,12 +32,10 @@ fn load_many(c: &mut Criterion) {
 
     group.bench_function(id("load_many"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            handle_unwrap(
-                mocker
-                    .mock_toolchain_registry()
-                    .load_many(["bun", "node", "rust"])
-                    .await,
-            );
+            let registry = mocker.mock_toolchain_registry();
+
+            handle_unwrap(registry.load_many(["bun", "node", "rust"]).await);
+            drop(registry);
         })
     });
 
@@ -48,7 +49,10 @@ fn load_one(c: &mut Criterion) {
 
     group.bench_function(id("load_one"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            handle_unwrap(mocker.mock_toolchain_registry().load("javascript").await);
+            let registry = mocker.mock_toolchain_registry();
+
+            handle_unwrap(registry.load("javascript").await);
+            drop(registry);
         })
     });
 

@@ -27,7 +27,7 @@ env:
 jobs:
   bench:
     name: Bench
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-24.04-8
     strategy:
       fail-fast: false
       matrix:

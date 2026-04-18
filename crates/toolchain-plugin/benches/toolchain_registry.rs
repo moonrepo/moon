@@ -13,14 +13,17 @@ fn load_all(c: &mut Criterion) {
     let sandbox = create_empty_sandbox();
     let mocker = WorkspaceMocker::new(sandbox.path()).with_all_toolchains();
 
-    group.bench_function(id("load_all"), |b| {
-        b.to_async(Runtime::new().unwrap()).iter(async || {
-            let registry = mocker.mock_toolchain_registry();
+    group
+        .bench_function(id("load_all"), |b| {
+            b.to_async(Runtime::new().unwrap()).iter(async || {
+                let registry = mocker.mock_toolchain_registry();
 
-            handle_unwrap(registry.load_all().await);
-            drop(registry);
+                handle_unwrap(registry.load_all().await);
+                drop(registry);
+            })
         })
-    });
+        // Runs out of memory in CI
+        .sample_size(50);
 
     group.finish();
 }

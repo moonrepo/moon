@@ -1,5 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use moon_bench_utils::create_simple_workspace;
+use moon_common::is_ci;
 use moon_test_utils2::WorkspaceMocker;
 use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync};
 use tokio::runtime::Runtime;
@@ -50,10 +51,12 @@ fn limit_1000(c: &mut Criterion) {
     do_limit(c, 1000);
 }
 
-// Too slow in CI!
-// fn limit_5000(c: &mut Criterion) {
-//     do_limit(c, 5000);
-// }
+fn limit_5000(c: &mut Criterion) {
+    // Too slow for CI!
+    if !is_ci() {
+        do_limit(c, 5000);
+    }
+}
 
-criterion_group!(benches, limit_100, limit_1000); //, limit_5000);
+criterion_group!(benches, limit_100, limit_1000, limit_5000);
 criterion_main!(benches);

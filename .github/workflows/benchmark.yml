@@ -39,6 +39,7 @@ jobs:
       - uses: moonrepo/setup-rust@v1
         with:
           bins: cargo-codspeed
+          cache-target: release
 
       - name: Build the benchmark targets
         run: cargo codspeed build -p ${{ matrix.package }}
@@ -47,4 +48,4 @@ jobs:
         uses: CodSpeedHQ/action@v4
         with:
           mode: simulation
-          run: cargo codspeed run
+          run: cargo codspeed run -p ${{ matrix.package }}

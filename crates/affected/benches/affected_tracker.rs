@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use moon_affected::AffectedTracker;
 use moon_bench_utils::create_simple_workspace;
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{is_ci, path::WorkspaceRelativePathBuf};
 use moon_test_utils2::WorkspaceMocker;
 use rustc_hash::FxHashSet;
 use starbase_sandbox::Sandbox;
@@ -73,14 +73,16 @@ fn limit_100(c: &mut Criterion) {
     do_limit(c, 100);
 }
 
-// fn limit_1000(c: &mut Criterion) {
-//     do_limit(c, 1000);
-// }
+fn limit_1000(c: &mut Criterion) {
+    do_limit(c, 1000);
+}
 
-// Too slow in CI!
-// fn limit_5000(c: &mut Criterion) {
-//     do_limit(c, 5000);
-// }
+fn limit_5000(c: &mut Criterion) {
+    // Too slow for CI!
+    if !is_ci() {
+        do_limit(c, 5000);
+    }
+}
 
-criterion_group!(benches, limit_10, limit_100); // , limit_1000); // , limit_5000);
+criterion_group!(benches, limit_10, limit_100, limit_1000, limit_5000);
 criterion_main!(benches);

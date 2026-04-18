@@ -11,7 +11,7 @@ fn id(label: &str) -> String {
 
 fn sample_size() -> usize {
     // Runs out of memory in CI
-    if is_ci() { 25 } else { 100 }
+    if is_ci() { 10 } else { 100 }
 }
 
 fn load_all(c: &mut Criterion) {

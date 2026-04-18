@@ -5,6 +5,14 @@ use moon_test_utils2::WorkspaceMocker;
 use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync};
 use tokio::runtime::Runtime;
 
+fn id(max: u16, label: &str) -> String {
+    format!("WorkspaceBuilder / {max} {label}")
+}
+
+fn should_run(max: u16) -> bool {
+    !is_ci() || !(is_ci() && max >= 1000)
+}
+
 fn handle_unwrap<T>(res: Result<T, miette::Report>) {
     if let Err(error) = res {
         dbg!(&error);
@@ -17,7 +25,7 @@ fn do_limit(c: &mut Criterion, max: u16) {
     let sandbox = create_simple_workspace(max);
     let mocker = WorkspaceMocker::new(sandbox.path()).load_default_configs();
 
-    group.bench_function("sync", |b| {
+    group.bench_function(id(max, "sync"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
             let mut builder = WorkspaceBuilder::new(mocker.mock_workspace_builder_context())
                 .await
@@ -29,7 +37,7 @@ fn do_limit(c: &mut Criterion, max: u16) {
         })
     });
 
-    group.bench_function("async", |b| {
+    group.bench_function(id(max, "async"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
             let mut builder = WorkspaceBuilderAsync::new(mocker.mock_workspace_builder_context())
                 .await
@@ -53,7 +61,7 @@ fn limit_1000(c: &mut Criterion) {
 
 fn limit_5000(c: &mut Criterion) {
     // Too slow for CI!
-    if !is_ci() {
+    if should_run(5000) {
         do_limit(c, 5000);
     }
 }

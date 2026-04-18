@@ -8,6 +8,14 @@ use starbase_sandbox::Sandbox;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
+fn id(max: u16, label: &str) -> String {
+    format!("AffectedTracker / {max} {label}")
+}
+
+fn should_run(max: u16) -> bool {
+    !is_ci() || !(is_ci() && max >= 1000)
+}
+
 fn create_changed_files(max: u16) -> FxHashSet<WorkspaceRelativePathBuf> {
     let mut set = FxHashSet::default();
 
@@ -28,15 +36,18 @@ fn do_limit(c: &mut Criterion, max: u16) {
     let files = create_changed_files(max);
     let mocker = create_workspace_mocker(&sandbox);
 
-    group.bench_function("projects sync", |b| {
-        b.to_async(Runtime::new().unwrap()).iter(async || {
-            AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
-                .track_projects()
-                .unwrap();
-        })
-    });
+    // Sync benchmarks are too slow for CI
+    if should_run(max) {
+        group.bench_function(id(max, "projects sync"), |b| {
+            b.to_async(Runtime::new().unwrap()).iter(async || {
+                AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
+                    .track_projects()
+                    .unwrap();
+            })
+        });
+    }
 
-    group.bench_function("projects async", |b| {
+    group.bench_function(id(max, "projects async"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
             AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
                 .track_projects_async()
@@ -45,15 +56,18 @@ fn do_limit(c: &mut Criterion, max: u16) {
         })
     });
 
-    group.bench_function("tasks sync", |b| {
-        b.to_async(Runtime::new().unwrap()).iter(async || {
-            AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
-                .track_tasks()
-                .unwrap();
-        })
-    });
+    // Sync benchmarks are too slow for CI
+    if should_run(max) {
+        group.bench_function(id(max, "tasks sync"), |b| {
+            b.to_async(Runtime::new().unwrap()).iter(async || {
+                AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
+                    .track_tasks()
+                    .unwrap();
+            })
+        });
+    }
 
-    group.bench_function("tasks async", |b| {
+    group.bench_function(id(max, "tasks async"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
             AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
                 .track_tasks_async()
@@ -78,8 +92,7 @@ fn limit_1000(c: &mut Criterion) {
 }
 
 fn limit_5000(c: &mut Criterion) {
-    // Too slow for CI!
-    if !is_ci() {
+    if should_run(5000) {
         do_limit(c, 5000);
     }
 }

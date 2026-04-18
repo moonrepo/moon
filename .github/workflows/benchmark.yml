@@ -32,6 +32,7 @@ jobs:
       matrix:
         package:
           - moon_affected
+          - moon_toolchain_plugin
           - moon_workspace
     steps:
       - uses: actions/checkout@v6

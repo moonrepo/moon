@@ -8,6 +8,10 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
+[[bench]]
+name = "toolchain_registry"
+harness = false
+
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
@@ -25,6 +29,13 @@ rustc-hash = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob", "json"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
+
+[dev-dependencies]
+moon_bench_utils = { path = "../bench-utils" }
+moon_test_utils2 = { path = "../test-utils" }
+criterion2 = { workspace = true }
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }
 
 [lints]
 workspace = true

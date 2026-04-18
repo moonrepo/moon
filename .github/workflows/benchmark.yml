@@ -27,7 +27,8 @@ env:
 jobs:
   bench:
     name: Bench
-    runs-on: depot-ubuntu-24.04-8
+    # 64GB of memory!
+    runs-on: depot-ubuntu-24.04-16
     strategy:
       fail-fast: false
       matrix:

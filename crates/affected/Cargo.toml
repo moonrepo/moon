@@ -38,3 +38,7 @@ tokio = { workspace = true }
 
 [lints]
 workspace = true
+
+[features]
+default = []
+codspeed = ["criterion2/codspeed"]

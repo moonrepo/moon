@@ -19,23 +19,21 @@ permissions:
 env:
   RUST_LOG: info
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  # Limit parallel compilation jobs to reduce peak memory usage.
-  # The bench profile inherits from release (LTO + codegen-units=1),
-  # which is very memory-intensive.
-  CARGO_BUILD_JOBS: 2
 
 jobs:
   bench:
     name: Bench
-    # 64GB of memory!
-    runs-on: depot-ubuntu-24.04-16
     strategy:
       fail-fast: false
       matrix:
-        package:
-          - moon_affected
-          - moon_toolchain_plugin
-          - moon_workspace
+        include:
+          - package: moon_affected
+            runner: depot-ubuntu-24.04-16 # 64GB mem
+          - package: moon_toolchain_plugin
+            runner: depot-ubuntu-24.04-8 # 32GB mem
+          - package: moon_workspace
+            runner: depot-ubuntu-24.04-8 # 32GB mem
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
 

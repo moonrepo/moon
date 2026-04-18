@@ -1,6 +1,7 @@
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use moon_affected::AffectedTracker;
 use moon_bench_utils::create_simple_workspace;
+use moon_common::is_local;
 use moon_common::{is_ci, path::WorkspaceRelativePathBuf};
 use moon_test_utils2::WorkspaceMocker;
 use rustc_hash::FxHashSet;
@@ -8,12 +9,12 @@ use starbase_sandbox::Sandbox;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
-fn id(max: u16, label: &str) -> String {
-    format!("AffectedTracker / {max} {label}")
+fn id(max: u16, label: &str) -> BenchmarkId {
+    BenchmarkId::new(label, max)
 }
 
 fn should_run(max: u16) -> bool {
-    !is_ci() || !(is_ci() && max >= 1000)
+    is_local() || !(is_ci() && max >= 1000)
 }
 
 fn create_changed_files(max: u16) -> FxHashSet<WorkspaceRelativePathBuf> {
@@ -31,14 +32,14 @@ fn create_workspace_mocker(sandbox: &Sandbox) -> WorkspaceMocker {
 }
 
 fn do_limit(c: &mut Criterion, max: u16) {
-    let mut group = c.benchmark_group(format!("{max}"));
+    let mut group = c.benchmark_group("AffectedTracker");
     let sandbox = create_simple_workspace(max);
     let files = create_changed_files(max);
     let mocker = create_workspace_mocker(&sandbox);
 
     // Sync benchmarks are too slow for CI
     if should_run(max) {
-        group.bench_function(id(max, "projects sync"), |b| {
+        group.bench_function(id(max, "track_projects_sync"), |b| {
             b.to_async(Runtime::new().unwrap()).iter(async || {
                 AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
                     .track_projects()
@@ -47,7 +48,7 @@ fn do_limit(c: &mut Criterion, max: u16) {
         });
     }
 
-    group.bench_function(id(max, "projects async"), |b| {
+    group.bench_function(id(max, "track_projects_async"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
             AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
                 .track_projects_async()
@@ -58,7 +59,7 @@ fn do_limit(c: &mut Criterion, max: u16) {
 
     // Sync benchmarks are too slow for CI
     if should_run(max) {
-        group.bench_function(id(max, "tasks sync"), |b| {
+        group.bench_function(id(max, "track_tasks_sync"), |b| {
             b.to_async(Runtime::new().unwrap()).iter(async || {
                 AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
                     .track_tasks()
@@ -67,7 +68,7 @@ fn do_limit(c: &mut Criterion, max: u16) {
         });
     }
 
-    group.bench_function(id(max, "tasks async"), |b| {
+    group.bench_function(id(max, "track_tasks_async"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
             AffectedTracker::new(Arc::new(mocker.mock_workspace_graph().await), files.clone())
                 .track_tasks_async()

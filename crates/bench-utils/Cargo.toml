@@ -9,6 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+miette = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

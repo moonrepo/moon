@@ -5055,6 +5055,7 @@ dependencies = [
 name = "moon_bench_utils"
 version = "0.0.1"
 dependencies = [
+ "miette 7.6.0",
  "starbase_sandbox",
 ]
 

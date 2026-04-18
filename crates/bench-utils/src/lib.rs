@@ -1,6 +1,13 @@
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::fs;
 
+pub fn handle_unwrap<T>(res: Result<T, miette::Report>) {
+    if let Err(error) = res {
+        dbg!(&error);
+        panic!("{error}");
+    }
+}
+
 pub fn create_simple_workspace(max: u16) -> Sandbox {
     let sandbox = create_empty_sandbox();
     sandbox.enable_git();

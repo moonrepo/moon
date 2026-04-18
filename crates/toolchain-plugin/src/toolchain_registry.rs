@@ -106,12 +106,14 @@ impl ToolchainRegistry {
         I: IntoIterator<Item = T>,
         T: AsRef<str>,
     {
+        let ids = ids
+            .into_iter()
+            .map(|id| Id::raw(id.as_ref()))
+            .collect::<Vec<_>>();
         let mut set = JoinSet::<miette::Result<Arc<ToolchainPlugin>>>::new();
         let mut list = vec![];
 
         for id in ids {
-            let id = Id::raw(id.as_ref());
-
             let Some(config) = self.config.get_plugin_config(&id) else {
                 continue;
             };

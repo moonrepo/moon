@@ -45,7 +45,7 @@ jobs:
           cache-target: release
 
       - name: Build the benchmark targets
-        run: cargo codspeed build -m walltime -p ${{ matrix.package }} --features codspeed
+        run: cargo codspeed build -m walltime -p ${{ matrix.package }}
 
       - name: Run the benchmarks
         uses: CodSpeedHQ/action@v4

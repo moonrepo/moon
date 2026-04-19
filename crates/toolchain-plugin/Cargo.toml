@@ -23,6 +23,7 @@ moon_process = { path = "../process" }
 moon_toolchain = { path = "../toolchain" }
 async-trait = { workspace = true }
 futures = { workspace = true }
+indexmap = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }

@@ -6071,6 +6071,7 @@ dependencies = [
  "async-trait",
  "codspeed-criterion-compat",
  "futures",
+ "indexmap",
  "miette 7.6.0",
  "moon_bench_utils",
  "moon_common",

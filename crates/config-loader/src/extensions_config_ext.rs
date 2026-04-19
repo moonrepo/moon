@@ -36,7 +36,7 @@ impl ExtensionsConfigExt {
     }
 
     pub fn inherit_test_builtin_plugins(config: &mut ExtensionsConfig) {
-        for id in ["download", "migrate-nx", "migrate-turborepo"] {
+        for id in ["download", "migrate-nx", "migrate-turborepo", "unpack"] {
             config.plugins.entry(Id::raw(id)).or_default();
         }
     }
@@ -48,7 +48,7 @@ impl ExtensionsConfigExt {
             }
 
             match id.as_str() {
-                "download" | "migrate-nx" | "migrate-turborepo" => {
+                "download" | "migrate-nx" | "migrate-turborepo" | "unpack" => {
                     config.plugin = Self::get_plugin_locator(id);
                 }
                 #[cfg(debug_assertions)]

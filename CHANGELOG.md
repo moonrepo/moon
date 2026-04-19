@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed a regression in plugin loading that reduced performance of graph operations.
+- Fixed an issue where the `unpack` extension would trigger a missing plugin locator error.
+
 ## 2.2.1
 
 #### 🚀 Updates

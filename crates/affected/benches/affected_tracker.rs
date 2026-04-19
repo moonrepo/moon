@@ -14,7 +14,7 @@ fn id(max: u16, label: &str) -> BenchmarkId {
 }
 
 fn should_run(max: u16) -> bool {
-    is_local() || !(is_ci() && max >= 1000)
+    is_local() || is_ci() && max <= 1000
 }
 
 fn create_changed_files(max: u16) -> FxHashSet<WorkspaceRelativePathBuf> {

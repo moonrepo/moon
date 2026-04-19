@@ -1,12 +1,13 @@
 name: Benchmark
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
       - develop-*
-  workflow_dispatch:
-  pull_request:
+  issue_comment:
+    types: [created]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -23,6 +24,7 @@ env:
 jobs:
   bench:
     name: Bench
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/develop-')) || github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     strategy:
       fail-fast: false
       matrix:

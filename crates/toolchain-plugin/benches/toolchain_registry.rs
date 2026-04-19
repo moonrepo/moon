@@ -8,7 +8,7 @@ fn id(label: &str) -> String {
     label.to_string()
 }
 
-fn load_all(c: &mut Criterion) {
+fn load(c: &mut Criterion) {
     let mut group = c.benchmark_group("ToolchainRegistry");
     let sandbox = create_empty_sandbox();
     let mocker = WorkspaceMocker::new(sandbox.path()).with_all_toolchains();
@@ -22,14 +22,6 @@ fn load_all(c: &mut Criterion) {
         })
     });
 
-    group.finish();
-}
-
-fn load_many(c: &mut Criterion) {
-    let mut group = c.benchmark_group("ToolchainRegistry");
-    let sandbox = create_empty_sandbox();
-    let mocker = WorkspaceMocker::new(sandbox.path()).with_all_toolchains();
-
     group.bench_function(id("load_many"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
             let registry = mocker.mock_toolchain_registry();
@@ -38,14 +30,6 @@ fn load_many(c: &mut Criterion) {
             drop(registry);
         })
     });
-
-    group.finish();
-}
-
-fn load_one(c: &mut Criterion) {
-    let mut group = c.benchmark_group("ToolchainRegistry");
-    let sandbox = create_empty_sandbox();
-    let mocker = WorkspaceMocker::new(sandbox.path()).with_all_toolchains();
 
     group.bench_function(id("load_one"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
@@ -59,5 +43,5 @@ fn load_one(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, load_one, load_many, load_all);
+criterion_group!(benches, load);
 criterion_main!(benches);

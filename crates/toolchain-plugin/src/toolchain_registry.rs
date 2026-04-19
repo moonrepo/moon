@@ -113,6 +113,22 @@ impl ToolchainRegistry {
         let mut set = JoinSet::<miette::Result<Arc<ToolchainPlugin>>>::new();
         let mut list = vec![];
 
+        // First check if all of the requested plugins are already registered,
+        // and if so, return them immediately
+        for id in &ids {
+            if self.is_registered(id).await {
+                list.push(self.get_instance(id).await?);
+            }
+        }
+
+        if list.len() == ids.len() {
+            return Ok(list);
+        } else {
+            list.clear();
+        }
+
+        // Otherwise load all the plugins in parallel, and return them in the
+        // order they were requested
         for id in ids {
             let Some(config) = self.config.get_plugin_config(&id) else {
                 continue;
@@ -150,10 +166,8 @@ impl ToolchainRegistry {
             }));
         }
 
-        if !set.is_empty() {
-            while let Some(result) = set.join_next().await {
-                list.push(result.into_diagnostic()??);
-            }
+        while let Some(result) = set.join_next().await {
+            list.push(result.into_diagnostic()??);
         }
 
         Ok(list)

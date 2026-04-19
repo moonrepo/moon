@@ -93,12 +93,30 @@ impl ExtensionRegistry {
         I: IntoIterator<Item = T>,
         T: AsRef<str>,
     {
+        let ids = ids
+            .into_iter()
+            .map(|id| Id::raw(id.as_ref()))
+            .collect::<Vec<_>>();
         let mut set = JoinSet::<miette::Result<Arc<ExtensionPlugin>>>::new();
         let mut list = vec![];
 
-        for id in ids {
-            let id = Id::raw(id.as_ref());
+        // First check if all of the requested plugins are already registered,
+        // and if so, return them immediately
+        for id in &ids {
+            if self.is_registered(id).await {
+                list.push(self.get_instance(id).await?);
+            }
+        }
 
+        if list.len() == ids.len() {
+            return Ok(list);
+        } else {
+            list.clear();
+        }
+
+        // Otherwise load all the plugins in parallel, and return them in the
+        // order they were requested
+        for id in ids {
             let Some(config) = self.config.plugins.get(&id) else {
                 continue;
             };
@@ -129,10 +147,8 @@ impl ExtensionRegistry {
             }));
         }
 
-        if !set.is_empty() {
-            while let Some(result) = set.join_next().await {
-                list.push(result.into_diagnostic()??);
-            }
+        while let Some(result) = set.join_next().await {
+            list.push(result.into_diagnostic()??);
         }
 
         Ok(list)

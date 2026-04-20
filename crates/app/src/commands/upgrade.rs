@@ -23,6 +23,26 @@ pub fn is_musl() -> bool {
     }
 }
 
+pub enum InstalledWith {
+    Moon,
+    Proto,
+    Unknown(PathBuf),
+}
+
+pub fn is_installed_with(session: &MoonSession) -> miette::Result<InstalledWith> {
+    let current_exe_path = env::current_exe().into_diagnostic()?;
+
+    if current_exe_path.starts_with(&session.proto_env.store.dir) {
+        return Ok(InstalledWith::Proto);
+    }
+
+    if current_exe_path.starts_with(&session.moon_env.store_root) {
+        return Ok(InstalledWith::Moon);
+    }
+
+    Ok(InstalledWith::Unknown(current_exe_path))
+}
+
 #[instrument(skip(session))]
 pub async fn upgrade(session: MoonSession) -> AppResult {
     if proto_core::is_offline() {
@@ -72,35 +92,37 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         format!("{target}.tar.xz")
     };
 
-    let current_exe_path = env::current_exe().into_diagnostic()?;
     let bin_dir = match GlobalEnvBag::instance().get("MOON_INSTALL_DIR") {
         Some(dir) => PathBuf::from(dir),
         None => session.moon_env.store_root.join("bin"),
     };
 
-    // Special case to install with proto
-    if current_exe_path.starts_with(&session.proto_env.store.dir) {
-        Command::new("proto")
-            .args(["install", "moon", "latest", "--pin", "global"])
-            .exec_stream_output()
-            .await?;
+    match is_installed_with(&session)? {
+        // Special case to install with proto
+        InstalledWith::Proto => {
+            Command::new("proto")
+                .args(["install", "moon", "latest", "--pin", "global"])
+                .exec_stream_output()
+                .await?;
 
-        return Ok(None);
-    }
+            return Ok(None);
+        }
 
-    // We can only upgrade moon if it's installed under .moon
-    if !current_exe_path.starts_with(&session.moon_env.store_root) {
-        session.console.render_err(element! {
-            Container {
-                Notice(variant: Variant::Caution) {
-                    StyledText(content: "moon can only upgrade itself when installed in the <path>~/.moon</path> directory.")
-                    StyledText(content: format!("moon is currently installed at <path>{}</path>!", current_exe_path.display()))
+        // We can only upgrade moon if it's installed under .moon
+        InstalledWith::Unknown(current_exe_path) => {
+            session.console.render_err(element! {
+                Container {
+                    Notice(variant: Variant::Caution) {
+                        StyledText(content: "moon can only upgrade itself when installed in the <path>~/.moon</path> directory.")
+                        StyledText(content: format!("moon is currently installed at <path>{}</path>!", current_exe_path.display()))
+                    }
                 }
-            }
-        })?;
+            })?;
 
-        return Ok(Some(1));
-    }
+            return Ok(Some(1));
+        }
+        _ => {}
+    };
 
     let progress = create_progress_loader(
         session.get_console()?,

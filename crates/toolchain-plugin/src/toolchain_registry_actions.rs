@@ -1,6 +1,5 @@
 use crate::toolchain_plugin::ToolchainPlugin;
 use crate::toolchain_registry::ToolchainRegistry;
-use indexmap::IndexSet;
 use moon_common::Id;
 use moon_config::LanguageType;
 use moon_pdk_api::{
@@ -13,7 +12,7 @@ use moon_pdk_api::{
 };
 use moon_plugin::CallResult;
 use proto_core::UnresolvedVersionSpec;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::json::JsonValue;
 use std::path::{Path, PathBuf};
 
@@ -99,7 +98,7 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
     {
-        let mut detected = IndexSet::<Id>::default();
+        let mut detected = FxHashSet::default();
 
         for toolchain in self.load_all().await? {
             if toolchain.detect_project_usage(dir)? {
@@ -124,7 +123,7 @@ impl ToolchainRegistry {
         ids: Vec<&Id>,
         command: &String,
     ) -> miette::Result<Vec<Id>> {
-        let mut detected = IndexSet::<Id>::default();
+        let mut detected = FxHashSet::default();
 
         for toolchain in self.load_many(ids).await? {
             if toolchain.detect_task_usage(command)? {
@@ -201,7 +200,7 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
     {
-        let mut expanded = IndexSet::<Id>::from_iter(ids);
+        let mut expanded = FxHashSet::from_iter(ids);
 
         for result in self
             .define_requirements_many(self.get_plugin_ids(), input_factory)

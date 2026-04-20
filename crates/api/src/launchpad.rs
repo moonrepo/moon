@@ -24,6 +24,7 @@ const ALERT_PAUSE_DURATION: Duration = Duration::from_secs(43200); // 12 hours
 pub struct CurrentVersion {
     pub current_version: String,
     pub message: Option<String>,
+    pub url: Option<String>,
 }
 
 cache_item!(
@@ -67,6 +68,7 @@ pub struct VersionCheck {
     pub remote_version: Version,
     pub message: Option<String>,
     pub update_available: bool,
+    pub url: Option<String>,
 }
 
 pub struct Launchpad {
@@ -186,6 +188,7 @@ impl Launchpad {
             local_version,
             remote_version,
             message: data.message,
+            url: data.url,
             update_available,
         }))
     }

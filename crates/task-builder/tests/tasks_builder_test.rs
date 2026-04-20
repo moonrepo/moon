@@ -870,7 +870,7 @@ tasks:
 
             let task = tasks.get("node").unwrap();
 
-            assert_eq!(task.toolchains, vec![Id::raw("node"), Id::raw("npm")]);
+            assert_eq!(task.toolchains, vec![Id::raw("npm"), Id::raw("node")]);
 
             let task = tasks.get("typescript").unwrap();
 
@@ -892,7 +892,7 @@ tasks:
 
             assert_eq!(
                 task.toolchains,
-                vec![Id::raw("javascript"), Id::raw("deno")]
+                vec![Id::raw("deno"), Id::raw("javascript")]
             );
 
             let task = tasks.get("node-via-cmd").unwrap();
@@ -1508,7 +1508,7 @@ tasks:
 
             let task = tasks.get("toolchains").unwrap();
 
-            assert_eq!(task.toolchains, vec!["global", "local"]);
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -1559,7 +1559,7 @@ tasks:
                 ]
             );
 
-            assert_eq!(task.toolchains, vec!["global", "local"]);
+            assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
         #[tokio::test(flavor = "multi_thread")]

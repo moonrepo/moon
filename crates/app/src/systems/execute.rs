@@ -1,16 +1,13 @@
+use crate::commands::upgrade::{InstalledWith, is_installed_with};
+use crate::session::MoonSession;
 use moon_api::Launchpad;
-use moon_cache::CacheEngine;
 use moon_common::{color, is_formatted_output, is_test_env};
-use moon_console::{Checkpoint, Console};
+use moon_console::Checkpoint;
 use starbase::AppResult;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
-pub async fn check_for_new_version(
-    console: &Console,
-    cache_engine: &CacheEngine,
-    manifest_url: &str,
-) -> AppResult {
+pub async fn check_for_new_version(session: &MoonSession, manifest_url: &str) -> AppResult {
     if is_test_env() || is_formatted_output() {
         return Ok(None);
     }
@@ -19,8 +16,11 @@ pub async fn check_for_new_version(
         return Ok(None);
     };
 
+    let console = &session.console;
+    let cache_engine = session.get_cache_engine()?;
+
     match launchpad
-        .check_version(cache_engine, false, manifest_url)
+        .check_version(&cache_engine, false, manifest_url)
         .await
     {
         Ok(Some(result)) => {
@@ -37,18 +37,43 @@ pub async fn check_for_new_version(
                 ),
             )?;
 
-            if let Some(newer_message) = result.message {
-                console.print_checkpoint(Checkpoint::Announcement, newer_message)?;
+            if let Some(message) = result.message {
+                console.print_checkpoint(Checkpoint::Announcement, message)?;
             }
 
-            console.print_checkpoint(
-                Checkpoint::Announcement,
-                format!(
-                    "Run {} or install from {}",
-                    color::success("moon upgrade"),
-                    color::url("https://moonrepo.dev/docs/install"),
-                ),
-            )?;
+            if let Some(url) = result.url {
+                console.print_checkpoint(Checkpoint::Announcement, format!("Learn more: {url}"))?;
+            }
+
+            match is_installed_with(session)? {
+                InstalledWith::Proto => {
+                    console.print_checkpoint(
+                        Checkpoint::Announcement,
+                        format!(
+                            "Run {} to upgrade!",
+                            color::shell(format!(
+                                "proto install moon {} --pin",
+                                result.remote_version
+                            ))
+                        ),
+                    )?;
+                }
+                InstalledWith::Moon => {
+                    console.print_checkpoint(
+                        Checkpoint::Announcement,
+                        format!("Run {} to get started!", color::shell("moon upgrade")),
+                    )?;
+                }
+                InstalledWith::Unknown(_) => {
+                    console.print_checkpoint(
+                        Checkpoint::Announcement,
+                        format!(
+                            "Install with: {}",
+                            color::url("https://moonrepo.dev/docs/install"),
+                        ),
+                    )?;
+                }
+            };
         }
         Err(error) => {
             debug!("Failed to check for current version: {}", error);

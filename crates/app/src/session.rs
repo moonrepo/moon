@@ -407,14 +407,8 @@ impl AppSession for MoonSession {
 
         // Check for a new version and log to the console
         if self.is_telemetry_enabled() && is_exec_command {
-            let cache_engine = self.get_cache_engine()?;
-
-            execute::check_for_new_version(
-                &self.console,
-                &cache_engine,
-                &self.toolchains_config.moon.manifest_url,
-            )
-            .await?;
+            execute::check_for_new_version(&self, &self.toolchains_config.moon.manifest_url)
+                .await?;
         }
 
         // Start the daemon in the background

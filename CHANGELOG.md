@@ -17,6 +17,11 @@
 - **Python**
   - Fixed the Python toolchain depending on pip/uv, when it should be reversed.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.56.4](https://github.com/moonrepo/proto/releases/tag/v0.56.4) from 0.56.3.
+- Updated dependencies.
+
 ## 2.2.1
 
 #### 🚀 Updates

@@ -5,7 +5,7 @@ use moon_task_runner::TaskRunCacheState;
 use moon_test_utils2::predicates::prelude::*;
 use starbase_utils::{fs, json};
 use std::path::MAIN_SEPARATOR_STR;
-use utils::{change_files, create_pipeline_sandbox};
+use utils::{change_files, create_pipeline_sandbox, create_sync_heavy_pipeline_sandbox};
 
 const PROJECT_DIR: &str = if cfg!(windows) { "windows" } else { "unix" };
 
@@ -15,6 +15,37 @@ fn target(task: &str) -> String {
 
 mod exec {
     use super::*;
+
+    mod dispatcher_regression {
+        use super::*;
+
+        #[test]
+        fn runs_sync_heavy_noop_graph_without_stalling() {
+            let depth = 12;
+            let width = 4;
+            let expected_sync_projects = (depth * width) + 1;
+            let mut sandbox = create_sync_heavy_pipeline_sandbox(depth, width);
+            sandbox.sandbox.settings.timeout = 20;
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("action-graph").arg("--dot").arg("app:noop");
+            });
+            let dot = assert.output();
+            assert.success();
+
+            assert_eq!(dot.matches("SyncProject(").count(), expected_sync_projects);
+            assert_eq!(dot.matches("RunTask(app:noop)").count(), 1);
+            assert!(dot.contains("SyncWorkspace"));
+
+            sandbox.sandbox.settings.timeout = 5;
+            sandbox
+                .run_bin(|cmd| {
+                    cmd.arg("exec").arg("app:noop");
+                })
+                .success()
+                .stdout(predicate::str::contains("Tasks: 1 completed"));
+        }
+    }
 
     mod general {
         use super::*;

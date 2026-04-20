@@ -22,9 +22,9 @@ impl ToolchainsConfigExt {
             "pnpm" => Some(locate("node_depman_toolchain", "1.0.3")),
             "rust" => Some(locate("rust_toolchain", "1.0.5")),
             "typescript" => Some(locate("typescript_toolchain", "1.1.3")),
-            "unstable_python" => Some(locate("python_toolchain", "0.1.6")),
+            "unstable_python" => Some(locate("python_toolchain", "0.1.7")),
             "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.2")),
-            "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.2")),
+            "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.3")),
             "yarn" => Some(locate("node_depman_toolchain", "1.0.3")),
             "system" => Some(PluginLocator::Data(Box::new(DataLocator {
                 data: "data://system_toolchain".into(),

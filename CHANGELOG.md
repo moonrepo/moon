@@ -2,10 +2,20 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Updated the VS Code extension to point to the v2 JSON schemas. If you are still using moon v1,
+  you'll need to pin to an older VS Code extension version until you upgrade to moon v2.
+
 #### 🐞 Fixes
 
 - Fixed a regression in plugin loading that reduced performance of graph operations.
 - Fixed an issue where the `unpack` extension would trigger a missing plugin locator error.
+
+#### 🧰 Toolchains
+
+- **Python**
+  - Fixed the Python toolchain depending on pip/uv, when it should be reversed.
 
 ## 2.2.1
 

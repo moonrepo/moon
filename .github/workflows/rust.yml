@@ -74,6 +74,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just
@@ -117,6 +119,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: moonrepo/setup-rust@v1
         with:
           bins: just, cargo-nextest, cargo-llvm-cov

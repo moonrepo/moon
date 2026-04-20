@@ -127,6 +127,8 @@ jobs:
           persist-credentials: false
           submodules: recursive
       - uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Rust non-interactively if not already installed
         if: ${{ matrix.container }}
         run: |

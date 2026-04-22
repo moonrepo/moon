@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where proto's `auto-clean` would remove tools installed by moon as they weren't
+  marked as used.
+
 ## 2.2.3
 
 #### 🐞 Fixes

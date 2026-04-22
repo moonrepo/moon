@@ -20,7 +20,7 @@ hash_fingerprint!(
 );
 
 #[instrument(skip(action, _action_context, app_context))]
-pub async fn setup_toolchain_plugin(
+pub async fn setup_toolchain(
     action: &mut Action,
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,

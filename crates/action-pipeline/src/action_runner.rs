@@ -118,7 +118,7 @@ pub async fn run_action(
                 })
                 .await?;
 
-            let result = setup_toolchain_plugin(action, action_context, app_context, inner).await;
+            let result = setup_toolchain(action, action_context, app_context, inner).await;
 
             emitter
                 .emit(Event::ToolchainInstalled {

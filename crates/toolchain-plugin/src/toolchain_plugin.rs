@@ -535,6 +535,11 @@ impl ToolchainPlugin {
                     // proto, like Rust (via rustup)
                     manager.sync_manifest().await?;
                 }
+
+                // Track used at so that proto's auto-clean doesn't remove it
+                if let Some(version) = &spec.version {
+                    tool.inventory.create_product(version).track_used_at()?;
+                }
             }
 
             // Pre-load the tool plugin so that task executions

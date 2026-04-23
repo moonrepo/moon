@@ -1,8 +1,9 @@
 use crate::hash_engine::HashEngine;
 use crate::state_engine::StateEngine;
 use crate::{merge_clean_results, resolve_path};
+use miette::IntoDiagnostic;
 use moon_cache_item::*;
-use moon_cas::{CasStore, CasStoreConfig};
+use moon_cas::{CasStore, CasStoreConfig, ContentHash};
 use moon_common::path::encode_component;
 use moon_env_var::GlobalEnvBag;
 use moon_time::parse_duration;
@@ -10,10 +11,12 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use starbase_utils::fs::{FileLock, RemoveDirContentsResult};
 use starbase_utils::{fs, json};
+use std::collections::BTreeMap;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
 use std::time::Duration;
+use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
 #[derive(Debug)]
@@ -128,6 +131,36 @@ impl CacheEngine {
         let guard = fs::lock_file(self.cache_dir.join("locks").join(name))?;
 
         Ok(guard)
+    }
+
+    pub async fn hash_files(
+        &self,
+        files: Vec<PathBuf>,
+    ) -> miette::Result<BTreeMap<PathBuf, ContentHash>> {
+        let mut map = BTreeMap::new();
+        let mut set = JoinSet::<miette::Result<(PathBuf, ContentHash)>>::new();
+
+        for file in files {
+            // File may have been deleted since we were given the path,
+            // so check existence before hashing
+            if !file.exists() {
+                continue;
+            }
+
+            set.spawn_blocking(move || {
+                let hash = ContentHash::hash_file(&file, 0)?;
+
+                Ok((file, hash))
+            });
+        }
+
+        while let Some(result) = set.join_next().await {
+            let (file, hash) = result.into_diagnostic()??;
+
+            map.insert(file, hash);
+        }
+
+        Ok(map)
     }
 
     pub fn write<K, T>(&self, path: K, data: &T) -> miette::Result<()>

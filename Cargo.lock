@@ -5198,7 +5198,9 @@ name = "moon_cache"
 version = "0.0.1"
 dependencies = [
  "blake3",
+ "codspeed-criterion-compat",
  "miette 7.6.0",
+ "moon_bench_utils",
  "moon_cache_item",
  "moon_cas",
  "moon_common",
@@ -5206,6 +5208,7 @@ dependencies = [
  "moon_hash",
  "moon_target",
  "moon_time",
+ "moon_vcs",
  "serde",
  "starbase_sandbox",
  "starbase_utils",

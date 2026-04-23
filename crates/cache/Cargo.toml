@@ -8,6 +8,10 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
+[[bench]]
+name = "hash_files"
+harness = false
+
 [dependencies]
 moon_cache_item = { path = "../cache-item" }
 moon_cas = { path = "../cas" }
@@ -24,6 +28,9 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_bench_utils = { path = "../bench-utils" }
+moon_vcs = { path = "../vcs" }
+criterion = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

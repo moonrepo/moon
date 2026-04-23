@@ -62,6 +62,8 @@ impl HashEngine {
         self.hashes_dir.join(format!("{hash}.json"))
     }
 
+    pub async fn hash_files(&self, files: &[PathBuf]) {}
+
     pub fn save_manifest(&self, hasher: &mut ContentHasher) -> miette::Result<String> {
         let hash = hasher.generate_hash()?;
         let path = self.get_manifest_path(&hash);

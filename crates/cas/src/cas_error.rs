@@ -1,21 +1,27 @@
 use miette::Diagnostic;
+use moon_common::{Style, Stylize};
 use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum CasError {
     #[diagnostic(code(cas::invalid_hash))]
-    #[error("Invalid content hash: expected 64 hex characters, got \"{hash}\"")]
+    #[error(
+        "Invalid content hash: expected 64 hex characters, got {}.",
+        .hash.style(Style::Symbol),
+    )]
     InvalidHash { hash: String },
 
     #[diagnostic(code(cas::not_found))]
-    #[error("Blob not found in CAS store for hash {hash}")]
+    #[error("Blob not found in CAS store for content hash {}.", .hash.style(Style::Symbol))]
     NotFound { hash: String },
 
     #[diagnostic(code(cas::integrity_mismatch))]
     #[error(
-        "Integrity check failed for blob at {}: expected {expected}, computed {actual}",
-        path.display()
+        "Integrity check failed for blob at {}: expected {}, computed {}.",
+        .path.style(Style::Path),
+        .expected.style(Style::Symbol),
+        .actual.style(Style::Symbol)
     )]
     IntegrityMismatch {
         path: PathBuf,
@@ -24,7 +30,7 @@ pub enum CasError {
     },
 
     #[diagnostic(code(cas::write_failed))]
-    #[error("Failed to write blob to CAS store at {}", path.display())]
+    #[error("Failed to write blob to CAS store at {}.", .path.style(Style::Path))]
     WriteFailed {
         path: PathBuf,
         #[source]
@@ -32,7 +38,7 @@ pub enum CasError {
     },
 
     #[diagnostic(code(cas::read_failed))]
-    #[error("Failed to read blob from CAS store at {}", path.display())]
+    #[error("Failed to read blob from CAS store at {}.", .path.style(Style::Path))]
     ReadFailed {
         path: PathBuf,
         #[source]

@@ -9,11 +9,13 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_common = { path = "../common" }
 blake3 = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 uuid = { workspace = true }
 

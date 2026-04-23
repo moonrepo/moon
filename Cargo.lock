@@ -5197,8 +5197,10 @@ dependencies = [
 name = "moon_cache"
 version = "0.0.1"
 dependencies = [
+ "blake3",
  "miette 7.6.0",
  "moon_cache_item",
+ "moon_cas",
  "moon_common",
  "moon_env_var",
  "moon_hash",
@@ -5207,6 +5209,7 @@ dependencies = [
  "serde",
  "starbase_sandbox",
  "starbase_utils",
+ "tokio",
  "tracing",
 ]
 
@@ -5229,10 +5232,12 @@ version = "0.0.1"
 dependencies = [
  "blake3",
  "miette 7.6.0",
+ "moon_common",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
+ "tokio",
  "tracing",
  "uuid",
 ]

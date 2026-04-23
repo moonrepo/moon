@@ -1,5 +1,8 @@
-use crate::{HashEngine, StateEngine, merge_clean_results, resolve_path};
+use crate::hash_engine::HashEngine;
+use crate::state_engine::StateEngine;
+use crate::{merge_clean_results, resolve_path};
 use moon_cache_item::*;
+use moon_cas::{CasStore, CasStoreConfig};
 use moon_common::path::encode_component;
 use moon_env_var::GlobalEnvBag;
 use moon_time::parse_duration;
@@ -18,6 +21,8 @@ pub struct CacheEngine {
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
+
+    pub cas: CasStore,
 
     /// Manages reading and writing of content hashable items.
     pub hash: HashEngine,
@@ -54,8 +59,11 @@ impl CacheEngine {
             )?;
         }
 
+        let hash = HashEngine::new(&dir)?;
+
         Ok(CacheEngine {
-            hash: HashEngine::new(&dir)?,
+            cas: CasStore::new(&hash.outputs_dir, CasStoreConfig::default())?,
+            hash,
             state: StateEngine::new(&dir)?,
             temp_dir: dir.join("temp"),
             cache_dir: dir,

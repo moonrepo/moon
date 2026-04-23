@@ -1,13 +1,41 @@
 use crate::cas_error::CasError;
 use serde::{Deserialize, Serialize};
+use starbase_utils::fs;
 use std::fmt;
+use std::path::Path;
 
 /// A BLAKE3 content hash: 64-character lowercase hex string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ContentHash(String);
 
 impl ContentHash {
-    /// Parse and validate a hex string as a content hash.
+    /// Hash a byte slice to produce a `ContentHash`.
+    pub fn hash_bytes(bytes: &[u8]) -> Self {
+        ContentHash::from_hash(blake3::hash(bytes))
+    }
+
+    /// Hash a file's contents to produce a `ContentHash`.
+    pub fn hash_file(path: &Path, mmap_threshold: u64) -> miette::Result<Self> {
+        let mut hasher = blake3::Hasher::new();
+        let metadata = fs::metadata(path)?;
+
+        // Memory-map large files for fast hashing
+        if metadata.len() >= mmap_threshold {
+            hasher
+                .update_mmap(path)
+                .map_err(|error| CasError::ReadFailed {
+                    path: path.to_owned(),
+                    error: Box::new(error),
+                })?;
+        } else {
+            let bytes = fs::read_file_bytes(path)?;
+            hasher.update(&bytes);
+        }
+
+        Ok(ContentHash::from_hash(hasher.finalize()))
+    }
+
+    /// Create a `ContentHash` from a hex string, validating format.
     pub fn from_hex(hex: &str) -> miette::Result<Self> {
         if hex.len() != 64 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
             return Err(CasError::InvalidHash {
@@ -20,7 +48,7 @@ impl ContentHash {
     }
 
     /// Create a `ContentHash` from a BLAKE3 hash output.
-    pub(crate) fn from_blake3(hash: blake3::Hash) -> Self {
+    pub fn from_hash(hash: blake3::Hash) -> Self {
         Self(hash.to_hex().to_string())
     }
 

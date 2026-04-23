@@ -1,6 +1,10 @@
-use crate::store::CasStore;
+use crate::cas::CasStore;
+use crate::fs::mark_writable;
+use miette::IntoDiagnostic;
 use starbase_utils::fs;
+use std::path::Path;
 use std::time::{Duration, SystemTime};
+use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
 /// Result of a garbage collection or purge operation.
@@ -12,137 +16,120 @@ pub struct GcResult {
 
 /// Remove blobs whose mtime is older than `max_age`, and clean orphaned temp files.
 #[instrument(skip(store))]
-pub(crate) fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult> {
+pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult> {
     let now = SystemTime::now();
-    let mut result = GcResult::default();
+    let purge = max_age.is_zero();
+    let mut set = JoinSet::new();
 
-    debug!(?max_age, "Running CAS garbage collection");
+    if purge {
+        debug!("Purging CAS store");
+    } else {
+        debug!(?max_age, "Running CAS garbage collection");
+    }
 
-    for shard_entry in fs::read_dir(store.objects_dir())? {
+    for shard_entry in fs::read_dir(&store.objects_dir)? {
         let shard_path = shard_entry.path();
+
         if !shard_path.is_dir() {
             continue;
         }
 
-        for blob_entry in fs::read_dir(&shard_path)? {
-            let blob_path = blob_entry.path();
-            let metadata = match std::fs::metadata(&blob_path) {
-                Ok(m) => m,
-                Err(_) => continue,
-            };
-            let modified = match metadata.modified() {
-                Ok(t) => t,
-                Err(_) => continue,
-            };
+        set.spawn_blocking(move || {
+            let mut stats = GcResult::default();
 
-            if now.duration_since(modified).unwrap_or_default() > max_age {
-                let size = metadata.len();
-                // Blobs are read-only; make writable before removal.
-                make_writable(&blob_path);
-                fs::remove_file(&blob_path)?;
-                result.blobs_removed += 1;
-                result.bytes_freed += size;
+            for blob_entry in fs::read_dir(&shard_path)? {
+                let blob_path = blob_entry.path();
+                let metadata = fs::metadata(&blob_path)?;
+
+                let do_remove = if purge {
+                    true
+                } else if let Ok(modified) = metadata.modified() {
+                    now.duration_since(modified).unwrap_or_default() > max_age
+                } else {
+                    false
+                };
+
+                if do_remove {
+                    let size = metadata.len();
+
+                    // Blobs are read-only; make writable before removal
+                    mark_writable(&blob_path)?;
+                    fs::remove_file(&blob_path)?;
+
+                    stats.blobs_removed += 1;
+                    stats.bytes_freed += size;
+                }
             }
-        }
 
-        // Remove empty shard directories to keep the tree clean.
-        if is_dir_empty(&shard_path) {
-            let _ = std::fs::remove_dir(&shard_path);
-        }
+            // Remove empty shard directories to keep the tree clean.
+            if purge || is_dir_empty(&shard_path) {
+                fs::remove_dir_all(&shard_path)?;
+            }
+
+            Ok::<_, miette::Report>(stats)
+        });
     }
 
-    // Clean orphaned temp files from crashed writes (older than 1 hour).
-    clean_tmp_dir(store, Duration::from_secs(3600))?;
+    let mut stats = GcResult::default();
 
-    debug!(
-        blobs_removed = result.blobs_removed,
-        bytes_freed = result.bytes_freed,
-        "CAS garbage collection complete"
-    );
+    while let Some(result) = set.join_next().await {
+        let blob_stats = result.into_diagnostic()??;
 
-    Ok(result)
+        stats.blobs_removed += blob_stats.blobs_removed;
+        stats.bytes_freed += blob_stats.bytes_freed;
+    }
+
+    if purge {
+        // Clean all temp files
+        fs::remove_dir_all(&store.temp_dir)?;
+
+        debug!(
+            blobs_removed = stats.blobs_removed,
+            bytes_freed = stats.bytes_freed,
+            "CAS purge complete"
+        );
+    } else {
+        // Clean orphaned temp files (older than 1 hour)
+        clean_temp_dir(store, Duration::from_secs(3600))?;
+
+        debug!(
+            blobs_removed = stats.blobs_removed,
+            bytes_freed = stats.bytes_freed,
+            "CAS garbage collection complete"
+        );
+    }
+
+    Ok(stats)
 }
 
 /// Remove all blobs from the store.
-pub(crate) fn purge(store: &CasStore) -> miette::Result<GcResult> {
-    let mut result = GcResult::default();
-
-    debug!("Purging CAS store");
-
-    for shard_entry in fs::read_dir(store.objects_dir())? {
-        let shard_path = shard_entry.path();
-        if !shard_path.is_dir() {
-            continue;
-        }
-
-        for blob_entry in fs::read_dir(&shard_path)? {
-            let blob_path = blob_entry.path();
-            let size = std::fs::metadata(&blob_path)
-                .map(|m| m.len())
-                .unwrap_or(0);
-            make_writable(&blob_path);
-            fs::remove_file(&blob_path)?;
-            result.blobs_removed += 1;
-            result.bytes_freed += size;
-        }
-
-        let _ = std::fs::remove_dir(&shard_path);
-    }
-
-    // Also clean all temp files.
-    for entry in fs::read_dir(store.tmp_dir())? {
-        let path = entry.path();
-        let _ = std::fs::remove_file(&path);
-    }
-
-    debug!(
-        blobs_removed = result.blobs_removed,
-        bytes_freed = result.bytes_freed,
-        "CAS purge complete"
-    );
-
-    Ok(result)
+pub async fn purge(store: &CasStore) -> miette::Result<GcResult> {
+    gc(store, Duration::ZERO).await
 }
 
-fn clean_tmp_dir(store: &CasStore, max_age: Duration) -> miette::Result<()> {
+fn clean_temp_dir(store: &CasStore, max_age: Duration) -> miette::Result<()> {
     let now = SystemTime::now();
 
-    if !store.tmp_dir().exists() {
+    if !store.temp_dir.exists() {
         return Ok(());
     }
 
-    for entry in fs::read_dir(store.tmp_dir())? {
+    for entry in fs::read_dir(&store.temp_dir)? {
         let path = entry.path();
         let modified = std::fs::metadata(&path)
             .and_then(|m| m.modified())
             .unwrap_or(now);
 
         if now.duration_since(modified).unwrap_or_default() > max_age {
-            let _ = std::fs::remove_file(&path);
+            let _ = fs::remove_file(&path);
         }
     }
 
     Ok(())
 }
 
-fn is_dir_empty(path: &std::path::Path) -> bool {
+fn is_dir_empty(path: &Path) -> bool {
     std::fs::read_dir(path)
         .map(|mut entries| entries.next().is_none())
         .unwrap_or(true)
-}
-
-fn make_writable(path: &std::path::Path) {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o644));
-    }
-    #[cfg(not(unix))]
-    {
-        if let Ok(metadata) = std::fs::metadata(path) {
-            let mut perms = metadata.permissions();
-            perms.set_readonly(false);
-            let _ = std::fs::set_permissions(path, perms);
-        }
-    }
 }

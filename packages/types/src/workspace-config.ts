@@ -4,6 +4,28 @@
 
 import type { ExtendsFrom, Id } from './common';
 
+/** Configures aspects of the content-addressable storage (CAS) cache. */
+export interface CacheCasConfig {
+	/**
+	 * Byte threshold above which to use memory-mapped I/O for hashing.
+	 * Files below this size are read into a stack buffer.
+	 *
+	 * @default 4194304
+	 */
+	mmapThreshold?: number;
+	/**
+	 * Verify BLAKE3 hash on every read. When enabled, reads are slower
+	 * but detect on-disk corruption.
+	 */
+	verifyIntegrity: boolean;
+}
+
+/** Configures aspects of the caching engine and layer. */
+export interface CacheConfig {
+	/** Configures aspects of the content-addressable storage (CAS) cache. */
+	cas: CacheCasConfig;
+}
+
 /** How to order ownership rules within the generated file. */
 export type CodeownersOrderBy = 'file-source' | 'project-id';
 
@@ -352,7 +374,7 @@ export interface RemoteAuthConfig {
 export type RemoteCompression = 'none' | 'zstd';
 
 /**
- * Configures the action cache (AC) and content addressable cache (CAS).
+ * Configures the action cache (AC) and content-addressable cache (CAS).
  * @since 1.30.0
  */
 export interface RemoteCacheConfig {
@@ -478,7 +500,7 @@ export interface RemoteConfig {
 	 * @since 1.32.0
 	 */
 	auth?: RemoteAuthConfig | null;
-	/** Configures the action cache (AC) and content addressable cache (CAS). */
+	/** Configures the action cache (AC) and content-addressable cache (CAS). */
 	cache: RemoteCacheConfig;
 	/**
 	 * The remote host to connect and send requests to.
@@ -566,6 +588,11 @@ export interface WorkspaceConfig {
 	/** @default './cache/schemas/workspace.json' */
 	$schema?: string;
 	/**
+	 * Configures aspects of the caching engine and layer.
+	 * @since 2.3.0
+	 */
+	cache: CacheConfig;
+	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
 	 * @since 1.8.0
 	 */
@@ -640,6 +667,28 @@ export interface WorkspaceConfig {
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
 	versionConstraint?: string | null;
+}
+
+/** Configures aspects of the content-addressable storage (CAS) cache. */
+export interface PartialCacheCasConfig {
+	/**
+	 * Byte threshold above which to use memory-mapped I/O for hashing.
+	 * Files below this size are read into a stack buffer.
+	 *
+	 * @default 4194304
+	 */
+	mmapThreshold?: number | null;
+	/**
+	 * Verify BLAKE3 hash on every read. When enabled, reads are slower
+	 * but detect on-disk corruption.
+	 */
+	verifyIntegrity?: boolean | null;
+}
+
+/** Configures aspects of the caching engine and layer. */
+export interface PartialCacheConfig {
+	/** Configures aspects of the content-addressable storage (CAS) cache. */
+	cas?: PartialCacheCasConfig | null;
 }
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */
@@ -962,7 +1011,7 @@ export interface PartialRemoteAuthConfig {
 }
 
 /**
- * Configures the action cache (AC) and content addressable cache (CAS).
+ * Configures the action cache (AC) and content-addressable cache (CAS).
  * @since 1.30.0
  */
 export interface PartialRemoteCacheConfig {
@@ -1086,7 +1135,7 @@ export interface PartialRemoteConfig {
 	 * @since 1.32.0
 	 */
 	auth?: PartialRemoteAuthConfig | null;
-	/** Configures the action cache (AC) and content addressable cache (CAS). */
+	/** Configures the action cache (AC) and content-addressable cache (CAS). */
 	cache?: PartialRemoteCacheConfig | null;
 	/**
 	 * The remote host to connect and send requests to.
@@ -1155,6 +1204,11 @@ export interface PartialVcsConfig {
 export interface PartialWorkspaceConfig {
 	/** @default './cache/schemas/workspace.json' */
 	$schema?: string | null;
+	/**
+	 * Configures aspects of the caching engine and layer.
+	 * @since 2.3.0
+	 */
+	cache?: PartialCacheConfig | null;
 	/**
 	 * Configures code ownership rules for generating a `CODEOWNERS` file.
 	 * @since 1.8.0

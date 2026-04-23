@@ -1,9 +1,16 @@
-use moon_cas::{CasStore, CasStoreConfig};
+use moon_cas::CasStore;
+use moon_config::CacheCasConfig;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::time::Duration;
 
 fn create_store(sandbox: &Sandbox) -> CasStore {
-    CasStore::new(sandbox.path().join("cas"), CasStoreConfig::default()).unwrap()
+    CasStore::new(sandbox.path().join("cas"), &CacheCasConfig::default()).unwrap()
+}
+
+fn backdate_mtime(path: &std::path::Path, age: Duration) {
+    let past = std::time::SystemTime::now() - age;
+    let file = std::fs::OpenOptions::new().write(true).open(path).unwrap();
+    file.set_modified(past).unwrap();
 }
 
 mod gc {
@@ -83,22 +90,5 @@ mod gc {
         store.gc(Duration::from_secs(86400)).await.unwrap();
 
         assert!(!orphan.exists());
-    }
-
-    fn backdate_mtime(path: &std::path::Path, age: Duration) {
-        // Make writable first (blobs are read-only)
-        let metadata = std::fs::metadata(path).unwrap();
-        let mut perms = metadata.permissions();
-        perms.set_readonly(false);
-        std::fs::set_permissions(path, perms).unwrap();
-
-        let past = std::time::SystemTime::now() - age;
-        let file = std::fs::OpenOptions::new().write(true).open(path).unwrap();
-        file.set_modified(past).unwrap();
-
-        // Restore read-only
-        let mut perms = file.metadata().unwrap().permissions();
-        perms.set_readonly(true);
-        std::fs::set_permissions(path, perms).unwrap();
     }
 }

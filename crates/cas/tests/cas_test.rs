@@ -1,16 +1,17 @@
-use moon_cas::{CasError, CasStore, CasStoreConfig, ContentHash};
+use moon_cas::{CasError, CasStore, ContentHash};
+use moon_config::CacheCasConfig;
 use starbase_sandbox::create_empty_sandbox;
 use std::io::Cursor;
 
 fn create_store(sandbox: &starbase_sandbox::Sandbox) -> CasStore {
-    CasStore::new(sandbox.path().join("cas"), CasStoreConfig::default()).unwrap()
+    CasStore::new(sandbox.path().join("cas"), &CacheCasConfig::default()).unwrap()
 }
 
 fn create_verified_store(sandbox: &starbase_sandbox::Sandbox) -> CasStore {
     CasStore::new(
         sandbox.path().join("cas"),
-        CasStoreConfig {
-            verify_on_read: true,
+        &CacheCasConfig {
+            verify_integrity: true,
             ..Default::default()
         },
     )
@@ -319,7 +320,7 @@ mod cas {
         fn multiple_threads_same_content() {
             let sandbox = create_empty_sandbox();
             let store =
-                CasStore::new(sandbox.path().join("cas"), CasStoreConfig::default()).unwrap();
+                CasStore::new(sandbox.path().join("cas"), &CacheCasConfig::default()).unwrap();
 
             let data = b"concurrent content";
 

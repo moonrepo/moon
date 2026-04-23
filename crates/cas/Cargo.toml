@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_config = { path = "../config" }
 blake3 = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }

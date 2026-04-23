@@ -1,7 +1,7 @@
 use crate::cas_error::CasError;
-use crate::config::CasStoreConfig;
 use crate::content_hash::ContentHash;
 use crate::gc::GcResult;
+use moon_config::CacheCasConfig;
 use starbase_utils::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -19,7 +19,7 @@ pub struct CasStore {
     pub root: PathBuf,
     pub objects_dir: PathBuf,
     pub temp_dir: PathBuf,
-    pub config: CasStoreConfig,
+    pub config: CacheCasConfig,
 }
 
 /// Drop guard that removes a temp file unless explicitly committed.
@@ -40,7 +40,7 @@ impl CasStore {
     /// Create or open a CAS store rooted at `root`.
     ///
     /// Creates the `v1/` and `temp/` subdirectories if they do not exist.
-    pub fn new(root: impl AsRef<Path>, config: CasStoreConfig) -> miette::Result<Self> {
+    pub fn new(root: impl AsRef<Path>, config: &CacheCasConfig) -> miette::Result<Self> {
         let root = root.as_ref();
         let objects_dir = root.join("v1");
         let temp_dir = root.join("temp");
@@ -54,7 +54,7 @@ impl CasStore {
             root: root.to_path_buf(),
             objects_dir,
             temp_dir,
-            config,
+            config: config.to_owned(),
         })
     }
 
@@ -187,7 +187,7 @@ impl CasStore {
         let path = self.object_path_with_exists_check(hash)?;
         let bytes = fs::read_file_bytes(&path)?;
 
-        if self.config.verify_on_read {
+        if self.config.verify_integrity {
             self.verify_integrity(&path, hash, &bytes)?;
         }
 
@@ -199,7 +199,7 @@ impl CasStore {
     pub fn open(&self, hash: &ContentHash) -> miette::Result<std::fs::File> {
         let path = self.object_path_with_exists_check(hash)?;
 
-        if self.config.verify_on_read {
+        if self.config.verify_integrity {
             let bytes = fs::read_file_bytes(&path)?;
             self.verify_integrity(&path, hash, &bytes)?;
         }

@@ -3,8 +3,9 @@ use crate::state_engine::StateEngine;
 use crate::{merge_clean_results, resolve_path};
 use miette::IntoDiagnostic;
 use moon_cache_item::*;
-use moon_cas::{CasStore, CasStoreConfig, ContentHash};
+use moon_cas::{CasStore, ContentHash};
 use moon_common::path::encode_component;
+use moon_config::CacheConfig;
 use moon_env_var::GlobalEnvBag;
 use moon_time::parse_duration;
 use serde::Serialize;
@@ -25,6 +26,7 @@ pub struct CacheEngine {
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
 
+    /// Manages content-addressable storage of blobs and files.
     pub cas: CasStore,
 
     /// Manages reading and writing of content hashable items.
@@ -36,12 +38,13 @@ pub struct CacheEngine {
     /// A temporary directory for random artifacts.
     pub temp_dir: PathBuf,
 
+    config: CacheConfig,
     mode: CacheMode,
     forced_mode: RwLock<Option<CacheMode>>,
 }
 
 impl CacheEngine {
-    pub fn new(config_dir: impl AsRef<Path>) -> miette::Result<CacheEngine> {
+    pub fn new(config_dir: impl AsRef<Path>, config: &CacheConfig) -> miette::Result<CacheEngine> {
         let dir = config_dir.as_ref().join("cache");
         let cache_tag = dir.join("CACHEDIR.TAG");
 
@@ -65,13 +68,14 @@ impl CacheEngine {
         let hash = HashEngine::new(&dir)?;
 
         Ok(CacheEngine {
-            cas: CasStore::new(&hash.outputs_dir, CasStoreConfig::default())?,
+            cas: CasStore::new(&hash.outputs_dir, &config.cas)?,
             hash,
             state: StateEngine::new(&dir)?,
             temp_dir: dir.join("temp"),
             cache_dir: dir,
             mode: get_cache_mode(),
             forced_mode: RwLock::new(None),
+            config: config.to_owned(),
         })
     }
 
@@ -139,6 +143,7 @@ impl CacheEngine {
     ) -> miette::Result<BTreeMap<PathBuf, ContentHash>> {
         let mut map = BTreeMap::new();
         let mut set = JoinSet::<miette::Result<(PathBuf, Option<ContentHash>)>>::new();
+        let mmap_threshold = self.config.cas.mmap_threshold;
 
         for file in files {
             set.spawn_blocking(move || {
@@ -148,7 +153,7 @@ impl CacheEngine {
                     return Ok((file, None));
                 }
 
-                let hash = ContentHash::hash_file(&file, 0)?;
+                let hash = ContentHash::hash_file(&file, mmap_threshold)?;
 
                 Ok((file, Some(hash)))
             });

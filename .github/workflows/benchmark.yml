@@ -37,12 +37,15 @@ jobs:
           - package: moon_affected
             runner: depot-ubuntu-24.04-16 # 64GB mem
             mode: walltime
+
           - package: moon_cache
             runner: depot-ubuntu-24.04
-            mode: simulation
+            mode: walltime
+
           - package: moon_toolchain_plugin
             runner: depot-ubuntu-24.04-8 # 32GB mem
             mode: walltime
+
           - package: moon_workspace
             runner: depot-ubuntu-24.04-8 # 32GB mem
             mode: walltime

@@ -196,18 +196,6 @@ mod cas {
             let hash = store.write_bytes(b"original content").unwrap();
             let path = store.object_path(&hash);
 
-            // Corrupt the blob on disk (need to make writable first).
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
-            }
-            #[cfg(not(unix))]
-            {
-                let mut perms = std::fs::metadata(&path).unwrap().permissions();
-                perms.set_readonly(false);
-                std::fs::set_permissions(&path, perms).unwrap();
-            }
             std::fs::write(&path, b"corrupted!").unwrap();
 
             let result = store.read_bytes(&hash);

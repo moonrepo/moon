@@ -30,7 +30,7 @@ mod gc {
         let result = store.gc(Duration::from_secs(3600)).await.unwrap();
 
         assert_eq!(result.blobs_removed, 1);
-        assert!(!store.contains_blob(&hash));
+        assert!(!store.contains_object(&hash).unwrap());
     }
 
     #[tokio::test]
@@ -42,7 +42,7 @@ mod gc {
         let result = store.gc(Duration::from_secs(3600)).await.unwrap();
 
         assert_eq!(result.blobs_removed, 0);
-        assert!(store.contains_blob(&hash));
+        assert!(store.contains_object(&hash).unwrap());
     }
 
     #[tokio::test]
@@ -59,7 +59,7 @@ mod gc {
 
         let result = store.gc(Duration::from_secs(3600)).await.unwrap();
         assert_eq!(result.blobs_removed, 0);
-        assert!(store.contains_blob(&hash));
+        assert!(store.contains_object(&hash).unwrap());
     }
 
     #[tokio::test]

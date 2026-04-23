@@ -195,9 +195,9 @@
         },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
-          "description": "Verify BLAKE3 hash on every read. When enabled, reads are slower but detect on-disk corruption.",
+          "description": "Verify BLAKE3 hash on every read/write. When enabled, operations are slower but detect on-disk corruption.",
           "type": "boolean",
-          "markdownDescription": "Verify BLAKE3 hash on every read. When enabled, reads are slower but detect on-disk corruption."
+          "markdownDescription": "Verify BLAKE3 hash on every read/write. When enabled, operations are slower but detect on-disk corruption."
         }
       },
       "additionalProperties": false,

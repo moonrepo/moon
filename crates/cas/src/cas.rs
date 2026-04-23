@@ -66,7 +66,7 @@ impl CasStore {
     pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<ContentHash> {
         let hash = ContentHash::hash_bytes(bytes);
 
-        if self.object_path(&hash).exists() {
+        if self.contains_object(&hash)? {
             return Ok(hash);
         }
 
@@ -100,7 +100,7 @@ impl CasStore {
     pub fn write_file(&self, source: &Path) -> miette::Result<ContentHash> {
         let hash = ContentHash::hash_file(source, self.config.mmap_threshold)?;
 
-        if self.object_path(&hash).exists() {
+        if self.contains_object(&hash)? {
             return Ok(hash);
         }
 
@@ -163,7 +163,7 @@ impl CasStore {
             ContentHash::from_hash(hasher.finalize())
         };
 
-        if self.object_path(&hash).exists() {
+        if self.contains_object(&hash)? {
             return Ok(hash);
         }
 
@@ -177,8 +177,24 @@ impl CasStore {
     // ---- Read operations ----
 
     /// Check whether a blob exists for the given hash.
-    pub fn contains_blob(&self, hash: &ContentHash) -> bool {
-        self.object_path(hash).exists()
+    pub fn contains_object(&self, hash: &ContentHash) -> miette::Result<bool> {
+        let path = self.object_path(hash);
+
+        if path.exists() {
+            if self.config.verify_integrity {
+                let bytes = fs::read_file_bytes(&path)?;
+
+                if self.verify_integrity(&path, hash, &bytes).is_err() {
+                    fs::remove_file(path)?;
+
+                    return Ok(false);
+                }
+            }
+
+            return Ok(true);
+        }
+
+        Ok(false)
     }
 
     /// Read the full blob into memory. Verifies integrity if configured.
@@ -213,64 +229,9 @@ impl CasStore {
         })
     }
 
-    // ---- Hard-link operations ----
-
-    /// Hard-link a CAS blob to `dest`. Falls back to copy if hard-linking
-    /// fails (e.g. cross-device).
-    #[instrument(skip(self))]
-    pub fn link_to(&self, hash: &ContentHash, dest: &Path) -> miette::Result<()> {
-        let source = self.object_path_with_exists_check(hash)?;
-
-        if let Some(parent) = dest.parent() {
-            fs::create_dir_all(parent)?;
-        }
-
-        // Remove existing file at destination if present, since hard-linking
-        // requires the destination to not exist
-        fs::remove_file(dest)?;
-
-        match std::fs::hard_link(&source, dest) {
-            Ok(_) => {}
-            Err(_) => {
-                fs::copy_file(&source, dest)?;
-            }
-        };
-
-        debug!(hash = %hash, dest = ?dest, "Linked blob to destination");
-
-        Ok(())
-    }
-
-    /// Ingest a file into the store by hard-linking it. Falls back to
-    /// `write_file` if hard-linking fails. Returns the content hash.
-    #[instrument(skip(self))]
-    pub fn link_from(&self, source: &Path) -> miette::Result<ContentHash> {
-        let hash = ContentHash::hash_file(source, self.config.mmap_threshold)?;
-        let object_path = self.object_path(&hash);
-
-        if object_path.exists() {
-            return Ok(hash);
-        }
-
-        self.ensure_shard_dir(&hash)?;
-
-        match std::fs::hard_link(source, &object_path) {
-            Ok(_) => {}
-            Err(_) => {
-                // Cross-device or permission issue; fall back to copy via write_file.
-                return self.write_file(source);
-            }
-        }
-
-        debug!(hash = %hash, source = ?source, "Linked blob from source");
-
-        Ok(hash)
-    }
-
     // ---- Lifecycle ----
 
     /// Remove blobs whose mtime is older than `max_age`.
-    #[instrument(skip(self))]
     pub async fn gc(&self, max_age: Duration) -> miette::Result<GcResult> {
         crate::gc::gc(self, max_age).await
     }

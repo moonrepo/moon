@@ -143,7 +143,7 @@ mod cas {
             let store = create_store(&sandbox);
 
             let hash = store.write_bytes(b"exists").unwrap();
-            assert!(store.contains_blob(&hash));
+            assert!(store.contains_object(&hash).unwrap());
         }
 
         #[test]
@@ -152,7 +152,7 @@ mod cas {
             let store = create_store(&sandbox);
 
             let hash = ContentHash::from_hex(&"0".repeat(64)).unwrap();
-            assert!(!store.contains_blob(&hash));
+            assert!(!store.contains_object(&hash).unwrap());
         }
     }
 
@@ -206,101 +206,6 @@ mod cas {
         }
     }
 
-    mod link_to {
-        use super::*;
-
-        #[test]
-        fn creates_file_at_dest() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let data = b"link target content";
-            let hash = store.write_bytes(data).unwrap();
-
-            let dest = sandbox.path().join("output.txt");
-            store.link_to(&hash, &dest).unwrap();
-
-            assert_eq!(std::fs::read(&dest).unwrap(), data);
-        }
-
-        #[test]
-        fn creates_parent_dirs() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let hash = store.write_bytes(b"nested").unwrap();
-            let dest = sandbox.path().join("deep/nested/dir/output.txt");
-            store.link_to(&hash, &dest).unwrap();
-
-            assert!(dest.exists());
-        }
-
-        #[cfg(unix)]
-        #[test]
-        fn shares_inode_on_same_device() {
-            use std::os::unix::fs::MetadataExt;
-
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let hash = store.write_bytes(b"inode test").unwrap();
-            let blob = store.object_path(&hash);
-
-            let dest = sandbox.path().join("linked.txt");
-            store.link_to(&hash, &dest).unwrap();
-
-            let blob_ino = std::fs::metadata(&blob).unwrap().ino();
-            let dest_ino = std::fs::metadata(&dest).unwrap().ino();
-            assert_eq!(blob_ino, dest_ino);
-        }
-
-        #[test]
-        fn not_found() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let hash = ContentHash::from_hex(&"2".repeat(64)).unwrap();
-            let dest = sandbox.path().join("nope.txt");
-            let result = store.link_to(&hash, &dest);
-
-            assert!(result.is_err());
-        }
-    }
-
-    mod link_from {
-        use super::*;
-
-        #[test]
-        fn ingests_file() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let source = sandbox.path().join("source.txt");
-            std::fs::write(&source, b"ingest me").unwrap();
-
-            let hash = store.link_from(&source).unwrap();
-            assert!(store.contains_blob(&hash));
-
-            let read_back = store.read_bytes(&hash).unwrap();
-            assert_eq!(read_back, b"ingest me");
-        }
-
-        #[test]
-        fn hash_matches_write_bytes() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let data = b"consistent hash";
-            let source = sandbox.path().join("source.txt");
-            std::fs::write(&source, data).unwrap();
-
-            let hash_link = store.link_from(&source).unwrap();
-            let hash_bytes = store.write_bytes(data).unwrap();
-
-            assert_eq!(hash_link, hash_bytes);
-        }
-    }
-
     mod concurrent_writes {
         use super::*;
 
@@ -328,7 +233,7 @@ mod cas {
 
             // Only one blob on disk.
             let hash = store.write_bytes(data).unwrap();
-            assert!(store.contains_blob(&hash));
+            assert!(store.contains_object(&hash).unwrap());
         }
     }
 }

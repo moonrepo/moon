@@ -14,8 +14,8 @@ export interface CacheCasConfig {
 	 */
 	mmapThreshold?: number;
 	/**
-	 * Verify BLAKE3 hash on every read. When enabled, reads are slower
-	 * but detect on-disk corruption.
+	 * Verify BLAKE3 hash on every read/write. When enabled, operations
+	 * are slower but detect on-disk corruption.
 	 */
 	verifyIntegrity: boolean;
 }
@@ -679,8 +679,8 @@ export interface PartialCacheCasConfig {
 	 */
 	mmapThreshold?: number | null;
 	/**
-	 * Verify BLAKE3 hash on every read. When enabled, reads are slower
-	 * but detect on-disk corruption.
+	 * Verify BLAKE3 hash on every read/write. When enabled, operations
+	 * are slower but detect on-disk corruption.
 	 */
 	verifyIntegrity?: boolean | null;
 }

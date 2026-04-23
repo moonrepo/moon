@@ -1,7 +1,6 @@
 use crate::cas_error::CasError;
 use crate::config::CasStoreConfig;
 use crate::content_hash::ContentHash;
-use crate::fs::*;
 use crate::gc::GcResult;
 use starbase_utils::fs;
 use std::io::{Read, Write};
@@ -256,9 +255,7 @@ impl CasStore {
         self.ensure_shard_dir(&hash)?;
 
         match std::fs::hard_link(source, &object_path) {
-            Ok(_) => {
-                mark_readonly(&object_path)?;
-            }
+            Ok(_) => {}
             Err(_) => {
                 // Cross-device or permission issue; fall back to copy via write_file.
                 return self.write_file(source);
@@ -286,10 +283,6 @@ impl CasStore {
     /// Update a blob's mtime to now, keeping it alive through GC.
     pub fn touch(&self, hash: &ContentHash) -> miette::Result<()> {
         let path = self.object_path_with_exists_check(hash)?;
-
-        // Temporarily make writable so we can update mtime
-        mark_writable(&path)?;
-
         let file = fs::open_file(&path)?;
 
         file.set_modified(SystemTime::now())
@@ -297,11 +290,6 @@ impl CasStore {
                 path: path.clone(),
                 error: Box::new(error),
             })?;
-
-        drop(file);
-
-        // Restore read-only
-        mark_readonly(&path)?;
 
         Ok(())
     }
@@ -332,6 +320,8 @@ impl CasStore {
     }
 
     fn create_temp_file(&self) -> miette::Result<TempGuard> {
+        fs::create_dir_all(&self.temp_dir)?;
+
         let path = self.temp_dir.join(Uuid::new_v4().to_string());
 
         Ok(TempGuard {
@@ -348,8 +338,6 @@ impl CasStore {
         fs::rename(&guard.path, &dest)?;
 
         guard.committed = true;
-
-        mark_readonly(&dest)?;
 
         Ok(())
     }

@@ -2,7 +2,6 @@ mod cas;
 mod cas_error;
 mod config;
 mod content_hash;
-mod fs;
 mod gc;
 
 pub use cas::CasStore;

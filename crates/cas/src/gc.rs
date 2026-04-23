@@ -1,8 +1,6 @@
 use crate::cas::CasStore;
-use crate::fs::mark_writable;
 use miette::IntoDiagnostic;
 use starbase_utils::fs;
-use std::path::Path;
 use std::time::{Duration, SystemTime};
 use tokio::task::JoinSet;
 use tracing::{debug, instrument};
@@ -52,8 +50,6 @@ pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult>
                 if do_remove {
                     let size = metadata.len();
 
-                    // Blobs are read-only; make writable before removal
-                    mark_writable(&blob_path)?;
                     fs::remove_file(&blob_path)?;
 
                     stats.blobs_removed += 1;
@@ -61,8 +57,7 @@ pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult>
                 }
             }
 
-            // Remove empty shard directories to keep the tree clean.
-            if purge || is_dir_empty(&shard_path) {
+            if purge {
                 fs::remove_dir_all(&shard_path)?;
             }
 
@@ -126,10 +121,4 @@ fn clean_temp_dir(store: &CasStore, max_age: Duration) -> miette::Result<()> {
     }
 
     Ok(())
-}
-
-fn is_dir_empty(path: &Path) -> bool {
-    std::fs::read_dir(path)
-        .map(|mut entries| entries.next().is_none())
-        .unwrap_or(true)
 }

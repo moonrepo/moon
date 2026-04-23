@@ -138,26 +138,28 @@ impl CacheEngine {
         files: Vec<PathBuf>,
     ) -> miette::Result<BTreeMap<PathBuf, ContentHash>> {
         let mut map = BTreeMap::new();
-        let mut set = JoinSet::<miette::Result<(PathBuf, ContentHash)>>::new();
+        let mut set = JoinSet::<miette::Result<(PathBuf, Option<ContentHash>)>>::new();
 
         for file in files {
-            // File may have been deleted since we were given the path,
-            // so check existence before hashing
-            if !file.exists() {
-                continue;
-            }
-
             set.spawn_blocking(move || {
+                // File may have been deleted since we were given the path,
+                // so check existence before hashing
+                if !file.exists() {
+                    return Ok((file, None));
+                }
+
                 let hash = ContentHash::hash_file(&file, 0)?;
 
-                Ok((file, hash))
+                Ok((file, Some(hash)))
             });
         }
 
         while let Some(result) = set.join_next().await {
             let (file, hash) = result.into_diagnostic()??;
 
-            map.insert(file, hash);
+            if let Some(hash) = hash {
+                map.insert(file, hash);
+            }
         }
 
         Ok(map)

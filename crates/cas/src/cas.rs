@@ -45,7 +45,7 @@ impl CasStore {
         let objects_dir = root.join("v1");
         let temp_dir = root.join("temp");
 
-        debug!(root = ?root, "Opening CAS store");
+        debug!(root = ?root, "Creating CAS store");
 
         fs::create_dir_all(&objects_dir)?;
         fs::create_dir_all(&temp_dir)?;
@@ -109,7 +109,7 @@ impl CasStore {
         fs::copy_file(source, &guard.path)?;
 
         {
-            let file = fs::open_file(&guard.path)?;
+            let file = fs::open_file_for_writing(&guard.path)?;
 
             file.sync_all().map_err(|error| CasError::WriteFailed {
                 path: guard.path.clone(),
@@ -244,7 +244,7 @@ impl CasStore {
     /// Update a blob's mtime to now, keeping it alive through GC.
     pub fn touch(&self, hash: &ContentHash) -> miette::Result<()> {
         let path = self.object_path_with_exists_check(hash)?;
-        let file = fs::open_file(&path)?;
+        let file = fs::open_file_for_writing(&path)?;
 
         file.set_modified(SystemTime::now())
             .map_err(|error| CasError::WriteFailed {

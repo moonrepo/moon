@@ -17,13 +17,18 @@ impl ContentHash {
     /// Hash a file's contents to produce a `ContentHash`.
     pub fn hash_file(path: &Path, mmap_threshold: u64) -> miette::Result<Self> {
         let mut hasher = blake3::Hasher::new();
-        let metadata = fs::metadata(path)?;
+
+        // Note: don't use starbase as it logs too much!
+        let metadata = std::fs::metadata(path).map_err(|error| CasError::HashFailed {
+            path: path.to_owned(),
+            error: Box::new(error),
+        })?;
 
         // Memory-map large files for fast hashing
         if metadata.len() >= mmap_threshold {
             hasher
                 .update_mmap(path)
-                .map_err(|error| CasError::ReadFailed {
+                .map_err(|error| CasError::HashFailed {
                     path: path.to_owned(),
                     error: Box::new(error),
                 })?;

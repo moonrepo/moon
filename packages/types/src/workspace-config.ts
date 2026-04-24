@@ -181,6 +181,12 @@ export interface ExperimentsConfig {
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding: boolean;
+	/**
+	 * Use the Blake3 hashing algorithm for file hashing.
+	 *
+	 * @env MOON_EXPERIMENT_BLAKE3_FILE_HASHING
+	 */
+	blake3FileHashing: boolean;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -842,6 +848,12 @@ export interface PartialExperimentsConfig {
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding?: boolean | null;
+	/**
+	 * Use the Blake3 hashing algorithm for file hashing.
+	 *
+	 * @env MOON_EXPERIMENT_BLAKE3_FILE_HASHING
+	 */
+	blake3FileHashing?: boolean | null;
 }
 
 /** Configures the generator for scaffolding from templates. */

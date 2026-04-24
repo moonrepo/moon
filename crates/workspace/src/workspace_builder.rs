@@ -46,6 +46,7 @@ pub const STATE_GRAPH_FILE_NAME: &str = "workspaceGraph.json";
 pub const STATE_PROJECTS_FILE_NAME: &str = "projectsBuildDataV1.json";
 
 pub struct WorkspaceBuilderContext {
+    pub cache_engine: Arc<CacheEngine>,
     pub config_loader: ConfigLoader,
     pub enabled_toolchains: Vec<Id>,
     pub extensions_config: Arc<ExtensionsConfig>,
@@ -706,12 +707,21 @@ impl WorkspaceBuilder {
     async fn hash_required_configs(
         &self,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
-        self.context()
-            .vcs
-            .as_ref()
-            .expect("VCS required!")
-            .get_file_hashes(&self.config_paths, true)
-            .await
+        let context = self.context();
+
+        if context.workspace_config.experiments.blake3_file_hashing {
+            context
+                .cache_engine
+                .hash_files(&context.workspace_root, &self.config_paths)
+                .await
+        } else {
+            context
+                .vcs
+                .as_ref()
+                .expect("VCS required!")
+                .get_file_hashes(&self.config_paths, true)
+                .await
+        }
     }
 
     /// Preload the graph with project sources from the workspace configuration.
@@ -1046,6 +1056,7 @@ impl WorkspaceBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use moon_config::CacheConfig;
     use moon_extension_plugin::ExtensionRegistry;
     use moon_graph_utils::GraphConnections;
     use moon_test_utils2::create_empty_moon_sandbox;
@@ -1055,6 +1066,10 @@ mod tests {
     async fn reindexes_project_graph_after_filtering_loading_nodes() {
         let sandbox = create_empty_moon_sandbox();
         let context = WorkspaceBuilderContext {
+            cache_engine: Arc::new(
+                CacheEngine::new(sandbox.path().join(".moon/cache"), &CacheConfig::default())
+                    .unwrap(),
+            ),
             config_loader: ConfigLoader::default(),
             enabled_toolchains: vec![],
             extensions_config: Arc::new(ExtensionsConfig::default()),
@@ -1112,6 +1127,10 @@ mod tests {
     async fn reindexes_task_graph_after_filtering_loading_nodes() {
         let sandbox = create_empty_moon_sandbox();
         let context = WorkspaceBuilderContext {
+            cache_engine: Arc::new(
+                CacheEngine::new(sandbox.path().join(".moon/cache"), &CacheConfig::default())
+                    .unwrap(),
+            ),
             config_loader: ConfigLoader::default(),
             enabled_toolchains: vec![],
             extensions_config: Arc::new(ExtensionsConfig::default()),

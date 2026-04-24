@@ -262,8 +262,7 @@ async fn create_hash_content<'action>(
             && let Ok(rel_lock_path) = lock_path.relative_to(&app_context.workspace_root)
         {
             let mut lock_hashes = app_context
-                .vcs
-                .get_file_hashes(std::slice::from_ref(&rel_lock_path), false)
+                .hash_files(std::slice::from_ref(&rel_lock_path))
                 .await?;
 
             if let Some(hash) = lock_hashes.remove(&rel_lock_path) {

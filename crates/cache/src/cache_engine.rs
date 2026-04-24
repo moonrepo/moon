@@ -4,7 +4,7 @@ use crate::{merge_clean_results, resolve_path};
 use miette::IntoDiagnostic;
 use moon_cache_item::*;
 use moon_cas::{CasStore, ContentHash};
-use moon_common::path::encode_component;
+use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
 use moon_config::CacheConfig;
 use moon_env_var::GlobalEnvBag;
 use moon_time::parse_duration;
@@ -139,23 +139,27 @@ impl CacheEngine {
 
     pub async fn hash_files(
         &self,
-        files: Vec<PathBuf>,
-    ) -> miette::Result<BTreeMap<PathBuf, ContentHash>> {
+        root: &Path,
+        files: &[WorkspaceRelativePathBuf],
+    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let mut map = BTreeMap::new();
-        let mut set = JoinSet::<miette::Result<(PathBuf, Option<ContentHash>)>>::new();
+        let mut set = JoinSet::<miette::Result<(WorkspaceRelativePathBuf, Option<String>)>>::new();
         let mmap_threshold = self.config.cas.mmap_threshold;
 
         for file in files {
+            let abs_file = file.to_logical_path(root);
+            let rel_file = file.clone();
+
             set.spawn_blocking(move || {
                 // File may have been deleted since we were given the path,
                 // so check existence before hashing
-                if !file.exists() {
-                    return Ok((file, None));
+                if !abs_file.exists() {
+                    return Ok((rel_file, None));
                 }
 
-                let hash = ContentHash::hash_file(&file, mmap_threshold)?;
+                let hash = ContentHash::hash_file(&abs_file, mmap_threshold)?;
 
-                Ok((file, Some(hash)))
+                Ok((rel_file, Some(hash.to_string())))
             });
         }
 

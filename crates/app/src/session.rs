@@ -137,6 +137,7 @@ impl MoonSession {
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {
         Ok(WorkspaceBuilderContext {
+            cache_engine: self.get_cache_engine()?,
             config_loader: self.config_loader.clone(),
             enabled_toolchains: self.toolchains_config.get_enabled(),
             extensions_config: Arc::clone(&self.extensions_config),

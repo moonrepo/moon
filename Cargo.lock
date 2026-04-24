@@ -5156,7 +5156,9 @@ dependencies = [
 name = "moon_app_context"
 version = "0.0.1"
 dependencies = [
+ "miette 7.6.0",
  "moon_cache",
+ "moon_common",
  "moon_config",
  "moon_console",
  "moon_env",

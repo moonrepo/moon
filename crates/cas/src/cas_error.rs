@@ -44,4 +44,12 @@ pub enum CasError {
         #[source]
         error: Box<std::io::Error>,
     },
+
+    #[diagnostic(code(cas::hash_failed))]
+    #[error("Failed to hash file {}.", .path.style(Style::Path))]
+    HashFailed {
+        path: PathBuf,
+        #[source]
+        error: Box<std::io::Error>,
+    },
 }

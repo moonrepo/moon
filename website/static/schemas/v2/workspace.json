@@ -482,6 +482,11 @@
           "title": "asyncGraphBuilding",
           "description": "Build the project and task graphs asynchronously.",
           "type": "boolean"
+        },
+        "blake3FileHashing": {
+          "title": "blake3FileHashing",
+          "description": "Use the Blake3 hashing algorithm for file hashing.",
+          "type": "boolean"
         }
       },
       "additionalProperties": false

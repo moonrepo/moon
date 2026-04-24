@@ -4,6 +4,7 @@ package moon.daemon.v1;
 
 service MoonDaemon {
   rpc ArchiveTaskOutputs(ArchiveTaskOutputsRequest) returns (ArchiveTaskOutputsResponse);
+  rpc HashFiles(HashFilesRequest) returns (HashFilesResponse);
   rpc Start(StartRequest) returns (StartResponse);
   rpc Stop(StopRequest) returns (StopResponse);
   rpc Status(StatusRequest) returns (StatusResponse);
@@ -14,7 +15,17 @@ message ArchiveTaskOutputsRequest {
   string hash = 2;
 }
 
-message ArchiveTaskOutputsResponse {}
+message ArchiveTaskOutputsResponse {
+  bool archived = 1;
+}
+
+message HashFilesRequest {
+  repeated string files = 1;
+}
+
+message HashFilesResponse {
+  map<string, string> files = 1;
+}
 
 message StartRequest {
   string workspace_root = 1;

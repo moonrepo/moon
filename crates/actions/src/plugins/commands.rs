@@ -328,7 +328,7 @@ async fn gather_cache_inputs(
     if !hash_files.is_empty() {
         let hash_files = hash_files.into_iter().map(|f| f.1).collect::<Vec<_>>();
 
-        for (rel_path, hash) in app_context.vcs.get_file_hashes(&hash_files, true).await? {
+        for (rel_path, hash) in app_context.hash_files(&hash_files).await? {
             fingerprint
                 .input_files
                 .insert(rel_path, format!("hash:{hash}"));

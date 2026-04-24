@@ -163,8 +163,17 @@ impl Git {
                             }
 
                             submodules.push(GitTree {
+<<<<<<< HEAD
                                 work_dir,
                                 git_dir: clean_components(sub.git_dir()),
+=======
+                                work_dir: clean_components(if work_dir.is_absolute() {
+                                    work_dir
+                                } else {
+                                    repository_root.join(work_dir)
+                                }),
+                                git_dir: clean_components(sub.git_dir().unwrap()),
+>>>>>>> 043e933d36 (new: Add a new file hashing mechanism. (#2501))
                                 type_of: GitTreeType::Submodule,
                                 path: RelativePathBuf::from(rel_path.to_string()),
                                 ..Default::default()

@@ -404,6 +404,7 @@ impl WorkspaceMocker {
 
     pub fn mock_workspace_builder_context(&self) -> WorkspaceBuilderContext {
         WorkspaceBuilderContext {
+            cache_engine: Arc::new(self.mock_cache_engine()),
             config_loader: self.config_loader.clone(),
             enabled_toolchains: self.toolchains_config.get_enabled(),
             extensions_config: Arc::new(self.extensions_config.clone()),

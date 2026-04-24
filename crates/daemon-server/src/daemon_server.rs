@@ -1,6 +1,7 @@
 use crate::daemon_server_error::DaemonServerError;
 use crate::daemon_watcher::{start_file_listener, start_file_watcher};
 use moon_app_context::AppContext;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_daemon_proto::{
     moon_daemon_server::{MoonDaemon, MoonDaemonServer},
     *,
@@ -85,6 +86,33 @@ impl MoonDaemon for DaemonService {
         .map_err(|error| Status::unknown(error.to_string()))?;
 
         Ok(Response::new(ArchiveTaskOutputsResponse {}))
+    }
+
+    async fn hash_files(
+        &self,
+        request: Request<HashFilesRequest>,
+    ) -> Result<Response<HashFilesResponse>, Status> {
+        debug!("Received start request (daemon already running)");
+
+        let files = request
+            .into_inner()
+            .files
+            .into_iter()
+            .map(WorkspaceRelativePathBuf::from)
+            .collect::<Vec<_>>();
+
+        let hashed_files = self
+            .state
+            .read()
+            .await
+            .app_context
+            .hash_files(&files)
+            .await
+            .map_err(|error| Status::unknown(error.to_string()))?;
+
+        Ok(Response::new(HashFilesResponse {
+            files: Default::default(), // hashed_files,
+        }))
     }
 
     async fn start(

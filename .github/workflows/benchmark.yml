@@ -7,9 +7,9 @@ on:
       - master
       - develop-*
   pull_request:
-  # Not supported by CodSpeed!
-  # issue_comment:
-  #   types: [created]
+    # Not supported by CodSpeed!
+    # issue_comment:
+    #   types: [created]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,7 +26,9 @@ env:
 jobs:
   bench:
     name: Bench
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/develop-')) || github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' &&
+      (github.ref == 'refs/heads/master' || startsWith(github.ref,
+      'refs/heads/develop-')) || github.event_name == 'pull_request'
     # || github.event.issue.pull_request && contains(github.event.comment.body, '!benchmark')
     strategy:
       fail-fast: false
@@ -34,10 +36,19 @@ jobs:
         include:
           - package: moon_affected
             runner: depot-ubuntu-24.04-16 # 64GB mem
+            mode: walltime
+
+          - package: moon_cache
+            runner: depot-ubuntu-24.04
+            mode: walltime
+
           - package: moon_toolchain_plugin
             runner: depot-ubuntu-24.04-8 # 32GB mem
+            mode: walltime
+
           - package: moon_workspace
             runner: depot-ubuntu-24.04-8 # 32GB mem
+            mode: walltime
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v6
@@ -48,10 +59,10 @@ jobs:
           cache-target: release
 
       - name: Build the benchmark targets
-        run: cargo codspeed build -m walltime -p ${{ matrix.package }}
+        run: cargo codspeed build -m ${{ matrix.mode }} -p ${{ matrix.package }}
 
       - name: Run the benchmarks
         uses: CodSpeedHQ/action@v4
         with:
-          mode: walltime
+          mode: ${{ matrix.mode }}
           run: cargo codspeed run -p ${{ matrix.package }}

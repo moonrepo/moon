@@ -119,6 +119,11 @@ config_struct!(
         #[setting(default = "./cache/schemas/workspace.json", rename = "$schema")]
         pub schema: String,
 
+        /// Configures aspects of the caching engine and layer.
+        /// @since 2.3.0
+        #[setting(nested)]
+        pub cache: CacheConfig,
+
         /// Configures code ownership rules for generating a `CODEOWNERS` file.
         /// @since 1.8.0
         #[setting(nested)]

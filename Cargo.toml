@@ -7,6 +7,7 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 async-recursion = "1.1.1"
 async-stream = "0.3.6"
+blake3 = { version = "1.8.2", features = ["mmap"] }
 async-trait = "0.1.89"
 cached = "0.59.0"
 chrono = { version = "0.4.44", features = ["serde"] }

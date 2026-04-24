@@ -709,7 +709,7 @@ impl WorkspaceBuilder {
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let context = self.context();
 
-        if true {
+        if context.workspace_config.experiments.blake3_file_hashing {
             context
                 .cache_engine
                 .hash_files(&context.workspace_root, &self.config_paths)

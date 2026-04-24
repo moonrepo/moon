@@ -1166,6 +1166,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-hex"
+version = "1.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "531185e432bb31db1ecda541e9e7ab21468d4d844ad7505e0546a49b4945d49b"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "proptest",
+ "serde_core",
+]
+
+[[package]]
 name = "const_format"
 version = "0.2.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4937,6 +4949,7 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_workspace_graph",
  "num_cpus",
+ "opentelemetry",
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",
@@ -5107,7 +5120,7 @@ dependencies = [
  "starbase_archive",
  "starbase_sandbox",
  "starbase_shell",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "starbase_utils",
  "tera",
  "thiserror 2.0.18",
@@ -5208,6 +5221,7 @@ dependencies = [
  "moon_test_utils",
  "moon_test_utils2",
  "moon_vcs",
+ "opentelemetry-proto",
  "proto_core",
  "proto_shim",
  "rustc-hash",
@@ -5216,9 +5230,11 @@ dependencies = [
  "starbase",
  "starbase_archive",
  "starbase_sandbox",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "starbase_utils",
  "tokio",
+ "tokio-stream",
+ "tonic",
  "tracing",
  "wasi-common",
  "wasmtime",
@@ -5276,7 +5292,7 @@ dependencies = [
  "schematic",
  "serde",
  "starbase_id",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 2.0.18",
 ]
 
@@ -5343,7 +5359,7 @@ dependencies = [
  "moon_target",
  "moon_time",
  "starbase_console",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracing",
 ]
 
@@ -5659,7 +5675,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_sandbox",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "starbase_utils",
  "thiserror 2.0.18",
  "tokio",
@@ -5987,14 +6003,19 @@ dependencies = [
  "moon_task_hasher",
  "moon_test_utils2",
  "moon_time",
+ "opentelemetry",
+ "opentelemetry-proto",
  "rustc-hash",
  "serde",
+ "starbase",
  "starbase_archive",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-stream",
  "tokio-util",
+ "tonic",
  "tracing",
 ]
 
@@ -6645,6 +6666,82 @@ dependencies = [
 ]
 
 [[package]]
+name = "opentelemetry"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b84bcd6ae87133e903af7ef497404dda70c60d0ea14895fc8a5e6722754fc2a0"
+dependencies = [
+ "futures-core",
+ "futures-sink",
+ "js-sys",
+ "pin-project-lite",
+ "thiserror 2.0.18",
+ "tracing",
+]
+
+[[package]]
+name = "opentelemetry-appender-tracing"
+version = "0.31.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef6a1ac5ca3accf562b8c306fa8483c85f4390f768185ab775f242f7fe8fdcc2"
+dependencies = [
+ "opentelemetry",
+ "tracing",
+ "tracing-core",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "opentelemetry-otlp"
+version = "0.31.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f69cd6acbb9af919df949cd1ec9e5e7fdc2ef15d234b6b795aaa525cc02f71f"
+dependencies = [
+ "http",
+ "opentelemetry",
+ "opentelemetry-proto",
+ "opentelemetry_sdk",
+ "prost",
+ "thiserror 2.0.18",
+ "tokio",
+ "tonic",
+]
+
+[[package]]
+name = "opentelemetry-proto"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7175df06de5eaee9909d4805a3d07e28bb752c34cab57fa9cff549da596b30f"
+dependencies = [
+ "base64 0.22.1",
+ "const-hex",
+ "opentelemetry",
+ "opentelemetry_sdk",
+ "prost",
+ "serde",
+ "serde_json",
+ "tonic",
+ "tonic-prost",
+]
+
+[[package]]
+name = "opentelemetry_sdk"
+version = "0.31.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e14ae4f5991976fd48df6d843de219ca6d31b01daaab2dad5af2badeded372bd"
+dependencies = [
+ "futures-channel",
+ "futures-executor",
+ "futures-util",
+ "opentelemetry",
+ "percent-encoding",
+ "rand 0.9.4",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+]
+
+[[package]]
 name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7169,6 +7266,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "proptest"
+version = "1.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b45fcc2344c680f5025fe57779faef368840d0bd1f42f216291f0dc4ace4744"
+dependencies = [
+ "bitflags 2.11.1",
+ "num-traits",
+ "rand 0.9.4",
+ "rand_chacha 0.9.0",
+ "rand_xorshift",
+ "regex-syntax",
+ "unarray",
+]
+
+[[package]]
 name = "prost"
 version = "0.14.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7251,7 +7363,7 @@ dependencies = [
  "starbase_archive",
  "starbase_console",
  "starbase_shell",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "starbase_utils",
  "system_env",
  "thiserror 2.0.18",
@@ -7493,6 +7605,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "76afc826de14238e6e8c374ddcc1fa19e374fd8dd986b0d2af0d02377261d83c"
 dependencies = [
  "getrandom 0.3.4",
+]
+
+[[package]]
+name = "rand_xorshift"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "513962919efc330f829edb2535844d1b912b0fbe2ca165d613e4e8788bb05a5a"
+dependencies = [
+ "rand_core 0.9.5",
 ]
 
 [[package]]
@@ -8109,7 +8230,7 @@ dependencies = [
  "serde_json",
  "serde_norway",
  "serde_path_to_error",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 2.0.18",
  "toml 1.1.2+spec-1.1.0",
  "tracing",
@@ -8614,16 +8735,19 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 [[package]]
 name = "starbase"
 version = "0.10.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcd26ce3c899ad844fccd5bc6ecf06f899bea6c5a6f83fe3d35b579ba540f76d"
 dependencies = [
  "async-trait",
  "chrono",
  "miette 7.6.0",
- "starbase_styles",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry_sdk",
+ "starbase_styles 0.6.7",
  "tokio",
  "tracing",
  "tracing-chrome",
+ "tracing-opentelemetry",
  "tracing-subscriber",
 ]
 
@@ -8639,7 +8763,7 @@ dependencies = [
  "liblzma",
  "miette 7.6.0",
  "rustc-hash",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "starbase_utils",
  "thiserror 2.0.18",
  "tracing",
@@ -8667,7 +8791,7 @@ dependencies = [
  "iocraft",
  "miette 7.6.0",
  "parking_lot",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -8719,11 +8843,20 @@ dependencies = [
 [[package]]
 name = "starbase_styles"
 version = "0.6.7"
+dependencies = [
+ "dirs",
+ "miette 7.6.0",
+ "owo-colors",
+ "supports-color",
+]
+
+[[package]]
+name = "starbase_styles"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67078591b8bea68aa42e19c61b4a40978e8e3787155012c2aa26331efe07f5e0"
 dependencies = [
  "dirs",
- "miette 7.6.0",
  "owo-colors",
  "relative-path",
  "supports-color",
@@ -8747,7 +8880,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "thiserror 2.0.18",
  "tokio",
  "toml 1.1.2+spec-1.1.0",
@@ -9483,6 +9616,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "tracing-opentelemetry"
+version = "0.32.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ac28f2d093c6c477eaa76b23525478f38de514fa9aeb1285738d4b97a9552fc"
+dependencies = [
+ "js-sys",
+ "opentelemetry",
+ "smallvec",
+ "tracing",
+ "tracing-core",
+ "tracing-log",
+ "tracing-subscriber",
+ "web-time",
+]
+
+[[package]]
 name = "tracing-subscriber"
 version = "0.3.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9534,6 +9683,12 @@ dependencies = [
  "tempfile",
  "windows-sys 0.61.2",
 ]
+
+[[package]]
+name = "unarray"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eaea85b334db583fe3274d12b4cd1880032beab409c0d774be044d4480ab9a94"
 
 [[package]]
 name = "unicase"
@@ -9809,7 +9964,7 @@ dependencies = [
  "sha2",
  "starbase_archive",
  "starbase_shell",
- "starbase_styles",
+ "starbase_styles 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "starbase_utils",
  "system_env",
  "thiserror 2.0.18",

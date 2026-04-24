@@ -8,6 +8,10 @@ homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
+[features]
+default = ["otel"]
+otel = ["dep:opentelemetry"]
+
 [dependencies]
 moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
@@ -28,6 +32,7 @@ moon_task = { path = "../task" }
 moon_task_hasher = { path = "../task-hasher" }
 moon_time = { path = "../time" }
 miette = { workspace = true }
+opentelemetry = { workspace = true, optional = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_archive = { workspace = true }
@@ -40,7 +45,11 @@ tracing = { workspace = true }
 [dev-dependencies]
 moon_affected = { path = "../affected" }
 moon_test_utils2 = { path = "../test-utils" }
+opentelemetry-proto = "0.31.0"
+starbase = { workspace = true, features = ["otel"] }
 starbase_sandbox = { workspace = true }
+tokio-stream = { version = "0.1.18", features = ["net"] }
+tonic = "0.14.5"
 
 [lints]
 workspace = true

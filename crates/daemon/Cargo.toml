@@ -4,10 +4,14 @@ version = "0.0.1"
 edition = "2024"
 publish = false
 
+[features]
+default = ["otel"]
+otel = ["moon_daemon_server/otel"]
+
 [dependencies]
 moon_daemon_client = { path = "../daemon-client" }
 moon_daemon_proto = { path = "../daemon-proto" }
-moon_daemon_server = { path = "../daemon-server" }
+moon_daemon_server = { path = "../daemon-server", default-features = false }
 moon_daemon_utils = { path = "../daemon-utils" }
 miette = { workspace = true }
 thiserror = { workspace = true }

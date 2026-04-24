@@ -86,8 +86,17 @@ pub struct ExecArgs {
     pub query: Option<String>,
 }
 
-#[instrument(skip(session))]
+#[instrument(
+    skip_all,
+    fields(
+        target_count = args.targets.len(),
+        has_query = args.query.is_some(),
+        on_failure = %args.on_failure,
+        ci = tracing::field::Empty,
+    )
+)]
 pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
+    tracing::Span::current().record("ci", args.ci.unwrap_or(false));
     let mut plan = ExecutionPlan::default();
 
     // Load the execution plan if provided

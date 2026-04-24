@@ -7,6 +7,10 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 default-run = "moon"
 
+[features]
+default = ["otel"]
+otel = ["moon_app/otel", "starbase/otel"]
+
 [package.metadata.dist]
 dist = true
 
@@ -26,7 +30,7 @@ name = "moonx"
 path = "src/main_exec.rs"
 
 [dependencies]
-moon_app = { path = "../app" }
+moon_app = { path = "../app", default-features = false }
 moon_common = { path = "../common" }
 moon_env_var = { path = "../env-var" }
 clap = { workspace = true }
@@ -62,11 +66,14 @@ moon_test_utils = { path = "../../legacy/core/test-utils" }
 moon_test_utils2 = { path = "../test-utils" }
 moon_vcs = { path = "../vcs" }
 httpmock = "0.8.3"
+opentelemetry-proto = "0.31.0"
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
 serial_test = { workspace = true }
 starbase_archive = { workspace = true }
 starbase_sandbox = { workspace = true }
+tokio-stream = { version = "0.1.18", features = ["net"] }
+tonic = "0.14.5"
 
 [lints]
 workspace = true

@@ -7,7 +7,14 @@ use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tracing::{instrument, warn};
 
-#[instrument(skip(action, action_context, app_context, workspace_graph))]
+#[instrument(
+    skip_all,
+    fields(
+        task_target = %node.target,
+        interactive = node.interactive,
+        persistent = node.persistent,
+    )
+)]
 pub async fn run_task(
     action: &mut Action,
     action_context: Arc<ActionContext>,

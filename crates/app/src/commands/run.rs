@@ -22,7 +22,13 @@ pub struct RunArgs {
     query: Option<String>,
 }
 
-#[instrument(skip(session))]
+#[instrument(
+    skip_all,
+    fields(
+        target_count = args.targets.len(),
+        has_query = args.query.is_some(),
+    )
+)]
 pub async fn run(session: MoonSession, args: RunArgs) -> AppResult {
     exec(session, {
         let mut exec = args.to_exec_args();

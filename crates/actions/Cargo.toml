@@ -4,6 +4,10 @@ version = "0.0.1"
 edition = "2024"
 publish = false
 
+[features]
+default = ["otel"]
+otel = ["moon_task_runner/otel"]
+
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
@@ -24,7 +28,7 @@ moon_process = { path = "../process" }
 moon_process_augment = { path = "../process-augment" }
 moon_project = { path = "../project" }
 moon_remote = { path = "../remote" }
-moon_task_runner = { path = "../task-runner" }
+moon_task_runner = { path = "../task-runner", default-features = false }
 moon_time = { path = "../time" }
 moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }

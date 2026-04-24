@@ -35,7 +35,13 @@ hash_fingerprint!(
     }
 );
 
-#[instrument(skip(action, action_context, app_context, workspace_graph))]
+#[instrument(
+    skip_all,
+    fields(
+        toolchain_id = %node.toolchain_id,
+        project_id = tracing::field::Empty,
+    )
+)]
 pub async fn install_dependencies(
     action: &mut Action,
     action_context: Arc<ActionContext>,
@@ -43,6 +49,12 @@ pub async fn install_dependencies(
     workspace_graph: Arc<WorkspaceGraph>,
     node: &InstallDependenciesNode,
 ) -> miette::Result<ActionStatus> {
+    let span = tracing::Span::current();
+
+    if let Some(project_id) = &node.project_id {
+        span.record("project_id", project_id.as_str());
+    }
+
     let deps_root = node.root.to_logical_path(&app_context.workspace_root);
 
     // Skip this action if requested by the user

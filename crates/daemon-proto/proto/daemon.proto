@@ -15,7 +15,9 @@ message ArchiveTaskOutputsRequest {
   string hash = 2;
 }
 
-message ArchiveTaskOutputsResponse {}
+message ArchiveTaskOutputsResponse {
+  bool archived = 1;
+}
 
 message HashFilesRequest {
   repeated string files = 1;

@@ -1,6 +1,7 @@
 use crate::daemon_server_error::DaemonServerError;
 use crate::daemon_watcher::{start_file_listener, start_file_watcher};
 use moon_app_context::AppContext;
+use moon_common::color;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_daemon_proto::{
     moon_daemon_server::{MoonDaemon, MoonDaemonServer},
@@ -64,7 +65,7 @@ impl MoonDaemon for DaemonService {
         &self,
         request: Request<ArchiveTaskOutputsRequest>,
     ) -> Result<Response<ArchiveTaskOutputsResponse>, Status> {
-        debug!("Received archive task outputs request");
+        debug!("Received {} request", color::property("ArchiveTaskOutputs"));
 
         let state = self.state.read().await;
         let req = request.into_inner();
@@ -77,7 +78,7 @@ impl MoonDaemon for DaemonService {
             .get_task(&target)
             .map_err(|error| Status::not_found(error.to_string()))?;
 
-        OutputArchiver {
+        let result = OutputArchiver {
             app_context: &state.app_context,
             task: &task,
         }
@@ -85,14 +86,16 @@ impl MoonDaemon for DaemonService {
         .await
         .map_err(|error| Status::unknown(error.to_string()))?;
 
-        Ok(Response::new(ArchiveTaskOutputsResponse {}))
+        Ok(Response::new(ArchiveTaskOutputsResponse {
+            archived: result.is_some(),
+        }))
     }
 
     async fn hash_files(
         &self,
         request: Request<HashFilesRequest>,
     ) -> Result<Response<HashFilesResponse>, Status> {
-        debug!("Received start request (daemon already running)");
+        debug!("Received {} request", color::property("HashFiles"));
 
         let files = request
             .into_inner()
@@ -122,7 +125,10 @@ impl MoonDaemon for DaemonService {
         &self,
         _request: Request<StartRequest>,
     ) -> Result<Response<StartResponse>, Status> {
-        debug!("Received start request (daemon already running)");
+        debug!(
+            "Received {} request (daemon already running)",
+            color::property("Start")
+        );
 
         Ok(Response::new(StartResponse {
             already_running: true,
@@ -132,7 +138,10 @@ impl MoonDaemon for DaemonService {
     }
 
     async fn stop(&self, _request: Request<StopRequest>) -> Result<Response<StopResponse>, Status> {
-        debug!("Received stop request, initiating graceful shutdown");
+        debug!(
+            "Received {} request, initiating graceful shutdown",
+            color::property("Stop")
+        );
 
         self.inner
             .shutdown_tx
@@ -146,6 +155,8 @@ impl MoonDaemon for DaemonService {
         &self,
         _request: Request<StatusRequest>,
     ) -> Result<Response<StatusResponse>, Status> {
+        debug!("Received {} request", color::property("Status"));
+
         let state = self.state.read().await;
         let uptime_secs = self.inner.started_at.elapsed().as_secs();
 

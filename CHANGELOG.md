@@ -8,6 +8,9 @@
   implementation that uses BLAKE3 for hashing instead of SHA256. This can improve performance by
   6-10%.
   - Enable with the `experiments.blake3FileHashing` setting in `.moon/workspace.*`.
+- **Git**
+  - Added SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256 as
+    the default hash algorithm.
 
 ## Unreleased
 

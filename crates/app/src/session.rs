@@ -173,9 +173,10 @@ impl MoonSession {
 
     pub fn get_cache_engine(&self) -> miette::Result<Arc<CacheEngine>> {
         if self.cache_engine.get().is_none() {
-            let _ = self
-                .cache_engine
-                .set(Arc::new(CacheEngine::new(&self.config_dir)?));
+            let _ = self.cache_engine.set(Arc::new(CacheEngine::new(
+                &self.config_dir,
+                &self.workspace_config.cache,
+            )?));
         }
 
         Ok(self.cache_engine.get().map(Arc::clone).unwrap())

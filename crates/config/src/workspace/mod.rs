@@ -1,3 +1,4 @@
+mod cache_config;
 mod codeowners_config;
 mod constraints_config;
 mod docker_config;
@@ -9,6 +10,7 @@ mod pipeline_config;
 mod remote_config;
 mod vcs_config;
 
+pub use cache_config::*;
 pub use codeowners_config::*;
 pub use constraints_config::*;
 pub use docker_config::*;

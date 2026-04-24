@@ -7,6 +7,7 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 async-recursion = "1.1.1"
 async-stream = "0.3.6"
+blake3 = { version = "1.8.2", features = ["mmap"] }
 async-trait = "0.1.89"
 cached = "0.59.0"
 chrono = { version = "0.4.44", features = ["serde"] }
@@ -69,7 +70,7 @@ starbase_id = { version = "0.3.2", features = ["miette", "schematic"] }
 starbase_sandbox = "0.11.0"
 starbase_shell = "0.12.3"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.13.1", default-features = false, features = [
+starbase_utils = { version = "0.13.2", default-features = false, features = [
     "editor-config",
     "glob-cache",
     "miette",

@@ -1,4 +1,5 @@
 use moon_cache::*;
+use moon_config::CacheConfig;
 use moon_env_var::GlobalEnvBag;
 use starbase_sandbox::create_empty_sandbox;
 
@@ -9,7 +10,7 @@ mod cache_engine {
     fn creates_cache_dir_tag() {
         let sandbox = create_empty_sandbox();
 
-        CacheEngine::new(sandbox.path().join(".moon")).unwrap();
+        CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
 
         assert!(sandbox.path().join(".moon/cache/CACHEDIR.TAG").exists());
     }
@@ -17,7 +18,8 @@ mod cache_engine {
     #[test]
     fn returns_default_if_cache_missing() {
         let sandbox = create_empty_sandbox();
-        let engine = CacheEngine::new(sandbox.path().join(".moon")).unwrap();
+        let engine =
+            CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
         let item = engine
             .state
             .load_state::<CommonCacheState>("state.json")
@@ -34,7 +36,8 @@ mod cache_engine {
             r#"{ "lastHash": "abc123" }"#,
         );
 
-        let engine = CacheEngine::new(sandbox.path().join(".moon")).unwrap();
+        let engine =
+            CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
         let item = engine
             .state
             .load_state::<CommonCacheState>("state.json")
@@ -51,7 +54,8 @@ mod cache_engine {
     #[test]
     fn can_write_cache_if_mode_off() {
         let sandbox = create_empty_sandbox();
-        let engine = CacheEngine::new(sandbox.path().join(".moon")).unwrap();
+        let engine =
+            CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
         let bag = GlobalEnvBag::instance();
 
         bag.set("MOON_CACHE", "off");
@@ -73,7 +77,8 @@ mod cache_engine {
     #[test]
     fn can_write_cache_if_mode_readonly() {
         let sandbox = create_empty_sandbox();
-        let engine = CacheEngine::new(sandbox.path().join(".moon")).unwrap();
+        let engine =
+            CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
         let bag = GlobalEnvBag::instance();
 
         bag.set("MOON_CACHE", "read");

@@ -65,7 +65,7 @@ impl RemoteCompression {
 }
 
 config_struct!(
-    /// Configures the action cache (AC) and content addressable cache (CAS).
+    /// Configures the action cache (AC) and content-addressable cache (CAS).
     /// @since 1.30.0
     #[derive(Config)]
     #[config(env_prefix = "MOON_REMOTE_CACHE_")]
@@ -167,7 +167,7 @@ config_struct!(
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub auth: Option<RemoteAuthConfig>,
 
-        /// Configures the action cache (AC) and content addressable cache (CAS).
+        /// Configures the action cache (AC) and content-addressable cache (CAS).
         #[setting(nested)]
         pub cache: RemoteCacheConfig,
 

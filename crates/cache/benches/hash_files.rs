@@ -1,11 +1,11 @@
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use moon_bench_utils::handle_unwrap;
 use moon_cache::CacheEngine;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::CacheConfig;
 use moon_vcs::Vcs;
 use moon_vcs::git::Git;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
-use std::path::{Path, PathBuf};
 use tokio::runtime::Runtime;
 
 fn id(max: u16, label: &str) -> BenchmarkId {
@@ -23,12 +23,6 @@ fn create_sandbox_with_files() -> Sandbox {
     sandbox
 }
 
-fn get_file_paths(root: &Path, limit: usize) -> Vec<PathBuf> {
-    (0..=limit)
-        .map(|i| root.join(format!("file{i}.txt")))
-        .collect()
-}
-
 fn get_relative_file_paths(limit: usize) -> Vec<WorkspaceRelativePathBuf> {
     (0..=limit)
         .map(|i| WorkspaceRelativePathBuf::from(format!("file{i}.txt")))
@@ -41,21 +35,23 @@ fn cas(c: &mut Criterion) {
 
     group.bench_function(id(100, "hash_files"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            CacheEngine::new(sandbox.path().join("cache"), &CacheConfig::default())
-                .unwrap()
-                .hash_files(get_file_paths(sandbox.path(), 100))
-                .await
-                .unwrap();
+            handle_unwrap(
+                CacheEngine::new(sandbox.path().join("cache"), &CacheConfig::default())
+                    .unwrap()
+                    .hash_files(sandbox.path(), &get_relative_file_paths(100))
+                    .await,
+            );
         })
     });
 
     group.bench_function(id(1000, "hash_files"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            CacheEngine::new(sandbox.path().join("cache"), &CacheConfig::default())
-                .unwrap()
-                .hash_files(get_file_paths(sandbox.path(), 1000))
-                .await
-                .unwrap();
+            handle_unwrap(
+                CacheEngine::new(sandbox.path().join("cache"), &CacheConfig::default())
+                    .unwrap()
+                    .hash_files(sandbox.path(), &get_relative_file_paths(1000))
+                    .await,
+            );
         })
     });
 

@@ -25,6 +25,7 @@ pipeline:
 experiments:
   asyncAffectedTracking: true
   asyncGraphBuilding: true
+  blake3FileHashing: true
 
 vcs:
   defaultBranch: 'master'

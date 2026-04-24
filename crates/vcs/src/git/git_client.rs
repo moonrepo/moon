@@ -149,7 +149,7 @@ impl Git {
                                 } else {
                                     repository_root.join(work_dir)
                                 }),
-                                git_dir: clean_components(sub.git_dir()),
+                                git_dir: clean_components(sub.git_dir().unwrap()),
                                 type_of: GitTreeType::Submodule,
                                 path: RelativePathBuf::from(rel_path.to_string()),
                                 ..Default::default()

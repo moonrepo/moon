@@ -74,7 +74,7 @@ impl<'task> TaskHasher<'task> {
         if !processed_inputs.is_empty() && self.app_context.vcs.is_enabled() {
             let files = processed_inputs.into_iter().collect::<Vec<_>>();
 
-            self.fingerprint.inputs = self.app_context.vcs.get_file_hashes(&files, true).await?;
+            self.fingerprint.inputs = self.app_context.hash_files(&files).await?;
         }
 
         if !self.task.input_env.is_empty() {

@@ -142,6 +142,8 @@ impl CacheEngine {
         root: &Path,
         files: &[WorkspaceRelativePathBuf],
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
+        debug!("Hashing {} files", files.len());
+
         let mut map = BTreeMap::new();
         let mut set = JoinSet::<miette::Result<(WorkspaceRelativePathBuf, Option<String>)>>::new();
         let mmap_threshold = self.config.cas.mmap_threshold;
@@ -149,6 +151,10 @@ impl CacheEngine {
         for file in files {
             let abs_file = file.to_logical_path(root);
             let rel_file = file.clone();
+
+            if !abs_file.is_file() {
+                continue;
+            }
 
             set.spawn_blocking(move || {
                 // File may have been deleted since we were given the path,

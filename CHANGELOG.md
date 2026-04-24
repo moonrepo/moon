@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a new experiment that replaces the VCS/Git based file hashing mechanism with a custom
+  implementation that uses BLAKE3 for hashing instead of SHA256. This can improve performance by
+  6-10%.
+  - Enable with the `experiments.blake3FileHashing` setting in `.moon/workspace.*`.
+
+## Unreleased
+
 #### 🐞 Fixes
 
 - Fixed an issue where proto's `auto-clean` would remove tools installed by moon as they weren't

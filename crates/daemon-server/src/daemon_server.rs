@@ -111,7 +111,10 @@ impl MoonDaemon for DaemonService {
             .map_err(|error| Status::unknown(error.to_string()))?;
 
         Ok(Response::new(HashFilesResponse {
-            files: Default::default(), // hashed_files,
+            files: hashed_files
+                .into_iter()
+                .map(|(path, hash)| (path.to_string(), hash))
+                .collect(),
         }))
     }
 

@@ -1,4 +1,5 @@
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use moon_bench_utils::handle_unwrap;
 use moon_cache::CacheEngine;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::CacheConfig;
@@ -34,21 +35,23 @@ fn cas(c: &mut Criterion) {
 
     group.bench_function(id(100, "hash_files"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            CacheEngine::new(sandbox.path().join("cache"), &CacheConfig::default())
-                .unwrap()
-                .hash_files(sandbox.path(), &get_relative_file_paths(100))
-                .await
-                .unwrap();
+            handle_unwrap(
+                CacheEngine::new(sandbox.path().join("cache"), &CacheConfig::default())
+                    .unwrap()
+                    .hash_files(sandbox.path(), &get_relative_file_paths(100))
+                    .await,
+            );
         })
     });
 
     group.bench_function(id(1000, "hash_files"), |b| {
         b.to_async(Runtime::new().unwrap()).iter(async || {
-            CacheEngine::new(sandbox.path().join("cache"), &CacheConfig::default())
-                .unwrap()
-                .hash_files(sandbox.path(), &get_relative_file_paths(1000))
-                .await
-                .unwrap();
+            handle_unwrap(
+                CacheEngine::new(sandbox.path().join("cache"), &CacheConfig::default())
+                    .unwrap()
+                    .hash_files(sandbox.path(), &get_relative_file_paths(1000))
+                    .await,
+            );
         })
     });
 

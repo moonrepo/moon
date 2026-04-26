@@ -39,12 +39,12 @@ impl TargetProjectScope {
 impl Display for TargetProjectScope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TargetProjectScope::All => write!(f, ""),
-            TargetProjectScope::Deps => write!(f, "^"),
-            TargetProjectScope::DepsOf(scope) => write!(f, "^{scope}"),
-            TargetProjectScope::Id(id) => write!(f, "{id}"),
-            TargetProjectScope::OwnSelf => write!(f, "~"),
-            TargetProjectScope::Tag(id) => write!(f, "#{id}"),
+            Self::All => write!(f, ""),
+            Self::Deps => write!(f, "^"),
+            Self::DepsOf(scope) => write!(f, "^{scope}"),
+            Self::Id(id) => write!(f, "{id}"),
+            Self::OwnSelf => write!(f, "~"),
+            Self::Tag(id) => write!(f, "#{id}"),
         }
     }
 }
@@ -56,6 +56,62 @@ impl AsRef<TargetProjectScope> for TargetProjectScope {
 }
 
 impl FromStr for TargetProjectScope {
+    type Err = miette::Report;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Self::parse(value)
+    }
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
+pub enum TargetTaskScope {
+    Id(Id),  // project:task
+    Tag(Id), // project:#tag
+}
+
+impl TargetTaskScope {
+    pub fn parse<T: AsRef<str>>(value: T) -> miette::Result<Self> {
+        let value = value.as_ref();
+
+        let scope = if let Some(tag) = value.strip_prefix('#') {
+            Self::Tag(Id::new(tag)?)
+        } else {
+            Self::Id(Id::new(value)?)
+        };
+
+        Ok(scope)
+    }
+
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Id(id) => id.as_str(),
+            Self::Tag(id) => id.as_str(),
+        }
+    }
+}
+
+impl Display for TargetTaskScope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Id(id) => write!(f, "{id}"),
+            Self::Tag(id) => write!(f, "#{id}"),
+        }
+    }
+}
+
+impl AsRef<TargetTaskScope> for TargetTaskScope {
+    fn as_ref(&self) -> &TargetTaskScope {
+        self
+    }
+}
+
+impl AsRef<str> for TargetTaskScope {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl FromStr for TargetTaskScope {
     type Err = miette::Report;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {

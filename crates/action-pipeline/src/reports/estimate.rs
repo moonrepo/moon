@@ -71,9 +71,11 @@ impl Estimate {
                     install_duration += task_duration;
                 }
                 ActionNode::RunTask(inner) => {
-                    let task_id = inner.target.task_id.as_str();
+                    let Ok(task_id) = inner.target.get_task_id() else {
+                        continue;
+                    };
 
-                    if let Some(task) = tasks.get_mut(task_id) {
+                    if let Some(task) = tasks.get_mut(task_id.as_str()) {
                         task.count += 1;
                         task.total += task_duration;
                     } else {

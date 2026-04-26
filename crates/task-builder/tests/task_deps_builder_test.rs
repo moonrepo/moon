@@ -25,9 +25,10 @@ impl TasksQuerent for TestQuerent {
             .data
             .iter()
             .filter_map(|(target, options)| {
-                let project_id = target.get_project_id().ok()?;
+                let other_project_id = target.get_project_id().ok()?;
+                let other_task_id = target.get_task_id().ok()?;
 
-                if &target.task_id == task_id && project_ids.contains(&project_id) {
+                if other_task_id == task_id && project_ids.contains(&other_project_id) {
                     Some((target, options))
                 } else {
                     None

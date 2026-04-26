@@ -1,6 +1,6 @@
 use crate::dep_scope::DependencyScope;
 use crate::target_error::TargetError;
-use crate::target_scope::TargetProjectScope;
+use crate::target_scope::{TargetProjectScope, TargetTaskScope};
 use compact_str::CompactString;
 use moon_common::{ID_CHARS, ID_SYMBOLS, Id, Style, Stylize, color};
 use regex::Regex;
@@ -13,7 +13,7 @@ use tracing::instrument;
 // The @ is to support npm package scopes!
 pub static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(&format!(
-        r"^(?P<project>(?:[A-Za-z@#_]{{1}}[{ID_CHARS}{ID_SYMBOLS}]*|\^(?:build|development|dev|peer|production|prod)?|~))?:(?P<task>[{ID_CHARS}{ID_SYMBOLS}]+)$"
+        r"^(?P<project>(?:[A-Za-z@#_]{{1}}[{ID_CHARS}{ID_SYMBOLS}]*|\^(?:build|development|dev|peer|production|prod)?|~))?:(?P<task>#?[{ID_CHARS}{ID_SYMBOLS}]+)$"
     ))
     .unwrap()
 });
@@ -22,7 +22,7 @@ pub static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 pub struct Target {
     pub id: CompactString,
     pub project: TargetProjectScope,
-    pub task_id: Id,
+    pub task: TargetTaskScope,
 }
 
 impl Target {
@@ -34,7 +34,7 @@ impl Target {
         let id = Target::format(&project, task_id);
 
         Ok(Target {
-            task_id: Id::new(task_id).map_err(|_| TargetError::InvalidFormat(id.clone()))?,
+            task: TargetTaskScope::parse(task_id)?,
             id: CompactString::new(id),
             project,
         })
@@ -156,11 +156,13 @@ impl Target {
     }
 
     pub fn is_all_task(&self, task_id: &str) -> bool {
-        if matches!(&self.project, TargetProjectScope::All) {
+        if matches!(&self.project, TargetProjectScope::All)
+            && let Ok(inner_id) = self.get_task_id()
+        {
             return if let Some(id) = task_id.strip_prefix(':') {
-                self.task_id == id
+                inner_id == id
             } else {
-                self.task_id == task_id
+                inner_id == task_id
             };
         }
 
@@ -180,6 +182,20 @@ impl Target {
             _ => None,
         }
     }
+
+    pub fn get_task_id(&self) -> miette::Result<&Id> {
+        match &self.task {
+            TargetTaskScope::Id(id) => Ok(id),
+            _ => Err(TargetError::TaskScopeRequired(self.id.to_string()).into()),
+        }
+    }
+
+    pub fn get_task_tag_id(&self) -> Option<&Id> {
+        match &self.task {
+            TargetTaskScope::Tag(id) => Some(id),
+            _ => None,
+        }
+    }
 }
 
 impl Default for Target {
@@ -187,7 +203,7 @@ impl Default for Target {
         Target {
             id: "~:unknown".into(),
             project: TargetProjectScope::OwnSelf,
-            task_id: Id::raw("unknown"),
+            task: TargetTaskScope::Id(Id::raw("unknown")),
         }
     }
 }

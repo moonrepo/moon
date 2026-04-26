@@ -24,6 +24,12 @@ pub enum TargetError {
     )]
     ProjectScopeRequired(String),
 
+    #[diagnostic(code(target::task_scope_required))]
+    #[error(
+        "Invalid target {}, requires fully-qualified project and task identifers (project:task).", .0.style(Style::Label)
+    )]
+    TaskScopeRequired(String),
+
     #[diagnostic(code(target::missing_segments))]
     #[error("Target \":\" encountered. Wildcard project and task scopes are not supported.")]
     TooWild,

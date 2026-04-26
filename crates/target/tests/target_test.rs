@@ -1,6 +1,6 @@
 use compact_str::CompactString;
 use moon_common::Id;
-use moon_target::{DependencyScope, Target, TargetProjectScope};
+use moon_target::{DependencyScope, Target, TargetProjectScope, TargetTaskScope};
 
 #[test]
 #[should_panic(expected = "Invalid target foo$:build")]
@@ -115,7 +115,7 @@ fn parse_ids() {
         Target {
             id: CompactString::from("foo:build"),
             project: TargetProjectScope::Id(Id::raw("foo")),
-            task_id: Id::raw("build"),
+            task: TargetTaskScope::Id(Id::raw("build")),
         }
     );
 }
@@ -127,7 +127,7 @@ fn parse_deps_scope() {
         Target {
             id: CompactString::from("^:build"),
             project: TargetProjectScope::Deps,
-            task_id: Id::raw("build"),
+            task: TargetTaskScope::Id(Id::raw("build")),
         }
     );
 }
@@ -139,7 +139,7 @@ fn parse_deps_of_build_scope() {
         Target {
             id: CompactString::from("^build:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Build),
-            task_id: Id::raw("lint"),
+            task: TargetTaskScope::Id(Id::raw("lint")),
         }
     );
 }
@@ -151,7 +151,7 @@ fn parse_deps_of_development_scope() {
         Target {
             id: CompactString::from("^development:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Development),
-            task_id: Id::raw("lint"),
+            task: TargetTaskScope::Id(Id::raw("lint")),
         }
     );
     assert_eq!(
@@ -159,7 +159,7 @@ fn parse_deps_of_development_scope() {
         Target {
             id: CompactString::from("^development:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Development),
-            task_id: Id::raw("lint"),
+            task: TargetTaskScope::Id(Id::raw("lint")),
         }
     );
 }
@@ -171,7 +171,7 @@ fn parse_deps_of_peer_scope() {
         Target {
             id: CompactString::from("^peer:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Peer),
-            task_id: Id::raw("lint"),
+            task: TargetTaskScope::Id(Id::raw("lint")),
         }
     );
 }
@@ -183,7 +183,7 @@ fn parse_deps_of_production_scope() {
         Target {
             id: CompactString::from("^production:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Production),
-            task_id: Id::raw("lint"),
+            task: TargetTaskScope::Id(Id::raw("lint")),
         }
     );
     assert_eq!(
@@ -191,7 +191,7 @@ fn parse_deps_of_production_scope() {
         Target {
             id: CompactString::from("^production:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Production),
-            task_id: Id::raw("lint"),
+            task: TargetTaskScope::Id(Id::raw("lint")),
         }
     );
 }
@@ -215,7 +215,7 @@ fn parse_self_scope() {
         Target {
             id: CompactString::from("~:build"),
             project: TargetProjectScope::OwnSelf,
-            task_id: Id::raw("build"),
+            task: TargetTaskScope::Id(Id::raw("build")),
         }
     );
 }
@@ -227,7 +227,7 @@ fn parse_self_when_no_colon() {
         Target {
             id: CompactString::from("~:build"),
             project: TargetProjectScope::OwnSelf,
-            task_id: Id::raw("build"),
+            task: TargetTaskScope::Id(Id::raw("build")),
         }
     );
 }
@@ -251,7 +251,7 @@ fn parse_all_scopes() {
         Target {
             id: CompactString::from(":build"),
             project: TargetProjectScope::All,
-            task_id: Id::raw("build"),
+            task: TargetTaskScope::Id(Id::raw("build")),
         }
     );
 }
@@ -275,7 +275,7 @@ fn parse_node_package() {
         Target {
             id: CompactString::from("@scope/foo:build"),
             project: TargetProjectScope::Id(Id::raw("@scope/foo")),
-            task_id: Id::raw("build"),
+            task: TargetTaskScope::Id(Id::raw("build")),
         }
     );
 }
@@ -287,7 +287,7 @@ fn parse_slashes() {
         Target {
             id: CompactString::from("foo/sub:build/esm"),
             project: TargetProjectScope::Id(Id::raw("foo/sub")),
-            task_id: Id::raw("build/esm"),
+            task: TargetTaskScope::Id(Id::raw("build/esm")),
         }
     );
 }

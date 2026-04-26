@@ -64,7 +64,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
     let mut task_ids = project
         .task_targets
         .iter()
-        .map(|task| &task.task_id)
+        .map(|target| target.get_task_id().unwrap())
         .collect::<Vec<_>>();
     task_ids.sort();
 

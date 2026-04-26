@@ -62,7 +62,7 @@ impl TaskGraph {
             .nodes
             .get(target)
             .ok_or_else(|| ProjectError::UnknownTask {
-                task_id: target.task_id.to_string(),
+                task_id: target.get_task_id().unwrap().to_string(),
                 project_id: target.get_project_id().unwrap().to_string(),
             })?;
 

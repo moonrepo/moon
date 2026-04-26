@@ -102,7 +102,7 @@ impl TaskDepsBuilder<'_> {
 
             let results = self
                 .querent
-                .query_tasks(project_ids, &dep_config.target.task_id)?;
+                .query_tasks(project_ids, dep_config.target.get_task_id()?)?;
 
             if results.is_empty() && !skip_if_missing {
                 return Err(match &dep_config.target.project {
@@ -131,7 +131,7 @@ impl TaskDepsBuilder<'_> {
                 if dep_task_target
                     .get_project_id()
                     .is_ok_and(|id| id == &project.id)
-                    && dep_task_target.task_id == self.task.target.task_id
+                    && dep_task_target.get_task_id()? == self.task.target.get_task_id()?
                 {
                     continue;
                 }

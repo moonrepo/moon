@@ -55,7 +55,7 @@ impl StateEngine {
             _ => self.get_project_dir("_"),
         };
 
-        dir.join(encode_component(target.task_id.as_str()))
+        dir.join(encode_component(target.task.as_str()))
     }
 
     pub fn load_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>

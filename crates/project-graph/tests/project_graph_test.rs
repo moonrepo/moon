@@ -33,7 +33,7 @@ fn map_ids(ids: Vec<Id>) -> Vec<String> {
 fn map_ids_from_target(targets: Vec<Target>) -> Vec<String> {
     targets
         .into_iter()
-        .map(|target| target.task_id.to_string())
+        .map(|target| target.get_task_id().unwrap().to_string())
         .collect()
 }
 

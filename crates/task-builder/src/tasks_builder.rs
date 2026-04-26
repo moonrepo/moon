@@ -1229,14 +1229,18 @@ impl<'proj> TasksBuilder<'proj> {
                     .get_project_id()
                     .is_ok_and(|id| id == self.project_id)
             {
+                let Ok(task_id) = dep.target.get_task_id() else {
+                    continue;
+                };
+
                 // Deps targeting upstream (^:task) or other scopes should
                 // be preserved, as excluding a task locally shouldn't
                 // prevent it from running on dependencies
-                if filters.exclude.contains(&dep.target.task_id) {
+                if filters.exclude.contains(task_id) {
                     continue;
                 }
 
-                if let Some(new_task_id) = filters.rename.get(&dep.target.task_id) {
+                if let Some(new_task_id) = filters.rename.get(task_id) {
                     dep.target = Target::new_self(new_task_id).unwrap();
                 }
             }

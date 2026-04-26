@@ -723,7 +723,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     // Don't error if the task does not exist
                     if let Ok(task) = self
                         .workspace_graph
-                        .get_task_from_project(&project.id, &target.task_id)
+                        .get_task_from_project(&project.id, target.get_task_id()?)
                     {
                         if !allow_internal && task.is_internal() {
                             continue;
@@ -741,7 +741,7 @@ impl<'query> ActionGraphBuilder<'query> {
             TargetProjectScope::Id(project_id) => {
                 let task = self
                     .workspace_graph
-                    .get_task_from_project(project_id, &target.task_id)?;
+                    .get_task_from_project(project_id, target.get_task_id()?)?;
 
                 // Don't allow internal tasks to be ran
                 if !allow_internal && task.is_internal() {
@@ -764,7 +764,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     // Don't error if the task does not exist
                     if let Ok(task) = self
                         .workspace_graph
-                        .get_task_from_project(&project.id, &target.task_id)
+                        .get_task_from_project(&project.id, target.get_task_id()?)
                     {
                         if !allow_internal && task.is_internal() {
                             continue;
@@ -854,7 +854,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 let target = if target.project == TargetProjectScope::OwnSelf {
                     Target::new_project(
                         &self.workspace_graph.get_project_from_path(None)?.id,
-                        &target.task_id,
+                        target.get_task_id()?,
                     )?
                 } else {
                     target.to_owned()

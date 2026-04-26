@@ -66,7 +66,7 @@ pub fn extend_task_command(
 ) -> FnResult<Json<ExtendTaskCommandOutput>> {
     let mut output = ExtendTaskCommandOutput::default();
 
-    match input.task.target.task_id.as_str() {
+    match input.task.target.get_task_id().unwrap().as_str() {
         "command" => {
             output.command = Some("new-command".into());
         }
@@ -109,7 +109,7 @@ pub fn extend_task_script(
 ) -> FnResult<Json<ExtendTaskScriptOutput>> {
     let mut output = ExtendTaskScriptOutput::default();
 
-    match input.task.target.task_id.as_str() {
+    match input.task.target.get_task_id().unwrap().as_str() {
         "env" => {
             output
                 .env

@@ -310,3 +310,225 @@ fn matches_all() {
     assert!(!full.is_all_task(":build"));
     assert!(!full.is_all_task("foo:lint"));
 }
+
+// Tag-based task identifiers (e.g. `project:#tag`)
+
+#[test]
+fn format_task_tag() {
+    assert_eq!(
+        Target::format(TargetProjectScope::Id(Id::raw("foo")), "#lint"),
+        "foo:#lint"
+    );
+}
+
+#[test]
+fn format_task_tag_with_all_scope() {
+    assert_eq!(Target::format(TargetProjectScope::All, "#lint"), ":#lint");
+}
+
+#[test]
+fn format_task_tag_with_self_scope() {
+    assert_eq!(
+        Target::format(TargetProjectScope::OwnSelf, "#lint"),
+        "~:#lint"
+    );
+}
+
+#[test]
+fn format_task_tag_with_deps_scope() {
+    assert_eq!(Target::format(TargetProjectScope::Deps, "#lint"), "^:#lint");
+}
+
+#[test]
+fn format_task_tag_with_deps_of_scope() {
+    assert_eq!(
+        Target::format(TargetProjectScope::DepsOf(DependencyScope::Build), "#lint"),
+        "^build:#lint"
+    );
+}
+
+#[test]
+fn format_task_tag_with_project_tag_scope() {
+    assert_eq!(
+        Target::format(TargetProjectScope::Tag(Id::raw("ui")), "#lint"),
+        "#ui:#lint"
+    );
+}
+
+#[test]
+fn parse_task_tag() {
+    assert_eq!(
+        Target::parse("foo:#lint").unwrap(),
+        Target {
+            id: CompactString::from("foo:#lint"),
+            project: TargetProjectScope::Id(Id::raw("foo")),
+            task: TargetTaskScope::Tag(Id::raw("lint")),
+        }
+    );
+}
+
+#[test]
+fn parse_task_tag_with_all_scope() {
+    assert_eq!(
+        Target::parse(":#lint").unwrap(),
+        Target {
+            id: CompactString::from(":#lint"),
+            project: TargetProjectScope::All,
+            task: TargetTaskScope::Tag(Id::raw("lint")),
+        }
+    );
+}
+
+#[test]
+fn parse_task_tag_with_self_scope() {
+    assert_eq!(
+        Target::parse("~:#lint").unwrap(),
+        Target {
+            id: CompactString::from("~:#lint"),
+            project: TargetProjectScope::OwnSelf,
+            task: TargetTaskScope::Tag(Id::raw("lint")),
+        }
+    );
+}
+
+#[test]
+fn parse_task_tag_with_deps_scope() {
+    assert_eq!(
+        Target::parse("^:#lint").unwrap(),
+        Target {
+            id: CompactString::from("^:#lint"),
+            project: TargetProjectScope::Deps,
+            task: TargetTaskScope::Tag(Id::raw("lint")),
+        }
+    );
+}
+
+#[test]
+fn parse_task_tag_with_deps_of_scope() {
+    assert_eq!(
+        Target::parse("^build:#lint").unwrap(),
+        Target {
+            id: CompactString::from("^build:#lint"),
+            project: TargetProjectScope::DepsOf(DependencyScope::Build),
+            task: TargetTaskScope::Tag(Id::raw("lint")),
+        }
+    );
+}
+
+#[test]
+fn parse_task_tag_with_project_tag_scope() {
+    assert_eq!(
+        Target::parse("#ui:#lint").unwrap(),
+        Target {
+            id: CompactString::from("#ui:#lint"),
+            project: TargetProjectScope::Tag(Id::raw("ui")),
+            task: TargetTaskScope::Tag(Id::raw("lint")),
+        }
+    );
+}
+
+#[test]
+fn parse_task_tag_with_node_package() {
+    assert_eq!(
+        Target::parse("@scope/foo:#lint").unwrap(),
+        Target {
+            id: CompactString::from("@scope/foo:#lint"),
+            project: TargetProjectScope::Id(Id::raw("@scope/foo")),
+            task: TargetTaskScope::Tag(Id::raw("lint")),
+        }
+    );
+}
+
+#[test]
+fn parse_task_tag_with_slashes() {
+    assert_eq!(
+        Target::parse("foo/sub:#lint/all").unwrap(),
+        Target {
+            id: CompactString::from("foo/sub:#lint/all"),
+            project: TargetProjectScope::Id(Id::raw("foo/sub")),
+            task: TargetTaskScope::Tag(Id::raw("lint/all")),
+        }
+    );
+}
+
+#[test]
+fn parse_task_tag_when_no_colon() {
+    assert_eq!(
+        Target::parse("#lint").unwrap(),
+        Target {
+            id: CompactString::from("~:#lint"),
+            project: TargetProjectScope::OwnSelf,
+            task: TargetTaskScope::Tag(Id::raw("lint")),
+        }
+    );
+}
+
+#[test]
+#[should_panic(expected = "Invalid target foo:#bad$tag")]
+fn errors_on_invalid_task_tag_chars() {
+    Target::parse("foo:#bad$tag").unwrap();
+}
+
+#[test]
+#[should_panic(expected = "Invalid target foo:#")]
+fn errors_on_empty_task_tag() {
+    Target::parse("foo:#").unwrap();
+}
+
+#[test]
+fn new_project_infers_task_tag() {
+    let target = Target::new_project("foo", "#lint").unwrap();
+
+    assert_eq!(target.id, "foo:#lint");
+    assert_eq!(target.project, TargetProjectScope::Id(Id::raw("foo")));
+    assert_eq!(target.task, TargetTaskScope::Tag(Id::raw("lint")));
+}
+
+#[test]
+fn new_self_infers_task_tag() {
+    let target = Target::new_self("#lint").unwrap();
+
+    assert_eq!(target.id, "~:#lint");
+    assert_eq!(target.project, TargetProjectScope::OwnSelf);
+    assert_eq!(target.task, TargetTaskScope::Tag(Id::raw("lint")));
+}
+
+#[test]
+fn new_project_tag_infers_task_tag() {
+    let target = Target::new_project_tag("ui", "#lint").unwrap();
+
+    assert_eq!(target.id, "#ui:#lint");
+    assert_eq!(target.project, TargetProjectScope::Tag(Id::raw("ui")));
+    assert_eq!(target.task, TargetTaskScope::Tag(Id::raw("lint")));
+}
+
+#[test]
+fn get_task_tag_id_returns_tag() {
+    let target = Target::parse("foo:#lint").unwrap();
+
+    assert_eq!(target.get_task_tag_id(), Some(&Id::raw("lint")));
+}
+
+#[test]
+fn get_task_tag_id_returns_none_for_id_task() {
+    let target = Target::parse("foo:lint").unwrap();
+
+    assert_eq!(target.get_task_tag_id(), None);
+}
+
+#[test]
+fn get_task_id_errors_when_task_is_tag() {
+    let target = Target::parse("foo:#lint").unwrap();
+
+    assert!(target.get_task_id().is_err());
+}
+
+#[test]
+fn is_all_task_false_when_task_is_tag() {
+    let target = Target::parse(":#lint").unwrap();
+
+    assert!(!target.is_all_task("lint"));
+    assert!(!target.is_all_task(":lint"));
+    assert!(!target.is_all_task("#lint"));
+    assert!(!target.is_all_task(":#lint"));
+}

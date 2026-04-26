@@ -13,7 +13,7 @@ mod target_locator {
                 TargetLocator::parse(":build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from(":build-*"),
-                    scope: Some(TargetScope::All),
+                    scope: Some(TargetProjectScope::All),
                     scope_glob: None,
                     task_glob: String::from("build-*"),
                 }
@@ -23,7 +23,7 @@ mod target_locator {
                 TargetLocator::parse("*:build").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("*:build"),
-                    scope: Some(TargetScope::All),
+                    scope: Some(TargetProjectScope::All),
                     scope_glob: None,
                     task_glob: String::from("build"),
                 }
@@ -36,7 +36,7 @@ mod target_locator {
                 TargetLocator::parse("^:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("^:build-*"),
-                    scope: Some(TargetScope::Deps),
+                    scope: Some(TargetProjectScope::Deps),
                     scope_glob: None,
                     task_glob: String::from("build-*"),
                 }
@@ -49,7 +49,7 @@ mod target_locator {
                 TargetLocator::parse("^build:lint-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("^build:lint-*"),
-                    scope: Some(TargetScope::DepsOf(DependencyScope::Build)),
+                    scope: Some(TargetProjectScope::DepsOf(DependencyScope::Build)),
                     scope_glob: None,
                     task_glob: String::from("lint-*"),
                 }
@@ -62,7 +62,7 @@ mod target_locator {
                 TargetLocator::parse("~:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("~:build-*"),
-                    scope: Some(TargetScope::OwnSelf),
+                    scope: Some(TargetProjectScope::OwnSelf),
                     scope_glob: None,
                     task_glob: String::from("build-*"),
                 }

@@ -4,16 +4,16 @@ use std::fmt::{self, Display};
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
-pub enum TargetScope {
+pub enum TargetProjectScope {
     All,                     // :task
     Deps,                    // ^:task
     DepsOf(DependencyScope), // ^build:task, ^development:task, etc.
+    Id(Id),                  // project:task
     OwnSelf,                 // ~:task
-    Project(Id),             // project:task
     Tag(Id),                 // #tag:task
 }
 
-impl TargetScope {
+impl TargetProjectScope {
     pub fn parse<T: AsRef<str>>(value: T) -> miette::Result<Self> {
         let scope = match value.as_ref() {
             "" => Self::All,
@@ -27,7 +27,7 @@ impl TargetScope {
                 if let Some(tag) = id.strip_prefix('#') {
                     Self::Tag(Id::new(tag)?)
                 } else {
-                    Self::Project(Id::new(id)?)
+                    Self::Id(Id::new(id)?)
                 }
             }
         };
@@ -36,26 +36,26 @@ impl TargetScope {
     }
 }
 
-impl Display for TargetScope {
+impl Display for TargetProjectScope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TargetScope::All => write!(f, ""),
-            TargetScope::Deps => write!(f, "^"),
-            TargetScope::DepsOf(scope) => write!(f, "^{scope}"),
-            TargetScope::OwnSelf => write!(f, "~"),
-            TargetScope::Project(id) => write!(f, "{id}"),
-            TargetScope::Tag(id) => write!(f, "#{id}"),
+            TargetProjectScope::All => write!(f, ""),
+            TargetProjectScope::Deps => write!(f, "^"),
+            TargetProjectScope::DepsOf(scope) => write!(f, "^{scope}"),
+            TargetProjectScope::Id(id) => write!(f, "{id}"),
+            TargetProjectScope::OwnSelf => write!(f, "~"),
+            TargetProjectScope::Tag(id) => write!(f, "#{id}"),
         }
     }
 }
 
-impl AsRef<TargetScope> for TargetScope {
-    fn as_ref(&self) -> &TargetScope {
+impl AsRef<TargetProjectScope> for TargetProjectScope {
+    fn as_ref(&self) -> &TargetProjectScope {
         self
     }
 }
 
-impl FromStr for TargetScope {
+impl FromStr for TargetProjectScope {
     type Err = miette::Report;
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {

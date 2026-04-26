@@ -16,7 +16,7 @@ use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
-use moon_task::{Target, TargetError, TargetLocator, TargetScope, Task};
+use moon_task::{Target, TargetError, TargetLocator, TargetProjectScope, Task};
 use moon_toolchain::ToolchainSpec;
 use moon_workspace_graph::projects::ProjectGraphError;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
@@ -708,9 +708,9 @@ impl<'query> ActionGraphBuilder<'query> {
     ) -> miette::Result<Vec<Arc<Task>>> {
         let mut tasks = vec![];
 
-        match &target.scope {
+        match &target.project {
             // :task
-            TargetScope::All => {
+            TargetProjectScope::All => {
                 let mut projects = vec![];
 
                 if let Some(all_query) = &self.all_query {
@@ -734,11 +734,11 @@ impl<'query> ActionGraphBuilder<'query> {
                 }
             }
             // ^:task, ^build:task, etc.
-            TargetScope::Deps | TargetScope::DepsOf(_) => {
+            TargetProjectScope::Deps | TargetProjectScope::DepsOf(_) => {
                 return Err(TargetError::NoDepsInRunContext.into());
             }
             // project:task
-            TargetScope::Project(project_id) => {
+            TargetProjectScope::Id(project_id) => {
                 let task = self
                     .workspace_graph
                     .get_task_from_project(project_id, &target.task_id)?;
@@ -755,7 +755,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 tasks.push(task);
             }
             // #tag:task
-            TargetScope::Tag(tag) => {
+            TargetProjectScope::Tag(tag) => {
                 let projects = self
                     .workspace_graph
                     .query_projects(build_query(format!("tag={tag}").as_str())?)?;
@@ -775,7 +775,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 }
             }
             // ~:task
-            TargetScope::OwnSelf => {
+            TargetProjectScope::OwnSelf => {
                 return Err(TargetError::NoSelfInRunContext.into());
             }
         };
@@ -815,7 +815,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     do_query = !projects.is_empty();
                 } else {
                     match scope {
-                        Some(TargetScope::All) => {
+                        Some(TargetProjectScope::All) => {
                             is_all = true;
                             do_query = true;
                         }
@@ -851,7 +851,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 }
             }
             TargetLocator::Qualified(target) => {
-                let target = if target.scope == TargetScope::OwnSelf {
+                let target = if target.project == TargetProjectScope::OwnSelf {
                     Target::new_project(
                         &self.workspace_graph.get_project_from_path(None)?.id,
                         &target.task_id,

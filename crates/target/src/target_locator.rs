@@ -1,5 +1,5 @@
 use crate::target::Target;
-use crate::target_scope::TargetScope;
+use crate::target_scope::TargetProjectScope;
 use moon_common::Id;
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::str::FromStr;
@@ -12,7 +12,7 @@ pub enum TargetLocator {
     // scope-*:task_id, scope:task-*
     GlobMatch {
         original: String,
-        scope: Option<TargetScope>,
+        scope: Option<TargetProjectScope>,
         scope_glob: Option<String>,
         task_glob: String,
     },
@@ -47,10 +47,10 @@ impl TargetLocator {
 
         match base_scope {
             "" | "*" | "**" | "**/*" | "..." => {
-                scope = Some(TargetScope::All);
+                scope = Some(TargetProjectScope::All);
             }
             "~" | "^" | "^build" | "^dev" | "^development" | "^peer" | "^prod" | "^production" => {
-                scope = Some(TargetScope::parse(base_scope)?);
+                scope = Some(TargetProjectScope::parse(base_scope)?);
             }
             inner => {
                 scope_glob = Some(inner.replace("...", "**/*"));

@@ -15,7 +15,7 @@ use moon_config::{
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
-use moon_target::{Target, TargetScope};
+use moon_target::{Target, TargetProjectScope};
 use moon_task::{
     Task, TaskArg, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptions, TaskState,
     TaskUnixShell, TaskWindowsShell,
@@ -1223,7 +1223,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         for mut dep in deps {
             // Only exclude/rename deps targeting the current project
-            if matches!(dep.target.scope, TargetScope::OwnSelf)
+            if matches!(dep.target.project, TargetProjectScope::OwnSelf)
                 || dep
                     .target
                     .get_project_id()

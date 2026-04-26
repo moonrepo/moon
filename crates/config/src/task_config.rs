@@ -3,7 +3,7 @@ use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::{config_enum, config_struct, config_unit_enum};
 use indexmap::IndexMap;
 use moon_common::Id;
-use moon_target::{Target, TargetScope};
+use moon_target::{Target, TargetProjectScope};
 use schematic::{Config, ConfigEnum, ValidateError, merge};
 
 pub type EnvMap = IndexMap<String, Option<String>>;
@@ -45,7 +45,7 @@ pub(crate) fn validate_deps<D, C>(
         match dep {
             PartialTaskDependency::Object(cfg) => {
                 if let Some(target) = &cfg.target {
-                    scope = &target.scope;
+                    scope = &target.project;
                 } else {
                     return Err(ValidateError::with_segment(
                         "a target field is required",
@@ -54,11 +54,11 @@ pub(crate) fn validate_deps<D, C>(
                 }
             }
             PartialTaskDependency::Target(target) => {
-                scope = &target.scope;
+                scope = &target.project;
             }
         };
 
-        if matches!(scope, TargetScope::All) {
+        if matches!(scope, TargetProjectScope::All) {
             return Err(ValidateError::with_segment(
                 "target scope not supported as a task dependency",
                 schematic::PathSegment::Index(i),

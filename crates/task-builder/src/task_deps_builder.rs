@@ -5,7 +5,8 @@ use moon_config::{
 };
 use moon_project::Project;
 use moon_task::{
-    DependencyScope as TargetDepScope, Target, TargetScope, Task, TaskOptionRunInCI, TaskOptions,
+    DependencyScope as TargetDepScope, Target, TargetProjectScope, Task, TaskOptionRunInCI,
+    TaskOptions,
 };
 use std::mem;
 use tracing::trace;
@@ -33,9 +34,9 @@ impl TaskDepsBuilder<'_> {
 
         for dep_config in mem::take(&mut self.task.deps) {
             let (project_ids, skip_if_missing, link_implicit_project_deps) =
-                match &dep_config.target.scope {
+                match &dep_config.target.project {
                     // :task
-                    TargetScope::All => {
+                    TargetProjectScope::All => {
                         return Err(TasksBuilderError::UnsupportedTargetScopeInDeps {
                             dep: dep_config.target.to_owned(),
                             task: self.task.target.to_owned(),
@@ -43,7 +44,7 @@ impl TaskDepsBuilder<'_> {
                         .into());
                     }
                     // ^:task
-                    TargetScope::Deps => (
+                    TargetProjectScope::Deps => (
                         project
                             .dependencies
                             .iter()
@@ -53,7 +54,7 @@ impl TaskDepsBuilder<'_> {
                         false,
                     ),
                     // ^build:task, ^development:task, etc
-                    TargetScope::DepsOf(scope) => {
+                    TargetProjectScope::DepsOf(scope) => {
                         let config_scope = match scope {
                             TargetDepScope::Build => DependencyScope::Build,
                             TargetDepScope::Development => DependencyScope::Development,
@@ -78,17 +79,17 @@ impl TaskDepsBuilder<'_> {
                         )
                     }
                     // ~:task
-                    TargetScope::OwnSelf => (
+                    TargetProjectScope::OwnSelf => (
                         vec![&project.id],
                         dep_config.optional.unwrap_or(false),
                         false,
                     ),
                     // id:task
-                    TargetScope::Project(project_id) => {
+                    TargetProjectScope::Id(project_id) => {
                         (vec![project_id], dep_config.optional.unwrap_or(false), true)
                     }
                     // #tag:task
-                    TargetScope::Tag(tag) => (
+                    TargetProjectScope::Tag(tag) => (
                         self.querent
                             .query_projects_by_tag(tag)?
                             .into_iter()
@@ -104,15 +105,15 @@ impl TaskDepsBuilder<'_> {
                 .query_tasks(project_ids, &dep_config.target.task_id)?;
 
             if results.is_empty() && !skip_if_missing {
-                return Err(match &dep_config.target.scope {
-                    TargetScope::Deps | TargetScope::DepsOf(_) => {
+                return Err(match &dep_config.target.project {
+                    TargetProjectScope::Deps | TargetProjectScope::DepsOf(_) => {
                         TasksBuilderError::UnknownDepTargetParentScope {
                             dep: dep_config.target.to_owned(),
                             task: self.task.target.to_owned(),
                         }
                         .into()
                     }
-                    TargetScope::Tag(_) => TasksBuilderError::UnknownDepTargetTagScope {
+                    TargetProjectScope::Tag(_) => TasksBuilderError::UnknownDepTargetTagScope {
                         dep: dep_config.target.to_owned(),
                         task: self.task.target.to_owned(),
                     }
@@ -223,7 +224,7 @@ pub fn create_project_dep_from_task_dep(
     root_project_id: Option<&Id>,
     already_exists: impl FnOnce(&Id) -> bool,
 ) -> Option<ProjectDependencyConfig> {
-    let TargetScope::Project(dep_project_id) = &task_dep.target.scope else {
+    let TargetProjectScope::Id(dep_project_id) = &task_dep.target.project else {
         return None;
     };
 

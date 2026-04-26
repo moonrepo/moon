@@ -25,6 +25,6 @@ pub enum TargetError {
     ProjectScopeRequired(String),
 
     #[diagnostic(code(target::missing_segments))]
-    #[error("Target \":\" encountered. Wildcard scope and task not supported.")]
+    #[error("Target \":\" encountered. Wildcard project and task scopes are not supported.")]
     TooWild,
 }

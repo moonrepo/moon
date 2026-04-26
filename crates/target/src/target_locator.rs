@@ -1,4 +1,5 @@
 use crate::target::Target;
+use crate::target_error::TargetError;
 use crate::target_scope::TargetProjectScope;
 use moon_common::Id;
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
@@ -36,6 +37,8 @@ impl TargetLocator {
             } else {
                 Ok(TargetLocator::Qualified(Target::parse(value)?))
             }
+        } else if value.starts_with('#') {
+            Err(TargetError::TagNotValidForDefaultProject(value.to_owned()).into())
         } else {
             Ok(TargetLocator::DefaultProject(Id::new(value)?))
         }

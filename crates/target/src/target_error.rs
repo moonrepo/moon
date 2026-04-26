@@ -30,6 +30,12 @@ pub enum TargetError {
     )]
     TaskScopeRequired(String),
 
+    #[diagnostic(code(target::tag_not_valid_for_default_project))]
+    #[error(
+        "Invalid target {}, tags are not supported for default project targets.", .0.style(Style::Label)
+    )]
+    TagNotValidForDefaultProject(String),
+
     #[diagnostic(code(target::missing_segments))]
     #[error("Target \":\" encountered. Wildcard project and task scopes are not supported.")]
     TooWild,

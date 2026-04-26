@@ -4,7 +4,7 @@ use moon_target::*;
 mod target_locator {
     use super::*;
 
-    mod glob {
+    mod project_glob {
         use super::*;
 
         #[test]
@@ -13,8 +13,8 @@ mod target_locator {
                 TargetLocator::parse(":build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from(":build-*"),
-                    scope: Some(TargetProjectScope::All),
-                    scope_glob: None,
+                    project: Some(TargetProjectScope::All),
+                    project_glob: None,
                     task_glob: String::from("build-*"),
                 }
             );
@@ -23,8 +23,8 @@ mod target_locator {
                 TargetLocator::parse("*:build").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("*:build"),
-                    scope: Some(TargetProjectScope::All),
-                    scope_glob: None,
+                    project: Some(TargetProjectScope::All),
+                    project_glob: None,
                     task_glob: String::from("build"),
                 }
             );
@@ -36,8 +36,8 @@ mod target_locator {
                 TargetLocator::parse("^:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("^:build-*"),
-                    scope: Some(TargetProjectScope::Deps),
-                    scope_glob: None,
+                    project: Some(TargetProjectScope::Deps),
+                    project_glob: None,
                     task_glob: String::from("build-*"),
                 }
             );
@@ -49,8 +49,8 @@ mod target_locator {
                 TargetLocator::parse("^build:lint-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("^build:lint-*"),
-                    scope: Some(TargetProjectScope::DepsOf(DependencyScope::Build)),
-                    scope_glob: None,
+                    project: Some(TargetProjectScope::DepsOf(DependencyScope::Build)),
+                    project_glob: None,
                     task_glob: String::from("lint-*"),
                 }
             );
@@ -62,8 +62,8 @@ mod target_locator {
                 TargetLocator::parse("~:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("~:build-*"),
-                    scope: Some(TargetProjectScope::OwnSelf),
-                    scope_glob: None,
+                    project: Some(TargetProjectScope::OwnSelf),
+                    project_glob: None,
                     task_glob: String::from("build-*"),
                 }
             );
@@ -75,8 +75,8 @@ mod target_locator {
                 TargetLocator::parse("#tag:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("#tag:build-*"),
-                    scope: None,
-                    scope_glob: Some(String::from("#tag")),
+                    project: None,
+                    project_glob: Some(String::from("#tag")),
                     task_glob: String::from("build-*"),
                 }
             );
@@ -85,8 +85,8 @@ mod target_locator {
                 TargetLocator::parse("#tag-*:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("#tag-*:build-*"),
-                    scope: None,
-                    scope_glob: Some(String::from("#tag-*")),
+                    project: None,
+                    project_glob: Some(String::from("#tag-*")),
                     task_glob: String::from("build-*"),
                 }
             );
@@ -98,8 +98,8 @@ mod target_locator {
                 TargetLocator::parse("project:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("project:build-*"),
-                    scope: None,
-                    scope_glob: Some(String::from("project")),
+                    project: None,
+                    project_glob: Some(String::from("project")),
                     task_glob: String::from("build-*"),
                 }
             );
@@ -108,8 +108,8 @@ mod target_locator {
                 TargetLocator::parse("proj-*:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("proj-*:build-*"),
-                    scope: None,
-                    scope_glob: Some(String::from("proj-*")),
+                    project: None,
+                    project_glob: Some(String::from("proj-*")),
                     task_glob: String::from("build-*"),
                 }
             );
@@ -121,8 +121,8 @@ mod target_locator {
                 TargetLocator::parse("a/b/...:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("a/b/...:build-*"),
-                    scope: None,
-                    scope_glob: Some(String::from("a/b/**/*")),
+                    project: None,
+                    project_glob: Some(String::from("a/b/**/*")),
                     task_glob: String::from("build-*"),
                 }
             );
@@ -131,8 +131,8 @@ mod target_locator {
                 TargetLocator::parse("a/.../b:build-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("a/.../b:build-*"),
-                    scope: None,
-                    scope_glob: Some(String::from("a/**/*/b")),
+                    project: None,
+                    project_glob: Some(String::from("a/**/*/b")),
                     task_glob: String::from("build-*"),
                 }
             );

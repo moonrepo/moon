@@ -1621,7 +1621,7 @@ mod project_graph {
             let (_sandbox, graph) = build_graph_from_fixture("query").await;
 
             let projects = graph
-                .query_projects(build_query("tag=[three,five]").unwrap())
+                .query_projects(build_query("projectTag=[three,five]").unwrap())
                 .unwrap();
 
             assert_eq!(get_ids_from_projects(projects), vec!["b", "c"]);
@@ -1694,7 +1694,8 @@ mod project_graph {
 
             let projects = graph
                 .query_projects(
-                    build_query("projectLayer=library && (taskType=build || tag=three)").unwrap(),
+                    build_query("projectLayer=library && (taskType=build || projectTag=three)")
+                        .unwrap(),
                 )
                 .unwrap();
 

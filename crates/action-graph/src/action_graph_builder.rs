@@ -758,7 +758,7 @@ impl<'query> ActionGraphBuilder<'query> {
             TargetProjectScope::Tag(tag) => {
                 let projects = self
                     .workspace_graph
-                    .query_projects(build_query(format!("tag={tag}").as_str())?)?;
+                    .query_projects(build_query(format!("projectTag={tag}").as_str())?)?;
 
                 for project in projects {
                     // Don't error if the task does not exist
@@ -793,8 +793,8 @@ impl<'query> ActionGraphBuilder<'query> {
 
         match locator {
             TargetLocator::GlobMatch {
-                scope,
-                scope_glob,
+                project,
+                project_glob,
                 task_glob,
                 ..
             } => {
@@ -804,9 +804,9 @@ impl<'query> ActionGraphBuilder<'query> {
 
                 // Query for all applicable projects first since we can't
                 // query projects + tasks at the same time
-                if let Some(glob) = scope_glob {
+                if let Some(glob) = project_glob {
                     let query = if let Some(tag_glob) = glob.strip_prefix('#') {
-                        format!("tag~{tag_glob}")
+                        format!("projectTag~{tag_glob}")
                     } else {
                         format!("project~{glob}")
                     };
@@ -814,7 +814,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     projects = self.workspace_graph.query_projects(build_query(&query)?)?;
                     do_query = !projects.is_empty();
                 } else {
-                    match scope {
+                    match project {
                         Some(TargetProjectScope::All) => {
                             is_all = true;
                             do_query = true;
@@ -828,7 +828,11 @@ impl<'query> ActionGraphBuilder<'query> {
 
                 // Then query for all tasks within the queried projects
                 if do_query {
-                    let mut query = format!("task~{task_glob}");
+                    let mut query = if let Some(tag_glob) = task_glob.strip_prefix('#') {
+                        format!("taskTag~{tag_glob}")
+                    } else {
+                        format!("task~{task_glob}")
+                    };
 
                     if !is_all {
                         query = format!(

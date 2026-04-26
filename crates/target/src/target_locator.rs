@@ -12,8 +12,8 @@ pub enum TargetLocator {
     // scope-*:task_id, scope:task-*
     GlobMatch {
         original: String,
-        scope: Option<TargetProjectScope>,
-        scope_glob: Option<String>,
+        project: Option<TargetProjectScope>,
+        project_glob: Option<String>,
         task_glob: String,
     },
 
@@ -30,9 +30,9 @@ impl TargetLocator {
     pub fn parse(value: &str) -> miette::Result<TargetLocator> {
         if value.contains(':') {
             if value.contains(['*', '?', '[', ']', '{', '}', '!']) || value.contains("...") {
-                let (base_scope, base_task) = value.split_once(':').unwrap();
+                let (base_project, base_task) = value.split_once(':').unwrap();
 
-                Ok(Self::parse_glob(value, base_scope, base_task)?)
+                Ok(Self::parse_glob(value, base_project, base_task)?)
             } else {
                 Ok(TargetLocator::Qualified(Target::parse(value)?))
             }
@@ -41,26 +41,30 @@ impl TargetLocator {
         }
     }
 
-    fn parse_glob(value: &str, base_scope: &str, base_task: &str) -> miette::Result<TargetLocator> {
-        let mut scope = None;
-        let mut scope_glob = None;
+    fn parse_glob(
+        value: &str,
+        base_project: &str,
+        base_task: &str,
+    ) -> miette::Result<TargetLocator> {
+        let mut project = None;
+        let mut project_glob = None;
 
-        match base_scope {
+        match base_project {
             "" | "*" | "**" | "**/*" | "..." => {
-                scope = Some(TargetProjectScope::All);
+                project = Some(TargetProjectScope::All);
             }
             "~" | "^" | "^build" | "^dev" | "^development" | "^peer" | "^prod" | "^production" => {
-                scope = Some(TargetProjectScope::parse(base_scope)?);
+                project = Some(TargetProjectScope::parse(base_project)?);
             }
             inner => {
-                scope_glob = Some(inner.replace("...", "**/*"));
+                project_glob = Some(inner.replace("...", "**/*"));
             }
         };
 
         Ok(TargetLocator::GlobMatch {
             original: value.to_owned(),
-            scope,
-            scope_glob,
+            project,
+            project_glob,
             task_glob: base_task.to_owned(),
         })
     }

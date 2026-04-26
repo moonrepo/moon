@@ -106,7 +106,9 @@ impl WorkspaceGraph {
                             condition.matches(sources, &project.source)
                         }
                         Field::ProjectStack(types) => condition.matches_enum(types, &project.stack),
-                        Field::Tag(tags) => condition.matches_list(tags, &project.config.tags),
+                        Field::ProjectTag(tags) => {
+                            condition.matches_list(tags, &project.config.tags)
+                        }
                         Field::Task(ids) => Ok(project.task_targets.iter().any(|target| {
                             target
                                 .get_task_id()

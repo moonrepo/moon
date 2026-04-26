@@ -19,8 +19,9 @@ pub enum Field<'l> {
     ProjectLayer(Vec<LayerType>),
     ProjectSource(FieldValues<'l>),
     ProjectStack(Vec<StackType>),
-    Tag(FieldValues<'l>),
+    ProjectTag(FieldValues<'l>),
     Task(FieldValues<'l>),
+    TaskTag(FieldValues<'l>),
     TaskToolchain(FieldValues<'l>),
     TaskType(Vec<TaskType>),
 }
@@ -138,8 +139,9 @@ fn build_criteria(ast: Vec<AstNode<'_>>) -> miette::Result<Criteria<'_>> {
                     "projectStack" => {
                         Field::ProjectStack(build_criteria_enum::<StackType>(&field, &op, value)?)
                     }
-                    "tag" => Field::Tag(value),
+                    "projectTag" | "projectTags" | "tag" => Field::ProjectTag(value),
                     "task" => Field::Task(value),
+                    "taskTag" | "taskTags" => Field::TaskTag(value),
                     "taskToolchain" | "taskToolchains" => Field::TaskToolchain(value),
                     "taskType" => {
                         Field::TaskType(build_criteria_enum::<TaskType>(&field, &op, value)?)

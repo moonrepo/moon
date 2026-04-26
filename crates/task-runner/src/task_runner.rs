@@ -26,6 +26,12 @@ pub struct TaskRunResult {
     pub operations: OperationList,
 }
 
+#[derive(Debug)]
+pub struct TaskHashes {
+    pub content_hash: String,
+    pub hash: String,
+}
+
 pub struct TaskRunner<'task> {
     app_context: &'task Arc<AppContext>,
     project: &'task Arc<Project>,
@@ -39,6 +45,7 @@ pub struct TaskRunner<'task> {
     pub operations: OperationList,
     pub remote_state: Option<ActionState<'task>>,
     pub report_item: TaskReportItem,
+    pub task_content_hash: Option<String>,
     pub target_state: Option<TargetState>,
 }
 
@@ -72,6 +79,7 @@ impl<'task> TaskRunner<'task> {
                 output_style: task.options.output_style,
                 ..Default::default()
             },
+            task_content_hash: None,
             target_state: None,
             task,
             app_context,
@@ -92,7 +100,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Always generate a hash
-        let hash = self.generate_hash(context, node).await?;
+        let hashes = self.generate_hashes(context, node).await?;
 
         if self.is_cache_enabled() {
             debug!(
@@ -101,15 +109,15 @@ impl<'task> TaskRunner<'task> {
             );
 
             // Exit early if this build has already been cached/hashed
-            if self.hydrate(&hash).await? {
-                return Ok(Some(hash));
+            if self.hydrate(&hashes.hash).await? {
+                return Ok(Some(hashes.hash));
             }
 
             // Otherwise build and execute the command as a child process
             self.execute(context, node).await?;
 
             // If we created outputs, archive them into the cache
-            self.archive(&hash).await?;
+            self.archive(&hashes.hash).await?;
         } else {
             debug!(
                 task_target = self.task.target.as_str(),
@@ -120,7 +128,7 @@ impl<'task> TaskRunner<'task> {
             self.execute(context, node).await?;
         }
 
-        Ok(Some(hash))
+        Ok(Some(hashes.hash))
     }
 
     #[instrument(skip(self, context))]
@@ -371,6 +379,15 @@ impl<'task> TaskRunner<'task> {
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<String> {
+        Ok(self.generate_hashes(context, node).await?.hash)
+    }
+
+    #[instrument(skip_all)]
+    pub async fn generate_hashes(
+        &mut self,
+        context: &ActionContext,
+        node: &ActionNode,
+    ) -> miette::Result<TaskHashes> {
         debug!(
             task_target = self.task.target.as_str(),
             "Generating a unique hash for this task"
@@ -378,31 +395,42 @@ impl<'task> TaskRunner<'task> {
 
         let hash_engine = &self.app_context.cache_engine.hash;
         let mut hasher = hash_engine.create_hasher(node.label());
+        let mut content_hasher = hash_engine.create_hasher(format!("{}-content", node.label()));
         let mut operation = Operation::hash_generation();
 
         // Hash common fields
-        hash_common_task_contents(
+        let common_fingerprint = generate_common_task_fingerprint(
             self.app_context,
             context,
             self.project,
             self.task,
             node,
-            &mut hasher,
         )
         .await?;
 
+        hasher.hash_content(&common_fingerprint)?;
+        content_hasher.hash_content(generate_task_content_fingerprint(
+            &common_fingerprint,
+            self.task,
+        ))?;
+
         // Hash toolchain fields
-        hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
-            .await?;
+        let toolchain_fingerprints =
+            generate_toolchain_task_fingerprints(self.app_context, self.project, self.task).await?;
+
+        hash_toolchain_task_fingerprints(&toolchain_fingerprints, &mut hasher)?;
+        hash_toolchain_task_fingerprints(&toolchain_fingerprints, &mut content_hasher)?;
 
         // Generate the hash and persist values
         let hash = hash_engine.save_manifest(&mut hasher)?;
+        let content_hash = content_hasher.generate_hash()?;
 
         operation.meta.set_hash(&hash);
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
         self.report_item.hash = Some(hash.clone());
+        self.task_content_hash = Some(content_hash.clone());
 
         // Store the hash digest for remote caching
         if RemoteService::is_enabled() {
@@ -422,10 +450,11 @@ impl<'task> TaskRunner<'task> {
         debug!(
             task_target = self.task.target.as_str(),
             hash = &hash,
+            content_hash = &content_hash,
             "Generated a unique hash"
         );
 
-        Ok(hash)
+        Ok(TaskHashes { content_hash, hash })
     }
 
     #[instrument(skip(self, context, node))]
@@ -451,6 +480,7 @@ impl<'task> TaskRunner<'task> {
             .build(
                 context,
                 self.report_item.hash.as_deref().unwrap_or_default(),
+                self.task_content_hash.as_deref().unwrap_or_default(),
             )
             .await?;
 

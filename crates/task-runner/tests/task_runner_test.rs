@@ -655,6 +655,57 @@ mod task_runner {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn generates_a_content_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner();
+            let context = ActionContext::default();
+            let node = container.create_action_node();
+
+            let hashes = runner.generate_hashes(&context, &node).await.unwrap();
+
+            assert_eq!(hashes.hash.len(), 64);
+            assert_eq!(hashes.content_hash.len(), 64);
+            assert_eq!(
+                runner.task_content_hash.as_ref(),
+                Some(&hashes.content_hash)
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn excludes_dependency_hashes_from_content_hash() {
+            let container = TaskRunnerContainer::new("runner", "has-deps").await;
+            container.sandbox.enable_git();
+
+            let node = container.create_action_node();
+            let dep_target = container.task.deps[0].target.clone();
+            let before_context = ActionContext::default();
+            before_context
+                .target_states
+                .insert_sync(dep_target.clone(), TargetState::Passed("hash123".into()))
+                .unwrap();
+
+            let mut runner = container.create_runner();
+            let before_hashes = runner
+                .generate_hashes(&before_context, &node)
+                .await
+                .unwrap();
+
+            let after_context = ActionContext::default();
+            after_context
+                .target_states
+                .insert_sync(dep_target, TargetState::Passed("hash456".into()))
+                .unwrap();
+
+            let mut runner = container.create_runner();
+            let after_hashes = runner.generate_hashes(&after_context, &node).await.unwrap();
+
+            assert_ne!(before_hashes.hash, after_hashes.hash);
+            assert_eq!(before_hashes.content_hash, after_hashes.content_hash);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn generates_a_different_hash_via_passthrough_args() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             container.sandbox.enable_git();

@@ -5194,6 +5194,7 @@ dependencies = [
  "clap",
  "extism",
  "httpmock",
+ "libc",
  "liblzma",
  "mimalloc",
  "moon_affected",

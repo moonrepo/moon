@@ -1,5 +1,6 @@
 mod lookup;
 mod shared;
+mod stdio;
 
 use starbase::MainResult;
 use std::env;

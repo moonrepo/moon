@@ -19,11 +19,7 @@
 pub fn normalize_stdio_blocking() {
     use std::os::raw::c_int;
 
-    for fd in [
-        libc::STDIN_FILENO,
-        libc::STDOUT_FILENO,
-        libc::STDERR_FILENO,
-    ] {
+    for fd in [libc::STDIN_FILENO, libc::STDOUT_FILENO, libc::STDERR_FILENO] {
         clear_nonblock_on_fd(fd as c_int);
     }
 }
@@ -124,11 +120,7 @@ mod tests {
         // either blocking or were not modifiable (e.g. not yet open).
         normalize_stdio_blocking();
 
-        for fd in [
-            libc::STDIN_FILENO,
-            libc::STDOUT_FILENO,
-            libc::STDERR_FILENO,
-        ] {
+        for fd in [libc::STDIN_FILENO, libc::STDOUT_FILENO, libc::STDERR_FILENO] {
             let flags = get_flags(fd);
             if flags >= 0 {
                 assert_eq!(

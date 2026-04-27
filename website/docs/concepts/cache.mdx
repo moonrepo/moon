@@ -32,6 +32,12 @@ Our smart hashing currently takes the following sources into account:
   - `package.json` dependencies (including development and peer).
   - `tsconfig.json` compiler options (when applicable).
 
+When running a task, moon exposes the full hash as `MOON_TASK_HASH`. It also exposes
+`MOON_TASK_CONTENT_HASH`, which hashes the same task-local content and toolchain information but
+excludes upstream dependency task result hashes. This value is intended for external command wrappers
+that want to namespace their own runtime-observed cache experiments without changing moon's built-in
+cache behavior.
+
 :::caution
 
 Be aware that greedy inputs (`**/*`, the default) will include _everything_ in the target directory

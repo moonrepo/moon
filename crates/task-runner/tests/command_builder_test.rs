@@ -300,6 +300,18 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn sets_task_hashes() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            assert_eq!(get_env(&command, "MOON_TASK_HASH").unwrap(), "abc123");
+            assert_eq!(
+                get_env(&command, "MOON_TASK_CONTENT_HASH").unwrap(),
+                "content123"
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn inherits_when_a_task_dep() {
             let container = TaskRunnerContainer::new("builder", "base").await;
             let command = container

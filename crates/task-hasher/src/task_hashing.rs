@@ -1,3 +1,4 @@
+use crate::task_fingerprint::TaskFingerprint;
 use crate::task_hasher::TaskHasher;
 use miette::IntoDiagnostic;
 use moon_action::ActionNode;
@@ -18,14 +19,15 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 
-pub async fn hash_common_task_contents(
-    app_context: &AppContext,
-    action_context: &ActionContext,
-    project: &Project,
-    task: &Task,
-    node: &ActionNode,
-    hasher: &mut ContentHasher,
-) -> miette::Result<()> {
+const TASK_CONTENT_DEP_VALUE: &str = "dependency";
+
+pub async fn generate_common_task_fingerprint<'hash>(
+    app_context: &'hash AppContext,
+    action_context: &'hash ActionContext,
+    project: &'hash Project,
+    task: &'hash Task,
+    node: &'hash ActionNode,
+) -> miette::Result<TaskFingerprint<'hash>> {
     let mut task_hasher = TaskHasher::new(
         app_context,
         project,
@@ -64,13 +66,41 @@ pub async fn hash_common_task_contents(
         task_hasher.hash_env(&inner.env);
     }
 
-    hasher.hash_content(task_hasher.hash())?;
+    Ok(task_hasher.hash())
+}
+
+pub fn generate_task_content_fingerprint<'hash>(
+    common_fingerprint: &TaskFingerprint<'hash>,
+    task: &'hash Task,
+) -> TaskFingerprint<'hash> {
+    let mut fingerprint = common_fingerprint.clone();
+
+    fingerprint.deps = task
+        .deps
+        .iter()
+        .map(|dep| (&dep.target, TASK_CONTENT_DEP_VALUE.to_owned()))
+        .collect();
+
+    fingerprint
+}
+
+pub async fn hash_common_task_contents(
+    app_context: &AppContext,
+    action_context: &ActionContext,
+    project: &Project,
+    task: &Task,
+    node: &ActionNode,
+    hasher: &mut ContentHasher,
+) -> miette::Result<()> {
+    hasher.hash_content(
+        generate_common_task_fingerprint(app_context, action_context, project, task, node).await?,
+    )?;
 
     Ok(())
 }
 
 hash_fingerprint!(
-    struct TaskToolchainFingerprint {
+    pub struct TaskToolchainFingerprint {
         toolchain: String,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -84,12 +114,11 @@ hash_fingerprint!(
     }
 );
 
-pub async fn hash_toolchain_task_contents(
+pub async fn generate_toolchain_task_fingerprints(
     app_context: &Arc<AppContext>,
     project: &Project,
     task: &Task,
-    hasher: &mut ContentHasher,
-) -> miette::Result<()> {
+) -> miette::Result<Vec<TaskToolchainFingerprint>> {
     // Load all toolchains
     let toolchains = app_context
         .toolchain_registry
@@ -128,11 +157,30 @@ pub async fn hash_toolchain_task_contents(
     // Sort the contents so the hash is deterministic
     contents.sort_by(|a, d| a.toolchain.cmp(&d.toolchain));
 
+    Ok(contents)
+}
+
+pub fn hash_toolchain_task_fingerprints(
+    contents: &[TaskToolchainFingerprint],
+    hasher: &mut ContentHasher,
+) -> miette::Result<()> {
     for content in contents {
         hasher.hash_content(content)?;
     }
 
     Ok(())
+}
+
+pub async fn hash_toolchain_task_contents(
+    app_context: &Arc<AppContext>,
+    project: &Project,
+    task: &Task,
+    hasher: &mut ContentHasher,
+) -> miette::Result<()> {
+    hash_toolchain_task_fingerprints(
+        &generate_toolchain_task_fingerprints(app_context, project, task).await?,
+        hasher,
+    )
 }
 
 async fn apply_toolchain(

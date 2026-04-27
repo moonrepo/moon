@@ -57,7 +57,12 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(name = "build_command", skip_all)]
-    pub async fn build(mut self, context: &ActionContext, hash: &str) -> miette::Result<Command> {
+    pub async fn build(
+        mut self,
+        context: &ActionContext,
+        hash: &str,
+        content_hash: &str,
+    ) -> miette::Result<Command> {
         debug!(
             task_target = self.task.target.as_str(),
             working_dir = ?self.working_dir,
@@ -75,7 +80,7 @@ impl<'task> CommandBuilder<'task> {
 
         // Order is important!
         self.inject_args(context);
-        self.inject_env(hash)?;
+        self.inject_env(hash, content_hash)?;
         self.inject_shell();
         self.inherit_affected(context)?;
         self.inherit_config();
@@ -116,7 +121,7 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(skip_all)]
-    fn inject_env(&mut self, hash: &str) -> miette::Result<()> {
+    fn inject_env(&mut self, hash: &str, content_hash: &str) -> miette::Result<()> {
         let task = self.task;
         let mut moon_env = FxHashMap::<String, Option<String>>::default();
 
@@ -158,6 +163,10 @@ impl<'task> CommandBuilder<'task> {
                 ),
             ),
             ("MOON_TASK_ID".into(), Some(task.id.to_string())),
+            (
+                "MOON_TASK_CONTENT_HASH".into(),
+                Some(content_hash.to_string()),
+            ),
             ("MOON_TASK_HASH".into(), Some(hash.to_string())),
             ("MOON_TARGET".into(), Some(task.target.to_string())),
             (

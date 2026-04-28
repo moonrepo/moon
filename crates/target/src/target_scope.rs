@@ -65,56 +65,16 @@ impl FromStr for TargetProjectScope {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
 pub enum TargetTaskScope {
-    Id(Id),  // project:task
-    Tag(Id), // project:#tag
+    Id,  // project:task
+    Tag, // project:#tag
 }
 
 impl TargetTaskScope {
-    pub fn parse<T: AsRef<str>>(value: T) -> miette::Result<Self> {
-        let value = value.as_ref();
-
-        let scope = if let Some(tag) = value.strip_prefix('#') {
-            Self::Tag(Id::new(tag)?)
+    pub fn parse<T: AsRef<str>>(value: T) -> Self {
+        if value.as_ref().starts_with('#') {
+            Self::Tag
         } else {
-            Self::Id(Id::new(value)?)
-        };
-
-        Ok(scope)
-    }
-
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Id(id) => id.as_str(),
-            Self::Tag(id) => id.as_str(),
+            Self::Id
         }
-    }
-}
-
-impl Display for TargetTaskScope {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::Id(id) => write!(f, "{id}"),
-            Self::Tag(id) => write!(f, "#{id}"),
-        }
-    }
-}
-
-impl AsRef<TargetTaskScope> for TargetTaskScope {
-    fn as_ref(&self) -> &TargetTaskScope {
-        self
-    }
-}
-
-impl AsRef<str> for TargetTaskScope {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl FromStr for TargetTaskScope {
-    type Err = miette::Report;
-
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::parse(value)
     }
 }

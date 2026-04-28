@@ -19,7 +19,7 @@ impl TasksQuerent for TestQuerent {
     fn query_tasks(
         &self,
         project_ids: Vec<&Id>,
-        task_id: &Id,
+        task_id: &str,
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>> {
         Ok(self
             .data

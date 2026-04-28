@@ -115,7 +115,7 @@ fn parse_ids() {
         Target {
             id: CompactString::from("foo:build"),
             project: TargetProjectScope::Id(Id::raw("foo")),
-            task: TargetTaskScope::Id(Id::raw("build")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -127,7 +127,7 @@ fn parse_deps_scope() {
         Target {
             id: CompactString::from("^:build"),
             project: TargetProjectScope::Deps,
-            task: TargetTaskScope::Id(Id::raw("build")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -139,7 +139,7 @@ fn parse_deps_of_build_scope() {
         Target {
             id: CompactString::from("^build:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Build),
-            task: TargetTaskScope::Id(Id::raw("lint")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -151,7 +151,7 @@ fn parse_deps_of_development_scope() {
         Target {
             id: CompactString::from("^development:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Development),
-            task: TargetTaskScope::Id(Id::raw("lint")),
+            task: TargetTaskScope::Id,
         }
     );
     assert_eq!(
@@ -159,7 +159,7 @@ fn parse_deps_of_development_scope() {
         Target {
             id: CompactString::from("^development:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Development),
-            task: TargetTaskScope::Id(Id::raw("lint")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -171,7 +171,7 @@ fn parse_deps_of_peer_scope() {
         Target {
             id: CompactString::from("^peer:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Peer),
-            task: TargetTaskScope::Id(Id::raw("lint")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -183,7 +183,7 @@ fn parse_deps_of_production_scope() {
         Target {
             id: CompactString::from("^production:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Production),
-            task: TargetTaskScope::Id(Id::raw("lint")),
+            task: TargetTaskScope::Id,
         }
     );
     assert_eq!(
@@ -191,7 +191,7 @@ fn parse_deps_of_production_scope() {
         Target {
             id: CompactString::from("^production:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Production),
-            task: TargetTaskScope::Id(Id::raw("lint")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -215,7 +215,7 @@ fn parse_self_scope() {
         Target {
             id: CompactString::from("~:build"),
             project: TargetProjectScope::OwnSelf,
-            task: TargetTaskScope::Id(Id::raw("build")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -227,7 +227,7 @@ fn parse_self_when_no_colon() {
         Target {
             id: CompactString::from("~:build"),
             project: TargetProjectScope::OwnSelf,
-            task: TargetTaskScope::Id(Id::raw("build")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -251,7 +251,7 @@ fn parse_all_scopes() {
         Target {
             id: CompactString::from(":build"),
             project: TargetProjectScope::All,
-            task: TargetTaskScope::Id(Id::raw("build")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -275,7 +275,7 @@ fn parse_node_package() {
         Target {
             id: CompactString::from("@scope/foo:build"),
             project: TargetProjectScope::Id(Id::raw("@scope/foo")),
-            task: TargetTaskScope::Id(Id::raw("build")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -287,7 +287,7 @@ fn parse_slashes() {
         Target {
             id: CompactString::from("foo/sub:build/esm"),
             project: TargetProjectScope::Id(Id::raw("foo/sub")),
-            task: TargetTaskScope::Id(Id::raw("build/esm")),
+            task: TargetTaskScope::Id,
         }
     );
 }
@@ -362,7 +362,7 @@ fn parse_task_tag() {
         Target {
             id: CompactString::from("foo:#lint"),
             project: TargetProjectScope::Id(Id::raw("foo")),
-            task: TargetTaskScope::Tag(Id::raw("lint")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -374,7 +374,7 @@ fn parse_task_tag_with_all_scope() {
         Target {
             id: CompactString::from(":#lint"),
             project: TargetProjectScope::All,
-            task: TargetTaskScope::Tag(Id::raw("lint")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -386,7 +386,7 @@ fn parse_task_tag_with_self_scope() {
         Target {
             id: CompactString::from("~:#lint"),
             project: TargetProjectScope::OwnSelf,
-            task: TargetTaskScope::Tag(Id::raw("lint")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -398,7 +398,7 @@ fn parse_task_tag_with_deps_scope() {
         Target {
             id: CompactString::from("^:#lint"),
             project: TargetProjectScope::Deps,
-            task: TargetTaskScope::Tag(Id::raw("lint")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -410,7 +410,7 @@ fn parse_task_tag_with_deps_of_scope() {
         Target {
             id: CompactString::from("^build:#lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Build),
-            task: TargetTaskScope::Tag(Id::raw("lint")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -422,7 +422,7 @@ fn parse_task_tag_with_project_tag_scope() {
         Target {
             id: CompactString::from("#ui:#lint"),
             project: TargetProjectScope::Tag(Id::raw("ui")),
-            task: TargetTaskScope::Tag(Id::raw("lint")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -434,7 +434,7 @@ fn parse_task_tag_with_node_package() {
         Target {
             id: CompactString::from("@scope/foo:#lint"),
             project: TargetProjectScope::Id(Id::raw("@scope/foo")),
-            task: TargetTaskScope::Tag(Id::raw("lint")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -446,7 +446,7 @@ fn parse_task_tag_with_slashes() {
         Target {
             id: CompactString::from("foo/sub:#lint/all"),
             project: TargetProjectScope::Id(Id::raw("foo/sub")),
-            task: TargetTaskScope::Tag(Id::raw("lint/all")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -458,7 +458,7 @@ fn parse_task_tag_when_no_colon() {
         Target {
             id: CompactString::from("~:#lint"),
             project: TargetProjectScope::OwnSelf,
-            task: TargetTaskScope::Tag(Id::raw("lint")),
+            task: TargetTaskScope::Tag,
         }
     );
 }
@@ -481,7 +481,7 @@ fn new_project_infers_task_tag() {
 
     assert_eq!(target.id, "foo:#lint");
     assert_eq!(target.project, TargetProjectScope::Id(Id::raw("foo")));
-    assert_eq!(target.task, TargetTaskScope::Tag(Id::raw("lint")));
+    assert_eq!(target.task, TargetTaskScope::Tag);
 }
 
 #[test]
@@ -490,7 +490,7 @@ fn new_self_infers_task_tag() {
 
     assert_eq!(target.id, "~:#lint");
     assert_eq!(target.project, TargetProjectScope::OwnSelf);
-    assert_eq!(target.task, TargetTaskScope::Tag(Id::raw("lint")));
+    assert_eq!(target.task, TargetTaskScope::Tag);
 }
 
 #[test]
@@ -499,14 +499,14 @@ fn new_project_tag_infers_task_tag() {
 
     assert_eq!(target.id, "#ui:#lint");
     assert_eq!(target.project, TargetProjectScope::Tag(Id::raw("ui")));
-    assert_eq!(target.task, TargetTaskScope::Tag(Id::raw("lint")));
+    assert_eq!(target.task, TargetTaskScope::Tag);
 }
 
 #[test]
 fn get_task_tag_id_returns_tag() {
     let target = Target::parse("foo:#lint").unwrap();
 
-    assert_eq!(target.get_task_tag_id(), Some(&Id::raw("lint")));
+    assert_eq!(target.get_task_tag_id(), Some("lint"));
 }
 
 #[test]

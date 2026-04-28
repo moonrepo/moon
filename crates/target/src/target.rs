@@ -22,6 +22,8 @@ pub static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 pub struct Target {
     pub id: CompactString,
     pub project: TargetProjectScope,
+
+    #[doc(hidden)]
     pub task: TargetTaskScope,
 }
 
@@ -34,7 +36,7 @@ impl Target {
         let id = Target::format(&project, task_id);
 
         Ok(Target {
-            task: TargetTaskScope::parse(task_id)?,
+            task: TargetTaskScope::parse(task_id),
             id: CompactString::new(id),
             project,
         })
@@ -183,17 +185,36 @@ impl Target {
         }
     }
 
-    pub fn get_task_id(&self) -> miette::Result<&Id> {
-        match &self.task {
-            TargetTaskScope::Id(id) => Ok(id),
+    pub fn get_task_id(&self) -> miette::Result<&str> {
+        let (scope, value) = self.get_task_scope();
+
+        match scope {
+            TargetTaskScope::Id => Ok(value),
             _ => Err(TargetError::TaskScopeRequired(self.id.to_string()).into()),
         }
     }
 
-    pub fn get_task_tag_id(&self) -> Option<&Id> {
-        match &self.task {
-            TargetTaskScope::Tag(id) => Some(id),
-            _ => None,
+    pub fn get_task_tag_id(&self) -> Option<&str> {
+        let (scope, value) = self.get_task_scope();
+
+        if let TargetTaskScope::Tag = scope {
+            Some(value)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_task_scope(&self) -> (TargetTaskScope, &str) {
+        let index = self
+            .id
+            .find(':')
+            .expect("Targets must have a `:` separator.");
+
+        let value = &self.id[index + 1..];
+
+        match value.strip_prefix('#') {
+            Some(tag) => (TargetTaskScope::Tag, tag),
+            None => (TargetTaskScope::Id, value),
         }
     }
 }
@@ -203,7 +224,7 @@ impl Default for Target {
         Target {
             id: "~:unknown".into(),
             project: TargetProjectScope::OwnSelf,
-            task: TargetTaskScope::Id(Id::raw("unknown")),
+            task: TargetTaskScope::Id,
         }
     }
 }

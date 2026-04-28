@@ -23,7 +23,7 @@ impl TasksQuerent for WorkspaceBuilderTasksQuerent<'_> {
     fn query_tasks(
         &self,
         project_ids: Vec<&Id>,
-        task_id: &Id,
+        task_id: &str,
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>> {
         // May be an alias!
         let project_ids = project_ids
@@ -68,7 +68,7 @@ impl<'a> TasksQuerent for WorkspaceTasksQuerent<'a> {
     fn query_tasks(
         &self,
         project_ids: Vec<&Id>,
-        task_id: &Id,
+        task_id: &str,
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>> {
         let mut list = vec![];
 

@@ -49,9 +49,11 @@ impl StateEngine {
     }
 
     pub fn get_target_dir(&self, target: &Target) -> PathBuf {
-        let name = match &target.task {
-            TargetTaskScope::Id(id) => id.to_string(),
-            TargetTaskScope::Tag(tag) => format!("tag-{tag}"),
+        let (scope, value) = target.get_task_scope();
+
+        let name = match scope {
+            TargetTaskScope::Id => value.to_string(),
+            TargetTaskScope::Tag => format!("tag-{value}"),
         };
 
         let dir = match &target.project {

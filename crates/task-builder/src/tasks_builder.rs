@@ -1236,7 +1236,7 @@ impl<'proj> TasksBuilder<'proj> {
                 // Deps targeting upstream (^:task) or other scopes should
                 // be preserved, as excluding a task locally shouldn't
                 // prevent it from running on dependencies
-                if filters.exclude.contains(task_id) {
+                if filters.exclude.iter().any(|ex| ex == task_id) {
                     continue;
                 }
 

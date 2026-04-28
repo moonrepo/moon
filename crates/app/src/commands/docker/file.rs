@@ -162,12 +162,15 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         .or(workspace_docker.file.build_task.as_ref());
 
     let build_task_id = if let Some(id) = &args.build_task {
-        Some(id)
+        Some(id.to_owned())
     } else if args.defaults {
-        build_task_setting
+        build_task_setting.cloned()
     } else {
-        let default_index = build_task_setting
-            .and_then(|id| task_ids.iter().position(|cursor_id| cursor_id == &id));
+        let default_index = build_task_setting.and_then(|id| {
+            task_ids
+                .iter()
+                .position(|cursor_id| *cursor_id == id.as_str())
+        });
         let mut index = default_index.unwrap_or(0);
 
         console
@@ -188,7 +191,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         if index == task_ids.len() {
             None
         } else {
-            Some(task_ids[index])
+            Some(Id::raw(task_ids[index]))
         }
     };
 
@@ -212,12 +215,15 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         .or(workspace_docker.file.start_task.as_ref());
 
     let start_task_id = if let Some(id) = &args.start_task {
-        Some(id)
+        Some(id.to_owned())
     } else if args.defaults {
-        start_task_setting
+        start_task_setting.cloned()
     } else {
-        let default_index = start_task_setting
-            .and_then(|id| task_ids.iter().position(|cursor_id| cursor_id == &id));
+        let default_index = start_task_setting.and_then(|id| {
+            task_ids
+                .iter()
+                .position(|cursor_id| *cursor_id == id.as_str())
+        });
         let mut index = default_index.unwrap_or(0);
 
         console
@@ -238,7 +244,7 @@ pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
         if index == task_ids.len() {
             None
         } else {
-            Some(task_ids[index])
+            Some(Id::raw(task_ids[index]))
         }
     };
 

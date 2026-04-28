@@ -75,7 +75,7 @@ impl Estimate {
                         continue;
                     };
 
-                    if let Some(task) = tasks.get_mut(task_id.as_str()) {
+                    if let Some(task) = tasks.get_mut(task_id) {
                         task.count += 1;
                         task.total += task_duration;
                     } else {

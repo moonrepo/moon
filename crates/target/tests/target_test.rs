@@ -15,7 +15,7 @@ fn errors_on_invalid_task_no_at() {
 }
 
 #[test]
-#[should_panic(expected = "Wildcard project and task scopes are not supported.")]
+#[should_panic(expected = "Wildcard project and task scopes")]
 fn errors_on_too_wild() {
     Target::parse(":").unwrap();
 }

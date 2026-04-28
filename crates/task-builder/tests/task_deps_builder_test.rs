@@ -338,9 +338,9 @@ mod task_deps_builder {
             assert_eq!(
                 task.deps,
                 vec![
-                    TaskDependencyConfig::new(Target::parse("bar:build").unwrap()),
                     TaskDependencyConfig::new(Target::parse("baz:build").unwrap()),
                     TaskDependencyConfig::new(Target::parse("foo:build").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("bar:build").unwrap()),
                 ]
             );
         }

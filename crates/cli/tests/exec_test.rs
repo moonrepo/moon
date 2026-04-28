@@ -989,6 +989,37 @@ mod exec {
             }
 
             #[test]
+            fn upstream_none_ignores_dependency_hashes() {
+                let sandbox = create_pipeline_sandbox();
+
+                sandbox.create_file(
+                    "a/moon.yml",
+                    r#"tasks:
+  task:
+    command: 'exit 0'
+    options:
+      cache: false
+"#,
+                );
+                sandbox.create_file(
+                    "b/moon.yml",
+                    r#"tasks:
+  task:
+    command: 'exit 0'
+    deps: ['a:task']
+    options:
+      cache: false
+"#,
+                );
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("--upstream=none").arg("b:task");
+                });
+
+                assert.success();
+            }
+
+            #[test]
             fn downstream_direct() {
                 let sandbox = create_pipeline_sandbox();
 

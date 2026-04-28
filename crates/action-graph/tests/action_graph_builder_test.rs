@@ -1572,6 +1572,39 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
+            async fn marks_skipped_deps_as_passthrough_for_none_depth() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::None,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, _) = builder.build();
+
+                assert_eq!(
+                    context.get_target_states(),
+                    FxHashMap::from_iter([(
+                        Target::parse("deps:chain4").unwrap(),
+                        TargetState::Passthrough
+                    )])
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn can_set_none_depth_affected() {
                 let sandbox = create_sandbox("tasks");
                 let mut container = ActionGraphContainer::new(sandbox.path());
@@ -1633,6 +1666,39 @@ mod action_graph_builder {
                 let (_, graph) = builder.build();
 
                 assert_snapshot!(graph.to_dot());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn marks_skipped_transitive_deps_as_passthrough_for_direct_depth() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Direct,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (context, _) = builder.build();
+
+                assert_eq!(
+                    context.get_target_states(),
+                    FxHashMap::from_iter([(
+                        Target::parse("deps:chain5").unwrap(),
+                        TargetState::Passthrough
+                    )])
+                );
             }
 
             #[tokio::test(flavor = "multi_thread")]

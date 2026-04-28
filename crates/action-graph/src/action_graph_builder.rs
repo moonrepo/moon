@@ -132,6 +132,7 @@ pub struct ActionGraphBuilder<'query> {
     changed_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
+    ignored_dependency_targets: FxHashSet<Target>,
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
 }
@@ -151,6 +152,7 @@ impl<'query> ActionGraphBuilder<'query> {
             graph: Dag::new(),
             nodes: FxHashMap::default(),
             options,
+            ignored_dependency_targets: FxHashSet::default(),
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
             changed_files: None,
@@ -166,6 +168,12 @@ impl<'query> ActionGraphBuilder<'query> {
 
         if !self.passthrough_targets.is_empty() {
             for target in mem::take(&mut self.passthrough_targets) {
+                context.set_target_state(target, TargetState::Passthrough);
+            }
+        }
+
+        if !self.ignored_dependency_targets.is_empty() {
+            for target in mem::take(&mut self.ignored_dependency_targets) {
                 context.set_target_state(target, TargetState::Passthrough);
             }
         }
@@ -978,10 +986,15 @@ impl<'query> ActionGraphBuilder<'query> {
         // Insert and then link edges
         let index = self.insert_node(node);
 
-        if !task.deps.is_empty() && should_run_dependencies {
-            child_reqs.skip_affected = true;
+        if !task.deps.is_empty() {
+            if should_run_dependencies {
+                child_reqs.skip_affected = true;
 
-            edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?);
+                edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?);
+            } else {
+                self.ignored_dependency_targets
+                    .extend(task.deps.iter().map(|dep| dep.target.clone()));
+            }
         }
 
         self.link_optional_requirements(index, edges)?;

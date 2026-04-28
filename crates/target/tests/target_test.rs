@@ -68,7 +68,7 @@ fn parse_deps_of_development_scope() {
     assert_eq!(
         Target::parse("^dev:lint").unwrap(),
         Target {
-            id: CompactString::from("^development:lint"),
+            id: CompactString::from("^dev:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Development),
             task: TargetTaskScope::Id,
         }
@@ -100,7 +100,7 @@ fn parse_deps_of_production_scope() {
     assert_eq!(
         Target::parse("^prod:lint").unwrap(),
         Target {
-            id: CompactString::from("^production:lint"),
+            id: CompactString::from("^prod:lint"),
             project: TargetProjectScope::DepsOf(DependencyScope::Production),
             task: TargetTaskScope::Id,
         }
@@ -364,7 +364,7 @@ fn new_self_infers_task_tag() {
 
 #[test]
 fn new_project_tag_infers_task_tag() {
-    let target = Target::parse("ui#lint").unwrap();
+    let target = Target::parse("#ui:#lint").unwrap();
 
     assert_eq!(target.id, "#ui:#lint");
     assert_eq!(target.project, TargetProjectScope::Tag);

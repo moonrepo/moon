@@ -1,5 +1,4 @@
 use compact_str::CompactString;
-use moon_common::Id;
 use moon_target::{DependencyScope, Target, TargetProjectScope, TargetTaskScope};
 
 #[test]
@@ -21,100 +20,12 @@ fn errors_on_too_wild() {
 }
 
 #[test]
-fn format_all_scope() {
-    assert_eq!(Target::format(TargetProjectScope::All, "build"), ":build");
-}
-
-#[test]
-fn format_deps_scope() {
-    assert_eq!(Target::format(TargetProjectScope::Deps, "build"), "^:build");
-}
-
-#[test]
-fn format_deps_of_build_scope() {
-    assert_eq!(
-        Target::format(TargetProjectScope::DepsOf(DependencyScope::Build), "build"),
-        "^build:build"
-    );
-}
-
-#[test]
-fn format_deps_of_development_scope() {
-    assert_eq!(
-        Target::format(
-            TargetProjectScope::DepsOf(DependencyScope::Development),
-            "build"
-        ),
-        "^development:build"
-    );
-}
-
-#[test]
-fn format_deps_of_peer_scope() {
-    assert_eq!(
-        Target::format(TargetProjectScope::DepsOf(DependencyScope::Peer), "build"),
-        "^peer:build"
-    );
-}
-
-#[test]
-fn format_deps_of_production_scope() {
-    assert_eq!(
-        Target::format(
-            TargetProjectScope::DepsOf(DependencyScope::Production),
-            "build"
-        ),
-        "^production:build"
-    );
-}
-
-#[test]
-fn format_self_scope() {
-    assert_eq!(
-        Target::format(TargetProjectScope::OwnSelf, "build"),
-        "~:build"
-    );
-}
-
-#[test]
-fn format_project_scope() {
-    assert_eq!(
-        Target::format(TargetProjectScope::Id(Id::raw("foo")), "build"),
-        "foo:build"
-    );
-}
-
-#[test]
-fn format_tag_scope() {
-    assert_eq!(
-        Target::format(TargetProjectScope::Tag(Id::raw("foo")), "build"),
-        "#foo:build"
-    );
-}
-
-#[test]
-fn format_with_slashes() {
-    assert_eq!(
-        Target::format(TargetProjectScope::Id(Id::raw("foo/sub")), "build/esm"),
-        "foo/sub:build/esm"
-    );
-}
-
-#[test]
-fn format_node_package() {
-    assert_eq!(
-        Target::format(TargetProjectScope::Id(Id::raw("@scope/foo")), "build"),
-        "@scope/foo:build"
-    );
-}
-
-#[test]
 fn parse_ids() {
     assert_eq!(
         Target::parse("foo:build").unwrap(),
         Target {
             id: CompactString::from("foo:build"),
-            project: TargetProjectScope::Id(Id::raw("foo")),
+            project: TargetProjectScope::Id,
             task: TargetTaskScope::Id,
         }
     );
@@ -274,7 +185,7 @@ fn parse_node_package() {
         Target::parse("@scope/foo:build").unwrap(),
         Target {
             id: CompactString::from("@scope/foo:build"),
-            project: TargetProjectScope::Id(Id::raw("@scope/foo")),
+            project: TargetProjectScope::Id,
             task: TargetTaskScope::Id,
         }
     );
@@ -286,7 +197,7 @@ fn parse_slashes() {
         Target::parse("foo/sub:build/esm").unwrap(),
         Target {
             id: CompactString::from("foo/sub:build/esm"),
-            project: TargetProjectScope::Id(Id::raw("foo/sub")),
+            project: TargetProjectScope::Id,
             task: TargetTaskScope::Id,
         }
     );
@@ -314,54 +225,12 @@ fn matches_all() {
 // Tag-based task identifiers (e.g. `project:#tag`)
 
 #[test]
-fn format_task_tag() {
-    assert_eq!(
-        Target::format(TargetProjectScope::Id(Id::raw("foo")), "#lint"),
-        "foo:#lint"
-    );
-}
-
-#[test]
-fn format_task_tag_with_all_scope() {
-    assert_eq!(Target::format(TargetProjectScope::All, "#lint"), ":#lint");
-}
-
-#[test]
-fn format_task_tag_with_self_scope() {
-    assert_eq!(
-        Target::format(TargetProjectScope::OwnSelf, "#lint"),
-        "~:#lint"
-    );
-}
-
-#[test]
-fn format_task_tag_with_deps_scope() {
-    assert_eq!(Target::format(TargetProjectScope::Deps, "#lint"), "^:#lint");
-}
-
-#[test]
-fn format_task_tag_with_deps_of_scope() {
-    assert_eq!(
-        Target::format(TargetProjectScope::DepsOf(DependencyScope::Build), "#lint"),
-        "^build:#lint"
-    );
-}
-
-#[test]
-fn format_task_tag_with_project_tag_scope() {
-    assert_eq!(
-        Target::format(TargetProjectScope::Tag(Id::raw("ui")), "#lint"),
-        "#ui:#lint"
-    );
-}
-
-#[test]
 fn parse_task_tag() {
     assert_eq!(
         Target::parse("foo:#lint").unwrap(),
         Target {
             id: CompactString::from("foo:#lint"),
-            project: TargetProjectScope::Id(Id::raw("foo")),
+            project: TargetProjectScope::Id,
             task: TargetTaskScope::Tag,
         }
     );
@@ -421,7 +290,7 @@ fn parse_task_tag_with_project_tag_scope() {
         Target::parse("#ui:#lint").unwrap(),
         Target {
             id: CompactString::from("#ui:#lint"),
-            project: TargetProjectScope::Tag(Id::raw("ui")),
+            project: TargetProjectScope::Tag,
             task: TargetTaskScope::Tag,
         }
     );
@@ -433,7 +302,7 @@ fn parse_task_tag_with_node_package() {
         Target::parse("@scope/foo:#lint").unwrap(),
         Target {
             id: CompactString::from("@scope/foo:#lint"),
-            project: TargetProjectScope::Id(Id::raw("@scope/foo")),
+            project: TargetProjectScope::Id,
             task: TargetTaskScope::Tag,
         }
     );
@@ -445,7 +314,7 @@ fn parse_task_tag_with_slashes() {
         Target::parse("foo/sub:#lint/all").unwrap(),
         Target {
             id: CompactString::from("foo/sub:#lint/all"),
-            project: TargetProjectScope::Id(Id::raw("foo/sub")),
+            project: TargetProjectScope::Id,
             task: TargetTaskScope::Tag,
         }
     );
@@ -477,10 +346,10 @@ fn errors_on_empty_task_tag() {
 
 #[test]
 fn new_project_infers_task_tag() {
-    let target = Target::new_project("foo", "#lint").unwrap();
+    let target = Target::new("foo", "#lint").unwrap();
 
     assert_eq!(target.id, "foo:#lint");
-    assert_eq!(target.project, TargetProjectScope::Id(Id::raw("foo")));
+    assert_eq!(target.project, TargetProjectScope::Id);
     assert_eq!(target.task, TargetTaskScope::Tag);
 }
 
@@ -495,10 +364,10 @@ fn new_self_infers_task_tag() {
 
 #[test]
 fn new_project_tag_infers_task_tag() {
-    let target = Target::new_project_tag("ui", "#lint").unwrap();
+    let target = Target::parse("ui#lint").unwrap();
 
     assert_eq!(target.id, "#ui:#lint");
-    assert_eq!(target.project, TargetProjectScope::Tag(Id::raw("ui")));
+    assert_eq!(target.project, TargetProjectScope::Tag);
     assert_eq!(target.task, TargetTaskScope::Tag);
 }
 
@@ -506,14 +375,14 @@ fn new_project_tag_infers_task_tag() {
 fn get_task_tag_id_returns_tag() {
     let target = Target::parse("foo:#lint").unwrap();
 
-    assert_eq!(target.get_task_tag_id(), Some("lint"));
+    assert_eq!(target.get_task_tag(), Some("lint"));
 }
 
 #[test]
 fn get_task_tag_id_returns_none_for_id_task() {
     let target = Target::parse("foo:lint").unwrap();
 
-    assert_eq!(target.get_task_tag_id(), None);
+    assert_eq!(target.get_task_tag(), None);
 }
 
 #[test]

@@ -707,8 +707,9 @@ impl<'query> ActionGraphBuilder<'query> {
         allow_internal: bool,
     ) -> miette::Result<Vec<Arc<Task>>> {
         let mut tasks = vec![];
+        let (scope, scope_value) = target.get_project_scope();
 
-        match &target.project {
+        match scope {
             // :task
             TargetProjectScope::All => {
                 let mut projects = vec![];
@@ -738,16 +739,16 @@ impl<'query> ActionGraphBuilder<'query> {
                 return Err(TargetError::NoDepsInRunContext.into());
             }
             // project:task
-            TargetProjectScope::Id(project_id) => {
+            TargetProjectScope::Id => {
                 let task = self
                     .workspace_graph
-                    .get_task_from_project(project_id, target.get_task_id()?)?;
+                    .get_task_from_project(scope_value, target.get_task_id()?)?;
 
                 // Don't allow internal tasks to be ran
                 if !allow_internal && task.is_internal() {
                     return Err(ProjectError::UnknownTask {
                         task_id: task.id.to_string(),
-                        project_id: project_id.to_string(),
+                        project_id: scope_value.to_string(),
                     }
                     .into());
                 }
@@ -755,10 +756,10 @@ impl<'query> ActionGraphBuilder<'query> {
                 tasks.push(task);
             }
             // #tag:task
-            TargetProjectScope::Tag(tag) => {
+            TargetProjectScope::Tag => {
                 let projects = self
                     .workspace_graph
-                    .query_projects(build_query(format!("projectTag={tag}").as_str())?)?;
+                    .query_projects(build_query(format!("projectTag={scope_value}").as_str())?)?;
 
                 for project in projects {
                     // Don't error if the task does not exist
@@ -856,7 +857,7 @@ impl<'query> ActionGraphBuilder<'query> {
             }
             TargetLocator::Qualified(target) => {
                 let target = if target.project == TargetProjectScope::OwnSelf {
-                    Target::new_project(
+                    Target::new(
                         &self.workspace_graph.get_project_from_path(None)?.id,
                         target.get_task_id()?,
                     )?
@@ -876,7 +877,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     }
                 })?;
 
-                let target = Target::new_project(&project.id, task_id)?;
+                let target = Target::new(&project.id, task_id)?;
 
                 tasks.extend(
                     self.internal_resolve_tasks_from_target(&target, allow_internal)

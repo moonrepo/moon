@@ -56,9 +56,11 @@ impl StateEngine {
             TargetTaskScope::Tag => format!("tag-{value}"),
         };
 
-        let dir = match &target.project {
-            TargetProjectScope::Id(id) => self.get_project_dir(id),
-            TargetProjectScope::Tag(tag) => self.get_tag_dir(tag),
+        let (scope, value) = target.get_project_scope();
+
+        let dir = match scope {
+            TargetProjectScope::Id => self.get_project_dir(value),
+            TargetProjectScope::Tag => self.get_tag_dir(value),
             _ => self.get_project_dir("_"),
         };
 

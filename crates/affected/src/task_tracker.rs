@@ -117,7 +117,7 @@ impl TaskTracker {
 
         if let Ok(project_id) = task.target.get_project_id() {
             self.tracked_projects
-                .entry(project_id.to_owned())
+                .entry(Id::raw(project_id))
                 .or_default()
                 .insert(AffectedBy::Task(task.target.clone()));
         }

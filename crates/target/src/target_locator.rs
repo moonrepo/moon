@@ -57,7 +57,7 @@ impl TargetLocator {
                 project = Some(TargetProjectScope::All);
             }
             "~" | "^" | "^build" | "^dev" | "^development" | "^peer" | "^prod" | "^production" => {
-                project = Some(TargetProjectScope::parse(base_project)?);
+                project = Some(TargetProjectScope::parse(base_project));
             }
             inner => {
                 project_glob = Some(inner.replace("...", "**/*"));

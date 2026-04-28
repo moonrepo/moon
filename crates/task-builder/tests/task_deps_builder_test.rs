@@ -28,7 +28,7 @@ impl TasksQuerent for TestQuerent {
                 let other_project_id = target.get_project_id().ok()?;
                 let other_task_id = target.get_task_id().ok()?;
 
-                if other_task_id == task_id && project_ids.contains(&other_project_id) {
+                if other_task_id == task_id && project_ids.contains(&&other_project_id) {
                     Some((target, options))
                 } else {
                     None
@@ -48,7 +48,7 @@ fn create_project() -> Project {
 fn create_task() -> Task {
     Task {
         id: Id::raw("task"),
-        target: Target::new_project("project", "task").unwrap(),
+        target: Target::new("project", "task").unwrap(),
         ..Task::default()
     }
 }

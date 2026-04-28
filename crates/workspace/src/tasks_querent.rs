@@ -38,7 +38,8 @@ impl TasksQuerent for WorkspaceBuilderTasksQuerent<'_> {
                 let other_project_id = target.get_project_id().ok()?;
                 let other_task_id = target.get_task_id().ok()?;
 
-                if other_task_id == task_id && project_ids.contains(other_project_id) {
+                if other_task_id == task_id && project_ids.iter().any(|id| id == &other_project_id)
+                {
                     Some((target, &data.options))
                 } else {
                     None

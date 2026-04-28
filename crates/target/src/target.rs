@@ -1,8 +1,7 @@
-use crate::dep_scope::DependencyScope;
 use crate::target_error::TargetError;
 use crate::target_scope::{TargetProjectScope, TargetTaskScope};
 use compact_str::CompactString;
-use moon_common::{ID_CHARS, ID_SYMBOLS, Id, Style, Stylize, color};
+use moon_common::{ID_CHARS, ID_SYMBOLS, Style, Stylize, color};
 use regex::Regex;
 use schematic::{Schema, SchemaBuilder, Schematic};
 use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
@@ -21,6 +20,8 @@ pub static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Target {
     pub id: CompactString,
+
+    #[doc(hidden)]
     pub project: TargetProjectScope,
 
     #[doc(hidden)]
@@ -28,81 +29,32 @@ pub struct Target {
 }
 
 impl Target {
-    pub fn new<T>(project: TargetProjectScope, task_id: T) -> miette::Result<Target>
+    pub fn new<P, T>(project_id: P, task_id: T) -> miette::Result<Target>
     where
-        T: AsRef<str>,
-    {
-        let task_id = task_id.as_ref();
-        let id = Target::format(&project, task_id);
-
-        Ok(Target {
-            task: TargetTaskScope::parse(task_id),
-            id: CompactString::new(id),
-            project,
-        })
-    }
-
-    pub fn new_deps<T>(task_id: T) -> miette::Result<Target>
-    where
-        T: AsRef<str>,
-    {
-        Self::new(TargetProjectScope::Deps, task_id)
-    }
-
-    pub fn new_deps_of<T>(deps: DependencyScope, task_id: T) -> miette::Result<Target>
-    where
-        T: AsRef<str>,
-    {
-        Self::new(TargetProjectScope::DepsOf(deps), task_id)
-    }
-
-    pub fn new_project<S, T>(project_id: S, task_id: T) -> miette::Result<Target>
-    where
-        S: AsRef<str>,
+        P: AsRef<str>,
         T: AsRef<str>,
     {
         let project_id = project_id.as_ref();
         let task_id = task_id.as_ref();
 
-        Self::new(
-            TargetProjectScope::Id(
-                Id::new(project_id)
-                    .map_err(|_| TargetError::InvalidFormat(format!("{project_id}:{task_id}")))?,
-            ),
-            task_id,
-        )
-    }
-
-    pub fn new_project_tag<S, T>(tag_id: S, task_id: T) -> miette::Result<Target>
-    where
-        S: AsRef<str>,
-        T: AsRef<str>,
-    {
-        let tag_id = tag_id.as_ref();
-        let task_id = task_id.as_ref();
-
-        Self::new(
-            TargetProjectScope::Tag(
-                Id::new(tag_id)
-                    .map_err(|_| TargetError::InvalidFormat(format!("#{tag_id}:{task_id}")))?,
-            ),
-            task_id,
-        )
+        Ok(Target {
+            project: TargetProjectScope::parse(project_id),
+            task: TargetTaskScope::parse(task_id),
+            id: CompactString::new(format!("{project_id}:{task_id}")),
+        })
     }
 
     pub fn new_self<T>(task_id: T) -> miette::Result<Target>
     where
         T: AsRef<str>,
     {
-        Self::new(TargetProjectScope::OwnSelf, task_id)
-    }
+        let task_id = task_id.as_ref();
 
-    pub fn format<S, T>(project: S, task: T) -> String
-    where
-        S: AsRef<TargetProjectScope>,
-        T: AsRef<str>,
-    {
-        format!("{}:{}", project.as_ref(), task.as_ref())
+        Ok(Target {
+            project: TargetProjectScope::OwnSelf,
+            task: TargetTaskScope::parse(task_id),
+            id: CompactString::new(format!("~:{task_id}")),
+        })
     }
 
     #[instrument(name = "parse_target")]
@@ -119,14 +71,14 @@ impl Target {
             return Err(TargetError::InvalidFormat(target_id.to_owned()).into());
         };
 
-        let project = match matches.name("project") {
-            Some(value) => TargetProjectScope::parse(value.as_str())?,
-            None => TargetProjectScope::All,
+        let project_id = match matches.name("project") {
+            Some(value) => value.as_str(),
+            None => "", // All
         };
 
         let task_id = matches.name("task").expect("Task ID required.").as_str();
 
-        Self::new(project, task_id)
+        Self::new(project_id, task_id)
     }
 
     pub fn parse_strict(target_id: &str) -> miette::Result<Target> {
@@ -171,17 +123,41 @@ impl Target {
         false
     }
 
-    pub fn get_project_id(&self) -> miette::Result<&Id> {
-        match &self.project {
-            TargetProjectScope::Id(id) => Ok(id),
+    pub fn get_project_id(&self) -> miette::Result<&str> {
+        let (scope, value) = self.get_project_scope();
+
+        match scope {
+            TargetProjectScope::Id => Ok(value),
             _ => Err(TargetError::ProjectScopeRequired(self.id.to_string()).into()),
         }
     }
 
-    pub fn get_project_tag_id(&self) -> Option<&Id> {
+    pub fn get_project_tag(&self) -> Option<&str> {
+        let (scope, value) = self.get_project_scope();
+
+        if let TargetProjectScope::Tag = scope {
+            Some(value)
+        } else {
+            None
+        }
+    }
+
+    pub fn get_project_scope(&self) -> (TargetProjectScope, &str) {
+        let index = self
+            .id
+            .find(':')
+            .expect("Targets must have a `:` separator.");
+
+        let project = &self.id[0..index];
+
         match &self.project {
-            TargetProjectScope::Tag(id) => Some(id),
-            _ => None,
+            TargetProjectScope::DepsOf(scope) => (
+                TargetProjectScope::DepsOf(*scope),
+                project.trim_start_matches('^'),
+            ),
+            TargetProjectScope::Id => (TargetProjectScope::Id, project),
+            TargetProjectScope::Tag => (TargetProjectScope::Tag, project.trim_start_matches('#')),
+            _ => (self.project.clone(), ""),
         }
     }
 
@@ -194,7 +170,7 @@ impl Target {
         }
     }
 
-    pub fn get_task_tag_id(&self) -> Option<&str> {
+    pub fn get_task_tag(&self) -> Option<&str> {
         let (scope, value) = self.get_task_scope();
 
         if let TargetTaskScope::Tag = scope {

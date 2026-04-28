@@ -33,8 +33,10 @@ impl TaskDepsBuilder<'_> {
         let project = self.project.take().unwrap();
 
         for dep_config in mem::take(&mut self.task.deps) {
-            let (project_ids, skip_if_missing, link_implicit_project_deps) =
-                match &dep_config.target.project {
+            let (project_ids, skip_if_missing, link_implicit_project_deps) = {
+                let (scope, scope_value) = dep_config.target.get_project_scope();
+
+                match scope {
                     // :task
                     TargetProjectScope::All => {
                         return Err(TasksBuilderError::UnsupportedTargetScopeInDeps {
@@ -48,7 +50,7 @@ impl TaskDepsBuilder<'_> {
                         project
                             .dependencies
                             .iter()
-                            .map(|dep| &dep.id)
+                            .map(|dep| dep.id.clone())
                             .collect::<Vec<_>>(),
                         dep_config.optional.unwrap_or(true),
                         false,
@@ -68,7 +70,7 @@ impl TaskDepsBuilder<'_> {
                                 .iter()
                                 .filter_map(|dep| {
                                     if dep.scope == config_scope {
-                                        Some(&dep.id)
+                                        Some(dep.id.clone())
                                     } else {
                                         None
                                     }
@@ -80,29 +82,34 @@ impl TaskDepsBuilder<'_> {
                     }
                     // ~:task
                     TargetProjectScope::OwnSelf => (
-                        vec![&project.id],
+                        vec![project.id.clone()],
                         dep_config.optional.unwrap_or(false),
                         false,
                     ),
                     // id:task
-                    TargetProjectScope::Id(project_id) => {
-                        (vec![project_id], dep_config.optional.unwrap_or(false), true)
-                    }
+                    TargetProjectScope::Id => (
+                        vec![Id::raw(scope_value)],
+                        dep_config.optional.unwrap_or(false),
+                        true,
+                    ),
                     // #tag:task
-                    TargetProjectScope::Tag(tag) => (
+                    TargetProjectScope::Tag => (
                         self.querent
-                            .query_projects_by_tag(tag)?
+                            .query_projects_by_tag(scope_value)?
                             .into_iter()
                             .filter(|id| *id != &project.id)
+                            .cloned()
                             .collect(),
                         dep_config.optional.unwrap_or(true),
                         true,
                     ),
-                };
+                }
+            };
 
-            let results = self
-                .querent
-                .query_tasks(project_ids, dep_config.target.get_task_id()?)?;
+            let results = self.querent.query_tasks(
+                project_ids.iter().collect(),
+                dep_config.target.get_task_id()?,
+            )?;
 
             if results.is_empty() && !skip_if_missing {
                 return Err(match &dep_config.target.project {
@@ -113,7 +120,7 @@ impl TaskDepsBuilder<'_> {
                         }
                         .into()
                     }
-                    TargetProjectScope::Tag(_) => TasksBuilderError::UnknownDepTargetTagScope {
+                    TargetProjectScope::Tag => TasksBuilderError::UnknownDepTargetTagScope {
                         dep: dep_config.target.to_owned(),
                         task: self.task.target.to_owned(),
                     }
@@ -130,7 +137,7 @@ impl TaskDepsBuilder<'_> {
                 // Avoid circular references
                 if dep_task_target
                     .get_project_id()
-                    .is_ok_and(|id| id == &project.id)
+                    .is_ok_and(|id| id == project.id.as_str())
                     && dep_task_target.get_task_id()? == self.task.target.get_task_id()?
                 {
                     continue;
@@ -224,12 +231,12 @@ pub fn create_project_dep_from_task_dep(
     root_project_id: Option<&Id>,
     already_exists: impl FnOnce(&Id) -> bool,
 ) -> Option<ProjectDependencyConfig> {
-    let TargetProjectScope::Id(dep_project_id) = &task_dep.target.project else {
+    let Ok(dep_project_id) = task_dep.target.get_project_id().map(Id::raw) else {
         return None;
     };
 
     // Already a dependency, or references self
-    if project_id == dep_project_id || already_exists(dep_project_id) {
+    if project_id == &dep_project_id || already_exists(&dep_project_id) {
         return None;
     }
 
@@ -241,12 +248,12 @@ pub fn create_project_dep_from_task_dep(
     );
 
     Some(ProjectDependencyConfig {
-        id: dep_project_id.to_owned(),
-        scope: if root_project_id.is_some_and(|id| id == dep_project_id) {
+        scope: if root_project_id.is_some_and(|id| id == &dep_project_id) {
             DependencyScope::Root
         } else {
             DependencyScope::Build
         },
+        id: dep_project_id,
         source: DependencySource::Implicit,
         via: Some(format!("task {}", task_dep.target)),
     })

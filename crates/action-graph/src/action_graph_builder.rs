@@ -132,7 +132,7 @@ pub struct ActionGraphBuilder<'query> {
     changed_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
-    ignored_dependency_targets: FxHashSet<Target>,
+    ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
 }
@@ -152,7 +152,7 @@ impl<'query> ActionGraphBuilder<'query> {
             graph: Dag::new(),
             nodes: FxHashMap::default(),
             options,
-            ignored_dependency_targets: FxHashSet::default(),
+            ignored_dependencies: FxHashMap::default(),
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
             changed_files: None,
@@ -172,10 +172,8 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
-        if !self.ignored_dependency_targets.is_empty() {
-            for target in mem::take(&mut self.ignored_dependency_targets) {
-                context.set_target_state(target, TargetState::Passthrough);
-            }
+        if !self.ignored_dependencies.is_empty() {
+            context.ignored_dependencies = mem::take(&mut self.ignored_dependencies);
         }
 
         if !self.primary_targets.is_empty() {
@@ -992,8 +990,10 @@ impl<'query> ActionGraphBuilder<'query> {
 
                 edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?);
             } else {
-                self.ignored_dependency_targets
-                    .extend(task.deps.iter().map(|dep| dep.target.clone()));
+                self.ignored_dependencies.insert(
+                    task.target.clone(),
+                    task.deps.iter().map(|dep| dep.target.clone()).collect(),
+                );
             }
         }
 

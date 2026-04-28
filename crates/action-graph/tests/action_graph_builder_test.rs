@@ -1572,7 +1572,7 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn marks_skipped_deps_as_passthrough_for_none_depth() {
+            async fn tracks_skipped_deps_for_none_depth() {
                 let sandbox = create_sandbox("tasks");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -1596,10 +1596,10 @@ mod action_graph_builder {
                 let (context, _) = builder.build();
 
                 assert_eq!(
-                    context.get_target_states(),
+                    context.ignored_dependencies,
                     FxHashMap::from_iter([(
-                        Target::parse("deps:chain4").unwrap(),
-                        TargetState::Passthrough
+                        Target::parse("deps:chain3").unwrap(),
+                        FxHashSet::from_iter([Target::parse("deps:chain4").unwrap()])
                     )])
                 );
             }
@@ -1669,7 +1669,7 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            async fn marks_skipped_transitive_deps_as_passthrough_for_direct_depth() {
+            async fn tracks_skipped_transitive_deps_for_direct_depth() {
                 let sandbox = create_sandbox("tasks");
                 let mut container = ActionGraphContainer::new(sandbox.path());
 
@@ -1693,10 +1693,10 @@ mod action_graph_builder {
                 let (context, _) = builder.build();
 
                 assert_eq!(
-                    context.get_target_states(),
+                    context.ignored_dependencies,
                     FxHashMap::from_iter([(
-                        Target::parse("deps:chain5").unwrap(),
-                        TargetState::Passthrough
+                        Target::parse("deps:chain4").unwrap(),
+                        FxHashSet::from_iter([Target::parse("deps:chain5").unwrap()])
                     )])
                 );
             }

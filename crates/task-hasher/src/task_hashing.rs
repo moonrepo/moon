@@ -41,6 +41,11 @@ pub async fn hash_common_task_contents(
         let mut deps = BTreeMap::default();
 
         for dep in &task.deps {
+            if action_context.is_dependency_ignored(&task.target, &dep.target) {
+                deps.insert(&dep.target, "passthrough".into());
+                continue;
+            }
+
             if let Some(entry) = action_context.target_states.get_sync(&dep.target) {
                 match entry.get() {
                     TargetState::Passed(hash) => {

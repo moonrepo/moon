@@ -8,6 +8,7 @@ use moon_task::Target;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::output_hydrater::HydrateFrom;
 use moon_time::now_millis;
+use rustc_hash::FxHashSet;
 use utils::*;
 
 mod task_runner {
@@ -631,6 +632,35 @@ mod task_runner {
             let container = TaskRunnerContainer::new("runner", "has-deps").await;
             let runner = container.create_runner();
             let context = ActionContext::default();
+
+            runner.is_dependencies_complete(&context).unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_true_if_dep_is_ignored_for_target() {
+            let container = TaskRunnerContainer::new("runner", "has-deps").await;
+            let runner = container.create_runner();
+            let mut context = ActionContext::default();
+
+            context.ignored_dependencies.insert(
+                runner.task.target.clone(),
+                FxHashSet::from_iter([Target::new_project("project", "dep").unwrap()]),
+            );
+
+            assert!(runner.is_dependencies_complete(&context).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        #[should_panic(expected = "Encountered a missing hash for task project:dep")]
+        async fn errors_if_dep_is_ignored_for_another_target() {
+            let container = TaskRunnerContainer::new("runner", "has-deps").await;
+            let runner = container.create_runner();
+            let mut context = ActionContext::default();
+
+            context.ignored_dependencies.insert(
+                Target::new_project("project", "other").unwrap(),
+                FxHashSet::from_iter([Target::new_project("project", "dep").unwrap()]),
+            );
 
             runner.is_dependencies_complete(&context).unwrap();
         }

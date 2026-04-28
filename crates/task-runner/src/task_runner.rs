@@ -341,6 +341,10 @@ impl<'task> TaskRunner<'task> {
         }
 
         for dep in &self.task.deps {
+            if context.is_dependency_ignored(&self.task.target, &dep.target) {
+                continue;
+            }
+
             if let Some(dep_state) = context.target_states.get_sync(&dep.target) {
                 if dep_state.get().is_complete() {
                     continue;

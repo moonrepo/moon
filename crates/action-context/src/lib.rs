@@ -43,6 +43,9 @@ pub struct ActionContext {
     #[serde(skip)]
     pub named_mutexes: scc::HashMap<String, Arc<Mutex<()>>>,
 
+    /// Dependency edges that were intentionally ignored by graph options.
+    pub ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
+
     /// Additional arguments passed after `--` to passthrough.
     pub passthrough_args: Vec<String>,
 
@@ -89,6 +92,16 @@ impl ActionContext {
 
     pub fn is_primary_target<T: AsRef<Target>>(&self, target: T) -> bool {
         self.primary_targets.contains(target.as_ref())
+    }
+
+    pub fn is_dependency_ignored<T: AsRef<Target>, D: AsRef<Target>>(
+        &self,
+        target: T,
+        dependency: D,
+    ) -> bool {
+        self.ignored_dependencies
+            .get(target.as_ref())
+            .is_some_and(|dependencies| dependencies.contains(dependency.as_ref()))
     }
 
     pub fn set_target_state<T: AsRef<Target>>(&self, target: T, state: TargetState) {

@@ -345,6 +345,13 @@ export interface TaskOptionsConfig {
 	 */
 	mergeOutputs?: TaskMergeStrategy | null;
 	/**
+	 * The strategy to use when merging `tags` with an inherited task.
+	 * @since 2.3.0
+	 *
+	 * @default 'append'
+	 */
+	mergeTags?: TaskMergeStrategy | null;
+	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 * @since 2.0.0
 	 *
@@ -518,6 +525,12 @@ export interface TaskConfig {
 	 * @since 1.27.0
 	 */
 	script?: string | null;
+	/**
+	 * A list of tags to categorize this task with. Tags are inherited and can
+	 * be used for querying and filtering tasks.
+	 * @since 2.3.0
+	 */
+	tags?: Id[] | null;
 	/**
 	 * A toolchain, or list of toolchains, in which the task will inherit
 	 * functionality from.
@@ -804,6 +817,13 @@ export interface PartialTaskOptionsConfig {
 	 */
 	mergeOutputs?: TaskMergeStrategy | null;
 	/**
+	 * The strategy to use when merging `tags` with an inherited task.
+	 * @since 2.3.0
+	 *
+	 * @default 'append'
+	 */
+	mergeTags?: TaskMergeStrategy | null;
+	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 * @since 2.0.0
 	 *
@@ -947,6 +967,12 @@ export interface PartialTaskConfig {
 	 * @since 1.27.0
 	 */
 	script?: string | null;
+	/**
+	 * A list of tags to categorize this task with. Tags are inherited and can
+	 * be used for querying and filtering tasks.
+	 * @since 2.3.0
+	 */
+	tags?: Id[] | null;
 	/**
 	 * A toolchain, or list of toolchains, in which the task will inherit
 	 * functionality from.

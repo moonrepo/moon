@@ -967,6 +967,21 @@
           ],
           "markdownDescription": "A script to run within a shell. A script is anything from a single command, to multiple commands, or shell specific syntax. Does not support arguments, merging, or inheritance. This overrides `command` and `args`. @since 1.27.0"
         },
+        "tags": {
+          "title": "tags",
+          "description": "A list of tags to categorize this task with. Tags are inherited and can be used for querying and filtering tasks. @since 2.3.0",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Id"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "toolchain": {
           "title": "toolchain",
           "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
@@ -1423,6 +1438,20 @@
             }
           ],
           "markdownDescription": "The strategy to use when merging `outputs` with an inherited task."
+        },
+        "mergeTags": {
+          "title": "mergeTags",
+          "description": "The strategy to use when merging tags with an inherited task. @since 2.3.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `tags` with an inherited task. @since 2.3.0"
         },
         "mergeToolchains": {
           "title": "mergeToolchains",

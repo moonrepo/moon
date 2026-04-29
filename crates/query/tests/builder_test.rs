@@ -533,20 +533,20 @@ mod mql_build {
         }
     }
 
-    mod tag {
+    mod project_tag {
         use super::*;
 
         #[test]
         fn tag_eq() {
             assert_eq!(
-                build_query("tag=lib").unwrap(),
+                build_query("projectTag=lib").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Tag(value_list(["lib"])),
+                        field: Field::ProjectTag(value_list(["lib"])),
                         op: ComparisonOperator::Equal,
                     }],
-                    input: Some("tag=lib".into())
+                    input: Some("projectTag=lib".into())
                 }
             );
         }
@@ -554,14 +554,14 @@ mod mql_build {
         #[test]
         fn tag_neq_list() {
             assert_eq!(
-                build_query("tag!=[foo,bar]").unwrap(),
+                build_query("projectTag!=[foo,bar]").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Tag(value_list(["foo", "bar"])),
+                        field: Field::ProjectTag(value_list(["foo", "bar"])),
                         op: ComparisonOperator::NotEqual,
                     }],
-                    input: Some("tag!=[foo,bar]".into())
+                    input: Some("projectTag!=[foo,bar]".into())
                 }
             );
         }
@@ -569,14 +569,14 @@ mod mql_build {
         #[test]
         fn tag_like() {
             assert_eq!(
-                build_query("tag~app-*").unwrap(),
+                build_query("projectTag~app-*").unwrap(),
                 Criteria {
                     op: LogicalOperator::And,
                     conditions: vec![Condition::Field {
-                        field: Field::Tag(value_list(["app-*"])),
+                        field: Field::ProjectTag(value_list(["app-*"])),
                         op: ComparisonOperator::Like,
                     }],
-                    input: Some("tag~app-*".into())
+                    input: Some("projectTag~app-*".into())
                 }
             );
         }
@@ -611,6 +611,55 @@ mod mql_build {
                         op: ComparisonOperator::Like,
                     }],
                     input: Some("task~foo*".into())
+                }
+            );
+        }
+    }
+
+    mod task_tag {
+        use super::*;
+
+        #[test]
+        fn tag_eq() {
+            assert_eq!(
+                build_query("taskTag=lib").unwrap(),
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
+                        field: Field::TaskTag(value_list(["lib"])),
+                        op: ComparisonOperator::Equal,
+                    }],
+                    input: Some("taskTag=lib".into())
+                }
+            );
+        }
+
+        #[test]
+        fn tag_neq_list() {
+            assert_eq!(
+                build_query("taskTag!=[foo,bar]").unwrap(),
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
+                        field: Field::TaskTag(value_list(["foo", "bar"])),
+                        op: ComparisonOperator::NotEqual,
+                    }],
+                    input: Some("taskTag!=[foo,bar]".into())
+                }
+            );
+        }
+
+        #[test]
+        fn tag_like() {
+            assert_eq!(
+                build_query("taskTag~app-*").unwrap(),
+                Criteria {
+                    op: LogicalOperator::And,
+                    conditions: vec![Condition::Field {
+                        field: Field::TaskTag(value_list(["app-*"])),
+                        op: ComparisonOperator::Like,
+                    }],
+                    input: Some("taskTag~app-*".into())
                 }
             );
         }

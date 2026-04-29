@@ -15,7 +15,7 @@ use moon_config::{
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
-use moon_target::{Target, TargetScope};
+use moon_target::{Target, TargetProjectScope};
 use moon_task::{
     Task, TaskArg, TaskOptionAffectedFiles, TaskOptionEnvFile, TaskOptions, TaskState,
     TaskUnixShell, TaskWindowsShell,
@@ -176,7 +176,7 @@ impl<'proj> TasksBuilder<'proj> {
 
         for global_config in global_configs.values() {
             for (task_id, task_config) in &global_config.tasks {
-                let target = Target::new_project(self.project_id, task_id).unwrap();
+                let target = Target::new(self.project_id, task_id).unwrap();
 
                 // None = Include all
                 // [] = Include none
@@ -279,7 +279,7 @@ impl<'proj> TasksBuilder<'proj> {
 
     #[instrument(skip(self))]
     async fn build_task(&self, id: &Id) -> miette::Result<Task> {
-        let target = Target::new_project(self.project_id, id)?;
+        let target = Target::new(self.project_id, id)?;
 
         trace!(
             task_target = target.as_str(),
@@ -1223,20 +1223,24 @@ impl<'proj> TasksBuilder<'proj> {
 
         for mut dep in deps {
             // Only exclude/rename deps targeting the current project
-            if matches!(dep.target.scope, TargetScope::OwnSelf)
+            if matches!(dep.target.project, TargetProjectScope::OwnSelf)
                 || dep
                     .target
                     .get_project_id()
-                    .is_ok_and(|id| id == self.project_id)
+                    .is_ok_and(|id| id == self.project_id.as_str())
             {
+                let Ok(task_id) = dep.target.get_task_id() else {
+                    continue;
+                };
+
                 // Deps targeting upstream (^:task) or other scopes should
                 // be preserved, as excluding a task locally shouldn't
                 // prevent it from running on dependencies
-                if filters.exclude.contains(&dep.target.task_id) {
+                if filters.exclude.iter().any(|ex| ex == task_id) {
                     continue;
                 }
 
-                if let Some(new_task_id) = filters.rename.get(&dep.target.task_id) {
+                if let Some(new_task_id) = filters.rename.get(task_id) {
                     dep.target = Target::new_self(new_task_id).unwrap();
                 }
             }

@@ -6,7 +6,7 @@ use thiserror::Error;
 pub enum TargetError {
     #[diagnostic(code(target::invalid_format))]
     #[error(
-        "Invalid target {}, must be in the format of \"scope:task\", with acceptable identifier characters.", .0.style(Style::Label)
+        "Invalid target {}, must be in the format of \"project:task\", with acceptable identifier characters.", .0.style(Style::Label)
     )]
     InvalidFormat(String),
 
@@ -20,11 +20,23 @@ pub enum TargetError {
 
     #[diagnostic(code(target::project_scope_required))]
     #[error(
-        "Invalid target {}, requires fully-qualified project and task identifers (project:task).", .0.style(Style::Label)
+        "Invalid target {}, requires fully-qualified project identifer (project:task).", .0.style(Style::Label)
     )]
     ProjectScopeRequired(String),
 
+    #[diagnostic(code(target::task_scope_required))]
+    #[error(
+        "Invalid target {}, requires fully-qualified task identifer (project:task).", .0.style(Style::Label)
+    )]
+    TaskScopeRequired(String),
+
+    #[diagnostic(code(target::tag_not_valid_for_default_project))]
+    #[error(
+        "Invalid target {}, tags are not supported for default project targets.", .0.style(Style::Label)
+    )]
+    TagNotValidForDefaultProject(String),
+
     #[diagnostic(code(target::missing_segments))]
-    #[error("Target \":\" encountered. Wildcard scope and task not supported.")]
+    #[error("Target \":\" encountered. Wildcard project and task scopes are not supported.")]
     TooWild,
 }

@@ -12,7 +12,7 @@ use moon_console::ui::{
 };
 use moon_process::Command;
 use moon_project::Project;
-use moon_task::{Target, TargetScope, Task};
+use moon_task::{Target, Task};
 use moon_task_runner::command_builder::CommandBuilder;
 use starbase::AppResult;
 use starbase_utils::json;
@@ -46,7 +46,7 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
     })
     .await?;
 
-    let TargetScope::Project(project_locator) = &target.scope else {
+    let Ok(project_locator) = target.get_project_id() else {
         return Err(AppError::ProjectIdRequired.into());
     };
 

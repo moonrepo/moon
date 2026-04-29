@@ -5,6 +5,7 @@ use crate::queries::tasks::*;
 use crate::session::MoonSession;
 use clap::Args;
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_common::Id;
 use starbase::AppResult;
 use starbase_utils::json;
 use std::collections::BTreeMap;
@@ -111,7 +112,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
 
         result
             .tasks
-            .entry(project_id.to_owned())
+            .entry(Id::raw(project_id))
             .or_default()
             .insert(task.id.clone(), task);
     }

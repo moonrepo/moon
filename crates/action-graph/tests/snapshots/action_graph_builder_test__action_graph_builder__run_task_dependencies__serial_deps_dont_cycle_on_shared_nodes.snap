@@ -1,6 +1,5 @@
 ---
 source: crates/action-graph/tests/action_graph_builder_test.rs
-assertion_line: 2135
 expression: graph.to_dot()
 ---
 digraph {

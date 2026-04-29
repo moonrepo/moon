@@ -59,10 +59,7 @@ mod task_runner {
                 let context = ActionContext::default();
                 context
                     .target_states
-                    .insert_sync(
-                        Target::new_project("project", "dep").unwrap(),
-                        TargetState::Skipped,
-                    )
+                    .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                     .unwrap();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -86,10 +83,7 @@ mod task_runner {
                 let context = ActionContext::default();
                 context
                     .target_states
-                    .insert_sync(
-                        Target::new_project("project", "dep").unwrap(),
-                        TargetState::Failed,
-                    )
+                    .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
                     .unwrap();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
@@ -583,10 +577,7 @@ mod task_runner {
 
             context
                 .target_states
-                .insert_sync(
-                    Target::new_project("project", "dep").unwrap(),
-                    TargetState::Failed,
-                )
+                .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
                 .unwrap();
 
             assert!(!runner.is_dependencies_complete(&context).unwrap());
@@ -600,10 +591,7 @@ mod task_runner {
 
             context
                 .target_states
-                .insert_sync(
-                    Target::new_project("project", "dep").unwrap(),
-                    TargetState::Skipped,
-                )
+                .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                 .unwrap();
 
             assert!(!runner.is_dependencies_complete(&context).unwrap());
@@ -618,7 +606,7 @@ mod task_runner {
             context
                 .target_states
                 .insert_sync(
-                    Target::new_project("project", "dep").unwrap(),
+                    Target::new("project", "dep").unwrap(),
                     TargetState::Passed("hash123".into()),
                 )
                 .unwrap();
@@ -697,7 +685,7 @@ mod task_runner {
 
             context
                 .primary_targets
-                .insert(Target::new_project("project", "base").unwrap());
+                .insert(Target::new("project", "base").unwrap());
             context.passthrough_args.push("--extra".into());
 
             let after_hash = runner.generate_hash(&context, &node).await.unwrap();

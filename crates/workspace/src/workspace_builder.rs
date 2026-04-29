@@ -525,7 +525,7 @@ impl WorkspaceBuilder {
         {
             let Some(build_data) = self.task_data.get(&target) else {
                 return Err(ProjectError::UnknownTask {
-                    task_id: target.task_id.to_string(),
+                    task_id: target.get_task_id().unwrap().to_string(),
                     project_id: target.get_project_id().unwrap().to_string(),
                 }
                 .into());
@@ -557,7 +557,7 @@ impl WorkspaceBuilder {
         self.task_data.get_mut(&target).unwrap().node_index = Some(index);
 
         // Build the task (remove from project)
-        let mut task = project.tasks.remove(&target.task_id).unwrap();
+        let mut task = project.tasks.remove(target.get_task_id()?).unwrap();
 
         cycle.insert(target.clone());
 

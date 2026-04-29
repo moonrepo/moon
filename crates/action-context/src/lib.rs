@@ -125,8 +125,9 @@ impl ActionContext {
 
         // :task == scope:task
         for other_target in &self.initial_targets {
-            if let TargetLocator::Qualified(other_target) = other_target
-                && other_target.is_all_task(&target.task_id)
+            if let Ok(task_id) = target.get_task_id()
+                && let TargetLocator::Qualified(other_target) = other_target
+                && other_target.is_all_task(task_id)
             {
                 return true;
             }

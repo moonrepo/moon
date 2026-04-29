@@ -2252,10 +2252,10 @@ mod action_graph_builder {
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [
-                    Target::parse("server:build").unwrap(),
+                    Target::parse("client:build").unwrap(),
                     Target::parse("base:build").unwrap(),
                     Target::parse("common:build").unwrap(),
-                    Target::parse("client:build").unwrap(),
+                    Target::parse("server:build").unwrap(),
                 ]
             );
         }
@@ -2530,13 +2530,13 @@ mod action_graph_builder {
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [
-                    Target::parse("ci:ci4-dependency").unwrap(),
-                    Target::parse("ci:ci2-dependency").unwrap(),
                     Target::parse("deps-affected:c").unwrap(),
-                    Target::parse("deps-affected:a").unwrap(),
-                    Target::parse("ci:ci3-dependency").unwrap(),
                     Target::parse("deps:a").unwrap(),
                     Target::parse("deps:c").unwrap(),
+                    Target::parse("ci:ci2-dependency").unwrap(),
+                    Target::parse("ci:ci3-dependency").unwrap(),
+                    Target::parse("ci:ci4-dependency").unwrap(),
+                    Target::parse("deps-affected:a").unwrap(),
                 ]
             );
         }
@@ -2563,8 +2563,8 @@ mod action_graph_builder {
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [
-                    Target::parse("common:build").unwrap(),
                     Target::parse("client:build").unwrap(),
+                    Target::parse("common:build").unwrap(),
                 ]
             );
         }

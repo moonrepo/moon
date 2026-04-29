@@ -101,7 +101,7 @@ impl<'a> TasksQuerent for WorkspaceTasksQuerent<'a> {
                             if self
                                 .tags_to_targets
                                 .get(tag_id)
-                                .map_or(false, |targets| targets.contains(target))
+                                .is_some_and(|targets| targets.contains(target))
                             {
                                 list.push((target, options));
                             }

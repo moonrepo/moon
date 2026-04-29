@@ -11,6 +11,9 @@
 - **Git**
   - Added SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256 as
     the default hash algorithm.
+- **Tasks**
+  - Added tags support to tasks through a new `tags` setting.
+    - Added `taskTag` field support to MQL.
 
 ## Unreleased
 

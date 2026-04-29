@@ -106,10 +106,16 @@ impl WorkspaceGraph {
                             condition.matches(sources, &project.source)
                         }
                         Field::ProjectStack(types) => condition.matches_enum(types, &project.stack),
-                        Field::Tag(tags) => condition.matches_list(tags, &project.config.tags),
+                        Field::ProjectTag(tags) => {
+                            condition.matches_list(tags, &project.config.tags)
+                        }
                         Field::Task(ids) => Ok(project.task_targets.iter().any(|target| {
-                            condition.matches(ids, &target.task_id).unwrap_or_default()
+                            target
+                                .get_task_id()
+                                .and_then(|task_id| condition.matches(ids, task_id))
+                                .unwrap_or_default()
                         })),
+                        Field::TaskTag(_tags) => todo!("TODO"),
                         Field::TaskToolchain(ids) => Ok(self
                             .tasks
                             .get_many(&project.task_targets)?

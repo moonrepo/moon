@@ -23,7 +23,7 @@ impl TasksQuerent for WorkspaceBuilderTasksQuerent<'_> {
     fn query_tasks(
         &self,
         project_ids: Vec<&Id>,
-        task_id: &Id,
+        task_id: &str,
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>> {
         // May be an alias!
         let project_ids = project_ids
@@ -35,9 +35,10 @@ impl TasksQuerent for WorkspaceBuilderTasksQuerent<'_> {
             .task_data
             .iter()
             .filter_map(|(target, data)| {
-                let project_id = target.get_project_id().ok()?;
+                let other_project_id = target.get_project_id().ok()?;
+                let other_task_id = target.get_task_id().ok()?;
 
-                if &target.task_id == task_id && project_ids.contains(project_id) {
+                if other_task_id == task_id && project_ids.iter().any(|id| id == other_project_id) {
                     Some((target, &data.options))
                 } else {
                     None
@@ -67,14 +68,14 @@ impl<'a> TasksQuerent for WorkspaceTasksQuerent<'a> {
     fn query_tasks(
         &self,
         project_ids: Vec<&Id>,
-        task_id: &Id,
+        task_id: &str,
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>> {
         let mut list = vec![];
 
         for project_id in project_ids {
             if let Some(tasks) = self.ids_to_target_options.get(project_id) {
                 for (target, options) in tasks {
-                    if &target.task_id == task_id {
+                    if target.get_task_id()? == task_id {
                         list.push((target, options));
                     }
                 }

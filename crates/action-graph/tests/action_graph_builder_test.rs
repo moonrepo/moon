@@ -20,7 +20,7 @@ use utils::ActionGraphContainer;
 fn create_task(project: &str, id: &str) -> Task {
     Task {
         id: Id::raw(id),
-        target: Target::new_project(project, id).unwrap(),
+        target: Target::new(project, id).unwrap(),
         toolchains: vec![Id::raw("node")],
         ..Task::default()
     }
@@ -2252,9 +2252,9 @@ mod action_graph_builder {
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [
+                    Target::parse("client:build").unwrap(),
                     Target::parse("base:build").unwrap(),
                     Target::parse("common:build").unwrap(),
-                    Target::parse("client:build").unwrap(),
                     Target::parse("server:build").unwrap(),
                 ]
             );
@@ -2404,7 +2404,7 @@ mod action_graph_builder {
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [
                     Target::parse("client:lint").unwrap(),
-                    Target::parse("common:lint").unwrap()
+                    Target::parse("common:lint").unwrap(),
                 ]
             );
         }
@@ -2530,13 +2530,13 @@ mod action_graph_builder {
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [
+                    Target::parse("deps-affected:c").unwrap(),
                     Target::parse("deps:a").unwrap(),
-                    Target::parse("ci:ci4-dependency").unwrap(),
-                    Target::parse("deps-affected:a").unwrap(),
                     Target::parse("deps:c").unwrap(),
                     Target::parse("ci:ci2-dependency").unwrap(),
                     Target::parse("ci:ci3-dependency").unwrap(),
-                    Target::parse("deps-affected:c").unwrap(),
+                    Target::parse("ci:ci4-dependency").unwrap(),
+                    Target::parse("deps-affected:a").unwrap(),
                 ]
             );
         }

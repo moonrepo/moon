@@ -19,15 +19,17 @@ impl TasksQuerent for TestQuerent {
     fn query_tasks(
         &self,
         project_ids: Vec<&Id>,
-        task_id: &Id,
+        task_id: &str,
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>> {
         Ok(self
             .data
             .iter()
             .filter_map(|(target, options)| {
-                let project_id = target.get_project_id().ok()?;
+                let other_project_id = target.get_project_id().ok()?;
+                let other_task_id = target.get_task_id().ok()?;
 
-                if &target.task_id == task_id && project_ids.contains(&project_id) {
+                if other_task_id == task_id && project_ids.iter().any(|id| id == &other_project_id)
+                {
                     Some((target, options))
                 } else {
                     None
@@ -47,7 +49,7 @@ fn create_project() -> Project {
 fn create_task() -> Task {
     Task {
         id: Id::raw("task"),
-        target: Target::new_project("project", "task").unwrap(),
+        target: Target::new("project", "task").unwrap(),
         ..Task::default()
     }
 }
@@ -337,9 +339,9 @@ mod task_deps_builder {
             assert_eq!(
                 task.deps,
                 vec![
-                    TaskDependencyConfig::new(Target::parse("bar:build").unwrap()),
                     TaskDependencyConfig::new(Target::parse("baz:build").unwrap()),
                     TaskDependencyConfig::new(Target::parse("foo:build").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("bar:build").unwrap()),
                 ]
             );
         }

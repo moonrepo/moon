@@ -1,64 +1,76 @@
-use crate::dep_scope::DependencyScope;
 use moon_common::Id;
-use std::fmt::{self, Display};
-use std::str::FromStr;
+use std::fmt;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
-pub enum TargetScope {
-    All,                     // :task
-    Deps,                    // ^:task
-    DepsOf(DependencyScope), // ^build:task, ^development:task, etc.
-    OwnSelf,                 // ~:task
-    Project(Id),             // project:task
-    Tag(Id),                 // #tag:task
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
+pub enum TargetDependencyScope {
+    Build,
+    Development,
+    Peer,
+    Production,
 }
 
-impl TargetScope {
-    pub fn parse<T: AsRef<str>>(value: T) -> miette::Result<Self> {
-        let scope = match value.as_ref() {
-            "" => Self::All,
-            "^" => Self::Deps,
-            "^build" => Self::DepsOf(DependencyScope::Build),
-            "^dev" | "^development" => Self::DepsOf(DependencyScope::Development),
-            "^peer" => Self::DepsOf(DependencyScope::Peer),
-            "^prod" | "^production" => Self::DepsOf(DependencyScope::Production),
-            "~" => Self::OwnSelf,
-            id => {
-                if let Some(tag) = id.strip_prefix('#') {
-                    Self::Tag(Id::new(tag)?)
-                } else {
-                    Self::Project(Id::new(id)?)
-                }
-            }
-        };
-
-        Ok(scope)
-    }
-}
-
-impl Display for TargetScope {
+impl fmt::Display for TargetDependencyScope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TargetScope::All => write!(f, ""),
-            TargetScope::Deps => write!(f, "^"),
-            TargetScope::DepsOf(scope) => write!(f, "^{scope}"),
-            TargetScope::OwnSelf => write!(f, "~"),
-            TargetScope::Project(id) => write!(f, "{id}"),
-            TargetScope::Tag(id) => write!(f, "#{id}"),
+            Self::Build => write!(f, "build"),
+            Self::Development => write!(f, "development"),
+            Self::Peer => write!(f, "peer"),
+            Self::Production => write!(f, "production"),
         }
     }
 }
 
-impl AsRef<TargetScope> for TargetScope {
-    fn as_ref(&self) -> &TargetScope {
-        self
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd)]
+pub enum TargetProjectScope {
+    All,                           // :task
+    Deps,                          // ^:task
+    DepsOf(TargetDependencyScope), // ^build:task, ^development:task, etc.
+    Id,                            // project:task
+    OwnSelf,                       // ~:task
+    Tag,                           // #tag:task
+}
+
+impl TargetProjectScope {
+    pub fn parse<T: AsRef<str>>(value: T) -> miette::Result<Self> {
+        let value = match value.as_ref() {
+            "" => Self::All,
+            "^" => Self::Deps,
+            "^build" => Self::DepsOf(TargetDependencyScope::Build),
+            "^dev" | "^development" => Self::DepsOf(TargetDependencyScope::Development),
+            "^peer" => Self::DepsOf(TargetDependencyScope::Peer),
+            "^prod" | "^production" => Self::DepsOf(TargetDependencyScope::Production),
+            "~" => Self::OwnSelf,
+            id => {
+                if let Some(id) = id.strip_prefix('#') {
+                    Id::new(id)?;
+                    Self::Tag
+                } else {
+                    Id::new(id)?;
+                    Self::Id
+                }
+            }
+        };
+
+        Ok(value)
     }
 }
 
-impl FromStr for TargetScope {
-    type Err = miette::Report;
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq, PartialOrd)]
+pub enum TargetTaskScope {
+    Id,  // project:task
+    Tag, // project:#tag
+}
 
-    fn from_str(value: &str) -> Result<Self, Self::Err> {
-        Self::parse(value)
+impl TargetTaskScope {
+    pub fn parse<T: AsRef<str>>(value: T) -> miette::Result<Self> {
+        let value = value.as_ref();
+
+        if let Some(id) = value.strip_prefix('#') {
+            Id::new(id)?;
+            Ok(Self::Tag)
+        } else {
+            Id::new(value)?;
+            Ok(Self::Id)
+        }
     }
 }

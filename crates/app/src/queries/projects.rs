@@ -90,7 +90,7 @@ fn load_with_regex(
             let has_task = project
                 .task_targets
                 .iter()
-                .any(|target| regex.is_match(&target.task_id));
+                .any(|target| regex.is_match(target.get_task_id().unwrap()));
 
             if !has_task {
                 continue;

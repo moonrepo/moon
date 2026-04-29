@@ -1,7 +1,7 @@
 use crate::resolve_path;
 use moon_cache_item::CacheItem;
 use moon_common::path::encode_component;
-use moon_target::{Target, TargetScope};
+use moon_target::{Target, TargetProjectScope, TargetTaskScope};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use starbase_utils::{fs, json};
@@ -49,13 +49,22 @@ impl StateEngine {
     }
 
     pub fn get_target_dir(&self, target: &Target) -> PathBuf {
-        let dir = match &target.scope {
-            TargetScope::Project(id) => self.get_project_dir(id),
-            TargetScope::Tag(tag) => self.get_tag_dir(tag),
+        let (scope, value) = target.get_task_scope();
+
+        let name = match scope {
+            TargetTaskScope::Id => value.to_string(),
+            TargetTaskScope::Tag => format!("tag-{value}"),
+        };
+
+        let (scope, value) = target.get_project_scope();
+
+        let dir = match scope {
+            TargetProjectScope::Id => self.get_project_dir(value),
+            TargetProjectScope::Tag => self.get_tag_dir(value),
             _ => self.get_project_dir("_"),
         };
 
-        dir.join(encode_component(target.task_id.as_str()))
+        dir.join(encode_component(name))
     }
 
     pub fn load_state<T>(&self, path: impl AsRef<OsStr>) -> miette::Result<CacheItem<T>>

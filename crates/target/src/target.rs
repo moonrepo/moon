@@ -17,6 +17,10 @@ pub static TARGET_PATTERN: LazyLock<Regex> = LazyLock::new(|| {
     .unwrap()
 });
 
+fn map_error(value: &str) -> TargetError {
+    TargetError::InvalidFormat(value.to_owned())
+}
+
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct Target {
     pub id: CompactString,
@@ -26,6 +30,10 @@ pub struct Target {
 
     #[doc(hidden)]
     pub task: TargetTaskScope,
+
+    // Index of the `:` separator, used for fast slicing
+    #[doc(hidden)]
+    pub index: u8,
 }
 
 impl Target {
@@ -36,11 +44,13 @@ impl Target {
     {
         let project_id = project_id.as_ref();
         let task_id = task_id.as_ref();
+        let id = format!("{project_id}:{task_id}");
 
         Ok(Target {
-            project: TargetProjectScope::parse(project_id),
-            task: TargetTaskScope::parse(task_id),
-            id: CompactString::new(format!("{project_id}:{task_id}")),
+            index: project_id.len() as u8,
+            project: TargetProjectScope::parse(project_id).map_err(|_| map_error(&id))?,
+            task: TargetTaskScope::parse(task_id).map_err(|_| map_error(&id))?,
+            id: CompactString::new(id),
         })
     }
 
@@ -49,11 +59,13 @@ impl Target {
         T: AsRef<str>,
     {
         let task_id = task_id.as_ref();
+        let id = format!("~:{task_id}");
 
         Ok(Target {
+            index: 1,
             project: TargetProjectScope::OwnSelf,
-            task: TargetTaskScope::parse(task_id),
-            id: CompactString::new(format!("~:{task_id}")),
+            task: TargetTaskScope::parse(task_id).map_err(|_| map_error(&id))?,
+            id: CompactString::new(id),
         })
     }
 
@@ -71,11 +83,7 @@ impl Target {
             return Err(TargetError::InvalidFormat(target_id.to_owned()).into());
         };
 
-        let project_id = match matches.name("project") {
-            Some(value) => value.as_str(),
-            None => "", // All
-        };
-
+        let project_id = matches.name("project").map(|m| m.as_str()).unwrap_or("");
         let task_id = matches.name("task").expect("Task ID required.").as_str();
 
         Self::new(project_id, task_id)
@@ -143,12 +151,7 @@ impl Target {
     }
 
     pub fn get_project_scope(&self) -> (TargetProjectScope, &str) {
-        let index = self
-            .id
-            .find(':')
-            .expect("Targets must have a `:` separator.");
-
-        let project = &self.id[0..index];
+        let project = &self.id[0..self.index as usize];
 
         match &self.project {
             TargetProjectScope::DepsOf(scope) => (
@@ -181,12 +184,7 @@ impl Target {
     }
 
     pub fn get_task_scope(&self) -> (TargetTaskScope, &str) {
-        let index = self
-            .id
-            .find(':')
-            .expect("Targets must have a `:` separator.");
-
-        let value = &self.id[index + 1..];
+        let value = &self.id[self.index as usize + 1..];
 
         match value.strip_prefix('#') {
             Some(tag) => (TargetTaskScope::Tag, tag),
@@ -201,6 +199,7 @@ impl Default for Target {
             id: "~:unknown".into(),
             project: TargetProjectScope::OwnSelf,
             task: TargetTaskScope::Id,
+            index: 1,
         }
     }
 }

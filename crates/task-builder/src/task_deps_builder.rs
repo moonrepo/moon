@@ -5,7 +5,7 @@ use moon_config::{
 };
 use moon_project::Project;
 use moon_task::{
-    DependencyScope as TargetDepScope, Target, TargetProjectScope, Task, TaskOptionRunInCI,
+    Target, TargetDependencyScope as TargetDepScope, TargetProjectScope, Task, TaskOptionRunInCI,
     TaskOptions,
 };
 use std::mem;

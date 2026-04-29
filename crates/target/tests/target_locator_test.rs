@@ -49,7 +49,7 @@ mod target_locator {
                 TargetLocator::parse("^build:lint-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("^build:lint-*"),
-                    project: Some(TargetProjectScope::DepsOf(DependencyScope::Build)),
+                    project: Some(TargetProjectScope::DepsOf(TargetDependencyScope::Build)),
                     project_glob: None,
                     task_glob: String::from("lint-*"),
                 }
@@ -196,7 +196,7 @@ mod target_locator {
                 TargetLocator::parse("^build:#test-*").unwrap(),
                 TargetLocator::GlobMatch {
                     original: String::from("^build:#test-*"),
-                    project: Some(TargetProjectScope::DepsOf(DependencyScope::Build)),
+                    project: Some(TargetProjectScope::DepsOf(TargetDependencyScope::Build)),
                     project_glob: None,
                     task_glob: String::from("#test-*"),
                 }

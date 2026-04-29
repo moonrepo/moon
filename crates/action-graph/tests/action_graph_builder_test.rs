@@ -2403,8 +2403,8 @@ mod action_graph_builder {
             assert_eq!(
                 context.primary_targets.into_iter().collect::<Vec<_>>(),
                 [
-                    Target::parse("common:lint").unwrap(),
                     Target::parse("client:lint").unwrap(),
+                    Target::parse("common:lint").unwrap(),
                 ]
             );
         }

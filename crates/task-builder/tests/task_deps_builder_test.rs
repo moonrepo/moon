@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_config::*;
 use moon_project::Project;
-use moon_task::{Target, Task, TaskOptions};
+use moon_task::{Target, TargetTaskScope, Task, TaskOptions};
 use moon_task_builder::{TaskDepsBuilder, TasksQuerent};
 use rustc_hash::FxHashMap;
 
@@ -19,7 +19,7 @@ impl TasksQuerent for TestQuerent {
     fn query_tasks(
         &self,
         project_ids: Vec<&Id>,
-        task_id: &str,
+        task_scope: (TargetTaskScope, &str),
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>> {
         Ok(self
             .data
@@ -28,11 +28,22 @@ impl TasksQuerent for TestQuerent {
                 let other_project_id = target.get_project_id().ok()?;
                 let other_task_id = target.get_task_id().ok()?;
 
-                if other_task_id == task_id && project_ids.iter().any(|id| id == &other_project_id)
-                {
-                    Some((target, options))
-                } else {
-                    None
+                if !project_ids.iter().any(|id| id.as_str() == other_project_id) {
+                    return None;
+                }
+
+                match task_scope {
+                    (TargetTaskScope::Id, task_id) => {
+                        if other_task_id == task_id {
+                            Some((target, options))
+                        } else {
+                            None
+                        }
+                    }
+                    (TargetTaskScope::Tag, _tag_id) => {
+                        // TODO
+                        None
+                    }
                 }
             })
             .collect::<Vec<_>>())

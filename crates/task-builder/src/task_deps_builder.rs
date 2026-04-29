@@ -5,8 +5,8 @@ use moon_config::{
 };
 use moon_project::Project;
 use moon_task::{
-    Target, TargetDependencyScope as TargetDepScope, TargetProjectScope, Task, TaskOptionRunInCI,
-    TaskOptions,
+    Target, TargetDependencyScope as TargetDepScope, TargetProjectScope, TargetTaskScope, Task,
+    TaskOptionRunInCI, TaskOptions,
 };
 use std::mem;
 use tracing::trace;
@@ -16,7 +16,7 @@ pub trait TasksQuerent {
     fn query_tasks(
         &self,
         project_ids: Vec<&Id>,
-        task_id: &str,
+        task_scope: (TargetTaskScope, &str),
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>>;
 }
 
@@ -108,7 +108,7 @@ impl TaskDepsBuilder<'_> {
 
             let results = self.querent.query_tasks(
                 project_ids.iter().collect(),
-                dep_config.target.get_task_id()?,
+                dep_config.target.get_task_scope(),
             )?;
 
             if results.is_empty() && !skip_if_missing {

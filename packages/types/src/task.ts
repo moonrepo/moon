@@ -94,6 +94,7 @@ export interface Task {
 	preset?: TaskPreset | null;
 	script?: string | null;
 	state: TaskState;
+	tags: Id[];
 	target: string;
 	toolchains?: Id[];
 	type: TaskType;

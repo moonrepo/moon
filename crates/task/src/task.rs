@@ -133,6 +133,9 @@ cacheable!(
 
         pub state: TaskState,
 
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        pub tags: Vec<Id>,
+
         pub target: Target,
 
         #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -371,6 +374,7 @@ impl Default for Task {
             preset: None,
             script: None,
             state: TaskState::default(),
+            tags: vec![],
             target: Target::default(),
             toolchains: vec![Id::raw("system")],
             type_of: TaskType::default(),

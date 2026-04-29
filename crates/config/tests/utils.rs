@@ -296,6 +296,7 @@ pub fn load_tasks_config_in_format(format: &str) {
                 merge_env: Some(TaskMergeStrategy::Replace),
                 merge_inputs: Some(TaskMergeStrategy::Preserve),
                 merge_outputs: None,
+                merge_tags: None,
                 merge_toolchains: None,
                 mutex: Some("lock".into()),
                 os: Some(OneOrMany::Many(vec![

@@ -115,7 +115,15 @@ impl WorkspaceGraph {
                                 .and_then(|task_id| condition.matches(ids, task_id))
                                 .unwrap_or_default()
                         })),
-                        Field::TaskTag(_tags) => todo!("TODO"),
+                        Field::TaskTag(tags) => Ok(self
+                            .tasks
+                            .get_many(&project.task_targets)?
+                            .iter()
+                            .any(|task| {
+                                condition
+                                    .matches_list(tags, &task.tags)
+                                    .unwrap_or_default()
+                            })),
                         Field::TaskToolchain(ids) => Ok(self
                             .tasks
                             .get_many(&project.task_targets)?

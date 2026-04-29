@@ -16,7 +16,7 @@ use moon_exec_plan::{ExecutionPlan, TargetsBlock};
 use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
-use moon_task::{Target, TargetError, TargetLocator, TargetProjectScope, Task};
+use moon_task::{Target, TargetError, TargetLocator, TargetProjectScope, TargetTaskScope, Task};
 use moon_toolchain::ToolchainSpec;
 use moon_workspace_graph::projects::ProjectGraphError;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
@@ -707,9 +707,11 @@ impl<'query> ActionGraphBuilder<'query> {
         allow_internal: bool,
     ) -> miette::Result<Vec<Arc<Task>>> {
         let mut tasks = vec![];
+
+        // First, find all projects based on the target scope
         let (scope, scope_value) = target.get_project_scope();
 
-        match scope {
+        let (projects, bubble_error) = match scope {
             // :task
             TargetProjectScope::All => {
                 let mut projects = vec![];
@@ -720,40 +722,13 @@ impl<'query> ActionGraphBuilder<'query> {
                     projects.extend(self.workspace_graph.get_projects()?);
                 };
 
-                for project in projects {
-                    // Don't error if the task does not exist
-                    if let Ok(task) = self
-                        .workspace_graph
-                        .get_task_from_project(&project.id, target.get_task_id()?)
-                    {
-                        if !allow_internal && task.is_internal() {
-                            continue;
-                        }
-
-                        tasks.push(task);
-                    }
-                }
-            }
-            // ^:task, ^build:task, etc.
-            TargetProjectScope::Deps | TargetProjectScope::DepsOf(_) => {
-                return Err(TargetError::NoDepsInRunContext.into());
+                (projects, false)
             }
             // project:task
             TargetProjectScope::Id => {
-                let task = self
-                    .workspace_graph
-                    .get_task_from_project(scope_value, target.get_task_id()?)?;
+                let project = self.workspace_graph.get_project(scope_value)?;
 
-                // Don't allow internal tasks to be ran
-                if !allow_internal && task.is_internal() {
-                    return Err(ProjectError::UnknownTask {
-                        task_id: task.id.to_string(),
-                        project_id: scope_value.to_string(),
-                    }
-                    .into());
-                }
-
-                tasks.push(task);
+                (vec![project], true)
             }
             // #tag:task
             TargetProjectScope::Tag => {
@@ -761,25 +736,62 @@ impl<'query> ActionGraphBuilder<'query> {
                     .workspace_graph
                     .query_projects(build_query(format!("projectTag={scope_value}").as_str())?)?;
 
-                for project in projects {
-                    // Don't error if the task does not exist
-                    if let Ok(task) = self
-                        .workspace_graph
-                        .get_task_from_project(&project.id, target.get_task_id()?)
-                    {
-                        if !allow_internal && task.is_internal() {
-                            continue;
-                        }
-
-                        tasks.push(task);
-                    }
-                }
+                (projects, false)
+            }
+            // ^:task, ^build:task, etc.
+            TargetProjectScope::Deps | TargetProjectScope::DepsOf(_) => {
+                return Err(TargetError::NoDepsInRunContext.into());
             }
             // ~:task
             TargetProjectScope::OwnSelf => {
                 return Err(TargetError::NoSelfInRunContext.into());
             }
         };
+
+        // Second, find all tasks based on the task scope for each project
+        let (scope, scope_value) = target.get_task_scope();
+
+        for project in projects {
+            let project_tasks = match scope {
+                TargetTaskScope::Id => {
+                    match self
+                        .workspace_graph
+                        .get_task_from_project(&project.id, scope_value)
+                    {
+                        Ok(task) => vec![task],
+                        Err(error) => {
+                            if bubble_error {
+                                return Err(error);
+                            } else {
+                                continue;
+                            }
+                        }
+                    }
+                }
+                TargetTaskScope::Tag => self
+                    .workspace_graph
+                    .get_tasks_from_project(&project.id)?
+                    .into_iter()
+                    .filter(|task| task.tags.iter().any(|tag| tag == scope_value))
+                    .collect(),
+            };
+
+            for project_task in project_tasks {
+                if !allow_internal && project_task.is_internal() {
+                    if bubble_error {
+                        return Err(ProjectError::UnknownTask {
+                            task_id: project_task.id.to_string(),
+                            project_id: project.id.to_string(),
+                        }
+                        .into());
+                    } else {
+                        continue;
+                    }
+                }
+
+                tasks.push(project_task);
+            }
+        }
 
         Ok(tasks)
     }
@@ -858,7 +870,10 @@ impl<'query> ActionGraphBuilder<'query> {
             TargetLocator::Qualified(target) => {
                 let target = if target.project == TargetProjectScope::OwnSelf {
                     Target::new(
-                        &self.workspace_graph.get_project_from_path(None)?.id,
+                        self.workspace_graph
+                            .get_project_from_path(None)?
+                            .id
+                            .as_str(),
                         target.get_task_id()?,
                     )?
                 } else {

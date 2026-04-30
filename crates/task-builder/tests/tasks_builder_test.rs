@@ -1506,6 +1506,10 @@ tasks:
                 ]
             );
 
+            let task = tasks.get("tags").unwrap();
+
+            assert_eq!(task.tags, vec![Id::raw("global"), Id::raw("local")]);
+
             let task = tasks.get("toolchains").unwrap();
 
             assert_eq!(task.toolchains, vec!["local", "global"]);
@@ -1558,6 +1562,8 @@ tasks:
                     Output::File(stub_file_output("local")),
                 ]
             );
+
+            assert_eq!(task.tags, vec![Id::raw("global"), Id::raw("local")]);
 
             assert_eq!(task.toolchains, vec!["local", "global"]);
         }
@@ -1618,6 +1624,10 @@ tasks:
                 ]
             );
 
+            let task = tasks.get("tags").unwrap();
+
+            assert_eq!(task.tags, vec![Id::raw("local"), Id::raw("global")]);
+
             let task = tasks.get("toolchains").unwrap();
 
             assert_eq!(task.toolchains, vec!["local", "global"]);
@@ -1671,6 +1681,8 @@ tasks:
                 ]
             );
 
+            assert_eq!(task.tags, vec![Id::raw("local"), Id::raw("global")]);
+
             assert_eq!(task.toolchains, vec!["local", "global"]);
         }
 
@@ -1721,6 +1733,10 @@ tasks:
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("local"))]);
 
+            let task = tasks.get("tags").unwrap();
+
+            assert_eq!(task.tags, vec![Id::raw("local")]);
+
             let task = tasks.get("toolchains").unwrap();
 
             assert_eq!(task.toolchains, vec!["local"]);
@@ -1765,6 +1781,8 @@ tasks:
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("local"))]);
 
+            assert_eq!(task.tags, vec![Id::raw("local")]);
+
             assert_eq!(task.toolchains, vec!["local"]);
         }
 
@@ -1797,6 +1815,10 @@ tasks:
 
             assert!(task.outputs.is_empty());
 
+            let task = tasks.get("tags").unwrap();
+
+            assert!(task.tags.is_empty());
+
             let task = tasks.get("toolchains").unwrap();
 
             // fallback
@@ -1821,6 +1843,8 @@ tasks:
             assert!(task.state.empty_inputs);
 
             assert!(task.outputs.is_empty());
+
+            assert!(task.tags.is_empty());
 
             // fallback
             assert_eq!(task.toolchains, ["system"]);
@@ -1875,6 +1899,10 @@ tasks:
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
 
+            let task = tasks.get("tags").unwrap();
+
+            assert_eq!(task.tags, vec![Id::raw("global")]);
+
             let task = tasks.get("toolchains").unwrap();
 
             assert_eq!(task.toolchains, vec!["global"]);
@@ -1920,6 +1948,8 @@ tasks:
             assert!(!task.state.empty_inputs);
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            assert_eq!(task.tags, vec![Id::raw("global")]);
 
             assert_eq!(task.args, vec!["a", "b", "c"]);
         }
@@ -1971,6 +2001,10 @@ tasks:
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
 
+            let task = tasks.get("tags").unwrap();
+
+            assert_eq!(task.tags, vec![Id::raw("global")]);
+
             let task = tasks.get("toolchains").unwrap();
 
             assert_eq!(task.toolchains, vec!["global"]);
@@ -2014,6 +2048,8 @@ tasks:
             );
 
             assert_eq!(task.outputs, vec![Output::File(stub_file_output("global"))]);
+
+            assert_eq!(task.tags, vec![Id::raw("global")]);
 
             assert_eq!(task.toolchains, vec!["global"]);
         }

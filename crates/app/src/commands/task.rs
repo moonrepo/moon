@@ -325,6 +325,23 @@ pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
                     }
                 }))
                 Entry(
+                    name: "Tags",
+                    no_children: task.tags.is_empty()
+                ) {
+                    List {
+                        #(task.tags.iter().map(|tag| {
+                            element! {
+                                ListItem {
+                                    StyledText(
+                                        content: tag.as_str(),
+                                        style: Style::Id
+                                    )
+                                }
+                            }
+                        }))
+                    }
+                }
+                Entry(
                     name: "Inputs",
                     no_children: inputs.is_empty()
                 ) {

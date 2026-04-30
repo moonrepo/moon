@@ -38,7 +38,7 @@ task from that project.
 $ moon run app:lint
 ```
 
-### By tag<VersionLabel version="1.4.0" />
+### By project tag<VersionLabel version="1.4.0" />
 
 Another way to target projects is with the tag scope, which requires the name of a tag prefixed with
 `#`, and will run a specific task in all projects with that tag.
@@ -54,6 +54,17 @@ Because `#` is a special character in the terminal (is considered a comment), yo
 the target in quotes, or escape it like so `\#`.
 
 :::
+
+### By task tag<VersionLabel version="2.3.0" />
+
+Targets can also be scoped by task tags, which is similar to the project tag scope, but instead of
+targeting projects with a specific tag, it targets tasks with a specific tag, regardless of the
+project. This allows you to run specific tasks across different projects based on their tags.
+
+```shell
+# Run `#quality` tagged tasks in the app project
+$ moon run app:#quality
+```
 
 ## Run scopes
 

@@ -36,6 +36,7 @@ export interface TaskOptions {
 	mergeEnv: TaskMergeStrategy;
 	mergeInputs: TaskMergeStrategy;
 	mergeOutputs: TaskMergeStrategy;
+	mergeTags: TaskMergeStrategy;
 	mergeToolchains: TaskMergeStrategy;
 	mutex?: string | null;
 	os?: TaskOperatingSystem[] | null;
@@ -94,6 +95,7 @@ export interface Task {
 	preset?: TaskPreset | null;
 	script?: string | null;
 	state: TaskState;
+	tags: Id[];
 	target: string;
 	toolchains?: Id[];
 	type: TaskType;

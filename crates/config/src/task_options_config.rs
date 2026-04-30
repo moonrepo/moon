@@ -340,6 +340,11 @@ config_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub merge_outputs: Option<TaskMergeStrategy>,
 
+        /// The strategy to use when merging `tags` with an inherited task.
+        /// @since 2.3.0
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub merge_tags: Option<TaskMergeStrategy>,
+
         /// The strategy to use when merging `toolchains` with an inherited task.
         /// @since 2.0.0
         #[serde(skip_serializing_if = "Option::is_none")]

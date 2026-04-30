@@ -1059,6 +1059,22 @@ more about [commands vs scripts](../concepts/task#commands-vs-scripts).
 
 :::
 
+### `tags`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#tags" />
+
+Tags are a simple mechanism for categorizing tasks. They can be used to group tasks together for
+[easier querying](../commands/query/tasks), referencing within targets, and more.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint'
+    tags:
+      - 'quality'
+      - 'ci'
+```
+
 ### `toolchains`<VersionLabel version="1.31.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#toolchain" />
@@ -1381,7 +1397,14 @@ The [strategy](../concepts/task-inheritance#merge-strategies) to use when mergin
 The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
 [`outputs`](#outputs) list with an inherited task. Defaults to "append".
 
-#### `mergeToolchains`
+#### `mergeTags`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeTags" />
+
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`tags`](#tags) list with an inherited task. Defaults to "append".
+
+#### `mergeToolchains`<VersionLabel version="2.0.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeToolchains" />
 

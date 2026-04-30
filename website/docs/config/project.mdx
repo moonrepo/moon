@@ -1059,6 +1059,22 @@ more about [commands vs scripts](../concepts/task#commands-vs-scripts).
 
 :::
 
+### `tags`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#tags" />
+
+Tags are a simple mechanism for categorizing tasks. They can be used to group tasks together for
+[easier querying](../commands/query/tasks), referencing within targets, and more.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint'
+    tags:
+      - 'quality'
+      - 'ci'
+```
+
 ### `toolchains`<VersionLabel version="1.31.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#toolchain" />

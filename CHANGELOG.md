@@ -15,6 +15,10 @@
   - Added tags support to tasks through new `tags` and `options.mergeTags` settings.
     - Added `taskTag` field support to MQL.
     - Added `--tags` option support to `moon query tasks`.
+  - Updated targets to support the `#` tag syntax in the task scope, allowing you to reference tasks
+    by their tags. For example: `app:#quality`.
+- **Performance**
+  - Reduced task target memory footprint by 50-100%.
 
 ## Unreleased
 

@@ -21,6 +21,7 @@ Process ────────────────────────
 
 Configuration ──────────────────────────────────────────────
 
+  Tags: —
   Inputs:
     - .moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}
     - tasks/**/*

@@ -371,6 +371,7 @@ impl WorkspaceBuilder {
             self.task_data.insert(
                 task.target.clone(),
                 TaskBuildData {
+                    tags: task.tags.clone(),
                     options: task.options.clone(),
                     ..Default::default()
                 },

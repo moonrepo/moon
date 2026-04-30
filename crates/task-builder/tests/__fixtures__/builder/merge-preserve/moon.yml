@@ -9,6 +9,7 @@ tasks:
       LOCAL: 'true'
     inputs: ['local']
     outputs: ['local']
+    tags: ['local']
     toolchains: ['local']
     options:
       merge: preserve
@@ -39,6 +40,11 @@ tasks:
     outputs: ['local']
     options:
       mergeOutputs: preserve
+
+  tags:
+    tags: ['local']
+    options:
+      mergeTags: preserve
 
   toolchains:
     toolchains: ['local']

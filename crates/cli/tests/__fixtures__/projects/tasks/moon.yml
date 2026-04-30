@@ -5,10 +5,12 @@ tasks:
     command: jest --cache --color
     inputs:
       - 'tests/**/*'
+    tags: ['quality', 'test']
   lint:
     command: eslint --cache --report-unused-disable-directives
     outputs:
       - 'cache'
+    tags: ['quality', 'lint']
   internal:
     command: build
     options:

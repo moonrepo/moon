@@ -10,5 +10,7 @@ tasks:
     deps: ['^:build']
   lint:
     command: 'lint'
+    tags: ['quality']
   test:
     command: 'test'
+    tags: ['quality']

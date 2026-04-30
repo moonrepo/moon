@@ -22,6 +22,9 @@ pub struct TaskBuildData {
 
     #[serde(skip)]
     pub options: TaskOptions,
+
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<Id>,
 }
 
 impl TaskBuildData {

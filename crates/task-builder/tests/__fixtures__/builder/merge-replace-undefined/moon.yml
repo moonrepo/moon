@@ -25,6 +25,10 @@ tasks:
     options:
       mergeOutputs: replace
 
+  tags:
+    options:
+      mergeTags: replace
+
   toolchains:
     options:
       mergeToolchains: replace

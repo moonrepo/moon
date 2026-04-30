@@ -18,6 +18,7 @@ pub struct QueryTasksOptions {
     pub command: Option<String>,
     pub project: Option<String>,
     pub script: Option<String>,
+    pub tags: Option<String>,
     pub toolchain: Option<String>,
     #[serde(rename = "type")]
     pub type_of: Option<String>,
@@ -45,6 +46,7 @@ fn load_with_regex(
     let project_regex = convert_to_regex("project", &options.project)?;
     let script_regex = convert_to_regex("script", &options.script)?;
     let toolchain_regex = convert_to_regex("toolchain", &options.toolchain)?;
+    let tags_regex = convert_to_regex("tags", &options.tags)?;
     let type_regex = convert_to_regex("type", &options.type_of)?;
     let mut filtered = vec![];
 
@@ -71,6 +73,14 @@ fn load_with_regex(
             && !regex.is_match(script)
         {
             continue;
+        }
+
+        if let Some(regex) = &tags_regex {
+            let has_tag = task.tags.iter().any(|tag| regex.is_match(tag));
+
+            if !has_tag {
+                continue;
+            }
         }
 
         if let Some(regex) = &toolchain_regex

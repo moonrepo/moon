@@ -136,12 +136,12 @@ The project stack, as defined in [`moon.*`](../config/project#stack).
 projectStack=frontend
 ```
 
-### `tag`
+### `projectTag`
 
 A tag within the project, as defined in [`moon.*`](../config/project#tags).
 
 ```
-tag~react-*
+projectTag~react-*
 ```
 
 ### `task`
@@ -150,6 +150,14 @@ ID/name of a task within the project.
 
 ```
 task=[build,test]
+```
+
+### `taskTag`<VersionLabel version="2.3.0" />
+
+A tag within the task, as defined in [`moon.*`](../config/project#tags-1).
+
+```
+taskTag=quality
 ```
 
 ### `taskToolchain`<VersionLabel version="1.31.0" />

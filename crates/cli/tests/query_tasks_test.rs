@@ -181,6 +181,70 @@ mod query_tasks {
         assert_eq!(json.options.type_of.unwrap(), "build".to_string());
     }
 
+    #[test]
+    fn can_filter_by_tags() {
+        let sandbox = create_query_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query").arg("tasks").args(["--tags", "lint"]);
+        });
+
+        let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+        let mut targets = extract_targets(&json);
+        targets.sort();
+
+        assert_eq!(targets, ["tasks:lint"]);
+        assert_eq!(json.options.tags.unwrap(), "lint".to_string());
+    }
+
+    #[test]
+    fn can_filter_by_tags_multiple() {
+        let sandbox = create_query_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query").arg("tasks").args(["--tags", "lint|test"]);
+        });
+
+        let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+        let mut targets = extract_targets(&json);
+        targets.sort();
+
+        assert_eq!(targets, ["metadata:test", "tasks:lint", "tasks:test"]);
+        assert_eq!(json.options.tags.unwrap(), "lint|test".to_string());
+    }
+
+    #[test]
+    fn can_filter_by_shared_tag() {
+        // Tag shared across multiple tasks in different projects
+        let sandbox = create_query_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query").arg("tasks").args(["--tags", "quality"]);
+        });
+
+        let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+        let mut targets = extract_targets(&json);
+        targets.sort();
+
+        assert_eq!(targets, ["metadata:test", "tasks:lint", "tasks:test"]);
+    }
+
+    #[test]
+    fn can_filter_by_tags_no_match() {
+        let sandbox = create_query_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("tasks")
+                .args(["--tags", "nonexistent"]);
+        });
+
+        let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+        let targets = extract_targets(&json);
+
+        assert!(targets.is_empty());
+    }
+
     mod mql {
         use super::*;
 

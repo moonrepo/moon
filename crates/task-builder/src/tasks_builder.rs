@@ -424,6 +424,16 @@ impl<'proj> TasksBuilder<'proj> {
                 );
             }
 
+            if let Some(tags) = &config.tags {
+                task.tags = self.merge_vec(
+                    task.tags,
+                    tags.to_owned(),
+                    task.options.merge_tags,
+                    index,
+                    true,
+                );
+            }
+
             if let Some(toolchains) = &config.toolchains {
                 task.toolchains = self.merge_vec(
                     task.toolchains,
@@ -678,6 +688,7 @@ impl<'proj> TasksBuilder<'proj> {
                 options.merge_env = *merge;
                 options.merge_inputs = *merge;
                 options.merge_outputs = *merge;
+                options.merge_tags = *merge;
                 options.merge_toolchains = *merge;
             }
 
@@ -699,6 +710,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(merge_outputs) = &config.merge_outputs {
                 options.merge_outputs = *merge_outputs;
+            }
+
+            if let Some(merge_tags) = &config.merge_tags {
+                options.merge_tags = *merge_tags;
             }
 
             if let Some(merge_toolchains) = &config.merge_toolchains {

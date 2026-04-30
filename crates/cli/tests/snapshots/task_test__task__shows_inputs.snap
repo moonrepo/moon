@@ -20,6 +20,9 @@ Process ────────────────────────
 
 Configuration ──────────────────────────────────────────────
 
+  Tags:
+    - quality
+    - test
   Inputs:
     - .moon/*.{yml,yaml,jsonc,json,pkl,hcl,toml}
     - tasks/tests/**/*

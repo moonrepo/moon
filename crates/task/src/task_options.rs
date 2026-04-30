@@ -52,6 +52,8 @@ cacheable!(
 
         pub merge_outputs: TaskMergeStrategy,
 
+        pub merge_tags: TaskMergeStrategy,
+
         pub merge_toolchains: TaskMergeStrategy,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -107,6 +109,7 @@ impl Default for TaskOptions {
             merge_env: TaskMergeStrategy::Append,
             merge_inputs: TaskMergeStrategy::Append,
             merge_outputs: TaskMergeStrategy::Append,
+            merge_tags: TaskMergeStrategy::Append,
             merge_toolchains: TaskMergeStrategy::Append,
             mutex: None,
             os: None,

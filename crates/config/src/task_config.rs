@@ -254,6 +254,12 @@ config_struct!(
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub script: Option<String>,
 
+        /// A list of tags to categorize this task with. Tags are inherited and can
+        /// be used for querying and filtering tasks.
+        /// @since 2.3.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub tags: Option<Vec<Id>>,
+
         /// A toolchain, or list of toolchains, in which the task will inherit
         /// functionality from.
         #[setting(alias = "toolchain")]

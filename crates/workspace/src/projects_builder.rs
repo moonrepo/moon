@@ -241,6 +241,9 @@ pub struct WorkspaceProjectsBuilder {
 
     /// Map of tag IDs to a list of project IDs that belong to the tag.
     tags_to_ids: FxHashMap<Id, Vec<Id>>,
+
+    /// Map of tag IDs to a list of task targets that belong to the tag.
+    tags_to_targets: FxHashMap<Id, Vec<Target>>,
 }
 
 impl WorkspaceProjectsBuilder {
@@ -298,6 +301,7 @@ impl WorkspaceProjectsBuilder {
             repo_type: RepoType::Unknown,
             root_id: None,
             tags_to_ids: FxHashMap::default(),
+            tags_to_targets: FxHashMap::default(),
         }
     }
 
@@ -345,6 +349,7 @@ impl WorkspaceProjectsBuilder {
                             aliases_to_ids: &self.aliases_to_ids,
                             ids_to_target_options: &self.ids_to_target_options,
                             tags_to_ids: &self.tags_to_ids,
+                            tags_to_targets: &self.tags_to_targets,
                         }),
                         project: Some(project),
                         root_project_id: self.root_id.as_ref(),
@@ -360,6 +365,7 @@ impl WorkspaceProjectsBuilder {
         // Free up some memory
         mem::take(&mut self.ids_to_target_options);
         mem::take(&mut self.tags_to_ids);
+        mem::take(&mut self.tags_to_targets);
 
         Ok(tasks)
     }
@@ -458,6 +464,13 @@ impl WorkspaceProjectsBuilder {
 
                 // Extract task data (this is heavy)
                 for task in project.tasks.values() {
+                    for tag in &task.tags {
+                        self.tags_to_targets
+                            .entry(tag.to_owned())
+                            .or_default()
+                            .push(task.target.clone());
+                    }
+
                     self.ids_to_target_options
                         .entry(project.id.clone())
                         .or_default()

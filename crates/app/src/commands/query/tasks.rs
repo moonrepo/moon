@@ -61,7 +61,10 @@ pub struct QueryTasksArgs {
     #[arg(long, help = "Filter tasks that belong to a toolchain", help_heading = HEADING_FILTERS)]
     toolchain: Option<String>,
 
-    #[arg(long = "type", help = "Filter projects of this type", help_heading = HEADING_FILTERS)]
+    #[arg(long, help = "Filter tasks that have the following tags", help_heading = HEADING_FILTERS)]
+    tags: Option<String>,
+
+    #[arg(long = "type", help = "Filter tasks of this type", help_heading = HEADING_FILTERS)]
     type_of: Option<String>,
 }
 
@@ -76,6 +79,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
         query: args.query,
         project: args.project,
         script: args.script,
+        tags: args.tags,
         toolchain: args.toolchain,
         type_of: args.type_of,
     };

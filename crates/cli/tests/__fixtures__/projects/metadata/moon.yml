@@ -13,6 +13,7 @@ tasks:
     description: 'Runs the test runner!'
     deps: ['build']
     command: 'noop'
+    tags: ['quality', 'test']
 
   build:
     description: 'Builds the project!'

@@ -7,6 +7,7 @@ tasks:
     env: {}
     inputs: []
     outputs: []
+    tags: []
     toolchains: []
     options:
       merge: replace
@@ -35,6 +36,11 @@ tasks:
     outputs: []
     options:
       mergeOutputs: replace
+
+  tags:
+    tags: []
+    options:
+      mergeTags: replace
 
   toolchains:
     toolchains: []

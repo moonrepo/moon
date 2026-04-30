@@ -903,9 +903,8 @@ mod task_deps_builder {
             let mut project = create_project();
 
             let mut task = create_task();
-            task.deps.push(TaskDependencyConfig::new(
-                Target::parse("a:#lint").unwrap(),
-            ));
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("a:#lint").unwrap()));
 
             build_task_deps_with_querent(
                 &mut project,
@@ -947,9 +946,8 @@ mod task_deps_builder {
             let mut project = create_project();
 
             let mut task = create_task();
-            task.deps.push(TaskDependencyConfig::new(
-                Target::parse("a:#lint").unwrap(),
-            ));
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("a:#lint").unwrap()));
 
             build_task_deps_with_querent(
                 &mut project,
@@ -957,19 +955,16 @@ mod task_deps_builder {
                 TestQuerent {
                     data: FxHashMap::from_iter([
                         (Target::parse("a:eslint").unwrap(), TaskOptions::default()),
-                        (Target::parse("a:stylelint").unwrap(), TaskOptions::default()),
+                        (
+                            Target::parse("a:stylelint").unwrap(),
+                            TaskOptions::default(),
+                        ),
                         (Target::parse("a:build").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![],
                     task_tags: FxHashMap::from_iter([
-                        (
-                            Target::parse("a:eslint").unwrap(),
-                            vec![Id::raw("lint")],
-                        ),
-                        (
-                            Target::parse("a:stylelint").unwrap(),
-                            vec![Id::raw("lint")],
-                        ),
+                        (Target::parse("a:eslint").unwrap(), vec![Id::raw("lint")]),
+                        (Target::parse("a:stylelint").unwrap(), vec![Id::raw("lint")]),
                         // build is not tagged
                     ]),
                 },
@@ -992,9 +987,8 @@ mod task_deps_builder {
             let mut project = create_project();
 
             let mut task = create_task();
-            task.deps.push(TaskDependencyConfig::new(
-                Target::parse("a:#lint").unwrap(),
-            ));
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("a:#lint").unwrap()));
 
             build_task_deps_with_querent(
                 &mut project,

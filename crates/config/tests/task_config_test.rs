@@ -631,10 +631,7 @@ tags:
                 load_config_from_code,
             );
 
-            assert_eq!(
-                config.tags,
-                Some(vec![Id::raw("lint"), Id::raw("check")])
-            );
+            assert_eq!(config.tags, Some(vec![Id::raw("lint"), Id::raw("check")]));
         }
 
         #[test]

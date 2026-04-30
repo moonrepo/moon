@@ -120,9 +120,7 @@ impl WorkspaceGraph {
                             .get_many(&project.task_targets)?
                             .iter()
                             .any(|task| {
-                                condition
-                                    .matches_list(tags, &task.tags)
-                                    .unwrap_or_default()
+                                condition.matches_list(tags, &task.tags).unwrap_or_default()
                             })),
                         Field::TaskToolchain(ids) => Ok(self
                             .tasks

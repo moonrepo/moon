@@ -292,8 +292,7 @@ mod query_projects {
             });
 
             let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
-            let mut ids: Vec<String> =
-                json.projects.iter().map(|p| p.id.to_string()).collect();
+            let mut ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
             ids.sort();
 
             assert_eq!(ids, ["tasks"]);
@@ -308,8 +307,7 @@ mod query_projects {
             });
 
             let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
-            let mut ids: Vec<String> =
-                json.projects.iter().map(|p| p.id.to_string()).collect();
+            let mut ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
             ids.sort();
 
             assert_eq!(ids, ["metadata", "tasks"]);
@@ -324,12 +322,10 @@ mod query_projects {
             });
 
             let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
-            let mut ids: Vec<String> =
-                json.projects.iter().map(|p| p.id.to_string()).collect();
+            let mut ids: Vec<String> = json.projects.iter().map(|p| p.id.to_string()).collect();
             ids.sort();
 
             assert_eq!(ids, ["metadata", "tasks"]);
         }
-
     }
 }

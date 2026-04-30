@@ -143,12 +143,27 @@ impl Git {
                         if let Ok(work_dir) = sub.work_dir()
                             && let Ok(rel_path) = sub.path()
                         {
+                            let work_dir = clean_components(if work_dir.is_absolute() {
+                                work_dir
+                            } else {
+                                repository_root.join(work_dir)
+                            });
+
+                            // Ensure the submodule has actually been checked out.
+                            // When a submodule is declared in `.gitmodules` but never
+                            // initialized (e.g. `update = none`), running git in its
+                            // missing work_dir would fail with ENOENT.
+                            if !work_dir.join(".git").exists() {
+                                debug!(
+                                    submodule = ?work_dir,
+                                    "Encountered a submodule that hasn't been checked out, skipping it"
+                                );
+
+                                continue;
+                            }
+
                             submodules.push(GitTree {
-                                work_dir: clean_components(if work_dir.is_absolute() {
-                                    work_dir
-                                } else {
-                                    repository_root.join(work_dir)
-                                }),
+                                work_dir,
                                 git_dir: clean_components(sub.git_dir()),
                                 type_of: GitTreeType::Submodule,
                                 path: RelativePathBuf::from(rel_path.to_string()),

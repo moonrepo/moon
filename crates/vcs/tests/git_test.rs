@@ -169,25 +169,10 @@ mod git {
             assert_eq!(git.worktree.work_dir, sandbox.path());
             assert_eq!(git.worktree.path.as_str(), "");
             assert_eq!(git.worktree.type_of, GitTreeType::Root);
-            assert_eq!(
-                git.submodules,
-                vec![
-                    GitTree {
-                        git_dir: sandbox.path().join("modules/submodules/mono"),
-                        path: "submodules/mono".into(),
-                        type_of: GitTreeType::Submodule,
-                        work_dir: sandbox.path().join("submodules/mono"),
-                        ..Default::default()
-                    },
-                    GitTree {
-                        git_dir: sandbox.path().join("modules/submodules/poly"),
-                        path: "submodules/poly".into(),
-                        type_of: GitTreeType::Submodule,
-                        work_dir: sandbox.path().join("submodules/poly"),
-                        ..Default::default()
-                    }
-                ]
-            )
+            // Bare clones don't materialize submodule worktrees on disk,
+            // so they're filtered out (otherwise spawning git in a missing
+            // dir fails with ENOENT).
+            assert!(git.submodules.is_empty());
         }
 
         #[tokio::test]
@@ -569,7 +554,11 @@ mod git {
 
             let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
 
-            assert!(!git.submodules.is_empty());
+            assert!(git.submodules.is_empty());
+
+            // Spawning git in a missing submodule dir would fail with ENOENT,
+            // so verify a command that fans out across all trees still works.
+            git.get_changed_files().await.unwrap();
         }
     }
 

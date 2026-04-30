@@ -6,6 +6,9 @@
 
 - Fixed an issue where proto's `auto-clean` would remove tools installed by moon as they weren't
   marked as used.
+- Fixed a regression where moon would fail with `Failed to execute git and capture output` when
+  `.gitmodules` referenced a submodule that hadn't been checked out (e.g. `update = none`).
+  Uninitialized submodules are now skipped, matching the v1 behavior.
 
 ## 2.2.3
 

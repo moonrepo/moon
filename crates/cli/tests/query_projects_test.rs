@@ -281,5 +281,55 @@ mod query_projects {
             assert_eq!(ids, ["no-config"]);
             assert!(json.options.affected.is_some());
         }
+
+        #[test]
+        fn can_filter_by_task_tag() {
+            // `taskTag = X` matches projects that have a task with the tag.
+            let sandbox = create_query_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("query").arg("projects").arg("taskTag=lint");
+            });
+
+            let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+            let mut ids: Vec<String> =
+                json.projects.iter().map(|p| p.id.to_string()).collect();
+            ids.sort();
+
+            assert_eq!(ids, ["tasks"]);
+        }
+
+        #[test]
+        fn can_filter_by_task_tag_shared() {
+            let sandbox = create_query_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("query").arg("projects").arg("taskTag=quality");
+            });
+
+            let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+            let mut ids: Vec<String> =
+                json.projects.iter().map(|p| p.id.to_string()).collect();
+            ids.sort();
+
+            assert_eq!(ids, ["metadata", "tasks"]);
+        }
+
+        #[test]
+        fn can_filter_by_task_tag_glob() {
+            let sandbox = create_query_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("query").arg("projects").arg("taskTag~te*");
+            });
+
+            let json: QueryProjectsResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+            let mut ids: Vec<String> =
+                json.projects.iter().map(|p| p.id.to_string()).collect();
+            ids.sort();
+
+            assert_eq!(ids, ["metadata", "tasks"]);
+        }
+
     }
 }

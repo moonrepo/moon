@@ -9,6 +9,7 @@ use rustc_hash::FxHashMap;
 struct TestQuerent {
     pub data: FxHashMap<Target, TaskOptions>,
     pub tag_ids: Vec<Id>,
+    pub task_tags: FxHashMap<Target, Vec<Id>>,
 }
 
 impl TasksQuerent for TestQuerent {
@@ -40,9 +41,16 @@ impl TasksQuerent for TestQuerent {
                             None
                         }
                     }
-                    (TargetTaskScope::Tag, _tag_id) => {
-                        // TODO
-                        None
+                    (TargetTaskScope::Tag, tag_id) => {
+                        if self
+                            .task_tags
+                            .get(target)
+                            .is_some_and(|tags| tags.iter().any(|tag| tag.as_str() == tag_id))
+                        {
+                            Some((target, options))
+                        } else {
+                            None
+                        }
                     }
                 }
             })
@@ -80,6 +88,7 @@ fn build_task_deps_with_data(
         TestQuerent {
             data,
             tag_ids: vec![],
+            task_tags: FxHashMap::default(),
         },
     )
 }
@@ -380,6 +389,7 @@ mod task_deps_builder {
                         (Target::parse("qux:build").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![],
+                    task_tags: FxHashMap::default(),
                 }),
                 project: Some(&mut project),
                 root_project_id: None,
@@ -436,6 +446,7 @@ mod task_deps_builder {
                         (Target::parse("qux:build").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![],
+                    task_tags: FxHashMap::default(),
                 }),
                 project: Some(&mut project),
                 root_project_id: None,
@@ -746,6 +757,7 @@ mod task_deps_builder {
                         (Target::parse("baz:build").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
+                    task_tags: FxHashMap::default(),
                 },
             );
 
@@ -777,6 +789,7 @@ mod task_deps_builder {
                         (Target::parse("baz:test").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
+                    task_tags: FxHashMap::default(),
                 },
             );
 
@@ -805,6 +818,7 @@ mod task_deps_builder {
                 TestQuerent {
                     data: FxHashMap::from_iter([]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
+                    task_tags: FxHashMap::default(),
                 },
             );
         }
@@ -827,6 +841,7 @@ mod task_deps_builder {
                         TaskOptions::default(),
                     )]),
                     tag_ids: vec![Id::raw("project")],
+                    task_tags: FxHashMap::default(),
                 },
             );
 
@@ -852,6 +867,7 @@ mod task_deps_builder {
                         (Target::parse("baz:build").unwrap(), TaskOptions::default()),
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
+                    task_tags: FxHashMap::default(),
                 },
             );
 
@@ -872,6 +888,179 @@ mod task_deps_builder {
                     },
                 ]
             );
+        }
+    }
+
+    mod task_tag_scope {
+        use super::*;
+
+        #[test]
+        #[should_panic(
+            expected = "Invalid dependency a:#lint for task project:task, target does not exist"
+        )]
+        fn errors_if_no_tagged_tasks_in_project() {
+            // For an `id:#tag` dep, a missing match errors (skip_if_missing = false)
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("a:#lint").unwrap(),
+            ));
+
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
+                    data: FxHashMap::from_iter([(
+                        Target::parse("a:build").unwrap(),
+                        TaskOptions::default(),
+                    )]),
+                    tag_ids: vec![],
+                    task_tags: FxHashMap::default(),
+                },
+            );
+        }
+
+        #[test]
+        fn doesnt_error_if_optional_and_no_matches() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(TaskDependencyConfig::new(Target::parse("a:#lint").unwrap()).optional());
+
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
+                    data: FxHashMap::from_iter([]),
+                    tag_ids: vec![],
+                    task_tags: FxHashMap::default(),
+                },
+            );
+
+            assert!(task.deps.is_empty());
+        }
+
+        #[test]
+        fn returns_each_tagged_task_in_project() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("a:#lint").unwrap(),
+            ));
+
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
+                    data: FxHashMap::from_iter([
+                        (Target::parse("a:eslint").unwrap(), TaskOptions::default()),
+                        (Target::parse("a:stylelint").unwrap(), TaskOptions::default()),
+                        (Target::parse("a:build").unwrap(), TaskOptions::default()),
+                    ]),
+                    tag_ids: vec![],
+                    task_tags: FxHashMap::from_iter([
+                        (
+                            Target::parse("a:eslint").unwrap(),
+                            vec![Id::raw("lint")],
+                        ),
+                        (
+                            Target::parse("a:stylelint").unwrap(),
+                            vec![Id::raw("lint")],
+                        ),
+                        // build is not tagged
+                    ]),
+                },
+            );
+
+            let mut expected = vec![
+                TaskDependencyConfig::new(Target::parse("a:eslint").unwrap()),
+                TaskDependencyConfig::new(Target::parse("a:stylelint").unwrap()),
+            ];
+            let mut actual = task.deps.clone();
+            // Order from FxHashMap iteration is not deterministic
+            expected.sort_by(|a, b| a.target.as_str().cmp(b.target.as_str()));
+            actual.sort_by(|a, b| a.target.as_str().cmp(b.target.as_str()));
+
+            assert_eq!(actual, expected);
+        }
+
+        #[test]
+        fn excludes_tasks_in_other_projects() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("a:#lint").unwrap(),
+            ));
+
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
+                    data: FxHashMap::from_iter([
+                        (Target::parse("a:eslint").unwrap(), TaskOptions::default()),
+                        // tagged but in a different project
+                        (Target::parse("b:eslint").unwrap(), TaskOptions::default()),
+                    ]),
+                    tag_ids: vec![],
+                    task_tags: FxHashMap::from_iter([
+                        (Target::parse("a:eslint").unwrap(), vec![Id::raw("lint")]),
+                        (Target::parse("b:eslint").unwrap(), vec![Id::raw("lint")]),
+                    ]),
+                },
+            );
+
+            assert_eq!(
+                task.deps,
+                vec![TaskDependencyConfig::new(
+                    Target::parse("a:eslint").unwrap()
+                )]
+            );
+        }
+
+        #[test]
+        fn returns_tagged_tasks_across_tagged_projects() {
+            // `#projtag:#tasktag` — both project tag and task tag scopes
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps.push(TaskDependencyConfig::new(
+                Target::parse("#pkg:#lint").unwrap(),
+            ));
+
+            build_task_deps_with_querent(
+                &mut project,
+                &mut task,
+                TestQuerent {
+                    data: FxHashMap::from_iter([
+                        (Target::parse("foo:eslint").unwrap(), TaskOptions::default()),
+                        (Target::parse("bar:eslint").unwrap(), TaskOptions::default()),
+                        (Target::parse("baz:eslint").unwrap(), TaskOptions::default()),
+                        // not tagged
+                        (Target::parse("foo:build").unwrap(), TaskOptions::default()),
+                    ]),
+                    // pkg-tag includes foo and baz only
+                    tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
+                    task_tags: FxHashMap::from_iter([
+                        (Target::parse("foo:eslint").unwrap(), vec![Id::raw("lint")]),
+                        (Target::parse("bar:eslint").unwrap(), vec![Id::raw("lint")]),
+                        (Target::parse("baz:eslint").unwrap(), vec![Id::raw("lint")]),
+                    ]),
+                },
+            );
+
+            // bar is excluded by project-tag scope; foo and baz remain
+            let mut actual: Vec<_> = task
+                .deps
+                .iter()
+                .map(|d| d.target.as_str().to_owned())
+                .collect();
+            actual.sort();
+
+            assert_eq!(actual, vec!["baz:eslint", "foo:eslint"]);
         }
     }
 }

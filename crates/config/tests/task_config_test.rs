@@ -23,7 +23,7 @@ mod task_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `dependsOn`, `deps`, `env`, `inputs`, `outputs`, `options`, `preset`, `script`, `toolchain`, `toolchains`, `type`"
+        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `dependsOn`, `deps`, `env`, `inputs`, `outputs`, `options`, `preset`, `script`, `tags`, `toolchain`, `toolchains`, `type`"
     )]
     fn error_unknown_field() {
         test_parse_config("unknown: 123", load_config_from_code);
@@ -610,6 +610,53 @@ outputs:
         }
     }
 
+    mod tags {
+        use super::*;
+
+        #[test]
+        fn defaults_to_none() {
+            let config = test_parse_config("{}", load_config_from_code);
+
+            assert_eq!(config.tags, None);
+        }
+
+        #[test]
+        fn parses_list() {
+            let config = test_parse_config(
+                r"
+tags:
+  - lint
+  - check
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.tags,
+                Some(vec![Id::raw("lint"), Id::raw("check")])
+            );
+        }
+
+        #[test]
+        fn parses_empty_list() {
+            let config = test_parse_config("tags: []", load_config_from_code);
+
+            assert_eq!(config.tags, Some(vec![]));
+        }
+
+        #[test]
+        #[should_panic(expected = "Invalid identifier format for `bad$tag`")]
+        fn errors_on_invalid_id() {
+            test_parse_config("tags: ['bad$tag']", load_config_from_code);
+        }
+
+        #[test]
+        #[should_panic(expected = "expected a sequence")]
+        fn errors_on_non_list() {
+            test_parse_config("tags: lint", load_config_from_code);
+        }
+    }
+
     mod type_of {
         use super::*;
 
@@ -649,6 +696,7 @@ options:
   cache: false
   runDepsInParallel: false
   mergeDeps: replace
+  mergeTags: replace
   outputStyle: stream
 ",
                 load_config_from_code,
@@ -658,7 +706,31 @@ options:
             assert_eq!(opts.cache, Some(TaskOptionCache::Enabled(false)));
             assert_eq!(opts.run_deps_in_parallel, Some(false));
             assert_eq!(opts.merge_deps, Some(TaskMergeStrategy::Replace));
+            assert_eq!(opts.merge_tags, Some(TaskMergeStrategy::Replace));
             assert_eq!(opts.output_style, Some(TaskOutputStyle::Stream));
+        }
+
+        #[test]
+        fn merge_tags_defaults_to_none() {
+            let config = test_parse_config("{}", load_config_from_code);
+
+            assert_eq!(config.options.merge_tags, None);
+        }
+
+        #[test]
+        fn merge_tags_supports_all_strategies() {
+            for (raw, expected) in [
+                ("append", TaskMergeStrategy::Append),
+                ("prepend", TaskMergeStrategy::Prepend),
+                ("replace", TaskMergeStrategy::Replace),
+                ("preserve", TaskMergeStrategy::Preserve),
+            ] {
+                let config = test_parse_config(
+                    &format!("options:\n  mergeTags: {raw}"),
+                    load_config_from_code,
+                );
+                assert_eq!(config.options.merge_tags, Some(expected));
+            }
         }
 
         mod affected_files {

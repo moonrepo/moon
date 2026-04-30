@@ -11,6 +11,7 @@ tasks:
       KEY2: 'value2'
     inputs: ['global']
     outputs: ['global']
+    tags: ['global']
     toolchains: ['global']
 
   args:
@@ -30,6 +31,9 @@ tasks:
 
   outputs:
     outputs: ['global']
+
+  tags:
+    tags: ['global']
 
   toolchains:
     toolchains: ['global']

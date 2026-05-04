@@ -44,6 +44,7 @@ pub struct ActionContext {
     pub named_mutexes: scc::HashMap<String, Arc<Mutex<()>>>,
 
     /// Dependency edges that were intentionally ignored by graph options.
+    #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
     pub ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
 
     /// Additional arguments passed after `--` to passthrough.

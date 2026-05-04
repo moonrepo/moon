@@ -963,8 +963,22 @@ impl<'query> ActionGraphBuilder<'query> {
             id: None,
         });
 
+        let had_ignored_dependencies = if should_run_dependencies {
+            self.ignored_dependencies.remove(&task.target).is_some()
+        } else {
+            false
+        };
+
         // Check if the node exists to avoid all the overhead below
         if let Some(index) = self.get_index_from_node(&node) {
+            if had_ignored_dependencies && !task.deps.is_empty() {
+                child_reqs.skip_affected = true;
+
+                let edges = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
+
+                self.link_optional_requirements(index, edges)?;
+            }
+
             return Ok(Some(index));
         }
 

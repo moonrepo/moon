@@ -1702,6 +1702,46 @@ mod action_graph_builder {
             }
 
             #[tokio::test(flavor = "multi_thread")]
+            async fn clears_skipped_deps_when_task_is_revisited_in_scope() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let parent = wg.get_task_from_project("deps", "chain2").unwrap();
+                let task = wg.get_task_from_project("deps", "chain3").unwrap();
+
+                let reqs = RunRequirements {
+                    dependencies: UpstreamScope::Direct,
+                    dependents: DownstreamScope::None,
+                    ..RunRequirements::default()
+                };
+
+                builder.run_task(&parent, &reqs).await.unwrap();
+                builder.run_task(&task, &reqs).await.unwrap();
+
+                let (context, graph) = builder.build();
+
+                assert!(
+                    !context
+                        .ignored_dependencies
+                        .contains_key(&Target::parse("deps:chain3").unwrap())
+                );
+                assert_eq!(
+                    context.ignored_dependencies,
+                    FxHashMap::from_iter([(
+                        Target::parse("deps:chain4").unwrap(),
+                        FxHashSet::from_iter([Target::parse("deps:chain5").unwrap()])
+                    )])
+                );
+                assert!(topo(graph).into_iter().any(|node| matches!(
+                    node,
+                    ActionNode::RunTask(inner) if inner.target == Target::parse("deps:chain4").unwrap()
+                )));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn can_set_direct_depth_affected() {
                 let sandbox = create_sandbox("tasks");
                 let mut container = ActionGraphContainer::new(sandbox.path());

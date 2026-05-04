@@ -99,9 +99,8 @@ pub async fn setup_environment(
             commands: &output.commands,
             operations: &output.operations,
         },
-        false,
-    )
-    .await?
+        || false,
+    )?
     else {
         debug!(
             toolchain_id = node.toolchain_id.as_str(),

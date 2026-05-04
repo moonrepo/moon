@@ -57,40 +57,43 @@ pub fn create_hash_and_return_lock(
     data: impl Serialize,
 ) -> miette::Result<HashLock> {
     let mut hasher = create_hasher(action, app_context, data)?;
-    let hash = app_context.cache_engine.hash.save_manifest(&mut hasher)?;
+    let hash = hasher.generate_hash()?;
+    let manifest_path = app_context.cache_engine.hash.get_manifest_path(&hash);
 
     let lock = app_context
         .cache_engine
         .create_lock(format!("{}-{hash}", action.get_prefix()))?;
 
+    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
+
     Ok(HashLock {
         lock,
-        manifest_path: app_context.cache_engine.hash.get_manifest_path(&hash),
+        manifest_path,
         remove_on_drop: true,
     })
 }
 
-pub async fn create_hash_and_return_lock_if_changed(
+pub fn create_hash_and_return_lock_if_changed(
     action: &mut Action,
     app_context: &AppContext,
     fingerprint: impl Serialize,
-    force: bool,
+    should_force: impl Fn() -> bool,
 ) -> miette::Result<Option<HashLock>> {
     let mut hasher = create_hasher(action, app_context, fingerprint)?;
     let hash = hasher.generate_hash()?;
     let manifest_path = app_context.cache_engine.hash.get_manifest_path(&hash);
 
-    // If the hash manifest exists, then it has ran before
-    if !force && manifest_path.exists() {
-        return Ok(None);
-    }
-
-    // Otherwise save the manifest and return a lock
-    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
-
     let lock = app_context
         .cache_engine
         .create_lock(format!("{}-{hash}", action.get_prefix()))?;
+
+    // If the hash manifest exists, then it has run before. Check this after
+    // locking so that concurrent processes wait for in-progress actions.
+    if !should_force() && manifest_path.exists() {
+        return Ok(None);
+    }
+
+    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
 
     Ok(Some(HashLock {
         lock,

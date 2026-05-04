@@ -31,7 +31,6 @@ hash_fingerprint!(
         manifest_paths: BTreeSet<WorkspaceRelativePathBuf>,
         project: Option<&'action ProjectFragment>,
         toolchain_config: &'action JsonValue,
-        vendor_dir_exists: bool,
     }
 );
 
@@ -110,9 +109,7 @@ pub async fn install_dependencies(
 
     // When in CI, we can avoid installing dependencies if the vendor directory exists
     // because we can assume they've already been installed before moon runs!
-    let vendor_exists = has_vendor_installed_dependencies(&toolchain, &deps_root);
-
-    if is_ci() && vendor_exists {
+    if is_ci() && has_vendor_installed_dependencies(&toolchain, &deps_root) {
         debug!(
             root = node.root.as_str(),
             toolchain_id = node.toolchain_id.as_str(),
@@ -158,9 +155,11 @@ pub async fn install_dependencies(
             &input,
         )
         .await?,
-        toolchain.metadata.vendor_dir_name.is_some() && !vendor_exists,
-    )
-    .await?
+        || {
+            toolchain.metadata.vendor_dir_name.is_some()
+                && !has_vendor_installed_dependencies(&toolchain, &deps_root)
+        },
+    )?
     else {
         debug!(
             toolchain_id = toolchain.id.as_str(),
@@ -251,13 +250,7 @@ async fn create_hash_content<'action>(
         manifest_paths: BTreeSet::default(),
         project: input.project.as_ref(),
         toolchain_config: &input.toolchain_config,
-        vendor_dir_exists: false,
     };
-
-    // Check if vendored already
-    if let Some(vendor_dir_name) = &toolchain.metadata.vendor_dir_name {
-        fingerprint.vendor_dir_exists = deps_root.join(vendor_dir_name).exists();
-    }
 
     // Extract lockfile last modification
     for lock_file_name in &toolchain.metadata.lock_file_names {

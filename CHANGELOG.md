@@ -15,13 +15,14 @@
   even on failure.
 - Fixed an issue where `WouldBlock` errors would trigger when attempting to flush buffered output to
   the console.
+- Fixed an issue where `--upstream=none` would error for missing dependencies.
 
 #### 🧰 Toolchains
 
 - **Python**
   - Fixed an issue where the wrong arguments were passed to `uv sync` depending on whether proto is
     managing the Python version.
-  - Fixed an issue where venv paths were not available to commands ran through the toolchain, like
+  - Fixed an issue where venv paths were not available to commands run through the toolchain, like
     `uv sync`.
 
 #### ⚙️ Internal

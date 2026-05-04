@@ -146,7 +146,7 @@ pub async fn install_dependencies(
     };
 
     // Create a lock if we haven't run before
-    let Some(_lock) = create_hash_and_return_lock_if_changed(
+    let Some(mut lock) = create_hash_and_return_lock_if_changed(
         action,
         &app_context,
         create_hash_content(
@@ -226,6 +226,8 @@ pub async fn install_dependencies(
     }
 
     finalize_action_operations(action, &toolchain, setup_op, output.operations, vec![])?;
+
+    lock.persist_hash_manifest();
 
     Ok(if skipped {
         ActionStatus::Skipped

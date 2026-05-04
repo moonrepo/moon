@@ -11,6 +11,8 @@
   Uninitialized submodules are now skipped, matching the v1 behavior.
 - Fixed an issue where toolchain dependency installation would be skipped even when the vendor
   directory does not exist.
+- Fixed an issue where failing actions would not re-run again because their hash would be persisted,
+  even on failure.
 
 #### 🧰 Toolchains
 

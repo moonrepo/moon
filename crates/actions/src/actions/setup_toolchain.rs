@@ -70,7 +70,7 @@ pub async fn setup_toolchain(
     }
 
     // Create a lock if we haven't run before
-    let _lock = create_hash_and_return_lock(
+    let mut lock = create_hash_and_return_lock(
         action,
         &app_context,
         SetupToolchainFingerprint {
@@ -114,6 +114,8 @@ pub async fn setup_toolchain(
         output.operations,
         output.changed_files,
     )?;
+
+    lock.persist_hash_manifest();
 
     Ok(if output.installed {
         ActionStatus::Passed

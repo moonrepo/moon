@@ -3,7 +3,29 @@ use moon_app_context::AppContext;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::ContentHasher;
 use serde::Serialize;
-use starbase_utils::fs::FileLock;
+use starbase_utils::fs::{self, FileLock};
+use std::path::PathBuf;
+
+pub struct HashLock {
+    #[allow(dead_code)]
+    lock: FileLock,
+    manifest_path: PathBuf,
+    remove_on_drop: bool,
+}
+
+impl HashLock {
+    pub fn persist_hash_manifest(&mut self) {
+        self.remove_on_drop = false;
+    }
+}
+
+impl Drop for HashLock {
+    fn drop(&mut self) {
+        if self.remove_on_drop {
+            let _ = fs::remove_file(&self.manifest_path);
+        }
+    }
+}
 
 pub fn create_hasher(
     action: &mut Action,
@@ -33,18 +55,19 @@ pub fn create_hash_and_return_lock(
     action: &mut Action,
     app_context: &AppContext,
     data: impl Serialize,
-) -> miette::Result<FileLock> {
+) -> miette::Result<HashLock> {
     let mut hasher = create_hasher(action, app_context, data)?;
+    let hash = app_context.cache_engine.hash.save_manifest(&mut hasher)?;
 
-    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
+    let lock = app_context
+        .cache_engine
+        .create_lock(format!("{}-{hash}", action.get_prefix()))?;
 
-    let lock = app_context.cache_engine.create_lock(format!(
-        "{}-{}",
-        action.get_prefix(),
-        hasher.generate_hash()?
-    ))?;
-
-    Ok(lock)
+    Ok(HashLock {
+        lock,
+        manifest_path: app_context.cache_engine.hash.get_manifest_path(&hash),
+        remove_on_drop: true,
+    })
 }
 
 pub async fn create_hash_and_return_lock_if_changed(
@@ -52,18 +75,13 @@ pub async fn create_hash_and_return_lock_if_changed(
     app_context: &AppContext,
     fingerprint: impl Serialize,
     force: bool,
-) -> miette::Result<Option<FileLock>> {
+) -> miette::Result<Option<HashLock>> {
     let mut hasher = create_hasher(action, app_context, fingerprint)?;
     let hash = hasher.generate_hash()?;
+    let manifest_path = app_context.cache_engine.hash.get_manifest_path(&hash);
 
     // If the hash manifest exists, then it has ran before
-    if !force
-        && app_context
-            .cache_engine
-            .hash
-            .get_manifest_path(&hash)
-            .exists()
-    {
+    if !force && manifest_path.exists() {
         return Ok(None);
     }
 
@@ -74,7 +92,11 @@ pub async fn create_hash_and_return_lock_if_changed(
         .cache_engine
         .create_lock(format!("{}-{hash}", action.get_prefix()))?;
 
-    Ok(Some(lock))
+    Ok(Some(HashLock {
+        lock,
+        manifest_path,
+        remove_on_drop: true,
+    }))
 }
 
 pub fn should_skip_action(key: &str) -> Option<String> {

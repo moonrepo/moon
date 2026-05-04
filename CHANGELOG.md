@@ -13,6 +13,8 @@
   directory does not exist.
 - Fixed an issue where failing actions would not re-run again because their hash would be persisted,
   even on failure.
+- Fixed an issue where `WouldBlock` errors would trigger when attempting to flush buffered output to
+  the console.
 
 #### 🧰 Toolchains
 

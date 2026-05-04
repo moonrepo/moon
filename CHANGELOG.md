@@ -12,6 +12,14 @@
 - Fixed an issue where toolchain dependency installation would be skipped even when the vendor
   directory does not exist.
 
+#### 🧰 Toolchains
+
+- **Python**
+  - Fixed an issue where the wrong arguments were passed to `uv sync` depending on whether proto is
+    managing the Python version.
+  - Fixed an issue where venv paths were not available to commands ran through the toolchain, like
+    `uv sync`.
+
 ## 2.2.3
 
 #### 🐞 Fixes

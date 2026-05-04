@@ -22,6 +22,10 @@
   - Fixed an issue where venv paths were not available to commands ran through the toolchain, like
     `uv sync`.
 
+#### ⚙️ Internal
+
+- Updated dependencies.
+
 ## 2.2.3
 
 #### 🐞 Fixes

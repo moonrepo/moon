@@ -99,6 +99,7 @@ pub async fn setup_environment(
             commands: &output.commands,
             operations: &output.operations,
         },
+        false,
     )
     .await?
     else {

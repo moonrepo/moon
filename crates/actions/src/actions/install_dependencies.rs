@@ -110,7 +110,9 @@ pub async fn install_dependencies(
 
     // When in CI, we can avoid installing dependencies if the vendor directory exists
     // because we can assume they've already been installed before moon runs!
-    if is_ci() && has_vendor_installed_dependencies(&toolchain, &deps_root) {
+    let vendor_exists = has_vendor_installed_dependencies(&toolchain, &deps_root);
+
+    if is_ci() && vendor_exists {
         debug!(
             root = node.root.as_str(),
             toolchain_id = node.toolchain_id.as_str(),
@@ -156,6 +158,7 @@ pub async fn install_dependencies(
             &input,
         )
         .await?,
+        toolchain.metadata.vendor_dir_name.is_some() && !vendor_exists,
     )
     .await?
     else {

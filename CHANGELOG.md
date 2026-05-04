@@ -9,6 +9,8 @@
 - Fixed a regression where moon would fail with `Failed to execute git and capture output` when
   `.gitmodules` referenced a submodule that hadn't been checked out (e.g. `update = none`).
   Uninitialized submodules are now skipped, matching the v1 behavior.
+- Fixed an issue where toolchain dependency installation would be skipped even when the vendor
+  directory does not exist.
 
 ## 2.2.3
 

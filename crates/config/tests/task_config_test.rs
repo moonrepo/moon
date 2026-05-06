@@ -4,8 +4,8 @@ use indexmap::IndexMap;
 use moon_common::Id;
 use moon_config::{
     FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, ProjectInput,
-    TaskArgs, TaskConfig, TaskDependency, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
-    TaskOutputStyle, TaskType,
+    TaskArgs, TaskConfig, TaskDependency, TaskDependencyCacheStrategy, TaskDependencyConfig,
+    TaskMergeStrategy, TaskOptionCache, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use schematic::{ConfigLoader as BaseLoader, RegexSetting};
@@ -187,18 +187,26 @@ deps:
             assert_eq!(
                 config.deps,
                 Some(vec![
-                    TaskDependency::Object(TaskDependencyConfig::new(
-                        Target::parse("task").unwrap()
-                    )),
                     TaskDependency::Object(TaskDependencyConfig {
-                        args: vec!["a".into(), "b".into(), "c".into()],
-                        target: Target::parse("project:task").unwrap(),
-                        ..TaskDependencyConfig::default()
+                        args: vec![],
+                        env: IndexMap::default(),
+                        target: Target::parse("task").unwrap(),
+                        optional: None,
+                        cache_strategy: None,
                     }),
                     TaskDependency::Object(TaskDependencyConfig {
+                        args: vec!["a".into(), "b".into(), "c".into()],
+                        env: IndexMap::default(),
+                        target: Target::parse("project:task").unwrap(),
+                        optional: None,
+                        cache_strategy: None,
+                    }),
+                    TaskDependency::Object(TaskDependencyConfig {
+                        args: vec![],
                         env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("^:task").unwrap(),
-                        ..TaskDependencyConfig::default()
+                        optional: None,
+                        cache_strategy: None,
                     }),
                     TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
@@ -208,6 +216,7 @@ deps:
                         ]),
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
+                        cache_strategy: None,
                     }),
                 ])
             );
@@ -234,6 +243,72 @@ deps:
   - args: [a, b, c]
 ",
                 load_config_from_code,
+            );
+        }
+
+        fn parse_first_dep_cache_strategy(yaml: &str) -> Option<TaskDependencyCacheStrategy> {
+            let config = test_parse_config(yaml, load_config_from_code);
+            let TaskDependency::Object(dep_config) = config.deps.unwrap().remove(0) else {
+                panic!("Expected TaskDependency::Object");
+            };
+            dep_config.cache_strategy
+        }
+
+        #[test]
+        fn supports_cache_strategy_hash() {
+            assert_eq!(
+                parse_first_dep_cache_strategy(
+                    r"
+deps:
+  - target: project:task
+    cacheStrategy: hash
+"
+                ),
+                Some(TaskDependencyCacheStrategy::Hash)
+            );
+        }
+
+        #[test]
+        fn supports_cache_strategy_ignored() {
+            assert_eq!(
+                parse_first_dep_cache_strategy(
+                    r"
+deps:
+  - target: project:task
+    cacheStrategy: ignored
+"
+                ),
+                Some(TaskDependencyCacheStrategy::Ignored)
+            );
+        }
+
+        #[test]
+        fn supports_cache_strategy_outputs() {
+            assert_eq!(
+                parse_first_dep_cache_strategy(
+                    r"
+deps:
+  - target: project:task
+    cacheStrategy: outputs
+"
+                ),
+                Some(TaskDependencyCacheStrategy::Outputs)
+            );
+        }
+
+        // Omitted YAML deserializes as `None`; the effective strategy is
+        // resolved later during task expansion based on whether the dep
+        // declares outputs.
+        #[test]
+        fn omitted_cache_strategy_deserializes_as_none() {
+            assert_eq!(
+                parse_first_dep_cache_strategy(
+                    r"
+deps:
+  - target: project:task
+"
+                ),
+                None
             );
         }
     }

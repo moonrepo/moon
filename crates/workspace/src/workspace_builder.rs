@@ -373,6 +373,7 @@ impl WorkspaceBuilder {
                 TaskBuildData {
                     tags: task.tags.clone(),
                     options: task.options.clone(),
+                    has_outputs: task.has_outputs(),
                     ..Default::default()
                 },
             );

@@ -227,6 +227,9 @@ pub struct WorkspaceProjectsBuilder {
     /// Map of project IDs to task options, indexed by target.
     ids_to_target_options: FxHashMap<Id, FxHashMap<Target, TaskOptions>>,
 
+    /// Map of task targets to whether they declare any outputs.
+    target_to_has_outputs: FxHashMap<Target, bool>,
+
     /// The project DAG.
     pub graph: ProjectDag,
 
@@ -296,6 +299,7 @@ impl WorkspaceProjectsBuilder {
             config_paths: FxHashSet::default(),
             ids_to_indexes: FxHashMap::default(),
             ids_to_target_options: FxHashMap::default(),
+            target_to_has_outputs: FxHashMap::default(),
             graph: ProjectDag::default(),
             renamed_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
@@ -350,6 +354,7 @@ impl WorkspaceProjectsBuilder {
                             ids_to_target_options: &self.ids_to_target_options,
                             tags_to_ids: &self.tags_to_ids,
                             tags_to_targets: &self.tags_to_targets,
+                            target_to_has_outputs: &self.target_to_has_outputs,
                         }),
                         project: Some(project),
                         root_project_id: self.root_id.as_ref(),
@@ -364,6 +369,7 @@ impl WorkspaceProjectsBuilder {
 
         // Free up some memory
         mem::take(&mut self.ids_to_target_options);
+        mem::take(&mut self.target_to_has_outputs);
         mem::take(&mut self.tags_to_ids);
         mem::take(&mut self.tags_to_targets);
 
@@ -484,6 +490,9 @@ impl WorkspaceProjectsBuilder {
                                 ..Default::default()
                             },
                         );
+
+                    self.target_to_has_outputs
+                        .insert(task.target.clone(), task.has_outputs());
                 }
 
                 self.insert_or_update_node(project);

@@ -1,7 +1,7 @@
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
-    WorkspaceProjectGlobFormat, WorkspaceProjects, WorkspaceProjectsConfig,
+    DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyCacheStrategy,
+    TaskDependencyConfig, WorkspaceProjectGlobFormat, WorkspaceProjects, WorkspaceProjectsConfig,
 };
 use moon_project::{FileGroup, Project, ProjectAlias};
 use moon_project_graph::*;
@@ -72,6 +72,13 @@ pub async fn build_graph_from_fixture(fixture: &str) -> (MoonSandbox, WorkspaceG
 
 mod project_graph {
     use super::*;
+
+    fn dep(target: &str) -> TaskDependencyConfig {
+        TaskDependencyConfig {
+            cache_strategy: Some(TaskDependencyCacheStrategy::Ignored),
+            ..TaskDependencyConfig::new(Target::parse(target).unwrap())
+        }
+    }
 
     #[tokio::test(flavor = "multi_thread")]
     async fn gets_by_id() {
@@ -760,13 +767,7 @@ mod project_graph {
             let graph = build_inheritance_graph("inheritance/implicits").await;
             let task = graph.get_task_from_project("project", "example").unwrap();
 
-            assert_eq!(
-                task.deps,
-                [
-                    TaskDependencyConfig::new(Target::parse("project:other").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("base:local").unwrap()),
-                ]
-            );
+            assert_eq!(task.deps, [dep("project:other"), dep("base:local")]);
 
             assert_eq!(
                 task.input_files,
@@ -880,12 +881,7 @@ mod project_graph {
                 )])
             );
 
-            assert_eq!(
-                task.deps,
-                [TaskDependencyConfig::new(
-                    Target::parse("project:build").unwrap()
-                )]
-            );
+            assert_eq!(task.deps, [dep("project:build")]);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -893,13 +889,7 @@ mod project_graph {
             let (_sandbox, graph) = build_graph_from_fixture("expansion").await;
             let task = graph.get_task_from_project("tasks", "test-tags").unwrap();
 
-            assert_eq!(
-                task.deps,
-                [
-                    TaskDependencyConfig::new(Target::parse("tag-one:test").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("tag-three:test").unwrap()),
-                ]
-            );
+            assert_eq!(task.deps, [dep("tag-one:test"), dep("tag-three:test")]);
         }
     }
 
@@ -1264,9 +1254,7 @@ mod project_graph {
                     .get_task_from_project("dupes-task-deps", "no-dupes")
                     .unwrap()
                     .deps,
-                [TaskDependencyConfig::new(
-                    Target::parse("alias-one:global").unwrap()
-                )]
+                [dep("alias-one:global")]
             );
         }
 
@@ -1280,9 +1268,9 @@ mod project_graph {
                     .unwrap()
                     .deps,
                 [
-                    TaskDependencyConfig::new(Target::parse("alias-one:global").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("alias-three:global").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("implicit:global").unwrap()),
+                    dep("alias-one:global"),
+                    dep("alias-three:global"),
+                    dep("implicit:global"),
                 ]
             );
         }
@@ -1745,10 +1733,7 @@ mod project_graph {
 
             assert_eq!(
                 task.deps,
-                [
-                    TaskDependencyConfig::new(Target::parse("bar-renamed:noop").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("baz-renamed:noop").unwrap()),
-                ]
+                [dep("bar-renamed:noop"), dep("baz-renamed:noop")]
             );
         }
 

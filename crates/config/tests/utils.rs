@@ -184,13 +184,15 @@ pub fn load_task_config_in_format(format: &str) {
                     args: vec![],
                     env: IndexMap::default(),
                     target: Target::parse("^:build").unwrap(),
-                    optional: Some(true)
+                    optional: Some(true),
+                    cache_strategy: None,
                 }),
                 TaskDependency::Object(TaskDependencyConfig {
                     args: vec!["--minify".into()],
                     env: IndexMap::from_iter([("DEBUG".into(), Some("1".to_owned()))]),
                     target: Target::parse("~:build").unwrap(),
-                    optional: None
+                    optional: None,
+                    cache_strategy: None,
                 }),
             ]),
             env: Some(IndexMap::from_iter([(

@@ -56,14 +56,14 @@ repository. If the ID is different than the shortname (`node` vs `nodejs`), you 
 "asdf:node" = "20"
 
 [tools."asdf.node"]
-asdf-shortname = "nodejs"
+shortname = "nodejs"
 ```
 
 The following settings are supported:
 
-- `asdf-shortname` (string) - The name of the [asdf plugin](https://github.com/asdf-vm/asdf-plugins)
-  if different than the configured ID.
-- `asdf-repository` (string) - The Git repository URL in which to locate
+- `shortname` (string) - The name of the [asdf plugin](https://github.com/asdf-vm/asdf-plugins) if
+  different than the configured ID.
+- `repository` (string) - The Git repository URL in which to locate
   [scripts](https://asdf-vm.com/plugins/create.html#scripts-overview). If not defined, is extracted
   from the shortname plugin index.
 - `exes` (string[]) - List of executable file names (relative from `bin`) to be linked as a
@@ -87,9 +87,9 @@ For example, to install [`cargo-dist`](https://crates.io/crates/cargo-dist):
 
 ### `npm`<VersionLabel version="0.57.0" />
 
-The `npm` backend will install CLIs from the [npm registry](https://www.npmjs.com/) using the
-`npm` package manager under the hood. The ID after the prefix is the package name as published to
-the registry.
+The `npm` backend will install CLIs from the [npm registry](https://www.npmjs.com/) using the `npm`
+package manager under the hood. The ID after the prefix is the package name as published to the
+registry.
 
 ```toml title=".prototools"
 "npm:<id>" = "6"

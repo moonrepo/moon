@@ -1,0 +1,136 @@
+---
+slug: proto-v0.57
+title: proto v0.57 - OCI plugin distribution, cargo and npm backends
+authors: [milesj]
+tags: [oci, ghcr, registry, backend, cargo, npm, versions, filter]
+# image: ./img/proto/v0.57.png
+---
+
+In this release, we're shifting how official plugins are distributed, and rolling out two new
+backends for installing CLIs from existing package registries.
+
+<!--truncate-->
+
+## Migrating plugin distribution to ghcr.io
+
+For a while now, proto's official plugins have been distributed as raw `.wasm` files attached to
+GitHub releases. While this worked, it also exposed us to GitHub's CDN flakiness: download retries,
+timeouts, and the occasional 5xx have been a recurring source of friction for users (especially in
+CI).
+
+To combat this, we're migrating away from raw release URLs and onto OCI artifacts hosted on
+[ghcr.io](https://ghcr.io/) (also known as GitHub Container Registry). Yes, we're still hosted on
+GitHub infrastructure, but ghcr.io is a different surface, with different reliability characteristics,
+and we want to verify whether the registry path is more stable than raw release downloads.
+
+If it turns out ghcr.io is _not_ a meaningful improvement, we'll revert back to the previous
+implementation and start exploring other alternatives.
+
+This work builds directly on the
+[unstable OCI registry support](./proto-v0.51#unstable-oci-registries-for-plugin-storage) introduced
+in v0.51 — official plugins are now resolved through the same `registry://` flow that custom
+plugins already use.
+
+### Tar archives as OCI artifacts
+
+As part of this work, the OCI artifact spec we support now allows the layer blob to be a tar
+archive (not just a raw `.wasm` file). When proto resolves a plugin from a registry, it will
+download the artifact, unpack it, and locate the contained WASM file automatically. This makes it
+easier for plugin authors to publish supporting files (TOML/YAML schemas, JSON manifests, multiple
+WASM binaries) alongside the plugin itself.
+
+If you're publishing your own WASM plugins, the
+[`moonrepo/build-wasm-plugin`](https://github.com/moonrepo/build-wasm-plugin) GitHub Action has
+also been updated to support publishing directly to ghcr.io.
+
+## New `cargo` and `npm` backends
+
+In [v0.52](./proto-v0.52) we opened up [custom backend plugins](./proto-v0.52#custom-backend-plugins)
+to the community. In this release, we're adding two new official backends that target the registries
+many of you already use day-to-day:
+
+- `cargo` — installs CLIs from [crates.io](https://crates.io/) via
+  [`cargo install`](https://doc.rust-lang.org/cargo/commands/cargo-install.html).
+- `npm` — installs CLIs from the [npm registry](https://www.npmjs.com/).
+
+Like any [backend](/docs/proto/tool-spec#backends), prefix the tool identifier in `.prototools`
+with the backend's name:
+
+```toml title=".prototools"
+"cargo:cargo-dist" = "0.31"
+"npm:typescript" = "6"
+```
+
+This is a great way to manage one-off CLIs that aren't worth writing a dedicated plugin for, while
+still benefiting from proto's pinning, shimming, and lockfile workflows.
+
+## Filtering `proto versions`
+
+The [`proto versions`](/docs/proto/commands/versions) command (and the `list_tool_versions` MCP
+tool) now accept a version requirement to filter the list. This is handy when a tool has hundreds
+of releases and you only care about a specific range:
+
+```shell
+$ proto versions node ~24
+```
+
+The filter argument accepts any [version range](/docs/proto/tool-spec#requirements-and-ranges)
+that proto already understands (`~24`, `^22`, `>=22, <24`, etc).
+
+For the MCP tool, the same filter is exposed as a `--filter` option:
+
+```shell
+$ list_tool_versions node --filter ~24
+```
+
+## Breaking changes
+
+### New `auth` and `default` flags for `unstable-registries`
+
+The [`settings.unstable-registries`](/docs/proto/config#unstable-registries) entries now accept two
+additional fields, and both are required for behaviors that previously worked implicitly.
+
+If you're using a custom OCI registry that requires authentication, you'll need to set
+`auth = true`. When enabled, proto will attempt to load credentials for that host from your
+Docker config:
+
+```toml title=".prototools"
+[settings]
+unstable-registries = [
+  { registry = "custom.host.com", auth = true }
+]
+```
+
+If you're using a custom OCI registry as the fallback when a locator only provides an identifier
+(no registry host or namespace), you'll need to set `default = true`:
+
+```toml title=".prototools"
+[settings]
+unstable-registries = [
+  { registry = "custom.host.com", default = true }
+]
+```
+
+### First-time installs no longer pin globally
+
+Previously, installing a tool for the first time would implicitly pin its version to the global
+`~/.proto/.prototools` config. Going forward, first-time installs do _not_ touch the global config.
+If you want to record a pinned version, use `proto install --pin` (or `--pin global`), or write
+the version into a `.prototools` file directly.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.57.0) for a full list
+of changes.
+
+- Added support for `.tar.zst` (tar + zstd) archives.
+- Fixed an issue where some backend-managed tools (asdf) would generate broken shims.
+- Fixed an issue where `proto outdated --update` would overwrite aliases.
+- Added an extensive end-to-end test suite that exercises proto from the command line (not through
+  Rust's testing framework) to better catch real-world regressions.
+
+## Looking for contributors
+
+We have a lot of cool stuff planned for proto, like more official backends and tools, improved
+workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
+and appreciate your help. Feel free to ping us on Discord!

@@ -36,9 +36,20 @@ $ proto versions node
 23.5.0 - installed 12/25/24
 ```
 
+### Filtering versions<VersionLabel version="0.57.0" />
+
+To narrow the list down to a specific range, pass a [version requirement](../tool-spec#requirements-and-ranges)
+as the second argument. Only versions that satisfy the requirement will be displayed.
+
+```shell
+$ proto versions node ~24
+$ proto versions node ">=22, <24"
+```
+
 ### Arguments
 
 - `<tool>` - Type of tool.
+- `[filter]` - Version range/requirement to filter the list by. <VersionLabel version="0.57.0" />
 
 ### Options
 

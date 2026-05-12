@@ -69,6 +69,38 @@ The following settings are supported:
 - `exes` (string[]) - List of executable file names (relative from `bin`) to be linked as a
   shim/bin. If not defined, we'll automatically scan the `bin` directory.
 
+### `cargo`<VersionLabel version="0.57.0" />
+
+The `cargo` backend will install CLIs from [crates.io](https://crates.io/) using
+[`cargo install`](https://doc.rust-lang.org/cargo/commands/cargo-install.html) under the hood. The
+ID after the prefix is the crate name as published to the registry.
+
+```toml title=".prototools"
+"cargo:<id>" = "0.31"
+```
+
+For example, to install [`cargo-dist`](https://crates.io/crates/cargo-dist):
+
+```toml title=".prototools"
+"cargo:cargo-dist" = "0.31"
+```
+
+### `npm`<VersionLabel version="0.57.0" />
+
+The `npm` backend will install CLIs from the [npm registry](https://www.npmjs.com/) using the
+`npm` package manager under the hood. The ID after the prefix is the package name as published to
+the registry.
+
+```toml title=".prototools"
+"npm:<id>" = "6"
+```
+
+For example, to install [`typescript`](https://www.npmjs.com/package/typescript):
+
+```toml title=".prototools"
+"npm:typescript" = "6"
+```
+
 ## Semantic versions
 
 The most common format is [semver](https://semver.org/), also known as a semantic version. This

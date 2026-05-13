@@ -2,11 +2,105 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-04-13T00:00:00.000Z</updated>
+    <updated>2026-05-12T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.57 - OCI plugin distribution, cargo and npm backends]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.57</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.57"/>
+        <updated>2026-05-12T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we're shifting how official plugins are distributed, and rolling out two new]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we're shifting how official plugins are distributed, and rolling out two new
+backends for installing CLIs from existing package registries.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="migrating-plugin-distribution-to-ghcrio">Migrating plugin distribution to ghcr.io<a href="https://moonrepo.dev/blog/proto-v0.57#migrating-plugin-distribution-to-ghcrio" class="hash-link" aria-label="Direct link to Migrating plugin distribution to ghcr.io" title="Direct link to Migrating plugin distribution to ghcr.io" translate="no">​</a></h2>
+<p>For a while now, proto's official plugins have been distributed as raw <code>.wasm</code> files attached to
+GitHub releases. While this worked, it also exposed us to GitHub's CDN flakiness: download retries,
+timeouts, and the occasional 5xx have been a recurring source of friction for users (especially in
+CI).</p>
+<p>To combat this, we're migrating away from raw release URLs and onto OCI artifacts hosted on
+<a href="https://ghcr.io/" target="_blank" rel="noopener noreferrer" class="">ghcr.io</a> (also known as GitHub Container Registry). Yes, we're still hosted on
+GitHub infrastructure, but ghcr.io is a different surface, with different reliability
+characteristics, and we want to verify whether the registry path is more stable than raw release
+downloads.</p>
+<p>If it turns out ghcr.io is <em>not</em> a meaningful improvement, we'll revert back to the previous
+implementation and start exploring other alternatives.</p>
+<p>This work builds directly on the
+<a class="" href="https://moonrepo.dev/blog/proto-v0.51#unstable-oci-registries-for-plugin-storage">unstable OCI registry support</a> introduced
+in v0.51 — official plugins are now resolved through the same <code>registry://</code> flow that custom plugins
+already use.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="tar-archives-as-oci-artifacts">Tar archives as OCI artifacts<a href="https://moonrepo.dev/blog/proto-v0.57#tar-archives-as-oci-artifacts" class="hash-link" aria-label="Direct link to Tar archives as OCI artifacts" title="Direct link to Tar archives as OCI artifacts" translate="no">​</a></h3>
+<p>As part of this work, the OCI artifact spec we support now allows the layer blob to be a tar archive
+(not just a raw <code>.wasm</code> file). When proto resolves a plugin from a registry, it will download the
+artifact, unpack it, and locate the contained WASM file automatically. This makes it easier for
+plugin authors to publish supporting files (TOML/YAML schemas, JSON manifests, multiple WASM
+binaries) alongside the plugin itself.</p>
+<p>If you're publishing your own WASM plugins, the
+<a href="https://github.com/moonrepo/build-wasm-plugin" target="_blank" rel="noopener noreferrer" class=""><code>moonrepo/build-wasm-plugin</code></a> GitHub Action has also
+been updated to support publishing directly to ghcr.io.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-cargo-and-npm-backends">New <code>cargo</code> and <code>npm</code> backends<a href="https://moonrepo.dev/blog/proto-v0.57#new-cargo-and-npm-backends" class="hash-link" aria-label="Direct link to new-cargo-and-npm-backends" title="Direct link to new-cargo-and-npm-backends" translate="no">​</a></h2>
+<p>In <a class="" href="https://moonrepo.dev/blog/proto-v0.52">v0.52</a> we opened up
+<a class="" href="https://moonrepo.dev/blog/proto-v0.52#custom-backend-plugins">custom backend plugins</a> to the community. In this release,
+we're adding two new official backends that target the registries many of you already use
+day-to-day:</p>
+<ul>
+<li class=""><code>cargo</code> — installs CLIs from <a href="https://crates.io/" target="_blank" rel="noopener noreferrer" class="">crates.io</a>.</li>
+<li class=""><code>npm</code> — installs CLIs from the <a href="https://www.npmjs.com/" target="_blank" rel="noopener noreferrer" class="">npm registry</a>.</li>
+</ul>
+<p>Like any <a class="" href="https://moonrepo.dev/docs/proto/tool-spec#backends">backend</a>, prefix the tool identifier in <code>.prototools</code> with
+the backend's name:</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">"cargo:cargo-dist"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"0.31"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">"npm:typescript"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"6"</span><br></span></code></pre></div></div>
+<p>This is a great way to manage one-off CLIs that aren't worth writing a dedicated plugin for, while
+still benefiting from proto's pinning, shimming, and lockfile workflows.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="filtering-proto-versions">Filtering <code>proto versions</code><a href="https://moonrepo.dev/blog/proto-v0.57#filtering-proto-versions" class="hash-link" aria-label="Direct link to filtering-proto-versions" title="Direct link to filtering-proto-versions" translate="no">​</a></h2>
+<p>The <a class="" href="https://moonrepo.dev/docs/proto/commands/versions"><code>proto versions</code></a> command (and the <code>list_tool_versions</code> MCP
+tool) now accept a version requirement to filter the list. This is handy when a tool has hundreds of
+releases and you only care about a specific range:</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto versions </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> </span><span class="token number" style="color:#94dded">24</span><br></span></code></pre></div></div>
+<p>The filter argument accepts any <a class="" href="https://moonrepo.dev/docs/proto/tool-spec#requirements-and-ranges">version range</a> that
+proto already understands (<code>~24</code>, <code>^22</code>, <code>&gt;=22, &lt;24</code>, etc).</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="breaking-changes">Breaking changes<a href="https://moonrepo.dev/blog/proto-v0.57#breaking-changes" class="hash-link" aria-label="Direct link to Breaking changes" title="Direct link to Breaking changes" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-auth-and-default-flags-for-unstable-registries">New <code>auth</code> and <code>default</code> flags for <code>unstable-registries</code><a href="https://moonrepo.dev/blog/proto-v0.57#new-auth-and-default-flags-for-unstable-registries" class="hash-link" aria-label="Direct link to new-auth-and-default-flags-for-unstable-registries" title="Direct link to new-auth-and-default-flags-for-unstable-registries" translate="no">​</a></h3>
+<p>The <a class="" href="https://moonrepo.dev/docs/proto/config#unstable-registries"><code>settings.unstable-registries</code></a> entries now accept two
+additional fields, and both are required for behaviors that previously worked implicitly.</p>
+<p>If you're using a custom OCI registry that requires authentication, you'll need to set
+<code>auth = true</code>. When enabled, proto will attempt to load credentials for that host from your Docker
+config, otherwise the request will be anonymous.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">unstable-registries</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"> </span><span class="token key property" style="color:#b7a9f9">registry</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"custom.host.com"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token key property" style="color:#b7a9f9">auth</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<p>If you're using a custom OCI registry as the fallback when a locator only provides an identifier (no
+registry host or namespace), and the identifier is not a built-in plugin, you'll need to set
+<code>default = true</code>.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">unstable-registries</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"> </span><span class="token key property" style="color:#b7a9f9">registry</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"custom.host.com"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token key property" style="color:#b7a9f9">default</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="first-time-installs-no-longer-pin-globally">First-time installs no longer pin globally<a href="https://moonrepo.dev/blog/proto-v0.57#first-time-installs-no-longer-pin-globally" class="hash-link" aria-label="Direct link to First-time installs no longer pin globally" title="Direct link to First-time installs no longer pin globally" translate="no">​</a></h3>
+<p>Previously, installing a tool for the first time would implicitly pin its version to the global
+<code>~/.proto/.prototools</code> config. Going forward, first-time installs do <em>not</em> touch the global config.
+If you want to record a pinned version, use <code>proto install --pin</code> (or <code>--pin global</code>), or write the
+version into a <code>.prototools</code> file directly.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.57#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.57.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
+of changes.</p>
+<ul>
+<li class="">Added support for <code>.tar.zst</code> (tar + zstd) archives.</li>
+<li class="">Fixed an issue where some backend-managed tools (asdf) would generate broken shims.</li>
+<li class="">Fixed an issue where <code>proto outdated --update</code> would overwrite aliases.</li>
+<li class="">Added an extensive end-to-end test suite that exercises proto from the command line (not through
+Rust's testing framework) to better catch real-world regressions.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="oci" term="oci"/>
+        <category label="ghcr" term="ghcr"/>
+        <category label="registry" term="registry"/>
+        <category label="backend" term="backend"/>
+        <category label="cargo" term="cargo"/>
+        <category label="npm" term="npm"/>
+        <category label="versions" term="versions"/>
+        <category label="filter" term="filter"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v2.2 - Daemon, AI skills, async graph building, async affected tracking, and more]]></title>
         <id>https://moonrepo.dev/blog/moon-v2.2</id>
@@ -1940,123 +2034,5 @@ with moon.</p>]]></content>
         <category label="moonbase" term="moonbase"/>
         <category label="remote" term="remote"/>
         <category label="cache" term="cache"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[moon v1.33 - Alpha support for toolchain WASM plugins]]></title>
-        <id>https://moonrepo.dev/blog/moon-v1.33</id>
-        <link href="https://moonrepo.dev/blog/moon-v1.33"/>
-        <updated>2025-03-13T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[With this release, we're stoked to provide an initial release for plugin support.]]></summary>
-        <content type="html"><![CDATA[<p>With this release, we're stoked to provide an initial release for plugin support.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="alpha-release-of-toolchain-wasm-plugins">Alpha release of toolchain WASM plugins<a href="https://moonrepo.dev/blog/moon-v1.33#alpha-release-of-toolchain-wasm-plugins" class="hash-link" aria-label="Direct link to Alpha release of toolchain WASM plugins" title="Direct link to Alpha release of toolchain WASM plugins" translate="no">​</a></h2>
-<p>For over a <a class="" href="https://moonrepo.dev/blog/2024-roadmap#plugin-based-architecture">year now</a>, we've talked about supporting
-WASM-based toolchain plugins... but what's taking so long? Migrating from a "hard-coded in core"
-approach to a dynamic plugin approach was actually quite difficult, especially in Rust. It took us
-way longer than we expected.</p>
-<p>With that said, we're excited to announce alpha support for WASM-based toolchain plugins. In this
-release, we have a working solution, but with partial support for the toolchain's
-<a class="" href="https://moonrepo.dev/docs/how-it-works/languages#tier-structure-and-responsibilities">tiered features</a>. At this point
-in time, we provide full support for tier 0, major support for tier 1 excluding lockfile/manifest
-parsing, minor support for tier 2, no support for tier 3 (but will use
-<a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin">proto's APIs</a>), and support for non-tiered features, like
-<a class="" href="https://moonrepo.dev/docs/commands/init"><code>moon init</code></a> and <a class="" href="https://moonrepo.dev/docs/commands/docker"><code>moon docker</code></a>.</p>
-<p>If you're curious, the following WASM function APIs are now available:</p>
-<ul>
-<li class=""><code>register_toolchain</code> - Registers the toolchain and provide metadata for detection and other
-purposes.</li>
-<li class=""><code>initialize_toolchain</code> - Provides prompts to use during <code>moon init</code> to gather settings values.</li>
-<li class=""><code>define_toolchain_config</code> - Defines a configuration schema for use within JSON schemas.</li>
-<li class=""><code>define_docker_metadata</code> - Defines metadata related to <code>docker</code> commands.</li>
-<li class=""><code>hash_task_contents</code> - Injects content into the task hashing process.</li>
-<li class=""><code>prune_docker</code> - Custom operations to run during <code>docker prune</code>.</li>
-<li class=""><code>scaffold_docker</code> - Custom operations to run during <code>docker scaffold</code>.</li>
-<li class=""><code>sync_project</code> - Runs syncing operations per project (during the <code>SyncProject</code> action).</li>
-<li class=""><code>sync_workspace</code> - Runs syncing operations at the workspace root (during the <code>SyncWorkspace</code>
-action).</li>
-</ul>
-<p>We know everyone is very excited about these plugins, so feel free to start using them today!
-However, since we don't have full tiered support, most of the advanced functionality related to
-running tasks is currently not supported (except for task hashing which is supported).</p>
-<p>Additionally, we do <em>not</em> have documentation yet for these new APIs, but we do have the following
-resources to help you get started:</p>
-<ul>
-<li class=""><a class="" href="https://moonrepo.dev/docs/guides/wasm-plugins">Getting started with WASM plugins</a></li>
-<li class=""><a href="https://github.com/moonrepo/plugins/tree/master/toolchains" target="_blank" rel="noopener noreferrer" class="">Example toolchain WASM plugins</a></li>
-<li class=""><a href="https://docs.rs/moon_pdk" target="_blank" rel="noopener noreferrer" class=""><code>moon_pdk</code> documentation</a> (functions, macros, etc)</li>
-<li class=""><a href="https://docs.rs/moon_pdk_api" target="_blank" rel="noopener noreferrer" class=""><code>moon_pdk_api</code> documentation</a> (structs, enums, etc)</li>
-</ul>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="typescript-toolchain">TypeScript toolchain<a href="https://moonrepo.dev/blog/moon-v1.33#typescript-toolchain" class="hash-link" aria-label="Direct link to TypeScript toolchain" title="Direct link to TypeScript toolchain" translate="no">​</a></h3>
-<p>To verify that our WASM plugin implementation works correctly, we've
-<a href="https://github.com/moonrepo/plugins/tree/master/toolchains/typescript" target="_blank" rel="noopener noreferrer" class="">migrated the TypeScript toolchain entirely to a WASM plugin</a>,
-and it's no longer hard-coded in our Rust core! If you've configured
-<a class="" href="https://moonrepo.dev/docs/config/toolchain#typescript"><code>typescript</code></a> in
-<a class="" href="https://moonrepo.dev/docs/config/toolchain"><code>.moon/toolchain.yml</code></a>, then you'll automatically use the new plugin under
-the hood.</p>
-<p>This is our first step in supporting plugins in core. We chose TypeScript as our 1st plugin because
-it was the simplest of all the toolchains, was primarily used for project syncing, and did not
-require all tiered APIs.</p>
-<p>With that said, most of the code had to be rewritten when porting, but we tried to keep as much
-parity as possible. Please report an issues or differences you encounter. Additionally, because
-TypeScript is now a "true" toolchain, it will appear in the toolchains list for projects and tasks.
-This is required since it runs operations in the context of the plugin.</p>
-<p>Because toolchain plugins are configured differently internally, and since TypeScript is now a
-plugin, the configuration syntax for disabling the TypeScript toolchain at the project-level has
-changed. While not a breaking change in this release, the old format will be removed in the future.</p>
-<div class="language-yml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Before</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">typescript</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">disable</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># After</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">toolchain</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">typescript</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic"># or null</span><br></span></code></pre></div></div>
-<div class="theme-admonition theme-admonition-warning admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_pbrs"><p>If you use the TypeScript toolchain, you'll need to update your configuration files or editor to
-point to the newer <a href="https://moonrepo.dev/blog/moon-v1.33#dynamic-json-schemas" class="">JSON schemas</a>, otherwise your editor may error with
-"Property typescript is not allowed".</p></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="experimental-moonx-executable">Experimental <code>moonx</code> executable<a href="https://moonrepo.dev/blog/moon-v1.33#experimental-moonx-executable" class="hash-link" aria-label="Direct link to experimental-moonx-executable" title="Direct link to experimental-moonx-executable" translate="no">​</a></h2>
-<p>Based on a <a href="https://github.com/moonrepo/moon/issues/1828" target="_blank" rel="noopener noreferrer" class="">request from the community</a>, we're
-introducing a new executable <code>moonx</code>, which is simply a shorthand for <code>moon run ...</code>. In the future
-we will expand this with more "shorthand" functionality.</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moonx app:build</span><br></span></code></pre></div></div>
-<p>Because of our current release process, the <code>moonx</code> executable is <em>not</em> packaged in the release (on
-GitHub), and is instead created the first time <code>moon</code> runs. Furthermore, <code>moonx</code> is not a binary
-executable, and is instead a shim (a Bash script on Unix, and a PowerShell (<code>.ps1</code>) script on
-Windows). In the future, this will become a true binary.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="dynamic-json-schemas">Dynamic JSON schemas<a href="https://moonrepo.dev/blog/moon-v1.33#dynamic-json-schemas" class="hash-link" aria-label="Direct link to Dynamic JSON schemas" title="Direct link to Dynamic JSON schemas" translate="no">​</a></h2>
-<p>With the initial support for toolchain plugins, the available configuration in
-<a class="" href="https://moonrepo.dev/docs/config/toolchain"><code>.moon/toolchain.yml</code></a> and <a class="" href="https://moonrepo.dev/docs/config/project"><code>moon.yml</code></a> is no longer
-static, and is instead dynamic based on the enabled/configured toolchains. Because of this, the JSON
-schemas provided at <code>moonrepo.dev</code> and in the GitHub release are not accurate for some toolchain
-related settings, but accurate for everything else.</p>
-<p>This may lead to a poor developer experience where your editor shows errors for unknown settings. To
-remedy this, we now generate dynamic schemas at <code>.moon/cache/schemas</code> with accurate settings. If
-you're editor supports the <code>$schema</code> property, you can update them like so:</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">$schema</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'./cache/schemas/toolchain.json'</span><br></span></code></pre></div></div>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">app/moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">$schema</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'../.moon/cache/schemas/toolchain.json'</span><br></span></code></pre></div></div>
-<p>The VS Code YAML server does not support the
-<a href="https://github.com/redhat-developer/yaml-language-server/pull/970" target="_blank" rel="noopener noreferrer" class=""><code>$schema</code> property</a>, but there
-is a
-<a href="https://github.com/redhat-developer/yaml-language-server?tab=readme-ov-file#using-inlined-schema" target="_blank" rel="noopener noreferrer" class="">work around</a>.
-However, that syntax is a bit unfortunate, so our official moon VS Code extension supports updating
-<code>.vscode/settings</code>. Simply open the command palette and select "moon: Append YAML schemas
-configuration to settings".</p>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>These schemas are automatically generated through <a class="" href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a> but can be
-manually generated with <a class="" href="https://moonrepo.dev/docs/commands/sync/config-schemas"><code>moon sync config-schemas</code></a>.</p></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.33#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.33.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added support for <code>moon run ~:build</code>, which will run the <code>build</code> task in the closest project
-(traversing upwards).</li>
-<li class="">Added <code>$XDG_DATA_HOME</code> support when detecting the moon store. Will be used if <code>$MOON_HOME</code> is not
-set, and will fallback to <code>$HOME/.moon</code>.</li>
-<li class="">Added elapsed/timing information to child processes and WASM calls within logs.</li>
-<li class="">Improved the handling of CTRL-C, CTRL-BREAK, and other signals on Windows.</li>
-<li class="">Updated <code>moon init</code> with toolchain plugin support.</li>
-<li class="">Updated <code>toolchain.default</code> in <code>moon.yml</code> to support a list of IDs.</li>
-<li class="">Updated file hashing (via <code>git hash-object</code>) to continously pipe stdin to avoid hanging processes.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="toolchain" term="toolchain"/>
-        <category label="wasm" term="wasm"/>
-        <category label="plugin" term="plugin"/>
-        <category label="moonx" term="moonx"/>
-        <category label="schema" term="schema"/>
     </entry>
 </feed>

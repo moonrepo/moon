@@ -137,6 +137,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [install](https://moonrepo.dev/docs/proto/commands/install): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [list-remote](https://moonrepo.dev/docs/proto/commands/list-remote): :::danger
 - [list](https://moonrepo.dev/docs/proto/commands/list): :::danger
+- [mcp](https://moonrepo.dev/docs/proto/commands/mcp): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [outdated](https://moonrepo.dev/docs/proto/commands/outdated): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [pin](https://moonrepo.dev/docs/proto/commands/pin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [plugin add](https://moonrepo.dev/docs/proto/commands/plugin/add): import VersionLabel from '@site/src/components/Docs/VersionLabel';
@@ -147,6 +148,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [regen](https://moonrepo.dev/docs/proto/commands/regen): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [run](https://moonrepo.dev/docs/proto/commands/run): The `proto run <tool> [version]` (or `proto r`) command will run a tool after
 - [setup](https://moonrepo.dev/docs/proto/commands/setup): The `proto setup` command will setup proto in your current shell by modifying an applicable profile
+- [shell](https://moonrepo.dev/docs/proto/commands/shell): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [status](https://moonrepo.dev/docs/proto/commands/status): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [unalias](https://moonrepo.dev/docs/proto/commands/unalias): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [uninstall](https://moonrepo.dev/docs/proto/commands/uninstall): The `proto uninstall <tool> [version]` (or `proto ui`) command will uninstall and remove a tool from
@@ -280,3 +282,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [moon v2.0 - Official "Phobos" release!](https://moonrepo.dev/blog/2026-02-18_moon-v2.0): We're very excited to announce the release of moon v2.0, codenamed "Phobos", after one of Mars'
 - [moon v2.1 - Execution plans, target deps scopes, toolchain/task settings, and more](https://moonrepo.dev/blog/2026-03-16_moon-v2.1): It's been about a month since our major v2.0 release, and we're back with a smaller, but still
 - [moon v2.2 - Daemon, AI skills, async graph building, async affected tracking, and more](https://moonrepo.dev/blog/2026-04-13_moon-v2.2): In this release, we focused entirely on performance improvements, with the introduction of a daemon,
+- [proto v0.57 - OCI plugin distribution, cargo and npm backends](https://moonrepo.dev/blog/2026-05-12_proto-v0.57): In this release, we're shifting how official plugins are distributed, and rolling out two new

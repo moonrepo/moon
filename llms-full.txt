@@ -18927,6 +18927,53 @@ $ proto list node
 
 ---
 
+## mcp(Commands)
+
+<VersionLabel version="0.54.0" header />
+
+The `proto mcp` command starts a [Model Context Protocol](https://modelcontextprotocol.io/) server
+over stdio, allowing AI agents and other MCP-compatible clients to interact with proto's toolchain,
+configuration, and environment.
+
+```shell
+$ proto mcp
+```
+
+The server is intended to be launched by an MCP client, not invoked directly. Configure your client
+(Claude Code, Cursor, etc) to spawn `proto mcp` as the server command.
+
+### Inspecting the server
+
+To see what the server exposes without starting an actual session, pass `--info`. This will print
+the server metadata and a list of all available tools and resources.
+
+```shell
+$ proto mcp --info
+```
+
+### Tools
+
+The server exposes the following tools to MCP clients:
+
+- `install_tool` - Install a tool with a specified version.
+- `uninstall_tool` - Uninstall a tool with a specified version.
+- `list_tool_versions` - List available and installed versions for a tool.
+- `get_config` - Get the current proto configuration.
+
+### Resources
+
+The server also exposes the following resources:
+
+- `proto://config` - Configuration loaded for the current working directory.
+- `proto://env` - The current proto environment, store paths, variables, and more.
+- `proto://tools` - List of installed tools and their versions.
+
+### Options
+
+- `--info` - Display server information and list available tools and resources, then exit.
+
+---
+
 ## outdated
 
 <VersionLabel version="0.19.0" header />
@@ -18990,9 +19037,9 @@ the location, or use the `--tool-native` option to use a location unique to the 
   and `user`.
   <VersionLabel version="0.41.0" />
 - `--tool-native` - Pins the version in a tool specific location. Examples:
+  <VersionLabel version="0.55.0" />
   - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc)
     - Pins version in the `devEngines` field in the `package.json` file.
-  - <VersionLabel version="0.55.0" />
 
 ---
 
@@ -19337,6 +19384,49 @@ If you would like to opt-out of this behavior, pass the `--no-modify-path` flag.
 
 ---
 
+## shell
+
+<VersionLabel version="0.54.0" header />
+
+The `proto shell <tools...>` (or `proto sh`, `proto session`) command will initialize a list of
+tools into the environment and start an interactive shell session with that environment active.
+
+```shell
+$ proto shell node@20 npm@10
+```
+
+Tools will automatically detect a version to launch with based on loaded `.prototools`, but the
+version can be provided inline by suffixing the tool with `@<version>`. If no tools are provided,
+the list will be inherited from the current `.prototools` configuration.
+
+```shell
+$ proto shell node pnpm
+```
+
+This is effectively a convenience wrapper around [`proto exec`](./exec) that launches an interactive
+shell instead of an arbitrary command. Inside the session, all configured environment variables and
+`PATH` modifications for the provided tools are active.
+
+### Choosing a shell
+
+By default, the current shell is detected and reused. To start a different shell, pass `--shell`
+with the shell name.
+
+```shell
+$ proto shell node@20 --shell fish
+```
+
+### Arguments
+
+- `[tools...]` - List of tool identifiers with optional version. If omitted, tools are inherited
+  from `.prototools` configs.
+
+### Options
+
+- `--shell` - Shell to start an interactive session for (e.g. `bash`, `pwsh`).
+
+---
+
 ## status
 
 <VersionLabel version="0.34.0" header />
@@ -19535,9 +19625,21 @@ $ proto versions node
 23.5.0 - installed 12/25/24
 ```
 
+### Filtering versions<VersionLabel version="0.57.0" />
+
+To narrow the list down to a specific range, pass a
+[version requirement](../tool-spec#requirements-and-ranges) as the second argument. Only versions
+that satisfy the requirement will be displayed.
+
+```shell
+$ proto versions node 24
+$ proto versions node ">=22, <24"
+```
+
 ### Arguments
 
 - `<tool>` - Type of tool.
+- `[filter]` - Version range/requirement to filter the list by. <VersionLabel version="0.57.0" />
 
 ### Options
 
@@ -19839,11 +19941,16 @@ are configured. Each registry object supports the following fields:
 
 - `registry` - The registry host, e.g. `ghcr.io`.
 - `namespace` - The namespace (or organization) that the plugin belongs to.
+- `auth` (bool) - Whether the registry requires authentication. When true, proto will attempt to
+  load credentials for this host from the Docker config. <VersionLabel version="0.57.0" />
+- `default` (bool) - Whether this registry should be used as the default when the locator only
+  provides an identifier (no registry host or namespace). <VersionLabel version="0.57.0" />
 
 ```toml title=".prototools"
 [settings]
 unstable-registries = [
-  { registry: "ghcr.io", namespace: "moonrepo" }
+  { registry = "ghcr.io", namespace = "moonrepo", default = true },
+  { registry = "custom.host.com", namespace = "my-org", auth = true },
 ]
 ```
 
@@ -20001,6 +20108,19 @@ The timeout in milliseconds to wait for a ping against a host to resolve. Defaul
 ```toml title=".prototools"
 [settings.offline]
 timeout = 500
+```
+
+### `[shell]`<VersionLabel version="0.56.0" />
+
+#### `aliases`<VersionLabel version="0.56.0" />
+
+A map of shell aliases that will be injected into your shell when running `proto activate`. This is
+useful for defining aliases to share between developers, or to define aliases for tools that don't
+support them natively.
+
+```toml title=".prototools"
+[shell.aliases]
+gs = "git status"
 ```
 
 ### `[plugins]`
@@ -20927,24 +21047,56 @@ this, some tools may not be usable through proto.
 By default, the ID pinned in `.prototools` is the
 [asdf shortname](https://asdf-vm.com/plugins/create.html#plugin-shortname-index) used when cloning a
 repository. If the ID is different than the shortname (`node` vs `nodejs`), you can configure the
-`asdf-shortname` setting.
+`shortname` setting.
 
 ```toml title=".prototools"
 "asdf:node" = "20"
 
 [tools."asdf.node"]
-asdf-shortname = "nodejs"
+shortname = "nodejs"
 ```
 
 The following settings are supported:
 
-- `asdf-shortname` (string) - The name of the [asdf plugin](https://github.com/asdf-vm/asdf-plugins)
-  if different than the configured ID.
-- `asdf-repository` (string) - The Git repository URL in which to locate
+- `shortname` (string) - The name of the [asdf plugin](https://github.com/asdf-vm/asdf-plugins) if
+  different than the configured ID.
+- `repository` (string) - The Git repository URL in which to locate
   [scripts](https://asdf-vm.com/plugins/create.html#scripts-overview). If not defined, is extracted
   from the shortname plugin index.
 - `exes` (string[]) - List of executable file names (relative from `bin`) to be linked as a
   shim/bin. If not defined, we'll automatically scan the `bin` directory.
+
+### `cargo`<VersionLabel version="0.57.0" />
+
+The `cargo` backend will install CLIs from [crates.io](https://crates.io/) using
+[`cargo install`](https://doc.rust-lang.org/cargo/commands/cargo-install.html) under the hood. The
+ID after the prefix is the crate name as published to the registry.
+
+```toml title=".prototools"
+"cargo:<id>" = "0.31"
+```
+
+For example, to install [`cargo-dist`](https://crates.io/crates/cargo-dist):
+
+```toml title=".prototools"
+"cargo:cargo-dist" = "0.31"
+```
+
+### `npm`<VersionLabel version="0.57.0" />
+
+The `npm` backend will install CLIs from the [npm registry](https://www.npmjs.com/) using the `npm`
+package manager under the hood. The ID after the prefix is the package name as published to the
+registry.
+
+```toml title=".prototools"
+"npm:<id>" = "6"
+```
+
+For example, to install [`typescript`](https://www.npmjs.com/package/typescript):
+
+```toml title=".prototools"
+"npm:typescript" = "6"
+```
 
 ## Semantic versions
 
@@ -34901,3 +35053,126 @@ changes.
 - Improved performance of task output archiving, by no longer blocking the main thread pool.
 - Updated the system toolchain to be built-in instead of an external WASM plugin that needs to be
   downloaded.
+
+---
+
+## proto v0.57 - OCI plugin distribution, cargo and npm backends
+
+In this release, we're shifting how official plugins are distributed, and rolling out two new
+backends for installing CLIs from existing package registries.
+
+<!--truncate-->
+
+## Migrating plugin distribution to ghcr.io
+
+For a while now, proto's official plugins have been distributed as raw `.wasm` files attached to
+GitHub releases. While this worked, it also exposed us to GitHub's CDN flakiness: download retries,
+timeouts, and the occasional 5xx have been a recurring source of friction for users (especially in
+CI).
+
+To combat this, we're migrating away from raw release URLs and onto OCI artifacts hosted on
+[ghcr.io](https://ghcr.io/) (also known as GitHub Container Registry). Yes, we're still hosted on
+GitHub infrastructure, but ghcr.io is a different surface, with different reliability
+characteristics, and we want to verify whether the registry path is more stable than raw release
+downloads.
+
+If it turns out ghcr.io is _not_ a meaningful improvement, we'll revert back to the previous
+implementation and start exploring other alternatives.
+
+This work builds directly on the
+[unstable OCI registry support](./proto-v0.51#unstable-oci-registries-for-plugin-storage) introduced
+in v0.51 — official plugins are now resolved through the same `registry://` flow that custom plugins
+already use.
+
+### Tar archives as OCI artifacts
+
+As part of this work, the OCI artifact spec we support now allows the layer blob to be a tar archive
+(not just a raw `.wasm` file). When proto resolves a plugin from a registry, it will download the
+artifact, unpack it, and locate the contained WASM file automatically. This makes it easier for
+plugin authors to publish supporting files (TOML/YAML schemas, JSON manifests, multiple WASM
+binaries) alongside the plugin itself.
+
+If you're publishing your own WASM plugins, the
+[`moonrepo/build-wasm-plugin`](https://github.com/moonrepo/build-wasm-plugin) GitHub Action has also
+been updated to support publishing directly to ghcr.io.
+
+## New `cargo` and `npm` backends
+
+In [v0.52](./proto-v0.52) we opened up
+[custom backend plugins](./proto-v0.52#custom-backend-plugins) to the community. In this release,
+we're adding two new official backends that target the registries many of you already use
+day-to-day:
+
+- `cargo` — installs CLIs from [crates.io](https://crates.io/).
+- `npm` — installs CLIs from the [npm registry](https://www.npmjs.com/).
+
+Like any [backend](/docs/proto/tool-spec#backends), prefix the tool identifier in `.prototools` with
+the backend's name:
+
+```toml title=".prototools"
+"cargo:cargo-dist" = "0.31"
+"npm:typescript" = "6"
+```
+
+This is a great way to manage one-off CLIs that aren't worth writing a dedicated plugin for, while
+still benefiting from proto's pinning, shimming, and lockfile workflows.
+
+## Filtering `proto versions`
+
+The [`proto versions`](/docs/proto/commands/versions) command (and the `list_tool_versions` MCP
+tool) now accept a version requirement to filter the list. This is handy when a tool has hundreds of
+releases and you only care about a specific range:
+
+```shell
+$ proto versions node 24
+```
+
+The filter argument accepts any [version range](/docs/proto/tool-spec#requirements-and-ranges) that
+proto already understands (`~24`, `^22`, `>=22, <24`, etc).
+
+## Breaking changes
+
+### New `auth` and `default` flags for `unstable-registries`
+
+The [`settings.unstable-registries`](/docs/proto/config#unstable-registries) entries now accept two
+additional fields, and both are required for behaviors that previously worked implicitly.
+
+If you're using a custom OCI registry that requires authentication, you'll need to set
+`auth = true`. When enabled, proto will attempt to load credentials for that host from your Docker
+config, otherwise the request will be anonymous.
+
+```toml title=".prototools"
+[settings]
+unstable-registries = [
+  { registry = "custom.host.com", auth = true }
+]
+```
+
+If you're using a custom OCI registry as the fallback when a locator only provides an identifier (no
+registry host or namespace), and the identifier is not a built-in plugin, you'll need to set
+`default = true`.
+
+```toml title=".prototools"
+[settings]
+unstable-registries = [
+  { registry = "custom.host.com", default = true }
+]
+```
+
+### First-time installs no longer pin globally
+
+Previously, installing a tool for the first time would implicitly pin its version to the global
+`~/.proto/.prototools` config. Going forward, first-time installs do _not_ touch the global config.
+If you want to record a pinned version, use `proto install --pin` (or `--pin global`), or write the
+version into a `.prototools` file directly.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.57.0) for a full list
+of changes.
+
+- Added support for `.tar.zst` (tar + zstd) archives.
+- Fixed an issue where some backend-managed tools (asdf) would generate broken shims.
+- Fixed an issue where `proto outdated --update` would overwrite aliases.
+- Added an extensive end-to-end test suite that exercises proto from the command line (not through
+  Rust's testing framework) to better catch real-world regressions.

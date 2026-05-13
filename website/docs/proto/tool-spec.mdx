@@ -50,24 +50,56 @@ this, some tools may not be usable through proto.
 By default, the ID pinned in `.prototools` is the
 [asdf shortname](https://asdf-vm.com/plugins/create.html#plugin-shortname-index) used when cloning a
 repository. If the ID is different than the shortname (`node` vs `nodejs`), you can configure the
-`asdf-shortname` setting.
+`shortname` setting.
 
 ```toml title=".prototools"
 "asdf:node" = "20"
 
 [tools."asdf.node"]
-asdf-shortname = "nodejs"
+shortname = "nodejs"
 ```
 
 The following settings are supported:
 
-- `asdf-shortname` (string) - The name of the [asdf plugin](https://github.com/asdf-vm/asdf-plugins)
-  if different than the configured ID.
-- `asdf-repository` (string) - The Git repository URL in which to locate
+- `shortname` (string) - The name of the [asdf plugin](https://github.com/asdf-vm/asdf-plugins) if
+  different than the configured ID.
+- `repository` (string) - The Git repository URL in which to locate
   [scripts](https://asdf-vm.com/plugins/create.html#scripts-overview). If not defined, is extracted
   from the shortname plugin index.
 - `exes` (string[]) - List of executable file names (relative from `bin`) to be linked as a
   shim/bin. If not defined, we'll automatically scan the `bin` directory.
+
+### `cargo`<VersionLabel version="0.57.0" />
+
+The `cargo` backend will install CLIs from [crates.io](https://crates.io/) using
+[`cargo install`](https://doc.rust-lang.org/cargo/commands/cargo-install.html) under the hood. The
+ID after the prefix is the crate name as published to the registry.
+
+```toml title=".prototools"
+"cargo:<id>" = "0.31"
+```
+
+For example, to install [`cargo-dist`](https://crates.io/crates/cargo-dist):
+
+```toml title=".prototools"
+"cargo:cargo-dist" = "0.31"
+```
+
+### `npm`<VersionLabel version="0.57.0" />
+
+The `npm` backend will install CLIs from the [npm registry](https://www.npmjs.com/) using the `npm`
+package manager under the hood. The ID after the prefix is the package name as published to the
+registry.
+
+```toml title=".prototools"
+"npm:<id>" = "6"
+```
+
+For example, to install [`typescript`](https://www.npmjs.com/package/typescript):
+
+```toml title=".prototools"
+"npm:typescript" = "6"
+```
 
 ## Semantic versions
 

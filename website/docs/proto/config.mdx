@@ -295,11 +295,16 @@ are configured. Each registry object supports the following fields:
 
 - `registry` - The registry host, e.g. `ghcr.io`.
 - `namespace` - The namespace (or organization) that the plugin belongs to.
+- `auth` (bool) - Whether the registry requires authentication. When true, proto will attempt to
+  load credentials for this host from the Docker config. <VersionLabel version="0.57.0" />
+- `default` (bool) - Whether this registry should be used as the default when the locator only
+  provides an identifier (no registry host or namespace). <VersionLabel version="0.57.0" />
 
 ```toml title=".prototools"
 [settings]
 unstable-registries = [
-  { registry: "ghcr.io", namespace: "moonrepo" }
+  { registry = "ghcr.io", namespace = "moonrepo", default = true },
+  { registry = "custom.host.com", namespace = "my-org", auth = true },
 ]
 ```
 
@@ -457,6 +462,19 @@ The timeout in milliseconds to wait for a ping against a host to resolve. Defaul
 ```toml title=".prototools"
 [settings.offline]
 timeout = 500
+```
+
+### `[shell]`<VersionLabel version="0.56.0" />
+
+#### `aliases`<VersionLabel version="0.56.0" />
+
+A map of shell aliases that will be injected into your shell when running `proto activate`. This is
+useful for defining aliases to share between developers, or to define aliases for tools that don't
+support them natively.
+
+```toml title=".prototools"
+[shell.aliases]
+gs = "git status"
 ```
 
 ### `[plugins]`

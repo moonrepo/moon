@@ -464,6 +464,19 @@ The timeout in milliseconds to wait for a ping against a host to resolve. Defaul
 timeout = 500
 ```
 
+### `[shell]`<VersionLabel version="0.56.0" />
+
+#### `aliases`<VersionLabel version="0.56.0" />
+
+A map of shell aliases that will be injected into your shell when running `proto activate`. This is
+useful for defining aliases to share between developers, or to define aliases for tools that don't
+support them natively.
+
+```toml title=".prototools"
+[shell.aliases]
+gs = "git status"
+```
+
 ### `[plugins]`
 
 This setting was renamed to [`[plugins.tools]`](#pluginstools) in v0.52 but exists for backwards

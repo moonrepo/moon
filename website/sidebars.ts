@@ -359,6 +359,7 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/diagnose',
 				'proto/commands/exec',
 				'proto/commands/install',
+				'proto/commands/mcp',
 				'proto/commands/outdated',
 				'proto/commands/pin',
 				{
@@ -382,6 +383,7 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/regen',
 				'proto/commands/run',
 				'proto/commands/setup',
+				'proto/commands/shell',
 				'proto/commands/status',
 				'proto/commands/unalias',
 				'proto/commands/uninstall',

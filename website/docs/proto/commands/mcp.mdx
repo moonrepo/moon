@@ -1,0 +1,48 @@
+---
+title: mcp
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.54.0" header />
+
+The `proto mcp` command starts a [Model Context Protocol](https://modelcontextprotocol.io/) server
+over stdio, allowing AI agents and other MCP-compatible clients to interact with proto's toolchain,
+configuration, and environment.
+
+```shell
+$ proto mcp
+```
+
+The server is intended to be launched by an MCP client, not invoked directly. Configure your client
+(Claude Code, Cursor, etc) to spawn `proto mcp` as the server command.
+
+### Inspecting the server
+
+To see what the server exposes without starting an actual session, pass `--info`. This will print
+the server metadata and a list of all available tools and resources.
+
+```shell
+$ proto mcp --info
+```
+
+### Tools
+
+The server exposes the following tools to MCP clients:
+
+- `install_tool` - Install a tool with a specified version.
+- `uninstall_tool` - Uninstall a tool with a specified version.
+- `list_tool_versions` - List available and installed versions for a tool.
+- `get_config` - Get the current proto configuration.
+
+### Resources
+
+The server also exposes the following resources:
+
+- `proto://config` - Configuration loaded for the current working directory.
+- `proto://env` - The current proto environment, store paths, variables, and more.
+- `proto://tools` - List of installed tools and their versions.
+
+### Options
+
+- `--info` - Display server information and list available tools and resources, then exit.

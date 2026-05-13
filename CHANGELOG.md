@@ -41,6 +41,11 @@
   - Will resolve `catalog:` references in `package.json` files using catalogs declared in a root
     `deno.json`.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.57.0](https://github.com/moonrepo/proto/releases/tag/v0.57.0) from 0.56.4.
+- Updated dependencies.
+
 ## 2.2.6
 
 #### 🐞 Fixes

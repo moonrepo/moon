@@ -7108,9 +7108,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.57.0"
+version = "0.57.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "de8be889601887570f8b4d915e41aacb25602506b6c5c85540cbf277f7bf83ca"
+checksum = "0c4b4a0315254ea1c4dca978f331948b9f04b871459c158188e56c4317830a20"
 dependencies = [
  "convert_case 0.11.0",
  "docker_credential",
@@ -7169,9 +7169,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_test_utils"
-version = "0.45.0"
+version = "0.45.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "39571221a9a69b243e15ccc73678d95773e63cd7c5a70aeb1bae04466f14fbd9"
+checksum = "57e8e9e4c87e2b0d21bba35b388aa1959d9fe5f101abd532799f7061fa7fff83"
 dependencies = [
  "extism",
  "proto_core",
@@ -9723,9 +9723,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.31.0"
+version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6699b7b563dab661ffdc21ef1e9651c9e7a15ac23aed8ade4f57d72ca28b6ef5"
+checksum = "1d9eb857f4a1a07661c62cde68daa3c8c5dd4ea1e4b01eebefe1d13f9e4d70ed"
 dependencies = [
  "async-trait",
  "base64 0.22.1",

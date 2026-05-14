@@ -1,4 +1,4 @@
-use moon_hash::{ContentHasher, hash_fingerprint};
+use moon_hash::{ContentHash, ContentHasher, hash_fingerprint};
 
 hash_fingerprint!(
     struct ContentOne<'l> {
@@ -18,7 +18,8 @@ fn hashes_empty() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+        ContentHash::from_hex("4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945")
+            .unwrap()
     );
 }
 
@@ -29,7 +30,8 @@ fn hashes_with_1_content() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "37d04b9909c26008c08eeed62baf021fbd439a748c8a4b0aa27e66fe17c4dcb8"
+        ContentHash::from_hex("37d04b9909c26008c08eeed62baf021fbd439a748c8a4b0aa27e66fe17c4dcb8")
+            .unwrap()
     );
 
     let mut hasher = ContentHasher::new("test");
@@ -37,7 +39,8 @@ fn hashes_with_1_content() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "deec63985262a5c34ea2352e368aa96623193584ec1055817dcaaea1eb746c30"
+        ContentHash::from_hex("deec63985262a5c34ea2352e368aa96623193584ec1055817dcaaea1eb746c30")
+            .unwrap()
     );
 }
 
@@ -49,7 +52,8 @@ fn hashes_with_2_content() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "c65c4706a49bfa57a44b25bf5b441ec6549358c1a87a91a2aa8502fe225ac5f6"
+        ContentHash::from_hex("c65c4706a49bfa57a44b25bf5b441ec6549358c1a87a91a2aa8502fe225ac5f6")
+            .unwrap()
     );
 
     let mut hasher = ContentHasher::new("test");
@@ -58,7 +62,8 @@ fn hashes_with_2_content() {
 
     assert_eq!(
         hasher.generate_hash().unwrap(),
-        "295892f785d11426dec31aa569e913db83d7a1cf2e944f82e55f1fdc33eccf96"
+        ContentHash::from_hex("295892f785d11426dec31aa569e913db83d7a1cf2e944f82e55f1fdc33eccf96")
+            .unwrap()
     );
 }
 

@@ -162,7 +162,7 @@ impl WorkspaceBuilder {
             .hash
             .save_manifest_without_hasher("workspace-graph", &fingerprint)?;
 
-        debug!(hash, "Generated hash for workspace graph");
+        debug!(%hash, "Generated hash for workspace graph");
 
         // Check the current state and cache
         let mut state = cache_engine

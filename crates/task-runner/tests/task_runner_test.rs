@@ -632,7 +632,7 @@ mod task_runner {
 
             context.ignored_dependencies.insert(
                 runner.task.target.clone(),
-                FxHashSet::from_iter([Target::new_project("project", "dep").unwrap()]),
+                FxHashSet::from_iter([Target::new("project", "dep").unwrap()]),
             );
 
             assert!(runner.is_dependencies_complete(&context).unwrap());
@@ -646,8 +646,8 @@ mod task_runner {
             let mut context = ActionContext::default();
 
             context.ignored_dependencies.insert(
-                Target::new_project("project", "other").unwrap(),
-                FxHashSet::from_iter([Target::new_project("project", "dep").unwrap()]),
+                Target::new("project", "other").unwrap(),
+                FxHashSet::from_iter([Target::new("project", "dep").unwrap()]),
             );
 
             runner.is_dependencies_complete(&context).unwrap();

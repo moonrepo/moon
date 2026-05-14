@@ -1,4 +1,4 @@
-use moon_hash::ContentHasher;
+use moon_hash::{ContentHash, ContentHasher};
 use serde::Serialize;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
@@ -62,7 +62,7 @@ impl HashEngine {
         self.hashes_dir.join(format!("{hash}.json"))
     }
 
-    pub fn save_manifest(&self, hasher: &mut ContentHasher) -> miette::Result<String> {
+    pub fn save_manifest(&self, hasher: &mut ContentHasher) -> miette::Result<ContentHash> {
         let hash = hasher.generate_hash()?;
         let path = self.get_manifest_path(&hash);
 
@@ -79,7 +79,7 @@ impl HashEngine {
         &self,
         label: &str,
         content: T,
-    ) -> miette::Result<String> {
+    ) -> miette::Result<ContentHash> {
         let mut hasher = ContentHasher::new(label);
         hasher.hash_content(content)?;
 

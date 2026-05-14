@@ -1,5 +1,4 @@
 use moon_cache::*;
-use moon_hash::*;
 use starbase_sandbox::create_empty_sandbox;
 use std::fs;
 
@@ -27,7 +26,8 @@ fn saves_manifest() {
 
     assert_eq!(
         hash,
-        "d612ce4d246bc531a35e693615e8cd2ca76f47b27a0a1ac768679154e0ba55c3"
+        ContentHash::from_hex("d612ce4d246bc531a35e693615e8cd2ca76f47b27a0a1ac768679154e0ba55c3")
+            .unwrap()
     );
 
     let hash_path = sandbox
@@ -60,7 +60,8 @@ fn saves_manifest_without_hasher() {
 
     assert_eq!(
         hash,
-        "d612ce4d246bc531a35e693615e8cd2ca76f47b27a0a1ac768679154e0ba55c3"
+        ContentHash::from_hex("d612ce4d246bc531a35e693615e8cd2ca76f47b27a0a1ac768679154e0ba55c3")
+            .unwrap()
     );
 
     let hash_path = sandbox

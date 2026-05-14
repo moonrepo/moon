@@ -1,12 +1,12 @@
+use crate::content_hash::ContentHash;
 use serde::Serialize;
-use sha2::{Digest, Sha256};
 use starbase_utils::json;
 use tracing::{debug, instrument, trace};
 
 pub struct ContentHasher {
     content_cache: Option<String>,
     contents: Vec<String>,
-    hash_cache: Option<String>,
+    hash_cache: Option<ContentHash>,
 
     pub label: String,
 }
@@ -27,18 +27,14 @@ impl ContentHasher {
     }
 
     #[instrument(skip_all)]
-    pub fn generate_hash(&mut self) -> miette::Result<String> {
+    pub fn generate_hash(&mut self) -> miette::Result<ContentHash> {
         if let Some(hash) = &self.hash_cache {
             return Ok(hash.to_owned());
         }
 
-        let mut hasher = Sha256::default();
+        let hash = ContentHash::hash_bytes(self.serialize()?)?;
 
-        hasher.update(self.serialize()?.as_bytes());
-
-        let hash = format!("{:x}", hasher.finalize());
-
-        debug!(label = &self.label, hash, "Generated content hash");
+        debug!(label = &self.label, %hash, "Generated content hash");
 
         self.hash_cache = Some(hash.clone());
 

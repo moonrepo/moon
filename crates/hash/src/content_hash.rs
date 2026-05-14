@@ -1,13 +1,15 @@
 use crate::hash_error::HashError;
+use compact_str::CompactString;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use starbase_utils::fs;
 use std::fmt;
+use std::ops::Deref;
 use std::path::Path;
 
 /// A SHA-256 content hash: 64-character lowercase hex string.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ContentHash(String);
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ContentHash(CompactString);
 
 impl ContentHash {
     /// Hash a byte slice to produce a `ContentHash`.
@@ -96,6 +98,14 @@ impl fmt::Display for ContentHash {
 
 impl AsRef<str> for ContentHash {
     fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl Deref for ContentHash {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }

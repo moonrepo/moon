@@ -152,7 +152,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let hash = ContentHash::from_hex(&"0".repeat(64)).unwrap();
+            let hash = ContentHash::from_hex("0".repeat(64)).unwrap();
             assert!(!store.contains_object(&hash).unwrap());
         }
     }
@@ -165,7 +165,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let hash = ContentHash::from_hex(&"1".repeat(64)).unwrap();
+            let hash = ContentHash::from_hex("1".repeat(64)).unwrap();
             let result = store.read_bytes(&hash);
 
             assert!(result.is_err());

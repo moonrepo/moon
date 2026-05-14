@@ -13,6 +13,9 @@
 - **MCP**
   - Added `get_template` and `get_templates` tools so AI coding assistants can discover templates
     and inspect their variable schemas before calling `generate`.
+- **Plugins**
+  - Updated plugin distribution to use ghcr.io instead of raw URLs, which should improve reliability
+    and performance of plugin downloads.
 - **Tasks**
   - Added tags support to tasks through new `tags` and `options.mergeTags` settings.
     - Added `taskTag` field support to MQL.

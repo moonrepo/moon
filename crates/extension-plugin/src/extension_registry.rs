@@ -25,20 +25,19 @@ impl Default for ExtensionRegistry {
     fn default() -> Self {
         Self {
             config: Arc::new(ExtensionsConfig::default()),
-            registry: Arc::new(PluginRegistry::new(
-                PluginType::Extension,
-                MoonHostData::default(),
-            )),
+            registry: Arc::new(
+                PluginRegistry::new(PluginType::Extension, MoonHostData::default()).unwrap(),
+            ),
         }
     }
 }
 
 impl ExtensionRegistry {
-    pub fn new(host_data: MoonHostData, config: Arc<ExtensionsConfig>) -> Self {
-        Self {
+    pub fn new(host_data: MoonHostData, config: Arc<ExtensionsConfig>) -> miette::Result<Self> {
+        Ok(Self {
             config,
-            registry: Arc::new(PluginRegistry::new(PluginType::Extension, host_data)),
-        }
+            registry: Arc::new(PluginRegistry::new(PluginType::Extension, host_data)?),
+        })
     }
 
     pub fn create_config(&self, id: &str) -> JsonValue {

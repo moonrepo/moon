@@ -2,7 +2,7 @@ use moon_cache::*;
 use starbase_sandbox::create_empty_sandbox;
 use std::fs;
 
-hash_fingerprint!(
+fingerprint!(
     struct Content<'l> {
         pub one: &'l str,
         pub two: usize,

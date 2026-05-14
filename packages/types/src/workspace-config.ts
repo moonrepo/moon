@@ -14,7 +14,7 @@ export interface CacheCasConfig {
 	 */
 	mmapThreshold?: number;
 	/**
-	 * Verify BLAKE3 hash on every read/write. When enabled, operations
+	 * Verify hash on every read/write. When enabled, operations
 	 * are slower but detect on-disk corruption.
 	 */
 	verifyIntegrity: boolean;
@@ -182,11 +182,11 @@ export interface ExperimentsConfig {
 	 */
 	asyncGraphBuilding: boolean;
 	/**
-	 * Use the Blake3 hashing algorithm for file hashing.
+	 * Use native file hashing instead of using the VCS.
 	 *
-	 * @env MOON_EXPERIMENT_BLAKE3_FILE_HASHING
+	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
-	blake3FileHashing: boolean;
+	nativeFileHashing: boolean;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -685,7 +685,7 @@ export interface PartialCacheCasConfig {
 	 */
 	mmapThreshold?: number | null;
 	/**
-	 * Verify BLAKE3 hash on every read/write. When enabled, operations
+	 * Verify hash on every read/write. When enabled, operations
 	 * are slower but detect on-disk corruption.
 	 */
 	verifyIntegrity?: boolean | null;
@@ -849,11 +849,11 @@ export interface PartialExperimentsConfig {
 	 */
 	asyncGraphBuilding?: boolean | null;
 	/**
-	 * Use the Blake3 hashing algorithm for file hashing.
+	 * Use native file hashing instead of using the VCS.
 	 *
-	 * @env MOON_EXPERIMENT_BLAKE3_FILE_HASHING
+	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
-	blake3FileHashing?: boolean | null;
+	nativeFileHashing?: boolean | null;
 }
 
 /** Configures the generator for scaffolding from templates. */

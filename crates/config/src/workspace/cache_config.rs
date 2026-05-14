@@ -10,7 +10,7 @@ config_struct!(
         #[setting(default = 4_194_304)]
         pub mmap_threshold: u64,
 
-        /// Verify BLAKE3 hash on every read/write. When enabled, operations
+        /// Verify hash on every read/write. When enabled, operations
         /// are slower but detect on-disk corruption.
         pub verify_integrity: bool,
     }

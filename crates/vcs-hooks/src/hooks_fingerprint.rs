@@ -1,8 +1,8 @@
 use moon_config::VcsClient;
-use moon_hash::hash_fingerprint;
+use moon_hash::fingerprint;
 use std::collections::BTreeMap;
 
-hash_fingerprint!(
+fingerprint!(
     pub struct HooksFingerprint<'cfg> {
         pub hooks: BTreeMap<&'cfg str, &'cfg [String]>,
         pub vcs: &'cfg VcsClient,

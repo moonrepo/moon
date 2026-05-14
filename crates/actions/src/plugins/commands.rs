@@ -7,7 +7,7 @@ use moon_common::{
 };
 use moon_console::{Checkpoint, Console};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_fingerprint;
+use moon_hash::fingerprint;
 use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
 use moon_process::Output;
 use moon_process_augment::AugmentedCommand;
@@ -20,7 +20,7 @@ use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, warn};
 
-hash_fingerprint!(
+fingerprint!(
     struct ExecCommandFingerprint<'data> {
         key: &'data str,
 

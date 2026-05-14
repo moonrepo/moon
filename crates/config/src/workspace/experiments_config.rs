@@ -13,8 +13,8 @@ config_struct!(
         #[setting(env = "MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING", parse_env = env::parse_bool)]
         pub async_graph_building: bool,
 
-        /// Use the Blake3 hashing algorithm for file hashing.
-        #[setting(env = "MOON_EXPERIMENT_BLAKE3_FILE_HASHING", parse_env = env::parse_bool)]
-        pub blake3_file_hashing: bool,
+        /// Use native file hashing instead of using the VCS.
+        #[setting(env = "MOON_EXPERIMENT_NATIVE_FILE_HASHING", parse_env = env::parse_bool)]
+        pub native_file_hashing: bool,
     }
 );

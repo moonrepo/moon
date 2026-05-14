@@ -2,10 +2,10 @@ use moon_app_context::AppContext;
 use moon_common::color;
 use moon_config::Version;
 use moon_config_schema::json_schemas::generate_json_schemas;
-use moon_hash::hash_fingerprint;
+use moon_hash::fingerprint;
 use tracing::{instrument, warn};
 
-hash_fingerprint!(
+fingerprint!(
     pub struct ConfigSchemaFingerprint<'cfg> {
         pub files_exist: bool,
         pub moon_version: &'cfg Version,

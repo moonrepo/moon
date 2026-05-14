@@ -1,12 +1,11 @@
-mod hasher;
+mod content_hash;
+mod content_hasher;
+mod digest;
+mod fingerprint;
+mod hash_error;
 
-pub use hasher::*;
-
-#[macro_export]
-macro_rules! hash_fingerprint {
-    ($impl:item) => {
-        #[derive(serde::Serialize)]
-        #[serde(default, rename_all = "camelCase")]
-        $impl
-    };
-}
+pub use content_hash::*;
+pub use content_hasher::*;
+pub use digest::*;
+pub use hash_error::*;
+pub use sha2::{Digest as Sha256Digest, Sha256};

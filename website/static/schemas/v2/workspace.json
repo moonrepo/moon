@@ -195,9 +195,9 @@
         },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
-          "description": "Verify BLAKE3 hash on every read/write. When enabled, operations are slower but detect on-disk corruption.",
+          "description": "Verify hash on every read/write. When enabled, operations are slower but detect on-disk corruption.",
           "type": "boolean",
-          "markdownDescription": "Verify BLAKE3 hash on every read/write. When enabled, operations are slower but detect on-disk corruption."
+          "markdownDescription": "Verify hash on every read/write. When enabled, operations are slower but detect on-disk corruption."
         }
       },
       "additionalProperties": false,
@@ -483,9 +483,9 @@
           "description": "Build the project and task graphs asynchronously.",
           "type": "boolean"
         },
-        "blake3FileHashing": {
-          "title": "blake3FileHashing",
-          "description": "Use the Blake3 hashing algorithm for file hashing.",
+        "nativeFileHashing": {
+          "title": "nativeFileHashing",
+          "description": "Use native file hashing instead of using the VCS.",
           "type": "boolean"
         }
       },

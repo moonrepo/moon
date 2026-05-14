@@ -162,7 +162,7 @@ impl WorkspaceBuilder {
             .hash
             .save_manifest_without_hasher("workspace-graph", &fingerprint)?;
 
-        debug!(hash, "Generated hash for workspace graph");
+        debug!(%hash, "Generated hash for workspace graph");
 
         // Check the current state and cache
         let mut state = cache_engine
@@ -710,7 +710,7 @@ impl WorkspaceBuilder {
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let context = self.context();
 
-        if context.workspace_config.experiments.blake3_file_hashing {
+        if context.workspace_config.experiments.native_file_hashing {
             context
                 .cache_engine
                 .hash_files(&context.workspace_root, &self.config_paths)

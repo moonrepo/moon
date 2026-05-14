@@ -6,4 +6,5 @@ mod hash_error;
 
 pub use content_hash::*;
 pub use content_hasher::*;
+pub use digest::*;
 pub use hash_error::*;

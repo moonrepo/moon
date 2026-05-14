@@ -1,10 +1,8 @@
+use super::find_debug_locator_with_fallback as locate;
 use moon_common::Id;
 use moon_common::color;
 use moon_config::{ToolchainPluginVersionFrom, ToolchainsConfig};
-use proto_core::{
-    PluginLocator, ProtoConfig, ToolContext,
-    warpgate::{DataLocator, find_debug_locator_with_url_fallback as locate},
-};
+use proto_core::{DataLocator, PluginLocator, ProtoConfig, ToolContext};
 use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 use tracing::trace;
 

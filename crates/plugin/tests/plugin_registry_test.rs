@@ -42,7 +42,8 @@ fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {
             workspace_config: Arc::new(WorkspaceConfig::default()),
             workspace_graph: Arc::new(OnceLock::new()),
         },
-    );
+    )
+    .unwrap();
 
     // These must exist or extism errors
     for (host_path, _) in registry.get_virtual_paths() {

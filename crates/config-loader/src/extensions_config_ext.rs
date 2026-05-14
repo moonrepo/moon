@@ -1,6 +1,7 @@
+use super::find_debug_locator_with_fallback as locate;
 use moon_common::Id;
 use moon_config::ExtensionsConfig;
-use proto_core::{PluginLocator, warpgate::find_debug_locator_with_url_fallback as locate};
+use proto_core::PluginLocator;
 use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
 
 pub struct ExtensionsConfigExt;

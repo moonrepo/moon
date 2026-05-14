@@ -4,7 +4,7 @@ use moon_action::ActionNode;
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_config::{DependencyScope, HasherOptimization, ProjectConfig, UnresolvedVersionSpec};
-use moon_hash::{ContentHasher, hash_fingerprint};
+use moon_hash::{ContentHasher, fingerprint};
 use moon_pdk_api::{
     HashTaskContentsInput, LocateDependenciesRootInput, LockDependency, ManifestDependency,
     ParseLockInput, ParseLockOutput, ParseManifestInput, ParseManifestOutput,
@@ -74,7 +74,7 @@ pub async fn hash_common_task_contents(
     Ok(())
 }
 
-hash_fingerprint!(
+fingerprint!(
     struct TaskToolchainFingerprint {
         toolchain: String,
 

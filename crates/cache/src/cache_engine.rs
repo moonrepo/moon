@@ -3,10 +3,11 @@ use crate::state_engine::StateEngine;
 use crate::{merge_clean_results, resolve_path};
 use miette::IntoDiagnostic;
 use moon_cache_item::*;
-use moon_cas::{CasStore, ContentHash};
+use moon_cas::CasStore;
 use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
 use moon_config::CacheConfig;
 use moon_env_var::GlobalEnvBag;
+use moon_hash::ContentHash;
 use moon_time::parse_duration;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -38,6 +39,7 @@ pub struct CacheEngine {
     /// A temporary directory for random artifacts.
     pub temp_dir: PathBuf,
 
+    #[allow(dead_code)]
     config: CacheConfig,
     mode: CacheMode,
     forced_mode: RwLock<Option<CacheMode>>,
@@ -146,7 +148,7 @@ impl CacheEngine {
 
         let mut map = BTreeMap::new();
         let mut set = JoinSet::<miette::Result<(WorkspaceRelativePathBuf, Option<String>)>>::new();
-        let mmap_threshold = self.config.cas.mmap_threshold;
+        // let mmap_threshold = self.config.cas.mmap_threshold;
 
         for file in files {
             let abs_file = file.to_logical_path(root);
@@ -163,7 +165,7 @@ impl CacheEngine {
                     return Ok((rel_file, None));
                 }
 
-                let hash = ContentHash::hash_file(&abs_file, mmap_threshold)?;
+                let hash = ContentHash::hash_file(&abs_file)?;
 
                 Ok((rel_file, Some(hash.to_string())))
             });

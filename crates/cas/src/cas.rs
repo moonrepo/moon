@@ -1,7 +1,7 @@
 use crate::cas_error::CasError;
-use crate::content_hash::ContentHash;
 use crate::gc::GcResult;
 use moon_config::CacheCasConfig;
+use moon_hash::{ContentHash, Sha256, Sha256Digest, hash_sha256};
 use starbase_utils::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 /// A content-addressable file system store.
 ///
-/// Content is addressed by its BLAKE3 hash and stored in a git-style
+/// Content is addressed by its SHA256 hash and stored in a git-style
 /// prefix-sharded directory layout. Writes are atomic (temp file + rename)
 /// so readers never observe partial data, and no file locking is required.
 #[derive(Debug)]
@@ -64,7 +64,7 @@ impl CasStore {
     /// already exists, this is a no-op that returns the hash immediately.
     #[instrument(skip(self, bytes), fields(len = bytes.len()))]
     pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<ContentHash> {
-        let hash = ContentHash::hash_bytes(bytes);
+        let hash = ContentHash::hash_bytes(bytes)?;
 
         if self.contains_object(&hash)? {
             return Ok(hash);
@@ -98,7 +98,7 @@ impl CasStore {
     /// hashing files larger than the configured threshold.
     #[instrument(skip(self))]
     pub fn write_file(&self, source: &Path) -> miette::Result<ContentHash> {
-        let hash = ContentHash::hash_file(source, self.config.mmap_threshold)?;
+        let hash = ContentHash::hash_file(source)?;
 
         if self.contains_object(&hash)? {
             return Ok(hash);
@@ -130,7 +130,7 @@ impl CasStore {
         let mut guard = self.create_temp_file()?;
 
         let hash = {
-            let mut hasher = blake3::Hasher::new();
+            let mut hasher = Sha256::default();
             let mut file = fs::create_file(&guard.path)?;
             let mut buffer = [0u8; 64 * 1024];
 
@@ -160,7 +160,7 @@ impl CasStore {
                 error: Box::new(error),
             })?;
 
-            ContentHash::from_hash(hasher.finalize())
+            ContentHash::from_hex(format!("{:x}", hasher.finalize()))?
         };
 
         if self.contains_object(&hash)? {
@@ -309,7 +309,7 @@ impl CasStore {
         expected: &ContentHash,
         bytes: &[u8],
     ) -> miette::Result<()> {
-        let actual = blake3::hash(bytes).to_hex().to_string();
+        let actual = hash_sha256(bytes);
 
         if actual != expected.as_hex() {
             return Err(CasError::IntegrityMismatch {

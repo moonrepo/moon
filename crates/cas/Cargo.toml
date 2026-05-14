@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
-blake3 = { workspace = true }
+moon_hash = { path = "../hash" }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true }

@@ -9,10 +9,13 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_common = { path = "../common" }
+compact_str = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }
+thiserror = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]

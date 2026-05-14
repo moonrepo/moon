@@ -6,13 +6,13 @@ use moon_app_context::AppContext;
 use moon_common::color;
 use moon_console::Checkpoint;
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_fingerprint;
+use moon_hash::fingerprint;
 use moon_pdk_api::SetupToolchainInput;
 use moon_toolchain::is_using_global_toolchain;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
-hash_fingerprint!(
+fingerprint!(
     struct SetupToolchainFingerprint<'action> {
         action_node: &'action SetupToolchainNode,
         installed_in_proto: bool,

@@ -106,7 +106,7 @@ mod cache_engine {
         }
 
         #[tokio::test]
-        async fn hashes_files_into_blake3_hex() {
+        async fn hashes_files_into_hex() {
             let sandbox = create_empty_sandbox();
             sandbox.create_file("a.txt", "hello");
             sandbox.create_file("b.txt", "world");

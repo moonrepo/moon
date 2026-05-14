@@ -43,7 +43,7 @@ impl AppContext {
         &self,
         files: &[WorkspaceRelativePathBuf],
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
-        if self.workspace_config.experiments.blake3_file_hashing {
+        if self.workspace_config.experiments.native_file_hashing {
             self.cache_engine
                 .hash_files(&self.workspace_root, files)
                 .await

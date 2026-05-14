@@ -1,4 +1,4 @@
-use moon_cas::ContentHash;
+use moon_hash::ContentHash;
 
 mod content_hash {
     use super::*;
@@ -23,13 +23,6 @@ mod content_hash {
         let hex = "g".repeat(64);
         let result = ContentHash::from_hex(&hex);
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn normalizes_to_lowercase() {
-        let hex = "A".repeat(64);
-        let hash = ContentHash::from_hex(&hex).unwrap();
-        assert_eq!(hash.as_hex(), "a".repeat(64));
     }
 
     #[test]

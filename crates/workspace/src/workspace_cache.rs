@@ -1,20 +1,20 @@
 use crate::projects_builder::ProjectBuildData;
-use moon_cache::cache_item;
+use moon_cache::{ContentHash, cache_item};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, is_docker};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_fingerprint;
+use moon_hash::fingerprint;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
 cache_item!(
     pub struct WorkspaceProjectsCacheState {
-        pub last_hash: String,
+        pub last_hash: ContentHash,
         pub projects: FxHashMap<Id, ProjectBuildData>,
     }
 );
 
-hash_fingerprint!(
+fingerprint!(
     #[derive(Debug)]
     pub struct WorkspaceGraphFingerprint<'graph> {
         // Data derived from the workspace graph builder.

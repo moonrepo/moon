@@ -5,13 +5,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
 pub enum CasError {
-    #[diagnostic(code(cas::invalid_hash))]
-    #[error(
-        "Invalid content hash: expected 64 hex characters, got {}.",
-        .hash.style(Style::Symbol),
-    )]
-    InvalidHash { hash: String },
-
     #[diagnostic(code(cas::not_found))]
     #[error("Blob not found in CAS store for content hash {}.", .hash.style(Style::Symbol))]
     NotFound { hash: String },

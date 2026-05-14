@@ -9,7 +9,7 @@ use moon_app_context::AppContext;
 use moon_common::path::PathExt;
 use moon_common::{color, is_ci, path::WorkspaceRelativePathBuf};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::hash_fingerprint;
+use moon_hash::fingerprint;
 use moon_pdk_api::{InstallDependenciesInput, ManifestDependency, ParseManifestInput};
 use moon_project::ProjectFragment;
 use moon_toolchain_plugin::ToolchainPlugin;
@@ -23,7 +23,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
-hash_fingerprint!(
+fingerprint!(
     struct InstallDependenciesFingerprint<'action> {
         action_node: &'action InstallDependenciesNode,
         lockfile_hash: Option<String>,

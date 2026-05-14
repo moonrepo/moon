@@ -27,10 +27,9 @@ the location, or use the `--tool-native` option to use a location unique to the 
 ### Options
 
 - `--resolve` - Resolve the version to a fully-qualified semantic version before pinning.
-- `--to` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
-  and `user`.
-  <VersionLabel version="0.41.0" />
-- `--tool-native` - Pins the version in a tool specific location. Examples:
-  <VersionLabel version="0.55.0" />
-  - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc)
-    - Pins version in the `devEngines` field in the `package.json` file.
+- `--to` <VersionLabel version="0.41.0" /> - [Location of `.prototools`](../config#locations) to
+  update. Supports `global`, `local`, and `user`.
+- `--tool-native` <VersionLabel version="0.55.0" /> - Pins the version in a tool specific location.
+  Examples:
+  - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc) - Pins version in the `devEngines`
+    field in the `package.json` file.

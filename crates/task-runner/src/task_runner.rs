@@ -9,6 +9,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
+use moon_hash::ContentHash;
 use moon_process::ProcessError;
 use moon_project::Project;
 use moon_remote::{ActionState, Digest, RemoteService};
@@ -21,7 +22,7 @@ use tracing::{debug, instrument, trace};
 
 #[derive(Debug)]
 pub struct TaskRunResult {
-    pub hash: Option<String>,
+    pub hash: Option<ContentHash>,
     pub error: Option<miette::Report>,
     pub operations: OperationList,
 }
@@ -83,7 +84,7 @@ impl<'task> TaskRunner<'task> {
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
-    ) -> miette::Result<Option<String>> {
+    ) -> miette::Result<Option<ContentHash>> {
         // If a dependency has failed or been skipped, we should skip this task
         if !self.is_dependencies_complete(context)? {
             self.skip()?;
@@ -143,7 +144,7 @@ impl<'task> TaskRunner<'task> {
                     self.target_state.take().unwrap_or(TargetState::Passthrough),
                 );
 
-                self.report_item.hash = maybe_hash.clone();
+                self.report_item.hash = maybe_hash.as_ref().map(|h| h.to_string());
 
                 self.app_context.console.on_task_completed(
                     &self.task.target,
@@ -374,7 +375,7 @@ impl<'task> TaskRunner<'task> {
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
-    ) -> miette::Result<String> {
+    ) -> miette::Result<ContentHash> {
         debug!(
             task_target = self.task.target.as_str(),
             "Generating a unique hash for this task"
@@ -406,14 +407,14 @@ impl<'task> TaskRunner<'task> {
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
-        self.report_item.hash = Some(hash.clone());
+        self.report_item.hash = Some(hash.to_string());
 
         // Store the hash digest for remote caching
         if RemoteService::is_enabled() {
             let bytes = hasher.into_bytes();
             let mut state = ActionState::new(
                 Digest {
-                    hash: hash.clone(),
+                    hash: hash.to_string(),
                     size_bytes: bytes.len() as i64,
                 },
                 self.task,
@@ -425,7 +426,7 @@ impl<'task> TaskRunner<'task> {
 
         debug!(
             task_target = self.task.target.as_str(),
-            hash = &hash,
+            %hash,
             "Generated a unique hash"
         );
 

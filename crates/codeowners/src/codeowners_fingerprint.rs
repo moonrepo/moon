@@ -1,8 +1,8 @@
 use moon_config::{CodeownersConfig, OwnersConfig};
-use moon_hash::hash_fingerprint;
+use moon_hash::fingerprint;
 use std::collections::BTreeMap;
 
-hash_fingerprint!(
+fingerprint!(
     pub struct CodeownersFingerprint<'cfg> {
         pub file_exists: bool,
         pub projects: BTreeMap<&'cfg str, &'cfg OwnersConfig>,

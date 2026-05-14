@@ -5227,10 +5227,10 @@ dependencies = [
 name = "moon_cas"
 version = "0.0.1"
 dependencies = [
- "blake3",
  "miette 7.6.0",
  "moon_common",
  "moon_config",
+ "moon_hash",
  "serde",
  "starbase_sandbox",
  "starbase_utils",

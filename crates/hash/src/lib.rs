@@ -8,3 +8,4 @@ pub use content_hash::*;
 pub use content_hasher::*;
 pub use digest::*;
 pub use hash_error::*;
+pub use sha2::{Digest as Sha256Digest, Sha256};

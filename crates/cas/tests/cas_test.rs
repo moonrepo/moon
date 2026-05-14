@@ -1,5 +1,6 @@
-use moon_cas::{CasError, CasStore, ContentHash};
+use moon_cas::{CasError, CasStore};
 use moon_config::CacheCasConfig;
+use moon_hash::ContentHash;
 use starbase_sandbox::create_empty_sandbox;
 use std::io::Cursor;
 

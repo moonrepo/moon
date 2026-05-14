@@ -7,6 +7,13 @@ use std::fmt;
 use std::ops::Deref;
 use std::path::Path;
 
+pub fn hash_sha256<T: AsRef<[u8]>>(bytes: T) -> String {
+    let mut hasher = Sha256::default();
+    hasher.update(bytes.as_ref());
+
+    format!("{:x}", hasher.finalize())
+}
+
 /// A SHA-256 content hash: 64-character hex string.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct ContentHash(CompactString);
@@ -14,12 +21,7 @@ pub struct ContentHash(CompactString);
 impl ContentHash {
     /// Hash a byte slice to produce a `ContentHash`.
     pub fn hash_bytes<T: AsRef<[u8]>>(bytes: T) -> miette::Result<Self> {
-        let mut hasher = Sha256::default();
-        hasher.update(bytes.as_ref());
-
-        let hash = format!("{:x}", hasher.finalize());
-
-        ContentHash::from_hex(hash)
+        ContentHash::from_hex(hash_sha256(bytes))
     }
 
     /// Hash a file's contents to produce a `ContentHash`.

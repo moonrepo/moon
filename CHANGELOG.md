@@ -5,7 +5,7 @@
 #### 🚀 Updates
 
 - Added a new experiment that replaces the VCS/Git based file hashing mechanism with a custom native
-  implementation that runs within our task pool. This can improve performance by 6-10%.
+  implementation that runs within our task pool. This can improve performance by 10-50%.
   - Enable with the `experiments.nativeFileHashing` setting in `.moon/workspace.*`.
 - **Git**
   - Added SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256 as

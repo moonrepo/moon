@@ -109,14 +109,6 @@ impl Deref for CompressableBlob {
     }
 }
 
-impl Deref for CompressableBlob {
-    type Target = Blob;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
 // bazel-remote uses zstd and the fastest compression: level 1
 // https://github.com/buchgr/bazel-remote/blob/master/cache/disk/zstdimpl/gozstd.go#L13
 // https://github.com/klauspost/compress/tree/master/zstd#status

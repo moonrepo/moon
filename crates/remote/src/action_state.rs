@@ -2,21 +2,18 @@ use crate::blob::*;
 use crate::digest_compat::LocalDigestExt;
 use crate::fs_digest::{OutputDigests, create_timestamp_from_naive};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    Action, ActionResult, Command, ExecutedActionMetadata, command, platform,
+    ActionResult, ExecutedActionMetadata,
 };
 use moon_action::Operation;
 use moon_hash::Digest;
 use moon_task::Task;
-use std::collections::BTreeMap;
 use std::path::Path;
 
 pub struct ActionState<'task> {
     task: &'task Task,
 
     // RE API
-    pub action: Option<Action>,
     pub action_result: Option<ActionResult>,
-    pub command: Option<Command>,
     pub digest: Digest,
 
     // Outputs to upload
@@ -30,55 +27,11 @@ impl ActionState<'_> {
     pub fn new(digest: Digest, task: &Task) -> ActionState<'_> {
         ActionState {
             task,
-            action: None,
             action_result: None,
-            command: None,
             digest,
             blobs: vec![],
             bytes: vec![],
         }
-    }
-
-    pub fn create_action_from_task(&mut self) {
-        let mut action = Action {
-            command_digest: Some(self.digest.to_remote_digest()),
-            do_not_cache: !self.task.options.cache.is_enabled(),
-            ..Default::default()
-        };
-
-        // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/platform.md
-        if let Some(os_list) = &self.task.options.os {
-            let platform = action.platform.get_or_insert_default();
-
-            for os in os_list {
-                platform.properties.push(platform::Property {
-                    name: "OSFamily".into(),
-                    value: os.to_string(),
-                });
-            }
-        }
-
-        // Since we don't support (or plan to) remote execution,
-        // then we can ignore all the working directory logic
-        let mut command = Command {
-            arguments: vec![self.task.command.get_value().to_owned()],
-            ..Default::default()
-        };
-
-        for arg in &self.task.args {
-            command.arguments.push(arg.get_value().to_owned());
-        }
-
-        for (name, value) in BTreeMap::from_iter(self.task.env.clone()) {
-            if let Some(value) = value {
-                command
-                    .environment_variables
-                    .push(command::EnvironmentVariable { name, value });
-            }
-        }
-
-        self.action = Some(action);
-        self.command = Some(command);
     }
 
     pub fn create_action_result_from_operation(

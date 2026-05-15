@@ -138,8 +138,10 @@ jobs:
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
-      - name: Login to ghcr.io to avoid plugin rate limits
-        uses: docker/login-action@v3
+      - uses: docker/setup-docker-action@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}

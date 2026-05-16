@@ -1,11 +1,10 @@
 use crate::blob::Blob;
-use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    ActionResult, Digest, ServerCapabilities,
-};
+use bazel_remote_apis::build::bazel::remote::execution::v2::{ActionResult, ServerCapabilities};
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use miette::IntoDiagnostic;
 use moon_config::RemoteConfig;
 use moon_env_var::{EnvSubstitutor, GlobalEnvBag};
+use moon_hash::Digest;
 use std::path::Path;
 use tracing::warn;
 

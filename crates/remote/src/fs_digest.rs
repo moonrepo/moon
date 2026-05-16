@@ -1,14 +1,14 @@
 // Note: Don't use `starbase_utils::fs` as it spams the logs far too much!
 
 use crate::blob::Blob;
+use crate::digest_ext::LocalDigestExt;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    Digest, NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
+    NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
 };
 use bazel_remote_apis::google::protobuf::Timestamp;
 use chrono::NaiveDateTime;
 use moon_common::path::PathExt;
-use sha2::{Digest as Sha256Digest, Sha256};
 use starbase_utils::fs::FsError;
 use starbase_utils::glob::{self, GlobWalkOptions};
 use std::{
@@ -16,16 +16,6 @@ use std::{
     path::{Path, PathBuf},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-
-pub fn create_digest(bytes: &[u8]) -> Digest {
-    let mut hasher = Sha256::default();
-    hasher.update(bytes);
-
-    Digest {
-        hash: format!("{:x}", hasher.finalize()),
-        size_bytes: bytes.len() as i64,
-    }
-}
 
 pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
     time.duration_since(UNIX_EPOCH)
@@ -130,7 +120,7 @@ impl OutputDigests {
 
             self.files.push(OutputFile {
                 path: path_to_string(&abs_path),
-                digest: Some(blob.digest.clone()),
+                digest: Some(blob.digest.to_remote_digest()),
                 is_executable: is_file_executable(&abs_path, &props),
                 contents: vec![],
                 node_properties: Some(props),

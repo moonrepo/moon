@@ -1,15 +1,17 @@
 use crate::action_state::ActionState;
 use crate::blob::*;
+use crate::digest_ext::RemoteDigestExt;
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::http_remote_client::HttpRemoteClient;
 use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    ActionResult, Digest, ServerCapabilities, digest_function,
+    ActionResult, ServerCapabilities, digest_function,
 };
 use miette::IntoDiagnostic;
 use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
+use moon_hash::Digest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -252,7 +254,7 @@ impl RemoteService {
                     }
                     Err(error) => {
                         warn!(
-                            hash = &digest.hash,
+                            hash = ?digest.hash,
                             "Failed to upload blobs and cache action result: {}",
                             color::muted_light(error.to_string()),
                         );
@@ -268,7 +270,7 @@ impl RemoteService {
 
                 if let Err(error) = client.update_action_result(&digest, result).await {
                     warn!(
-                        hash = &digest.hash,
+                        hash = ?digest.hash,
                         "Failed to cache action result: {}",
                         color::muted_light(error.to_string()),
                     );
@@ -306,7 +308,7 @@ impl RemoteService {
             }
             Err(error) => {
                 warn!(
-                    hash = &state.digest.hash,
+                    hash = ?state.digest.hash,
                     "Failed to download blobs and restore action result: {}",
                     color::muted_light(error.to_string()),
                 );
@@ -323,14 +325,14 @@ impl RemoteService {
             && result.stderr_raw.is_empty()
             && stderr_digest.size_bytes > 0
         {
-            stdio_digests.push(stderr_digest.to_owned());
+            stdio_digests.push(stderr_digest.to_local_digest()?);
         }
 
         if let Some(stdout_digest) = &result.stdout_digest
             && result.stdout_raw.is_empty()
             && stdout_digest.size_bytes > 0
         {
-            stdio_digests.push(stdout_digest.to_owned());
+            stdio_digests.push(stdout_digest.to_local_digest()?);
         }
 
         if !stdio_digests.is_empty() {
@@ -343,20 +345,18 @@ impl RemoteService {
                     continue;
                 };
 
-                if result
-                    .stderr_digest
-                    .as_ref()
-                    .is_some_and(|dig| dig == &blob.digest)
-                {
+                if result.stderr_digest.as_ref().is_some_and(|dig| {
+                    dig.hash.as_str() == blob.digest.hash.as_str()
+                        && dig.size_bytes == blob.digest.size
+                }) {
                     result.stderr_raw = blob.bytes;
                     continue;
                 }
 
-                if result
-                    .stdout_digest
-                    .as_ref()
-                    .is_some_and(|dig| dig == &blob.digest)
-                {
+                if result.stdout_digest.as_ref().is_some_and(|dig| {
+                    dig.hash.as_str() == blob.digest.hash.as_str()
+                        && dig.size_bytes == blob.digest.size
+                }) {
                     result.stdout_raw = blob.bytes;
                 }
             }
@@ -384,7 +384,7 @@ async fn batch_find_blobs(
     max_size: usize,
 ) -> miette::Result<Vec<Digest>> {
     let digest_groups = partition_into_groups(blob_digests, max_size, |digest| {
-        digest.size_bytes.to_string().len() + digest.hash.len()
+        digest.size.to_string().len() + digest.hash.len()
     });
 
     if digest_groups.is_empty() {
@@ -399,7 +399,7 @@ async fn batch_find_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = &action_digest.hash,
+            hash = ?action_digest.hash,
             blobs = group.items.len(),
             "Batching find blobs (group {group_key})",
         );
@@ -425,7 +425,7 @@ async fn batch_find_blobs(
         let (group_key, digests) = res.into_diagnostic()??;
 
         trace!(
-            hash = &action_digest.hash,
+            hash = ?action_digest.hash,
             digests = digests.len(),
             "Batched find blobs (group {group_key})",
         );
@@ -479,7 +479,7 @@ async fn batch_upload_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = &action_digest.hash,
+            hash = ?action_digest.hash,
             blobs = group.items.len(),
             size = group.size,
             "Batching blobs upload (group {group_key})",
@@ -514,7 +514,7 @@ async fn batch_upload_blobs(
         let (group_key, digests) = res.into_diagnostic()??;
 
         trace!(
-            hash = &action_digest.hash,
+            hash = ?action_digest.hash,
             digests = digests.len(),
             "Batched blobs upload (group {group_key})",
         );
@@ -551,12 +551,11 @@ async fn batch_download_blobs(
         if file.contents.is_empty()
             && let Some(digest) = &file.digest
         {
-            blob_digests.push(digest.to_owned());
+            blob_digests.push(digest.to_local_digest()?);
         }
     }
 
-    let digest_groups =
-        partition_into_groups(blob_digests, max_size, |dig| dig.size_bytes as usize);
+    let digest_groups = partition_into_groups(blob_digests, max_size, |dig| dig.size as usize);
     let group_total = digest_groups.len();
     let mut set = JoinSet::default();
 
@@ -566,7 +565,7 @@ async fn batch_download_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = &action_digest.hash,
+            hash = ?action_digest.hash,
             blobs = group.items.len(),
             size = group.size,
             max_size,
@@ -602,7 +601,7 @@ async fn batch_download_blobs(
         let (group_key, blobs) = res.into_diagnostic()??;
 
         trace!(
-            hash = &action_digest.hash,
+            hash = ?action_digest.hash,
             blobs = blobs.len(),
             "Batched blobs download (group {group_key})",
         );
@@ -613,10 +612,10 @@ async fn batch_download_blobs(
                 break 'outer;
             };
 
-            if blob.bytes.len() != blob.digest.size_bytes as usize {
+            if blob.bytes.len() != blob.digest.size as usize {
                 trace!(
-                    hash = &action_digest.hash,
-                    expected_size = blob.digest.size_bytes,
+                    hash = ?action_digest.hash,
+                    expected_size = blob.digest.size,
                     actual_size = blob.bytes.len(),
                     "Integrity failure, mismatched file sizes, unable to write output file",
                 );
@@ -624,13 +623,13 @@ async fn batch_download_blobs(
                 abort = true;
                 break 'outer;
             } else if verify_integrity {
-                let actual_digest = create_digest(&blob.bytes);
+                let actual_digest = Digest::from_bytes(&blob.bytes)?;
 
                 if actual_digest != blob.digest {
                     trace!(
-                        hash = &action_digest.hash,
-                        expected_hash = &blob.digest.hash,
-                        actual_hash = &actual_digest.hash,
+                        hash = ?action_digest.hash,
+                        expected_hash = ?blob.digest.hash,
+                        actual_hash = ?actual_digest.hash,
                         "Integrity failure, mismatched digests, unable to write output file",
                     );
 
@@ -639,7 +638,8 @@ async fn batch_download_blobs(
                 }
             }
 
-            blob_map.insert(blob.digest.hash, blob.bytes);
+            // Use a string so that the remote digest can index it
+            blob_map.insert(blob.digest.hash.to_string(), blob.bytes);
         }
     }
 
@@ -668,8 +668,8 @@ async fn batch_download_blobs(
             write_output_file(&file_path, bytes, file)?;
         } else {
             warn!(
-                hash = &action_digest.hash,
-                blob_hash = &digest.hash,
+                hash = ?action_digest.hash,
+                blob_hash = ?digest.hash,
                 output_file = ?file_path,
                 "Missing file metadata for blob hash, unable to write output file",
             );

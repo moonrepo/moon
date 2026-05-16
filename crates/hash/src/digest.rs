@@ -2,20 +2,20 @@ use crate::content_hash::ContentHash;
 use starbase_utils::fs;
 use std::path::Path;
 
-#[derive(Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Digest {
     pub hash: ContentHash,
-    pub size_bytes: i64,
+    pub size: i64,
 }
 
 impl Digest {
     pub fn from_bytes<T: AsRef<[u8]>>(bytes: T) -> miette::Result<Self> {
         let bytes = bytes.as_ref();
-        let size_bytes = bytes.len() as i64;
+        let size = bytes.len() as i64;
 
         Ok(Digest {
             hash: ContentHash::hash_bytes(bytes)?,
-            size_bytes,
+            size,
         })
     }
 

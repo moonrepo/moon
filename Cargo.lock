@@ -5874,6 +5874,7 @@ dependencies = [
  "moon_config",
  "moon_env_var",
  "moon_feature_flags",
+ "moon_hash",
  "moon_process",
  "moon_task",
  "reqwest",

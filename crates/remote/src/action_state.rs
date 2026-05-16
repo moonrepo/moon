@@ -1,9 +1,11 @@
 use crate::blob::*;
+use crate::digest_ext::LocalDigestExt;
 use crate::fs_digest::{OutputDigests, create_timestamp_from_naive};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    Action, ActionResult, Command, Digest, ExecutedActionMetadata, command, platform,
+    Action, ActionResult, Command, ExecutedActionMetadata, command, platform,
 };
 use moon_action::Operation;
+use moon_hash::Digest;
 use moon_task::Task;
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -39,7 +41,7 @@ impl ActionState<'_> {
 
     pub fn create_action_from_task(&mut self) {
         let mut action = Action {
-            command_digest: Some(self.digest.clone()),
+            command_digest: Some(self.digest.to_remote_digest()),
             do_not_cache: !self.task.options.cache.is_enabled(),
             ..Default::default()
         };
@@ -101,14 +103,14 @@ impl ActionState<'_> {
             if let Some(stderr) = &exec.stderr {
                 let blob = Blob::from(stderr.as_bytes().to_owned());
 
-                result.stderr_digest = Some(blob.digest.clone());
+                result.stderr_digest = Some(blob.digest.to_remote_digest());
                 self.blobs.push(blob);
             }
 
             if let Some(stdout) = &exec.stdout {
                 let blob = Blob::from(stdout.as_bytes().to_owned());
 
-                result.stdout_digest = Some(blob.digest.clone());
+                result.stdout_digest = Some(blob.digest.to_remote_digest());
                 self.blobs.push(blob);
             }
         }

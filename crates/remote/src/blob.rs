@@ -1,7 +1,7 @@
-use crate::fs_digest::create_digest;
 use crate::remote_error::RemoteError;
-use bazel_remote_apis::build::bazel::remote::execution::v2::{Digest, compressor};
+use bazel_remote_apis::build::bazel::remote::execution::v2::compressor;
 use moon_config::RemoteCompression;
+use moon_hash::Digest;
 
 #[derive(Clone)]
 pub struct Blob {
@@ -13,7 +13,7 @@ pub struct Blob {
 impl From<Vec<u8>> for Blob {
     fn from(bytes: Vec<u8>) -> Self {
         Self {
-            digest: create_digest(&bytes),
+            digest: Digest::from_bytes(&bytes).unwrap(), // TODO
             compressed: RemoteCompression::None,
             bytes,
         }

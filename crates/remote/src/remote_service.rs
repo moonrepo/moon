@@ -218,7 +218,10 @@ impl RemoteService {
             self.client
                 .batch_update_blobs(
                     &action_digest,
-                    vec![CompressableBlob::new(action_digest.clone(), bytes.to_vec())],
+                    vec![CompressableBlob::new(
+                        action_digest.to_owned(),
+                        bytes.to_vec(),
+                    )],
                 )
                 .await?;
         }

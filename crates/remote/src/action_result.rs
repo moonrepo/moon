@@ -53,14 +53,14 @@ pub fn create_action_result_for_upload(
         result.exit_code = exec.exit_code.unwrap_or_default();
 
         if let Some(stderr) = &exec.stderr {
-            let blob = Blob::from(stderr.as_bytes().to_owned());
+            let blob = CompressableBlob::from(stderr.as_bytes().to_owned());
 
             result.stderr_digest = Some(blob.digest.clone());
             blobs.push(blob);
         }
 
         if let Some(stdout) = &exec.stdout {
-            let blob = Blob::from(stdout.as_bytes().to_owned());
+            let blob = CompressableBlob::from(stdout.as_bytes().to_owned());
 
             result.stdout_digest = Some(blob.digest.clone());
             blobs.push(blob);
@@ -96,7 +96,7 @@ pub fn create_action_result_for_upload(
             let bytes = fs::read(&abs_path).map_err(map_read_error)?;
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
-            let blob = Blob::from(bytes);
+            let blob = CompressableBlob::from(bytes);
 
             result.output_files.push(OutputFile {
                 path: path_to_string(&abs_path),

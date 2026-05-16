@@ -116,7 +116,7 @@ impl OutputDigests {
             let bytes = fs::read(&abs_path).map_err(map_read_error)?;
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
-            let blob = CompressableBlob::from(bytes);
+            let blob = CompressableBlob::from_bytes(bytes)?;
 
             self.files.push(OutputFile {
                 path: path_to_string(&abs_path),

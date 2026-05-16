@@ -101,14 +101,14 @@ impl ActionState<'_> {
             result.exit_code = exec.exit_code.unwrap_or_default();
 
             if let Some(stderr) = &exec.stderr {
-                let blob = CompressableBlob::from(stderr.as_bytes().to_owned());
+                let blob = CompressableBlob::from_bytes(stderr.as_bytes().to_owned())?;
 
                 result.stderr_digest = Some(blob.digest.to_remote_digest());
                 self.blobs.push(blob);
             }
 
             if let Some(stdout) = &exec.stdout {
-                let blob = CompressableBlob::from(stdout.as_bytes().to_owned());
+                let blob = CompressableBlob::from_bytes(stdout.as_bytes().to_owned())?;
 
                 result.stdout_digest = Some(blob.digest.to_remote_digest());
                 self.blobs.push(blob);

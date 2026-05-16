@@ -431,7 +431,7 @@ impl RemoteClient for GrpcRemoteClient {
                 if actual_digest != blob.digest {
                     return Err(RemoteError::GrpcDownloadDigestMismatch {
                         actual: actual_digest,
-                        expected: blob.digest,
+                        expected: blob.digest.clone(),
                     }
                     .into());
                 }
@@ -506,7 +506,7 @@ impl RemoteClient for GrpcRemoteClient {
             }
         }
 
-        let blob = CompressableBlob::from(bytes);
+        let blob = CompressableBlob::from_bytes(bytes)?;
 
         if blob.digest != blob_digest {
             return Err(RemoteError::GrpcDownloadDigestMismatch {
@@ -553,8 +553,8 @@ impl RemoteClient for GrpcRemoteClient {
                 requests: blobs
                     .into_iter()
                     .map(|blob| batch_update_blobs_request::Request {
-                        data: blob.bytes,
-                        digest: Some(blob.digest.into_remote_digest()),
+                        data: blob.inner.bytes,
+                        digest: Some(blob.inner.digest.into_remote_digest()),
                         compressor: get_compressor(compression),
                     })
                     .collect(),
@@ -641,7 +641,7 @@ impl RemoteClient for GrpcRemoteClient {
         let stream_error_clone = stream_error.clone();
 
         let stream = async_stream::stream! {
-            let reader = ReaderStream::new(blob.bytes.as_slice());
+            let reader = ReaderStream::new(blob.inner.bytes.as_slice());
             let mut written_bytes: i64 = 0;
 
             for await read_result in reader {
@@ -693,10 +693,10 @@ impl RemoteClient for GrpcRemoteClient {
 
         trace!(
             hash = ?action_digest.hash,
-            blob_hash = ?blob.digest.hash,
+            blob_hash = ?blob.inner.digest.hash,
             "Uploaded output blob"
         );
 
-        Ok(blob.digest)
+        Ok(blob.inner.digest)
     }
 }

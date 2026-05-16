@@ -352,7 +352,7 @@ impl RemoteService {
                     dig.hash.as_str() == blob.digest.hash.as_str()
                         && dig.size_bytes == blob.digest.size
                 }) {
-                    result.stderr_raw = blob.bytes;
+                    result.stderr_raw = blob.inner.bytes;
                     continue;
                 }
 
@@ -360,7 +360,7 @@ impl RemoteService {
                     dig.hash.as_str() == blob.digest.hash.as_str()
                         && dig.size_bytes == blob.digest.size
                 }) {
-                    result.stdout_raw = blob.bytes;
+                    result.stdout_raw = blob.inner.bytes;
                 }
             }
         }
@@ -642,7 +642,7 @@ async fn batch_download_blobs(
             }
 
             // Use a string so that the remote digest can index it
-            blob_map.insert(blob.digest.hash.to_string(), blob.bytes);
+            blob_map.insert(blob.digest.hash.to_string(), blob.inner.bytes);
         }
     }
 

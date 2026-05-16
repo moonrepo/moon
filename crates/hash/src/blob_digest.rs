@@ -2,6 +2,28 @@ use crate::content_hash::ContentHash;
 use starbase_utils::fs;
 use std::path::Path;
 
+#[derive(Clone)]
+pub struct Blob {
+    pub bytes: Vec<u8>,
+    pub digest: Digest,
+}
+
+impl Blob {
+    pub fn from_bytes(bytes: Vec<u8>) -> miette::Result<Self> {
+        Ok(Blob {
+            digest: Digest {
+                hash: ContentHash::hash_bytes(&bytes)?,
+                size: bytes.len() as i64,
+            },
+            bytes,
+        })
+    }
+
+    pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
+        Self::from_bytes(fs::read_file_bytes(path.as_ref())?)
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Digest {
     pub hash: ContentHash,

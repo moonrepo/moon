@@ -347,12 +347,12 @@ impl RemoteClient for HttpRemoteClient {
                     return Ok(None);
                 };
 
-                match client.put(url).body(blob.bytes).send().await {
+                match client.put(url).body(blob.inner.bytes).send().await {
                     Ok(response) => {
                         let status = response.status();
 
                         if status.is_success() {
-                            return Ok(Some(blob.digest));
+                            return Ok(Some(blob.inner.digest));
                         }
 
                         Err(

@@ -1,6 +1,5 @@
 use crate::content_hash::ContentHash;
-use starbase_utils::glob::GlobWalkOptions;
-use starbase_utils::{fs, glob};
+use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -52,25 +51,5 @@ impl Digest {
 
 #[derive(Default)]
 pub struct OutputDigests {
-    pub outputs: BTreeMap<PathBuf, Blob>,
-}
-
-impl OutputDigests {
-    pub fn insert(&mut self, abs_path: PathBuf) -> miette::Result<()> {
-        if abs_path.is_file() {
-            let output = Blob::from_file(&abs_path)?;
-
-            self.outputs.insert(abs_path, output);
-        } else if abs_path.is_dir() {
-            for path in glob::walk_fast_with_options(
-                abs_path,
-                ["**/*"],
-                GlobWalkOptions::default().files(),
-            )? {
-                self.insert(path)?;
-            }
-        }
-
-        Ok(())
-    }
+    pub blobs: BTreeMap<PathBuf, Blob>,
 }

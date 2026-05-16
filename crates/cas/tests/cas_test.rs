@@ -83,8 +83,8 @@ mod cas {
             let source = sandbox.path().join("input.txt");
             std::fs::write(&source, b"file content").unwrap();
 
-            let hash = store.write_file(&source).unwrap();
-            let read_back = store.read_bytes(&hash).unwrap();
+            let blob = store.write_file(&source).unwrap();
+            let read_back = store.read_bytes(&blob.digest.hash).unwrap();
 
             assert_eq!(read_back, b"file content");
         }
@@ -99,9 +99,9 @@ mod cas {
             std::fs::write(&source, data).unwrap();
 
             let hash_bytes = store.write_bytes(data).unwrap();
-            let hash_file = store.write_file(&source).unwrap();
+            let blob = store.write_file(&source).unwrap();
 
-            assert_eq!(hash_bytes, hash_file);
+            assert_eq!(hash_bytes, blob.digest.hash);
         }
     }
 

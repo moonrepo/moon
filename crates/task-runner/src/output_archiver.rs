@@ -1,11 +1,15 @@
+use crate::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
+use moon_hash::{ContentHash, OutputDigests};
 use moon_remote::{ActionState, RemoteService};
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarPacker;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
@@ -58,10 +62,42 @@ impl OutputArchiver<'_> {
         if let Some(state) = remote_state
             && self.task.options.cache.is_remote_enabled()
         {
-            archived = self.upload_to_remote_service(state).await?;
+            archived = self.upload_to_remote_service(hash, state).await?;
         }
 
         Ok(if archived { Some(archive_file) } else { None })
+    }
+
+    pub async fn archive_modern(
+        &self,
+        hash: &str,
+    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, ContentHash>> {
+        let mut hashes = BTreeMap::new();
+
+        // Step 1) Save the outputs to local cache and gather blobs
+        let outputs = self.store_in_local_cache(hash).await?;
+
+        // Check that outputs actually exist
+        if self.task.is_build_type() && outputs.blobs.is_empty() {
+            return Err(TaskRunnerError::MissingOutputs {
+                target: self.task.target.clone(),
+            }
+            .into());
+        }
+
+        // Step 2) Extract the hashes to store in state
+        for (path, blob) in &outputs.blobs {
+            hashes.insert(
+                path.relative_to(&self.app_context.workspace_root)
+                    .into_diagnostic()?,
+                blob.digest.hash.clone(),
+            );
+        }
+
+        // Step 3) Upload these blobs to remote cache
+        // TODO
+
+        Ok(hashes)
     }
 
     #[instrument(skip(self))]
@@ -163,9 +199,18 @@ impl OutputArchiver<'_> {
     }
 
     #[instrument(skip(self, state))]
-    async fn upload_to_remote_service(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
+    async fn upload_to_remote_service(
+        &self,
+        hash: &str,
+        state: &mut ActionState<'_>,
+    ) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
             if remote.can_upload() {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash, "Storing task outputs in remote cache"
+                );
+
                 state.compute_outputs(&self.app_context.workspace_root)?;
             }
 
@@ -189,5 +234,53 @@ impl OutputArchiver<'_> {
         }
 
         Ok(false)
+    }
+
+    #[instrument(skip(self))]
+    async fn store_in_local_cache(&self, hash: &str) -> miette::Result<OutputDigests> {
+        debug!(
+            task_target = self.task.target.as_str(),
+            hash, "Storing task outputs in local cache"
+        );
+
+        let app_context = Arc::clone(self.app_context);
+        let output_paths = self
+            .task
+            .get_output_files(&app_context.workspace_root, true)?;
+
+        let outputs = spawn_blocking(move || {
+            let mut outputs = OutputDigests::default();
+
+            for path in output_paths {
+                let blob = app_context.cache_engine.cas.write_file(&path)?;
+                outputs.blobs.insert(path, blob);
+            }
+
+            Ok::<_, miette::Report>(outputs)
+        })
+        .await
+        .into_diagnostic()??;
+
+        Ok(outputs)
+    }
+
+    #[instrument(skip(self, outputs))]
+    async fn store_in_remote_cache(
+        &self,
+        hash: &str,
+        outputs: OutputDigests,
+    ) -> miette::Result<()> {
+        let Some(remote) = RemoteService::session() else {
+            return Ok(());
+        };
+
+        if remote.can_upload() {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Storing task outputs in remote cache"
+            );
+        }
+
+        Ok(())
     }
 }

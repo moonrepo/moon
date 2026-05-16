@@ -1,7 +1,7 @@
 use crate::cas_error::CasError;
 use crate::gc::GcResult;
 use moon_config::CacheCasConfig;
-use moon_hash::{ContentHash, Sha256, Sha256Digest, hash_sha256};
+use moon_hash::{Blob, ContentHash, Sha256, Sha256Digest, hash_sha256};
 use starbase_utils::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -60,14 +60,10 @@ impl CasStore {
 
     // ---- Write operations ----
 
-    /// Store raw bytes. Returns the content hash. Idempotent: if the blob
-    /// already exists, this is a no-op that returns the hash immediately.
     #[instrument(skip(self, bytes), fields(len = bytes.len()))]
-    pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<ContentHash> {
-        let hash = ContentHash::hash_bytes(bytes)?;
-
-        if self.contains_object(&hash)? {
-            return Ok(hash);
+    fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<()> {
+        if self.contains_object(hash)? {
+            return Ok(());
         }
 
         let mut guard = self.create_temp_file()?;
@@ -87,41 +83,44 @@ impl CasStore {
             })?;
         }
 
-        self.commit_temp_file(&hash, &mut guard)?;
+        self.commit_temp_file(hash, &mut guard)?;
 
-        debug!(hash = %hash, "Stored blob from bytes");
+        Ok(())
+    }
+
+    /// Store raw bytes. Returns the content hash. Idempotent: if the blob
+    /// already exists, this is a no-op that returns the hash immediately.
+    pub fn write_blob(&self, blob: &Blob) -> miette::Result<()> {
+        self.write(&blob.digest.hash, &blob.bytes)?;
+
+        debug!(hash = %blob.digest.hash, "Stored object from blob");
+
+        Ok(())
+    }
+
+    /// Store raw bytes. Returns the content hash. Idempotent: if the blob
+    /// already exists, this is a no-op that returns the hash immediately.
+    pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<ContentHash> {
+        let hash = ContentHash::hash_bytes(bytes)?;
+
+        self.write(&hash, bytes)?;
+
+        debug!(hash = %hash, "Stored object from bytes");
 
         Ok(hash)
     }
 
-    /// Store content read from a file at `source`. Uses memory-mapped I/O for
+    /// Store content read from a file. Uses memory-mapped I/O for
     /// hashing files larger than the configured threshold.
     #[instrument(skip(self))]
-    pub fn write_file(&self, source: &Path) -> miette::Result<ContentHash> {
-        let hash = ContentHash::hash_file(source)?;
+    pub fn write_file(&self, path: &Path) -> miette::Result<Blob> {
+        let blob = Blob::from_file(path)?;
 
-        if self.contains_object(&hash)? {
-            return Ok(hash);
-        }
+        self.write(&blob.digest.hash, &blob.bytes)?;
 
-        let mut guard = self.create_temp_file()?;
+        debug!(hash = %blob.digest.hash, path = ?path, "Stored object from file");
 
-        fs::copy_file(source, &guard.path)?;
-
-        {
-            let file = fs::open_file_for_writing(&guard.path)?;
-
-            file.sync_all().map_err(|error| CasError::WriteFailed {
-                path: guard.path.clone(),
-                error: Box::new(error),
-            })?;
-        }
-
-        self.commit_temp_file(&hash, &mut guard)?;
-
-        debug!(hash = %hash, source = ?source, "Stored blob from file");
-
-        Ok(hash)
+        Ok(blob)
     }
 
     /// Store content from a streaming reader. Hashes and writes simultaneously
@@ -169,14 +168,14 @@ impl CasStore {
 
         self.commit_temp_file(&hash, &mut guard)?;
 
-        debug!(hash = %hash, "Stored blob from byte stream");
+        debug!(hash = %hash, "Stored object from byte stream");
 
         Ok(hash)
     }
 
     // ---- Read operations ----
 
-    /// Check whether a blob exists for the given hash.
+    /// Check whether an object exists for the given hash.
     pub fn contains_object(&self, hash: &ContentHash) -> miette::Result<bool> {
         let path = self.object_path(hash);
 

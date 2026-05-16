@@ -1,6 +1,6 @@
 mod action_state;
 mod blob;
-mod digest_ext;
+mod digest_compat;
 mod fs_digest;
 mod grpc_remote_client;
 mod grpc_services;

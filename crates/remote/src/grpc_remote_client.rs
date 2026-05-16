@@ -1,5 +1,5 @@
 use crate::blob::*;
-use crate::digest_ext::LocalDigestExt;
+use crate::digest_compat::LocalDigestExt;
 use crate::grpc_services::*;
 use crate::grpc_tls::*;
 use crate::remote_client::RemoteClient;

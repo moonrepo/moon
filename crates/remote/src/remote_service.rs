@@ -1,6 +1,6 @@
 use crate::action_state::ActionState;
 use crate::blob::*;
-use crate::digest_ext::RemoteDigestExt;
+use crate::digest_compat::RemoteDigestExt;
 use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::http_remote_client::HttpRemoteClient;

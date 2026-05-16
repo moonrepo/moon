@@ -1,5 +1,5 @@
 use crate::blob::*;
-use crate::digest_ext::LocalDigestExt;
+use crate::digest_compat::LocalDigestExt;
 use crate::fs_digest::{OutputDigests, create_timestamp_from_naive};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Action, ActionResult, Command, ExecutedActionMetadata, command, platform,

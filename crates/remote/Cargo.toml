@@ -21,7 +21,6 @@ reqwest = { workspace = true, features = ["gzip", "json", "zstd"] }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
 serde = { workspace = true }
-sha2 = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }

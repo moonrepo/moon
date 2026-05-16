@@ -1,7 +1,7 @@
 // Note: Don't use `starbase_utils::fs` as it spams the logs far too much!
 
 use crate::blob::CompressableBlob;
-use crate::digest_ext::LocalDigestExt;
+use crate::digest_compat::LocalDigestExt;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     NodeProperties, OutputDirectory, OutputFile, OutputSymlink,

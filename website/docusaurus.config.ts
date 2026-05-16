@@ -211,6 +211,11 @@ const config: Config = {
 				'typescript',
 			],
 		},
+		// You can remove this in v4
+		// https://github.com/facebook/docusaurus/issues/11719#:~:text=Enable%20respectPrefersColorScheme%20by%20default
+		colorMode: {
+			respectPrefersColorScheme: true,
+		},
 	} satisfies Preset.ThemeConfig,
 
 	plugins: [

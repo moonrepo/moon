@@ -214,7 +214,7 @@ impl OutputArchiver<'_> {
                 state.compute_outputs(&self.app_context.workspace_root)?;
             }
 
-            match remote.save_action(state).await {
+            match remote.save_action(&state.digest, &state.bytes).await {
                 Ok(saved) => {
                     // Saves in a background thread
                     remote.save_action_result(state).await?;
@@ -264,21 +264,39 @@ impl OutputArchiver<'_> {
         Ok(outputs)
     }
 
-    #[instrument(skip(self, outputs))]
+    #[instrument(skip_all)]
     async fn store_in_remote_cache(
         &self,
         hash: &str,
+        state: &TaskRunState,
         outputs: OutputDigests,
     ) -> miette::Result<()> {
-        let Some(remote) = RemoteService::session() else {
-            return Ok(());
-        };
-
-        if remote.can_upload() {
+        if let Some(remote) = RemoteService::session()
+            && remote.can_upload()
+        {
             debug!(
                 task_target = self.task.target.as_str(),
                 hash, "Storing task outputs in remote cache"
             );
+
+            match remote
+                .save_action(&state.action_digest, &state.action_bytes)
+                .await
+            {
+                Ok(saved) => {
+                    // Saves in a background thread
+                    remote.save_action_result(state).await?;
+                }
+                Err(error) => {
+                    // If the task is successful but the upload fails,
+                    // we don't want to mark the task as failed, so
+                    // don't bubble up the error
+                    warn!(
+                        "Failed to upload to remote service: {}",
+                        color::muted_light(error.to_string())
+                    );
+                }
+            }
         }
 
         Ok(())

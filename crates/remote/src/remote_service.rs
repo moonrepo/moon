@@ -9,6 +9,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, ServerCapabilities, digest_function,
 };
 use miette::IntoDiagnostic;
+use moon_action::Operation;
 use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
 use moon_hash::Digest;
@@ -193,18 +194,22 @@ impl RemoteService {
         self.client.get_action_result(&state.digest).await
     }
 
-    #[instrument(skip(self, state))]
-    pub async fn save_action(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
+    #[instrument(skip(self, bytes))]
+    pub async fn save_action(
+        &self,
+        action_digest: &RemoteDigest,
+        bytes: &[u8],
+    ) -> miette::Result<bool> {
         if !self.can_upload() {
             return Ok(false);
         }
 
         let missing = self
             .client
-            .find_missing_blobs(vec![state.digest.clone()])
+            .find_missing_blobs(vec![action_digest.to_owned()])
             .await?;
 
-        if missing.contains(&state.digest) {
+        if missing.contains(&action_digest) {
             // This is where moon differs from the Bazel RE API. In Bazel,
             // we would serialize + hash the `Action` and `Command` types,
             // and upload those. But those types do not match how our hashing
@@ -212,11 +217,8 @@ impl RemoteService {
             // hash manifests. Hopefully this doesn't cause issues!
             self.client
                 .batch_update_blobs(
-                    &state.digest,
-                    vec![CompressableBlob::new(
-                        state.digest.clone(),
-                        state.bytes.clone(),
-                    )],
+                    &action_digest,
+                    vec![CompressableBlob::new(action_digest.clone(), bytes.to_vec())],
                 )
                 .await?;
         }
@@ -224,8 +226,13 @@ impl RemoteService {
         Ok(true)
     }
 
-    #[instrument(skip(self, state))]
-    pub async fn save_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
+    #[instrument(skip(self, outputs))]
+    pub async fn save_action_result(
+        &self,
+        action_digest: &RemoteDigest,
+        operation: &Operation,
+        outputs: OutputDigests,
+    ) -> miette::Result<bool> {
         if !self.can_upload() {
             return Ok(false);
         }
@@ -235,7 +242,7 @@ impl RemoteService {
         };
 
         let client = Arc::clone(&self.client);
-        let digest = state.digest.clone();
+        let digest = action_digest.to_owned();
         let max_size = self.get_max_batch_size();
 
         self.upload_requests
@@ -382,10 +389,10 @@ impl RemoteService {
 
 async fn batch_find_blobs(
     client: Arc<Box<dyn RemoteClient>>,
-    action_digest: &Digest,
-    blob_digests: Vec<Digest>,
+    action_digest: &RemoteDigest,
+    blob_digests: Vec<RemoteDigest>,
     max_size: usize,
-) -> miette::Result<Vec<Digest>> {
+) -> miette::Result<Vec<RemoteDigest>> {
     let digest_groups = partition_into_groups(blob_digests, max_size, |digest| {
         digest.size.to_string().len() + digest.hash.len()
     });
@@ -541,7 +548,7 @@ async fn batch_upload_blobs(
 
 async fn batch_download_blobs(
     client: Arc<Box<dyn RemoteClient>>,
-    action_digest: &Digest,
+    action_digest: &RemoteDigest,
     result: &ActionResult,
     workspace_root: &Path,
     max_size: usize,

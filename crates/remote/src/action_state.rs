@@ -1,13 +1,11 @@
+use crate::action_result::create_timestamp_from_naive;
 use crate::blob::*;
-use crate::digest_compat::LocalDigestExt;
-use crate::fs_digest::{OutputDigests, create_timestamp_from_naive};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, ExecutedActionMetadata,
 };
 use moon_action::Operation;
 use moon_hash::Digest;
 use moon_task::Task;
-use std::path::Path;
 
 pub struct ActionState<'task> {
     task: &'task Task,
@@ -75,24 +73,6 @@ impl ActionState<'_> {
 
     pub fn set_action_result(&mut self, result: ActionResult) {
         self.action_result = Some(result);
-    }
-
-    pub fn compute_outputs(&mut self, workspace_root: &Path) -> miette::Result<()> {
-        if let Some(result) = &mut self.action_result {
-            let mut outputs = OutputDigests::default();
-
-            for path in self.task.get_output_files(workspace_root, true)? {
-                outputs.insert_path(path, workspace_root)?;
-            }
-
-            result.output_files = outputs.files;
-            result.output_symlinks = outputs.symlinks;
-            result.output_directories = outputs.dirs;
-
-            self.blobs.extend(outputs.blobs);
-        }
-
-        Ok(())
     }
 
     pub fn extract_for_upload(&mut self) -> Option<(ActionResult, Vec<CompressableBlob>)> {

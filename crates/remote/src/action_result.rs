@@ -122,7 +122,7 @@ pub fn create_action_result_for_upload(
     Ok(result)
 }
 
-fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
+pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
     time.duration_since(UNIX_EPOCH)
         .ok()
         .map(|duration| Timestamp {
@@ -131,7 +131,7 @@ fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
         })
 }
 
-fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
+pub fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
     let utc = time.and_utc();
 
     Some(Timestamp {

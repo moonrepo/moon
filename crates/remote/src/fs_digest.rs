@@ -1,6 +1,6 @@
 // Note: Don't use `starbase_utils::fs` as it spams the logs far too much!
 
-use crate::blob::Blob;
+use crate::blob::CompressableBlob;
 use crate::digest_ext::LocalDigestExt;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
@@ -67,7 +67,7 @@ pub fn compute_node_properties(metadata: &Metadata) -> NodeProperties {
 
 #[derive(Default)]
 pub struct OutputDigests {
-    pub blobs: Vec<Blob>,
+    pub blobs: Vec<CompressableBlob>,
     pub dirs: Vec<OutputDirectory>,
     pub files: Vec<OutputFile>,
     pub symlinks: Vec<OutputSymlink>,
@@ -116,7 +116,7 @@ impl OutputDigests {
             let bytes = fs::read(&abs_path).map_err(map_read_error)?;
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
-            let blob = Blob::from(bytes);
+            let blob = CompressableBlob::from(bytes);
 
             self.files.push(OutputFile {
                 path: path_to_string(&abs_path),

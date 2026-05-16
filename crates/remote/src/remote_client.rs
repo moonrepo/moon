@@ -1,4 +1,4 @@
-use crate::blob::Blob;
+use crate::blob::CompressableBlob;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{ActionResult, ServerCapabilities};
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use miette::IntoDiagnostic;
@@ -78,13 +78,13 @@ pub trait RemoteClient: Send + Sync {
         &self,
         action_digest: &Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<Vec<Option<Blob>>>;
+    ) -> miette::Result<Vec<Option<CompressableBlob>>>;
 
     async fn stream_read_blob(
         &self,
         action_digest: &Digest,
         blob_digest: Digest,
-    ) -> miette::Result<Option<Blob>> {
+    ) -> miette::Result<Option<CompressableBlob>> {
         let mut result = self
             .batch_read_blobs(action_digest, vec![blob_digest])
             .await?;
@@ -95,13 +95,13 @@ pub trait RemoteClient: Send + Sync {
     async fn batch_update_blobs(
         &self,
         action_digest: &Digest,
-        blobs: Vec<Blob>,
+        blobs: Vec<CompressableBlob>,
     ) -> miette::Result<Vec<Option<Digest>>>;
 
     async fn stream_update_blob(
         &self,
         action_digest: &Digest,
-        blob: Blob,
+        blob: CompressableBlob,
     ) -> miette::Result<Digest> {
         let mut result = self.batch_update_blobs(action_digest, vec![blob]).await?;
 

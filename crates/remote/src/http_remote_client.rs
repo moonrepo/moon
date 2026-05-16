@@ -263,7 +263,7 @@ impl RemoteClient for HttpRemoteClient {
         &self,
         action_digest: &Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<Vec<Option<Blob>>> {
+    ) -> miette::Result<Vec<Option<CompressableBlob>>> {
         trace!(
             hash = ?action_digest.hash,
             compression = self.config.cache.compression.to_string(),
@@ -271,7 +271,7 @@ impl RemoteClient for HttpRemoteClient {
             blob_digests.len()
         );
 
-        let mut requests: Vec<JoinHandle<miette::Result<Option<Blob>>>> = vec![];
+        let mut requests: Vec<JoinHandle<miette::Result<Option<CompressableBlob>>>> = vec![];
         let debug_enabled = self.debug;
 
         for blob_digest in blob_digests {
@@ -290,7 +290,7 @@ impl RemoteClient for HttpRemoteClient {
 
                         if status.is_success() {
                             return if let Ok(bytes) = response.bytes().await {
-                                Ok(Some(Blob::new(blob_digest, bytes.to_vec())))
+                                Ok(Some(CompressableBlob::new(blob_digest, bytes.to_vec())))
                             } else {
                                 Ok(None)
                             };
@@ -323,7 +323,7 @@ impl RemoteClient for HttpRemoteClient {
     async fn batch_update_blobs(
         &self,
         action_digest: &Digest,
-        blobs: Vec<Blob>,
+        blobs: Vec<CompressableBlob>,
     ) -> miette::Result<Vec<Option<Digest>>> {
         let compression = self.config.cache.compression;
         let mut requests: Vec<JoinHandle<miette::Result<Option<Digest>>>> = vec![];

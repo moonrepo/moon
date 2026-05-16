@@ -368,7 +368,7 @@ impl RemoteClient for GrpcRemoteClient {
         &self,
         action_digest: &Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<Vec<Option<Blob>>> {
+    ) -> miette::Result<Vec<Option<CompressableBlob>>> {
         trace!(
             hash = ?action_digest.hash,
             compression = self.config.cache.compression.to_string(),
@@ -421,8 +421,8 @@ impl RemoteClient for GrpcRemoteClient {
             }
 
             if success && let Some(digest) = download.digest {
-                let mut blob = Blob::new(Digest::from_remote(digest)?, download.data);
-                blob.compressed = get_compression_from_code(download.compressor);
+                let mut blob = CompressableBlob::new(Digest::from_remote(digest)?, download.data);
+                blob.compression = get_compression_from_code(download.compressor);
                 blob.decompress()?;
 
                 // Verify digest matches decompressed content
@@ -458,7 +458,7 @@ impl RemoteClient for GrpcRemoteClient {
         &self,
         action_digest: &Digest,
         blob_digest: Digest,
-    ) -> miette::Result<Option<Blob>> {
+    ) -> miette::Result<Option<CompressableBlob>> {
         trace!(
             hash = ?action_digest.hash,
             blob_hash = ?blob_digest.hash,
@@ -506,7 +506,7 @@ impl RemoteClient for GrpcRemoteClient {
             }
         }
 
-        let blob = Blob::from(bytes);
+        let blob = CompressableBlob::from(bytes);
 
         if blob.digest != blob_digest {
             return Err(RemoteError::GrpcDownloadDigestMismatch {
@@ -529,7 +529,7 @@ impl RemoteClient for GrpcRemoteClient {
     async fn batch_update_blobs(
         &self,
         action_digest: &Digest,
-        mut blobs: Vec<Blob>,
+        mut blobs: Vec<CompressableBlob>,
     ) -> miette::Result<Vec<Option<Digest>>> {
         let compression = self.config.cache.compression;
 
@@ -621,7 +621,7 @@ impl RemoteClient for GrpcRemoteClient {
     async fn stream_update_blob(
         &self,
         action_digest: &Digest,
-        blob: Blob,
+        blob: CompressableBlob,
     ) -> miette::Result<Digest> {
         trace!(
             hash = ?action_digest.hash,

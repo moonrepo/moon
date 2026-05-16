@@ -213,7 +213,10 @@ impl RemoteService {
             self.client
                 .batch_update_blobs(
                     &state.digest,
-                    vec![Blob::new(state.digest.clone(), state.bytes.clone())],
+                    vec![CompressableBlob::new(
+                        state.digest.clone(),
+                        state.bytes.clone(),
+                    )],
                 )
                 .await?;
         }
@@ -445,7 +448,7 @@ async fn batch_find_blobs(
 async fn batch_upload_blobs(
     client: Arc<Box<dyn RemoteClient>>,
     action_digest: Digest,
-    mut blobs: Vec<Blob>,
+    mut blobs: Vec<CompressableBlob>,
     max_size: usize,
 ) -> miette::Result<bool> {
     let missing_digests = batch_find_blobs(

@@ -20,7 +20,7 @@ pub struct ActionState<'task> {
     pub digest: Digest,
 
     // Outputs to upload
-    pub blobs: Vec<Blob>,
+    pub blobs: Vec<CompressableBlob>,
 
     // Bytes of our hashed manifest
     pub bytes: Vec<u8>,
@@ -101,14 +101,14 @@ impl ActionState<'_> {
             result.exit_code = exec.exit_code.unwrap_or_default();
 
             if let Some(stderr) = &exec.stderr {
-                let blob = Blob::from(stderr.as_bytes().to_owned());
+                let blob = CompressableBlob::from(stderr.as_bytes().to_owned());
 
                 result.stderr_digest = Some(blob.digest.to_remote_digest());
                 self.blobs.push(blob);
             }
 
             if let Some(stdout) = &exec.stdout {
-                let blob = Blob::from(stdout.as_bytes().to_owned());
+                let blob = CompressableBlob::from(stdout.as_bytes().to_owned());
 
                 result.stdout_digest = Some(blob.digest.to_remote_digest());
                 self.blobs.push(blob);
@@ -142,7 +142,7 @@ impl ActionState<'_> {
         Ok(())
     }
 
-    pub fn extract_for_upload(&mut self) -> Option<(ActionResult, Vec<Blob>)> {
+    pub fn extract_for_upload(&mut self) -> Option<(ActionResult, Vec<CompressableBlob>)> {
         self.action_result
             .take()
             .map(|result| (result, self.blobs.drain(0..).collect::<Vec<_>>()))

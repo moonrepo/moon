@@ -4,33 +4,33 @@ use moon_config::RemoteCompression;
 use moon_hash::Digest;
 
 #[derive(Clone)]
-pub struct Blob {
+pub struct CompressableBlob {
     pub bytes: Vec<u8>,
-    pub compressed: RemoteCompression,
+    pub compression: RemoteCompression,
     pub digest: Digest,
 }
 
-impl From<Vec<u8>> for Blob {
+impl From<Vec<u8>> for CompressableBlob {
     fn from(bytes: Vec<u8>) -> Self {
         Self {
             digest: Digest::from_bytes(&bytes).unwrap(), // TODO
-            compressed: RemoteCompression::None,
+            compression: RemoteCompression::None,
             bytes,
         }
     }
 }
 
-impl Blob {
+impl CompressableBlob {
     pub fn new(digest: Digest, bytes: Vec<u8>) -> Self {
         Self {
             digest,
-            compressed: RemoteCompression::None,
+            compression: RemoteCompression::None,
             bytes,
         }
     }
 
     pub fn compress(&mut self, compression: RemoteCompression) -> miette::Result<()> {
-        self.compressed = compression;
+        self.compression = compression;
 
         match compression {
             RemoteCompression::None => {
@@ -49,7 +49,10 @@ impl Blob {
         Ok(())
     }
 
-    pub fn compress_and_keep(&mut self, compression: RemoteCompression) -> miette::Result<Blob> {
+    pub fn compress_and_keep(
+        &mut self,
+        compression: RemoteCompression,
+    ) -> miette::Result<CompressableBlob> {
         let uncompressed = self.clone();
 
         self.compress(compression)?;
@@ -58,26 +61,26 @@ impl Blob {
     }
 
     pub fn decompress(&mut self) -> miette::Result<()> {
-        match self.compressed {
+        match self.compression {
             RemoteCompression::None => {
                 // N/A
             }
             RemoteCompression::Zstd => {
                 self.bytes = zstd::decode_all(self.bytes.as_slice()).map_err(|error| {
                     RemoteError::CompressFailed {
-                        format: self.compressed,
+                        format: self.compression,
                         error: Box::new(error),
                     }
                 })?
             }
         };
 
-        self.compressed = RemoteCompression::None;
+        self.compression = RemoteCompression::None;
 
         Ok(())
     }
 
-    pub fn decompress_and_keep(&mut self) -> miette::Result<Blob> {
+    pub fn decompress_and_keep(&mut self) -> miette::Result<CompressableBlob> {
         let compressed = self.clone();
 
         self.decompress()?;

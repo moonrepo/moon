@@ -9,10 +9,10 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
-use moon_hash::ContentHash;
+use moon_hash::{ContentHash, Digest};
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_remote::{ActionState, Digest, RemoteService};
+use moon_remote::{ActionState, RemoteService};
 use moon_task::Task;
 use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
@@ -414,8 +414,8 @@ impl<'task> TaskRunner<'task> {
             let bytes = hasher.into_bytes();
             let mut state = ActionState::new(
                 Digest {
-                    hash: hash.to_string(),
-                    size_bytes: bytes.len() as i64,
+                    hash: hash.clone(),
+                    size: bytes.len() as i64,
                 },
                 self.task,
             );
@@ -426,7 +426,7 @@ impl<'task> TaskRunner<'task> {
 
         debug!(
             task_target = self.task.target.as_str(),
-            %hash,
+            ?hash,
             "Generated a unique hash"
         );
 

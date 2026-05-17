@@ -1,7 +1,7 @@
-use bazel_remote_apis::build::bazel::remote::execution::v2::Digest;
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
 use moon_config::RemoteCompression;
+use moon_hash::Digest;
 use std::path::PathBuf;
 use thiserror::Error;
 
@@ -32,9 +32,9 @@ pub enum RemoteError {
     #[error(
         "Failed to download blob, mismatched blob digests. Received {}:{}, but we expected {}:{}.",
         .actual.hash,
-        .actual.size_bytes,
+        .actual.size,
         .expected.hash,
-        .expected.size_bytes,
+        .expected.size,
     )]
     GrpcDownloadDigestMismatch { actual: Digest, expected: Digest },
 

@@ -32,45 +32,6 @@ impl ActionState<'_> {
         }
     }
 
-    pub fn create_action_result_from_operation(
-        &mut self,
-        operation: &Operation,
-    ) -> miette::Result<()> {
-        let mut result = ActionResult {
-            execution_metadata: Some(ExecutedActionMetadata {
-                worker: "moon".into(),
-                execution_start_timestamp: create_timestamp_from_naive(operation.started_at),
-                execution_completed_timestamp: operation
-                    .finished_at
-                    .and_then(create_timestamp_from_naive),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-
-        if let Some(exec) = operation.get_exec_output() {
-            result.exit_code = exec.exit_code.unwrap_or_default();
-
-            if let Some(stderr) = &exec.stderr {
-                let blob = CompressableBlob::from_bytes(stderr.as_bytes().to_owned())?;
-
-                result.stderr_digest = Some(blob.digest.to_remote_digest());
-                self.blobs.push(blob);
-            }
-
-            if let Some(stdout) = &exec.stdout {
-                let blob = CompressableBlob::from_bytes(stdout.as_bytes().to_owned())?;
-
-                result.stdout_digest = Some(blob.digest.to_remote_digest());
-                self.blobs.push(blob);
-            }
-        }
-
-        self.action_result = Some(result);
-
-        Ok(())
-    }
-
     pub fn set_action_result(&mut self, result: ActionResult) {
         self.action_result = Some(result);
     }

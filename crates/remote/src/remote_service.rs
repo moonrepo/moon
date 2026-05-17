@@ -1,3 +1,4 @@
+use crate::action_result::*;
 use crate::action_state::ActionState;
 use crate::blob::*;
 use crate::digest_compat::RemoteDigestExt;
@@ -12,7 +13,7 @@ use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
-use moon_hash::Digest;
+use moon_hash::{Digest, OutputDigests};
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -195,11 +196,7 @@ impl RemoteService {
     }
 
     #[instrument(skip(self, bytes))]
-    pub async fn save_action(
-        &self,
-        action_digest: &RemoteDigest,
-        bytes: &[u8],
-    ) -> miette::Result<bool> {
+    pub async fn save_action(&self, action_digest: &Digest, bytes: &[u8]) -> miette::Result<bool> {
         if !self.can_upload() {
             return Ok(false);
         }
@@ -232,7 +229,7 @@ impl RemoteService {
     #[instrument(skip(self, outputs))]
     pub async fn save_action_result(
         &self,
-        action_digest: &RemoteDigest,
+        action_digest: &Digest,
         operation: &Operation,
         outputs: OutputDigests,
     ) -> miette::Result<bool> {
@@ -240,55 +237,55 @@ impl RemoteService {
             return Ok(false);
         }
 
-        let Some((mut result, blobs)) = state.extract_for_upload() else {
-            return Ok(false);
-        };
+        // let Some((mut result, blobs)) = state.extract_for_upload() else {
+        //     return Ok(false);
+        // };
 
-        let client = Arc::clone(&self.client);
-        let digest = action_digest.to_owned();
-        let max_size = self.get_max_batch_size();
+        // let client = Arc::clone(&self.client);
+        // let digest = action_digest.to_owned();
+        // let max_size = self.get_max_batch_size();
 
-        self.upload_requests
-            .write()
-            .await
-            .push(tokio::spawn(Box::pin(async move {
-                if let Some(metadata) = &mut result.execution_metadata {
-                    metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
-                }
+        // self.upload_requests
+        //     .write()
+        //     .await
+        //     .push(tokio::spawn(Box::pin(async move {
+        //         if let Some(metadata) = &mut result.execution_metadata {
+        //             metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
+        //         }
 
-                // Don't save the action result if some of the blobs failed to upload
-                match batch_upload_blobs(client.clone(), digest.clone(), blobs, max_size as usize)
-                    .await
-                {
-                    Ok(uploaded) => {
-                        if !uploaded {
-                            return;
-                        }
-                    }
-                    Err(error) => {
-                        warn!(
-                            hash = ?digest.hash,
-                            "Failed to upload blobs and cache action result: {}",
-                            color::muted_light(error.to_string()),
-                        );
+        //         // Don't save the action result if some of the blobs failed to upload
+        //         match batch_upload_blobs(client.clone(), digest.clone(), blobs, max_size as usize)
+        //             .await
+        //         {
+        //             Ok(uploaded) => {
+        //                 if !uploaded {
+        //                     return;
+        //                 }
+        //             }
+        //             Err(error) => {
+        //                 warn!(
+        //                     hash = ?digest.hash,
+        //                     "Failed to upload blobs and cache action result: {}",
+        //                     color::muted_light(error.to_string()),
+        //                 );
 
-                        return;
-                    }
-                };
+        //                 return;
+        //             }
+        //         };
 
-                if let Some(metadata) = &mut result.execution_metadata {
-                    metadata.output_upload_completed_timestamp =
-                        create_timestamp(SystemTime::now());
-                }
+        //         if let Some(metadata) = &mut result.execution_metadata {
+        //             metadata.output_upload_completed_timestamp =
+        //                 create_timestamp(SystemTime::now());
+        //         }
 
-                if let Err(error) = client.update_action_result(&digest, result).await {
-                    warn!(
-                        hash = ?digest.hash,
-                        "Failed to cache action result: {}",
-                        color::muted_light(error.to_string()),
-                    );
-                }
-            })));
+        //         if let Err(error) = client.update_action_result(&digest, result).await {
+        //             warn!(
+        //                 hash = ?digest.hash,
+        //                 "Failed to cache action result: {}",
+        //                 color::muted_light(error.to_string()),
+        //             );
+        //         }
+        //     })));
 
         // We don't actually know at this point if they all uploaded
         Ok(true)
@@ -392,10 +389,10 @@ impl RemoteService {
 
 async fn batch_find_blobs(
     client: Arc<Box<dyn RemoteClient>>,
-    action_digest: &RemoteDigest,
-    blob_digests: Vec<RemoteDigest>,
+    action_digest: &Digest,
+    blob_digests: Vec<Digest>,
     max_size: usize,
-) -> miette::Result<Vec<RemoteDigest>> {
+) -> miette::Result<Vec<Digest>> {
     let digest_groups = partition_into_groups(blob_digests, max_size, |digest| {
         digest.size.to_string().len() + digest.hash.len()
     });
@@ -551,7 +548,7 @@ async fn batch_upload_blobs(
 
 async fn batch_download_blobs(
     client: Arc<Box<dyn RemoteClient>>,
-    action_digest: &RemoteDigest,
+    action_digest: &Digest,
     result: &ActionResult,
     workspace_root: &Path,
     max_size: usize,

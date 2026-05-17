@@ -1,4 +1,5 @@
 use crate::blob::*;
+use crate::digest_compat::LocalDigestExt;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, Digest, ExecutedActionMetadata, NodeProperties, OutputDirectory, OutputFile,
@@ -53,16 +54,16 @@ pub fn create_action_result_for_upload(
         result.exit_code = exec.exit_code.unwrap_or_default();
 
         if let Some(stderr) = &exec.stderr {
-            let blob = CompressableBlob::from(stderr.as_bytes().to_owned());
+            let blob = CompressableBlob::from_bytes(stderr.as_bytes().to_owned())?;
 
-            result.stderr_digest = Some(blob.digest.clone());
+            result.stderr_digest = Some(blob.digest.to_remote_digest());
             blobs.push(blob);
         }
 
         if let Some(stdout) = &exec.stdout {
-            let blob = CompressableBlob::from(stdout.as_bytes().to_owned());
+            let blob = CompressableBlob::from_bytes(stdout.as_bytes().to_owned())?;
 
-            result.stdout_digest = Some(blob.digest.clone());
+            result.stdout_digest = Some(blob.digest.to_remote_digest());
             blobs.push(blob);
         }
     }
@@ -96,11 +97,11 @@ pub fn create_action_result_for_upload(
             let bytes = fs::read(&abs_path).map_err(map_read_error)?;
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
-            let blob = CompressableBlob::from(bytes);
+            let blob = CompressableBlob::from_bytes(bytes)?;
 
             result.output_files.push(OutputFile {
                 path: path_to_string(&abs_path),
-                digest: Some(blob.digest.clone()),
+                digest: Some(blob.digest.to_remote_digest()),
                 is_executable: is_file_executable(&abs_path, &props),
                 contents: vec![],
                 node_properties: Some(props),

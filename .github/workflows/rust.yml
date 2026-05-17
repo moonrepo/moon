@@ -21,6 +21,7 @@ concurrency:
 
 env:
   WARPGATE_PLUGINS_DIR: ${{ github.workspace }}/wasm
+  PROTO_PLUGINS_USE_URL_DIST: true
   # RUST_LOG: trace
   # setup-rust
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

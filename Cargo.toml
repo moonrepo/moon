@@ -100,7 +100,7 @@ uuid = { version = "1.23.2", features = ["v4"] }
 # proto/plugin related
 extism = "=1.21.0"
 extism-pdk = "1.4.1"
-proto_core = "0.57.1"
+proto_core = "0.57.2"
 proto_pdk_api = "0.31.12"
 proto_pdk_test_utils = "0.45.1"
 proto_shim = "0.8.2"

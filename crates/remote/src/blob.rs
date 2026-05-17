@@ -1,55 +1,55 @@
-use crate::fs_digest::create_digest;
 use crate::remote_error::RemoteError;
-use bazel_remote_apis::build::bazel::remote::execution::v2::{Digest, compressor};
+use bazel_remote_apis::build::bazel::remote::execution::v2::compressor;
 use moon_config::RemoteCompression;
+use moon_hash::{Blob, Digest};
+use std::ops::Deref;
 
 #[derive(Clone)]
-pub struct Blob {
-    pub bytes: Vec<u8>,
-    pub compressed: RemoteCompression,
-    pub digest: Digest,
+pub struct CompressableBlob {
+    pub inner: Blob,
+    pub compression: RemoteCompression,
 }
 
-impl From<Vec<u8>> for Blob {
-    fn from(bytes: Vec<u8>) -> Self {
-        Self {
-            digest: create_digest(&bytes),
-            compressed: RemoteCompression::None,
-            bytes,
-        }
-    }
-}
-
-impl Blob {
+impl CompressableBlob {
     pub fn new(digest: Digest, bytes: Vec<u8>) -> Self {
         Self {
-            digest,
-            compressed: RemoteCompression::None,
-            bytes,
+            inner: Blob { bytes, digest },
+            compression: RemoteCompression::None,
         }
+    }
+
+    pub fn from_bytes(bytes: Vec<u8>) -> miette::Result<Self> {
+        Ok(Self {
+            inner: Blob::from_bytes(bytes)?,
+            compression: RemoteCompression::None,
+        })
     }
 
     pub fn compress(&mut self, compression: RemoteCompression) -> miette::Result<()> {
-        self.compressed = compression;
+        self.compression = compression;
 
         match compression {
             RemoteCompression::None => {
                 // N/A
             }
             RemoteCompression::Zstd => {
-                self.bytes = zstd::encode_all(self.bytes.as_slice(), 1).map_err(|error| {
-                    RemoteError::CompressFailed {
-                        format: compression,
-                        error: Box::new(error),
-                    }
-                })?
+                self.inner.bytes =
+                    zstd::encode_all(self.inner.bytes.as_slice(), 1).map_err(|error| {
+                        RemoteError::CompressFailed {
+                            format: compression,
+                            error: Box::new(error),
+                        }
+                    })?
             }
         };
 
         Ok(())
     }
 
-    pub fn compress_and_keep(&mut self, compression: RemoteCompression) -> miette::Result<Blob> {
+    pub fn compress_and_keep(
+        &mut self,
+        compression: RemoteCompression,
+    ) -> miette::Result<CompressableBlob> {
         let uncompressed = self.clone();
 
         self.compress(compression)?;
@@ -58,31 +58,40 @@ impl Blob {
     }
 
     pub fn decompress(&mut self) -> miette::Result<()> {
-        match self.compressed {
+        match self.compression {
             RemoteCompression::None => {
                 // N/A
             }
             RemoteCompression::Zstd => {
-                self.bytes = zstd::decode_all(self.bytes.as_slice()).map_err(|error| {
-                    RemoteError::CompressFailed {
-                        format: self.compressed,
-                        error: Box::new(error),
-                    }
-                })?
+                self.inner.bytes =
+                    zstd::decode_all(self.inner.bytes.as_slice()).map_err(|error| {
+                        RemoteError::CompressFailed {
+                            format: self.compression,
+                            error: Box::new(error),
+                        }
+                    })?
             }
         };
 
-        self.compressed = RemoteCompression::None;
+        self.compression = RemoteCompression::None;
 
         Ok(())
     }
 
-    pub fn decompress_and_keep(&mut self) -> miette::Result<Blob> {
+    pub fn decompress_and_keep(&mut self) -> miette::Result<CompressableBlob> {
         let compressed = self.clone();
 
         self.decompress()?;
 
         Ok(compressed)
+    }
+}
+
+impl Deref for CompressableBlob {
+    type Target = Blob;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
     }
 }
 

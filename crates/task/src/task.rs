@@ -261,6 +261,10 @@ impl Task {
         Ok(list.into_iter().collect())
     }
 
+    pub fn has_outputs(&self) -> bool {
+        !self.output_files.is_empty() || !self.output_globs.is_empty()
+    }
+
     /// Return a list of all workspace-relative output files.
     pub fn get_output_files(
         &self,

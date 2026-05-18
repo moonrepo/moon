@@ -10,6 +10,7 @@ struct TestQuerent {
     pub data: FxHashMap<Target, TaskOptions>,
     pub tag_ids: Vec<Id>,
     pub task_tags: FxHashMap<Target, Vec<Id>>,
+    pub task_has_outputs: FxHashMap<Target, bool>,
 }
 
 impl TasksQuerent for TestQuerent {
@@ -56,6 +57,10 @@ impl TasksQuerent for TestQuerent {
             })
             .collect::<Vec<_>>())
     }
+
+    fn query_task_has_outputs(&self, target: &Target) -> bool {
+        self.task_has_outputs.get(target).copied().unwrap_or(false)
+    }
 }
 
 fn create_project() -> Project {
@@ -71,6 +76,21 @@ fn create_task() -> Task {
         target: Target::new("project", "task").unwrap(),
         ..Task::default()
     }
+}
+
+fn dep_ignored(target_str: &str) -> TaskDependencyConfig {
+    TaskDependencyConfig {
+        target: Target::parse(target_str).unwrap(),
+        cache_strategy: Some(TaskDependencyCacheStrategy::Ignored),
+        ..Default::default()
+    }
+}
+
+fn assert_deps_eq(mut actual: Vec<TaskDependencyConfig>, mut expected: Vec<TaskDependencyConfig>) {
+    // Order from FxHashMap iteration is not deterministic
+    actual.sort_by(|a, b| a.target.as_str().cmp(b.target.as_str()));
+    expected.sort_by(|a, b| a.target.as_str().cmp(b.target.as_str()));
+    assert_eq!(actual, expected);
 }
 
 fn build_task_deps(project: &mut Project, task: &mut Task) {
@@ -89,6 +109,7 @@ fn build_task_deps_with_data(
             data,
             tag_ids: vec![],
             task_tags: FxHashMap::default(),
+            task_has_outputs: FxHashMap::default(),
         },
     )
 }
@@ -356,13 +377,13 @@ mod task_deps_builder {
                 ]),
             );
 
-            assert_eq!(
-                task.deps,
+            assert_deps_eq(
+                task.deps.clone(),
                 vec![
-                    TaskDependencyConfig::new(Target::parse("baz:build").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("foo:build").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("bar:build").unwrap()),
-                ]
+                    dep_ignored("bar:build"),
+                    dep_ignored("baz:build"),
+                    dep_ignored("foo:build"),
+                ],
             );
         }
 
@@ -390,6 +411,7 @@ mod task_deps_builder {
                     ]),
                     tag_ids: vec![],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 }),
                 project: Some(&mut project),
                 root_project_id: None,
@@ -398,12 +420,7 @@ mod task_deps_builder {
             .build()
             .unwrap();
 
-            assert_eq!(
-                task.deps,
-                vec![TaskDependencyConfig::new(
-                    Target::parse("foo:build").unwrap()
-                )]
-            );
+            assert_eq!(task.deps, vec![dep_ignored("foo:build")]);
         }
 
         #[test]
@@ -447,6 +464,7 @@ mod task_deps_builder {
                     ]),
                     tag_ids: vec![],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 }),
                 project: Some(&mut project),
                 root_project_id: None,
@@ -455,12 +473,7 @@ mod task_deps_builder {
             .build()
             .unwrap();
 
-            assert_eq!(
-                task.deps,
-                vec![TaskDependencyConfig::new(
-                    Target::parse("foo:build").unwrap()
-                )]
-            );
+            assert_eq!(task.deps, vec![dep_ignored("foo:build")]);
         }
 
         #[test]
@@ -523,10 +536,7 @@ mod task_deps_builder {
 
             assert_eq!(
                 task.deps,
-                vec![
-                    TaskDependencyConfig::new(Target::parse("project:build").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("project:lint").unwrap()),
-                ]
+                vec![dep_ignored("project:build"), dep_ignored("project:lint")]
             );
         }
 
@@ -555,12 +565,7 @@ mod task_deps_builder {
 
             build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
-            assert_eq!(
-                task.deps,
-                vec![TaskDependencyConfig::new(
-                    Target::parse("project:build").unwrap()
-                )]
-            );
+            assert_eq!(task.deps, vec![dep_ignored("project:build")]);
         }
 
         #[test]
@@ -622,10 +627,7 @@ mod task_deps_builder {
 
             assert_eq!(
                 task.deps,
-                vec![
-                    TaskDependencyConfig::new(Target::parse("a:build").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("c:test").unwrap()),
-                ]
+                vec![dep_ignored("a:build"), dep_ignored("c:test")]
             );
         }
 
@@ -655,10 +657,7 @@ mod task_deps_builder {
 
             build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
-            assert_eq!(
-                task.deps,
-                vec![TaskDependencyConfig::new(Target::parse("a:build").unwrap())]
-            );
+            assert_eq!(task.deps, vec![dep_ignored("a:build")]);
         }
 
         #[test]
@@ -758,15 +757,13 @@ mod task_deps_builder {
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
 
-            assert_eq!(
-                task.deps,
-                vec![
-                    TaskDependencyConfig::new(Target::parse("baz:build").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("foo:build").unwrap()),
-                ]
+            assert_deps_eq(
+                task.deps.clone(),
+                vec![dep_ignored("baz:build"), dep_ignored("foo:build")],
             );
         }
 
@@ -790,15 +787,11 @@ mod task_deps_builder {
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
 
-            assert_eq!(
-                task.deps,
-                vec![TaskDependencyConfig::new(
-                    Target::parse("foo:build").unwrap()
-                ),]
-            );
+            assert_eq!(task.deps, vec![dep_ignored("foo:build")]);
         }
 
         #[test]
@@ -819,6 +812,7 @@ mod task_deps_builder {
                     data: FxHashMap::from_iter([]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
         }
@@ -842,6 +836,7 @@ mod task_deps_builder {
                     )]),
                     tag_ids: vec![Id::raw("project")],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
 
@@ -868,6 +863,7 @@ mod task_deps_builder {
                     ]),
                     tag_ids: vec![Id::raw("foo"), Id::raw("baz")],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
 
@@ -916,6 +912,7 @@ mod task_deps_builder {
                     )]),
                     tag_ids: vec![],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
         }
@@ -935,6 +932,7 @@ mod task_deps_builder {
                     data: FxHashMap::from_iter([]),
                     tag_ids: vec![],
                     task_tags: FxHashMap::default(),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
 
@@ -967,19 +965,14 @@ mod task_deps_builder {
                         (Target::parse("a:stylelint").unwrap(), vec![Id::raw("lint")]),
                         // build is not tagged
                     ]),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
 
-            let mut expected = vec![
-                TaskDependencyConfig::new(Target::parse("a:eslint").unwrap()),
-                TaskDependencyConfig::new(Target::parse("a:stylelint").unwrap()),
-            ];
-            let mut actual = task.deps.clone();
-            // Order from FxHashMap iteration is not deterministic
-            expected.sort_by(|a, b| a.target.as_str().cmp(b.target.as_str()));
-            actual.sort_by(|a, b| a.target.as_str().cmp(b.target.as_str()));
-
-            assert_eq!(actual, expected);
+            assert_deps_eq(
+                task.deps.clone(),
+                vec![dep_ignored("a:eslint"), dep_ignored("a:stylelint")],
+            );
         }
 
         #[test]
@@ -1004,15 +997,11 @@ mod task_deps_builder {
                         (Target::parse("a:eslint").unwrap(), vec![Id::raw("lint")]),
                         (Target::parse("b:eslint").unwrap(), vec![Id::raw("lint")]),
                     ]),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
 
-            assert_eq!(
-                task.deps,
-                vec![TaskDependencyConfig::new(
-                    Target::parse("a:eslint").unwrap()
-                )]
-            );
+            assert_eq!(task.deps, vec![dep_ignored("a:eslint")]);
         }
 
         #[test]
@@ -1043,6 +1032,7 @@ mod task_deps_builder {
                         (Target::parse("bar:eslint").unwrap(), vec![Id::raw("lint")]),
                         (Target::parse("baz:eslint").unwrap(), vec![Id::raw("lint")]),
                     ]),
+                    task_has_outputs: FxHashMap::default(),
                 },
             );
 
@@ -1056,5 +1046,96 @@ mod task_deps_builder {
 
             assert_eq!(actual, vec!["baz:eslint", "foo:eslint"]);
         }
+    }
+}
+
+mod cache_strategy {
+    use super::*;
+
+    fn dep_target() -> Target {
+        Target::parse("other:build").unwrap()
+    }
+
+    fn dep_with_strategy(strategy: Option<TaskDependencyCacheStrategy>) -> TaskDependencyConfig {
+        TaskDependencyConfig {
+            target: dep_target(),
+            cache_strategy: strategy,
+            ..Default::default()
+        }
+    }
+
+    fn build_with_dep(
+        dep_config: TaskDependencyConfig,
+        dep_has_outputs: bool,
+    ) -> Vec<TaskDependencyConfig> {
+        let mut project = create_project();
+        let mut task = create_task();
+        task.deps = vec![dep_config];
+
+        build_task_deps_with_querent(
+            &mut project,
+            &mut task,
+            TestQuerent {
+                data: FxHashMap::from_iter([(dep_target(), TaskOptions::default())]),
+                task_has_outputs: FxHashMap::from_iter([(dep_target(), dep_has_outputs)]),
+                ..Default::default()
+            },
+        );
+
+        task.deps
+    }
+
+    #[test]
+    fn resolves_to_hash_when_dep_has_outputs() {
+        let deps = build_with_dep(dep_with_strategy(None), true);
+        assert_eq!(
+            deps[0].cache_strategy,
+            Some(TaskDependencyCacheStrategy::Hash)
+        );
+    }
+
+    #[test]
+    fn resolves_to_ignored_when_dep_has_no_outputs() {
+        let deps = build_with_dep(dep_with_strategy(None), false);
+        assert_eq!(
+            deps[0].cache_strategy,
+            Some(TaskDependencyCacheStrategy::Ignored)
+        );
+    }
+
+    #[test]
+    fn explicit_hash_left_unchanged() {
+        let deps = build_with_dep(
+            dep_with_strategy(Some(TaskDependencyCacheStrategy::Hash)),
+            false,
+        );
+        assert_eq!(
+            deps[0].cache_strategy,
+            Some(TaskDependencyCacheStrategy::Hash)
+        );
+    }
+
+    #[test]
+    fn explicit_ignored_left_unchanged() {
+        let deps = build_with_dep(
+            dep_with_strategy(Some(TaskDependencyCacheStrategy::Ignored)),
+            true,
+        );
+        assert_eq!(
+            deps[0].cache_strategy,
+            Some(TaskDependencyCacheStrategy::Ignored)
+        );
+    }
+
+    #[test]
+    fn explicit_outputs_left_unchanged() {
+        let deps = build_with_dep(
+            dep_with_strategy(Some(TaskDependencyCacheStrategy::Outputs)),
+            false,
+        );
+        assert_eq!(
+            deps[0].cache_strategy,
+            Some(TaskDependencyCacheStrategy::Outputs)
+        );
     }
 }

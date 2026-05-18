@@ -18,6 +18,7 @@ rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["url"] }
 serde = { workspace = true }
 serde_path_to_error = "0.1.20"
+starbase_utils = { workspace = true }
 tracing = { workspace = true }
 
 [lints]

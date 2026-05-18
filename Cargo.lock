@@ -5201,6 +5201,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_path_to_error",
+ "starbase_utils",
  "tracing",
 ]
 

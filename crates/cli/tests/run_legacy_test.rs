@@ -1139,6 +1139,8 @@ mod run_legacy {
                 cmd.arg("run").arg("outputStyles:bufferFailurePassPrimary");
             });
 
+            assert.debug();
+
             assert_snapshot!(assert.output());
         }
 

@@ -139,14 +139,6 @@ jobs:
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
-      - uses: docker/setup-docker-action@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build plugins
         run: just build-wasm
       - name: Run tests

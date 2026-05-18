@@ -45,6 +45,15 @@
   - Added tags support to tasks through new `tags` and `options.mergeTags` settings.
     - Added `taskTag` field support to MQL.
     - Added `--tags` option support to `moon query tasks`.
+  - Added a `cacheStrategy` field to task dependencies that controls how a dependency's changes
+    invalidate the current task's cache. Supports `hash`, `ignored`, and `outputs` — the latter
+    mixes in the dependency's output files instead of its hash, so build tasks are only
+    invalidated when upstream outputs change, not when upstream inputs change.
+    - **Behavior change:** when `cacheStrategy` is omitted, the default is now `hash` if the
+      dependency declares outputs and `ignored` if it doesn't, instead of always `hash`. Tasks
+      that depend on output-less tasks (e.g. lint, test) will see fewer cache invalidations.
+      Set `cacheStrategy: 'hash'` explicitly to restore the previous behavior for a given
+      dependency.
   - Updated targets to support the `#` tag syntax in the task scope, allowing you to reference tasks
     by their tags. For example: `app:#quality`.
 - **Performance**

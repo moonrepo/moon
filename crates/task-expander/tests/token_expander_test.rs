@@ -22,7 +22,7 @@ mod token_expander {
     #[should_panic(expected = "Unknown token @unknown(id).")]
     fn errors_for_unknown_token_func() {
         let sandbox = create_empty_sandbox();
-        let project_graph = create_project_graph();
+        let project_graph = create_project_graph([]);
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(sandbox.path());
@@ -35,7 +35,7 @@ mod token_expander {
     #[should_panic(expected = "Unknown file group unknown for project project.")]
     fn errors_for_unknown_file_group() {
         let sandbox = create_empty_sandbox();
-        let project_graph = create_project_graph();
+        let project_graph = create_project_graph([]);
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(sandbox.path());
@@ -50,7 +50,7 @@ mod token_expander {
     )]
     fn errors_for_invalid_in_index_type() {
         let sandbox = create_empty_sandbox();
-        let project_graph = create_project_graph();
+        let project_graph = create_project_graph([]);
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(sandbox.path());
@@ -63,7 +63,7 @@ mod token_expander {
     #[should_panic(expected = "Input index 10 does not exist for token @in(10)")]
     fn errors_for_invalid_in_index() {
         let sandbox = create_empty_sandbox();
-        let project_graph = create_project_graph();
+        let project_graph = create_project_graph([]);
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(sandbox.path());
@@ -78,7 +78,7 @@ mod token_expander {
     )]
     fn errors_for_invalid_out_index_type() {
         let sandbox = create_empty_sandbox();
-        let project_graph = create_project_graph();
+        let project_graph = create_project_graph([]);
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(sandbox.path());
@@ -91,7 +91,7 @@ mod token_expander {
     #[should_panic(expected = "Output index 10 does not exist for token @out(10)")]
     fn errors_for_invalid_out_index() {
         let sandbox = create_empty_sandbox();
-        let project_graph = create_project_graph();
+        let project_graph = create_project_graph([]);
         let project = create_project(sandbox.path());
         let task = create_task();
         let context = create_context(sandbox.path());
@@ -106,7 +106,7 @@ mod token_expander {
         #[test]
         fn in_can_ref_other_token_funcs() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
             task.inputs.push(Input::TokenFunc("@globs(all)".into()));
@@ -130,7 +130,7 @@ mod token_expander {
         #[should_panic(expected = "Unknown file group unknown")]
         fn errors_if_in_refs_invalid_group() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
             task.inputs.push(Input::TokenFunc("@globs(unknown)".into()));
@@ -144,7 +144,7 @@ mod token_expander {
         #[test]
         fn out_can_ref_other_token_funcs() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
             task.outputs.push(Output::TokenFunc("@globs(all)".into()));
@@ -168,7 +168,7 @@ mod token_expander {
         #[should_panic(expected = "Unknown file group unknown")]
         fn errors_if_out_refs_invalid_group() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
             task.outputs
@@ -183,7 +183,7 @@ mod token_expander {
         #[test]
         fn meta_refs_native_metadata() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
 
             let metadata = project.config.project.get_or_insert(Default::default());
@@ -219,7 +219,7 @@ mod token_expander {
             use starbase_utils::json::JsonValue;
 
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
 
             let metadata = project.config.project.get_or_insert(Default::default());
@@ -264,7 +264,7 @@ mod token_expander {
         #[test]
         fn replaces_variables() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
             project.layer = LayerType::Library;
             project.language = LanguageType::JavaScript;
@@ -427,7 +427,7 @@ mod token_expander {
         #[test]
         fn replaces_variable_at_different_positions() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
             project.language = LanguageType::JavaScript;
             let task = create_task();
@@ -470,7 +470,7 @@ mod token_expander {
         #[test]
         fn doesnt_clobber_same_name_variables() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
             project.language = LanguageType::JavaScript;
             let task = create_task();
@@ -501,7 +501,7 @@ mod token_expander {
         #[test]
         fn keeps_unknown_var_as_is() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let task = create_task();
 
@@ -524,7 +524,7 @@ mod token_expander {
         #[should_panic(expected = "Token @files(sources) in task project:task cannot be used")]
         fn errors_for_func() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -539,7 +539,7 @@ mod token_expander {
         #[test]
         fn passes_through() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -554,7 +554,7 @@ mod token_expander {
         #[test]
         fn replaces_one_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -569,7 +569,7 @@ mod token_expander {
         #[test]
         fn replaces_two_vars() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -587,7 +587,7 @@ mod token_expander {
         #[test]
         fn supports_meta_func() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
 
             project
@@ -609,7 +609,7 @@ mod token_expander {
         #[test]
         fn inherits_inputs_from_env_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -626,7 +626,7 @@ mod token_expander {
         #[test]
         fn doesnt_inherit_inputs_from_env_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -643,7 +643,7 @@ mod token_expander {
         #[test]
         fn doesnt_inherit_inputs_from_env_var_that_is_blacklisted() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -667,7 +667,7 @@ mod token_expander {
         #[test]
         fn supports_meta_func() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
 
             project
@@ -689,7 +689,7 @@ mod token_expander {
         #[test]
         fn inherits_inputs_from_env_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -706,7 +706,7 @@ mod token_expander {
         #[test]
         fn doesnt_inherit_inputs_from_env_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -723,7 +723,7 @@ mod token_expander {
         #[test]
         fn inherits_inputs_from_token_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -766,7 +766,7 @@ mod token_expander {
         #[test]
         fn doesnt_inherit_inputs_from_token_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -793,7 +793,7 @@ mod token_expander {
         #[test]
         fn can_use_env_and_token_vars_together() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -816,7 +816,7 @@ mod token_expander {
         #[test]
         fn passes_through() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -834,7 +834,7 @@ mod token_expander {
         #[test]
         fn replaces_one_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -852,7 +852,7 @@ mod token_expander {
         #[test]
         fn replaces_two_vars() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -871,7 +871,7 @@ mod token_expander {
         #[test]
         fn inherits_inputs_from_token_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -911,7 +911,7 @@ mod token_expander {
         #[test]
         fn doesnt_inherit_inputs_from_token_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -935,7 +935,7 @@ mod token_expander {
         #[test]
         fn supports_group_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -956,7 +956,7 @@ mod token_expander {
         #[test]
         fn supports_dirs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -974,7 +974,7 @@ mod token_expander {
         #[test]
         fn supports_files_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -995,7 +995,7 @@ mod token_expander {
         #[test]
         fn supports_globs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1016,7 +1016,7 @@ mod token_expander {
         #[test]
         fn supports_root_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1034,7 +1034,7 @@ mod token_expander {
         #[test]
         fn supports_meta_func() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
 
             project
@@ -1062,7 +1062,7 @@ mod token_expander {
         )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1080,7 +1080,7 @@ mod token_expander {
         )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1098,7 +1098,7 @@ mod token_expander {
         )]
         fn errors_for_envs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1117,7 +1117,7 @@ mod token_expander {
         #[test]
         fn supports_env_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1138,7 +1138,7 @@ mod token_expander {
         #[test]
         fn supports_env_var_glob() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1173,7 +1173,7 @@ mod token_expander {
         #[test]
         fn supports_group_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1202,7 +1202,7 @@ mod token_expander {
         #[test]
         fn supports_group_via_input() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1234,7 +1234,7 @@ mod token_expander {
         #[test]
         fn supports_dirs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1259,7 +1259,7 @@ mod token_expander {
         #[test]
         fn supports_dirs_via_input() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1287,7 +1287,7 @@ mod token_expander {
         #[test]
         fn supports_files_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1314,7 +1314,7 @@ mod token_expander {
         #[test]
         fn supports_files_via_input() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1344,7 +1344,7 @@ mod token_expander {
         #[test]
         fn supports_globs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1370,7 +1370,7 @@ mod token_expander {
         #[test]
         fn supports_globs_via_input() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1399,7 +1399,7 @@ mod token_expander {
         #[test]
         fn supports_root_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1421,7 +1421,7 @@ mod token_expander {
         #[test]
         fn supports_root_via_input() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1446,7 +1446,7 @@ mod token_expander {
         #[test]
         fn supports_envs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1470,7 +1470,7 @@ mod token_expander {
         )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1488,7 +1488,7 @@ mod token_expander {
         )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1506,7 +1506,7 @@ mod token_expander {
         )]
         fn errors_for_meta_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1521,7 +1521,7 @@ mod token_expander {
         #[test]
         fn supports_vars() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1549,7 +1549,7 @@ mod token_expander {
         #[test]
         fn supports_vars_in_paths() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1586,7 +1586,7 @@ mod token_expander {
         #[test]
         fn supports_group_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1615,7 +1615,7 @@ mod token_expander {
         #[test]
         fn supports_dirs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1640,7 +1640,7 @@ mod token_expander {
         #[test]
         fn supports_files_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1667,7 +1667,7 @@ mod token_expander {
         #[test]
         fn supports_globs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1693,7 +1693,7 @@ mod token_expander {
         #[test]
         fn supports_root_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1718,7 +1718,7 @@ mod token_expander {
         )]
         fn errors_for_in_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1736,7 +1736,7 @@ mod token_expander {
         )]
         fn errors_for_out_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1754,7 +1754,7 @@ mod token_expander {
         )]
         fn errors_for_meta_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1772,7 +1772,7 @@ mod token_expander {
         )]
         fn errors_for_envs_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1787,7 +1787,7 @@ mod token_expander {
         #[test]
         fn converts_variables() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1820,7 +1820,7 @@ mod token_expander {
         #[test]
         fn converts_env_variables() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1860,7 +1860,7 @@ mod token_expander {
         #[test]
         fn passes_through() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1878,7 +1878,7 @@ mod token_expander {
         #[test]
         fn replaces_one_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1896,7 +1896,7 @@ mod token_expander {
         #[test]
         fn replaces_two_vars() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1914,7 +1914,7 @@ mod token_expander {
         #[test]
         fn inherits_inputs_from_env_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1931,7 +1931,7 @@ mod token_expander {
         #[test]
         fn doesnt_inherit_inputs_from_env_var() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1948,7 +1948,7 @@ mod token_expander {
         #[test]
         fn inherits_inputs_from_token_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -1985,7 +1985,7 @@ mod token_expander {
         #[test]
         fn doesnt_inherit_inputs_from_token_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -2006,7 +2006,7 @@ mod token_expander {
         #[test]
         fn supports_out_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -2025,7 +2025,7 @@ mod token_expander {
         #[test]
         fn supports_in_func() {
             let sandbox = create_sandbox("file-group");
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let project = create_project(sandbox.path());
             let mut task = create_task();
 
@@ -2047,7 +2047,7 @@ mod token_expander {
         #[test]
         fn supports_meta_func() {
             let sandbox = create_empty_sandbox();
-            let project_graph = create_project_graph();
+            let project_graph = create_project_graph([]);
             let mut project = create_project(sandbox.path());
 
             project

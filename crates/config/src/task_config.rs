@@ -121,6 +121,32 @@ config_unit_enum!(
     }
 );
 
+config_enum!(
+    /// Controls how a task dependency invalidates the current task's cache entry.
+    /// When omitted, the effective strategy is `Hash` if the dependency declares
+    /// outputs, or `Ignored` otherwise.
+    /// @since 2.3.0
+    #[derive(Copy, ConfigEnum)]
+    pub enum TaskDependencyCacheStrategy {
+        /// Use the dependency task's hash to invalidate the current task's cache.
+        /// Selected as the resolved default when the dependency declares outputs —
+        /// any change to the dependency's hash invalidates this task.
+        Hash,
+
+        /// Ignore the dependency task's hash for cache invalidation.
+        /// The current task's cache is never invalidated by this dependency's changes.
+        /// Selected as the resolved default when the dependency declares no outputs
+        /// (treated as a sequencing edge only).
+        Ignored,
+
+        /// Use the dependency task's outputs instead of its hash for cache invalidation.
+        /// The current task's cache is only invalidated when the dependency's outputs change,
+        /// not when its inputs change. Useful for build tasks where you only care about a
+        /// dependency's outputs, not what triggered the dependency to run.
+        Outputs,
+    }
+);
+
 config_struct!(
     /// Expanded information about a task dependency.
     #[derive(Config)]
@@ -138,6 +164,13 @@ config_struct!(
         /// @since 1.20.0
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub optional: Option<bool>,
+
+        /// Controls how this dependency invalidates the current task's cache.
+        /// When omitted, defaults to `hash` if the dependency declares outputs,
+        /// otherwise `ignored`.
+        /// @since 2.3.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub cache_strategy: Option<TaskDependencyCacheStrategy>,
     }
 );
 

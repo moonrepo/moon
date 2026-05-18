@@ -82,10 +82,25 @@ export interface ProjectInput {
 
 export type Input = string | FileInput | FileGroupInput | GlobInput | ProjectInput;
 
+/**
+ * Controls how a task dependency invalidates the current task's cache entry.
+ * When omitted, the effective strategy is `Hash` if the dependency declares
+ * outputs, or `Ignored` otherwise.
+ * @since 2.3.0
+ */
+export type TaskDependencyCacheStrategy = 'hash' | 'ignored' | 'outputs';
+
 /** Expanded information about a task dependency. */
 export interface TaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
 	args: string[];
+	/**
+	 * Controls how this dependency invalidates the current task's cache.
+	 * When omitted, defaults to `hash` if the dependency declares outputs,
+	 * otherwise `ignored`.
+	 * @since 2.3.0
+	 */
+	cacheStrategy?: TaskDependencyCacheStrategy | null;
 	/** A map of environment variables specific to this dependency. */
 	env: Record<string, string | null>;
 	/**
@@ -601,6 +616,13 @@ export interface InheritedTasksConfig {
 export interface PartialTaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
 	args?: string[] | null;
+	/**
+	 * Controls how this dependency invalidates the current task's cache.
+	 * When omitted, defaults to `hash` if the dependency declares outputs,
+	 * otherwise `ignored`.
+	 * @since 2.3.0
+	 */
+	cacheStrategy?: TaskDependencyCacheStrategy | null;
 	/** A map of environment variables specific to this dependency. */
 	env?: Record<string, string | null> | null;
 	/**

@@ -3,7 +3,10 @@ use miette::IntoDiagnostic;
 use moon_action::ActionNode;
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
-use moon_config::{DependencyScope, HasherOptimization, ProjectConfig, UnresolvedVersionSpec};
+use moon_config::{
+    DependencyScope, HasherOptimization, ProjectConfig, TaskDependencyCacheStrategy,
+    UnresolvedVersionSpec,
+};
 use moon_hash::{ContentHasher, fingerprint};
 use moon_pdk_api::{
     HashTaskContentsInput, LocateDependenciesRootInput, LockDependency, ManifestDependency,
@@ -46,16 +49,10 @@ pub async fn hash_common_task_contents(
                 continue;
             }
 
-            if let Some(entry) = action_context.target_states.get_sync(&dep.target) {
-                match entry.get() {
-                    TargetState::Passed(hash) => {
-                        deps.insert(&dep.target, hash.clone());
-                    }
-                    TargetState::Passthrough => {
-                        deps.insert(&dep.target, "passthrough".into());
-                    }
-                    _ => {}
-                };
+            if let Some(entry) = action_context.target_states.get_sync(&dep.target)
+                && let Some(value) = dep_hash_input(dep.cache_strategy, entry.get())
+            {
+                deps.insert(&dep.target, value);
             }
         }
 
@@ -72,6 +69,35 @@ pub async fn hash_common_task_contents(
     hasher.hash_content(task_hasher.hash())?;
 
     Ok(())
+}
+
+/// Returns the value a dep contributes to the consumer task's hash, based on
+/// the dep's `cache_strategy` and its observed `TargetState`. Returns `None`
+/// when the dep should not contribute at all (e.g. failed or skipped runs
+/// that can't be relied on for cache correctness).
+pub fn dep_hash_input(
+    strategy: Option<TaskDependencyCacheStrategy>,
+    state: &TargetState,
+) -> Option<String> {
+    match strategy {
+        // Ignored: constant marker — dep changes never invalidate this task.
+        Some(TaskDependencyCacheStrategy::Ignored) => Some("ignored".into()),
+        // Hash: mix the dep's actual hash so any dep change invalidates. `None`
+        // is a defensive backstop — all deps should have a resolved cache
+        // strategy by this point.
+        Some(TaskDependencyCacheStrategy::Hash) | None => match state {
+            TargetState::Passed(hash) => Some(hash.clone()),
+            TargetState::Passthrough => Some("passthrough".into()),
+            TargetState::Failed | TargetState::Skipped => None,
+        },
+        // Outputs: constant marker — invalidation comes from the dep's outputs,
+        // which `inject_deps_outputs` adds to this task's inputs.
+        Some(TaskDependencyCacheStrategy::Outputs) => match state {
+            TargetState::Passed(_) => Some("outputs".into()),
+            TargetState::Passthrough => Some("outputs-passthrough".into()),
+            TargetState::Failed | TargetState::Skipped => None,
+        },
+    }
 }
 
 fingerprint!(
@@ -433,4 +459,148 @@ fn apply_toolchain_dependencies_by_scope(
     }
 
     inject
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn passed(hash: &str) -> TargetState {
+        TargetState::Passed(hash.into())
+    }
+
+    mod dep_hash_input {
+        use super::*;
+
+        #[test]
+        fn hash_strategy_uses_dep_hash_when_passed() {
+            assert_eq!(
+                dep_hash_input(Some(TaskDependencyCacheStrategy::Hash), &passed("abc123")),
+                Some("abc123".into())
+            );
+        }
+
+        #[test]
+        fn hash_strategy_marks_passthrough() {
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Hash),
+                    &TargetState::Passthrough
+                ),
+                Some("passthrough".into())
+            );
+        }
+
+        #[test]
+        fn hash_strategy_skips_failed_and_skipped() {
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Hash),
+                    &TargetState::Failed
+                ),
+                None
+            );
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Hash),
+                    &TargetState::Skipped
+                ),
+                None
+            );
+        }
+
+        #[test]
+        fn omitted_strategy_behaves_like_hash() {
+            // Defensive backstop. All deps should have a resolved cache
+            // strategy explicitly set during task expansion time based on
+            // whether the dep declares outputs. This test pins the fallback so
+            // a hasher reached outside that path (e.g. from a unit test, or a
+            // future caller that skips expansion) still produces a stable hash
+            // contribution.
+            for state in [
+                passed("abc"),
+                TargetState::Passthrough,
+                TargetState::Failed,
+                TargetState::Skipped,
+            ] {
+                assert_eq!(
+                    dep_hash_input(None, &state),
+                    dep_hash_input(Some(TaskDependencyCacheStrategy::Hash), &state)
+                );
+            }
+        }
+
+        #[test]
+        fn ignored_strategy_emits_constant_marker_regardless_of_state() {
+            for state in [
+                passed("abc"),
+                TargetState::Passthrough,
+                TargetState::Failed,
+                TargetState::Skipped,
+            ] {
+                assert_eq!(
+                    dep_hash_input(Some(TaskDependencyCacheStrategy::Ignored), &state),
+                    Some("ignored".into())
+                );
+            }
+        }
+
+        #[test]
+        fn outputs_strategy_emits_constant_marker_when_passed() {
+            assert_eq!(
+                dep_hash_input(Some(TaskDependencyCacheStrategy::Outputs), &passed("abc")),
+                Some("outputs".into())
+            );
+        }
+
+        #[test]
+        fn outputs_strategy_distinguishes_passthrough() {
+            // Distinct marker so a Passthrough run can't be confused with a
+            // Passed run when computing the consumer's hash.
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Outputs),
+                    &TargetState::Passthrough
+                ),
+                Some("outputs-passthrough".into())
+            );
+        }
+
+        #[test]
+        fn outputs_strategy_skips_failed_and_skipped() {
+            // Mirrors Hash's bail-out so a stale on-disk output from a
+            // failed/skipped dep can't cause a spurious cache hit.
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Outputs),
+                    &TargetState::Failed
+                ),
+                None
+            );
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Outputs),
+                    &TargetState::Skipped
+                ),
+                None
+            );
+        }
+
+        #[test]
+        fn distinct_strategies_yield_distinct_markers_for_passed_state() {
+            // Regression guard: each strategy must produce a unique hash
+            // contribution so that two deps with different strategies don't
+            // collapse to the same cache identity.
+            let state = passed("dep-hash");
+            let hash = dep_hash_input(Some(TaskDependencyCacheStrategy::Hash), &state).unwrap();
+            let ignored =
+                dep_hash_input(Some(TaskDependencyCacheStrategy::Ignored), &state).unwrap();
+            let outputs =
+                dep_hash_input(Some(TaskDependencyCacheStrategy::Outputs), &state).unwrap();
+
+            assert_ne!(hash, ignored);
+            assert_ne!(hash, outputs);
+            assert_ne!(ignored, outputs);
+        }
+    }
 }

@@ -5,7 +5,8 @@ use moon_project::ProjectError;
 use moon_project_graph::ProjectGraph;
 use moon_target::Target;
 use moon_task::Task;
-use moon_task_expander::TaskExpander;
+use moon_task_expander::{TaskExpander, TaskLookup};
+use once_cell::sync::OnceCell;
 use petgraph::graph::{DiGraph, NodeIndex};
 use rustc_hash::FxHashMap;
 use scc::hash_map::Entry;
@@ -35,7 +36,7 @@ pub struct TaskGraph {
     project_graph: Arc<ProjectGraph>,
 
     /// Map of expanded tasks by target.
-    tasks: Arc<scc::HashMap<Target, Arc<Task>>>,
+    tasks: Arc<scc::HashMap<Target, Arc<OnceCell<Arc<Task>>>>>,
 }
 
 impl TaskGraph {
@@ -155,25 +156,32 @@ impl TaskGraph {
     }
 
     fn internal_get(&self, target: &Target) -> miette::Result<Arc<Task>> {
-        let task = match self.tasks.entry_sync(target.to_owned()) {
-            Entry::Occupied(entry) => Arc::clone(entry.get()),
-            Entry::Vacant(entry) => {
-                let expander = TaskExpander::new(
-                    &self.project_graph,
-                    self.project_graph
-                        .get_unexpanded(target.get_project_id()?)?,
-                    &self.context,
-                );
-
-                let task = Arc::new(expander.expand(self.get_unexpanded(entry.key())?)?);
-
-                entry.insert_entry(Arc::clone(&task));
-
-                task
+        let once = match self.tasks.entry_sync(target.to_owned()) {
+            Entry::Occupied(e) => Arc::clone(e.get()),
+            Entry::Vacant(e) => {
+                let once = Arc::new(OnceCell::new());
+                e.insert_entry(Arc::clone(&once));
+                once
             }
         };
 
-        Ok(task)
+        once.get_or_try_init(|| {
+            let expander = TaskExpander::new(
+                &self.project_graph,
+                self.project_graph
+                    .get_unexpanded(target.get_project_id()?)?,
+                &self.context,
+                self,
+            );
+            Ok(Arc::new(expander.expand(self.get_unexpanded(target)?)?))
+        })
+        .map(Arc::clone)
+    }
+}
+
+impl TaskLookup for TaskGraph {
+    fn get_task(&self, target: &Target) -> miette::Result<Arc<Task>> {
+        self.internal_get(target)
     }
 }
 

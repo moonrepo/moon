@@ -1,19 +1,21 @@
+use crate::task_lookup::TaskLookup;
 use crate::token_expander::TokenExpander;
 use moon_common::color;
-use moon_config::EnvMap;
+use moon_config::{EnvMap, TaskDependencyCacheStrategy};
 use moon_env_var::*;
 use moon_graph_utils::GraphExpanderContext;
 use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskArg, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use std::mem;
-use tracing::{debug, instrument, trace, warn};
+use tracing::{debug, instrument, trace};
 
 pub struct TaskExpander<'graph> {
     pub context: &'graph GraphExpanderContext,
     pub token: TokenExpander<'graph>,
     pub project: &'graph Project,
     pub project_graph: &'graph ProjectGraph,
+    pub task_lookup: &'graph dyn TaskLookup,
 }
 
 impl<'graph> TaskExpander<'graph> {
@@ -21,12 +23,14 @@ impl<'graph> TaskExpander<'graph> {
         project_graph: &'graph ProjectGraph,
         project: &'graph Project,
         context: &'graph GraphExpanderContext,
+        task_lookup: &'graph dyn TaskLookup,
     ) -> Self {
         Self {
             token: TokenExpander::new(project_graph, project, context),
             context,
             project,
             project_graph,
+            task_lookup,
         }
     }
 
@@ -55,11 +59,51 @@ impl<'graph> TaskExpander<'graph> {
         self.expand_args(&mut task)?;
         task.state.expanded = true;
 
+        // Inject dep outputs as inputs for deps with `cacheStrategy: outputs`
+        self.inject_deps_outputs(&mut task)?;
+
         // Run post-expand operations
         self.move_input_dirs_to_globs(&mut task);
         self.remove_input_output_overlaps(&mut task);
 
         Ok(task)
+    }
+
+    #[instrument(skip_all)]
+    pub fn inject_deps_outputs(&mut self, task: &mut Task) -> miette::Result<()> {
+        for dep in task.deps.iter() {
+            if !matches!(
+                dep.cache_strategy,
+                Some(TaskDependencyCacheStrategy::Outputs)
+            ) {
+                continue;
+            }
+
+            let dep_task = self.task_lookup.get_task(&dep.target)?;
+            if dep_task.output_files.is_empty() && dep_task.output_globs.is_empty() {
+                continue;
+            }
+
+            trace!(
+                task_target = dep.target.as_str(),
+                "Injecting dep outputs as inputs of the current task"
+            );
+
+            for (path, output) in dep_task.output_files.iter() {
+                task.input_files
+                    .entry(path.clone())
+                    .or_insert_with(|| TaskFileInput {
+                        content: None,
+                        optional: Some(output.optional),
+                    });
+            }
+
+            for glob in dep_task.output_globs.keys() {
+                task.input_globs.entry(glob.clone()).or_default();
+            }
+        }
+
+        Ok(())
     }
 
     #[instrument(skip_all)]

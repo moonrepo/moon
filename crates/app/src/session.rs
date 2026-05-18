@@ -46,10 +46,10 @@ pub struct MoonSession {
 
     // Lazy components
     pub(crate) cache_engine: OnceLock<Arc<CacheEngine>>,
-    pub(crate) extension_registry: OnceLock<Arc<ExtensionRegistry>>,
+    pub(crate) extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     pub(crate) project_graph: OnceLock<Arc<ProjectGraph>>,
     pub(crate) task_graph: OnceLock<Arc<TaskGraph>>,
-    pub(crate) toolchain_registry: OnceLock<Arc<ToolchainRegistry>>,
+    pub(crate) toolchain_registry: OnceCell<Arc<ToolchainRegistry>>,
     pub(crate) vcs_adapter: OnceLock<Arc<BoxedVcs>>,
     pub(crate) workspace_graph: OnceCell<Arc<WorkspaceGraph>>,
 
@@ -76,14 +76,14 @@ impl MoonSession {
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
             extensions_config: Arc::new(ExtensionsConfig::default()),
-            extension_registry: OnceLock::new(),
+            extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
             project_graph: OnceLock::new(),
             proto_env: Arc::new(ProtoEnvironment::default()),
             task_graph: OnceLock::new(),
             tasks_config: Arc::new(InheritedTasksManager::default()),
             toolchains_config: Arc::new(ToolchainsConfig::default()),
-            toolchain_registry: OnceLock::new(),
+            toolchain_registry: OnceCell::new(),
             working_dir: PathBuf::new(),
             workspace_config: Arc::new(WorkspaceConfig::default()),
             workspace_graph: OnceCell::new(),
@@ -195,23 +195,22 @@ impl MoonSession {
     }
 
     pub async fn get_extension_registry(&self) -> miette::Result<Arc<ExtensionRegistry>> {
-        if self.extension_registry.get().is_none() {
-            let registry = ExtensionRegistry::new(
-                MoonHostData {
-                    moon_env: Arc::clone(&self.moon_env),
-                    proto_env: Arc::clone(&self.proto_env),
-                    extensions_config: Arc::clone(&self.extensions_config),
-                    toolchains_config: Arc::clone(&self.toolchains_config),
-                    workspace_config: Arc::clone(&self.workspace_config),
-                    workspace_graph: Arc::new(OnceLock::new()),
-                },
-                Arc::clone(&self.extensions_config),
-            )?;
-
-            let _ = self.extension_registry.set(Arc::new(registry));
-        }
-
-        Ok(self.extension_registry.get().map(Arc::clone).unwrap())
+        self.extension_registry
+            .get_or_try_init(async || {
+                Ok(Arc::new(ExtensionRegistry::new(
+                    MoonHostData {
+                        moon_env: Arc::clone(&self.moon_env),
+                        proto_env: Arc::clone(&self.proto_env),
+                        extensions_config: Arc::clone(&self.extensions_config),
+                        toolchains_config: Arc::clone(&self.toolchains_config),
+                        workspace_config: Arc::clone(&self.workspace_config),
+                        workspace_graph: Arc::new(OnceLock::new()),
+                    },
+                    Arc::clone(&self.extensions_config),
+                )?))
+            })
+            .await
+            .map(Arc::clone)
     }
 
     pub async fn get_project_graph(&self) -> miette::Result<Arc<ProjectGraph>> {
@@ -231,23 +230,22 @@ impl MoonSession {
     }
 
     pub async fn get_toolchain_registry(&self) -> miette::Result<Arc<ToolchainRegistry>> {
-        if self.toolchain_registry.get().is_none() {
-            let registry = ToolchainRegistry::new(
-                MoonHostData {
-                    moon_env: Arc::clone(&self.moon_env),
-                    proto_env: Arc::clone(&self.proto_env),
-                    extensions_config: Arc::clone(&self.extensions_config),
-                    toolchains_config: Arc::clone(&self.toolchains_config),
-                    workspace_config: Arc::clone(&self.workspace_config),
-                    workspace_graph: Arc::new(OnceLock::new()),
-                },
-                Arc::clone(&self.toolchains_config),
-            )?;
-
-            let _ = self.toolchain_registry.set(Arc::new(registry));
-        }
-
-        Ok(self.toolchain_registry.get().map(Arc::clone).unwrap())
+        self.toolchain_registry
+            .get_or_try_init(async || {
+                Ok(Arc::new(ToolchainRegistry::new(
+                    MoonHostData {
+                        moon_env: Arc::clone(&self.moon_env),
+                        proto_env: Arc::clone(&self.proto_env),
+                        extensions_config: Arc::clone(&self.extensions_config),
+                        toolchains_config: Arc::clone(&self.toolchains_config),
+                        workspace_config: Arc::clone(&self.workspace_config),
+                        workspace_graph: Arc::new(OnceLock::new()),
+                    },
+                    Arc::clone(&self.toolchains_config),
+                )?))
+            })
+            .await
+            .map(Arc::clone)
     }
 
     pub fn get_vcs_adapter(&self) -> miette::Result<Arc<BoxedVcs>> {
@@ -267,12 +265,10 @@ impl MoonSession {
     }
 
     pub async fn get_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
-        let result = self
-            .workspace_graph
+        self.workspace_graph
             .get_or_try_init(async || self.load_workspace_graph().await)
-            .await?;
-
-        Ok(Arc::clone(result))
+            .await
+            .map(Arc::clone)
     }
 
     pub fn is_telemetry_enabled(&self) -> bool {

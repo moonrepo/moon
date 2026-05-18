@@ -279,7 +279,7 @@ impl Task {
             list.extend(glob::walk_fast_with_options(
                 workspace_root,
                 self.output_globs.keys(),
-                GlobWalkOptions::default().files(),
+                GlobWalkOptions::default().files().cache(),
             )?);
         }
 

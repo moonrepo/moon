@@ -41,6 +41,7 @@ pub struct TaskRunner<'task> {
     pub remote_state: Option<ActionState<'task>>,
     pub report_item: TaskReportItem,
     pub target_state: Option<TargetState>,
+    pub state: TaskRunState,
 }
 
 impl<'task> TaskRunner<'task> {
@@ -75,6 +76,7 @@ impl<'task> TaskRunner<'task> {
             },
             target_state: None,
             task,
+            state: TaskRunState::default(),
             app_context,
             operations: OperationList::default(),
         })
@@ -495,10 +497,6 @@ impl<'task> TaskRunner<'task> {
         // Persist the state locally and for the remote service
         if let Some(last_attempt) = result.attempts.get_last_execution() {
             self.persist_state(last_attempt)?;
-
-            if let Some(state) = &mut self.remote_state {
-                state.create_action_result_from_operation(last_attempt)?;
-            }
         }
 
         // Extract the attempts from the result
@@ -739,6 +737,8 @@ impl<'task> TaskRunner<'task> {
     }
 
     fn persist_state(&mut self, operation: &Operation) -> miette::Result<()> {
+        self.state.operation = operation.to_owned();
+
         let state_dir = self
             .app_context
             .cache_engine

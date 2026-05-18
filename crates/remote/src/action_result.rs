@@ -2,74 +2,83 @@ use crate::blob::*;
 use crate::digest_compat::LocalDigestExt;
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    ActionResult, Digest, ExecutedActionMetadata, NodeProperties, OutputDirectory, OutputFile,
-    OutputSymlink,
+    ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
 };
 use bazel_remote_apis::google::protobuf::Timestamp;
 use chrono::NaiveDateTime;
 use moon_action::Operation;
 use moon_common::path::PathExt;
-use moon_hash::OutputDigests;
-use moon_task::Task;
+use moon_hash::{Blob, OutputDigests};
 use starbase_utils::fs::FsError;
 use starbase_utils::glob::{self, GlobWalkOptions};
 use std::fs::{self, Metadata};
-use std::path::Path;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-pub fn create_action_result_for_upload(
-    operation: &Operation,
-    outputs: OutputDigests,
-    workspace_root: &Path,
-) -> miette::Result<ActionResult> {
-    let mut blobs = vec![];
-    let mut result = ActionResult {
-        execution_metadata: Some(ExecutedActionMetadata {
+pub struct ActionResultBuilder<'a> {
+    blobs: Vec<CompressableBlob>,
+    result: ActionResult,
+    workspace_root: &'a Path,
+}
+
+impl<'a> ActionResultBuilder<'a> {
+    pub fn new(workspace_root: &'a Path) -> Self {
+        Self {
+            blobs: Vec::new(),
+            result: ActionResult::default(),
+            workspace_root,
+        }
+    }
+
+    pub fn build(self) -> (ActionResult, Vec<CompressableBlob>) {
+        (self.result, self.blobs)
+    }
+
+    pub fn with_operation(&mut self, operation: &Operation) -> miette::Result<()> {
+        self.result.execution_metadata = Some(ExecutedActionMetadata {
             worker: "moon".into(),
             execution_start_timestamp: create_timestamp_from_naive(operation.started_at),
             execution_completed_timestamp: operation
                 .finished_at
                 .and_then(create_timestamp_from_naive),
             ..Default::default()
-        }),
-        ..Default::default()
-    };
+        });
 
-    // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L1233
-    let path_to_string = |inner_path: &Path| {
-        let outer_path = inner_path
-            .relative_to(workspace_root)
-            .expect("Output path is outside of the workspace!")
-            .to_string();
+        // Extract executions outputs (stdout, stderr)
+        if let Some(exec) = operation.get_exec_output() {
+            self.result.exit_code = exec.exit_code.unwrap_or_default();
 
-        if let Some(stripped) = outer_path.strip_prefix('/') {
-            stripped.to_owned()
-        } else {
-            outer_path
-        }
-    };
+            if let Some(stderr) = &exec.stderr {
+                let blob = CompressableBlob::from_bytes(stderr.as_bytes().to_owned())?;
 
-    // Extract executions outputs (stdout, stderr)
-    if let Some(exec) = operation.get_exec_output() {
-        result.exit_code = exec.exit_code.unwrap_or_default();
+                self.result.stderr_digest = Some(blob.digest.to_remote_digest());
+                self.blobs.push(blob);
+            }
 
-        if let Some(stderr) = &exec.stderr {
-            let blob = CompressableBlob::from_bytes(stderr.as_bytes().to_owned())?;
+            if let Some(stdout) = &exec.stdout {
+                let blob = CompressableBlob::from_bytes(stdout.as_bytes().to_owned())?;
 
-            result.stderr_digest = Some(blob.digest.to_remote_digest());
-            blobs.push(blob);
+                self.result.stdout_digest = Some(blob.digest.to_remote_digest());
+                self.blobs.push(blob);
+            }
         }
 
-        if let Some(stdout) = &exec.stdout {
-            let blob = CompressableBlob::from_bytes(stdout.as_bytes().to_owned())?;
-
-            result.stdout_digest = Some(blob.digest.to_remote_digest());
-            blobs.push(blob);
-        }
+        Ok(())
     }
 
-    // Extract file outputs
-    for (abs_path, blob) in outputs.blobs {
+    pub fn with_outputs(&mut self, outputs: OutputDigests) -> miette::Result<()> {
+        for (abs_path, blob) in outputs.blobs {
+            self.insert_output(abs_path, Some(blob))?;
+        }
+
+        Ok(())
+    }
+
+    fn insert_output(
+        &mut self,
+        abs_path: PathBuf,
+        source_blob: Option<Blob>,
+    ) -> miette::Result<()> {
         let map_read_error = |error| FsError::Read {
             path: abs_path.clone(),
             error: Box::new(error),
@@ -77,10 +86,9 @@ pub fn create_action_result_for_upload(
 
         if abs_path.is_symlink() {
             let link = fs::read_link(&abs_path).map_err(map_read_error)?;
-            let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
-            let props = compute_node_properties(&metadata);
 
-            if !abs_path.starts_with(workspace_root) || !link.starts_with(workspace_root) {
+            if !abs_path.starts_with(self.workspace_root) || !link.starts_with(self.workspace_root)
+            {
                 return Err(RemoteError::OutputSymlinkOutsideOfWorkspace {
                     output: abs_path,
                     target: link,
@@ -88,39 +96,66 @@ pub fn create_action_result_for_upload(
                 .into());
             }
 
-            result.output_symlinks.push(OutputSymlink {
-                path: path_to_string(&abs_path),
-                target: path_to_string(&link),
+            let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
+            let props = compute_node_properties(&metadata);
+
+            self.result.output_symlinks.push(OutputSymlink {
+                path: self.convert_path(&abs_path)?,
+                target: self.convert_path(&link)?,
                 node_properties: Some(props),
             });
         } else if abs_path.is_file() {
-            let bytes = fs::read(&abs_path).map_err(map_read_error)?;
+            if !abs_path.starts_with(self.workspace_root) {
+                return Err(RemoteError::OutputFileOutsideOfWorkspace { output: abs_path }.into());
+            }
+
             let metadata = fs::metadata(&abs_path).map_err(map_read_error)?;
             let props = compute_node_properties(&metadata);
-            let blob = CompressableBlob::from_bytes(bytes)?;
+            let blob = match source_blob {
+                Some(inner) => CompressableBlob::from_blob(inner)?,
+                None => CompressableBlob::from_file(&abs_path)?,
+            };
 
-            result.output_files.push(OutputFile {
-                path: path_to_string(&abs_path),
+            self.result.output_files.push(OutputFile {
+                path: self.convert_path(&abs_path)?,
                 digest: Some(blob.digest.to_remote_digest()),
                 is_executable: is_file_executable(&abs_path, &props),
                 contents: vec![],
                 node_properties: Some(props),
             });
 
-            blobs.push(blob);
+            self.blobs.push(blob);
         } else if abs_path.is_dir() {
+            if !abs_path.starts_with(self.workspace_root) {
+                return Err(RemoteError::OutputFileOutsideOfWorkspace { output: abs_path }.into());
+            }
+
             for abs_file in glob::walk_fast_with_options(
                 abs_path,
                 ["**/*"],
                 GlobWalkOptions::default().files(),
             )? {
-                // TODO
-                // self.insert_path(abs_file, workspace_root)?;
+                self.insert_output(abs_file, None)?;
             }
         }
+
+        Ok(())
     }
 
-    Ok(result)
+    // https://github.com/bazelbuild/remote-apis/blob/main/build/bazel/remote/execution/v2/remote_execution.proto#L1233
+    fn convert_path(&self, abs_path: &Path) -> miette::Result<String> {
+        let outer_path = abs_path
+            .relative_to(self.workspace_root)
+            .map_err(|_| RemoteError::OutputFileOutsideOfWorkspace {
+                output: abs_path.to_owned(),
+            })?
+            .to_string();
+
+        Ok(outer_path
+            .strip_prefix('/')
+            .unwrap_or(&outer_path)
+            .to_owned())
+    }
 }
 
 pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {

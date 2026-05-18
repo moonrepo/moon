@@ -3,6 +3,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::compressor;
 use moon_config::RemoteCompression;
 use moon_hash::{Blob, Digest};
 use std::ops::Deref;
+use std::path::Path;
 
 #[derive(Clone)]
 pub struct CompressableBlob {
@@ -18,9 +19,23 @@ impl CompressableBlob {
         }
     }
 
+    pub fn from_blob(blob: Blob) -> miette::Result<Self> {
+        Ok(Self {
+            inner: blob,
+            compression: RemoteCompression::None,
+        })
+    }
+
     pub fn from_bytes(bytes: Vec<u8>) -> miette::Result<Self> {
         Ok(Self {
             inner: Blob::from_bytes(bytes)?,
+            compression: RemoteCompression::None,
+        })
+    }
+
+    pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
+        Ok(Self {
+            inner: Blob::from_file(path)?,
             compression: RemoteCompression::None,
         })
     }

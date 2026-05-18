@@ -1,9 +1,5 @@
-use crate::action_result::create_timestamp_from_naive;
 use crate::blob::*;
-use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    ActionResult, ExecutedActionMetadata,
-};
-use moon_action::Operation;
+use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
 use moon_hash::Digest;
 use moon_task::Task;
 

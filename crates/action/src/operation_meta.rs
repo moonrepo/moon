@@ -3,21 +3,21 @@ use std::path::PathBuf;
 use std::process::ExitStatus;
 use std::sync::Arc;
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct OperationMetaHash {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hash: Option<String>,
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct OperationMetaFileChange {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub changed_files: Vec<PathBuf>,
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct OperationMetaProcessOutput {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -54,7 +54,7 @@ impl OperationMetaProcessOutput {
     }
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
 #[serde(tag = "type", rename_all = "kebab-case")]
 pub enum OperationMeta {
     // Processes

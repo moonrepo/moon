@@ -28,6 +28,7 @@ impl OutputArchiver<'_> {
     pub async fn archive(
         &self,
         hash: &str,
+        state: &TaskRunState,
         remote_state: Option<&mut ActionState<'_>>,
     ) -> miette::Result<Option<PathBuf>> {
         let mut archived = false;
@@ -68,22 +69,43 @@ impl OutputArchiver<'_> {
         Ok(if archived { Some(archive_file) } else { None })
     }
 
+    pub async fn archive_legacy(&self, hash: &str, state: &TaskRunState) -> miette::Result<bool> {
+        let mut archived = false;
+        let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
+
+        if archive_file.exists() {
+            archived = true;
+        } else if self.app_context.cache_engine.is_writable() {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Archiving task outputs from project"
+            );
+
+            archived = self.create_local_archive(hash, &archive_file).await?;
+        } else {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Cache is not writable, skipping output archiving"
+            );
+        }
+
+        // Then cache the result in the remote service
+        if self.task.options.cache.is_remote_enabled() {
+            archived = self.store_in_remote_cache(hash, state).await?;
+        }
+
+        Ok(archived)
+    }
+
     pub async fn archive_modern(
         &self,
         hash: &str,
+        state: &TaskRunState,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, ContentHash>> {
         let mut hashes = BTreeMap::new();
 
         // Step 1) Save the outputs to local cache and gather blobs
         let outputs = self.store_in_local_cache(hash).await?;
-
-        // Check that outputs actually exist
-        if self.task.is_build_type() && outputs.blobs.is_empty() {
-            return Err(TaskRunnerError::MissingOutputs {
-                target: self.task.target.clone(),
-            }
-            .into());
-        }
 
         // Step 2) Extract the hashes to store in state
         for (path, blob) in &outputs.blobs {
@@ -95,7 +117,9 @@ impl OutputArchiver<'_> {
         }
 
         // Step 3) Upload these blobs to remote cache
-        // TODO
+        if self.task.options.cache.is_remote_enabled() {
+            self.store_in_remote_cache(hash, state, outputs).await?;
+        }
 
         Ok(hashes)
     }
@@ -198,44 +222,6 @@ impl OutputArchiver<'_> {
         Ok(archived)
     }
 
-    #[instrument(skip(self, state))]
-    async fn upload_to_remote_service(
-        &self,
-        hash: &str,
-        state: &mut ActionState<'_>,
-    ) -> miette::Result<bool> {
-        if let Some(remote) = RemoteService::session() {
-            if remote.can_upload() {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    hash, "Storing task outputs in remote cache"
-                );
-
-                state.compute_outputs(&self.app_context.workspace_root)?;
-            }
-
-            match remote.save_action(&state.digest, &state.bytes).await {
-                Ok(saved) => {
-                    // Saves in a background thread
-                    remote.save_action_result(state).await?;
-
-                    return Ok(saved);
-                }
-                Err(error) => {
-                    // If the task is successful but the upload fails,
-                    // we don't want to mark the task as failed, so
-                    // don't bubble up the error
-                    warn!(
-                        "Failed to upload to remote service: {}",
-                        color::muted_light(error.to_string())
-                    );
-                }
-            }
-        }
-
-        Ok(false)
-    }
-
     #[instrument(skip(self))]
     async fn store_in_local_cache(&self, hash: &str) -> miette::Result<OutputDigests> {
         debug!(
@@ -270,7 +256,7 @@ impl OutputArchiver<'_> {
         hash: &str,
         state: &TaskRunState,
         outputs: OutputDigests,
-    ) -> miette::Result<()> {
+    ) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session()
             && remote.can_upload()
         {
@@ -285,7 +271,11 @@ impl OutputArchiver<'_> {
             {
                 Ok(saved) => {
                     // Saves in a background thread
-                    remote.save_action_result(state).await?;
+                    remote
+                        .save_action_result(&state.action_digest, &state.operation, outputs)
+                        .await?;
+
+                    return Ok(saved);
                 }
                 Err(error) => {
                     // If the task is successful but the upload fails,
@@ -299,6 +289,6 @@ impl OutputArchiver<'_> {
             }
         }
 
-        Ok(())
+        Ok(false)
     }
 }

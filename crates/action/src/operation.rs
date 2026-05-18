@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::process::ExitStatus;
 use std::time::{Duration, Instant};
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -25,7 +25,7 @@ impl Blob {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Default, Clone, Eq, PartialEq)]
 pub struct Digest {
     pub hash: ContentHash,
     pub size: i64,

@@ -1,7 +1,7 @@
+use moon_action::Operation;
 use moon_cache_item::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_hash::ContentHash;
-use moon_remote::RemoteDigest;
+use moon_hash::{ContentHash, Digest};
 use std::collections::BTreeMap;
 
 cache_item!(
@@ -16,7 +16,11 @@ cache_item!(
     }
 );
 
+#[derive(Default)]
 pub struct TaskRunState {
-    pub action_digest: RemoteDigest,
+    pub action_digest: Digest,
     pub action_bytes: Vec<u8>,
+
+    /// The last operation that was executed, which may be used to resume an incomplete run.
+    pub operation: Operation,
 }

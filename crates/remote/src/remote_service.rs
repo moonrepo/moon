@@ -237,55 +237,56 @@ impl RemoteService {
             return Ok(false);
         }
 
-        // let Some((mut result, blobs)) = state.extract_for_upload() else {
-        //     return Ok(false);
-        // };
+        let mut builder = ActionResultBuilder::new(&self.workspace_root);
+        builder.with_operation(operation)?;
+        builder.with_outputs(outputs)?;
 
-        // let client = Arc::clone(&self.client);
-        // let digest = action_digest.to_owned();
-        // let max_size = self.get_max_batch_size();
+        let (mut result, blobs) = builder.build();
+        let client = Arc::clone(&self.client);
+        let digest = action_digest.to_owned();
+        let max_size = self.get_max_batch_size();
 
-        // self.upload_requests
-        //     .write()
-        //     .await
-        //     .push(tokio::spawn(Box::pin(async move {
-        //         if let Some(metadata) = &mut result.execution_metadata {
-        //             metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
-        //         }
+        self.upload_requests
+            .write()
+            .await
+            .push(tokio::spawn(Box::pin(async move {
+                if let Some(metadata) = &mut result.execution_metadata {
+                    metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
+                }
 
-        //         // Don't save the action result if some of the blobs failed to upload
-        //         match batch_upload_blobs(client.clone(), digest.clone(), blobs, max_size as usize)
-        //             .await
-        //         {
-        //             Ok(uploaded) => {
-        //                 if !uploaded {
-        //                     return;
-        //                 }
-        //             }
-        //             Err(error) => {
-        //                 warn!(
-        //                     hash = ?digest.hash,
-        //                     "Failed to upload blobs and cache action result: {}",
-        //                     color::muted_light(error.to_string()),
-        //                 );
+                // Don't save the action result if some of the blobs failed to upload
+                match batch_upload_blobs(client.clone(), digest.clone(), blobs, max_size as usize)
+                    .await
+                {
+                    Ok(uploaded) => {
+                        if !uploaded {
+                            return;
+                        }
+                    }
+                    Err(error) => {
+                        warn!(
+                            hash = ?digest.hash,
+                            "Failed to upload blobs and cache action result: {}",
+                            color::muted_light(error.to_string()),
+                        );
 
-        //                 return;
-        //             }
-        //         };
+                        return;
+                    }
+                };
 
-        //         if let Some(metadata) = &mut result.execution_metadata {
-        //             metadata.output_upload_completed_timestamp =
-        //                 create_timestamp(SystemTime::now());
-        //         }
+                if let Some(metadata) = &mut result.execution_metadata {
+                    metadata.output_upload_completed_timestamp =
+                        create_timestamp(SystemTime::now());
+                }
 
-        //         if let Err(error) = client.update_action_result(&digest, result).await {
-        //             warn!(
-        //                 hash = ?digest.hash,
-        //                 "Failed to cache action result: {}",
-        //                 color::muted_light(error.to_string()),
-        //             );
-        //         }
-        //     })));
+                if let Err(error) = client.update_action_result(&digest, result).await {
+                    warn!(
+                        hash = ?digest.hash,
+                        "Failed to cache action result: {}",
+                        color::muted_light(error.to_string()),
+                    );
+                }
+            })));
 
         // We don't actually know at this point if they all uploaded
         Ok(true)

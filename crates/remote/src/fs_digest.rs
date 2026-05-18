@@ -1,20 +1,13 @@
 // Note: Don't use `starbase_utils::fs` as it spams the logs far too much!
 
-use crate::blob::CompressableBlob;
-use crate::digest_compat::LocalDigestExt;
-use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    NodeProperties, OutputDirectory, OutputFile, OutputSymlink,
+    NodeProperties, OutputFile, OutputSymlink,
 };
-use bazel_remote_apis::google::protobuf::Timestamp;
-use chrono::NaiveDateTime;
-use moon_common::path::PathExt;
 use starbase_utils::fs::FsError;
-use starbase_utils::glob::{self, GlobWalkOptions};
 use std::{
-    fs::{self, Metadata},
+    fs,
     path::{Path, PathBuf},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, UNIX_EPOCH},
 };
 
 fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<()> {

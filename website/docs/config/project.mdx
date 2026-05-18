@@ -705,6 +705,55 @@ tasks:
         optional: true
 ```
 
+#### Cache strategy<VersionLabel version="2.3.0" />
+
+The `cacheStrategy` field controls how a dependency's changes invalidate the current task's cache.
+
+When omitted, the strategy is chosen for you based on whether the dependency declares outputs:
+
+- A dependency **with** outputs (e.g. a `build` task) defaults to `hash` — any change to the
+  dependency invalidates this task.
+- A dependency **without** outputs (e.g. a `lint` or `test` task) defaults to `ignored` — the
+  dependency is treated as a sequencing edge only and its changes never invalidate this task.
+
+You can override the default explicitly with one of:
+
+- `hash` - Use the dependency task's hash for cache invalidation. The current task is invalidated
+  whenever the dependency changes (inputs, command, args, env, etc.).
+- `ignored` - Ignore the dependency task's hash for cache invalidation. The current task is
+  **never** invalidated by this dependency's changes.
+- `outputs` - Use the dependency task's outputs instead of its hash for cache invalidation. The
+  current task is only invalidated when the dependency's outputs change, not when its inputs
+  change. Useful for build tasks where you only care about a dependency's outputs, not what
+  triggered the dependency to run.
+
+```yaml title="moon.yml" {4-6}
+tasks:
+  build:
+    command: 'webpack'
+    deps:
+      - target: 'apiClients:build'
+        cacheStrategy: 'outputs'
+```
+
+The most common use case for `cacheStrategy: outputs` is when you have build dependencies. Instead
+of rebuilding a project whenever an upstream task's inputs change, you rebuild only when the
+upstream task's outputs change:
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'npm run build'
+    inputs:
+      - 'src/**/*'
+    outputs:
+      - 'dist/**/*'
+    deps:
+      # Only invalidate if the dependency's dist/ changes, not if its src/ or other inputs change
+      - target: '^:build'
+        cacheStrategy: 'outputs'
+```
+
 ### `env`
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#env" />

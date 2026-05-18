@@ -408,6 +408,7 @@ implicitDeps:
                         env: IndexMap::from_iter([("FOO".into(), Some("abc".to_owned()))]),
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
+                        cache_strategy: None,
                     }),
                 ]
             );

@@ -56,6 +56,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "TaskArgs".into(),
                 "TaskConfig".into(),
                 "TaskDependency".into(),
+                "TaskDependencyCacheStrategy".into(),
                 "TaskDependencyConfig".into(),
                 "TaskMergeStrategy".into(),
                 "TaskOperatingSystem".into(),

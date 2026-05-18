@@ -1,7 +1,8 @@
 use crate::tasks_builder_error::TasksBuilderError;
 use moon_common::Id;
 use moon_config::{
-    DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyConfig,
+    DependencyScope, DependencySource, ProjectDependencyConfig, TaskDependencyCacheStrategy,
+    TaskDependencyConfig,
 };
 use moon_project::Project;
 use moon_task::{
@@ -18,6 +19,7 @@ pub trait TasksQuerent {
         project_ids: Vec<&Id>,
         task_scope: (TargetTaskScope, &str),
     ) -> miette::Result<Vec<(&Target, &TaskOptions)>>;
+    fn query_task_has_outputs(&self, target: &Target) -> bool;
 }
 
 pub struct TaskDepsBuilder<'proj> {
@@ -214,9 +216,16 @@ impl TaskDepsBuilder<'_> {
             .into());
         }
 
+        let dep_has_outputs = self.querent.query_task_has_outputs(dep_task_target);
+
         // Add the dep if it has not already been
         let dep = TaskDependencyConfig {
             target: dep_task_target.to_owned(),
+            cache_strategy: dep_config.cache_strategy.or(Some(if dep_has_outputs {
+                TaskDependencyCacheStrategy::Hash
+            } else {
+                TaskDependencyCacheStrategy::Ignored
+            })),
             // optional: Some(skip_if_missing),
             ..dep_config.clone()
         };

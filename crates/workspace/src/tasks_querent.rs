@@ -63,6 +63,10 @@ impl TasksQuerent for WorkspaceBuilderTasksQuerent<'_> {
 
         Ok(results)
     }
+
+    fn query_task_has_outputs(&self, target: &Target) -> bool {
+        self.task_data.get(target).is_some_and(|d| d.has_outputs)
+    }
 }
 
 pub struct WorkspaceTasksQuerent<'a> {
@@ -70,6 +74,7 @@ pub struct WorkspaceTasksQuerent<'a> {
     pub ids_to_target_options: &'a FxHashMap<Id, FxHashMap<Target, TaskOptions>>,
     pub tags_to_ids: &'a FxHashMap<Id, Vec<Id>>,
     pub tags_to_targets: &'a FxHashMap<Id, Vec<Target>>,
+    pub target_to_has_outputs: &'a FxHashMap<Target, bool>,
 }
 
 impl<'a> TasksQuerent for WorkspaceTasksQuerent<'a> {
@@ -112,5 +117,12 @@ impl<'a> TasksQuerent for WorkspaceTasksQuerent<'a> {
         }
 
         Ok(list)
+    }
+
+    fn query_task_has_outputs(&self, target: &Target) -> bool {
+        self.target_to_has_outputs
+            .get(target)
+            .copied()
+            .unwrap_or(false)
     }
 }

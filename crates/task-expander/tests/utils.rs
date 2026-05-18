@@ -4,13 +4,64 @@ use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{Input, TaskOptionCache};
 use moon_graph_utils::GraphExpanderContext;
-use moon_project::{FileGroup, Project};
-use moon_project_graph::ProjectGraph;
+use moon_project::{FileGroup, Project, ProjectError};
+use moon_project_graph::{ProjectGraph, ProjectNode};
 use moon_task::{Target, Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
+use moon_task_expander::TaskLookup;
+use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
+
+fn unknown_task(target: &Target) -> miette::Report {
+    ProjectError::UnknownTask {
+        task_id: target
+            .get_task_id()
+            .map(|id| id.to_string())
+            .unwrap_or_default(),
+        project_id: target
+            .get_project_id()
+            .map(|id| id.to_string())
+            .unwrap_or_default(),
+    }
+    .into()
+}
+
+pub struct EmptyTaskLookup;
+
+impl TaskLookup for EmptyTaskLookup {
+    fn get_task(&self, target: &Target) -> miette::Result<Arc<Task>> {
+        Err(unknown_task(target))
+    }
+}
+
+pub static EMPTY_TASK_LOOKUP: EmptyTaskLookup = EmptyTaskLookup;
+
+#[derive(Default)]
+pub struct MapTaskLookup {
+    pub tasks: FxHashMap<Target, Arc<Task>>,
+}
+
+impl MapTaskLookup {
+    pub fn with_task(mut self, task: Task) -> Self {
+        let target = task.target.clone();
+        assert!(
+            self.tasks.insert(target.clone(), Arc::new(task)).is_none(),
+            "duplicate target in MapTaskLookup: {target}"
+        );
+        self
+    }
+}
+
+impl TaskLookup for MapTaskLookup {
+    fn get_task(&self, target: &Target) -> miette::Result<Arc<Task>> {
+        self.tasks
+            .get(target)
+            .map(Arc::clone)
+            .ok_or_else(|| unknown_task(target))
+    }
+}
 
 pub fn create_context(workspace_root: &Path) -> GraphExpanderContext {
     GraphExpanderContext {
@@ -22,8 +73,20 @@ pub fn create_context(workspace_root: &Path) -> GraphExpanderContext {
     }
 }
 
-pub fn create_project_graph() -> ProjectGraph {
-    ProjectGraph::default()
+pub fn create_project_graph(projects: impl IntoIterator<Item = Project>) -> ProjectGraph {
+    let mut graph = ProjectGraph::default();
+
+    for (i, project) in projects.into_iter().enumerate() {
+        graph.nodes.insert(
+            project.id.clone(),
+            ProjectNode {
+                index: NodeIndex::new(i),
+                project,
+            },
+        );
+    }
+
+    graph
 }
 
 pub fn create_project(workspace_root: &Path) -> Project {

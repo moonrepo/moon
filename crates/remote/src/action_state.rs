@@ -1,11 +1,8 @@
 use crate::blob::*;
 use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
 use moon_hash::Digest;
-use moon_task::Task;
 
-pub struct ActionState<'task> {
-    task: &'task Task,
-
+pub struct ActionState {
     // RE API
     pub action_result: Option<ActionResult>,
     pub digest: Digest,
@@ -17,10 +14,9 @@ pub struct ActionState<'task> {
     pub bytes: Vec<u8>,
 }
 
-impl ActionState<'_> {
-    pub fn new(digest: Digest, task: &Task) -> ActionState<'_> {
+impl ActionState {
+    pub fn new(digest: Digest) -> ActionState {
         ActionState {
-            task,
             action_result: None,
             digest,
             blobs: vec![],

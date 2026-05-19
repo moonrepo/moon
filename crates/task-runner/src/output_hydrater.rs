@@ -27,7 +27,7 @@ impl OutputHydrater<'_> {
         &self,
         from: HydrateFrom,
         hash: &str,
-        remote_state: Option<&mut ActionState<'_>>,
+        remote_state: Option<&mut ActionState>,
     ) -> miette::Result<bool> {
         match from {
             // Only hydrate when the hash is different from the previous build,
@@ -109,10 +109,7 @@ impl OutputHydrater<'_> {
     }
 
     #[instrument(skip(self, state))]
-    async fn download_from_remote_service(
-        &self,
-        state: &mut ActionState<'_>,
-    ) -> miette::Result<bool> {
+    async fn download_from_remote_service(&self, state: &mut ActionState) -> miette::Result<bool> {
         if let Some(remote) = RemoteService::session() {
             self.delete_existing_outputs()?;
 

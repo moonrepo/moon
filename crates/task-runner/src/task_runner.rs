@@ -38,7 +38,7 @@ pub struct TaskRunner<'task> {
     // Public for testing
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
-    pub remote_state: Option<ActionState<'task>>,
+    pub remote_state: Option<ActionState>,
     pub report_item: TaskReportItem,
     pub target_state: Option<TargetState>,
     pub state: TaskRunState,
@@ -414,13 +414,10 @@ impl<'task> TaskRunner<'task> {
         // Store the hash digest for remote caching
         if RemoteService::is_enabled() {
             let bytes = hasher.into_bytes();
-            let mut state = ActionState::new(
-                Digest {
-                    hash: hash.clone(),
-                    size: bytes.len() as i64,
-                },
-                self.task,
-            );
+            let mut state = ActionState::new(Digest {
+                hash: hash.clone(),
+                size: bytes.len() as i64,
+            });
             state.bytes = bytes;
 
             self.remote_state = Some(state);
@@ -569,11 +566,8 @@ impl<'task> TaskRunner<'task> {
             "Running cache archiving operation"
         );
 
-        let archived = self
-            .archiver
-            .archive(hash, self.remote_state.as_mut())
-            .await?
-            .is_some();
+        let output_hashes = self.archiver.archive(hash, &self.state).await?;
+        let archived = !output_hashes.is_empty();
 
         if archived {
             debug!(

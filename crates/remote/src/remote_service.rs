@@ -13,7 +13,7 @@ use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
-use moon_hash::{Digest, OutputDigests};
+use moon_hash::{Digest, OutputBlobs};
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -186,7 +186,7 @@ impl RemoteService {
     #[instrument(skip(self, state))]
     pub async fn is_action_cached(
         &self,
-        state: &ActionState<'_>,
+        state: &ActionState,
     ) -> miette::Result<Option<ActionResult>> {
         if !self.can_download() {
             return Ok(None);
@@ -231,7 +231,7 @@ impl RemoteService {
         &self,
         action_digest: &Digest,
         operation: &Operation,
-        outputs: OutputDigests,
+        outputs: OutputBlobs,
     ) -> miette::Result<bool> {
         if !self.can_upload() {
             return Ok(false);
@@ -293,7 +293,7 @@ impl RemoteService {
     }
 
     #[instrument(skip(self, state))]
-    pub async fn restore_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
+    pub async fn restore_action_result(&self, state: &mut ActionState) -> miette::Result<bool> {
         if !self.can_download() {
             return Ok(false);
         }

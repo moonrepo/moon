@@ -1,4 +1,5 @@
 use crate::content_hash::ContentHash;
+use moon_common::path::WorkspaceRelativePathBuf;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -49,7 +50,5 @@ impl Digest {
     }
 }
 
-#[derive(Default)]
-pub struct OutputDigests {
-    pub blobs: BTreeMap<PathBuf, Blob>,
-}
+pub type OutputBlobs = BTreeMap<PathBuf, Blob>;
+pub type OutputHashes = BTreeMap<WorkspaceRelativePathBuf, ContentHash>;

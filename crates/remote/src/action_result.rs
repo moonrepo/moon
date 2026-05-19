@@ -8,7 +8,7 @@ use bazel_remote_apis::google::protobuf::Timestamp;
 use chrono::NaiveDateTime;
 use moon_action::Operation;
 use moon_common::path::PathExt;
-use moon_hash::{Blob, OutputDigests};
+use moon_hash::{Blob, OutputBlobs};
 use starbase_utils::fs::FsError;
 use starbase_utils::glob::{self, GlobWalkOptions};
 use std::fs::{self, Metadata};
@@ -66,8 +66,8 @@ impl<'a> ActionResultBuilder<'a> {
         Ok(())
     }
 
-    pub fn with_outputs(&mut self, outputs: OutputDigests) -> miette::Result<()> {
-        for (abs_path, blob) in outputs.blobs {
+    pub fn with_outputs(&mut self, outputs: OutputBlobs) -> miette::Result<()> {
+        for (abs_path, blob) in outputs {
             self.insert_output(abs_path, Some(blob))?;
         }
 

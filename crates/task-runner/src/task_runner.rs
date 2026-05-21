@@ -411,14 +411,16 @@ impl<'task> TaskRunner<'task> {
         self.operations.push(operation);
         self.report_item.hash = Some(hash.to_string());
 
-        // Store the hash digest for remote caching
+        // Store the hash digest for caching
+        self.state.action_bytes = hasher.into_bytes();
+        self.state.action_digest = Digest {
+            hash: hash.clone(),
+            size: self.state.action_bytes.len() as i64,
+        };
+
         if RemoteService::is_enabled() {
-            let bytes = hasher.into_bytes();
-            let mut state = ActionState::new(Digest {
-                hash: hash.clone(),
-                size: bytes.len() as i64,
-            });
-            state.bytes = bytes;
+            let mut state = ActionState::new(self.state.action_digest.clone());
+            state.bytes = self.state.action_bytes.clone();
 
             self.remote_state = Some(state);
         }
@@ -568,6 +570,8 @@ impl<'task> TaskRunner<'task> {
 
         let output_hashes = self.archiver.archive(hash, &self.state).await?;
         let archived = !output_hashes.is_empty();
+
+        dbg!(&output_hashes);
 
         if archived {
             debug!(

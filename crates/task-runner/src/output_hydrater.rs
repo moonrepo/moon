@@ -9,10 +9,12 @@ use std::path::Path;
 use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
+use crate::TaskRunState;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum HydrateFrom {
-    LocalCache,
     PreviousOutput,
+    LocalCache,
     RemoteCache,
 }
 
@@ -73,6 +75,16 @@ impl OutputHydrater<'_> {
         }
     }
 
+    fn is_local_cache_readable(&self) -> bool {
+        self.app_context.cache_engine.is_readable() && self.task.options.cache.is_local_enabled()
+    }
+
+    fn is_remote_cache_readable(&self) -> bool {
+        self.app_context.cache_engine.is_readable()
+            && self.task.options.cache.is_remote_enabled()
+            && RemoteService::is_enabled()
+    }
+
     #[instrument(skip(self))]
     fn unpack_local_archive(&self, hash: &str, archive_file: &Path) -> miette::Result<()> {
         debug!(
@@ -106,6 +118,11 @@ impl OutputHydrater<'_> {
         }
 
         Ok(())
+    }
+
+    #[instrument(skip(self, state))]
+    fn retrieve_from_local_cache(&self, hash: &str, state: &TaskRunState) -> miette::Result<bool> {
+        Ok(false)
     }
 
     #[instrument(skip(self, state))]

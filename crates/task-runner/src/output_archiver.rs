@@ -75,14 +75,13 @@ impl OutputArchiver<'_> {
             );
         }
 
-        // We need to always collect and extract outputs
-        let blobs = self.collect_output_blobs(false).await?;
-        let hashes = self.extract_output_hashes(&blobs)?;
-
         // Then cache the result in the remote service
-        self.store_in_remote_cache(hash, state, blobs).await?;
+        if self.is_remote_cache_writable() {
+            self.store_in_remote_cache(hash, state, self.collect_output_blobs(false).await?)
+                .await?;
+        }
 
-        Ok(hashes)
+        Ok(OutputHashes::default())
     }
 
     #[instrument(skip(self, state))]
@@ -91,6 +90,8 @@ impl OutputArchiver<'_> {
         hash: &str,
         state: &TaskRunState,
     ) -> miette::Result<OutputHashes> {
+        dbg!(&hash, &state);
+
         // Step 1) Save the outputs to local cache and gather blobs
         let blobs = self.store_in_local_cache(hash).await?;
 
@@ -163,6 +164,8 @@ impl OutputArchiver<'_> {
         let output_paths = self
             .task
             .get_output_files(&app_context.workspace_root, true)?;
+
+        dbg!(&output_paths);
 
         let outputs = spawn_blocking(move || {
             let mut outputs = OutputBlobs::default();

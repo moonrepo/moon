@@ -16,7 +16,7 @@ cache_item!(
     }
 );
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct TaskRunState {
     pub action_digest: Digest,
     pub action_bytes: Vec<u8>,

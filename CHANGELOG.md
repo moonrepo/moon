@@ -9,6 +9,12 @@
 - Fixed an issue where commands executed during toolchain actions (like setup environment) may
   trigger a file system deadlock.
 
+#### 🧰 Toolchains
+
+- **Python**
+  - Updated venv commands to be skipped during environment setup if the directory already exists.
+    Configure `--clear` to force re-initializing.
+
 ## 2.2.4
 
 #### 🐞 Fixes

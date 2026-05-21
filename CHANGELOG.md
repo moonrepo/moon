@@ -4,6 +4,8 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where toolchain specific fields, like `versionFromPrototools`, were missing from
+  the generated JSON schemas.
 - Fixed an issue where commands executed during toolchain actions (like setup environment) may
   trigger a file system deadlock.
 

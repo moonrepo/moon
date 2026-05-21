@@ -2,7 +2,7 @@ use moon_config::*;
 use rustc_hash::FxHashMap;
 use schematic::schema::json_schema::{JsonSchemaOptions, JsonSchemaRenderer};
 use schematic::schema::{BooleanType, SchemaField, SchemaGenerator, UnionType};
-use schematic::{Schema, SchemaType};
+use schematic::{Schema, SchemaBuilder, SchemaType};
 use std::path::Path;
 
 fn create_jsonschema_renderer() -> JsonSchemaRenderer {
@@ -150,9 +150,22 @@ fn generate_workspace(out_dir: &Path) -> miette::Result<()> {
 
 pub fn generate_json_schemas(
     out_dir: impl AsRef<Path>,
-    toolchain_schemas: FxHashMap<String, Schema>,
+    mut toolchain_schemas: FxHashMap<String, Schema>,
 ) -> miette::Result<bool> {
     let out_dir = out_dir.as_ref();
+    let entry_config = SchemaBuilder::build_root::<ToolchainPluginConfig>();
+
+    for schema in toolchain_schemas.values_mut() {
+        if let SchemaType::Struct(entry_fields) = &entry_config.ty {
+            for (name, field) in &entry_fields.fields {
+                if name == "config" {
+                    continue;
+                }
+
+                schema.add_field(name, field.schema.clone());
+            }
+        }
+    }
 
     generate_extensions(out_dir)?;
     generate_project(out_dir, &toolchain_schemas)?;

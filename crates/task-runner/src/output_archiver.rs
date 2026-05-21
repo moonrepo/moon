@@ -1,15 +1,13 @@
 use crate::TaskRunState;
+use crate::output_tree::{OutputDigestsMap, OutputTree};
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_common::path::PathExt;
-use moon_hash::{Blob, OutputBlobs, OutputHashes};
 use moon_remote::RemoteService;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarPacker;
-use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
@@ -25,7 +23,11 @@ pub struct OutputArchiver<'task> {
 
 impl OutputArchiver<'_> {
     #[instrument(skip(self, state))]
-    pub async fn archive(&self, hash: &str, state: &TaskRunState) -> miette::Result<OutputHashes> {
+    pub async fn archive(
+        &self,
+        hash: &str,
+        state: &TaskRunState,
+    ) -> miette::Result<OutputDigestsMap> {
         // Check that outputs actually exist
         if self.task.is_build_type() && !self.has_outputs_been_created(false)? {
             return Err(TaskRunnerError::MissingOutputs {
@@ -53,7 +55,7 @@ impl OutputArchiver<'_> {
         &self,
         hash: &str,
         state: &TaskRunState,
-    ) -> miette::Result<OutputHashes> {
+    ) -> miette::Result<OutputDigestsMap> {
         let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
 
         if self.app_context.cache_engine.is_readable() && archive_file.exists() {
@@ -77,11 +79,11 @@ impl OutputArchiver<'_> {
 
         // Then cache the result in the remote service
         if self.is_remote_cache_writable() {
-            self.store_in_remote_cache(hash, state, self.collect_output_blobs(false).await?)
+            self.store_in_remote_cache(hash, state) // , self.collect_output_blobs(false).await?)
                 .await?;
         }
 
-        Ok(OutputHashes::default())
+        Ok(OutputDigestsMap::default())
     }
 
     #[instrument(skip(self, state))]
@@ -89,19 +91,19 @@ impl OutputArchiver<'_> {
         &self,
         hash: &str,
         state: &TaskRunState,
-    ) -> miette::Result<OutputHashes> {
+    ) -> miette::Result<OutputDigestsMap> {
         dbg!(&hash, &state);
 
         // Step 1) Save the outputs to local cache and gather blobs
-        let blobs = self.store_in_local_cache(hash).await?;
+        let outputs = self.store_in_local_cache(hash).await?;
 
         // Step 2) Extract the hashes to store in state
-        let hashes = self.extract_output_hashes(&blobs)?;
+        let digests = outputs.get_digests();
 
         // Step 3) Upload these blobs to remote cache
-        self.store_in_remote_cache(hash, state, blobs).await?;
+        self.store_in_remote_cache(hash, state).await?;
 
-        Ok(hashes)
+        Ok(digests)
     }
 
     #[instrument(skip(self))]
@@ -159,25 +161,26 @@ impl OutputArchiver<'_> {
     }
 
     #[instrument(skip(self))]
-    async fn collect_output_blobs(&self, cas: bool) -> miette::Result<OutputBlobs> {
+    async fn collect_output_blobs(&self, cas: bool) -> miette::Result<OutputTree> {
         let app_context = Arc::clone(self.app_context);
+        let mut outputs = OutputTree::new(&app_context.workspace_root);
         let output_paths = self
             .task
             .get_output_files(&app_context.workspace_root, true)?;
 
         dbg!(&output_paths);
 
-        let outputs = spawn_blocking(move || {
-            let mut outputs = OutputBlobs::default();
-
+        let tree = spawn_blocking(move || {
+            // Read blobs
             for path in output_paths {
-                let blob = if cas {
-                    app_context.cache_engine.cas.write_file(&path)?
-                } else {
-                    Blob::from_file(&path)?
-                };
+                outputs.insert(path, None)?;
+            }
 
-                outputs.insert(path, blob);
+            // Store in CAS
+            if cas {
+                for blob in outputs.files.values() {
+                    app_context.cache_engine.cas.write_blob(blob)?;
+                }
             }
 
             Ok::<_, miette::Report>(outputs)
@@ -185,21 +188,9 @@ impl OutputArchiver<'_> {
         .await
         .into_diagnostic()??;
 
-        Ok(outputs)
-    }
+        dbg!(&tree);
 
-    fn extract_output_hashes(&self, outputs: &OutputBlobs) -> miette::Result<OutputHashes> {
-        let mut hashes = BTreeMap::new();
-
-        for (path, blob) in outputs {
-            hashes.insert(
-                path.relative_to(&self.app_context.workspace_root)
-                    .into_diagnostic()?,
-                blob.digest.hash.clone(),
-            );
-        }
-
-        Ok(hashes)
+        Ok(tree)
     }
 
     #[instrument(skip(self))]
@@ -256,7 +247,7 @@ impl OutputArchiver<'_> {
     }
 
     #[instrument(skip(self))]
-    async fn store_in_local_cache(&self, hash: &str) -> miette::Result<OutputBlobs> {
+    async fn store_in_local_cache(&self, hash: &str) -> miette::Result<OutputTree> {
         let store_local = self.is_local_cache_writable();
         let store_remote = self.is_remote_cache_writable();
 
@@ -280,12 +271,12 @@ impl OutputArchiver<'_> {
         self.collect_output_blobs(store_local).await
     }
 
-    #[instrument(skip(self, state, outputs))]
+    #[instrument(skip(self, state))]
     async fn store_in_remote_cache(
         &self,
         hash: &str,
         state: &TaskRunState,
-        outputs: OutputBlobs,
+        // outputs: OutputBlobs,
     ) -> miette::Result<bool> {
         if !self.is_remote_cache_writable() {
             return Ok(false);
@@ -306,7 +297,7 @@ impl OutputArchiver<'_> {
         {
             Ok(saved) => {
                 remote
-                    .save_action_result(&state.action_digest, &state.operation, outputs)
+                    .save_action_result(&state.action_digest, &state.operation)
                     .await?;
 
                 Ok(saved)

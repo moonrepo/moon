@@ -13,7 +13,7 @@ use miette::IntoDiagnostic;
 use moon_action::Operation;
 use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
-use moon_hash::{Digest, OutputBlobs};
+use moon_hash::Digest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
@@ -226,12 +226,12 @@ impl RemoteService {
         Ok(true)
     }
 
-    #[instrument(skip(self, outputs))]
+    #[instrument(skip(self))]
     pub async fn save_action_result(
         &self,
         action_digest: &Digest,
         operation: &Operation,
-        outputs: OutputBlobs,
+        // outputs: OutputBlobs,
     ) -> miette::Result<bool> {
         if !self.can_upload() {
             return Ok(false);
@@ -239,7 +239,7 @@ impl RemoteService {
 
         let mut builder = ActionResultBuilder::new(&self.workspace_root);
         builder.with_operation(operation)?;
-        builder.with_outputs(outputs)?;
+        // builder.with_outputs(outputs)?;
 
         let (mut result, blobs) = builder.build();
         let client = Arc::clone(&self.client);

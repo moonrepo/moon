@@ -1,8 +1,7 @@
 use crate::content_hash::ContentHash;
-use moon_common::path::WorkspaceRelativePathBuf;
 use starbase_utils::fs;
-use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
+use std::fmt::Debug;
+use std::path::Path;
 
 #[derive(Clone)]
 pub struct Blob {
@@ -23,6 +22,14 @@ impl Blob {
 
     pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
         Self::from_bytes(fs::read_file_bytes(path.as_ref())?)
+    }
+}
+
+impl Debug for Blob {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Blob")
+            .field("digest", &self.digest)
+            .finish()
     }
 }
 
@@ -49,6 +56,3 @@ impl Digest {
         Self::from_bytes(&bytes)
     }
 }
-
-pub type OutputBlobs = BTreeMap<PathBuf, Blob>;
-pub type OutputHashes = BTreeMap<WorkspaceRelativePathBuf, ContentHash>;

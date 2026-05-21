@@ -8,6 +8,7 @@ default-members = ["crates/cli"]
 async-recursion = "1.1.1"
 async-stream = "0.3.6"
 blake3 = { version = "1.8.2", features = ["mmap"] }
+bazel-remote-apis = { version = "0.27.0", features = ["serde"] }
 async-trait = "0.1.89"
 cached = "0.59.0"
 chrono = { version = "0.4.44", features = ["serde"] }

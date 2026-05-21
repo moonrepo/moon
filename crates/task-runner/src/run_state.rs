@@ -1,7 +1,9 @@
+use bazel_remote_apis::build::bazel::remote::execution::v2::Action;
 use moon_action::Operation;
 use moon_cache_item::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::{ContentHash, Digest};
+use moon_remote::ActionResult;
 use std::collections::BTreeMap;
 
 cache_item!(
@@ -20,6 +22,9 @@ cache_item!(
 pub struct TaskRunState {
     pub action_digest: Digest,
     pub action_bytes: Vec<u8>,
+
+    pub action: Action,
+    pub action_result: Option<ActionResult>,
 
     /// The last operation that was executed, which may be used to resume an incomplete run.
     pub operation: Operation,

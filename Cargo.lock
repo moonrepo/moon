@@ -4874,7 +4874,7 @@ dependencies = [
  "moon_common",
  "moon_target",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "serde",
  "tokio",
 ]
@@ -4981,7 +4981,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "serde",
  "serial_test",
  "starbase_sandbox",
@@ -5466,7 +5466,7 @@ dependencies = [
  "moon_common",
  "regex",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "starbase_utils",
  "thiserror 2.0.18",
 ]
@@ -5656,7 +5656,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "serde",
  "serde_json",
  "starbase_sandbox",
@@ -5781,7 +5781,7 @@ dependencies = [
  "moon_workspace",
  "petgraph 0.8.3",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
@@ -5822,7 +5822,7 @@ dependencies = [
  "moon_task",
  "reqwest",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "serde",
  "sha2",
  "starbase_utils",
@@ -5930,7 +5930,7 @@ dependencies = [
  "moon_task_expander",
  "petgraph 0.8.3",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "thiserror 2.0.18",
  "tracing",
 ]
@@ -6107,7 +6107,7 @@ dependencies = [
  "moon_process",
  "regex",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "semver",
  "serde",
  "soft-canonicalize",
@@ -6190,7 +6190,7 @@ dependencies = [
  "moon_project_graph",
  "moon_query",
  "moon_task_graph",
- "scc 3.7.0",
+ "scc 3.7.1",
  "tracing",
 ]
 
@@ -7242,7 +7242,7 @@ dependencies = [
  "regex",
  "reqwest",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "schematic",
  "semver",
  "serde",
@@ -8033,9 +8033,9 @@ checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
 
 [[package]]
 name = "saa"
-version = "5.5.1"
+version = "5.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd8d438861332c3b1ac396c77bd9cac620ea1ff347efb63c05a83d8f0a593899"
+checksum = "68f5acb362a0e75c2a963532fa7fabf13dff81626dc494df16488d30befcbea0"
 
 [[package]]
 name = "same-file"
@@ -8057,9 +8057,9 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "3.7.0"
+version = "3.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16c154cf1d115a1e901d7f4e3f279eb6eb455f0d670c1cf3c1aa74d50ad37fa9"
+checksum = "5bcd12b6caff5213cc3c03123cde8c3db5e413008a63b0c0ba35e6275825ea92"
 dependencies = [
  "saa",
  "sdd 4.8.6",
@@ -8732,9 +8732,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.13.1"
+version = "0.13.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67c3befdc1a11a0490b44ad7095e05bc7a9752faccb18f7e019d25acd4ef3557"
+checksum = "199fcab1a635071d3bdc2b7d45ae361c4ebdf7937c2761de878c3b5cbacc6cc9"
 dependencies = [
  "async-trait",
  "dirs",
@@ -8744,7 +8744,7 @@ dependencies = [
  "miette 7.6.0",
  "regex",
  "reqwest",
- "scc 3.7.0",
+ "scc 3.7.1",
  "serde",
  "serde_json",
  "serde_norway",
@@ -9156,9 +9156,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.52.2"
+version = "1.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "110a78583f19d5cdb2c5ccf321d1290344e71313c6c37d43520d386027d18386"
+checksum = "8fc7f01b389ac15039e4dc9531aa973a135d7a4135281b12d7c1bc79fd57fffe"
 dependencies = [
  "bytes",
  "libc",
@@ -9803,7 +9803,7 @@ dependencies = [
  "reqwest-retry",
  "rust-netrc",
  "rustc-hash",
- "scc 3.7.0",
+ "scc 3.7.1",
  "schematic",
  "serde",
  "serde_json",

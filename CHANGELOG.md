@@ -4,6 +4,10 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where dot folders would be ignored during globs. The `.git` folder is still always
+  ignored.
+- Fixed an issue where nested `node_modules` folders would be ignored during globs. The
+  `node_modules` folder at the glob target root is still always ignored.
 - Fixed an issue where toolchain specific fields, like `versionFromPrototools`, were missing from
   the generated JSON schemas.
 - Fixed an issue where commands executed during toolchain actions (like setup environment) may

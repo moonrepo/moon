@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where commands executed during toolchain actions (like setup environment) may
+  trigger a file system deadlock.
+
 ## 2.2.4
 
 #### 🐞 Fixes

@@ -3,7 +3,7 @@ use moon_action::{ActionStatus, Operation};
 use moon_app_context::AppContext;
 use moon_common::{
     Id, color,
-    path::{PathExt, WorkspaceRelativePathBuf, encode_component, hash_component},
+    path::{PathExt, WorkspaceRelativePathBuf, encode_component},
 };
 use moon_console::{Checkpoint, Console};
 use moon_env_var::GlobalEnvBag;
@@ -68,14 +68,6 @@ async fn internal_exec_plugin_command(
 ) -> miette::Result<Output> {
     let input = &command.command;
 
-    // Create a lock so that commands that clobber the same state (rustup, cargo, etc),
-    // do not run at the same time and collide
-    let _lock = app_context.cache_engine.create_lock(format!(
-        "{}-{}",
-        options.prefix,
-        hash_component(command.get_label())
-    ))?;
-
     let mut cmd = AugmentedCommand::from_input(&app_context, GlobalEnvBag::instance(), input);
     cmd.inherit_from_plugins(options.project.as_deref(), None)
         .await?;
@@ -91,6 +83,14 @@ async fn internal_exec_plugin_command(
     cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
     cmd.inherit_colors();
     cmd.inherit_proto();
+
+    // Create a lock so that commands that clobber the same state (rustup, cargo, etc),
+    // do not run at the same time and collide
+    let _lock = app_context.cache_engine.create_lock(format!(
+        "{}-{}",
+        options.prefix,
+        cmd.get_cache_key()
+    ))?;
 
     if let Some(on_exec) = &options.on_exec {
         on_exec(command, attempts)?;

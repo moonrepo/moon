@@ -1,5 +1,7 @@
 use crate::content_hash::ContentHash;
-use starbase_utils::fs;
+use miette::IntoDiagnostic;
+use serde::Serialize;
+use starbase_utils::{fs, json};
 use std::fmt::Debug;
 use std::path::Path;
 
@@ -18,6 +20,10 @@ impl Blob {
             },
             bytes,
         })
+    }
+
+    pub fn from_data<T: Serialize>(data: T) -> miette::Result<Self> {
+        Self::from_bytes(json::serde_json::to_vec(&data).into_diagnostic()?)
     }
 
     pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
@@ -48,6 +54,12 @@ impl Digest {
             hash: ContentHash::hash_bytes(bytes)?,
             size,
         })
+    }
+
+    pub fn from_data<T: Serialize>(data: T) -> miette::Result<Self> {
+        let bytes = json::serde_json::to_vec(&data).into_diagnostic()?;
+
+        Self::from_bytes(&bytes)
     }
 
     pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {

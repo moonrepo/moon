@@ -38,6 +38,7 @@ pub struct TaskRunner<'task> {
     // Public for testing
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
+    #[deprecated]
     pub remote_state: Option<ActionState>,
     pub report_item: TaskReportItem,
     pub target_state: Option<TargetState>,
@@ -402,36 +403,23 @@ impl<'task> TaskRunner<'task> {
         hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
             .await?;
 
-        // Generate the hash and persist values
-        let hash = hash_engine.save_manifest(&mut hasher)?;
+        // Generate the digest and store values
+        let digest = hash_engine.save_manifest(&mut hasher)?;
 
-        operation.meta.set_hash(&hash);
+        operation.meta.set_hash(&digest.hash);
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
-        self.report_item.hash = Some(hash.to_string());
-
-        // Store the hash digest for caching
-        self.state.action_bytes = hasher.into_bytes();
-        self.state.action_digest = Digest {
-            hash: hash.clone(),
-            size: self.state.action_bytes.len() as i64,
-        };
-
-        if RemoteService::is_enabled() {
-            let mut state = ActionState::new(self.state.action_digest.clone());
-            state.bytes = self.state.action_bytes.clone();
-
-            self.remote_state = Some(state);
-        }
+        self.report_item.hash = Some(digest.hash.to_string());
+        self.state.digest = digest.clone();
 
         debug!(
             task_target = self.task.target.as_str(),
-            ?hash,
+            hash = ?digest.hash,
             "Generated a unique hash"
         );
 
-        Ok(hash)
+        Ok(digest.hash)
     }
 
     #[instrument(skip(self, context, node))]
@@ -568,10 +556,8 @@ impl<'task> TaskRunner<'task> {
             "Running cache archiving operation"
         );
 
-        let output_hashes = self.archiver.archive(hash, &self.state).await?;
-        let archived = !output_hashes.is_empty();
-
-        dbg!(&output_hashes);
+        let output_digests = self.archiver.archive(hash, &self.state).await?;
+        let archived = !output_digests.is_empty();
 
         if archived {
             debug!(
@@ -589,6 +575,7 @@ impl<'task> TaskRunner<'task> {
             operation.finish(ActionStatus::Skipped);
         }
 
+        self.state.output_digests = output_digests;
         self.operations.push(operation);
 
         Ok(archived)

@@ -12,10 +12,10 @@ mod remote_client;
 mod remote_error;
 mod remote_service;
 
+pub use action_result::*;
 pub use action_state::*;
-pub use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    ActionResult, Digest as RemoteDigest,
-};
+pub use bazel_remote_apis::build::bazel::remote::execution::v2::Digest as RemoteDigest;
+pub use digest_compat::*;
 pub use fs_digest::*;
 pub use remote_error::*;
 pub use remote_service::*;

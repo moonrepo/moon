@@ -1,5 +1,6 @@
 use crate::TaskRunState;
 use crate::output_tree::{OutputDigestsMap, OutputTree};
+use crate::remote_compat::{create_action, create_action_result};
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
@@ -79,7 +80,7 @@ impl OutputArchiver<'_> {
 
         // Then cache the result in the remote service
         if self.is_remote_cache_writable() {
-            self.store_in_remote_cache(hash, state) // , self.collect_output_blobs(false).await?)
+            self.store_in_remote_cache(hash, state, self.collect_output_blobs(false).await?)
                 .await?;
         }
 
@@ -101,7 +102,7 @@ impl OutputArchiver<'_> {
         let digests = outputs.get_digests();
 
         // Step 3) Upload these blobs to remote cache
-        self.store_in_remote_cache(hash, state).await?;
+        self.store_in_remote_cache(hash, state, outputs).await?;
 
         Ok(digests)
     }
@@ -168,8 +169,6 @@ impl OutputArchiver<'_> {
             .task
             .get_output_files(&app_context.workspace_root, true)?;
 
-        dbg!(&output_paths);
-
         let tree = spawn_blocking(move || {
             // Read blobs
             for path in output_paths {
@@ -187,8 +186,6 @@ impl OutputArchiver<'_> {
         })
         .await
         .into_diagnostic()??;
-
-        dbg!(&tree);
 
         Ok(tree)
     }
@@ -276,7 +273,7 @@ impl OutputArchiver<'_> {
         &self,
         hash: &str,
         state: &TaskRunState,
-        // outputs: OutputBlobs,
+        outputs: OutputTree,
     ) -> miette::Result<bool> {
         if !self.is_remote_cache_writable() {
             return Ok(false);
@@ -291,16 +288,19 @@ impl OutputArchiver<'_> {
             hash, "Storing task outputs in remote cache"
         );
 
-        match remote
-            .save_action(&state.action_digest, &state.action_bytes)
-            .await
-        {
-            Ok(saved) => {
-                remote
-                    .save_action_result(&state.action_digest, &state.operation)
-                    .await?;
+        let action = create_action(&state.digest);
 
-                Ok(saved)
+        match remote.save_action(action).await {
+            Ok(digest) => {
+                if let Some(digest) = &digest {
+                    let (action_result, blobs) = create_action_result(&state.operation, outputs)?;
+
+                    remote
+                        .save_action_result(digest, action_result, blobs)
+                        .await?;
+                }
+
+                Ok(digest.is_some())
             }
             Err(error) => {
                 // If the task is successful but the upload fails,

@@ -19,11 +19,11 @@ impl CompressableBlob {
         }
     }
 
-    pub fn from_blob(blob: Blob) -> miette::Result<Self> {
-        Ok(Self {
+    pub fn from_blob(blob: Blob) -> Self {
+        Self {
             inner: blob,
             compression: RemoteCompression::None,
-        })
+        }
     }
 
     pub fn from_bytes(bytes: Vec<u8>) -> miette::Result<Self> {

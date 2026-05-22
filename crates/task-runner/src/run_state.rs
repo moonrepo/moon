@@ -1,9 +1,9 @@
+use crate::output_tree::OutputDigestsMap;
 use bazel_remote_apis::build::bazel::remote::execution::v2::Action;
 use moon_action::Operation;
 use moon_cache_item::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::{ContentHash, Digest};
-use moon_remote::ActionResult;
 use std::collections::BTreeMap;
 
 cache_item!(
@@ -18,14 +18,20 @@ cache_item!(
     }
 );
 
+// This is where moon differs from the Bazel RE API. In Bazel,
+// we would serialize + hash the `Action` and `Command` types,
+// and upload those. But those types do not match how our hashing
+// works, so instead, we're uploading the bytes of our internal
+// hash manifests. Hopefully this doesn't cause issues!
+
 #[derive(Debug, Default)]
 pub struct TaskRunState {
-    pub action_digest: Digest,
-    pub action_bytes: Vec<u8>,
-
-    pub action: Action,
-    pub action_result: Option<ActionResult>,
+    // The digest of our internal fingerprint. This is separate from the action
+    // digest as this implementation is not Bazel compatible.
+    pub digest: Digest,
 
     /// The last operation that was executed, which may be used to resume an incomplete run.
     pub operation: Operation,
+
+    pub output_digests: OutputDigestsMap,
 }

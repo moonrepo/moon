@@ -16,7 +16,6 @@ use uuid::Uuid;
 /// so readers never observe partial data, and no file locking is required.
 #[derive(Debug)]
 pub struct CasStore {
-    pub root: PathBuf,
     pub objects_dir: PathBuf,
     pub temp_dir: PathBuf,
     pub config: CacheCasConfig,
@@ -38,21 +37,16 @@ impl Drop for TempGuard {
 
 impl CasStore {
     /// Create or open a CAS store rooted at `root`.
-    ///
-    /// Creates the `v1/` and `temp/` subdirectories if they do not exist.
     pub fn new(root: impl AsRef<Path>, config: &CacheCasConfig) -> miette::Result<Self> {
         let root = root.as_ref();
-        let objects_dir = root.join("v1");
         let temp_dir = root.join("temp");
 
         debug!(root = ?root, "Creating CAS store");
 
-        fs::create_dir_all(&objects_dir)?;
         fs::create_dir_all(&temp_dir)?;
 
         Ok(Self {
-            root: root.to_path_buf(),
-            objects_dir,
+            objects_dir: root.to_path_buf(),
             temp_dir,
             config: config.to_owned(),
         })
@@ -61,7 +55,7 @@ impl CasStore {
     // ---- Write operations ----
 
     #[instrument(skip(self, bytes), fields(len = bytes.len()))]
-    fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<bool> {
+    pub fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<bool> {
         if self.contains_object(hash)? {
             return Ok(false);
         }
@@ -88,8 +82,7 @@ impl CasStore {
         Ok(true)
     }
 
-    /// Store raw bytes. Returns the content hash. Idempotent: if the blob
-    /// already exists, this is a no-op that returns the hash immediately.
+    /// Store raw bytes from the provided blob.
     pub fn write_blob(&self, blob: &Blob) -> miette::Result<()> {
         if self.write(&blob.digest.hash, &blob.bytes)? {
             debug!(hash = blob.digest.hash.as_str(), "Stored object from blob");
@@ -98,8 +91,7 @@ impl CasStore {
         Ok(())
     }
 
-    /// Store raw bytes. Returns the content hash. Idempotent: if the blob
-    /// already exists, this is a no-op that returns the hash immediately.
+    /// Store raw bytes and return the content hash.
     pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<ContentHash> {
         let hash = ContentHash::hash_bytes(bytes)?;
 
@@ -110,8 +102,7 @@ impl CasStore {
         Ok(hash)
     }
 
-    /// Store content read from a file. Uses memory-mapped I/O for
-    /// hashing files larger than the configured threshold.
+    /// Store content read from a file and return a blob.
     #[instrument(skip(self))]
     pub fn write_file(&self, path: &Path) -> miette::Result<Blob> {
         let blob = Blob::from_file(path)?;
@@ -123,8 +114,8 @@ impl CasStore {
         Ok(blob)
     }
 
-    /// Store content from a streaming reader. Hashes and writes simultaneously
-    /// in 64 KiB chunks.
+    /// Store content from a streaming reader.
+    /// Hashes and writes simultaneously in 64 KiB chunks.
     pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<ContentHash> {
         let uuid = Uuid::new_v4().to_string();
         let mut guard = self.create_temp_file(&uuid)?;
@@ -274,26 +265,14 @@ impl CasStore {
         Ok(path)
     }
 
-    fn ensure_shard_dir(&self, hash: &ContentHash) -> miette::Result<()> {
-        fs::create_dir_all(self.objects_dir.join(hash.prefix()))?;
-
-        Ok(())
-    }
-
     fn create_temp_file(&self, hash: &str) -> miette::Result<TempGuard> {
-        fs::create_dir_all(&self.temp_dir)?;
-
-        let path = self.temp_dir.join(hash);
-
         Ok(TempGuard {
-            path,
+            path: self.temp_dir.join(hash),
             committed: false,
         })
     }
 
     fn commit_temp_file(&self, hash: &ContentHash, guard: &mut TempGuard) -> miette::Result<()> {
-        self.ensure_shard_dir(hash)?;
-
         let dest = self.object_path(hash);
 
         fs::rename(&guard.path, &dest)?;

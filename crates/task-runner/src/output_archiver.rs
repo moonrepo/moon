@@ -193,6 +193,7 @@ impl OutputArchiver<'_> {
     ) -> miette::Result<()> {
         let store_local = self.is_local_cache_writable();
         let store_remote = self.is_remote_cache_writable();
+        let cache_engine = &self.app_context.cache_engine;
         let mut continue_remote = true;
 
         if store_local && store_remote {
@@ -225,7 +226,7 @@ impl OutputArchiver<'_> {
         let action_digest = action_blob.digest.clone();
 
         if store_local {
-            self.app_context.cache_engine.cas.write_blob(&action_blob)?;
+            cache_engine.cas.write_blob(&action_blob)?;
         }
 
         if store_remote && let Some(remote) = RemoteService::session() {
@@ -248,8 +249,17 @@ impl OutputArchiver<'_> {
         let (action_result, blobs) = create_action_result(&state.operation, outputs)?;
 
         if store_local {
+            // Locally the action results are stored using our internal task hash,
+            // and not the digest/hash that the Bazel Remote API expects
+            let action_result_blob = Blob::from_data(&action_result)?;
+
+            cache_engine
+                .ac
+                .write(&state.digest.hash, &action_result_blob.bytes)?;
+
+            // However the blobs themselves are stored using their content hash
             for blob in &blobs {
-                self.app_context.cache_engine.cas.write_blob(blob)?;
+                cache_engine.cas.write_blob(blob)?;
             }
         }
 

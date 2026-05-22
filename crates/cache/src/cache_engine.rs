@@ -5,7 +5,7 @@ use miette::IntoDiagnostic;
 use moon_cache_item::*;
 use moon_cas::CasStore;
 use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
-use moon_config::CacheConfig;
+use moon_config::{CacheCasConfig, CacheConfig};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::ContentHash;
 use moon_time::parse_duration;
@@ -23,11 +23,15 @@ use tracing::{debug, instrument};
 
 #[derive(Debug)]
 pub struct CacheEngine {
+    /// A content-addressable storage of action results.
+    pub ac: CasStore,
+
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
 
-    /// Manages content-addressable storage of blobs and files.
+    /// A content-addressable storage of objects, primarily for
+    /// storing task outputs.
     pub cas: CasStore,
 
     /// Manages reading and writing of content hashable items.
@@ -69,8 +73,12 @@ impl CacheEngine {
 
         let hash = HashEngine::new(&dir)?;
 
+        // Action cache always uses defaults
+        let ac_config = CacheCasConfig::default();
+
         Ok(CacheEngine {
-            cas: CasStore::new(&hash.outputs_dir, &config.cas)?,
+            ac: CasStore::new(dir.join("ac"), &ac_config)?,
+            cas: CasStore::new(dir.join("cas"), &config.cas)?,
             hash,
             state: StateEngine::new(&dir)?,
             temp_dir: dir.join("temp"),

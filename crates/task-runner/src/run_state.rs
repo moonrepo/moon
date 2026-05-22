@@ -1,5 +1,3 @@
-use crate::output_tree::OutputDigestsMap;
-use bazel_remote_apis::build::bazel::remote::execution::v2::Action;
 use moon_action::Operation;
 use moon_cache_item::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
@@ -32,6 +30,4 @@ pub struct TaskRunState {
 
     /// The last operation that was executed, which may be used to resume an incomplete run.
     pub operation: Operation,
-
-    pub output_digests: OutputDigestsMap,
 }

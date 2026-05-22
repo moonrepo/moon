@@ -1,13 +1,11 @@
 use crate::task_runner_error::TaskRunnerError;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
-use moon_hash::{Blob, Digest};
+use moon_hash::Blob;
 use starbase_utils::fs::FsError;
 use starbase_utils::glob::{self, GlobWalkOptions};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-
-pub type OutputDigestsMap = BTreeMap<WorkspaceRelativePathBuf, Digest>;
 
 #[derive(Debug)]
 pub struct OutputTree {
@@ -25,11 +23,8 @@ impl OutputTree {
         }
     }
 
-    pub fn get_digests(&self) -> OutputDigestsMap {
-        self.files
-            .iter()
-            .map(|(k, v)| (k.clone(), v.digest.clone()))
-            .collect()
+    pub fn is_empty(&self) -> bool {
+        self.files.is_empty() && self.symlinks.is_empty()
     }
 
     pub fn insert(&mut self, abs_path: PathBuf, source_blob: Option<Blob>) -> miette::Result<()> {

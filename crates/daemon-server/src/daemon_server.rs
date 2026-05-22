@@ -81,7 +81,7 @@ impl MoonDaemon for DaemonService {
         // TODO populate!
         let task_state = TaskRunState::default();
 
-        let result = OutputArchiver {
+        let archived = OutputArchiver {
             app_context: &state.app_context,
             task: &task,
         }
@@ -89,9 +89,7 @@ impl MoonDaemon for DaemonService {
         .await
         .map_err(|error| Status::unknown(error.to_string()))?;
 
-        Ok(Response::new(ArchiveTaskOutputsResponse {
-            archived: !result.is_empty(),
-        }))
+        Ok(Response::new(ArchiveTaskOutputsResponse { archived }))
     }
 
     async fn hash_files(

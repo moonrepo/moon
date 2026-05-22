@@ -556,8 +556,7 @@ impl<'task> TaskRunner<'task> {
             "Running cache archiving operation"
         );
 
-        let output_digests = self.archiver.archive(hash, &self.state).await?;
-        let archived = !output_digests.is_empty();
+        let archived = self.archiver.archive(hash, &self.state).await?;
 
         if archived {
             debug!(
@@ -575,7 +574,6 @@ impl<'task> TaskRunner<'task> {
             operation.finish(ActionStatus::Skipped);
         }
 
-        self.state.output_digests = output_digests;
         self.operations.push(operation);
 
         Ok(archived)

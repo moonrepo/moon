@@ -415,7 +415,7 @@ impl<'task> TaskRunner<'task> {
 
         debug!(
             task_target = self.task.target.as_str(),
-            hash = ?digest.hash,
+            hash = digest.hash.as_str(),
             "Generated a unique hash"
         );
 

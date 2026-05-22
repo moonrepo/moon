@@ -194,13 +194,12 @@ impl RemoteService {
         self.client.get_action_result(&state.digest).await
     }
 
-    #[instrument(skip(self, action))]
-    pub async fn save_action(&self, action: Action) -> miette::Result<Option<Digest>> {
+    #[instrument(skip(self, _action, blob))]
+    pub async fn save_action(&self, _action: Action, blob: Blob) -> miette::Result<bool> {
         if !self.can_upload() {
-            return Ok(None);
+            return Ok(false);
         }
 
-        let blob = Blob::from_data(action)?;
         let digest = blob.digest.clone();
 
         if self
@@ -214,7 +213,7 @@ impl RemoteService {
                 .await?;
         }
 
-        Ok(Some(digest))
+        Ok(true)
     }
 
     #[instrument(skip(self))]
@@ -259,7 +258,7 @@ impl RemoteService {
                     }
                     Err(error) => {
                         warn!(
-                            hash = ?digest.hash,
+                            hash = digest.hash.as_str(),
                             "Failed to upload blobs and cache action result: {}",
                             color::muted_light(error.to_string()),
                         );
@@ -275,7 +274,7 @@ impl RemoteService {
 
                 if let Err(error) = client.update_action_result(&digest, result).await {
                     warn!(
-                        hash = ?digest.hash,
+                        hash = digest.hash.as_str(),
                         "Failed to cache action result: {}",
                         color::muted_light(error.to_string()),
                     );
@@ -313,7 +312,7 @@ impl RemoteService {
             }
             Err(error) => {
                 warn!(
-                    hash = ?state.digest.hash,
+                    hash = state.digest.hash.as_str(),
                     "Failed to download blobs and restore action result: {}",
                     color::muted_light(error.to_string()),
                 );
@@ -404,7 +403,7 @@ async fn batch_find_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             blobs = group.items.len(),
             "Batching find blobs (group {group_key})",
         );
@@ -430,7 +429,7 @@ async fn batch_find_blobs(
         let (group_key, digests) = res.into_diagnostic()??;
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             digests = digests.len(),
             "Batched find blobs (group {group_key})",
         );
@@ -484,7 +483,7 @@ async fn batch_upload_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             blobs = group.items.len(),
             size = group.size,
             "Batching blobs upload (group {group_key})",
@@ -519,7 +518,7 @@ async fn batch_upload_blobs(
         let (group_key, digests) = res.into_diagnostic()??;
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             digests = digests.len(),
             "Batched blobs upload (group {group_key})",
         );
@@ -570,7 +569,7 @@ async fn batch_download_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             blobs = group.items.len(),
             size = group.size,
             max_size,
@@ -606,7 +605,7 @@ async fn batch_download_blobs(
         let (group_key, blobs) = res.into_diagnostic()??;
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             blobs = blobs.len(),
             "Batched blobs download (group {group_key})",
         );
@@ -619,7 +618,7 @@ async fn batch_download_blobs(
 
             if blob.bytes.len() != blob.digest.size as usize {
                 trace!(
-                    hash = ?action_digest.hash,
+                    hash = action_digest.hash.as_str(),
                     expected_size = blob.digest.size,
                     actual_size = blob.bytes.len(),
                     "Integrity failure, mismatched file sizes, unable to write output file",
@@ -632,9 +631,9 @@ async fn batch_download_blobs(
 
                 if actual_digest != blob.digest {
                     trace!(
-                        hash = ?action_digest.hash,
-                        expected_hash = ?blob.digest.hash,
-                        actual_hash = ?actual_digest.hash,
+                        hash = action_digest.hash.as_str(),
+                        expected_hash = blob.digest.hash.as_str(),
+                        actual_hash = actual_digest.hash.as_str(),
                         "Integrity failure, mismatched digests, unable to write output file",
                     );
 
@@ -673,8 +672,8 @@ async fn batch_download_blobs(
             write_output_file(&file_path, bytes, file)?;
         } else {
             warn!(
-                hash = ?action_digest.hash,
-                blob_hash = ?digest.hash,
+                hash = action_digest.hash.as_str(),
+                blob_hash = digest.hash.as_str(),
                 output_file = ?file_path,
                 "Missing file metadata for blob hash, unable to write output file",
             );

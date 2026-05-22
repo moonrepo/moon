@@ -61,12 +61,12 @@ impl CasStore {
     // ---- Write operations ----
 
     #[instrument(skip(self, bytes), fields(len = bytes.len()))]
-    fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<()> {
+    fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<bool> {
         if self.contains_object(hash)? {
-            return Ok(());
+            return Ok(false);
         }
 
-        let mut guard = self.create_temp_file()?;
+        let mut guard = self.create_temp_file(hash)?;
 
         {
             let mut file = fs::create_file(&guard.path)?;
@@ -85,15 +85,15 @@ impl CasStore {
 
         self.commit_temp_file(hash, &mut guard)?;
 
-        Ok(())
+        Ok(true)
     }
 
     /// Store raw bytes. Returns the content hash. Idempotent: if the blob
     /// already exists, this is a no-op that returns the hash immediately.
     pub fn write_blob(&self, blob: &Blob) -> miette::Result<()> {
-        self.write(&blob.digest.hash, &blob.bytes)?;
-
-        debug!(hash = %blob.digest.hash, "Stored object from blob");
+        if self.write(&blob.digest.hash, &blob.bytes)? {
+            debug!(hash = blob.digest.hash.as_str(), "Stored object from blob");
+        }
 
         Ok(())
     }
@@ -103,9 +103,9 @@ impl CasStore {
     pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<ContentHash> {
         let hash = ContentHash::hash_bytes(bytes)?;
 
-        self.write(&hash, bytes)?;
-
-        debug!(hash = %hash, "Stored object from bytes");
+        if self.write(&hash, bytes)? {
+            debug!(hash = hash.as_str(), "Stored object from bytes");
+        }
 
         Ok(hash)
     }
@@ -116,9 +116,9 @@ impl CasStore {
     pub fn write_file(&self, path: &Path) -> miette::Result<Blob> {
         let blob = Blob::from_file(path)?;
 
-        self.write(&blob.digest.hash, &blob.bytes)?;
-
-        debug!(hash = %blob.digest.hash, path = ?path, "Stored object from file");
+        if self.write(&blob.digest.hash, &blob.bytes)? {
+            debug!(hash = blob.digest.hash.as_str(), path = ?path, "Stored object from file");
+        }
 
         Ok(blob)
     }
@@ -126,7 +126,8 @@ impl CasStore {
     /// Store content from a streaming reader. Hashes and writes simultaneously
     /// in 64 KiB chunks.
     pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<ContentHash> {
-        let mut guard = self.create_temp_file()?;
+        let uuid = Uuid::new_v4().to_string();
+        let mut guard = self.create_temp_file(&uuid)?;
 
         let hash = {
             let mut hasher = Sha256::default();
@@ -168,7 +169,7 @@ impl CasStore {
 
         self.commit_temp_file(&hash, &mut guard)?;
 
-        debug!(hash = %hash, "Stored object from byte stream");
+        debug!(hash = hash.as_str(), "Stored object from byte stream");
 
         Ok(hash)
     }
@@ -279,10 +280,10 @@ impl CasStore {
         Ok(())
     }
 
-    fn create_temp_file(&self) -> miette::Result<TempGuard> {
+    fn create_temp_file(&self, hash: &str) -> miette::Result<TempGuard> {
         fs::create_dir_all(&self.temp_dir)?;
 
-        let path = self.temp_dir.join(Uuid::new_v4().to_string());
+        let path = self.temp_dir.join(hash);
 
         Ok(TempGuard {
             path,

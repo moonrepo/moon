@@ -1,5 +1,5 @@
 use crate::output_tree::OutputTree;
-use crate::remote_compat::{create_action, create_action_result};
+use crate::remote_compat::{create_action, create_action_blob, create_action_result};
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
@@ -41,7 +41,14 @@ impl OutputArchiver<'_> {
         self.save_in_cas(hash, state, outputs).await?;
 
         // Step 3) Create the archive file (temporary)
-        self.create_local_archive(hash).await?;
+        if !self
+            .app_context
+            .workspace_config
+            .experiments
+            .cas_outputs_cache
+        {
+            self.create_local_archive(hash).await?;
+        }
 
         Ok(archived)
     }
@@ -191,7 +198,12 @@ impl OutputArchiver<'_> {
         state: &TaskRunState,
         outputs: OutputTree,
     ) -> miette::Result<()> {
-        let store_local = self.is_local_cache_writable();
+        let store_local = self.is_local_cache_writable()
+            & self
+                .app_context
+                .workspace_config
+                .experiments
+                .cas_outputs_cache;
         let store_remote = self.is_remote_cache_writable();
         let cache_engine = &self.app_context.cache_engine;
         let mut continue_remote = true;
@@ -222,8 +234,7 @@ impl OutputArchiver<'_> {
 
         // Create and store the action first
         let action = create_action(&state.digest);
-        let action_blob = Blob::from_data(&action)?;
-        let action_digest = action_blob.digest.clone();
+        let action_blob = create_action_blob(&state.digest, &state.bytes);
 
         if store_local {
             cache_engine.cas.write_blob(&action_blob)?;
@@ -268,7 +279,7 @@ impl OutputArchiver<'_> {
             && let Some(remote) = RemoteService::session()
         {
             match remote
-                .save_action_result(&action_digest, action_result, blobs)
+                .save_action_result(&state.digest, action_result, blobs)
                 .await
             {
                 Ok(_) => {}

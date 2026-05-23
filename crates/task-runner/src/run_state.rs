@@ -16,18 +16,15 @@ cache_item!(
     }
 );
 
-// This is where moon differs from the Bazel RE API. In Bazel,
-// we would serialize + hash the `Action` and `Command` types,
-// and upload those. But those types do not match how our hashing
-// works, so instead, we're uploading the bytes of our internal
-// hash manifests. Hopefully this doesn't cause issues!
-
 #[derive(Debug, Default)]
 pub struct TaskRunState {
-    // The digest of our internal fingerprint. This is separate from the action
-    // digest as this implementation is not Bazel compatible.
+    /// The bytes of our internal fingerprint.
+    pub bytes: Vec<u8>,
+
+    /// The digest of our internal fingerprint. This is separate from the action
+    /// digest as this implementation is not Bazel compatible.
     pub digest: Digest,
 
-    /// The last operation that was executed, which may be used to resume an incomplete run.
+    /// The last operation that was executed.
     pub operation: Operation,
 }

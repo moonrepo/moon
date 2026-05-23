@@ -86,3 +86,19 @@ pub fn create_action_result(
 
     Ok((result, blobs))
 }
+
+// This is where moon differs from the Bazel RE API. In Bazel,
+// we would serialize + hash the `Action` and `Command` types,
+// to create the action blob, and upload that specifically.
+//
+// But those types do not match how our hashing works, so instead,
+// we're uploading the bytes of our internal hash manifests. Which
+// is better for debugging as hashes match across the board!
+//
+// Hopefully this doesn't cause issues!
+pub fn create_action_blob(digest: &Digest, bytes: &[u8]) -> Blob {
+    Blob {
+        digest: digest.clone(),
+        bytes: bytes.to_owned(),
+    }
+}

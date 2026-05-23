@@ -411,6 +411,7 @@ impl<'task> TaskRunner<'task> {
 
         self.operations.push(operation);
         self.report_item.hash = Some(digest.hash.to_string());
+        self.state.bytes = hasher.into_bytes();
         self.state.digest = digest.clone();
 
         debug!(

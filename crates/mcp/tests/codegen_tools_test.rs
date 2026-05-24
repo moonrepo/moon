@@ -1,4 +1,4 @@
-use moon_mcp::tools::codegen_tools::{Generate, Variables};
+use moon_mcp::tools::codegen_tools::{GenerateTool, GetTemplateTool, GetTemplatesTool, Variables};
 use rustc_hash::FxHashMap;
 use serde_json::Value;
 
@@ -64,6 +64,149 @@ fn assert_valid_json_schema_all_drafts(schema: &Value) {
 mod codegen_tools {
     use super::*;
 
+    mod generate {
+        use super::*;
+
+        #[test]
+        fn schema_is_valid_all_drafts() {
+            let schema = Value::Object(GenerateTool::json_schema());
+            assert_valid_json_schema_all_drafts(&schema);
+        }
+
+        #[test]
+        fn tool_input_schema_is_valid_all_drafts() {
+            let tool = GenerateTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            assert_valid_json_schema_all_drafts(&schema);
+        }
+
+        #[test]
+        fn tool_input_schema_validates_sample_input() {
+            let tool = GenerateTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            let validator = jsonschema::draft202012::new(&schema).unwrap();
+
+            let valid_input = serde_json::json!({
+                "template": "my-template",
+                "to": "./output",
+                "dry_run": true,
+                "variables": {"name": "test", "count": 42}
+            });
+            let result = validator.validate(&valid_input);
+            assert!(
+                result.is_ok(),
+                "Valid input rejected: {}",
+                result.unwrap_err(),
+            );
+        }
+
+        #[test]
+        fn tool_input_schema_rejects_missing_required() {
+            let tool = GenerateTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            let validator = jsonschema::draft202012::new(&schema).unwrap();
+
+            // Missing required "template" and "to" fields
+            let invalid_input = serde_json::json!({"dry_run": true});
+            assert!(
+                validator.validate(&invalid_input).is_err(),
+                "Schema should reject input missing required fields"
+            );
+        }
+    }
+
+    mod get_template {
+        use super::*;
+
+        #[test]
+        fn schema_is_valid_all_drafts() {
+            let schema = Value::Object(GetTemplateTool::json_schema());
+            assert_valid_json_schema_all_drafts(&schema);
+        }
+
+        #[test]
+        fn tool_input_schema_is_valid_all_drafts() {
+            let tool = GetTemplateTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            assert_valid_json_schema_all_drafts(&schema);
+        }
+
+        #[test]
+        fn tool_input_schema_validates_sample_input() {
+            let tool = GetTemplateTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            let validator = jsonschema::draft202012::new(&schema).unwrap();
+
+            let valid_input = serde_json::json!({"id": "my-template"});
+            let result = validator.validate(&valid_input);
+            assert!(
+                result.is_ok(),
+                "Valid input rejected: {}",
+                result.unwrap_err(),
+            );
+        }
+
+        #[test]
+        fn tool_input_schema_rejects_missing_required() {
+            let tool = GetTemplateTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            let validator = jsonschema::draft202012::new(&schema).unwrap();
+
+            let invalid_input = serde_json::json!({});
+            assert!(
+                validator.validate(&invalid_input).is_err(),
+                "Schema should reject input missing required id field"
+            );
+        }
+    }
+
+    mod get_templates {
+        use super::*;
+
+        #[test]
+        fn schema_is_valid_all_drafts() {
+            let schema = Value::Object(GetTemplatesTool::json_schema());
+            assert_valid_json_schema_all_drafts(&schema);
+        }
+
+        #[test]
+        fn tool_input_schema_is_valid_all_drafts() {
+            let tool = GetTemplatesTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            assert_valid_json_schema_all_drafts(&schema);
+        }
+
+        #[test]
+        fn tool_input_schema_accepts_empty_input() {
+            let tool = GetTemplatesTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            let validator = jsonschema::draft202012::new(&schema).unwrap();
+
+            let empty_input = serde_json::json!({});
+            let result = validator.validate(&empty_input);
+            assert!(
+                result.is_ok(),
+                "Empty input rejected: {}",
+                result.unwrap_err(),
+            );
+        }
+
+        #[test]
+        fn tool_input_schema_accepts_filter() {
+            let tool = GetTemplatesTool::tool();
+            let schema = serde_json::to_value(&tool.input_schema).unwrap();
+            let validator = jsonschema::draft202012::new(&schema).unwrap();
+
+            let valid_input = serde_json::json!({"filter": "foo"});
+            let result = validator.validate(&valid_input);
+            assert!(
+                result.is_ok(),
+                "Input with filter rejected: {}",
+                result.unwrap_err(),
+            );
+        }
+    }
+
     mod variables {
         use super::*;
 
@@ -84,57 +227,6 @@ mod codegen_tools {
             let deserialized: Variables = serde_json::from_str(&json).unwrap();
             assert_eq!(deserialized.len(), 2);
             assert_eq!(deserialized.get("name").unwrap(), "test");
-        }
-    }
-
-    mod generate {
-        use super::*;
-
-        #[test]
-        fn schema_is_valid_all_drafts() {
-            let schema = Value::Object(Generate::json_schema());
-            assert_valid_json_schema_all_drafts(&schema);
-        }
-
-        #[test]
-        fn tool_input_schema_is_valid_all_drafts() {
-            let tool = Generate::tool();
-            let schema = serde_json::to_value(&tool.input_schema).unwrap();
-            assert_valid_json_schema_all_drafts(&schema);
-        }
-
-        #[test]
-        fn tool_input_schema_validates_sample_input() {
-            let tool = Generate::tool();
-            let schema = serde_json::to_value(&tool.input_schema).unwrap();
-            let validator = jsonschema::draft202012::new(&schema).unwrap();
-
-            let valid_input = serde_json::json!({
-                "template": "my-template",
-                "to": "./output",
-                "dry_run": true,
-                "variables": {"name": "test", "count": 42}
-            });
-            let result = validator.validate(&valid_input);
-            assert!(
-                result.is_ok(),
-                "Valid input rejected: {}",
-                result.unwrap_err(),
-            );
-        }
-
-        #[test]
-        fn tool_input_schema_rejects_missing_required() {
-            let tool = Generate::tool();
-            let schema = serde_json::to_value(&tool.input_schema).unwrap();
-            let validator = jsonschema::draft202012::new(&schema).unwrap();
-
-            // Missing required "template" and "to" fields
-            let invalid_input = serde_json::json!({"dry_run": true});
-            assert!(
-                validator.validate(&invalid_input).is_err(),
-                "Schema should reject input missing required fields"
-            );
         }
     }
 }

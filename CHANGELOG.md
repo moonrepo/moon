@@ -10,6 +10,9 @@
 - **Git**
   - Added SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256 as
     the default hash algorithm.
+- **MCP**
+  - Added `get_template` and `get_templates` tools so AI coding assistants can discover
+    templates and inspect their variable schemas before calling `generate`.
 - **Tasks**
   - Added tags support to tasks through new `tags` and `options.mergeTags` settings.
     - Added `taskTag` field support to MQL.

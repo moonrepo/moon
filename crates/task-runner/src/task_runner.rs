@@ -9,10 +9,10 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
-use moon_hash::{ContentHash, Digest};
+use moon_hash::ContentHash;
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_remote::{ActionState, RemoteService};
+use moon_remote::RemoteService;
 use moon_task::Task;
 use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
@@ -38,8 +38,6 @@ pub struct TaskRunner<'task> {
     // Public for testing
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
-    #[deprecated]
-    pub remote_state: Option<ActionState>,
     pub report_item: TaskReportItem,
     pub target_state: Option<TargetState>,
     pub state: TaskRunState,
@@ -71,7 +69,6 @@ impl<'task> TaskRunner<'task> {
             archiver: OutputArchiver { app_context, task },
             hydrater: OutputHydrater { app_context, task },
             project,
-            remote_state: None,
             report_item: TaskReportItem {
                 output_style: task.options.output_style,
                 ..Default::default()

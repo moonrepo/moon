@@ -12,7 +12,7 @@ use starbase_archive::Archiver;
 use starbase_archive::tar::TarPacker;
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, instrument, trace, warn};
 
 /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
 /// so that subsequent builds are faster, and any local outputs
@@ -33,21 +33,40 @@ impl OutputArchiver<'_> {
             .into());
         }
 
+        if state.local_cache_writable && state.remote_cache_writable {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Storing task outputs in local and remote caches"
+            );
+        } else if state.local_cache_writable {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Storing task outputs in local cache"
+            );
+        } else if state.remote_cache_writable {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Storing task outputs in remote cache"
+            );
+        } else {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Cache is not writable, skipping task output archiving"
+            );
+
+            return Ok(false);
+        }
+
         // Step 1) Collect all outputs
-        let outputs = self.collect_output_blobs().await?;
+        let outputs = self.collect_output_blobs(hash).await?;
         let archived = !outputs.is_empty();
 
         // Step 2) Store in local and remote caches
         self.save_in_cas(hash, state, outputs).await?;
 
         // Step 3) Create the archive file (temporary)
-        if !self
-            .app_context
-            .workspace_config
-            .experiments
-            .cas_outputs_cache
-        {
-            self.create_local_archive(hash).await?;
+        if !state.local_cas_enabled {
+            self.pack_local_archive(hash, state).await?;
         }
 
         Ok(archived)
@@ -97,18 +116,13 @@ impl OutputArchiver<'_> {
         Ok(true)
     }
 
-    fn is_local_cache_writable(&self) -> bool {
-        self.app_context.cache_engine.is_writable() && self.task.options.cache.is_local_enabled()
-    }
-
-    fn is_remote_cache_writable(&self) -> bool {
-        self.app_context.cache_engine.is_writable()
-            && self.task.options.cache.is_remote_enabled()
-            && RemoteService::is_enabled()
-    }
-
     #[instrument(skip(self))]
-    async fn collect_output_blobs(&self) -> miette::Result<OutputTree> {
+    async fn collect_output_blobs(&self, hash: &str) -> miette::Result<OutputTree> {
+        trace!(
+            task_target = self.task.target.as_str(),
+            hash, "Collecting task output blobs"
+        );
+
         let app_context = Arc::clone(self.app_context);
         let mut outputs = OutputTree::new(&app_context.workspace_root);
         let output_paths = self
@@ -128,30 +142,36 @@ impl OutputArchiver<'_> {
         Ok(tree)
     }
 
-    #[instrument(skip(self))]
-    async fn create_local_archive(&self, hash: &str) -> miette::Result<()> {
+    #[instrument(skip(self, state))]
+    async fn pack_local_archive(&self, hash: &str, state: &TaskRunState) -> miette::Result<bool> {
         let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
 
-        if self.app_context.cache_engine.is_readable() && archive_file.exists() {
+        if state.local_cache_writable && archive_file.exists() {
             debug!(
                 task_target = self.task.target.as_str(),
                 hash, "Skipping archive, task outputs already persisted"
             );
-        } else if self.is_local_cache_writable() {
+        } else if !state.local_cache_writable {
             debug!(
                 task_target = self.task.target.as_str(),
-                hash, "Archiving task outputs from project"
+                hash, "Cache is not writable, skipping output archiving"
             );
-        } else {
-            return Ok(());
+
+            return Ok(false);
         }
+
+        debug!(
+            task_target = self.task.target.as_str(),
+            hash,
+            archive_file = ?archive_file, "Archiving task outputs from project"
+        );
 
         // Clone values to run in a blocking thread
         let app_context = Arc::clone(self.app_context);
         let task = Arc::clone(self.task);
         let hash = hash.to_string();
 
-        spawn_blocking(move || {
+        let archived = spawn_blocking(move || {
             // Create the archiver instance based on task outputs
             let mut archive = Archiver::new(&app_context.workspace_root, &archive_file);
 
@@ -176,7 +196,7 @@ impl OutputArchiver<'_> {
                     task_target = task.target.as_str(),
                     hash,
                     archive_file = ?archive_file,
-                    "Failed to package outputs into archive: {}",
+                    "Failed to package task outputs into archive: {}",
                     color::muted_light(error.to_string()),
                 );
 
@@ -188,7 +208,7 @@ impl OutputArchiver<'_> {
         .await
         .into_diagnostic()?;
 
-        Ok(())
+        Ok(archived)
     }
 
     #[instrument(skip(self, state, outputs))]
@@ -198,55 +218,28 @@ impl OutputArchiver<'_> {
         state: &TaskRunState,
         outputs: OutputTree,
     ) -> miette::Result<()> {
-        let store_local = self.is_local_cache_writable()
-            & self
-                .app_context
-                .workspace_config
-                .experiments
-                .cas_outputs_cache;
-        let store_remote = self.is_remote_cache_writable();
         let cache_engine = &self.app_context.cache_engine;
         let mut continue_remote = true;
-
-        if store_local && store_remote {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Storing task outputs in local and remote caches"
-            );
-        } else if store_local {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Storing task outputs in local cache"
-            );
-        } else if store_remote {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Storing task outputs in remote cache"
-            );
-        } else {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Cache is not writable, skipping task output archiving"
-            );
-
-            return Ok(());
-        }
 
         // Create and store the action first
         let action = create_action(&state.digest);
         let action_blob = create_action_blob(&state.digest, &state.bytes);
 
-        if store_local {
+        if state.local_cache_writable & state.local_cas_enabled {
             cache_engine.cas.write_blob(&action_blob)?;
         }
 
-        if store_remote && let Some(remote) = RemoteService::session() {
+        if state.remote_cache_writable
+            && let Some(remote) = RemoteService::session()
+        {
             match remote.save_action(action, action_blob).await {
                 Ok(saved) => {
                     continue_remote = saved;
                 }
                 Err(error) => {
                     warn!(
+                        task_target = self.task.target.as_str(),
+                        hash,
                         "Failed to upload action to remote service: {}",
                         color::muted_light(error.to_string())
                     );
@@ -259,7 +252,7 @@ impl OutputArchiver<'_> {
         // Then create and store the action result
         let (action_result, blobs) = create_action_result(&state.operation, outputs)?;
 
-        if store_local {
+        if state.local_cache_writable & state.local_cas_enabled {
             // Locally the action results are stored using our internal task hash,
             // and not the digest/hash that the Bazel Remote API expects
             let action_result_blob = Blob::from_data(&action_result)?;
@@ -274,22 +267,13 @@ impl OutputArchiver<'_> {
             }
         }
 
-        if store_remote
+        if state.remote_cache_writable
             && continue_remote
             && let Some(remote) = RemoteService::session()
         {
-            match remote
+            remote
                 .save_action_result(&state.digest, action_result, blobs)
-                .await
-            {
-                Ok(_) => {}
-                Err(error) => {
-                    warn!(
-                        "Failed to upload action result to remote service: {}",
-                        color::muted_light(error.to_string())
-                    );
-                }
-            };
+                .await?;
         }
 
         Ok(())

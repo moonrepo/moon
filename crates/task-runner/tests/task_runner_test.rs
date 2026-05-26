@@ -443,7 +443,7 @@ mod task_runner {
 
                 assert_eq!(
                     runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalCache)
+                    Some(HydrateFrom::LocalArchive)
                 );
             }
 

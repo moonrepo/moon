@@ -2,7 +2,6 @@ mod action_result;
 mod action_state;
 mod blob;
 mod digest_compat;
-mod fs_digest;
 mod grpc_remote_client;
 mod grpc_services;
 mod grpc_tls;
@@ -16,7 +15,6 @@ pub use action_result::*;
 pub use action_state::*;
 pub use bazel_remote_apis::build::bazel::remote::execution::v2::Digest as RemoteDigest;
 pub use digest_compat::*;
-pub use fs_digest::*;
 pub use remote_error::*;
 pub use remote_service::*;
 

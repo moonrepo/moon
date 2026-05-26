@@ -1,14 +1,16 @@
 use crate::output_tree::OutputTree;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    Action, ActionResult, ExecutedActionMetadata, OutputFile, OutputSymlink,
+    Action, ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
 };
 use moon_action::Operation;
 use moon_hash::{Blob, Digest};
 use moon_remote::{
     LocalDigestExt, compute_node_properties, create_timestamp_from_naive, is_file_executable,
 };
-use starbase_utils::fs::FsError;
-use std::fs;
+use starbase_utils::fs::{self, FsError};
+use std::fs as fs_std;
+use std::path::{Path, PathBuf};
+use std::time::{Duration, UNIX_EPOCH};
 
 pub fn create_action(command_digest: &Digest) -> Action {
     Action {
@@ -54,7 +56,7 @@ pub fn create_action_result(
 
     for (path, target) in outputs.symlinks {
         let abs_path = path.to_logical_path(&outputs.workspace_root);
-        let metadata = fs::metadata(&abs_path).map_err(|error| FsError::Read {
+        let metadata = fs_std::metadata(&abs_path).map_err(|error| FsError::Read {
             path: abs_path,
             error: Box::new(error),
         })?;
@@ -68,7 +70,7 @@ pub fn create_action_result(
 
     for (path, blob) in outputs.files {
         let abs_path = path.to_logical_path(&outputs.workspace_root);
-        let metadata = fs::metadata(&abs_path).map_err(|error| FsError::Read {
+        let metadata = fs_std::metadata(&abs_path).map_err(|error| FsError::Read {
             path: abs_path.clone(),
             error: Box::new(error),
         })?;
@@ -101,4 +103,88 @@ pub fn create_action_blob(digest: &Digest, bytes: &[u8]) -> Blob {
         digest: digest.clone(),
         bytes: bytes.to_owned(),
     }
+}
+
+pub fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<()> {
+    if let Some(mtime) = &props.mtime {
+        let modified = Duration::new(mtime.seconds as u64, mtime.nanos as u32);
+        let file = fs::open_file_for_writing(path)?;
+
+        file.set_modified(UNIX_EPOCH + modified)
+            .map_err(|error| FsError::Write {
+                path: path.to_owned(),
+                error: Box::new(error),
+            })?;
+    }
+
+    #[cfg(unix)]
+    if let Some(mode) = &props.unix_mode {
+        use std::os::unix::fs::PermissionsExt;
+
+        fs_std::set_permissions(path, fs_std::Permissions::from_mode(mode.value)).map_err(
+            |error| FsError::Perms {
+                path: path.to_path_buf(),
+                error: Box::new(error),
+            },
+        )?;
+    }
+
+    Ok(())
+}
+
+pub fn write_output_file(
+    output_path: PathBuf,
+    bytes: &[u8],
+    file: &OutputFile,
+) -> miette::Result<()> {
+    fs::write_file(&output_path, bytes)?;
+
+    if let Some(props) = &file.node_properties {
+        apply_node_properties(&output_path, props)?;
+    }
+
+    Ok(())
+}
+
+pub fn link_output_file(
+    from_path: PathBuf,
+    to_path: PathBuf,
+    link: &OutputSymlink,
+) -> miette::Result<()> {
+    if let Some(parent) = to_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    #[cfg(windows)]
+    {
+        if from_path.is_dir() {
+            std::os::windows::fs::symlink_dir(&from_path, &to_path).map_err(|error| {
+                FsError::Create {
+                    path: to_path.clone(),
+                    error: Box::new(error),
+                }
+            })?;
+        } else {
+            std::os::windows::fs::symlink_file(&from_path, &to_path).map_err(|error| {
+                FsError::Create {
+                    path: to_path.clone(),
+                    error: Box::new(error),
+                }
+            })?;
+        }
+    }
+
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(&from_path, &to_path).map_err(|error| FsError::Create {
+            path: to_path.clone(),
+            error: Box::new(error),
+        })?;
+    }
+
+    if let Some(props) = &link.node_properties {
+        apply_node_properties(&to_path, props)?;
+    }
+
+    Ok(())
 }

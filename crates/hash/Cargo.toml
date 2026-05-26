@@ -14,7 +14,7 @@ compact_str = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
-starbase_utils = { workspace = true, features = ["glob", "json"] }
+starbase_utils = { workspace = true, features = ["json"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 

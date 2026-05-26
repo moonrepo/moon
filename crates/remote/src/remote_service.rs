@@ -1,8 +1,6 @@
 use crate::action_result::*;
-use crate::action_state::ActionState;
 use crate::blob::*;
 use crate::digest_compat::RemoteDigestExt;
-use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::http_remote_client::HttpRemoteClient;
 use crate::remote_client::RemoteClient;
@@ -182,16 +180,16 @@ impl RemoteService {
             .unwrap_or(4194304)
     }
 
-    #[instrument(skip(self, state))]
+    #[instrument(skip(self))]
     pub async fn is_action_cached(
         &self,
-        state: &ActionState,
+        action_digest: &Digest,
     ) -> miette::Result<Option<ActionResult>> {
         if !self.can_download() {
             return Ok(None);
         }
 
-        self.client.get_action_result(&state.digest).await
+        self.client.get_action_result(action_digest).await
     }
 
     #[instrument(skip(self, _action, blob))]
@@ -285,21 +283,20 @@ impl RemoteService {
         Ok(true)
     }
 
-    #[instrument(skip(self, state))]
-    pub async fn restore_action_result(&self, state: &mut ActionState) -> miette::Result<bool> {
+    #[instrument(skip(self))]
+    pub async fn restore_action_result(
+        &self,
+        action_digest: &Digest,
+        result: &mut ActionResult,
+    ) -> miette::Result<bool> {
         if !self.can_download() {
             return Ok(false);
         }
 
-        let Some(result) = &mut state.action_result else {
-            return Ok(false);
-        };
-
         match batch_download_blobs(
             self.client.clone(),
-            &state.digest,
+            action_digest,
             result,
-            &self.workspace_root,
             self.get_max_batch_size() as usize,
             self.config.cache.verify_integrity,
         )
@@ -312,7 +309,7 @@ impl RemoteService {
             }
             Err(error) => {
                 warn!(
-                    hash = state.digest.hash.as_str(),
+                    hash = action_digest.hash.as_str(),
                     "Failed to download blobs and restore action result: {}",
                     color::muted_light(error.to_string()),
                 );
@@ -342,7 +339,7 @@ impl RemoteService {
         if !stdio_digests.is_empty() {
             for blob in self
                 .client
-                .batch_read_blobs(&state.digest, stdio_digests)
+                .batch_read_blobs(action_digest, stdio_digests)
                 .await?
             {
                 let Some(blob) = blob else {
@@ -543,8 +540,7 @@ async fn batch_upload_blobs(
 async fn batch_download_blobs(
     client: Arc<Box<dyn RemoteClient>>,
     action_digest: &Digest,
-    result: &ActionResult,
-    workspace_root: &Path,
+    result: &mut ActionResult,
     max_size: usize,
     verify_integrity: bool,
 ) -> miette::Result<bool> {
@@ -653,28 +649,18 @@ async fn batch_download_blobs(
         return Ok(false);
     }
 
-    // Create outputs after everything has been downloaded,
-    // so that we can ensure every request has been completed
-    // and we don't partially hydrate
-    for file in &result.output_files {
-        let file_path = workspace_root.join(&file.path);
-
-        if !file.contents.is_empty() {
-            write_output_file(&file_path, &file.contents, file)?;
-            continue;
-        }
-
+    for file in &mut result.output_files {
         let Some(digest) = &file.digest else {
             continue;
         };
 
-        if let Some(bytes) = blob_map.get(&digest.hash) {
-            write_output_file(&file_path, bytes, file)?;
+        if let Some(bytes) = blob_map.remove(&digest.hash) {
+            file.contents = bytes;
         } else {
             warn!(
                 hash = action_digest.hash.as_str(),
                 blob_hash = digest.hash.as_str(),
-                output_file = ?file_path,
+                output_file = ?file.path,
                 "Missing file metadata for blob hash, unable to write output file",
             );
 
@@ -682,14 +668,14 @@ async fn batch_download_blobs(
         }
     }
 
-    // Create symlinks after output files have been written,
-    // as the link target may reference one of these outputs
-    for link in &result.output_symlinks {
-        link_output_file(
-            workspace_root.join(&link.target),
-            workspace_root.join(&link.path),
-            link,
-        )?;
+    if !blob_map.is_empty() {
+        warn!(
+            hash = action_digest.hash.as_str(),
+            blob_count = blob_map.len(),
+            "Received more blobs than expected",
+        );
+
+        return Ok(false);
     }
 
     Ok(true)

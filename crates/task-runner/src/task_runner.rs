@@ -66,6 +66,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         Ok(Self {
+            state: TaskRunState::new(app_context, task),
             cache,
             archiver: OutputArchiver { app_context, task },
             hydrater: OutputHydrater { app_context, task },
@@ -77,7 +78,6 @@ impl<'task> TaskRunner<'task> {
             },
             target_state: None,
             task,
-            state: TaskRunState::default(),
             app_context,
             operations: OperationList::default(),
         })
@@ -305,23 +305,21 @@ impl<'task> TaskRunner<'task> {
                 "Cache hit in local cache, will reuse existing archive"
             );
 
-            return Ok(Some(HydrateFrom::LocalCache));
+            return Ok(Some(HydrateFrom::LocalArchive));
         }
 
         // Check if the outputs have been cached in the remote service
         if self.task.options.cache.is_remote_enabled()
-            && let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session())
+            && let Some(remote) = RemoteService::session()
             // Don't bubble up errors from the remote cache check, just treat them as cache misses
-            && let Ok(Some(result)) = remote.is_action_cached(state).await
+            && let Ok(Some(result)) = remote.is_action_cached(&self.state.digest).await
         {
             debug!(
                 task_target = self.task.target.as_str(),
                 hash, "Cache hit in remote service, will attempt to download output blobs"
             );
 
-            state.set_action_result(result);
-
-            return Ok(Some(HydrateFrom::RemoteCache));
+            return Ok(Some(HydrateFrom::RemoteCache(result)));
         }
 
         debug!(
@@ -585,7 +583,7 @@ impl<'task> TaskRunner<'task> {
         let mut operation = Operation::output_hydration();
 
         // Not cached
-        let Some(from) = self.is_cached(hash).await? else {
+        let Some(mut from) = self.is_cached(hash).await? else {
             debug!(
                 task_target = self.task.target.as_str(),
                 "Nothing to hydrate"
@@ -605,11 +603,7 @@ impl<'task> TaskRunner<'task> {
             "Running cache hydration operation"
         );
 
-        if !self
-            .hydrater
-            .hydrate(from, hash, self.remote_state.as_mut())
-            .await?
-        {
+        if !self.hydrater.hydrate(&mut from, hash, &self.state).await? {
             debug!(task_target = self.task.target.as_str(), "Did not hydrate");
 
             operation.finish(ActionStatus::Invalid);
@@ -629,49 +623,47 @@ impl<'task> TaskRunner<'task> {
         if let Some(output) = operation.get_exec_output_mut() {
             output.command = Some(self.task.get_command_line());
 
-            // If we received an action result from the remote cache,
-            // extract the logs from it
-            if let Some(result) = self
-                .remote_state
-                .as_ref()
-                .and_then(|state| state.action_result.as_ref())
-            {
-                output.exit_code = Some(result.exit_code);
+            match &from {
+                // If we received an action result from the cache,
+                // extract the logs from it
+                HydrateFrom::LocalCache(result) | HydrateFrom::RemoteCache(result) => {
+                    output.exit_code = Some(result.exit_code);
 
-                if !result.stderr_raw.is_empty() {
-                    output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
+                    if !result.stderr_raw.is_empty() {
+                        output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
+                    }
+
+                    if !result.stdout_raw.is_empty() {
+                        output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
+                    }
                 }
+                // If not using an action result, we need to read the locally
+                // cached stdout/stderr log files
+                _ => {
+                    output.exit_code = Some(self.cache.data.exit_code);
 
-                if !result.stdout_raw.is_empty() {
-                    output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
-                }
-            }
-            // If not from the remote cache, we need to read the locally
-            // cached stdout/stderr log files
-            else {
-                output.exit_code = Some(self.cache.data.exit_code);
+                    let state_dir = self
+                        .app_context
+                        .cache_engine
+                        .state
+                        .get_target_dir(&self.task.target);
+                    let err_path = state_dir.join("stderr.log");
+                    let out_path = state_dir.join("stdout.log");
 
-                let state_dir = self
-                    .app_context
-                    .cache_engine
-                    .state
-                    .get_target_dir(&self.task.target);
-                let err_path = state_dir.join("stderr.log");
-                let out_path = state_dir.join("stdout.log");
+                    if err_path.exists() {
+                        output.set_stderr(fs::read_file(err_path)?);
+                    }
 
-                if err_path.exists() {
-                    output.set_stderr(fs::read_file(err_path)?);
-                }
-
-                if out_path.exists() {
-                    output.set_stdout(fs::read_file(out_path)?);
+                    if out_path.exists() {
+                        output.set_stdout(fs::read_file(out_path)?);
+                    }
                 }
             }
         }
 
         // Then finalize the operation and target state
         operation.finish(match from {
-            HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
+            HydrateFrom::RemoteCache(_) => ActionStatus::CachedFromRemote,
             _ => ActionStatus::Cached,
         });
 

@@ -1,7 +1,10 @@
 use moon_action::Operation;
+use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::{ContentHash, Digest};
+use moon_remote::RemoteService;
+use moon_task::Task;
 use std::collections::BTreeMap;
 
 cache_item!(
@@ -16,7 +19,7 @@ cache_item!(
     }
 );
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct TaskRunState {
     /// The bytes of our internal fingerprint.
     pub bytes: Vec<u8>,
@@ -27,4 +30,30 @@ pub struct TaskRunState {
 
     /// The last operation that was executed.
     pub operation: Operation,
+
+    pub local_cas_enabled: bool,
+    pub local_cache_readable: bool,
+    pub local_cache_writable: bool,
+    pub remote_cache_readable: bool,
+    pub remote_cache_writable: bool,
+}
+
+impl TaskRunState {
+    pub fn new(app_context: &AppContext, task: &Task) -> Self {
+        let remote_enabled = RemoteService::is_enabled();
+        Self {
+            local_cas_enabled: app_context.workspace_config.experiments.cas_outputs_cache,
+            local_cache_readable: app_context.cache_engine.is_readable()
+                && task.options.cache.is_local_enabled(),
+            local_cache_writable: app_context.cache_engine.is_writable()
+                && task.options.cache.is_local_enabled(),
+            remote_cache_readable: app_context.cache_engine.is_readable()
+                && task.options.cache.is_remote_enabled()
+                && remote_enabled,
+            remote_cache_writable: app_context.cache_engine.is_writable()
+                && task.options.cache.is_remote_enabled()
+                && remote_enabled,
+            ..Default::default()
+        }
+    }
 }

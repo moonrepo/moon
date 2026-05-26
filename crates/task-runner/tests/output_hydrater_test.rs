@@ -48,7 +48,7 @@ mod output_hydrater {
 
             assert!(
                 !hydrater
-                    .hydrate(HydrateFrom::LocalCache, "hash123", None)
+                    .hydrate(HydrateFrom::LocalArchive, "hash123", None)
                     .await
                     .unwrap()
             );
@@ -72,7 +72,7 @@ mod output_hydrater {
 
             assert!(
                 !hydrater
-                    .hydrate(HydrateFrom::LocalCache, "hash123", None)
+                    .hydrate(HydrateFrom::LocalArchive, "hash123", None)
                     .await
                     .unwrap()
             );
@@ -90,7 +90,7 @@ mod output_hydrater {
             let hydrater = container.create_hydrator();
 
             hydrater
-                .hydrate(HydrateFrom::LocalCache, "hash123", None)
+                .hydrate(HydrateFrom::LocalArchive, "hash123", None)
                 .await
                 .unwrap();
 
@@ -113,7 +113,7 @@ mod output_hydrater {
             let hydrater = container.create_hydrator();
 
             hydrater
-                .hydrate(HydrateFrom::LocalCache, "hash123", None)
+                .hydrate(HydrateFrom::LocalArchive, "hash123", None)
                 .await
                 .unwrap();
 

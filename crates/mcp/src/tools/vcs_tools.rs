@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
     description = "Get changed files between the current head and base."
 )]
 #[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
-pub struct GetChangedFiles {
+pub struct GetChangedFilesTool {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub base: Option<String>,
 
@@ -27,7 +27,7 @@ pub struct GetChangedFiles {
     pub remote: Option<bool>,
 }
 
-impl GetChangedFiles {
+impl GetChangedFilesTool {
     pub async fn call_tool(
         &self,
         app_context: &AppContext,

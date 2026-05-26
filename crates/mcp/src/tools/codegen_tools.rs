@@ -2,7 +2,10 @@
 
 use super::map_miette_error;
 use moon_app_context::AppContext;
+use moon_codegen::CodeGenerator;
+use moon_config::TemplateVariable;
 use moon_process::{Command, output_to_trimmed_string};
+use regex::Regex;
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
     schema::{CallToolResult, TextContent, schema_utils::CallToolError},
@@ -10,7 +13,23 @@ use rust_mcp_sdk::{
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::BTreeMap;
 use std::ops::Deref;
+use std::sync::Arc;
+
+async fn load_generator<'a>(
+    app_context: &'a AppContext,
+) -> Result<CodeGenerator<'a>, CallToolError> {
+    let mut generator = CodeGenerator::new(
+        &app_context.workspace_root,
+        &app_context.workspace_config.generator,
+        Arc::clone(&app_context.moon_env),
+    );
+
+    generator.load_templates().await.map_err(map_miette_error)?;
+
+    Ok(generator)
+}
 
 /// Newtype wrapper around `FxHashMap<String, Value>` that provides a valid
 /// JSON Schema (`"type": "object"`) instead of the `"type": "unknown"` that
@@ -44,7 +63,7 @@ impl Deref for Variables {
     description = "Generate code or scaffold from a template."
 )]
 #[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
-pub struct Generate {
+pub struct GenerateTool {
     pub template: String,
     pub to: String,
 
@@ -58,7 +77,13 @@ pub struct Generate {
     pub variables: Option<Variables>,
 }
 
-impl Generate {
+#[derive(Serialize)]
+pub struct GenerateResponse {
+    pub error: Option<String>,
+    pub success: bool,
+}
+
+impl GenerateTool {
     pub async fn call_tool(
         &self,
         app_context: &AppContext,
@@ -139,8 +164,131 @@ impl Generate {
     }
 }
 
+#[mcp_tool(
+    name = "get_template",
+    title = "Get template",
+    description = "Describe a template's full variable schema, including types, defaults, \
+                   prompts, required flags, and enum values. The `extends` chain is resolved \
+                   so the returned schema matches what `generate` would actually prompt for. \
+                   Internal variables are excluded."
+)]
+#[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
+pub struct GetTemplateTool {
+    pub id: String,
+}
+
 #[derive(Serialize)]
-pub struct GenerateResponse {
-    pub error: Option<String>,
-    pub success: bool,
+pub struct GetTemplateResponse {
+    pub id: String,
+    pub title: String,
+    pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub destination: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub extends: Vec<String>,
+    pub variables: BTreeMap<String, TemplateVariable>,
+}
+
+impl GetTemplateTool {
+    pub async fn call_tool(
+        &self,
+        app_context: &AppContext,
+    ) -> Result<CallToolResult, CallToolError> {
+        let generator = load_generator(app_context).await?;
+        let template = generator.get_template(&self.id).map_err(map_miette_error)?;
+
+        let variables = template
+            .config
+            .variables
+            .iter()
+            .filter(|(_, var)| !var.is_internal())
+            .map(|(name, var)| (name.clone(), var.clone()))
+            .collect();
+
+        let response = GetTemplateResponse {
+            id: template.id.to_string(),
+            title: template.config.title.clone(),
+            description: template.config.description.clone(),
+            destination: template.config.destination.clone(),
+            extends: template
+                .config
+                .extends
+                .to_list()
+                .iter()
+                .map(|id| id.to_string())
+                .collect(),
+            variables,
+        };
+
+        Ok(CallToolResult::text_content(vec![TextContent::new(
+            serde_json::to_string_pretty(&response).map_err(CallToolError::new)?,
+            None,
+            None,
+        )]))
+    }
+}
+
+#[mcp_tool(
+    name = "get_templates",
+    title = "Get templates",
+    description = "List all available templates with their id, title, and description. \
+                   Use this to discover templates before calling `generate`."
+)]
+#[derive(Debug, Default, Deserialize, Serialize, JsonSchema)]
+pub struct GetTemplatesTool {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct TemplateSummary {
+    pub id: String,
+    pub title: String,
+    pub description: String,
+}
+
+#[derive(Serialize)]
+pub struct GetTemplatesResponse {
+    pub templates: Vec<TemplateSummary>,
+}
+
+impl GetTemplatesTool {
+    pub async fn call_tool(
+        &self,
+        app_context: &AppContext,
+    ) -> Result<CallToolResult, CallToolError> {
+        let generator = load_generator(app_context).await?;
+
+        let pattern = match self.filter.as_deref() {
+            Some(filter) => Some(
+                Regex::new(&format!("(?i){filter}"))
+                    .map_err(|err| CallToolError::new(std::io::Error::other(err.to_string())))?,
+            ),
+            None => None,
+        };
+
+        let mut templates: Vec<TemplateSummary> = generator
+            .templates
+            .iter()
+            .filter(|(id, _)| {
+                pattern
+                    .as_ref()
+                    .is_none_or(|pattern| pattern.is_match(id.as_str()))
+            })
+            .map(|(id, template)| TemplateSummary {
+                id: id.to_string(),
+                title: template.config.title.clone(),
+                description: template.config.description.clone(),
+            })
+            .collect();
+
+        templates.sort_by(|a, b| a.id.cmp(&b.id));
+
+        Ok(CallToolResult::text_content(vec![TextContent::new(
+            serde_json::to_string_pretty(&GetTemplatesResponse { templates })
+                .map_err(CallToolError::new)?,
+            None,
+            None,
+        )]))
+    }
 }

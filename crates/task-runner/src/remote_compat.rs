@@ -6,7 +6,8 @@ use moon_action::Operation;
 use moon_hash::{Blob, Digest};
 use moon_remote::{LocalDigestExt, create_timestamp, create_timestamp_from_naive};
 use starbase_utils::fs::{self, FsError};
-use std::fs::{self as fs_std, Metadata};
+use std::fs::{self as fs_std, File, Metadata};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, UNIX_EPOCH};
 
@@ -62,7 +63,7 @@ pub fn create_action_result(
         result.output_symlinks.push(OutputSymlink {
             path: path.to_string(),
             target: target.to_string(),
-            node_properties: Some(compute_node_properties(&metadata)),
+            node_properties: Some(extract_node_properties(&metadata)),
         });
     }
 
@@ -78,7 +79,7 @@ pub fn create_action_result(
             digest: Some(blob.digest.to_remote_digest()),
             is_executable: is_file_executable(&abs_path, &metadata),
             contents: vec![],
-            node_properties: Some(compute_node_properties(&metadata)),
+            node_properties: Some(extract_node_properties(&metadata)),
         });
 
         blobs.push(blob);
@@ -115,7 +116,7 @@ pub fn is_file_executable(path: &Path, _metadata: &Metadata) -> bool {
     path.extension().is_some_and(|ext| ext == "exe")
 }
 
-pub fn compute_node_properties(metadata: &Metadata) -> NodeProperties {
+pub fn extract_node_properties(metadata: &Metadata) -> NodeProperties {
     let mut props = NodeProperties::default();
 
     if let Ok(time) = metadata.modified() {
@@ -135,28 +136,18 @@ pub fn compute_node_properties(metadata: &Metadata) -> NodeProperties {
     props
 }
 
-pub fn apply_node_properties(path: &Path, props: &NodeProperties) -> miette::Result<()> {
+pub fn apply_node_properties(fd: &mut File, props: &NodeProperties) -> std::io::Result<()> {
     if let Some(mtime) = &props.mtime {
         let modified = Duration::new(mtime.seconds as u64, mtime.nanos as u32);
-        let file = fs::open_file_for_writing(path)?;
 
-        file.set_modified(UNIX_EPOCH + modified)
-            .map_err(|error| FsError::Write {
-                path: path.to_owned(),
-                error: Box::new(error),
-            })?;
+        fd.set_modified(UNIX_EPOCH + modified)?;
     }
 
     #[cfg(unix)]
     if let Some(mode) = &props.unix_mode {
         use std::os::unix::fs::PermissionsExt;
 
-        fs_std::set_permissions(path, fs_std::Permissions::from_mode(mode.value)).map_err(
-            |error| FsError::Perms {
-                path: path.to_path_buf(),
-                error: Box::new(error),
-            },
-        )?;
+        fd.set_permissions(fs_std::Permissions::from_mode(mode.value))?;
     }
 
     Ok(())
@@ -167,11 +158,20 @@ pub fn write_output_file(
     bytes: &[u8],
     file: &OutputFile,
 ) -> miette::Result<()> {
-    fs::write_file(&output_path, bytes)?;
+    let map_error = |error| FsError::Write {
+        path: output_path.clone(),
+        error: Box::new(error),
+    };
+
+    let mut fd = fs::create_file(&output_path)?;
+
+    fd.write_all(bytes).map_err(map_error)?;
 
     if let Some(props) = &file.node_properties {
-        apply_node_properties(&output_path, props)?;
+        apply_node_properties(&mut fd, props).map_err(map_error)?;
     }
+
+    fd.sync_all().map_err(map_error)?;
 
     Ok(())
 }
@@ -213,7 +213,16 @@ pub fn link_output_file(
     }
 
     if let Some(props) = &link.node_properties {
-        apply_node_properties(&to_path, props)?;
+        let map_error = |error| FsError::Write {
+            path: to_path.clone(),
+            error: Box::new(error),
+        };
+
+        let mut fd = fs::open_file_for_writing(&to_path)?;
+
+        apply_node_properties(&mut fd, props).map_err(map_error)?;
+
+        fd.sync_all().map_err(map_error)?;
     }
 
     Ok(())

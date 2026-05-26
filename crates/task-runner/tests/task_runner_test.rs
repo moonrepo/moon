@@ -28,8 +28,7 @@ mod task_runner {
 
             assert_ne!(
                 context
-                    .state
-                    .targets
+                    .target_states
                     .get_sync(&runner.task.target)
                     .unwrap()
                     .get(),
@@ -59,8 +58,7 @@ mod task_runner {
 
                 let context = ActionContext::default();
                 context
-                    .state
-                    .targets
+                    .target_states
                     .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                     .unwrap();
 
@@ -68,8 +66,7 @@ mod task_runner {
 
                 assert_eq!(
                     context
-                        .state
-                        .targets
+                        .target_states
                         .get_sync(&runner.task.target)
                         .unwrap()
                         .get(),
@@ -85,8 +82,7 @@ mod task_runner {
 
                 let context = ActionContext::default();
                 context
-                    .state
-                    .targets
+                    .target_states
                     .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
                     .unwrap();
 
@@ -94,8 +90,7 @@ mod task_runner {
 
                 assert_eq!(
                     context
-                        .state
-                        .targets
+                        .target_states
                         .get_sync(&runner.task.target)
                         .unwrap()
                         .get(),
@@ -581,8 +576,7 @@ mod task_runner {
             let context = ActionContext::default();
 
             context
-                .state
-                .targets
+                .target_states
                 .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
                 .unwrap();
 
@@ -596,8 +590,7 @@ mod task_runner {
             let context = ActionContext::default();
 
             context
-                .state
-                .targets
+                .target_states
                 .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                 .unwrap();
 
@@ -611,8 +604,7 @@ mod task_runner {
             let context = ActionContext::default();
 
             context
-                .state
-                .targets
+                .target_states
                 .insert_sync(
                     Target::new("project", "dep").unwrap(),
                     TargetState::Passed("hash123".into()),

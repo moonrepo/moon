@@ -4,6 +4,8 @@ use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
 use crate::run_state::*;
 use crate::task_runner_error::TaskRunnerError;
+use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
+use miette::IntoDiagnostic;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
@@ -17,7 +19,9 @@ use moon_task::Task;
 use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
+use starbase_utils::json::serde_json;
 use std::sync::Arc;
+use std::time::Duration;
 use tracing::{debug, instrument, trace};
 
 #[derive(Debug)]
@@ -274,11 +278,56 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // Check to see if a build with the provided hash has been cached locally.
-        // We only check for the archive, as the manifest is purely for local debugging!
-        let archive_file = cache_engine.hash.get_archive_path(hash);
+        // First check the local cache, as this is preferred to avoid network calls
+        if let Some(from) = self.is_cached_local(hash, cache_lifetime).await? {
+            return Ok(Some(from));
+        }
 
-        if archive_file.exists() && self.task.options.cache.is_local_enabled() {
+        // Otherwise fallback to the remote cache, if available and enabled
+        if let Some(from) = self.is_cached_remote(hash).await {
+            return Ok(Some(from));
+        }
+
+        debug!(
+            task_target = self.task.target.as_str(),
+            hash, "Cache miss, continuing run"
+        );
+
+        Ok(None)
+    }
+
+    async fn is_cached_local(
+        &self,
+        hash: &str,
+        cache_lifetime: Option<Duration>,
+    ) -> miette::Result<Option<HydrateFrom>> {
+        if !self.state.local_cache_readable {
+            return Ok(None);
+        }
+
+        // Check if the outputs have been cached in local CAS first
+        if self.state.local_cas_enabled {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Cache hit in local cache"
+            );
+
+            let result_bytes = self
+                .app_context
+                .cache_engine
+                .ac
+                .read_bytes(&self.state.digest.hash)?;
+
+            let result: ActionResult = serde_json::from_slice(&result_bytes).into_diagnostic()?;
+
+            return Ok(Some(HydrateFrom::LocalCache(result)));
+        }
+
+        // Otherwise check to see if a build with the provided hash has been cached locally.
+        // We only check for the archive, as the manifest is purely for local debugging!
+        let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
+
+        if archive_file.exists() {
             // Also check if the archive itself is stale
             if let Some(duration) = cache_lifetime
                 && fs::is_stale(&archive_file, false, duration)?
@@ -303,8 +352,11 @@ impl<'task> TaskRunner<'task> {
             return Ok(Some(HydrateFrom::LocalArchive));
         }
 
-        // Check if the outputs have been cached in the remote service
-        if self.task.options.cache.is_remote_enabled()
+        Ok(None)
+    }
+
+    async fn is_cached_remote(&self, hash: &str) -> Option<HydrateFrom> {
+        if self.state.remote_cache_readable
             && let Some(remote) = RemoteService::session()
             // Don't bubble up errors from the remote cache check, just treat them as cache misses
             && let Ok(Some(result)) = remote.is_action_cached(&self.state.digest).await
@@ -314,15 +366,10 @@ impl<'task> TaskRunner<'task> {
                 hash, "Cache hit in remote service, will attempt to download output blobs"
             );
 
-            return Ok(Some(HydrateFrom::RemoteCache(result)));
+            return Some(HydrateFrom::RemoteCache(result));
         }
 
-        debug!(
-            task_target = self.task.target.as_str(),
-            hash, "Cache miss, continuing run"
-        );
-
-        Ok(None)
+        None
     }
 
     pub fn is_cache_enabled(&self) -> bool {

@@ -9,7 +9,7 @@ use utils::*;
 mod output_archiver {
     use super::*;
 
-    mod pack {
+    mod local_legacy {
         use super::*;
 
         #[tokio::test(flavor = "multi_thread")]

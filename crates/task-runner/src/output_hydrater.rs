@@ -9,16 +9,28 @@ use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarUnpacker;
 use starbase_utils::fs;
+use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub enum HydrateFrom {
     PreviousOutput,
     LocalArchive,
     LocalCache(ActionResult),
     RemoteCache(ActionResult),
+}
+
+impl Debug for HydrateFrom {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HydrateFrom::PreviousOutput => write!(f, "PreviousOutput"),
+            HydrateFrom::LocalArchive => write!(f, "LocalArchive"),
+            HydrateFrom::LocalCache(_) => write!(f, "LocalCache"),
+            HydrateFrom::RemoteCache(_) => write!(f, "RemoteCache"),
+        }
+    }
 }
 
 pub struct OutputHydrater<'task> {

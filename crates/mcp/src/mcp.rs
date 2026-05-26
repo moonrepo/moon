@@ -1,8 +1,8 @@
 use crate::tools::action_tools::{SyncProjectsTool, SyncWorkspaceTool};
-use crate::tools::codegen_tools::Generate;
+use crate::tools::codegen_tools::{GenerateTool, GetTemplateTool, GetTemplatesTool};
 use crate::tools::project_tools::{GetProjectTool, GetProjectsTool};
 use crate::tools::task_tools::{GetTaskTool, GetTasksTool};
-use crate::tools::vcs_tools::GetChangedFiles;
+use crate::tools::vcs_tools::GetChangedFilesTool;
 use async_trait::async_trait;
 use moon_app_context::AppContext;
 use moon_workspace_graph::WorkspaceGraph;
@@ -44,12 +44,14 @@ impl ServerHandler for MoonMcpHandler {
         let tool_params: MoonTools = MoonTools::try_from(request).map_err(CallToolError::new)?;
 
         match tool_params {
-            MoonTools::Generate(inner) => inner.call_tool(&self.app_context).await,
+            MoonTools::GenerateTool(inner) => inner.call_tool(&self.app_context).await,
+            MoonTools::GetChangedFilesTool(inner) => inner.call_tool(&self.app_context).await,
             MoonTools::GetProjectTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetProjectsTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTaskTool(inner) => inner.call_tool(&self.workspace_graph),
             MoonTools::GetTasksTool(inner) => inner.call_tool(&self.workspace_graph),
-            MoonTools::GetChangedFiles(inner) => inner.call_tool(&self.app_context).await,
+            MoonTools::GetTemplateTool(inner) => inner.call_tool(&self.app_context).await,
+            MoonTools::GetTemplatesTool(inner) => inner.call_tool(&self.app_context).await,
             MoonTools::SyncProjectsTool(inner) => {
                 inner
                     .call_tool(&self.app_context, &self.workspace_graph)
@@ -114,12 +116,14 @@ pub async fn run_mcp(
 tool_box!(
     MoonTools,
     [
-        Generate,
+        GenerateTool,
+        GetChangedFilesTool,
         GetProjectTool,
         GetProjectsTool,
         GetTaskTool,
         GetTasksTool,
-        GetChangedFiles,
+        GetTemplateTool,
+        GetTemplatesTool,
         SyncProjectsTool,
         SyncWorkspaceTool
     ]

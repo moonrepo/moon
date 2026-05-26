@@ -1,6 +1,17 @@
 import type { Action } from './pipeline';
 import type { Project, ProjectFragment } from './project';
 import type { Task, TaskFragment } from './task';
+import type { TemplateVariable } from './template-config';
+
+export interface GetChangedFilesTool {
+	base?: string;
+	head?: string;
+	remote?: boolean;
+}
+
+export interface GetChangedFilesToolResponse {
+	files: string[];
+}
 
 export interface GetProjectTool {
 	id: string;
@@ -37,14 +48,25 @@ export interface GetTasksToolResponse {
 	tasks: TaskFragment[];
 }
 
-export interface GetChangedFilesTool {
-	base?: string;
-	head?: string;
-	remote?: boolean;
+export interface GetTemplateTool {
+	id: string;
 }
 
-export interface GetChangedFilesToolResponse {
-	files: string[];
+export interface GetTemplateToolResponse {
+	id: string;
+	title: string;
+	description: string;
+	destination?: string;
+	extends?: string[];
+	variables: Record<string, TemplateVariable>;
+}
+
+export interface GetTemplatesTool {
+	filter?: string;
+}
+
+export interface GetTemplatesToolResponse {
+	templates: TemplateSummary[];
 }
 
 export interface SyncProjectsTool {
@@ -59,4 +81,10 @@ export interface SyncProjectsToolResponse {
 export interface SyncWorkspaceToolResponse {
 	actions: Action[];
 	synced: boolean;
+}
+
+export interface TemplateSummary {
+	id: string;
+	title: string;
+	description: string;
 }

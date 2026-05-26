@@ -28,7 +28,8 @@ mod task_runner {
 
             assert_ne!(
                 context
-                    .target_states
+                    .state
+                    .targets
                     .get_sync(&runner.task.target)
                     .unwrap()
                     .get(),
@@ -58,7 +59,8 @@ mod task_runner {
 
                 let context = ActionContext::default();
                 context
-                    .target_states
+                    .state
+                    .targets
                     .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                     .unwrap();
 
@@ -66,7 +68,8 @@ mod task_runner {
 
                 assert_eq!(
                     context
-                        .target_states
+                        .state
+                        .targets
                         .get_sync(&runner.task.target)
                         .unwrap()
                         .get(),
@@ -82,7 +85,8 @@ mod task_runner {
 
                 let context = ActionContext::default();
                 context
-                    .target_states
+                    .state
+                    .targets
                     .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
                     .unwrap();
 
@@ -90,7 +94,8 @@ mod task_runner {
 
                 assert_eq!(
                     context
-                        .target_states
+                        .state
+                        .targets
                         .get_sync(&runner.task.target)
                         .unwrap()
                         .get(),
@@ -576,7 +581,8 @@ mod task_runner {
             let context = ActionContext::default();
 
             context
-                .target_states
+                .state
+                .targets
                 .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
                 .unwrap();
 
@@ -590,7 +596,8 @@ mod task_runner {
             let context = ActionContext::default();
 
             context
-                .target_states
+                .state
+                .targets
                 .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
                 .unwrap();
 
@@ -604,7 +611,8 @@ mod task_runner {
             let context = ActionContext::default();
 
             context
-                .target_states
+                .state
+                .targets
                 .insert_sync(
                     Target::new("project", "dep").unwrap(),
                     TargetState::Passed("hash123".into()),
@@ -736,7 +744,7 @@ mod task_runner {
         use super::*;
 
         fn setup_exec_state(runner: &mut TaskRunner) {
-            runner.report_item.hash = Some("hash123".into());
+            runner.report.hash = Some("hash123".into());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -753,7 +761,7 @@ mod task_runner {
             runner.execute(&context, &node).await.unwrap();
 
             assert_eq!(
-                runner.target_state.as_ref().unwrap(),
+                runner.state.target.as_ref().unwrap(),
                 &TargetState::Passed("hash123".into())
             );
         }
@@ -770,7 +778,7 @@ mod task_runner {
             runner.execute(&context, &node).await.unwrap();
 
             assert_eq!(
-                runner.target_state.as_ref().unwrap(),
+                runner.state.target.as_ref().unwrap(),
                 &TargetState::Passthrough
             );
         }
@@ -789,7 +797,7 @@ mod task_runner {
             // Swallow panic so we can check operations
             let _ = runner.execute(&context, &node).await;
 
-            assert_eq!(runner.target_state.as_ref().unwrap(), &TargetState::Failed);
+            assert_eq!(runner.state.target.as_ref().unwrap(), &TargetState::Failed);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -897,7 +905,7 @@ mod task_runner {
             let node = container.create_action_node();
             let context = ActionContext::default();
 
-            runner.report_item.hash = Some("hash123".into());
+            runner.report.hash = Some("hash123".into());
             runner.execute(&context, &node).await.unwrap();
         }
     }
@@ -925,7 +933,7 @@ mod task_runner {
 
             runner.skip().unwrap();
 
-            assert_eq!(runner.target_state.as_ref().unwrap(), &TargetState::Skipped);
+            assert_eq!(runner.state.target.as_ref().unwrap(), &TargetState::Skipped);
         }
     }
 
@@ -953,7 +961,7 @@ mod task_runner {
             runner.skip_no_op().unwrap();
 
             assert_eq!(
-                runner.target_state.as_ref().unwrap(),
+                runner.state.target.as_ref().unwrap(),
                 &TargetState::Passthrough
             );
         }
@@ -962,11 +970,11 @@ mod task_runner {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
 
-            runner.report_item.hash = Some("hash123".into());
+            runner.report.hash = Some("hash123".into());
             runner.skip_no_op().unwrap();
 
             assert_eq!(
-                runner.target_state.as_ref().unwrap(),
+                runner.state.target.as_ref().unwrap(),
                 &TargetState::Passed("hash123".into())
             );
         }
@@ -1065,7 +1073,7 @@ mod task_runner {
                 runner.hydrate("hash123").await.unwrap();
 
                 assert_eq!(
-                    runner.target_state.as_ref().unwrap(),
+                    runner.state.target.as_ref().unwrap(),
                     &TargetState::Passed("hash123".into())
                 );
             }
@@ -1107,7 +1115,7 @@ mod task_runner {
                 runner.hydrate("hash123").await.unwrap();
 
                 assert_eq!(
-                    runner.target_state.as_ref().unwrap(),
+                    runner.state.target.as_ref().unwrap(),
                     &TargetState::Passed("hash123".into())
                 );
             }

@@ -38,8 +38,7 @@ pub struct TaskRunner<'task> {
     // Public for testing
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
-    pub report_item: TaskReportItem,
-    pub target_state: Option<TargetState>,
+    pub report: TaskReportItem,
     pub state: TaskRunState,
 }
 
@@ -69,11 +68,10 @@ impl<'task> TaskRunner<'task> {
             archiver: OutputArchiver { app_context, task },
             hydrater: OutputHydrater { app_context, task },
             project,
-            report_item: TaskReportItem {
+            report: TaskReportItem {
                 output_style: task.options.output_style,
                 ..Default::default()
             },
-            target_state: None,
             task,
             app_context,
             operations: OperationList::default(),
@@ -130,7 +128,7 @@ impl<'task> TaskRunner<'task> {
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<TaskRunResult> {
-        self.report_item.output_prefix = Some(context.get_target_prefix(&self.task.target));
+        self.report.output_prefix = Some(context.get_target_prefix(&self.task.target));
 
         let result = self.internal_run(context, node).await;
 
@@ -141,15 +139,15 @@ impl<'task> TaskRunner<'task> {
             Ok(maybe_hash) => {
                 context.set_target_state(
                     &self.task.target,
-                    self.target_state.take().unwrap_or(TargetState::Passthrough),
+                    self.state.target.take().unwrap_or(TargetState::Passthrough),
                 );
 
-                self.report_item.hash = maybe_hash.as_ref().map(|h| h.to_string());
+                self.report.hash = maybe_hash.as_ref().map(|h| h.to_string());
 
                 self.app_context.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
-                    &self.report_item,
+                    &self.report,
                     None,
                 )?;
 
@@ -162,7 +160,7 @@ impl<'task> TaskRunner<'task> {
             Err(error) => {
                 context.set_target_state(
                     &self.task.target,
-                    self.target_state.take().unwrap_or(TargetState::Failed),
+                    self.state.target.take().unwrap_or(TargetState::Failed),
                 );
 
                 self.inject_failed_task_execution(Some(&error))?;
@@ -170,7 +168,7 @@ impl<'task> TaskRunner<'task> {
                 self.app_context.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
-                    &self.report_item,
+                    &self.report,
                     Some(&error),
                 )?;
 
@@ -405,7 +403,7 @@ impl<'task> TaskRunner<'task> {
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
-        self.report_item.hash = Some(digest.hash.to_string());
+        self.report.hash = Some(digest.hash.to_string());
         self.state.bytes = hasher.into_bytes();
         self.state.digest = digest.clone();
 
@@ -438,10 +436,7 @@ impl<'task> TaskRunner<'task> {
 
         // Build the command from the current task
         let command = CommandBuilder::new(self.app_context, self.project, self.task, node)
-            .build(
-                context,
-                self.report_item.hash.as_deref().unwrap_or_default(),
-            )
+            .build(context, self.report.hash.as_deref().unwrap_or_default())
             .await?;
 
         // Execute the command and gather all attempts made
@@ -472,9 +467,9 @@ impl<'task> TaskRunner<'task> {
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
-            executor.execute(context, &mut self.report_item).await?
+            executor.execute(context, &mut self.report).await?
         } else {
-            executor.execute(context, &mut self.report_item).await?
+            executor.execute(context, &mut self.report).await?
         };
 
         // Persist the state locally and for the remote service
@@ -486,7 +481,7 @@ impl<'task> TaskRunner<'task> {
         self.operations.merge(result.attempts);
 
         // Update the action state based on the result
-        self.target_state = Some(result.run_state);
+        self.state.target = Some(result.run_state);
 
         // If the execution as a whole failed, return the error.
         // We do this here instead of in `execute` so that we can
@@ -521,7 +516,7 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Skipped,
         ));
 
-        self.target_state = Some(TargetState::Skipped);
+        self.state.target = Some(TargetState::Skipped);
 
         Ok(())
     }
@@ -538,7 +533,7 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Passed,
         ));
 
-        self.target_state = Some(TargetState::from_hash(self.report_item.hash.as_deref()));
+        self.state.target = Some(TargetState::from_hash(self.report.hash.as_deref()));
 
         Ok(())
     }
@@ -667,7 +662,7 @@ impl<'task> TaskRunner<'task> {
         self.persist_state(&operation)?;
 
         self.operations.push(operation);
-        self.target_state = Some(TargetState::Passed(hash.to_owned()));
+        self.state.target = Some(TargetState::Passed(hash.to_owned()));
 
         Ok(true)
     }
@@ -700,7 +695,7 @@ impl<'task> TaskRunner<'task> {
         self.app_context.console.on_task_finished(
             &self.task.target,
             &operation,
-            &self.report_item,
+            &self.report,
             report,
         )?;
 

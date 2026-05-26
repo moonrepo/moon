@@ -3,7 +3,6 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::compressor;
 use moon_config::RemoteCompression;
 use moon_hash::{Blob, Digest};
 use std::ops::Deref;
-use std::path::Path;
 
 #[derive(Clone)]
 pub struct CompressableBlob {
@@ -33,12 +32,12 @@ impl CompressableBlob {
         })
     }
 
-    pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
-        Ok(Self {
-            inner: Blob::from_file(path)?,
-            compression: RemoteCompression::None,
-        })
-    }
+    // pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
+    //     Ok(Self {
+    //         inner: Blob::from_file(path)?,
+    //         compression: RemoteCompression::None,
+    //     })
+    // }
 
     pub fn compress(&mut self, compression: RemoteCompression) -> miette::Result<()> {
         self.compression = compression;
@@ -61,16 +60,16 @@ impl CompressableBlob {
         Ok(())
     }
 
-    pub fn compress_and_keep(
-        &mut self,
-        compression: RemoteCompression,
-    ) -> miette::Result<CompressableBlob> {
-        let uncompressed = self.clone();
+    // pub fn compress_and_keep(
+    //     &mut self,
+    //     compression: RemoteCompression,
+    // ) -> miette::Result<CompressableBlob> {
+    //     let uncompressed = self.clone();
 
-        self.compress(compression)?;
+    //     self.compress(compression)?;
 
-        Ok(uncompressed)
-    }
+    //     Ok(uncompressed)
+    // }
 
     pub fn decompress(&mut self) -> miette::Result<()> {
         match self.compression {
@@ -93,13 +92,13 @@ impl CompressableBlob {
         Ok(())
     }
 
-    pub fn decompress_and_keep(&mut self) -> miette::Result<CompressableBlob> {
-        let compressed = self.clone();
+    // pub fn decompress_and_keep(&mut self) -> miette::Result<CompressableBlob> {
+    //     let compressed = self.clone();
 
-        self.decompress()?;
+    //     self.decompress()?;
 
-        Ok(compressed)
-    }
+    //     Ok(compressed)
+    // }
 }
 
 impl Deref for CompressableBlob {

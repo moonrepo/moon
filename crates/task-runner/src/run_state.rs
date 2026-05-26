@@ -1,4 +1,5 @@
 use moon_action::Operation;
+use moon_action_context::TargetState;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_hash::Digest;
@@ -25,6 +26,9 @@ pub struct TaskRunState {
 
     /// The last operation that was executed.
     pub operation: Operation,
+
+    /// The final state of the target, for use within the action context.
+    pub target: Option<TargetState>,
 
     /// Read and write states for the local/remote caches.
     pub local_cas_enabled: bool,

@@ -429,7 +429,7 @@ mod task_runner {
             }
         }
 
-        mod local_cache {
+        mod local_cach_legacy {
             use super::*;
 
             #[tokio::test(flavor = "multi_thread")]
@@ -999,7 +999,7 @@ mod task_runner {
 
             let mut runner = container.create_runner();
 
-            assert!(runner.archive("hash123").await.unwrap());
+            assert!(!runner.archive("hash123").await.unwrap());
         }
     }
 
@@ -1071,7 +1071,7 @@ mod task_runner {
             }
         }
 
-        mod local_cache {
+        mod local_cache_legacy {
             use super::*;
             use std::fs;
 

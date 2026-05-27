@@ -17,24 +17,27 @@ mod output_archiver {
         async fn errors_if_outputs_not_created() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            archiver.archive("hash123", None).await.unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_if_outputs_not_created_but_marked_as_optional() {
             let container = TaskRunnerContainer::new("archive", "file-outputs-optional").await;
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let _ = archiver.archive("hash123", None).await.unwrap();
+            let _ = archiver.archive("hash123", &state).await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_error_if_outputs_not_created_but_marked_as_optional_using_globs() {
             let container = TaskRunnerContainer::new("archive", "glob-outputs-optional").await;
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let _ = archiver.archive("hash123", None).await.unwrap();
+            let _ = archiver.archive("hash123", &state).await.unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -43,8 +46,9 @@ mod output_archiver {
             container.sandbox.create_file("project/file.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            assert!(archiver.archive("hash123", None).await.unwrap().is_some());
+            assert!(archiver.archive("hash123", &state).await.unwrap());
             assert!(
                 container
                     .sandbox
@@ -55,7 +59,7 @@ mod output_archiver {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_create_an_archive_if_it_exists() {
+        async fn repacks_an_archive_if_it_exists() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");
             container
@@ -63,10 +67,17 @@ mod output_archiver {
                 .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            assert!(archiver.archive("hash123", &state).await.unwrap());
 
-            assert_eq!(fs::metadata(file).unwrap().len(), 0);
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
+
+            assert!(fs::metadata(file).unwrap().len() > 0);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -74,14 +85,15 @@ mod output_archiver {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");
 
-            let archiver = container.create_archiver();
-
             container
                 .app_context
                 .cache_engine
                 .force_mode(CacheMode::Off);
 
-            assert!(archiver.archive("hash123", None).await.unwrap().is_none());
+            let archiver = container.create_archiver();
+            let state = container.create_state();
+
+            assert!(!archiver.archive("hash123", &state).await.unwrap());
 
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
@@ -91,14 +103,15 @@ mod output_archiver {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");
 
-            let archiver = container.create_archiver();
-
             container
                 .app_context
                 .cache_engine
                 .force_mode(CacheMode::Read);
 
-            assert!(archiver.archive("hash123", None).await.unwrap().is_none());
+            let archiver = container.create_archiver();
+            let state = container.create_state();
+
+            assert!(!archiver.archive("hash123", &state).await.unwrap());
 
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
@@ -109,8 +122,15 @@ mod output_archiver {
             container.sandbox.create_file("project/file.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -126,8 +146,15 @@ mod output_archiver {
             container.sandbox.create_file("project/three.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -149,8 +176,15 @@ mod output_archiver {
             container.sandbox.create_file("project/file.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -172,8 +206,15 @@ mod output_archiver {
             container.sandbox.create_file("project/c.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -191,8 +232,15 @@ mod output_archiver {
             container.sandbox.create_file("project/c.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -208,8 +256,15 @@ mod output_archiver {
             container.sandbox.create_file("project/file.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -225,8 +280,15 @@ mod output_archiver {
             container.sandbox.create_file("project/c.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -242,8 +304,15 @@ mod output_archiver {
             container.sandbox.create_file("project/dir/file.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -259,8 +328,15 @@ mod output_archiver {
             container.sandbox.create_file("project/c/file.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -277,8 +353,15 @@ mod output_archiver {
             container.sandbox.create_file("project/dir/file.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -295,8 +378,15 @@ mod output_archiver {
             container.sandbox.create_file("shared/z.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();
@@ -314,8 +404,15 @@ mod output_archiver {
             container.sandbox.create_file("project/file.txt", "");
 
             let archiver = container.create_archiver();
+            let state = container.create_state();
 
-            let file = archiver.archive("hash123", None).await.unwrap().unwrap();
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let file = container
+                .app_context
+                .cache_engine
+                .hash
+                .get_archive_path("hash123");
             let dir = container.sandbox.path().join("out");
 
             Archiver::new(&dir, &file).unpack_from_ext().unwrap();

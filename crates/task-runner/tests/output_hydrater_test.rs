@@ -8,7 +8,7 @@ use utils::*;
 mod output_hydrater {
     use super::*;
 
-    mod unpack {
+    mod local_legacy {
         use super::*;
 
         // #[tokio::test(flavor = "multi_thread")]
@@ -23,10 +23,11 @@ mod output_hydrater {
         async fn does_nothing_if_from_prev_outputs() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             let hydrater = container.create_hydrator();
+            let state = container.create_state();
 
             assert!(
                 hydrater
-                    .hydrate(HydrateFrom::PreviousOutput, "hash123", None)
+                    .hydrate(&mut HydrateFrom::PreviousOutput, "hash123", &state)
                     .await
                     .unwrap()
             );
@@ -39,16 +40,17 @@ mod output_hydrater {
                 .sandbox
                 .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
-            let hydrater = container.create_hydrator();
-
             container
                 .app_context
                 .cache_engine
                 .force_mode(CacheMode::Off);
 
+            let hydrater = container.create_hydrator();
+            let state = container.create_state();
+
             assert!(
                 !hydrater
-                    .hydrate(HydrateFrom::LocalArchive, "hash123", None)
+                    .hydrate(&mut HydrateFrom::LocalArchive, "hash123", &state)
                     .await
                     .unwrap()
             );
@@ -63,16 +65,17 @@ mod output_hydrater {
                 .sandbox
                 .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
-            let hydrater = container.create_hydrator();
-
             container
                 .app_context
                 .cache_engine
                 .force_mode(CacheMode::Write);
 
+            let hydrater = container.create_hydrator();
+            let state = container.create_state();
+
             assert!(
                 !hydrater
-                    .hydrate(HydrateFrom::LocalArchive, "hash123", None)
+                    .hydrate(&mut HydrateFrom::LocalArchive, "hash123", &state)
                     .await
                     .unwrap()
             );
@@ -88,9 +91,10 @@ mod output_hydrater {
             assert!(!container.sandbox.path().join("project/file.txt").exists());
 
             let hydrater = container.create_hydrator();
+            let state = container.create_state();
 
             hydrater
-                .hydrate(HydrateFrom::LocalArchive, "hash123", None)
+                .hydrate(&mut HydrateFrom::LocalArchive, "hash123", &state)
                 .await
                 .unwrap();
 
@@ -111,9 +115,10 @@ mod output_hydrater {
             );
 
             let hydrater = container.create_hydrator();
+            let state = container.create_state();
 
             hydrater
-                .hydrate(HydrateFrom::LocalArchive, "hash123", None)
+                .hydrate(&mut HydrateFrom::LocalArchive, "hash123", &state)
                 .await
                 .unwrap();
 

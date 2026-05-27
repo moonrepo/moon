@@ -2,6 +2,7 @@ mod utils;
 
 use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
+use moon_hash::{Blob, Digest};
 use starbase_archive::Archiver;
 use std::fs;
 use utils::*;
@@ -419,6 +420,157 @@ mod output_archiver {
 
             assert!(dir.join("root.txt").exists());
             assert!(dir.join("project/file.txt").exists());
+        }
+    }
+
+    mod local_cas {
+        use super::*;
+
+        fn setup_cas_state(state: &mut moon_task_runner::TaskRunState) {
+            state.local_cas_enabled = true;
+            state.bytes = b"hash123".to_vec();
+            state.digest = Digest::from_bytes(&state.bytes).unwrap();
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn stores_action_blob_in_cas() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            archiver.archive("hash123", &state).await.unwrap();
+
+            assert!(
+                container
+                    .app_context
+                    .cache_engine
+                    .cas
+                    .contains_object(&state.digest.hash)
+                    .unwrap()
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn stores_action_result_in_ac() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            archiver.archive("hash123", &state).await.unwrap();
+
+            assert!(
+                container
+                    .app_context
+                    .cache_engine
+                    .ac
+                    .contains_object(&state.digest.hash)
+                    .unwrap()
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn stores_output_file_blobs_in_cas() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "contents");
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            archiver.archive("hash123", &state).await.unwrap();
+
+            let blob = Blob::from_bytes(b"contents".to_vec()).unwrap();
+
+            assert!(
+                container
+                    .app_context
+                    .cache_engine
+                    .cas
+                    .contains_object(&blob.digest.hash)
+                    .unwrap()
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_create_a_local_archive() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            archiver.archive("hash123", &state).await.unwrap();
+
+            assert!(
+                !container
+                    .sandbox
+                    .path()
+                    .join(".moon/cache/outputs/hash123.tar.gz")
+                    .exists()
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_write_to_cas_if_cache_disabled() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            container
+                .app_context
+                .cache_engine
+                .force_mode(CacheMode::Off);
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            assert!(!archiver.archive("hash123", &state).await.unwrap());
+
+            assert!(
+                !container
+                    .app_context
+                    .cache_engine
+                    .ac
+                    .contains_object(&state.digest.hash)
+                    .unwrap()
+            );
+
+            GlobalEnvBag::instance().remove("MOON_CACHE");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_write_to_cas_if_cache_read_only() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            container
+                .app_context
+                .cache_engine
+                .force_mode(CacheMode::Read);
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            assert!(!archiver.archive("hash123", &state).await.unwrap());
+
+            assert!(
+                !container
+                    .app_context
+                    .cache_engine
+                    .ac
+                    .contains_object(&state.digest.hash)
+                    .unwrap()
+            );
+
+            GlobalEnvBag::instance().remove("MOON_CACHE");
         }
     }
 

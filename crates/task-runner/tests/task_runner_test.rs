@@ -4,6 +4,7 @@ use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
+use moon_hash::Digest;
 use moon_task::Target;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::output_hydrater::HydrateFrom;
@@ -491,6 +492,50 @@ mod task_runner {
                 assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
 
                 GlobalEnvBag::instance().remove("MOON_CACHE");
+            }
+        }
+
+        mod local_cache {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_if_action_result_in_ac() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.state.local_cas_enabled = true;
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .app_context
+                    .cache_engine
+                    .ac
+                    .write(&runner.state.digest.hash, b"{}")
+                    .unwrap();
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::LocalCache(_))
+                ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_cache_isnt_readable() {
+                let container = TaskRunnerContainer::new("runner", "outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.state.local_cas_enabled = true;
+                runner.state.local_cache_readable = false;
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
+                container
+                    .app_context
+                    .cache_engine
+                    .ac
+                    .write(&runner.state.digest.hash, b"{}")
+                    .unwrap();
+
+                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
             }
         }
 

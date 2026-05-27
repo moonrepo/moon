@@ -93,7 +93,15 @@ impl OutputHydrater<'_> {
                     .as_ref()
                     .and_then(|digest| digest.to_local_digest().ok())
                 {
-                    file.contents = app_context.cache_engine.cas.read_bytes(&digest.hash)?;
+                    // Empty files have well-known content; don't hit the CAS
+                    // for them (mirrors the stderr/stdout handling below, and
+                    // avoids a hard failure when the empty blob isn't locally
+                    // present — for example after a remote-only fetch).
+                    if digest.size == 0 {
+                        file.contents = vec![];
+                    } else {
+                        file.contents = app_context.cache_engine.cas.read_bytes(&digest.hash)?;
+                    }
                 }
             }
 

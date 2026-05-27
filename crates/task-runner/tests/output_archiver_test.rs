@@ -569,6 +569,61 @@ mod output_archiver {
 
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn dedupes_blobs_for_files_with_same_content() {
+            // Multiple output files sharing identical content should share a
+            // single CAS blob (content-addressed). Regression coverage for
+            // the duplicate-digest path that broke remote hydration: any code
+            // that iterates output digests must tolerate repeats.
+            let container = TaskRunnerContainer::new("archive", "output-many-files").await;
+            container.sandbox.create_file("project/a.txt", "shared");
+            container.sandbox.create_file("project/b.txt", "shared");
+            container.sandbox.create_file("project/c.txt", "shared");
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            assert!(archiver.archive("hash123", &state).await.unwrap());
+
+            // The shared content lives at exactly one CAS hash.
+            let shared = Blob::from_bytes(b"shared".to_vec()).unwrap();
+
+            assert!(
+                container
+                    .app_context
+                    .cache_engine
+                    .cas
+                    .contains_object(&shared.digest.hash)
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn empty_files_share_the_empty_blob() {
+            // Empty files all hash to e3b0c4… ; verify the empty blob lands
+            // in CAS exactly once even when multiple files are empty.
+            let container = TaskRunnerContainer::new("archive", "output-many-files").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+            container.sandbox.create_file("project/c.txt", "");
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            assert!(archiver.archive("hash123", &state).await.unwrap());
+
+            let empty = Blob::from_bytes(vec![]).unwrap();
+
+            assert!(
+                container
+                    .app_context
+                    .cache_engine
+                    .cas
+                    .contains_object(&empty.digest.hash)
+            );
+        }
     }
 
     mod has_outputs {

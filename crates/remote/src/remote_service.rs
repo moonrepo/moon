@@ -12,7 +12,7 @@ use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
 use moon_hash::{Blob, Digest};
 use moon_process::ProcessRegistry;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
@@ -545,12 +545,19 @@ async fn batch_download_blobs(
 ) -> miette::Result<bool> {
     let mut blob_map = FxHashMap::default();
     let mut blob_digests = vec![];
+    let mut seen = FxHashSet::default();
 
+    // Dedupe by digest hash: two output files with identical content
+    // reference the same blob, but we only need to download it once.
     for file in &result.output_files {
         if file.contents.is_empty()
             && let Some(digest) = &file.digest
         {
-            blob_digests.push(digest.to_local_digest()?);
+            let local_digest = digest.to_local_digest()?;
+
+            if seen.insert(local_digest.hash.clone()) {
+                blob_digests.push(local_digest);
+            }
         }
     }
 
@@ -653,8 +660,10 @@ async fn batch_download_blobs(
             continue;
         };
 
-        if let Some(bytes) = blob_map.remove(&digest.hash) {
-            file.contents = bytes;
+        // Clone (don't remove): a blob may be referenced by multiple
+        // output files when they share identical content.
+        if let Some(bytes) = blob_map.get(&digest.hash) {
+            file.contents = bytes.to_owned();
         } else {
             warn!(
                 hash = action_digest.hash.as_str(),
@@ -665,16 +674,6 @@ async fn batch_download_blobs(
 
             return Ok(false);
         }
-    }
-
-    if !blob_map.is_empty() {
-        warn!(
-            hash = action_digest.hash.as_str(),
-            blob_count = blob_map.len(),
-            "Received more blobs than expected",
-        );
-
-        return Ok(false);
     }
 
     Ok(true)

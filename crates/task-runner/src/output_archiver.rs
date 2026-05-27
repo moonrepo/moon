@@ -8,6 +8,7 @@ use moon_common::{BLOCKING_THREAD_COUNT, color};
 use moon_hash::{Blob, Digest};
 use moon_remote::RemoteService;
 use moon_task::Task;
+use rustc_hash::FxHashSet;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarPacker;
 use std::path::PathBuf;
@@ -323,22 +324,30 @@ impl OutputArchiver<'_> {
     /// Reconstruct the full `Vec<Blob>` needed by the remote upload API by
     /// loading output file bytes from the CAS in parallel and combining them
     /// with the already-in-memory inline blobs (stderr/stdout).
+    ///
+    /// `output_digests` may contain duplicates (multiple output files with
+    /// identical content). We dedupe by hash before reading so each unique
+    /// blob hits the CAS exactly once.
     async fn batch_read_blobs_for_remote(
         &self,
         mut blobs: Vec<Blob>,
-        mut output_digests: Vec<Digest>,
+        output_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Blob>> {
         if output_digests.is_empty() {
             return Ok(blobs);
         }
 
-        let mut set = JoinSet::new();
-        let chunk_size = output_digests.len() / BLOCKING_THREAD_COUNT;
+        let mut unique_digests = FxHashSet::from_iter(output_digests)
+            .into_iter()
+            .collect::<Vec<_>>();
 
-        while !output_digests.is_empty() {
+        let mut set = JoinSet::new();
+        let chunk_size = unique_digests.len() / BLOCKING_THREAD_COUNT;
+
+        while !unique_digests.is_empty() {
             let cache_engine = Arc::clone(&self.app_context.cache_engine);
-            let chunk = output_digests
-                .drain(0..chunk_size.max(1).min(output_digests.len()))
+            let chunk = unique_digests
+                .drain(0..chunk_size.max(1).min(unique_digests.len()))
                 .collect::<Vec<_>>();
 
             set.spawn_blocking(move || {

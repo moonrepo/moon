@@ -307,7 +307,7 @@ impl OutputArchiver<'_> {
 
             set.spawn_blocking(move || {
                 for blob in &group.items {
-                    cache_engine.cas.write_blob(&blob)?;
+                    cache_engine.cas.write_blob(blob)?;
                 }
 
                 Ok::<_, miette::Report>(group.items)

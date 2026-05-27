@@ -477,7 +477,9 @@ mod output_archiver {
         #[tokio::test(flavor = "multi_thread")]
         async fn stores_output_file_blobs_in_cas() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "contents");
+            container
+                .sandbox
+                .create_file("project/file.txt", "contents");
 
             let archiver = container.create_archiver();
             let mut state = container.create_state();

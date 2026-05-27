@@ -152,7 +152,10 @@ mod output_hydrater {
             archiver.archive("hash123", state).await.unwrap();
         }
 
-        fn read_action_result(container: &TaskRunnerContainer, state: &TaskRunState) -> ActionResult {
+        fn read_action_result(
+            container: &TaskRunnerContainer,
+            state: &TaskRunState,
+        ) -> ActionResult {
             let bytes = container
                 .app_context
                 .cache_engine
@@ -166,7 +169,9 @@ mod output_hydrater {
         #[tokio::test(flavor = "multi_thread")]
         async fn hydrates_output_file_from_cas() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "contents");
+            container
+                .sandbox
+                .create_file("project/file.txt", "contents");
 
             let mut state = container.create_state();
             setup_cas_state(&mut state);
@@ -195,7 +200,9 @@ mod output_hydrater {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_hydrate_if_cache_disabled() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "contents");
+            container
+                .sandbox
+                .create_file("project/file.txt", "contents");
 
             let mut state = container.create_state();
             setup_cas_state(&mut state);

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the `InstallDependencies` action would scan manifests within the vendor
+  directory, which could cause issues with some package managers.
+
 ## 2.2.5
 
 #### 🐞 Fixes

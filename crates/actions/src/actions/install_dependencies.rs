@@ -305,7 +305,12 @@ async fn hash_manifest_contents<'action>(
     fingerprint: &mut InstallDependenciesFingerprint<'action>,
 ) -> miette::Result<()> {
     // Find all manifests in the workspace
-    let deps_members = node.members.clone().unwrap_or_default();
+    let mut deps_members = node.members.clone().unwrap_or_default();
+
+    // But avoid manifests in the vendor directory
+    if let Some(vendor_dir_name) = &toolchain.metadata.vendor_dir_name {
+        deps_members.push(format!("!**/{vendor_dir_name}/**"));
+    }
 
     let mut manifest_paths =
         glob::walk_fast_with_options(deps_root, &deps_members, GlobWalkOptions::default().cache())?

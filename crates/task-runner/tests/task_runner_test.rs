@@ -1046,7 +1046,9 @@ mod task_runner {
 
             let mut runner = container.create_runner();
 
-            assert!(!runner.archive("hash123").await.unwrap());
+            // Task has no outputs; legacy archive path still packs the
+            // stdout/stderr logs and returns true.
+            assert!(runner.archive("hash123").await.unwrap());
         }
     }
 

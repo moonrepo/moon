@@ -1,7 +1,7 @@
 use crate::cas_error::CasError;
 use crate::gc::GcResult;
 use moon_config::CacheCasConfig;
-use moon_hash::{Blob, ContentHash, Sha256, Sha256Digest, hash_sha256};
+use moon_hash::{Blob, ContentHash, Digest, Sha256, Sha256Digest, hash_sha256};
 use starbase_utils::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -89,14 +89,14 @@ impl CasStore {
     }
 
     /// Store raw bytes and return the content hash.
-    pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<ContentHash> {
-        let hash = ContentHash::hash_bytes(bytes)?;
+    pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<Digest> {
+        let digest = Digest::from_bytes(bytes)?;
 
-        if self.write(&hash, bytes)? {
-            trace!(hash = hash.as_str(), "Stored object from bytes");
+        if self.write(&digest.hash, bytes)? {
+            trace!(hash = digest.hash.as_str(), "Stored object from bytes");
         }
 
-        Ok(hash)
+        Ok(digest)
     }
 
     /// Store content read from a file and return a blob.
@@ -113,8 +113,9 @@ impl CasStore {
 
     /// Store content from a streaming reader.
     /// Hashes and writes simultaneously in 64 KiB chunks.
-    pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<ContentHash> {
+    pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<Digest> {
         let mut guard = self.create_temp_file()?;
+        let mut size = 0;
 
         let hash = {
             let mut hasher = Sha256::default();
@@ -128,6 +129,8 @@ impl CasStore {
                         path: guard.path.clone(),
                         error: Box::new(error),
                     })?;
+
+                size += n;
 
                 if n == 0 {
                     break;
@@ -146,15 +149,23 @@ impl CasStore {
             ContentHash::from_hex(format!("{:x}", hasher.finalize()))?
         };
 
-        if self.contains_object(&hash) {
-            return Ok(hash);
+        let digest = Digest {
+            hash,
+            size: size as i64,
+        };
+
+        if self.contains_object(&digest.hash) {
+            return Ok(digest);
         }
 
-        self.commit_temp_file(&hash, &mut guard)?;
+        self.commit_temp_file(&digest.hash, &mut guard)?;
 
-        trace!(hash = hash.as_str(), "Stored object from byte stream");
+        trace!(
+            hash = digest.hash.as_str(),
+            "Stored object from byte stream"
+        );
 
-        Ok(hash)
+        Ok(digest)
     }
 
     // ---- Read operations ----

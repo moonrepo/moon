@@ -18,11 +18,21 @@ pub fn create_action(command_digest: &Digest) -> Action {
     }
 }
 
+/// Build an `ActionResult` from the operation + collected outputs.
+///
+/// Returns:
+/// - The `ActionResult` itself (digests referenced inline).
+/// - `inline_blobs`: blobs whose bytes are already in memory (currently just
+///   stderr/stdout). Always small.
+/// - `output_digests`: digests of output files. The bytes live in the local
+///   CAS (the streaming collection step wrote them there); load on demand
+///   via `cas.read_bytes(&digest.hash)` if you need to upload them.
 pub fn create_action_result(
     operation: &Operation,
     outputs: OutputTree,
-) -> miette::Result<(ActionResult, Vec<Blob>)> {
-    let mut blobs = vec![];
+) -> miette::Result<(ActionResult, Vec<Blob>, Vec<Digest>)> {
+    let mut inline_blobs = vec![];
+    let mut output_digests = vec![];
     let mut result = ActionResult {
         execution_metadata: Some(ExecutedActionMetadata {
             worker: "moon".into(),
@@ -42,14 +52,14 @@ pub fn create_action_result(
             let blob = Blob::from_bytes(stderr.as_bytes().to_owned())?;
 
             result.stderr_digest = Some(blob.digest.to_remote_digest());
-            blobs.push(blob);
+            inline_blobs.push(blob);
         }
 
         if let Some(stdout) = &exec.stdout {
             let blob = Blob::from_bytes(stdout.as_bytes().to_owned())?;
 
             result.stdout_digest = Some(blob.digest.to_remote_digest());
-            blobs.push(blob);
+            inline_blobs.push(blob);
         }
     }
 
@@ -67,7 +77,7 @@ pub fn create_action_result(
         });
     }
 
-    for (path, blob) in outputs.files {
+    for (path, digest) in outputs.files {
         let abs_path = path.to_logical_path(&outputs.workspace_root);
         let metadata = fs_std::metadata(&abs_path).map_err(|error| FsError::Read {
             path: abs_path.clone(),
@@ -76,16 +86,16 @@ pub fn create_action_result(
 
         result.output_files.push(OutputFile {
             path: path.to_string(),
-            digest: Some(blob.digest.to_remote_digest()),
+            digest: Some(digest.to_remote_digest()),
             is_executable: is_file_executable(&abs_path, &metadata),
             contents: vec![],
             node_properties: Some(extract_node_properties(&metadata)),
         });
 
-        blobs.push(blob);
+        output_digests.push(digest);
     }
 
-    Ok((result, blobs))
+    Ok((result, inline_blobs, output_digests))
 }
 
 // This is where moon differs from the Bazel RE API. In Bazel,

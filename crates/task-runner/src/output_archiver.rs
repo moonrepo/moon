@@ -5,7 +5,7 @@ use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_common::{BLOCKING_THREAD_COUNT, color};
-use moon_hash::Blob;
+use moon_hash::{Blob, Digest};
 use moon_remote::RemoteService;
 use moon_task::Task;
 use starbase_archive::Archiver;
@@ -58,19 +58,19 @@ impl OutputArchiver<'_> {
             return Ok(false);
         }
 
-        // Step 1) Collect all outputs
-        let outputs = self.collect_output_blobs(hash).await?;
-        let archived = !outputs.is_empty();
+        if state.local_cas_enabled {
+            // Collect all outputs (streams each file directly into the CAS)
+            let outputs = self.collect_output_blobs(hash).await?;
+            let archived = !outputs.is_empty();
 
-        // Step 2) Store in local and remote caches
-        self.save_in_cas(hash, state, outputs).await?;
+            // Store action + result in local and/or remote caches
+            self.save_in_cas(hash, state, outputs).await?;
 
-        // Step 3) Create the archive file (temporary)
-        if !state.local_cas_enabled {
-            self.pack_local_archive(hash, state).await?;
+            return Ok(archived);
         }
 
-        Ok(archived)
+        // Create the archive file (temporary)
+        self.pack_local_archive(hash, state).await
     }
 
     #[instrument(skip(self))]
@@ -124,7 +124,7 @@ impl OutputArchiver<'_> {
             hash, "Collecting task output blobs"
         );
 
-        self.batch_read_blobs(
+        self.batch_read_blobs_for_local(
             self.task
                 .get_output_files(&self.app_context.workspace_root, true)?,
         )
@@ -242,26 +242,36 @@ impl OutputArchiver<'_> {
             };
         }
 
-        // Then create and store the action result
-        let (action_result, mut blobs) = create_action_result(&state.operation, outputs)?;
+        // Then create the action result. Output file blobs are already in the
+        // CAS thanks to streaming collection — `output_digests` references them.
+        // `inline_blobs` carries the small in-memory ones (stderr/stdout).
+        let (action_result, inline_blobs, output_digests) =
+            create_action_result(&state.operation, outputs)?;
 
         if state.local_cache_writable & state.local_cas_enabled {
-            // Locally the action results are stored using our internal task hash,
-            // and not the digest/hash that the Bazel Remote API expects
+            // Action results are keyed by our internal task hash locally
+            // (not the Bazel Remote API digest).
             let action_result_blob = Blob::from_data(&action_result)?;
 
             cache_engine
                 .ac
                 .write(&state.digest.hash, &action_result_blob.bytes)?;
 
-            // However the blobs themselves are stored using their content hash
-            blobs = self.batch_write_blobs(blobs).await?;
+            // Inline blobs (stderr/stdout) still need to be written to the CAS;
+            // output file blobs were already streamed there during collection.
+            for blob in &inline_blobs {
+                cache_engine.cas.write_blob(blob)?;
+            }
         }
 
         if state.remote_cache_writable
             && continue_remote
             && let Some(remote) = RemoteService::session()
         {
+            let blobs = self
+                .batch_read_blobs_for_remote(inline_blobs, output_digests)
+                .await?;
+
             remote
                 .save_action_result(&state.digest, action_result, blobs)
                 .await?;
@@ -270,19 +280,28 @@ impl OutputArchiver<'_> {
         Ok(())
     }
 
-    async fn batch_read_blobs(&self, mut paths: Vec<PathBuf>) -> miette::Result<OutputTree> {
+    /// Collect outputs into an `OutputTree`, streaming each file's bytes
+    /// directly into the local CAS as we hash it. After this returns, each
+    /// digest in the tree refers to a blob already on disk in the CAS —
+    /// callers can read bytes back via `cas.read_bytes(&digest.hash)` without
+    /// re-touching the source file.
+    async fn batch_read_blobs_for_local(
+        &self,
+        mut output_paths: Vec<PathBuf>,
+    ) -> miette::Result<OutputTree> {
         let mut set = JoinSet::new();
-        let chunk_size = paths.len() / BLOCKING_THREAD_COUNT;
+        let chunk_size = output_paths.len() / BLOCKING_THREAD_COUNT;
 
-        while !paths.is_empty() {
+        while !output_paths.is_empty() {
             let mut outputs = OutputTree::new(&self.app_context.workspace_root);
-            let chunk = paths
-                .drain(0..chunk_size.max(1).min(paths.len()))
+            let cache_engine = Arc::clone(&self.app_context.cache_engine);
+            let chunk = output_paths
+                .drain(0..chunk_size.max(1).min(output_paths.len()))
                 .collect::<Vec<_>>();
 
             set.spawn_blocking(move || {
                 for path in chunk {
-                    outputs.insert(path, None)?;
+                    outputs.insert(path, &cache_engine.cas)?;
                 }
 
                 Ok::<_, miette::Report>(outputs)
@@ -301,26 +320,38 @@ impl OutputArchiver<'_> {
         Ok(outputs)
     }
 
-    async fn batch_write_blobs(&self, mut blobs: Vec<Blob>) -> miette::Result<Vec<Blob>> {
-        let mut set = JoinSet::new();
-        let chunk_size = blobs.len() / BLOCKING_THREAD_COUNT;
+    /// Reconstruct the full `Vec<Blob>` needed by the remote upload API by
+    /// loading output file bytes from the CAS in parallel and combining them
+    /// with the already-in-memory inline blobs (stderr/stdout).
+    async fn batch_read_blobs_for_remote(
+        &self,
+        mut blobs: Vec<Blob>,
+        mut output_digests: Vec<Digest>,
+    ) -> miette::Result<Vec<Blob>> {
+        if output_digests.is_empty() {
+            return Ok(blobs);
+        }
 
-        while !blobs.is_empty() {
+        let mut set = JoinSet::new();
+        let chunk_size = output_digests.len() / BLOCKING_THREAD_COUNT;
+
+        while !output_digests.is_empty() {
             let cache_engine = Arc::clone(&self.app_context.cache_engine);
-            let chunk = blobs
-                .drain(0..chunk_size.max(1).min(blobs.len()))
+            let chunk = output_digests
+                .drain(0..chunk_size.max(1).min(output_digests.len()))
                 .collect::<Vec<_>>();
 
             set.spawn_blocking(move || {
-                for blob in &chunk {
-                    cache_engine.cas.write_blob(blob)?;
+                let mut blobs = Vec::with_capacity(chunk.len());
+
+                for digest in chunk {
+                    let bytes = cache_engine.cas.read_bytes(&digest.hash)?;
+                    blobs.push(Blob { bytes, digest });
                 }
 
-                Ok::<_, miette::Report>(chunk)
+                Ok::<_, miette::Report>(blobs)
             });
         }
-
-        let mut blobs = vec![];
 
         while let Some(chunk) = set.join_next().await {
             blobs.extend(chunk.into_diagnostic()??);

@@ -78,8 +78,8 @@ impl MoonDaemon for DaemonService {
             .get_task(&target)
             .map_err(|error| Status::not_found(error.to_string()))?;
 
-        // TODO populate!
-        let task_state = TaskRunState::default();
+        // TODO populate the action digest/bytes!
+        let task_state = TaskRunState::new(&state.app_context, &task);
 
         let archived = OutputArchiver {
             app_context: &state.app_context,

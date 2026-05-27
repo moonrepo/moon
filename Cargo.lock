@@ -5227,6 +5227,7 @@ dependencies = [
 name = "moon_cas"
 version = "0.0.1"
 dependencies = [
+ "fastrand",
  "miette 7.6.0",
  "moon_common",
  "moon_config",
@@ -5237,7 +5238,6 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "tracing",
- "uuid",
 ]
 
 [[package]]

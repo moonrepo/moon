@@ -13,7 +13,6 @@ use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
 use moon_hash::{Blob, Digest};
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashMap;
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
@@ -214,7 +213,7 @@ impl RemoteService {
         Ok(true)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip(self, result, blobs))]
     pub async fn save_action_result(
         &self,
         action_digest: &Digest,
@@ -283,7 +282,7 @@ impl RemoteService {
         Ok(true)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip(self, result))]
     pub async fn restore_action_result(
         &self,
         action_digest: &Digest,
@@ -679,61 +678,4 @@ async fn batch_download_blobs(
     }
 
     Ok(true)
-}
-
-struct Partition<T> {
-    pub items: Vec<T>,
-    pub size: usize,
-    pub stream: bool,
-}
-
-fn partition_into_groups<T>(
-    items: Vec<T>,
-    max_size: usize,
-    get_size: impl Fn(&T) -> usize,
-) -> BTreeMap<i32, Partition<T>> {
-    let mut groups = BTreeMap::<i32, Partition<T>>::default();
-
-    // Subtract a chunk from the max size, because when down/uploading blobs,
-    // we need to account for the non-blob data in the request/response, like the
-    // compression level, digest strings, status fields, etc. All of these "add up"
-    // and can bump the total body size larger than the actual limit. To be safe,
-    // we reduce the max size by 25%.
-    let max_group_size = (max_size as f64 * 0.75) as usize;
-
-    for item in items {
-        let item_size = get_size(&item);
-        let mut index_to_use = -1;
-        let mut stream = false;
-
-        // Item is too large, must be streamed
-        if item_size >= max_group_size {
-            stream = true;
-        }
-        // Try and find a partition that this item can go into
-        else {
-            for (index, group) in &groups {
-                if !group.stream && (group.size + item_size) <= max_group_size {
-                    index_to_use = *index;
-                    break;
-                }
-            }
-        }
-
-        // If no partition available, create a new one
-        if index_to_use == -1 {
-            index_to_use = groups.len() as i32;
-        }
-
-        let group = groups.entry(index_to_use).or_insert_with(|| Partition {
-            items: vec![],
-            size: 0,
-            stream: false,
-        });
-        group.size += item_size;
-        group.stream = stream;
-        group.items.push(item);
-    }
-
-    groups
 }

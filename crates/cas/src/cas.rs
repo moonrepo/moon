@@ -7,7 +7,6 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use tracing::{debug, instrument, trace};
-use uuid::Uuid;
 
 /// A content-addressable file system store.
 ///
@@ -60,8 +59,7 @@ impl CasStore {
             return Ok(false);
         }
 
-        let uuid = Uuid::new_v4().to_string();
-        let mut guard = self.create_temp_file(&uuid)?;
+        let mut guard = self.create_temp_file()?;
 
         {
             let mut file = fs::create_file(&guard.path)?;
@@ -118,8 +116,7 @@ impl CasStore {
     /// Store content from a streaming reader.
     /// Hashes and writes simultaneously in 64 KiB chunks.
     pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<ContentHash> {
-        let uuid = Uuid::new_v4().to_string();
-        let mut guard = self.create_temp_file(&uuid)?;
+        let mut guard = self.create_temp_file()?;
 
         let hash = {
             let mut hasher = Sha256::default();
@@ -266,9 +263,13 @@ impl CasStore {
         Ok(path)
     }
 
-    fn create_temp_file(&self, hash: &str) -> miette::Result<TempGuard> {
+    fn create_temp_file(&self) -> miette::Result<TempGuard> {
+        let key: String = std::iter::repeat_with(fastrand::alphanumeric)
+            .take(32)
+            .collect();
+
         Ok(TempGuard {
-            path: self.temp_dir.join(hash),
+            path: self.temp_dir.join(key),
             committed: false,
         })
     }

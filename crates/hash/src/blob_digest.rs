@@ -67,4 +67,8 @@ impl Digest {
 
         Self::from_bytes(&bytes)
     }
+
+    pub fn is_valid(&self) -> bool {
+        self.size >= 0 && !self.hash.is_empty()
+    }
 }

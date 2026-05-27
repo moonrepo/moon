@@ -301,7 +301,7 @@ impl<'task> TaskRunner<'task> {
         hash: &str,
         cache_lifetime: Option<Duration>,
     ) -> miette::Result<Option<HydrateFrom>> {
-        if !self.state.local_cache_readable {
+        if !self.state.local_cache_readable || !self.state.digest.is_valid() {
             return Ok(None);
         }
 
@@ -362,7 +362,8 @@ impl<'task> TaskRunner<'task> {
     }
 
     async fn is_cached_remote(&self, hash: &str) -> Option<HydrateFrom> {
-        if self.state.remote_cache_readable
+        if self.state.digest.is_valid()
+            && self.state.remote_cache_readable
             && let Some(remote) = RemoteService::session()
             // Don't bubble up errors from the remote cache check, just treat them as cache misses
             && let Ok(Some(result)) = remote.is_action_cached(&self.state.digest).await

@@ -6,7 +6,7 @@ use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_common::color;
 use moon_hash::Blob;
-use moon_remote::RemoteService;
+use moon_remote::{RemoteService, partition_into_groups};
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarPacker;
@@ -207,6 +207,10 @@ impl OutputArchiver<'_> {
         state: &TaskRunState,
         outputs: OutputTree,
     ) -> miette::Result<()> {
+        if !state.digest.is_valid() {
+            return Ok(());
+        }
+
         let cache_engine = &self.app_context.cache_engine;
         let mut continue_remote = true;
 
@@ -294,19 +298,19 @@ impl OutputArchiver<'_> {
         Ok(outputs)
     }
 
-    async fn batch_write_blobs(&self, mut blobs: Vec<Blob>) -> miette::Result<Vec<Blob>> {
+    async fn batch_write_blobs(&self, blobs: Vec<Blob>) -> miette::Result<Vec<Blob>> {
         let mut set = JoinSet::new();
 
-        while !blobs.is_empty() {
-            let chunk = blobs.drain(0..25.min(blobs.len())).collect::<Vec<_>>();
+        // 2mb per thread
+        for group in partition_into_groups(blobs, 2097152, |blob| blob.bytes.len()).into_values() {
             let cache_engine = Arc::clone(&self.app_context.cache_engine);
 
             set.spawn_blocking(move || {
-                for blob in &chunk {
+                for blob in &group.items {
                     cache_engine.cas.write_blob(&blob)?;
                 }
 
-                Ok::<_, miette::Report>(chunk)
+                Ok::<_, miette::Report>(group.items)
             });
         }
 

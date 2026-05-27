@@ -147,7 +147,9 @@ impl OutputHydrater<'_> {
             return self.hydrate_local(hash, state, result).await;
         };
 
-        if let Some(remote) = RemoteService::session() {
+        if state.digest.is_valid()
+            && let Some(remote) = RemoteService::session()
+        {
             debug!(
                 task_target = self.task.target.as_str(),
                 hash, "Hydrating task outputs from remote cache"

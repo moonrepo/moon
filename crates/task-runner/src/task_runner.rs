@@ -306,7 +306,13 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Check if the outputs have been cached in local CAS first
-        if self.state.local_cas_enabled {
+        if self.state.local_cas_enabled
+            && self
+                .app_context
+                .cache_engine
+                .ac
+                .contains_object(&self.state.digest.hash)?
+        {
             debug!(
                 task_target = self.task.target.as_str(),
                 hash, "Cache hit in local cache"

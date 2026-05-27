@@ -10,8 +10,9 @@ use moon_remote::RemoteService;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarPacker;
+use std::path::PathBuf;
 use std::sync::Arc;
-use tokio::task::spawn_blocking;
+use tokio::task::{JoinSet, spawn_blocking};
 use tracing::{debug, instrument, trace, warn};
 
 /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
@@ -123,23 +124,11 @@ impl OutputArchiver<'_> {
             hash, "Collecting task output blobs"
         );
 
-        let app_context = Arc::clone(self.app_context);
-        let mut outputs = OutputTree::new(&app_context.workspace_root);
-        let output_paths = self
-            .task
-            .get_output_files(&app_context.workspace_root, true)?;
-
-        let tree = spawn_blocking(move || {
-            for path in output_paths {
-                outputs.insert(path, None)?;
-            }
-
-            Ok::<_, miette::Report>(outputs)
-        })
+        self.batch_read_blobs(
+            self.task
+                .get_output_files(&self.app_context.workspace_root, true)?,
+        )
         .await
-        .into_diagnostic()??;
-
-        Ok(tree)
     }
 
     #[instrument(skip(self, state))]
@@ -250,7 +239,7 @@ impl OutputArchiver<'_> {
         }
 
         // Then create and store the action result
-        let (action_result, blobs) = create_action_result(&state.operation, outputs)?;
+        let (action_result, mut blobs) = create_action_result(&state.operation, outputs)?;
 
         if state.local_cache_writable & state.local_cas_enabled {
             // Locally the action results are stored using our internal task hash,
@@ -262,9 +251,7 @@ impl OutputArchiver<'_> {
                 .write(&state.digest.hash, &action_result_blob.bytes)?;
 
             // However the blobs themselves are stored using their content hash
-            for blob in &blobs {
-                cache_engine.cas.write_blob(blob)?;
-            }
+            blobs = self.batch_write_blobs(blobs).await?;
         }
 
         if state.remote_cache_writable
@@ -277,5 +264,58 @@ impl OutputArchiver<'_> {
         }
 
         Ok(())
+    }
+
+    async fn batch_read_blobs(&self, mut paths: Vec<PathBuf>) -> miette::Result<OutputTree> {
+        let mut set = JoinSet::new();
+
+        while !paths.is_empty() {
+            let chunk = paths.drain(0..25.min(paths.len())).collect::<Vec<_>>();
+            let mut outputs = OutputTree::new(&self.app_context.workspace_root);
+
+            set.spawn_blocking(move || {
+                for path in chunk {
+                    outputs.insert(path, None)?;
+                }
+
+                Ok::<_, miette::Report>(outputs)
+            });
+        }
+
+        let mut outputs = OutputTree::new(&self.app_context.workspace_root);
+
+        while let Some(chunk) = set.join_next().await {
+            let tree = chunk.into_diagnostic()??;
+
+            outputs.files.extend(tree.files);
+            outputs.symlinks.extend(tree.symlinks);
+        }
+
+        Ok(outputs)
+    }
+
+    async fn batch_write_blobs(&self, mut blobs: Vec<Blob>) -> miette::Result<Vec<Blob>> {
+        let mut set = JoinSet::new();
+
+        while !blobs.is_empty() {
+            let chunk = blobs.drain(0..25.min(blobs.len())).collect::<Vec<_>>();
+            let cache_engine = Arc::clone(&self.app_context.cache_engine);
+
+            set.spawn_blocking(move || {
+                for blob in &chunk {
+                    cache_engine.cas.write_blob(&blob)?;
+                }
+
+                Ok::<_, miette::Report>(chunk)
+            });
+        }
+
+        let mut blobs = vec![];
+
+        while let Some(chunk) = set.join_next().await {
+            blobs.extend(chunk.into_diagnostic()??);
+        }
+
+        Ok(blobs)
     }
 }

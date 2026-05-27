@@ -6,7 +6,7 @@ use starbase_utils::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, trace};
 use uuid::Uuid;
 
 /// A content-addressable file system store.
@@ -60,7 +60,8 @@ impl CasStore {
             return Ok(false);
         }
 
-        let mut guard = self.create_temp_file(hash)?;
+        let uuid = Uuid::new_v4().to_string();
+        let mut guard = self.create_temp_file(&uuid)?;
 
         {
             let mut file = fs::create_file(&guard.path)?;
@@ -85,7 +86,7 @@ impl CasStore {
     /// Store raw bytes from the provided blob.
     pub fn write_blob(&self, blob: &Blob) -> miette::Result<()> {
         if self.write(&blob.digest.hash, &blob.bytes)? {
-            debug!(hash = blob.digest.hash.as_str(), "Stored object from blob");
+            trace!(hash = blob.digest.hash.as_str(), "Stored object from blob");
         }
 
         Ok(())
@@ -96,7 +97,7 @@ impl CasStore {
         let hash = ContentHash::hash_bytes(bytes)?;
 
         if self.write(&hash, bytes)? {
-            debug!(hash = hash.as_str(), "Stored object from bytes");
+            trace!(hash = hash.as_str(), "Stored object from bytes");
         }
 
         Ok(hash)
@@ -108,7 +109,7 @@ impl CasStore {
         let blob = Blob::from_file(path)?;
 
         if self.write(&blob.digest.hash, &blob.bytes)? {
-            debug!(hash = blob.digest.hash.as_str(), path = ?path, "Stored object from file");
+            trace!(hash = blob.digest.hash.as_str(), path = ?path, "Stored object from file");
         }
 
         Ok(blob)
@@ -160,7 +161,7 @@ impl CasStore {
 
         self.commit_temp_file(&hash, &mut guard)?;
 
-        debug!(hash = hash.as_str(), "Stored object from byte stream");
+        trace!(hash = hash.as_str(), "Stored object from byte stream");
 
         Ok(hash)
     }

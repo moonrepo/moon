@@ -449,7 +449,6 @@ mod output_archiver {
                     .cache_engine
                     .cas
                     .contains_object(&state.digest.hash)
-                    .unwrap()
             );
         }
 
@@ -470,7 +469,6 @@ mod output_archiver {
                     .cache_engine
                     .ac
                     .contains_object(&state.digest.hash)
-                    .unwrap()
             );
         }
 
@@ -495,7 +493,6 @@ mod output_archiver {
                     .cache_engine
                     .cas
                     .contains_object(&blob.digest.hash)
-                    .unwrap()
             );
         }
 
@@ -541,7 +538,6 @@ mod output_archiver {
                     .cache_engine
                     .ac
                     .contains_object(&state.digest.hash)
-                    .unwrap()
             );
 
             GlobalEnvBag::instance().remove("MOON_CACHE");
@@ -569,7 +565,6 @@ mod output_archiver {
                     .cache_engine
                     .ac
                     .contains_object(&state.digest.hash)
-                    .unwrap()
             );
 
             GlobalEnvBag::instance().remove("MOON_CACHE");

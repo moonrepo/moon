@@ -4,9 +4,9 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_common::color;
+use moon_common::{BLOCKING_THREAD_COUNT, color};
 use moon_hash::Blob;
-use moon_remote::{RemoteService, partition_into_groups};
+use moon_remote::RemoteService;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarPacker;
@@ -272,10 +272,13 @@ impl OutputArchiver<'_> {
 
     async fn batch_read_blobs(&self, mut paths: Vec<PathBuf>) -> miette::Result<OutputTree> {
         let mut set = JoinSet::new();
+        let chunk_size = paths.len() / BLOCKING_THREAD_COUNT;
 
         while !paths.is_empty() {
-            let chunk = paths.drain(0..25.min(paths.len())).collect::<Vec<_>>();
             let mut outputs = OutputTree::new(&self.app_context.workspace_root);
+            let chunk = paths
+                .drain(0..chunk_size.max(1).min(paths.len()))
+                .collect::<Vec<_>>();
 
             set.spawn_blocking(move || {
                 for path in chunk {
@@ -298,19 +301,22 @@ impl OutputArchiver<'_> {
         Ok(outputs)
     }
 
-    async fn batch_write_blobs(&self, blobs: Vec<Blob>) -> miette::Result<Vec<Blob>> {
+    async fn batch_write_blobs(&self, mut blobs: Vec<Blob>) -> miette::Result<Vec<Blob>> {
         let mut set = JoinSet::new();
+        let chunk_size = blobs.len() / BLOCKING_THREAD_COUNT;
 
-        // 2mb per thread
-        for group in partition_into_groups(blobs, 2097152, |blob| blob.bytes.len()).into_values() {
+        while !blobs.is_empty() {
             let cache_engine = Arc::clone(&self.app_context.cache_engine);
+            let chunk = blobs
+                .drain(0..chunk_size.max(1).min(blobs.len()))
+                .collect::<Vec<_>>();
 
             set.spawn_blocking(move || {
-                for blob in &group.items {
+                for blob in &chunk {
                     cache_engine.cas.write_blob(blob)?;
                 }
 
-                Ok::<_, miette::Report>(group.items)
+                Ok::<_, miette::Report>(chunk)
             });
         }
 

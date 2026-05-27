@@ -171,8 +171,6 @@ pub fn write_output_file(
         apply_node_properties(&mut fd, props).map_err(map_error)?;
     }
 
-    fd.sync_all().map_err(map_error)?;
-
     Ok(())
 }
 
@@ -221,8 +219,6 @@ pub fn link_output_file(
         let mut fd = fs::open_file_for_writing(&to_path)?;
 
         apply_node_properties(&mut fd, props).map_err(map_error)?;
-
-        fd.sync_all().map_err(map_error)?;
     }
 
     Ok(())

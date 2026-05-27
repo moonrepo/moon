@@ -144,7 +144,7 @@ mod cas {
             let store = create_store(&sandbox);
 
             let hash = store.write_bytes(b"exists").unwrap();
-            assert!(store.contains_object(&hash).unwrap());
+            assert!(store.contains_object(&hash));
         }
 
         #[test]
@@ -153,7 +153,7 @@ mod cas {
             let store = create_store(&sandbox);
 
             let hash = ContentHash::from_hex("0".repeat(64)).unwrap();
-            assert!(!store.contains_object(&hash).unwrap());
+            assert!(!store.contains_object(&hash));
         }
     }
 
@@ -234,7 +234,7 @@ mod cas {
 
             // Only one blob on disk.
             let hash = store.write_bytes(data).unwrap();
-            assert!(store.contains_object(&hash).unwrap());
+            assert!(store.contains_object(&hash));
         }
     }
 }

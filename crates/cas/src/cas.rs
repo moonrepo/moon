@@ -55,7 +55,7 @@ impl CasStore {
 
     #[instrument(skip(self, bytes), fields(len = bytes.len()))]
     pub fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<bool> {
-        if self.contains_object(hash)? {
+        if self.contains_object(hash) {
             return Ok(false);
         }
 
@@ -69,13 +69,11 @@ impl CasStore {
                     path: guard.path.clone(),
                     error: Box::new(error),
                 })?;
-
-            file.sync_all().map_err(|error| CasError::WriteFailed {
-                path: guard.path.clone(),
-                error: Box::new(error),
-            })?;
         }
 
+        // No fsync: the temp-file + rename pattern guarantees readers never
+        // see partial content. Power-loss before durability flush would leave
+        // a missing blob, which on the next run just becomes a cache miss.
         self.commit_temp_file(hash, &mut guard)?;
 
         Ok(true)
@@ -144,15 +142,11 @@ impl CasStore {
                     })?;
             }
 
-            file.sync_all().map_err(|error| CasError::WriteFailed {
-                path: guard.path.clone(),
-                error: Box::new(error),
-            })?;
-
+            // No fsync: see `write` for rationale.
             ContentHash::from_hex(format!("{:x}", hasher.finalize()))?
         };
 
-        if self.contains_object(&hash)? {
+        if self.contains_object(&hash) {
             return Ok(hash);
         }
 
@@ -166,24 +160,14 @@ impl CasStore {
     // ---- Read operations ----
 
     /// Check whether an object exists for the given hash.
-    pub fn contains_object(&self, hash: &ContentHash) -> miette::Result<bool> {
-        let path = self.object_path(hash);
-
-        if path.exists() {
-            if self.config.verify_integrity {
-                let bytes = fs::read_file_bytes(&path)?;
-
-                if self.verify_integrity(&path, hash, &bytes).is_err() {
-                    fs::remove_file(path)?;
-
-                    return Ok(false);
-                }
-            }
-
-            return Ok(true);
-        }
-
-        Ok(false)
+    ///
+    /// This is a pure existence check; it does not verify the on-disk content
+    /// against the hash even when `verify_integrity` is enabled. Verification
+    /// happens lazily on read (via `read_bytes` / `open`). Putting it here
+    /// would force a full file read + rehash on every write to a hash that
+    /// already exists, which dominates the cost of a warm cache.
+    pub fn contains_object(&self, hash: &ContentHash) -> bool {
+        self.object_path(hash).exists()
     }
 
     /// Read the full blob into memory. Verifies integrity if configured.

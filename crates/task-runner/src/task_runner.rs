@@ -311,7 +311,7 @@ impl<'task> TaskRunner<'task> {
                 .app_context
                 .cache_engine
                 .ac
-                .contains_object(&self.state.digest.hash)?
+                .contains_object(&self.state.digest.hash)
         {
             debug!(
                 task_target = self.task.target.as_str(),

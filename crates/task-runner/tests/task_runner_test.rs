@@ -438,6 +438,8 @@ mod task_runner {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
 
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
+
                 container
                     .sandbox
                     .create_file(".moon/cache/outputs/hash123.tar.gz", "");
@@ -1120,9 +1122,11 @@ mod task_runner {
             use super::*;
             use std::fs;
 
-            fn setup_local_state(container: &TaskRunnerContainer, _runner: &mut TaskRunner) {
+            fn setup_local_state(container: &TaskRunnerContainer, runner: &mut TaskRunner) {
                 container.sandbox.enable_git();
                 container.pack_archive();
+
+                runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
             }
 
             #[tokio::test(flavor = "multi_thread")]

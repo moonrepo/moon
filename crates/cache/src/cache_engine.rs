@@ -103,13 +103,22 @@ impl CacheEngine {
     }
 
     #[instrument(skip(self))]
-    pub fn clean_stale_cache(&self, lifetime: &str, all: bool) -> miette::Result<(usize, u64)> {
+    pub async fn clean_stale_cache(
+        &self,
+        lifetime: &str,
+        all: bool,
+    ) -> miette::Result<(usize, u64)> {
         let duration = self.parse_lifetime(lifetime)?;
 
         debug!(
             "Cleaning up and deleting stale cached artifacts older than \"{}\"",
             lifetime
         );
+
+        let mut result = RemoveDirContentsResult {
+            files_deleted: 0,
+            bytes_saved: 0,
+        };
 
         let mut dirs = vec![&self.hash.hashes_dir, &self.hash.outputs_dir];
 
@@ -118,14 +127,19 @@ impl CacheEngine {
             dirs.push(&self.temp_dir);
         }
 
-        let mut result = RemoveDirContentsResult {
-            files_deleted: 0,
-            bytes_saved: 0,
-        };
-
         for dir in dirs {
             result = merge_clean_results(result, fs::remove_dir_stale_contents(dir, duration)?);
         }
+
+        let ac_result = self.ac.gc(duration).await?;
+
+        result.files_deleted += ac_result.blobs_removed;
+        result.bytes_saved += ac_result.bytes_freed;
+
+        let cas_result = self.cas.gc(duration).await?;
+
+        result.files_deleted += cas_result.blobs_removed;
+        result.bytes_saved += cas_result.bytes_freed;
 
         debug!(
             "Deleted {} artifacts and saved {} bytes",

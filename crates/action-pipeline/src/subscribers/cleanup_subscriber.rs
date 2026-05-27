@@ -31,7 +31,9 @@ impl Subscriber for CleanupSubscriber {
         ) {
             debug!("Cleaning stale cache");
 
-            self.cache_engine.clean_stale_cache(&self.lifetime, false)?;
+            self.cache_engine
+                .clean_stale_cache(&self.lifetime, false)
+                .await?;
         }
 
         Ok(())

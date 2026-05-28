@@ -12,6 +12,8 @@ use moon_app::commands::toolchain::ToolchainCommands;
 use moon_app::{Cli, Commands, MoonSession, commands};
 use moon_env_var::GlobalEnvBag;
 use starbase::diagnostics::IntoDiagnostic;
+#[cfg(feature = "otel")]
+use starbase::tracing::OtelOptions;
 use starbase::tracing::TracingOptions;
 use starbase::{App, MainResult};
 use starbase_styles::color;
@@ -35,7 +37,15 @@ fn get_version() -> String {
 fn get_tracing_modules() -> Vec<String> {
     let bag = GlobalEnvBag::instance();
     let mut modules = string_vec![
-        "moon", "proto", // "schematic",
+        "moon",
+        "moon_action_pipeline",
+        "moon_actions",
+        "moon_app",
+        "moon_cli",
+        "moon_daemon",
+        "moon_process",
+        "moon_task_runner",
+        "proto", // "schematic",
         "starbase",
         "warpgate",
         // Remote testing
@@ -96,14 +106,37 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
     let app = App::default();
     app.setup_diagnostics();
 
-    let _guard = app.setup_tracing(TracingOptions {
-        dump_trace: cli.dump,
-        filter_modules: get_tracing_modules(),
-        log_env: "STARBASE_LOG".into(), // Don't conflict with proto
-        log_file: cli.log_file.clone(),
-        show_spans: cli.log.is_verbose(),
-        ..TracingOptions::default()
-    });
+    // Handoff to a locally installed binary before tracing is initialized, so
+    // Unix exec does not bypass OpenTelemetry guard shutdown.
+    if let (Some(home_dir), Ok(current_dir)) = (dirs::home_dir(), env::current_dir())
+        && is_globally_installed(&home_dir)
+        && let Some(local_bin) = has_locally_installed(&home_dir, &current_dir)
+    {
+        let mut command = Command::new(local_bin);
+        command.args(&args[1..]);
+        command.current_dir(current_dir);
+
+        let exit_code = exec_local_bin(command).into_diagnostic()?;
+
+        return Ok(ExitCode::from(exit_code));
+    }
+
+    let _guard = app
+        .setup_tracing(TracingOptions {
+            dump_trace: cli.dump,
+            filter_modules: get_tracing_modules(),
+            log_env: "STARBASE_LOG".into(), // Don't conflict with proto
+            log_file: cli.log_file.clone(),
+            #[cfg(feature = "otel")]
+            otel: OtelOptions {
+                enabled: cli.otel,
+                logs_enabled: cli.otel_logs,
+                service_name: cli.otel_service_name.clone(),
+            },
+            show_spans: cli.log.is_verbose(),
+            ..TracingOptions::default()
+        })
+        .into_diagnostic()?;
 
     let pid = std::process::id();
 
@@ -117,23 +150,6 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         );
     } else {
         debug!(args = ?args, pid, "Running moon v{}", version);
-    }
-
-    // Detect if we've been installed globally
-    if let (Some(home_dir), Ok(current_dir)) = (dirs::home_dir(), env::current_dir())
-        && is_globally_installed(&home_dir)
-        && let Some(local_bin) = has_locally_installed(&home_dir, &current_dir)
-    {
-        debug!(local = ?local_bin, "Binary is running from a global path, but we found a local binary to use instead");
-        debug!("Will now execute the local binary and replace this running process");
-
-        let mut command = Command::new(local_bin);
-        command.args(&args[1..]);
-        command.current_dir(current_dir);
-
-        let exit_code = exec_local_bin(command).into_diagnostic()?;
-
-        return Ok(ExitCode::from(exit_code));
     }
 
     // Otherwise just run the CLI

@@ -2,6 +2,8 @@ use crate::event_emitter::{Event, EventEmitter};
 use crate::job::Job;
 use crate::job_context::JobContext;
 use crate::job_dispatcher::JobDispatcher;
+#[cfg(feature = "otel")]
+use crate::metrics::action_pipeline_metrics;
 use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::notifications_subscriber::NotificationsSubscriber;
@@ -25,7 +27,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, instrument, trace, warn};
+use tracing::{Instrument, debug, info_span, instrument, trace, warn};
 
 pub struct ActionPipeline {
     pub bail: bool,
@@ -476,7 +478,14 @@ impl ActionPipeline {
     }
 }
 
-#[instrument(skip(job_context, app_context, action_context))]
+#[instrument(
+    name = "dispatch_action",
+    skip_all,
+    fields(
+        action_label = %node.label(),
+        task_target = tracing::field::Empty,
+    )
+)]
 async fn dispatch_job(
     node: ActionNode,
     node_index: usize,
@@ -484,6 +493,12 @@ async fn dispatch_job(
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
 ) {
+    let span = tracing::Span::current();
+
+    if let ActionNode::RunTask(run_task) = &node {
+        span.record("task_target", run_task.target.as_str());
+    }
+
     let job = Job {
         node,
         node_index,
@@ -502,12 +517,38 @@ async fn dispatch_job_with_permit(
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
 ) {
-    let permit = job_context
-        .semaphore
-        .clone()
-        .acquire_owned()
-        .await
-        .expect("Failed to dispatch job!");
+    let permit = if let ActionNode::RunTask(run_task) = &node {
+        let span = info_span!(
+            "task_concurrency_wait",
+            task_target = %run_task.target,
+            concurrency_wait_ms = tracing::field::Empty,
+        );
+
+        let wait_started = Instant::now();
+        let permit = job_context
+            .semaphore
+            .clone()
+            .acquire_owned()
+            .instrument(span.clone())
+            .await
+            .expect("Failed to dispatch job!");
+
+        span.record(
+            "concurrency_wait_ms",
+            wait_started.elapsed().as_millis() as u64,
+        );
+        #[cfg(feature = "otel")]
+        action_pipeline_metrics()
+            .record_task_concurrency_wait(run_task.target.as_str(), wait_started.elapsed());
+        permit
+    } else {
+        job_context
+            .semaphore
+            .clone()
+            .acquire_owned()
+            .await
+            .expect("Failed to dispatch job!")
+    };
 
     dispatch_job(node, node_index, job_context, app_context, action_context).await;
 

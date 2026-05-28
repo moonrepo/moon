@@ -24,7 +24,13 @@ hash_fingerprint!(
     }
 );
 
-#[instrument(skip(action, _action_context, app_context, workspace_graph))]
+#[instrument(
+    skip_all,
+    fields(
+        toolchain_id = %node.toolchain_id,
+        project_id = tracing::field::Empty,
+    )
+)]
 pub async fn setup_environment(
     action: &mut Action,
     _action_context: Arc<ActionContext>,
@@ -32,6 +38,12 @@ pub async fn setup_environment(
     workspace_graph: Arc<WorkspaceGraph>,
     node: &SetupEnvironmentNode,
 ) -> miette::Result<ActionStatus> {
+    let span = tracing::Span::current();
+
+    if let Some(project_id) = &node.project_id {
+        span.record("project_id", project_id.as_str());
+    }
+
     // Skip this action if requested by the user
     if let Some(value) =
         should_skip_action_matching("MOON_SKIP_SETUP_ENVIRONMENT", &node.toolchain_id)

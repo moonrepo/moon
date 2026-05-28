@@ -19,7 +19,7 @@ use std::time::Instant;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command as TokioCommand};
 use tokio::task::{self, JoinHandle};
-use tracing::{debug, enabled, trace};
+use tracing::{debug, enabled, info_span, trace};
 
 impl Command {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
@@ -37,10 +37,16 @@ impl Command {
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped());
 
-            let mut child = command.spawn().map_err(|error| ProcessError::Capture {
-                bin: self.get_bin_name(),
-                error: Box::new(error),
-            })?;
+            let spawn_span = self.create_spawn_span();
+            let mut child = {
+                let _guard = spawn_span.enter();
+
+                command.spawn().map_err(|error| ProcessError::Capture {
+                    bin: self.get_bin_name(),
+                    error: Box::new(error),
+                })?
+            };
+            self.record_spawn_pid(&spawn_span, &child);
 
             self.write_input_to_child(&mut child).await?;
 
@@ -48,10 +54,18 @@ impl Command {
         } else {
             command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
-            command.spawn().map_err(|error| ProcessError::Capture {
-                bin: self.get_bin_name(),
-                error: Box::new(error),
-            })?
+            let spawn_span = self.create_spawn_span();
+            let child = {
+                let _guard = spawn_span.enter();
+
+                command.spawn().map_err(|error| ProcessError::Capture {
+                    bin: self.get_bin_name(),
+                    error: Box::new(error),
+                })?
+            };
+            self.record_spawn_pid(&spawn_span, &child);
+
+            child
         };
 
         let shared_child = registry.add_running(child).await;
@@ -87,10 +101,16 @@ impl Command {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
-        let child = command.spawn().map_err(|error| ProcessError::Capture {
-            bin: self.get_bin_name(),
-            error: Box::new(error),
-        })?;
+        let spawn_span = self.create_spawn_span();
+        let child = {
+            let _guard = spawn_span.enter();
+
+            command.spawn().map_err(|error| ProcessError::Capture {
+                bin: self.get_bin_name(),
+                error: Box::new(error),
+            })?
+        };
+        self.record_spawn_pid(&spawn_span, &child);
 
         let shared_child = registry.add_running(child).await;
         let stdin = shared_child.take_stdin().await;
@@ -200,19 +220,33 @@ impl Command {
         let child = if self.should_pass_stdin() {
             command.stdin(Stdio::piped());
 
-            let mut child = command.spawn().map_err(|error| ProcessError::Stream {
-                bin: self.get_bin_name(),
-                error: Box::new(error),
-            })?;
+            let spawn_span = self.create_spawn_span();
+            let mut child = {
+                let _guard = spawn_span.enter();
+
+                command.spawn().map_err(|error| ProcessError::Stream {
+                    bin: self.get_bin_name(),
+                    error: Box::new(error),
+                })?
+            };
+            self.record_spawn_pid(&spawn_span, &child);
 
             self.write_input_to_child(&mut child).await?;
 
             child
         } else {
-            command.spawn().map_err(|error| ProcessError::Stream {
-                bin: self.get_bin_name(),
-                error: Box::new(error),
-            })?
+            let spawn_span = self.create_spawn_span();
+            let child = {
+                let _guard = spawn_span.enter();
+
+                command.spawn().map_err(|error| ProcessError::Stream {
+                    bin: self.get_bin_name(),
+                    error: Box::new(error),
+                })?
+            };
+            self.record_spawn_pid(&spawn_span, &child);
+
+            child
         };
 
         let shared_child = registry.add_running(child).await;
@@ -257,12 +291,18 @@ impl Command {
             .stderr(Stdio::piped())
             .stdout(Stdio::piped());
 
-        let mut child = command
-            .spawn()
-            .map_err(|error| ProcessError::StreamCapture {
-                bin: self.get_bin_name(),
-                error: Box::new(error),
-            })?;
+        let spawn_span = self.create_spawn_span();
+        let mut child = {
+            let _guard = spawn_span.enter();
+
+            command
+                .spawn()
+                .map_err(|error| ProcessError::StreamCapture {
+                    bin: self.get_bin_name(),
+                    error: Box::new(error),
+                })?
+        };
+        self.record_spawn_pid(&spawn_span, &child);
 
         if self.should_pass_stdin() {
             self.write_input_to_child(&mut child).await?;
@@ -581,6 +621,20 @@ impl Command {
 
     fn create_async_command(&self) -> miette::Result<TokioCommand> {
         Ok(TokioCommand::from(self.create_sync_command()?))
+    }
+
+    fn create_spawn_span(&self) -> tracing::Span {
+        info_span!(
+            "process_spawn",
+            command = %self.get_bin_name(),
+            pid = tracing::field::Empty,
+        )
+    }
+
+    fn record_spawn_pid(&self, span: &tracing::Span, child: &Child) {
+        if let Some(pid) = child.id() {
+            span.record("pid", pid as u64);
+        }
     }
 
     fn handle_nonzero_status(&mut self, output: &Output, with_message: bool) -> miette::Result<()> {

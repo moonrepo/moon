@@ -1,5 +1,8 @@
 use crate::command_builder::CommandBuilder;
 use crate::command_executor::CommandExecutor;
+use crate::labels::action_status_label;
+#[cfg(feature = "otel")]
+use crate::metrics::task_runner_metrics;
 use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
 use crate::run_state::*;
@@ -8,6 +11,7 @@ use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationM
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
+use moon_common::is_ci_env;
 use moon_console::TaskReportItem;
 use moon_process::ProcessError;
 use moon_project::Project;
@@ -17,7 +21,9 @@ use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
 use std::sync::Arc;
-use tracing::{debug, instrument, trace};
+#[cfg(feature = "otel")]
+use std::time::Instant;
+use tracing::{Span, debug, instrument, trace};
 
 #[derive(Debug)]
 pub struct TaskRunResult {
@@ -39,6 +45,7 @@ pub struct TaskRunner<'task> {
     pub operations: OperationList,
     pub remote_state: Option<ActionState<'task>>,
     pub report_item: TaskReportItem,
+    pub trace_cache_source: Option<&'static str>,
     pub target_state: Option<TargetState>,
 }
 
@@ -72,6 +79,7 @@ impl<'task> TaskRunner<'task> {
                 output_style: task.options.output_style,
                 ..Default::default()
             },
+            trace_cache_source: None,
             target_state: None,
             task,
             app_context,
@@ -123,12 +131,54 @@ impl<'task> TaskRunner<'task> {
         Ok(Some(hash))
     }
 
-    #[instrument(skip(self, context))]
+    fn record_cache_lookup(&mut self, span: &Span, hit: bool, source: &'static str) {
+        self.trace_cache_source = Some(source);
+        span.record("cache_hit", hit);
+        span.record("cache_source", source);
+    }
+
+    fn record_status(span: &Span, status: ActionStatus) {
+        span.record("status", action_status_label(status));
+    }
+
+    fn get_trace_cache_source(&self) -> &'static str {
+        self.trace_cache_source.unwrap_or_else(|| {
+            if self.is_cache_enabled() {
+                "miss"
+            } else {
+                "disabled"
+            }
+        })
+    }
+
+    #[instrument(
+        name = "task_run",
+        skip(self, context, node),
+        fields(
+            project_id = %self.project.id,
+            task_target = %self.task.target,
+            task_id = %self.task.id,
+            task_type = %self.task.type_of,
+            interactive = node.is_interactive() || self.task.is_interactive(),
+            persistent = node.is_persistent() || self.task.is_persistent(),
+            retry_total = self.task.options.retry_count + 1,
+            cache_enabled = self.is_cache_enabled(),
+            ci = is_ci_env(),
+            status = tracing::field::Empty,
+            cache_hit = tracing::field::Empty,
+            cache_source = tracing::field::Empty,
+            exit_code = tracing::field::Empty,
+            flaky = tracing::field::Empty,
+        )
+    )]
     pub async fn run(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<TaskRunResult> {
+        #[cfg(feature = "otel")]
+        let run_started = Instant::now();
+        let span = Span::current();
         self.report_item.output_prefix = Some(context.get_target_prefix(&self.task.target));
 
         let result = self.internal_run(context, node).await;
@@ -152,6 +202,31 @@ impl<'task> TaskRunner<'task> {
                     None,
                 )?;
 
+                let status = self.operations.get_final_status();
+                Self::record_status(&span, status);
+                span.record("cache_hit", self.operations.iter().any(|op| op.is_cached()));
+                let cache_source = self.get_trace_cache_source();
+                span.record("cache_source", cache_source);
+                span.record("flaky", self.operations.is_flaky());
+                #[cfg(feature = "otel")]
+                task_runner_metrics().record_task_run(
+                    self.task,
+                    status,
+                    cache_source,
+                    node.is_interactive() || self.task.is_interactive(),
+                    node.is_persistent() || self.task.is_persistent(),
+                    run_started.elapsed(),
+                );
+
+                if let Some(exit_code) = self
+                    .operations
+                    .get_last_process()
+                    .and_then(|operation| operation.get_exec_output())
+                    .and_then(|output| output.exit_code)
+                {
+                    span.record("exit_code", exit_code);
+                }
+
                 Ok(TaskRunResult {
                     error: None,
                     hash: maybe_hash,
@@ -172,6 +247,31 @@ impl<'task> TaskRunner<'task> {
                     &self.report_item,
                     Some(&error),
                 )?;
+
+                let status = self.operations.get_final_status();
+                Self::record_status(&span, status);
+                span.record("cache_hit", self.operations.iter().any(|op| op.is_cached()));
+                let cache_source = self.get_trace_cache_source();
+                span.record("cache_source", cache_source);
+                span.record("flaky", self.operations.is_flaky());
+                #[cfg(feature = "otel")]
+                task_runner_metrics().record_task_run(
+                    self.task,
+                    status,
+                    cache_source,
+                    node.is_interactive() || self.task.is_interactive(),
+                    node.is_persistent() || self.task.is_persistent(),
+                    run_started.elapsed(),
+                );
+
+                if let Some(exit_code) = self
+                    .operations
+                    .get_last_process()
+                    .and_then(|operation| operation.get_exec_output())
+                    .and_then(|output| output.exit_code)
+                {
+                    span.record("exit_code", exit_code);
+                }
 
                 Ok(TaskRunResult {
                     error: Some(error),
@@ -197,8 +297,21 @@ impl<'task> TaskRunner<'task> {
         Ok(result)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(
+        name = "task_cache_lookup",
+        skip(self, hash),
+        fields(
+            project_id = %self.project.id,
+            task_target = %self.task.target,
+            task_id = %self.task.id,
+            cache_hit = tracing::field::Empty,
+            cache_source = tracing::field::Empty,
+        )
+    )]
     pub async fn is_cached(&mut self, hash: &str) -> miette::Result<Option<HydrateFrom>> {
+        #[cfg(feature = "otel")]
+        let lookup_started = Instant::now();
+        let span = Span::current();
         let cache_engine = &self.app_context.cache_engine;
 
         debug!(
@@ -245,6 +358,14 @@ impl<'task> TaskRunner<'task> {
                 hash, "Hash matches previous run, reusing existing outputs"
             );
 
+            self.record_cache_lookup(&span, true, "previous-output");
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_cache_lookup(
+                self.task,
+                "previous-output",
+                true,
+                lookup_started.elapsed(),
+            );
             return Ok(Some(HydrateFrom::PreviousOutput));
         }
 
@@ -254,6 +375,14 @@ impl<'task> TaskRunner<'task> {
                 hash, "Cache is not readable, continuing run"
             );
 
+            self.record_cache_lookup(&span, false, "unreadable");
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_cache_lookup(
+                self.task,
+                "unreadable",
+                false,
+                lookup_started.elapsed(),
+            );
             return Ok(None);
         }
 
@@ -267,6 +396,14 @@ impl<'task> TaskRunner<'task> {
                 hash, "Previous run failed, avoiding hydration"
             );
 
+            self.record_cache_lookup(&span, false, "previous-failure");
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_cache_lookup(
+                self.task,
+                "previous-failure",
+                false,
+                lookup_started.elapsed(),
+            );
             return Ok(None);
         }
 
@@ -301,6 +438,14 @@ impl<'task> TaskRunner<'task> {
                 "Cache hit in local cache, will reuse existing archive"
             );
 
+            self.record_cache_lookup(&span, true, "local-cache");
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_cache_lookup(
+                self.task,
+                "local-cache",
+                true,
+                lookup_started.elapsed(),
+            );
             return Ok(Some(HydrateFrom::LocalCache));
         }
 
@@ -317,6 +462,14 @@ impl<'task> TaskRunner<'task> {
 
             state.set_action_result(result);
 
+            self.record_cache_lookup(&span, true, "remote-cache");
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_cache_lookup(
+                self.task,
+                "remote-cache",
+                true,
+                lookup_started.elapsed(),
+            );
             return Ok(Some(HydrateFrom::RemoteCache));
         }
 
@@ -325,6 +478,14 @@ impl<'task> TaskRunner<'task> {
             hash, "Cache miss, continuing run"
         );
 
+        self.record_cache_lookup(&span, false, "miss");
+        #[cfg(feature = "otel")]
+        task_runner_metrics().record_cache_lookup(
+            self.task,
+            "miss",
+            false,
+            lookup_started.elapsed(),
+        );
         Ok(None)
     }
 
@@ -369,12 +530,22 @@ impl<'task> TaskRunner<'task> {
         Ok(true)
     }
 
-    #[instrument(skip_all)]
+    #[instrument(
+        name = "task_hash_generation",
+        skip_all,
+        fields(
+            project_id = %self.project.id,
+            task_target = %self.task.target,
+            task_id = %self.task.id,
+        )
+    )]
     pub async fn generate_hash(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<String> {
+        #[cfg(feature = "otel")]
+        let hash_started = Instant::now();
         debug!(
             task_target = self.task.target.as_str(),
             "Generating a unique hash for this task"
@@ -429,18 +600,45 @@ impl<'task> TaskRunner<'task> {
             "Generated a unique hash"
         );
 
+        #[cfg(feature = "otel")]
+        task_runner_metrics().record_hash_generation(self.task, hash_started.elapsed());
+
         Ok(hash)
     }
 
-    #[instrument(skip(self, context, node))]
+    #[instrument(
+        name = "task_execution",
+        skip(self, context, node),
+        fields(
+            project_id = %self.project.id,
+            task_target = %self.task.target,
+            task_id = %self.task.id,
+            interactive = node.is_interactive() || self.task.is_interactive(),
+            persistent = node.is_persistent() || self.task.is_persistent(),
+            retry_total = self.task.options.retry_count + 1,
+            status = tracing::field::Empty,
+            exit_code = tracing::field::Empty,
+        )
+    )]
     pub async fn execute(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<()> {
-        // If the task is a no-operation, we should exit early
+        #[cfg(feature = "otel")]
+        let execution_started = Instant::now();
+        let span = Span::current();
         if self.task.is_no_op() {
             self.skip_no_op()?;
+            Self::record_status(&span, ActionStatus::Passed);
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_execution(
+                self.task,
+                ActionStatus::Passed,
+                node.is_interactive() || self.task.is_interactive(),
+                node.is_persistent() || self.task.is_persistent(),
+                execution_started.elapsed(),
+            );
 
             return Ok(());
         }
@@ -495,6 +693,15 @@ impl<'task> TaskRunner<'task> {
         if let Some(last_attempt) = result.attempts.get_last_execution() {
             self.persist_state(last_attempt)?;
 
+            Self::record_status(&span, last_attempt.status);
+
+            if let Some(exit_code) = last_attempt
+                .get_exec_output()
+                .and_then(|output| output.exit_code)
+            {
+                span.record("exit_code", exit_code);
+            }
+
             if let Some(state) = &mut self.remote_state {
                 state.create_action_result_from_operation(last_attempt)?;
             }
@@ -510,6 +717,17 @@ impl<'task> TaskRunner<'task> {
         // We do this here instead of in `execute` so that we can
         // capture the attempts and report them.
         if let Some(result_error) = result.error {
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_execution(
+                self.task,
+                self.operations
+                    .get_last_execution()
+                    .map(|attempt| attempt.status)
+                    .unwrap_or(ActionStatus::Failed),
+                node.is_interactive() || self.task.is_interactive(),
+                node.is_persistent() || self.task.is_persistent(),
+                execution_started.elapsed(),
+            );
             return Err(result_error);
         }
 
@@ -517,6 +735,14 @@ impl<'task> TaskRunner<'task> {
         if let Some(last_attempt) = self.operations.get_last_execution()
             && last_attempt.has_failed()
         {
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_execution(
+                self.task,
+                last_attempt.status,
+                node.is_interactive() || self.task.is_interactive(),
+                node.is_persistent() || self.task.is_persistent(),
+                execution_started.elapsed(),
+            );
             return Err(TaskRunnerError::RunFailed {
                 target: self.task.target.clone(),
                 error: Box::new(ProcessError::ExitNonZero {
@@ -525,6 +751,23 @@ impl<'task> TaskRunner<'task> {
                 }),
             }
             .into());
+        }
+
+        #[cfg(feature = "otel")]
+        {
+            let execution_status = self
+                .operations
+                .get_last_execution()
+                .map(|attempt| attempt.status)
+                .unwrap_or(ActionStatus::Passed);
+
+            task_runner_metrics().record_execution(
+                self.task,
+                execution_status,
+                node.is_interactive() || self.task.is_interactive(),
+                node.is_persistent() || self.task.is_persistent(),
+                execution_started.elapsed(),
+            );
         }
 
         Ok(())
@@ -561,8 +804,19 @@ impl<'task> TaskRunner<'task> {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(
+        name = "task_output_archive",
+        skip(self, hash),
+        fields(
+            project_id = %self.project.id,
+            task_target = %self.task.target,
+            task_id = %self.task.id,
+            archived = tracing::field::Empty,
+        )
+    )]
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
+        #[cfg(feature = "otel")]
+        let archive_started = Instant::now();
         let mut operation = Operation::archive_creation();
 
         debug!(
@@ -593,12 +847,38 @@ impl<'task> TaskRunner<'task> {
         }
 
         self.operations.push(operation);
+        Span::current().record("archived", archived);
+        #[cfg(feature = "otel")]
+        task_runner_metrics().record_archive(
+            self.task,
+            archived,
+            self.operations
+                .iter()
+                .last()
+                .map(|operation| operation.status)
+                .unwrap_or(ActionStatus::Skipped),
+            archive_started.elapsed(),
+        );
 
         Ok(archived)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(
+        name = "task_output_hydration",
+        skip(self, hash),
+        fields(
+            project_id = %self.project.id,
+            task_target = %self.task.target,
+            task_id = %self.task.id,
+            hydrate_from = tracing::field::Empty,
+            hydrated = tracing::field::Empty,
+            status = tracing::field::Empty,
+        )
+    )]
     pub async fn hydrate(&mut self, hash: &str) -> miette::Result<bool> {
+        #[cfg(feature = "otel")]
+        let hydration_started = Instant::now();
+        let span = Span::current();
         let mut operation = Operation::output_hydration();
 
         // Not cached
@@ -611,6 +891,17 @@ impl<'task> TaskRunner<'task> {
             operation.finish(ActionStatus::Skipped);
 
             self.operations.push(operation);
+            Self::record_status(&span, ActionStatus::Skipped);
+            span.record("hydrated", false);
+            span.record("hydrate_from", "miss");
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_hydration(
+                self.task,
+                "miss",
+                ActionStatus::Skipped,
+                false,
+                hydration_started.elapsed(),
+            );
 
             return Ok(false);
         };
@@ -632,6 +923,22 @@ impl<'task> TaskRunner<'task> {
             operation.finish(ActionStatus::Invalid);
 
             self.operations.push(operation);
+            Self::record_status(&span, ActionStatus::Invalid);
+            span.record("hydrated", false);
+            let hydrate_from = match from {
+                HydrateFrom::LocalCache => "local-cache",
+                HydrateFrom::PreviousOutput => "previous-output",
+                HydrateFrom::RemoteCache => "remote-cache",
+            };
+            span.record("hydrate_from", hydrate_from);
+            #[cfg(feature = "otel")]
+            task_runner_metrics().record_hydration(
+                self.task,
+                hydrate_from,
+                ActionStatus::Invalid,
+                false,
+                hydration_started.elapsed(),
+            );
 
             return Ok(false);
         }
@@ -694,8 +1001,26 @@ impl<'task> TaskRunner<'task> {
 
         self.persist_state(&operation)?;
 
+        let status = operation.status;
+
         self.operations.push(operation);
         self.target_state = Some(TargetState::Passed(hash.to_owned()));
+        span.record("hydrated", true);
+        Self::record_status(&span, status);
+        let hydrate_from = match from {
+            HydrateFrom::LocalCache => "local-cache",
+            HydrateFrom::PreviousOutput => "previous-output",
+            HydrateFrom::RemoteCache => "remote-cache",
+        };
+        span.record("hydrate_from", hydrate_from);
+        #[cfg(feature = "otel")]
+        task_runner_metrics().record_hydration(
+            self.task,
+            hydrate_from,
+            status,
+            true,
+            hydration_started.elapsed(),
+        );
 
         Ok(true)
     }

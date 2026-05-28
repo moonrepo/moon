@@ -19,13 +19,25 @@ hash_fingerprint!(
     }
 );
 
-#[instrument(skip(action, _action_context, app_context))]
+#[instrument(
+    skip_all,
+    fields(
+        toolchain_id = %node.toolchain.id,
+        version = tracing::field::Empty,
+    )
+)]
 pub async fn setup_toolchain(
     action: &mut Action,
     _action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     node: &SetupToolchainNode,
 ) -> miette::Result<ActionStatus> {
+    let span = tracing::Span::current();
+
+    if let Some(version) = &node.toolchain.req {
+        span.record("version", version.to_string());
+    }
+
     // No version configured, use globals on PATH
     if node.toolchain.is_global()
         || is_using_global_toolchain(GlobalEnvBag::instance(), &node.toolchain.id)

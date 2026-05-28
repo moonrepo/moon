@@ -4,12 +4,22 @@ version = "0.0.1"
 edition = "2024"
 publish = false
 
+[features]
+default = ["otel"]
+otel = [
+    "moon_action_pipeline/otel",
+    "moon_actions/otel",
+    "moon_daemon/otel",
+    "moon_mcp/otel",
+    "moon_task_runner/otel",
+]
+
 [dependencies]
 moon_action = { path = "../action" }
 moon_action_context = { path = "../action-context" }
 moon_action_graph = { path = "../action-graph" }
-moon_action_pipeline = { path = "../action-pipeline" }
-moon_actions = { path = "../actions" }
+moon_action_pipeline = { path = "../action-pipeline", default-features = false }
+moon_actions = { path = "../actions", default-features = false }
 moon_affected = { path = "../affected" }
 moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
@@ -20,7 +30,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_config_loader = { path = "../config-loader" }
 moon_console = { path = "../console" }
-moon_daemon = { path = "../daemon" }
+moon_daemon = { path = "../daemon", default-features = false }
 moon_docker = { path = "../docker" }
 moon_env = { path = "../env" }
 moon_env_var = { path = "../env-var" }
@@ -28,7 +38,7 @@ moon_exec_plan = { path = "../exec-plan" }
 moon_extension_plugin = { path = "../extension-plugin" }
 moon_feature_flags = { path = "../feature-flags" }
 moon_file_watcher = { path = "../file-watcher" }
-moon_mcp = { path = "../mcp" }
+moon_mcp = { path = "../mcp", default-features = false }
 moon_pdk_api = { path = "../pdk-api" }
 moon_plugin = { path = "../plugin" }
 moon_process = { path = "../process" }
@@ -39,7 +49,7 @@ moon_query = { path = "../query" }
 moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_task_graph = { path = "../task-graph" }
-moon_task_runner = { path = "../task-runner" }
+moon_task_runner = { path = "../task-runner", default-features = false }
 moon_time = { path = "../time" }
 moon_toolchain = { path = "../toolchain" }
 moon_toolchain_plugin = { path = "../toolchain-plugin" }

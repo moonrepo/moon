@@ -1,3 +1,6 @@
+use crate::labels::action_status_label;
+#[cfg(feature = "otel")]
+use crate::metrics::task_runner_metrics;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList};
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
@@ -11,7 +14,7 @@ use std::time::Duration;
 use tokio::task::{self, JoinHandle};
 use tokio::time::{sleep, timeout};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, instrument};
+use tracing::{Span, debug, instrument};
 
 #[derive(Debug)]
 pub struct CommandExecuteResult {
@@ -65,12 +68,27 @@ impl<'task> CommandExecutor<'task> {
         }
     }
 
-    #[instrument(skip(self, context))]
+    #[instrument(
+        name = "task_execution_attempts",
+        skip(self, context),
+        fields(
+            project_id = %self.project.id,
+            task_target = %self.task.target,
+            task_id = %self.task.id,
+            command = %self.command.get_bin_name(),
+            interactive = self.interactive,
+            persistent = self.persistent,
+            retry_total = self.attempt_total,
+            status = tracing::field::Empty,
+            exit_code = tracing::field::Empty,
+        )
+    )]
     pub async fn execute(
         mut self,
         context: &ActionContext,
         report_item: &mut TaskReportItem,
     ) -> miette::Result<CommandExecuteResult> {
+        let span = Span::current();
         // Prepare state for the executor, and each attempt
         let mut run_state = TargetState::Failed;
 
@@ -149,9 +167,11 @@ impl<'task> CommandExecutor<'task> {
                 // Zero and non-zero exit codes
                 Ok(maybe_output) => {
                     let mut is_success = false;
+                    let mut exit_code = -1;
 
                     if let Some(output) = maybe_output {
                         is_success = output.success();
+                        exit_code = output.code().unwrap_or(-1);
 
                         debug!(
                             task_target = self.task.target.as_str(),
@@ -178,6 +198,7 @@ impl<'task> CommandExecutor<'task> {
                         None,
                     )?;
 
+                    let status = attempt.status;
                     self.attempts.push(attempt);
 
                     // Successful execution, so break the loop
@@ -187,6 +208,8 @@ impl<'task> CommandExecutor<'task> {
                             "Task was successful, proceeding to next step",
                         );
 
+                        span.record("status", "passed");
+                        span.record("exit_code", exit_code);
                         run_state = TargetState::from_hash(report_item.hash.as_deref());
                         break None;
                     }
@@ -207,6 +230,8 @@ impl<'task> CommandExecutor<'task> {
                             "Task was unsuccessful, failing as we hit our max attempts",
                         );
 
+                        span.record("status", action_status_label(status));
+                        span.record("exit_code", exit_code);
                         break None;
                     }
                 }
@@ -229,6 +254,8 @@ impl<'task> CommandExecutor<'task> {
                     )?;
 
                     self.attempts.push(attempt);
+                    span.record("status", "failed");
+                    span.record("exit_code", -1);
 
                     break Some(error);
                 }
@@ -236,6 +263,14 @@ impl<'task> CommandExecutor<'task> {
         };
 
         self.stop_monitoring();
+        #[cfg(feature = "otel")]
+        task_runner_metrics().record_execution_attempts(
+            self.task,
+            self.attempts.get_final_status(),
+            self.interactive,
+            self.persistent,
+            self.attempts.len() as u64,
+        );
 
         Ok(CommandExecuteResult {
             attempts: self.attempts.take(),

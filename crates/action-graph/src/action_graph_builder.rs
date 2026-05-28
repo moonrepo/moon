@@ -305,7 +305,13 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(())
     }
 
-    #[instrument(skip(self))]
+    #[instrument(
+        skip_all,
+        fields(
+            toolchain_id = %spec.id,
+            project_id = %project.id,
+        )
+    )]
     pub async fn install_dependencies(
         &mut self,
         spec: &ToolchainSpec,
@@ -399,7 +405,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(setup_toolchain_index)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all, fields(project_id = %project.id))]
     pub async fn install_dependencies_by_project(
         &mut self,
         project: &Project,
@@ -408,7 +414,13 @@ impl<'query> ActionGraphBuilder<'query> {
             .await
     }
 
-    #[instrument(skip(self))]
+    #[instrument(
+        skip_all,
+        fields(
+            project_id = %project.id,
+            toolchain_count = toolchains.len(),
+        )
+    )]
     pub async fn install_dependencies_by_toolchains(
         &mut self,
         project: &Project,
@@ -425,7 +437,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(indexes)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all, fields(task_target = %task.target))]
     pub async fn run_task(
         &mut self,
         task: &Task,
@@ -637,7 +649,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all, fields(task_target = %task.target))]
     pub async fn run_task_dependencies(
         &mut self,
         task: &Task,
@@ -682,7 +694,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(indexes)
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all, fields(task_target = %task.target))]
     pub async fn run_task_dependents(
         &mut self,
         task: &Task,
@@ -1023,13 +1035,25 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(Some(index))
     }
 
-    #[instrument(skip(self))]
+    #[instrument(
+        skip_all,
+        fields(
+            toolchain_id = %spec.id,
+            project_id = tracing::field::Empty,
+        )
+    )]
     pub async fn setup_environment(
         &mut self,
         spec: &ToolchainSpec,
         root: &WorkspaceRelativePathBuf,
         project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
+        let span = tracing::Span::current();
+
+        if let Some(project) = project {
+            span.record("project_id", project.id.as_str());
+        }
+
         // Explicitly disabled
         if !self.options.setup_environment.is_enabled(&spec.id) || spec.is_system() {
             return Ok(None);
@@ -1069,12 +1093,24 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(Some(index))
     }
 
-    #[instrument(skip(self))]
+    #[instrument(
+        skip_all,
+        fields(
+            toolchain_id = %spec.id,
+            project_id = tracing::field::Empty,
+        )
+    )]
     pub async fn setup_toolchain(
         &mut self,
         spec: &ToolchainSpec,
         project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
+        let span = tracing::Span::current();
+
+        if let Some(project) = project {
+            span.record("project_id", project.id.as_str());
+        }
+
         Box::pin(self.internal_setup_toolchain(spec, project, FxHashSet::default())).await
     }
 
@@ -1161,7 +1197,7 @@ impl<'query> ActionGraphBuilder<'query> {
         Ok(Some(index))
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all, fields(project_id = %project.id))]
     pub async fn sync_project(
         &mut self,
         project: &Project,

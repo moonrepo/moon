@@ -4,6 +4,10 @@ version = "0.0.1"
 edition = "2024"
 publish = false
 
+[features]
+default = ["otel"]
+otel = ["moon_task_runner/otel"]
+
 [dependencies]
 moon_app_context = { path = "../app-context" }
 moon_common = { path = "../common" }
@@ -12,7 +16,7 @@ moon_daemon_utils = { path = "../daemon-utils" }
 moon_file_watcher = { path = "../file-watcher" }
 moon_process = { path = "../process" }
 moon_target = { path = "../target" }
-moon_task_runner = { path = "../task-runner" }
+moon_task_runner = { path = "../task-runner", default-features = false }
 moon_workspace_graph = { path = "../workspace-graph" }
 miette = { workspace = true }
 notify-debouncer-full = { version = "0.7.0", features = ["flume"] }

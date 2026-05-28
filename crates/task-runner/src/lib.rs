@@ -1,6 +1,9 @@
 // Public for tests
 pub mod command_builder;
 pub mod command_executor;
+mod labels;
+#[cfg(feature = "otel")]
+mod metrics;
 pub mod output_archiver;
 pub mod output_hydrater;
 mod run_state;

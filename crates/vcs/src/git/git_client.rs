@@ -545,7 +545,7 @@ impl Vcs for Git {
             .unwrap_or(base_revision);
 
         // Load from root repo
-        changed_files.merge(self.worktree.exec_diff(merge_base_revision, "").await?);
+        changed_files.merge(self.worktree.exec_diff(merge_base_revision, head_revision).await?);
 
         // Load from each submodule
         if !self.submodules.is_empty() {

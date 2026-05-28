@@ -133,10 +133,12 @@ async fn query_changed_files_without_stdin(
         }
     }
 
-    // Always include local changes
-    trace!("Against local index");
+    // Only include local changes when not explicitly comparing two revisions
+    if head_value.is_none() || options.local {
+        trace!("Against local index");
 
-    changed_files_map.merge(vcs.get_changed_files().await?);
+        changed_files_map.merge(vcs.get_changed_files().await?);
+    }
 
     if options.status.is_empty() {
         debug!(

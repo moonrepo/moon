@@ -1,20 +1,18 @@
-use crate::action_state::ActionState;
 use crate::blob::*;
 use crate::digest_compat::RemoteDigestExt;
-use crate::fs_digest::*;
 use crate::grpc_remote_client::GrpcRemoteClient;
+use crate::helpers::*;
 use crate::http_remote_client::HttpRemoteClient;
 use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    ActionResult, ServerCapabilities, digest_function,
+    Action, ActionResult, ServerCapabilities, digest_function,
 };
 use miette::IntoDiagnostic;
 use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
-use moon_hash::Digest;
+use moon_hash::{Blob, Digest};
 use moon_process::ProcessRegistry;
-use rustc_hash::FxHashMap;
-use std::collections::BTreeMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::SystemTime;
@@ -181,61 +179,53 @@ impl RemoteService {
             .unwrap_or(4194304)
     }
 
-    #[instrument(skip(self, state))]
+    #[instrument(skip(self))]
     pub async fn is_action_cached(
         &self,
-        state: &ActionState<'_>,
+        action_digest: &Digest,
     ) -> miette::Result<Option<ActionResult>> {
         if !self.can_download() {
             return Ok(None);
         }
 
-        self.client.get_action_result(&state.digest).await
+        self.client.get_action_result(action_digest).await
     }
 
-    #[instrument(skip(self, state))]
-    pub async fn save_action(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
+    #[instrument(skip(self, _action, blob))]
+    pub async fn save_action(&self, _action: Action, blob: Blob) -> miette::Result<bool> {
         if !self.can_upload() {
             return Ok(false);
         }
 
-        let missing = self
-            .client
-            .find_missing_blobs(vec![state.digest.clone()])
-            .await?;
+        let digest = blob.digest.clone();
 
-        if missing.contains(&state.digest) {
-            // This is where moon differs from the Bazel RE API. In Bazel,
-            // we would serialize + hash the `Action` and `Command` types,
-            // and upload those. But those types do not match how our hashing
-            // works, so instead, we're uploading the bytes of our internal
-            // hash manifests. Hopefully this doesn't cause issues!
+        if self
+            .client
+            .find_missing_blobs(vec![digest.clone()])
+            .await?
+            .contains(&digest)
+        {
             self.client
-                .batch_update_blobs(
-                    &state.digest,
-                    vec![CompressableBlob::new(
-                        state.digest.clone(),
-                        state.bytes.clone(),
-                    )],
-                )
+                .batch_update_blobs(&digest, vec![CompressableBlob::from_blob(blob)])
                 .await?;
         }
 
         Ok(true)
     }
 
-    #[instrument(skip(self, state))]
-    pub async fn save_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
+    #[instrument(skip(self, result, blobs))]
+    pub async fn save_action_result(
+        &self,
+        action_digest: &Digest,
+        mut result: ActionResult,
+        blobs: Vec<Blob>,
+    ) -> miette::Result<bool> {
         if !self.can_upload() {
             return Ok(false);
         }
 
-        let Some((mut result, blobs)) = state.extract_for_upload() else {
-            return Ok(false);
-        };
-
         let client = Arc::clone(&self.client);
-        let digest = state.digest.clone();
+        let digest = action_digest.to_owned();
         let max_size = self.get_max_batch_size();
 
         self.upload_requests
@@ -247,8 +237,16 @@ impl RemoteService {
                 }
 
                 // Don't save the action result if some of the blobs failed to upload
-                match batch_upload_blobs(client.clone(), digest.clone(), blobs, max_size as usize)
-                    .await
+                match batch_upload_blobs(
+                    client.clone(),
+                    digest.clone(),
+                    blobs
+                        .into_iter()
+                        .map(CompressableBlob::from_blob)
+                        .collect::<Vec<_>>(),
+                    max_size as usize,
+                )
+                .await
                 {
                     Ok(uploaded) => {
                         if !uploaded {
@@ -257,7 +255,7 @@ impl RemoteService {
                     }
                     Err(error) => {
                         warn!(
-                            hash = ?digest.hash,
+                            hash = digest.hash.as_str(),
                             "Failed to upload blobs and cache action result: {}",
                             color::muted_light(error.to_string()),
                         );
@@ -273,7 +271,7 @@ impl RemoteService {
 
                 if let Err(error) = client.update_action_result(&digest, result).await {
                     warn!(
-                        hash = ?digest.hash,
+                        hash = digest.hash.as_str(),
                         "Failed to cache action result: {}",
                         color::muted_light(error.to_string()),
                     );
@@ -284,21 +282,20 @@ impl RemoteService {
         Ok(true)
     }
 
-    #[instrument(skip(self, state))]
-    pub async fn restore_action_result(&self, state: &mut ActionState<'_>) -> miette::Result<bool> {
+    #[instrument(skip(self, result))]
+    pub async fn restore_action_result(
+        &self,
+        action_digest: &Digest,
+        result: &mut ActionResult,
+    ) -> miette::Result<bool> {
         if !self.can_download() {
             return Ok(false);
         }
 
-        let Some(result) = &mut state.action_result else {
-            return Ok(false);
-        };
-
         match batch_download_blobs(
             self.client.clone(),
-            &state.digest,
+            action_digest,
             result,
-            &self.workspace_root,
             self.get_max_batch_size() as usize,
             self.config.cache.verify_integrity,
         )
@@ -311,7 +308,7 @@ impl RemoteService {
             }
             Err(error) => {
                 warn!(
-                    hash = ?state.digest.hash,
+                    hash = action_digest.hash.as_str(),
                     "Failed to download blobs and restore action result: {}",
                     color::muted_light(error.to_string()),
                 );
@@ -341,7 +338,7 @@ impl RemoteService {
         if !stdio_digests.is_empty() {
             for blob in self
                 .client
-                .batch_read_blobs(&state.digest, stdio_digests)
+                .batch_read_blobs(action_digest, stdio_digests)
                 .await?
             {
                 let Some(blob) = blob else {
@@ -402,7 +399,7 @@ async fn batch_find_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             blobs = group.items.len(),
             "Batching find blobs (group {group_key})",
         );
@@ -428,7 +425,7 @@ async fn batch_find_blobs(
         let (group_key, digests) = res.into_diagnostic()??;
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             digests = digests.len(),
             "Batched find blobs (group {group_key})",
         );
@@ -482,7 +479,7 @@ async fn batch_upload_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             blobs = group.items.len(),
             size = group.size,
             "Batching blobs upload (group {group_key})",
@@ -517,7 +514,7 @@ async fn batch_upload_blobs(
         let (group_key, digests) = res.into_diagnostic()??;
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             digests = digests.len(),
             "Batched blobs upload (group {group_key})",
         );
@@ -542,19 +539,25 @@ async fn batch_upload_blobs(
 async fn batch_download_blobs(
     client: Arc<Box<dyn RemoteClient>>,
     action_digest: &Digest,
-    result: &ActionResult,
-    workspace_root: &Path,
+    result: &mut ActionResult,
     max_size: usize,
     verify_integrity: bool,
 ) -> miette::Result<bool> {
     let mut blob_map = FxHashMap::default();
     let mut blob_digests = vec![];
+    let mut seen = FxHashSet::default();
 
+    // Dedupe by digest hash: two output files with identical content
+    // reference the same blob, but we only need to download it once.
     for file in &result.output_files {
         if file.contents.is_empty()
             && let Some(digest) = &file.digest
         {
-            blob_digests.push(digest.to_local_digest()?);
+            let local_digest = digest.to_local_digest()?;
+
+            if seen.insert(local_digest.hash.clone()) {
+                blob_digests.push(local_digest);
+            }
         }
     }
 
@@ -568,7 +571,7 @@ async fn batch_download_blobs(
         let group_key = format!("{}:{group_total}", group_index + 1);
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             blobs = group.items.len(),
             size = group.size,
             max_size,
@@ -604,7 +607,7 @@ async fn batch_download_blobs(
         let (group_key, blobs) = res.into_diagnostic()??;
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             blobs = blobs.len(),
             "Batched blobs download (group {group_key})",
         );
@@ -617,7 +620,7 @@ async fn batch_download_blobs(
 
             if blob.bytes.len() != blob.digest.size as usize {
                 trace!(
-                    hash = ?action_digest.hash,
+                    hash = action_digest.hash.as_str(),
                     expected_size = blob.digest.size,
                     actual_size = blob.bytes.len(),
                     "Integrity failure, mismatched file sizes, unable to write output file",
@@ -630,9 +633,9 @@ async fn batch_download_blobs(
 
                 if actual_digest != blob.digest {
                     trace!(
-                        hash = ?action_digest.hash,
-                        expected_hash = ?blob.digest.hash,
-                        actual_hash = ?actual_digest.hash,
+                        hash = action_digest.hash.as_str(),
+                        expected_hash = blob.digest.hash.as_str(),
+                        actual_hash = actual_digest.hash.as_str(),
                         "Integrity failure, mismatched digests, unable to write output file",
                     );
 
@@ -652,28 +655,20 @@ async fn batch_download_blobs(
         return Ok(false);
     }
 
-    // Create outputs after everything has been downloaded,
-    // so that we can ensure every request has been completed
-    // and we don't partially hydrate
-    for file in &result.output_files {
-        let file_path = workspace_root.join(&file.path);
-
-        if !file.contents.is_empty() {
-            write_output_file(&file_path, &file.contents, file)?;
-            continue;
-        }
-
+    for file in &mut result.output_files {
         let Some(digest) = &file.digest else {
             continue;
         };
 
+        // Clone (don't remove): a blob may be referenced by multiple
+        // output files when they share identical content.
         if let Some(bytes) = blob_map.get(&digest.hash) {
-            write_output_file(&file_path, bytes, file)?;
+            file.contents = bytes.to_owned();
         } else {
             warn!(
-                hash = ?action_digest.hash,
-                blob_hash = ?digest.hash,
-                output_file = ?file_path,
+                hash = action_digest.hash.as_str(),
+                blob_hash = digest.hash.as_str(),
+                output_file = ?file.path,
                 "Missing file metadata for blob hash, unable to write output file",
             );
 
@@ -681,72 +676,5 @@ async fn batch_download_blobs(
         }
     }
 
-    // Create symlinks after output files have been written,
-    // as the link target may reference one of these outputs
-    for link in &result.output_symlinks {
-        link_output_file(
-            workspace_root.join(&link.target),
-            workspace_root.join(&link.path),
-            link,
-        )?;
-    }
-
     Ok(true)
-}
-
-struct Partition<T> {
-    pub items: Vec<T>,
-    pub size: usize,
-    pub stream: bool,
-}
-
-fn partition_into_groups<T>(
-    items: Vec<T>,
-    max_size: usize,
-    get_size: impl Fn(&T) -> usize,
-) -> BTreeMap<i32, Partition<T>> {
-    let mut groups = BTreeMap::<i32, Partition<T>>::default();
-
-    // Subtract a chunk from the max size, because when down/uploading blobs,
-    // we need to account for the non-blob data in the request/response, like the
-    // compression level, digest strings, status fields, etc. All of these "add up"
-    // and can bump the total body size larger than the actual limit. To be safe,
-    // we reduce the max size by 25%.
-    let max_group_size = (max_size as f64 * 0.75) as usize;
-
-    for item in items {
-        let item_size = get_size(&item);
-        let mut index_to_use = -1;
-        let mut stream = false;
-
-        // Item is too large, must be streamed
-        if item_size >= max_group_size {
-            stream = true;
-        }
-        // Try and find a partition that this item can go into
-        else {
-            for (index, group) in &groups {
-                if !group.stream && (group.size + item_size) <= max_group_size {
-                    index_to_use = *index;
-                    break;
-                }
-            }
-        }
-
-        // If no partition available, create a new one
-        if index_to_use == -1 {
-            index_to_use = groups.len() as i32;
-        }
-
-        let group = groups.entry(index_to_use).or_insert_with(|| Partition {
-            items: vec![],
-            size: 0,
-            stream: false,
-        });
-        group.size += item_size;
-        group.stream = stream;
-        group.items.push(item);
-    }
-
-    groups
 }

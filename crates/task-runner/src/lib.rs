@@ -3,6 +3,8 @@ pub mod command_builder;
 pub mod command_executor;
 pub mod output_archiver;
 pub mod output_hydrater;
+pub mod output_tree;
+mod remote_compat;
 mod run_state;
 mod task_runner;
 mod task_runner_error;

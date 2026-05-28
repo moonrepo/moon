@@ -22,10 +22,10 @@ fn saves_manifest() {
         })
         .unwrap();
 
-    let hash = engine.save_manifest(&mut hasher).unwrap();
+    let digest = engine.save_manifest(&mut hasher).unwrap();
 
     assert_eq!(
-        hash,
+        digest.hash,
         ContentHash::from_hex("d612ce4d246bc531a35e693615e8cd2ca76f47b27a0a1ac768679154e0ba55c3")
             .unwrap()
     );
@@ -48,7 +48,7 @@ fn saves_manifest_without_hasher() {
     let sandbox = create_empty_sandbox();
     let engine = HashEngine::new(sandbox.path()).unwrap();
 
-    let hash = engine
+    let digest = engine
         .save_manifest_without_hasher(
             "test",
             Content {
@@ -59,7 +59,7 @@ fn saves_manifest_without_hasher() {
         .unwrap();
 
     assert_eq!(
-        hash,
+        digest.hash,
         ContentHash::from_hex("d612ce4d246bc531a35e693615e8cd2ca76f47b27a0a1ac768679154e0ba55c3")
             .unwrap()
     );

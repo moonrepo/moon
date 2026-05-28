@@ -21,8 +21,8 @@ mod gc {
         let sandbox = create_empty_sandbox();
         let store = create_store(&sandbox);
 
-        let hash = store.write_bytes(b"stale").unwrap();
-        let path = store.object_path(&hash);
+        let digest = store.write_bytes(b"stale").unwrap();
+        let path = store.object_path(&digest.hash);
 
         // Backdate the mtime to 2 hours ago.
         backdate_mtime(&path, Duration::from_secs(7200));
@@ -30,7 +30,7 @@ mod gc {
         let result = store.gc(Duration::from_secs(3600)).await.unwrap();
 
         assert_eq!(result.blobs_removed, 1);
-        assert!(!store.contains_object(&hash).unwrap());
+        assert!(!store.contains_object(&digest.hash));
     }
 
     #[tokio::test]
@@ -38,11 +38,11 @@ mod gc {
         let sandbox = create_empty_sandbox();
         let store = create_store(&sandbox);
 
-        let hash = store.write_bytes(b"fresh").unwrap();
+        let digest = store.write_bytes(b"fresh").unwrap();
         let result = store.gc(Duration::from_secs(3600)).await.unwrap();
 
         assert_eq!(result.blobs_removed, 0);
-        assert!(store.contains_object(&hash).unwrap());
+        assert!(store.contains_object(&digest.hash));
     }
 
     #[tokio::test]
@@ -50,16 +50,16 @@ mod gc {
         let sandbox = create_empty_sandbox();
         let store = create_store(&sandbox);
 
-        let hash = store.write_bytes(b"touched").unwrap();
-        let path = store.object_path(&hash);
+        let digest = store.write_bytes(b"touched").unwrap();
+        let path = store.object_path(&digest.hash);
 
         // Backdate, then touch.
         backdate_mtime(&path, Duration::from_secs(7200));
-        store.touch(&hash).unwrap();
+        store.touch(&digest.hash).unwrap();
 
         let result = store.gc(Duration::from_secs(3600)).await.unwrap();
         assert_eq!(result.blobs_removed, 0);
-        assert!(store.contains_object(&hash).unwrap());
+        assert!(store.contains_object(&digest.hash));
     }
 
     #[tokio::test]

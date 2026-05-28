@@ -11,7 +11,7 @@ use moon_daemon_utils::{endpoint::*, sys::is_process_alive};
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_process::ProcessRegistry;
 use moon_target::Target;
-use moon_task_runner::output_archiver::OutputArchiver;
+use moon_task_runner::{TaskRunState, output_archiver::OutputArchiver};
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
 use std::path::Path;
@@ -78,17 +78,18 @@ impl MoonDaemon for DaemonService {
             .get_task(&target)
             .map_err(|error| Status::not_found(error.to_string()))?;
 
-        let result = OutputArchiver {
+        // TODO populate the action digest/bytes!
+        let task_state = TaskRunState::new(&state.app_context, &task);
+
+        let archived = OutputArchiver {
             app_context: &state.app_context,
             task: &task,
         }
-        .archive(&req.hash, None)
+        .archive(&req.hash, &task_state)
         .await
         .map_err(|error| Status::unknown(error.to_string()))?;
 
-        Ok(Response::new(ArchiveTaskOutputsResponse {
-            archived: result.is_some(),
-        }))
+        Ok(Response::new(ArchiveTaskOutputsResponse { archived }))
     }
 
     async fn hash_files(

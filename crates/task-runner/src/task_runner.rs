@@ -4,20 +4,24 @@ use crate::output_archiver::OutputArchiver;
 use crate::output_hydrater::{HydrateFrom, OutputHydrater};
 use crate::run_state::*;
 use crate::task_runner_error::TaskRunnerError;
+use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
+use miette::IntoDiagnostic;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::CacheItem;
 use moon_console::TaskReportItem;
-use moon_hash::{ContentHash, Digest};
+use moon_hash::ContentHash;
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_remote::{ActionState, RemoteService};
+use moon_remote::RemoteService;
 use moon_task::Task;
 use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
+use starbase_utils::json::serde_json;
 use std::sync::Arc;
+use std::time::Duration;
 use tracing::{debug, instrument, trace};
 
 #[derive(Debug)]
@@ -38,9 +42,8 @@ pub struct TaskRunner<'task> {
     // Public for testing
     pub cache: CacheItem<TaskRunCacheState>,
     pub operations: OperationList,
-    pub remote_state: Option<ActionState<'task>>,
-    pub report_item: TaskReportItem,
-    pub target_state: Option<TargetState>,
+    pub report: TaskReportItem,
+    pub state: TaskRunState,
 }
 
 impl<'task> TaskRunner<'task> {
@@ -64,16 +67,15 @@ impl<'task> TaskRunner<'task> {
         }
 
         Ok(Self {
+            state: TaskRunState::new(app_context, task),
             cache,
             archiver: OutputArchiver { app_context, task },
             hydrater: OutputHydrater { app_context, task },
             project,
-            remote_state: None,
-            report_item: TaskReportItem {
+            report: TaskReportItem {
                 output_style: task.options.output_style,
                 ..Default::default()
             },
-            target_state: None,
             task,
             app_context,
             operations: OperationList::default(),
@@ -130,7 +132,7 @@ impl<'task> TaskRunner<'task> {
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<TaskRunResult> {
-        self.report_item.output_prefix = Some(context.get_target_prefix(&self.task.target));
+        self.report.output_prefix = Some(context.get_target_prefix(&self.task.target));
 
         let result = self.internal_run(context, node).await;
 
@@ -141,15 +143,15 @@ impl<'task> TaskRunner<'task> {
             Ok(maybe_hash) => {
                 context.set_target_state(
                     &self.task.target,
-                    self.target_state.take().unwrap_or(TargetState::Passthrough),
+                    self.state.target.take().unwrap_or(TargetState::Passthrough),
                 );
 
-                self.report_item.hash = maybe_hash.as_ref().map(|h| h.to_string());
+                self.report.hash = maybe_hash.as_ref().map(|h| h.to_string());
 
                 self.app_context.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
-                    &self.report_item,
+                    &self.report,
                     None,
                 )?;
 
@@ -162,7 +164,7 @@ impl<'task> TaskRunner<'task> {
             Err(error) => {
                 context.set_target_state(
                     &self.task.target,
-                    self.target_state.take().unwrap_or(TargetState::Failed),
+                    self.state.target.take().unwrap_or(TargetState::Failed),
                 );
 
                 self.inject_failed_task_execution(Some(&error))?;
@@ -170,7 +172,7 @@ impl<'task> TaskRunner<'task> {
                 self.app_context.console.on_task_completed(
                     &self.task.target,
                     &self.operations,
-                    &self.report_item,
+                    &self.report,
                     Some(&error),
                 )?;
 
@@ -276,11 +278,62 @@ impl<'task> TaskRunner<'task> {
             return Ok(None);
         }
 
-        // Check to see if a build with the provided hash has been cached locally.
-        // We only check for the archive, as the manifest is purely for local debugging!
-        let archive_file = cache_engine.hash.get_archive_path(hash);
+        // First check the local cache, as this is preferred to avoid network calls
+        if let Some(from) = self.is_cached_local(hash, cache_lifetime).await? {
+            return Ok(Some(from));
+        }
 
-        if archive_file.exists() && self.task.options.cache.is_local_enabled() {
+        // Otherwise fallback to the remote cache, if available and enabled
+        if let Some(from) = self.is_cached_remote(hash).await {
+            return Ok(Some(from));
+        }
+
+        debug!(
+            task_target = self.task.target.as_str(),
+            hash, "Cache miss, continuing run"
+        );
+
+        Ok(None)
+    }
+
+    async fn is_cached_local(
+        &self,
+        hash: &str,
+        cache_lifetime: Option<Duration>,
+    ) -> miette::Result<Option<HydrateFrom>> {
+        if !self.state.local_cache_readable || !self.state.digest.is_valid() {
+            return Ok(None);
+        }
+
+        // Check if the outputs have been cached in local CAS first
+        if self.state.local_cas_enabled
+            && self
+                .app_context
+                .cache_engine
+                .ac
+                .contains_object(&self.state.digest.hash)
+        {
+            debug!(
+                task_target = self.task.target.as_str(),
+                hash, "Cache hit in local cache"
+            );
+
+            let result_bytes = self
+                .app_context
+                .cache_engine
+                .ac
+                .read_bytes(&self.state.digest.hash)?;
+
+            let result: ActionResult = serde_json::from_slice(&result_bytes).into_diagnostic()?;
+
+            return Ok(Some(HydrateFrom::LocalCache(result)));
+        }
+
+        // Otherwise check to see if a build with the provided hash has been cached locally.
+        // We only check for the archive, as the manifest is purely for local debugging!
+        let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
+
+        if archive_file.exists() {
             // Also check if the archive itself is stale
             if let Some(duration) = cache_lifetime
                 && fs::is_stale(&archive_file, false, duration)?
@@ -302,31 +355,28 @@ impl<'task> TaskRunner<'task> {
                 "Cache hit in local cache, will reuse existing archive"
             );
 
-            return Ok(Some(HydrateFrom::LocalCache));
+            return Ok(Some(HydrateFrom::LocalArchive));
         }
 
-        // Check if the outputs have been cached in the remote service
-        if self.task.options.cache.is_remote_enabled()
-            && let (Some(state), Some(remote)) = (&mut self.remote_state, RemoteService::session())
+        Ok(None)
+    }
+
+    async fn is_cached_remote(&self, hash: &str) -> Option<HydrateFrom> {
+        if self.state.digest.is_valid()
+            && self.state.remote_cache_readable
+            && let Some(remote) = RemoteService::session()
             // Don't bubble up errors from the remote cache check, just treat them as cache misses
-            && let Ok(Some(result)) = remote.is_action_cached(state).await
+            && let Ok(Some(result)) = remote.is_action_cached(&self.state.digest).await
         {
             debug!(
                 task_target = self.task.target.as_str(),
                 hash, "Cache hit in remote service, will attempt to download output blobs"
             );
 
-            state.set_action_result(result);
-
-            return Ok(Some(HydrateFrom::RemoteCache));
+            return Some(HydrateFrom::RemoteCache(result));
         }
 
-        debug!(
-            task_target = self.task.target.as_str(),
-            hash, "Cache miss, continuing run"
-        );
-
-        Ok(None)
+        None
     }
 
     pub fn is_cache_enabled(&self) -> bool {
@@ -400,37 +450,24 @@ impl<'task> TaskRunner<'task> {
         hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
             .await?;
 
-        // Generate the hash and persist values
-        let hash = hash_engine.save_manifest(&mut hasher)?;
+        // Generate the digest and store values
+        let digest = hash_engine.save_manifest(&mut hasher)?;
 
-        operation.meta.set_hash(&hash);
+        operation.meta.set_hash(&digest.hash);
         operation.finish(ActionStatus::Passed);
 
         self.operations.push(operation);
-        self.report_item.hash = Some(hash.to_string());
-
-        // Store the hash digest for remote caching
-        if RemoteService::is_enabled() {
-            let bytes = hasher.into_bytes();
-            let mut state = ActionState::new(
-                Digest {
-                    hash: hash.clone(),
-                    size: bytes.len() as i64,
-                },
-                self.task,
-            );
-            state.bytes = bytes;
-
-            self.remote_state = Some(state);
-        }
+        self.report.hash = Some(digest.hash.to_string());
+        self.state.bytes = hasher.into_bytes();
+        self.state.digest = digest.clone();
 
         debug!(
             task_target = self.task.target.as_str(),
-            ?hash,
+            hash = digest.hash.as_str(),
             "Generated a unique hash"
         );
 
-        Ok(hash)
+        Ok(digest.hash)
     }
 
     #[instrument(skip(self, context, node))]
@@ -453,10 +490,7 @@ impl<'task> TaskRunner<'task> {
 
         // Build the command from the current task
         let command = CommandBuilder::new(self.app_context, self.project, self.task, node)
-            .build(
-                context,
-                self.report_item.hash.as_deref().unwrap_or_default(),
-            )
+            .build(context, self.report.hash.as_deref().unwrap_or_default())
             .await?;
 
         // Execute the command and gather all attempts made
@@ -487,25 +521,21 @@ impl<'task> TaskRunner<'task> {
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
-            executor.execute(context, &mut self.report_item).await?
+            executor.execute(context, &mut self.report).await?
         } else {
-            executor.execute(context, &mut self.report_item).await?
+            executor.execute(context, &mut self.report).await?
         };
 
         // Persist the state locally and for the remote service
         if let Some(last_attempt) = result.attempts.get_last_execution() {
             self.persist_state(last_attempt)?;
-
-            if let Some(state) = &mut self.remote_state {
-                state.create_action_result_from_operation(last_attempt)?;
-            }
         }
 
         // Extract the attempts from the result
         self.operations.merge(result.attempts);
 
         // Update the action state based on the result
-        self.target_state = Some(result.run_state);
+        self.state.target = Some(result.run_state);
 
         // If the execution as a whole failed, return the error.
         // We do this here instead of in `execute` so that we can
@@ -540,7 +570,7 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Skipped,
         ));
 
-        self.target_state = Some(TargetState::Skipped);
+        self.state.target = Some(TargetState::Skipped);
 
         Ok(())
     }
@@ -557,7 +587,7 @@ impl<'task> TaskRunner<'task> {
             ActionStatus::Passed,
         ));
 
-        self.target_state = Some(TargetState::from_hash(self.report_item.hash.as_deref()));
+        self.state.target = Some(TargetState::from_hash(self.report.hash.as_deref()));
 
         Ok(())
     }
@@ -571,11 +601,7 @@ impl<'task> TaskRunner<'task> {
             "Running cache archiving operation"
         );
 
-        let archived = self
-            .archiver
-            .archive(hash, self.remote_state.as_mut())
-            .await?
-            .is_some();
+        let archived = self.archiver.archive(hash, &self.state).await?;
 
         if archived {
             debug!(
@@ -603,7 +629,7 @@ impl<'task> TaskRunner<'task> {
         let mut operation = Operation::output_hydration();
 
         // Not cached
-        let Some(from) = self.is_cached(hash).await? else {
+        let Some(mut from) = self.is_cached(hash).await? else {
             debug!(
                 task_target = self.task.target.as_str(),
                 "Nothing to hydrate"
@@ -623,11 +649,7 @@ impl<'task> TaskRunner<'task> {
             "Running cache hydration operation"
         );
 
-        if !self
-            .hydrater
-            .hydrate(from, hash, self.remote_state.as_mut())
-            .await?
-        {
+        if !self.hydrater.hydrate(&mut from, hash, &self.state).await? {
             debug!(task_target = self.task.target.as_str(), "Did not hydrate");
 
             operation.finish(ActionStatus::Invalid);
@@ -647,56 +669,54 @@ impl<'task> TaskRunner<'task> {
         if let Some(output) = operation.get_exec_output_mut() {
             output.command = Some(self.task.get_command_line());
 
-            // If we received an action result from the remote cache,
-            // extract the logs from it
-            if let Some(result) = self
-                .remote_state
-                .as_ref()
-                .and_then(|state| state.action_result.as_ref())
-            {
-                output.exit_code = Some(result.exit_code);
+            match &from {
+                // If we received an action result from the cache,
+                // extract the logs from it
+                HydrateFrom::LocalCache(result) | HydrateFrom::RemoteCache(result) => {
+                    output.exit_code = Some(result.exit_code);
 
-                if !result.stderr_raw.is_empty() {
-                    output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
+                    if !result.stderr_raw.is_empty() {
+                        output.set_stderr(String::from_utf8_lossy(&result.stderr_raw).into());
+                    }
+
+                    if !result.stdout_raw.is_empty() {
+                        output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
+                    }
                 }
+                // If not using an action result, we need to read the locally
+                // cached stdout/stderr log files
+                _ => {
+                    output.exit_code = Some(self.cache.data.exit_code);
 
-                if !result.stdout_raw.is_empty() {
-                    output.set_stdout(String::from_utf8_lossy(&result.stdout_raw).into());
-                }
-            }
-            // If not from the remote cache, we need to read the locally
-            // cached stdout/stderr log files
-            else {
-                output.exit_code = Some(self.cache.data.exit_code);
+                    let state_dir = self
+                        .app_context
+                        .cache_engine
+                        .state
+                        .get_target_dir(&self.task.target);
+                    let err_path = state_dir.join("stderr.log");
+                    let out_path = state_dir.join("stdout.log");
 
-                let state_dir = self
-                    .app_context
-                    .cache_engine
-                    .state
-                    .get_target_dir(&self.task.target);
-                let err_path = state_dir.join("stderr.log");
-                let out_path = state_dir.join("stdout.log");
+                    if err_path.exists() {
+                        output.set_stderr(fs::read_file(err_path)?);
+                    }
 
-                if err_path.exists() {
-                    output.set_stderr(fs::read_file(err_path)?);
-                }
-
-                if out_path.exists() {
-                    output.set_stdout(fs::read_file(out_path)?);
+                    if out_path.exists() {
+                        output.set_stdout(fs::read_file(out_path)?);
+                    }
                 }
             }
         }
 
         // Then finalize the operation and target state
         operation.finish(match from {
-            HydrateFrom::RemoteCache => ActionStatus::CachedFromRemote,
+            HydrateFrom::RemoteCache(_) => ActionStatus::CachedFromRemote,
             _ => ActionStatus::Cached,
         });
 
         self.persist_state(&operation)?;
 
         self.operations.push(operation);
-        self.target_state = Some(TargetState::Passed(hash.to_owned()));
+        self.state.target = Some(TargetState::Passed(hash.to_owned()));
 
         Ok(true)
     }
@@ -729,7 +749,7 @@ impl<'task> TaskRunner<'task> {
         self.app_context.console.on_task_finished(
             &self.task.target,
             &operation,
-            &self.report_item,
+            &self.report,
             report,
         )?;
 
@@ -739,6 +759,8 @@ impl<'task> TaskRunner<'task> {
     }
 
     fn persist_state(&mut self, operation: &Operation) -> miette::Result<()> {
+        self.state.operation = operation.to_owned();
+
         let state_dir = self
             .app_context
             .cache_engine

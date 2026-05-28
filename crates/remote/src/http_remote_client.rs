@@ -171,7 +171,7 @@ impl RemoteClient for HttpRemoteClient {
         action_digest: &Digest,
     ) -> miette::Result<Option<ActionResult>> {
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             "Checking for a cached action result"
         );
 
@@ -195,7 +195,7 @@ impl RemoteClient for HttpRemoteClient {
                             })?;
 
                     trace!(
-                        hash = ?action_digest.hash,
+                        hash = action_digest.hash.as_str(),
                         files = result.output_files.len(),
                         links = result.output_symlinks.len(),
                         dirs = result.output_directories.len(),
@@ -205,7 +205,10 @@ impl RemoteClient for HttpRemoteClient {
 
                     Ok(Some(result))
                 } else if status.as_u16() == 404 {
-                    trace!(hash = ?action_digest.hash, "Cache miss on action result");
+                    trace!(
+                        hash = action_digest.hash.as_str(),
+                        "Cache miss on action result"
+                    );
 
                     Ok(None)
                 } else {
@@ -222,7 +225,7 @@ impl RemoteClient for HttpRemoteClient {
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>> {
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             files = result.output_files.len(),
             links = result.output_symlinks.len(),
             dirs = result.output_directories.len(),
@@ -242,7 +245,7 @@ impl RemoteClient for HttpRemoteClient {
                 // Doesn't return a response body
                 // https://github.com/buchgr/bazel-remote/blob/master/server/http.go#L429
                 if response.status().is_success() {
-                    trace!(hash = ?action_digest.hash, "Cached action result");
+                    trace!(hash = action_digest.hash.as_str(), "Cached action result");
 
                     Ok(Some(result))
                 } else {
@@ -265,7 +268,7 @@ impl RemoteClient for HttpRemoteClient {
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Option<CompressableBlob>>> {
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             compression = self.config.cache.compression.to_string(),
             "Downloading {} output blobs",
             blob_digests.len()
@@ -311,7 +314,7 @@ impl RemoteClient for HttpRemoteClient {
         }
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             "Downloaded {} of {} output blobs",
             blobs.len(),
             total_count
@@ -329,7 +332,7 @@ impl RemoteClient for HttpRemoteClient {
         let mut requests: Vec<JoinHandle<miette::Result<Option<Digest>>>> = vec![];
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             compression = compression.to_string(),
             "Uploading {} output blobs",
             blobs.len()
@@ -379,7 +382,7 @@ impl RemoteClient for HttpRemoteClient {
         }
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             "Uploaded {} of {} output blobs",
             uploaded_count,
             digests.len()

@@ -61,10 +61,10 @@ impl ActionGraph {
             let priority = node.get_priority();
 
             match priority {
-                0 => critical.push(node_index),
-                1 => high.push(node_index),
-                2 => normal.push(node_index),
-                3 => low.push(node_index),
+                0 => critical.push(node_index.index()),
+                1 => high.push(node_index.index()),
+                2 => normal.push(node_index.index()),
+                3 => low.push(node_index.index()),
                 _ => {}
             };
 

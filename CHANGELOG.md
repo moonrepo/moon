@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the `InstallDependencies` action would scan manifests within the vendor
+  directory, which could cause issues with some package managers.
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Added support for Go v1.24 `ignore` in `go.mod` and `go.work`.
+
 ## 2.2.5
 
 #### 🐞 Fixes

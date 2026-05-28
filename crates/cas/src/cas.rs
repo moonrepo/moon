@@ -1,13 +1,12 @@
 use crate::cas_error::CasError;
 use crate::gc::GcResult;
 use moon_config::CacheCasConfig;
-use moon_hash::{ContentHash, Sha256, Sha256Digest, hash_sha256};
+use moon_hash::{Blob, ContentHash, Digest, Sha256, Sha256Digest, hash_sha256};
 use starbase_utils::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
-use tracing::{debug, instrument};
-use uuid::Uuid;
+use tracing::{debug, instrument, trace};
 
 /// A content-addressable file system store.
 ///
@@ -16,7 +15,6 @@ use uuid::Uuid;
 /// so readers never observe partial data, and no file locking is required.
 #[derive(Debug)]
 pub struct CasStore {
-    pub root: PathBuf,
     pub objects_dir: PathBuf,
     pub temp_dir: PathBuf,
     pub config: CacheCasConfig,
@@ -38,21 +36,16 @@ impl Drop for TempGuard {
 
 impl CasStore {
     /// Create or open a CAS store rooted at `root`.
-    ///
-    /// Creates the `v1/` and `temp/` subdirectories if they do not exist.
     pub fn new(root: impl AsRef<Path>, config: &CacheCasConfig) -> miette::Result<Self> {
         let root = root.as_ref();
-        let objects_dir = root.join("v1");
         let temp_dir = root.join("temp");
 
         debug!(root = ?root, "Creating CAS store");
 
-        fs::create_dir_all(&objects_dir)?;
         fs::create_dir_all(&temp_dir)?;
 
         Ok(Self {
-            root: root.to_path_buf(),
-            objects_dir,
+            objects_dir: root.to_path_buf(),
             temp_dir,
             config: config.to_owned(),
         })
@@ -60,14 +53,10 @@ impl CasStore {
 
     // ---- Write operations ----
 
-    /// Store raw bytes. Returns the content hash. Idempotent: if the blob
-    /// already exists, this is a no-op that returns the hash immediately.
     #[instrument(skip(self, bytes), fields(len = bytes.len()))]
-    pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<ContentHash> {
-        let hash = ContentHash::hash_bytes(bytes)?;
-
-        if self.contains_object(&hash)? {
-            return Ok(hash);
+    pub fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<bool> {
+        if self.contains_object(hash) {
+            return Ok(false);
         }
 
         let mut guard = self.create_temp_file()?;
@@ -80,54 +69,53 @@ impl CasStore {
                     path: guard.path.clone(),
                     error: Box::new(error),
                 })?;
-
-            file.sync_all().map_err(|error| CasError::WriteFailed {
-                path: guard.path.clone(),
-                error: Box::new(error),
-            })?;
         }
 
-        self.commit_temp_file(&hash, &mut guard)?;
+        // No fsync: the temp-file + rename pattern guarantees readers never
+        // see partial content. Power-loss before durability flush would leave
+        // a missing blob, which on the next run just becomes a cache miss.
+        self.commit_temp_file(hash, &mut guard)?;
 
-        debug!(hash = %hash, "Stored blob from bytes");
-
-        Ok(hash)
+        Ok(true)
     }
 
-    /// Store content read from a file at `source`. Uses memory-mapped I/O for
-    /// hashing files larger than the configured threshold.
+    /// Store raw bytes from the provided blob.
+    pub fn write_blob(&self, blob: &Blob) -> miette::Result<()> {
+        if self.write(&blob.digest.hash, &blob.bytes)? {
+            trace!(hash = blob.digest.hash.as_str(), "Stored object from blob");
+        }
+
+        Ok(())
+    }
+
+    /// Store raw bytes and return the content hash.
+    pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<Digest> {
+        let digest = Digest::from_bytes(bytes)?;
+
+        if self.write(&digest.hash, bytes)? {
+            trace!(hash = digest.hash.as_str(), "Stored object from bytes");
+        }
+
+        Ok(digest)
+    }
+
+    /// Store content read from a file and return a blob.
     #[instrument(skip(self))]
-    pub fn write_file(&self, source: &Path) -> miette::Result<ContentHash> {
-        let hash = ContentHash::hash_file(source)?;
+    pub fn write_file(&self, path: &Path) -> miette::Result<Blob> {
+        let blob = Blob::from_file(path)?;
 
-        if self.contains_object(&hash)? {
-            return Ok(hash);
+        if self.write(&blob.digest.hash, &blob.bytes)? {
+            trace!(hash = blob.digest.hash.as_str(), path = ?path, "Stored object from file");
         }
 
-        let mut guard = self.create_temp_file()?;
-
-        fs::copy_file(source, &guard.path)?;
-
-        {
-            let file = fs::open_file_for_writing(&guard.path)?;
-
-            file.sync_all().map_err(|error| CasError::WriteFailed {
-                path: guard.path.clone(),
-                error: Box::new(error),
-            })?;
-        }
-
-        self.commit_temp_file(&hash, &mut guard)?;
-
-        debug!(hash = %hash, source = ?source, "Stored blob from file");
-
-        Ok(hash)
+        Ok(blob)
     }
 
-    /// Store content from a streaming reader. Hashes and writes simultaneously
-    /// in 64 KiB chunks.
-    pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<ContentHash> {
+    /// Store content from a streaming reader.
+    /// Hashes and writes simultaneously in 64 KiB chunks.
+    pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<Digest> {
         let mut guard = self.create_temp_file()?;
+        let mut size = 0;
 
         let hash = {
             let mut hasher = Sha256::default();
@@ -142,6 +130,8 @@ impl CasStore {
                         error: Box::new(error),
                     })?;
 
+                size += n;
+
                 if n == 0 {
                     break;
                 }
@@ -155,46 +145,40 @@ impl CasStore {
                     })?;
             }
 
-            file.sync_all().map_err(|error| CasError::WriteFailed {
-                path: guard.path.clone(),
-                error: Box::new(error),
-            })?;
-
+            // No fsync: see `write` for rationale.
             ContentHash::from_hex(format!("{:x}", hasher.finalize()))?
         };
 
-        if self.contains_object(&hash)? {
-            return Ok(hash);
+        let digest = Digest {
+            hash,
+            size: size as i64,
+        };
+
+        if self.contains_object(&digest.hash) {
+            return Ok(digest);
         }
 
-        self.commit_temp_file(&hash, &mut guard)?;
+        self.commit_temp_file(&digest.hash, &mut guard)?;
 
-        debug!(hash = %hash, "Stored blob from byte stream");
+        trace!(
+            hash = digest.hash.as_str(),
+            "Stored object from byte stream"
+        );
 
-        Ok(hash)
+        Ok(digest)
     }
 
     // ---- Read operations ----
 
-    /// Check whether a blob exists for the given hash.
-    pub fn contains_object(&self, hash: &ContentHash) -> miette::Result<bool> {
-        let path = self.object_path(hash);
-
-        if path.exists() {
-            if self.config.verify_integrity {
-                let bytes = fs::read_file_bytes(&path)?;
-
-                if self.verify_integrity(&path, hash, &bytes).is_err() {
-                    fs::remove_file(path)?;
-
-                    return Ok(false);
-                }
-            }
-
-            return Ok(true);
-        }
-
-        Ok(false)
+    /// Check whether an object exists for the given hash.
+    ///
+    /// This is a pure existence check; it does not verify the on-disk content
+    /// against the hash even when `verify_integrity` is enabled. Verification
+    /// happens lazily on read (via `read_bytes` / `open`). Putting it here
+    /// would force a full file read + rehash on every write to a hash that
+    /// already exists, which dominates the cost of a warm cache.
+    pub fn contains_object(&self, hash: &ContentHash) -> bool {
+        self.object_path(hash).exists()
     }
 
     /// Read the full blob into memory. Verifies integrity if configured.
@@ -274,26 +258,18 @@ impl CasStore {
         Ok(path)
     }
 
-    fn ensure_shard_dir(&self, hash: &ContentHash) -> miette::Result<()> {
-        fs::create_dir_all(self.objects_dir.join(hash.prefix()))?;
-
-        Ok(())
-    }
-
     fn create_temp_file(&self) -> miette::Result<TempGuard> {
-        fs::create_dir_all(&self.temp_dir)?;
-
-        let path = self.temp_dir.join(Uuid::new_v4().to_string());
+        let key: String = std::iter::repeat_with(fastrand::alphanumeric)
+            .take(32)
+            .collect();
 
         Ok(TempGuard {
-            path,
+            path: self.temp_dir.join(key),
             committed: false,
         })
     }
 
     fn commit_temp_file(&self, hash: &ContentHash, guard: &mut TempGuard) -> miette::Result<()> {
-        self.ensure_shard_dir(hash)?;
-
         let dest = self.object_path(hash);
 
         fs::rename(&guard.path, &dest)?;

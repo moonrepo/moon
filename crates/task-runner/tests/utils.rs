@@ -7,6 +7,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
+use moon_task_runner::TaskRunState;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::command_builder::CommandBuilder;
 use moon_task_runner::command_executor::CommandExecutor;
@@ -94,6 +95,10 @@ impl TaskRunnerContainer {
             app_context: &self.app_context,
             task: &self.task,
         }
+    }
+
+    pub fn create_state(&self) -> TaskRunState {
+        TaskRunState::new(&self.app_context, &self.task)
     }
 
     pub async fn create_command(&self, context: ActionContext) -> Command {

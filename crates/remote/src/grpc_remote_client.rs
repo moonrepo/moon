@@ -231,7 +231,7 @@ impl RemoteClient for GrpcRemoteClient {
         action_digest: &Digest,
     ) -> miette::Result<Option<ActionResult>> {
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             "Checking for a cached action result"
         );
 
@@ -251,7 +251,7 @@ impl RemoteClient for GrpcRemoteClient {
                 let result = response.into_inner();
 
                 trace!(
-                    hash = ?action_digest.hash,
+                    hash = action_digest.hash.as_str(),
                     files = result.output_files.len(),
                     links = result.output_symlinks.len(),
                     dirs = result.output_directories.len(),
@@ -263,7 +263,10 @@ impl RemoteClient for GrpcRemoteClient {
             }
             Err(status) => {
                 if matches!(status.code(), Code::NotFound) {
-                    trace!(hash = ?action_digest.hash, "Cache miss on action result");
+                    trace!(
+                        hash = action_digest.hash.as_str(),
+                        "Cache miss on action result"
+                    );
 
                     Ok(None)
                 }
@@ -272,7 +275,7 @@ impl RemoteClient for GrpcRemoteClient {
                 // happen, let's just do a cache miss instead...
                 else if matches!(status.code(), Code::OutOfRange) {
                     trace!(
-                        hash = ?action_digest.hash,
+                        hash = action_digest.hash.as_str(),
                         "Cache miss because the expected payload is too large"
                     );
 
@@ -291,7 +294,7 @@ impl RemoteClient for GrpcRemoteClient {
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>> {
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             files = result.output_files.len(),
             links = result.output_symlinks.len(),
             dirs = result.output_directories.len(),
@@ -311,7 +314,7 @@ impl RemoteClient for GrpcRemoteClient {
             .await
         {
             Ok(response) => {
-                trace!(hash = ?action_digest.hash, "Cached action result");
+                trace!(hash = action_digest.hash.as_str(), "Cached action result");
 
                 Ok(Some(response.into_inner()))
             }
@@ -370,7 +373,7 @@ impl RemoteClient for GrpcRemoteClient {
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Option<CompressableBlob>>> {
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             compression = self.config.cache.compression.to_string(),
             "Downloading {} output blobs",
             blob_digests.len()
@@ -404,7 +407,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                 if !matches!(code, Code::Ok | Code::NotFound) {
                     warn!(
-                        hash = ?action_digest.hash,
+                        hash = action_digest.hash.as_str(),
                         blob_hash = download.digest.as_ref().map(|d| &d.hash),
                         details = ?status.details,
                         code = ?code,
@@ -445,7 +448,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             "Downloaded {} of {} output blobs",
             blobs.len(),
             total_count
@@ -460,8 +463,8 @@ impl RemoteClient for GrpcRemoteClient {
         blob_digest: Digest,
     ) -> miette::Result<Option<CompressableBlob>> {
         trace!(
-            hash = ?action_digest.hash,
-            blob_hash = ?blob_digest.hash,
+            hash = action_digest.hash.as_str(),
+            blob_hash = blob_digest.hash.as_str(),
             "Streaming download output blob"
         );
 
@@ -517,8 +520,8 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         trace!(
-            hash = ?action_digest.hash,
-            blob_hash = ?blob_digest.hash,
+            hash = action_digest.hash.as_str(),
+            blob_hash = blob_digest.hash.as_str(),
             "Downloaded output blob"
         );
 
@@ -540,7 +543,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             compression = compression.to_string(),
             "Uploading {} output blobs",
             blobs.len()
@@ -584,7 +587,7 @@ impl RemoteClient for GrpcRemoteClient {
 
                 if !matches!(code, Code::Ok) {
                     warn!(
-                        hash = ?action_digest.hash,
+                        hash = action_digest.hash.as_str(),
                         blob_hash = upload.digest.as_ref().map(|dig| &dig.hash),
                         details = ?status.details,
                         code = ?code,
@@ -609,7 +612,7 @@ impl RemoteClient for GrpcRemoteClient {
         }
 
         trace!(
-            hash = ?action_digest.hash,
+            hash = action_digest.hash.as_str(),
             "Uploaded {} of {} output blobs",
             uploaded_count,
             digests.len()
@@ -624,8 +627,8 @@ impl RemoteClient for GrpcRemoteClient {
         blob: CompressableBlob,
     ) -> miette::Result<Digest> {
         trace!(
-            hash = ?action_digest.hash,
-            blob_hash = ?blob.digest.hash,
+            hash = action_digest.hash.as_str(),
+            blob_hash = blob.digest.hash.as_str(),
             "Streaming upload output blob"
         );
 
@@ -692,8 +695,8 @@ impl RemoteClient for GrpcRemoteClient {
         };
 
         trace!(
-            hash = ?action_digest.hash,
-            blob_hash = ?blob.inner.digest.hash,
+            hash = action_digest.hash.as_str(),
+            blob_hash = blob.inner.digest.hash.as_str(),
             "Uploaded output blob"
         );
 

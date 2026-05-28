@@ -5,6 +5,7 @@ mod state_engine;
 pub use cache_engine::*;
 pub use hash_engine::*;
 pub use moon_cache_item::*;
+pub use moon_cas::CasStore;
 pub use moon_hash::*;
 pub use state_engine::*;
 

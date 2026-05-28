@@ -14,8 +14,8 @@ export interface CacheCasConfig {
 	 */
 	mmapThreshold?: number;
 	/**
-	 * Verify hash on every read/write. When enabled, operations
-	 * are slower but detect on-disk corruption.
+	 * Verify hash on every read. When enabled, reads are slower
+	 * but detect on-disk corruption.
 	 */
 	verifyIntegrity: boolean;
 }
@@ -181,6 +181,12 @@ export interface ExperimentsConfig {
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding: boolean;
+	/**
+	 * Store task outputs in a local CAS (content-addressable storage) cache.
+	 *
+	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
+	 */
+	casOutputsCache: boolean;
 	/**
 	 * Use native file hashing instead of using the VCS.
 	 *
@@ -685,8 +691,8 @@ export interface PartialCacheCasConfig {
 	 */
 	mmapThreshold?: number | null;
 	/**
-	 * Verify hash on every read/write. When enabled, operations
-	 * are slower but detect on-disk corruption.
+	 * Verify hash on every read. When enabled, reads are slower
+	 * but detect on-disk corruption.
 	 */
 	verifyIntegrity?: boolean | null;
 }
@@ -848,6 +854,12 @@ export interface PartialExperimentsConfig {
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding?: boolean | null;
+	/**
+	 * Store task outputs in a local CAS (content-addressable storage) cache.
+	 *
+	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
+	 */
+	casOutputsCache?: boolean | null;
 	/**
 	 * Use native file hashing instead of using the VCS.
 	 *

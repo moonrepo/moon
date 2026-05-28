@@ -20,7 +20,8 @@ pub async fn clean(session: MoonSession, args: CleanArgs) -> AppResult {
 
     let (files_deleted, bytes_saved) = session
         .get_cache_engine()?
-        .clean_stale_cache(lifetime, true)?;
+        .clean_stale_cache(lifetime, true)
+        .await?;
 
     session.console.render(element! {
         Container {

@@ -1,5 +1,8 @@
 use crate::content_hash::ContentHash;
-use starbase_utils::fs;
+use miette::IntoDiagnostic;
+use serde::Serialize;
+use starbase_utils::{fs, json};
+use std::fmt::Debug;
 use std::path::Path;
 
 #[derive(Clone)]
@@ -19,12 +22,24 @@ impl Blob {
         })
     }
 
+    pub fn from_data<T: Serialize>(data: T) -> miette::Result<Self> {
+        Self::from_bytes(json::serde_json::to_vec(&data).into_diagnostic()?)
+    }
+
     pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
         Self::from_bytes(fs::read_file_bytes(path.as_ref())?)
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq)]
+impl Debug for Blob {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Blob")
+            .field("digest", &self.digest)
+            .finish()
+    }
+}
+
+#[derive(Debug, Default, Clone, Eq, Hash, PartialEq)]
 pub struct Digest {
     pub hash: ContentHash,
     pub size: i64,
@@ -41,9 +56,19 @@ impl Digest {
         })
     }
 
+    pub fn from_data<T: Serialize>(data: T) -> miette::Result<Self> {
+        let bytes = json::serde_json::to_vec(&data).into_diagnostic()?;
+
+        Self::from_bytes(&bytes)
+    }
+
     pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
         let bytes = fs::read_file_bytes(path.as_ref())?;
 
         Self::from_bytes(&bytes)
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.size >= 0 && !self.hash.is_empty()
     }
 }

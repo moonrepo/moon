@@ -158,11 +158,14 @@ impl WorkspaceBuilder {
         fingerprint.add_configs(graph.hash_required_configs().await?);
         fingerprint.gather_env();
 
-        let hash = cache_engine
+        let digest = cache_engine
             .hash
             .save_manifest_without_hasher("workspace-graph", &fingerprint)?;
 
-        debug!(%hash, "Generated hash for workspace graph");
+        debug!(
+            hash = digest.hash.as_str(),
+            "Generated hash for workspace graph"
+        );
 
         // Check the current state and cache
         let mut state = cache_engine
@@ -170,7 +173,7 @@ impl WorkspaceBuilder {
             .load_state::<WorkspaceProjectsCacheState>(STATE_PROJECTS_FILE_NAME)?;
         let cache_path = cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME);
 
-        if hash == state.data.last_hash && cache_path.exists() {
+        if digest.hash == state.data.last_hash && cache_path.exists() {
             let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;
 
             // Verify that the cached projects match the current projects
@@ -206,7 +209,7 @@ impl WorkspaceBuilder {
         graph.load_projects().await?;
         graph.load_tasks().await?;
 
-        state.data.last_hash = hash;
+        state.data.last_hash = digest.hash;
         state.data.projects = graph.project_data.clone();
         state.save()?;
 

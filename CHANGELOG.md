@@ -73,6 +73,10 @@
 - Updated Rust to v1.96.0.
 - Updated dependencies.
 
+#### 🐞 Fixes
+
+- Fixed a glob regression where unbounded walks could be up to 10x slower.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.57.2](https://github.com/moonrepo/proto/releases/tag/v0.57.0) from 0.56.4.

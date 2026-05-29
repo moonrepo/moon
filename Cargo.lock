@@ -398,6 +398,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ec2f1fc3ec205783a5da9a7e6c1509cc69dedf09a1949e412c1e18469326d00"
 dependencies = [
  "aws-lc-sys",
+ "untrusted 0.7.1",
  "zeroize",
 ]
 
@@ -4271,6 +4272,7 @@ version = "10.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eba32bfb4ffdeaca3e34431072faf01745c9b26d25504aa7a6cf5684334fc4fc"
 dependencies = [
+ "aws-lc-rs",
  "base64 0.22.1",
  "getrandom 0.2.17",
  "js-sys",
@@ -6389,13 +6391,14 @@ dependencies = [
 
 [[package]]
 name = "oci-client"
-version = "0.16.1"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b7f8deaffcd3b0e3baf93dddcab3d18b91d46dc37d38a8b170089b234de5bb3"
+checksum = "5261a7fb43d9c53b8e63e6d5e86860719dad253d015d022066c72d585125aed8"
 dependencies = [
  "bytes",
  "chrono",
  "futures-util",
+ "hex",
  "http",
  "http-auth",
  "jsonwebtoken",
@@ -6406,7 +6409,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -7096,9 +7099,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.57.2"
+version = "0.57.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd6fb59890859ccf8304b2f949dfda7768d3e8784bbfcda0c7baa45e9130361e"
+checksum = "02a38f4cef2d339694d56ff0bf2c4f058b09f5e7f7d2b1f2e97a8f7695ffa21b"
 dependencies = [
  "convert_case 0.11.0",
  "docker_credential",
@@ -7119,7 +7122,6 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
- "sha2 0.10.9",
  "shell-words",
  "starbase_archive",
  "starbase_console",
@@ -7648,7 +7650,7 @@ dependencies = [
  "cfg-if",
  "getrandom 0.2.17",
  "libc",
- "untrusted",
+ "untrusted 0.9.0",
  "windows-sys 0.52.0",
 ]
 
@@ -7917,7 +7919,7 @@ dependencies = [
  "aws-lc-rs",
  "ring",
  "rustls-pki-types",
- "untrusted",
+ "untrusted 0.9.0",
 ]
 
 [[package]]
@@ -9530,6 +9532,12 @@ checksum = "b39abd59bf32521c7f2301b52d05a6a2c975b6003521cbd0c6dc1582f0a22104"
 
 [[package]]
 name = "untrusted"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
+
+[[package]]
+name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
@@ -9695,15 +9703,16 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.32.0"
+version = "0.32.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d9eb857f4a1a07661c62cde68daa3c8c5dd4ea1e4b01eebefe1d13f9e4d70ed"
+checksum = "97bd156ba18c0b3576acc101cdb43a8c0fdcc3c9c6302db7c80949670c88a1bc"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
  "compact_str 0.9.1",
  "docker_credential",
  "extism",
+ "hex",
  "http-cache-reqwest",
  "miette 7.6.0",
  "oci-client",
@@ -9718,7 +9727,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "starbase_archive",
  "starbase_shell",
  "starbase_styles",

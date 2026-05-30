@@ -8,23 +8,23 @@ use std::path::Path;
 
 pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command {
     let path = path.as_ref();
-    let user_dir = home_dir().unwrap();
 
     let mut cmd = std::process::Command::new(cargo_bin("moon"));
     cmd.current_dir(path);
     cmd.env("RUST_BACKTRACE", "full");
     cmd.env("WASMTIME_BACKTRACE_DETAILS", "1");
     cmd.env("NO_COLOR", "true");
-    // Use a shared store to speed up tests
-    cmd.env("MOON_HOME", user_dir.join(".moon-tests"));
-    cmd.env("PROTO_HOME", user_dir.join(".proto-tests"));
+    // Store plugins in the sandbox
+    cmd.env("MOON_HOME", path.join(".moon-home"));
+    // Isolate proto home to prevent parallel test races on node installation
+    cmd.env("PROTO_HOME", path.join(".proto-home"));
     // Let our code know we're running tests
     cmd.env("MOON_TEST", "true");
     cmd.env("STARBASE_TEST", "true");
     // Don't exhaust all cores on the machine
-    // cmd.env("MOON_CONCURRENCY", "2");
+    cmd.env("MOON_CONCURRENCY", "2");
     // Hide install output as it disrupts testing snapshots
-    // cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
+    cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
     // Standardize file system paths for testing snapshots
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Enable logging for code coverage

@@ -189,12 +189,12 @@ impl WorkspaceMocker {
     pub fn with_global_envs(mut self) -> Self {
         let home_dir = std::env::home_dir().unwrap();
 
-        self.moon_env = MoonEnvironment::from(home_dir.join(".moon-tests")).unwrap();
+        self.moon_env = MoonEnvironment::from(home_dir.join(".moon")).unwrap();
         self.moon_env.working_dir = self.working_dir.clone();
         self.moon_env.workspace_root = self.workspace_root.clone();
         self.moon_env.test_only = true;
 
-        self.proto_env = ProtoEnvironment::from(home_dir.join(".proto-tests"), home_dir).unwrap();
+        self.proto_env = ProtoEnvironment::from(home_dir.join(".proto"), home_dir).unwrap();
         self.proto_env.working_dir = self.working_dir.clone();
         self.proto_env.test_only = true;
 

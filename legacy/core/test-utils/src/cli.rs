@@ -14,6 +14,11 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     cmd.env("RUST_BACKTRACE", "1");
     cmd.env("WASMTIME_BACKTRACE_DETAILS", "1");
     cmd.env("NO_COLOR", "true");
+    // Avoid inheriting user/runner Git config that can spawn fsmonitor daemons
+    // and hang temp fixture repositories under parallel tests.
+    cmd.env("GIT_CONFIG_COUNT", "1");
+    cmd.env("GIT_CONFIG_KEY_0", "core.fsmonitor");
+    cmd.env("GIT_CONFIG_VALUE_0", "false");
     // Store plugins in the sandbox
     cmd.env("MOON_HOME", path.join(".moon-home"));
     // Isolate proto home to prevent parallel test races on node installation
@@ -24,7 +29,7 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     // Don't exhaust all cores on the machine
     cmd.env("MOON_CONCURRENCY", "2");
     // Hide install output as it disrupts testing snapshots
-    // cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
+    cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
     // Standardize file system paths for testing snapshots
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Enable logging for code coverage

@@ -22,9 +22,9 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
     cmd.env("MOON_TEST", "true");
     cmd.env("STARBASE_TEST", "true");
     // Don't exhaust all cores on the machine
-    cmd.env("MOON_CONCURRENCY", "2");
+    // cmd.env("MOON_CONCURRENCY", "2");
     // Hide install output as it disrupts testing snapshots
-    cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
+    // cmd.env("MOON_TEST_HIDE_INSTALL_OUTPUT", "true");
     // Standardize file system paths for testing snapshots
     cmd.env("MOON_TEST_STANDARDIZE_PATHS", "true");
     // Enable logging for code coverage

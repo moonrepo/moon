@@ -31,7 +31,7 @@ zstd = "0.13.3"
 
 # gRPC
 async-stream = { workspace = true }
-http = "1.4.0"
+http = "1.4.1"
 tonic = { workspace = true, features = [
     "channel",
     "codegen",

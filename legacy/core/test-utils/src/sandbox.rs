@@ -76,7 +76,8 @@ impl Sandbox {
         C: FnOnce(&mut StdCommand),
     {
         let mut cmd = StdCommand::new(if cfg!(windows) { "git.exe" } else { "git" });
-        cmd.current_dir(self.path())
+        cmd.args(["-c", "core.fsmonitor=false"])
+            .current_dir(self.path())
             .env("GIT_AUTHOR_NAME", "moon tests")
             .env("GIT_AUTHOR_EMAIL", "fakeemail@moonrepo.dev")
             .env("GIT_COMMITTER_NAME", "moon tests")

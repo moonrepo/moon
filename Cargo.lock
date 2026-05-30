@@ -8508,9 +8508,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_archive"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bfe3d9c45b8b09ca135378de4c4f87c24c96feb270f620c1335f8e223dc8d63"
+checksum = "7d0ac0e61833eaed23a3d61cab2e0a87f32f47a832dc1822487798cac1f7d876"
 dependencies = [
  "binstall-tar",
  "bzip2",
@@ -8538,9 +8538,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_console"
-version = "0.6.26"
+version = "0.6.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3230b8be01b72e77baa67e3f7234d5cc0a94b33be43008626385189742a5752"
+checksum = "8a00ab3fe8ebe79dff7ee074b34b38cbc6caf7b5a878514beaf358b533724d42"
 dependencies = [
  "crossterm",
  "iocraft",
@@ -8582,9 +8582,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.12.3"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87821dbb9f0743e9aab41c3b3b3af5422fa7e2ff28132b7028c3c268800df4e5"
+checksum = "540a7739590a0e0cec64bfb811e3eed741ad756445362eac84a8c001a253b1a6"
 dependencies = [
  "base64 0.22.1",
  "miette 7.6.0",
@@ -8610,9 +8610,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.13.4"
+version = "0.13.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "199fcab1a635071d3bdc2b7d45ae361c4ebdf7937c2761de878c3b5cbacc6cc9"
+checksum = "76547a148dbdc909e97afe5cdb6d0e19ece9f9115ea3d6a3bdf8f179f2f73d2e"
 dependencies = [
  "async-trait",
  "dirs",
@@ -8620,7 +8620,6 @@ dependencies = [
  "json-strip-comments",
  "jwalk",
  "miette 7.6.0",
- "regex",
  "reqwest",
  "scc 3.7.1",
  "serde",
@@ -8751,9 +8750,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.38.4"
+version = "0.39.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92ab6a2f8bfe508deb3c6406578252e491d299cbbf3bc0529ecc3313aee4a52f"
+checksum = "21d0d938c10fcda3e897e28aaddf4ab462375d411f4378cd63b1c945f69aba96"
 dependencies = [
  "libc",
  "memchr",
@@ -11190,9 +11189,9 @@ dependencies = [
 
 [[package]]
 name = "zip"
-version = "8.5.1"
+version = "8.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcab981e19633ebcf0b001ddd37dd802996098bc1864f90b7c5d970ce76c1d59"
+checksum = "2d04a6b5381502aa6087c94c669499eb1602eb9c5e8198e534de571f7154809b"
 dependencies = [
  "bzip2",
  "crc32fast",

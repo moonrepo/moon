@@ -3,7 +3,7 @@ pub mod projects;
 pub mod tasks;
 
 use miette::IntoDiagnostic;
-use tracing::trace;
+use tracing::debug;
 
 pub(super) fn convert_to_regex(
     field: &str,
@@ -14,7 +14,7 @@ pub(super) fn convert_to_regex(
             // case-insensitive by default
             let pattern = regex::Regex::new(&format!("(?i){pattern}")).into_diagnostic()?;
 
-            trace!(
+            debug!(
                 "Filtering \"{}\" by matching against pattern \"{}\"",
                 field, pattern
             );

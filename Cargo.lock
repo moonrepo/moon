@@ -1162,6 +1162,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-oid"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
+
+[[package]]
 name = "const_format"
 version = "0.2.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1786,6 +1792,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1dd6dbb5841937940781866fa1281a1ff7bd3bf827091440879f9994983d5c2"
 dependencies = [
  "block-buffer 0.12.0",
+ "const-oid",
  "crypto-common 0.2.2",
 ]
 
@@ -5404,10 +5411,11 @@ name = "moon_hash"
 version = "0.0.1"
 dependencies = [
  "compact_str 0.9.1",
+ "hex",
  "miette 7.6.0",
  "moon_common",
  "serde",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "starbase_utils",
  "thiserror 2.0.18",
  "tracing",
@@ -8492,9 +8500,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starbase"
-version = "0.10.10"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fcd26ce3c899ad844fccd5bc6ecf06f899bea6c5a6f83fe3d35b579ba540f76d"
+checksum = "842d433df8483f0862ab5fd0d504dd2238a3ec5e57d4ddae4109fd1738219cf9"
 dependencies = [
  "async-trait",
  "chrono",

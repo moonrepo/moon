@@ -8,10 +8,7 @@ use std::ops::Deref;
 use std::path::Path;
 
 pub fn hash_sha256<T: AsRef<[u8]>>(bytes: T) -> String {
-    let mut hasher = Sha256::default();
-    hasher.update(bytes.as_ref());
-
-    format!("{:x}", hasher.finalize())
+    hex::encode(Sha256::digest(bytes))
 }
 
 /// A SHA-256 content hash: 64-character hex string.

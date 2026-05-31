@@ -1,5 +1,46 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a new experiment that replaces the VCS/Git based file hashing mechanism with a custom native
+  implementation that runs within our task pool. This can improve performance by 10-50%.
+  - Enable with the `experiments.nativeFileHashing` setting in `.moon/workspace.*`.
+- **Git**
+  - Added SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256 as
+    the default hash algorithm.
+- **MCP**
+  - Added `get_template` and `get_templates` tools so AI coding assistants can discover templates
+    and inspect their variable schemas before calling `generate`.
+- **Tasks**
+  - Added tags support to tasks through new `tags` and `options.mergeTags` settings.
+    - Added `taskTag` field support to MQL.
+    - Added `--tags` option support to `moon query tasks`.
+  - Added a `cacheStrategy` field to task dependencies that controls how a dependency's changes
+    invalidate the current task's cache. Supports `hash`, `ignored`, and `outputs` — the latter
+    mixes in the dependency's output files instead of its hash, so build tasks are only invalidated
+    when upstream outputs change, not when upstream inputs change.
+    - **Behavior change:** when `cacheStrategy` is omitted, the default is now `hash` if the
+      dependency declares outputs and `ignored` if it doesn't, instead of always `hash`. Tasks that
+      depend on output-less tasks (e.g. lint, test) will see fewer cache invalidations. Set
+      `cacheStrategy: 'hash'` explicitly to restore the previous behavior for a given dependency.
+  - Updated targets to support the `#` tag syntax in the task scope, allowing you to reference tasks
+    by their tags. For example: `app:#quality`.
+- **Performance**
+  - Reduced task target memory footprint by 50-100%.
+
+#### 🧰 Toolchains
+
+- **JavaScript**
+  - Added support for [Deno v2.8](https://deno.com/blog/v2.8):
+  - Will use `deno ci` for installs in CI when `deno.lock` exists and the configured Deno version
+    is >= v2.8.
+  - Will pass `--prod` to `deno install` for production installs when the configured Deno version
+    is >= v2.8.
+  - Will resolve `catalog:` references in `package.json` files using catalogs declared in a root
+    `deno.json`.
+
 ## 2.2.6
 
 #### 🐞 Fixes
@@ -32,37 +73,6 @@
     Configure `--clear` to force re-initializing.
 
 ## 2.2.4
-
-#### 🚀 Updates
-
-- Added a new experiment that replaces the VCS/Git based file hashing mechanism with a custom native
-  implementation that runs within our task pool. This can improve performance by 10-50%.
-  - Enable with the `experiments.nativeFileHashing` setting in `.moon/workspace.*`.
-- **Git**
-  - Added SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256 as
-    the default hash algorithm.
-- **MCP**
-  - Added `get_template` and `get_templates` tools so AI coding assistants can discover
-    templates and inspect their variable schemas before calling `generate`.
-- **Tasks**
-  - Added tags support to tasks through new `tags` and `options.mergeTags` settings.
-    - Added `taskTag` field support to MQL.
-    - Added `--tags` option support to `moon query tasks`.
-  - Added a `cacheStrategy` field to task dependencies that controls how a dependency's changes
-    invalidate the current task's cache. Supports `hash`, `ignored`, and `outputs` — the latter
-    mixes in the dependency's output files instead of its hash, so build tasks are only
-    invalidated when upstream outputs change, not when upstream inputs change.
-    - **Behavior change:** when `cacheStrategy` is omitted, the default is now `hash` if the
-      dependency declares outputs and `ignored` if it doesn't, instead of always `hash`. Tasks
-      that depend on output-less tasks (e.g. lint, test) will see fewer cache invalidations.
-      Set `cacheStrategy: 'hash'` explicitly to restore the previous behavior for a given
-      dependency.
-  - Updated targets to support the `#` tag syntax in the task scope, allowing you to reference tasks
-    by their tags. For example: `app:#quality`.
-- **Performance**
-  - Reduced task target memory footprint by 50-100%.
-
-## Unreleased
 
 #### 🐞 Fixes
 

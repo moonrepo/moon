@@ -1,7 +1,7 @@
 use crate::cas_error::CasError;
 use crate::gc::GcResult;
 use moon_config::CacheCasConfig;
-use moon_hash::{Blob, ContentHash, Digest, Sha256, Sha256Digest, hash_sha256};
+use moon_hash::{Blob, ContentHash, Digest, Sha256, Sha256Digest, hash_sha256, hex};
 use starbase_utils::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -146,7 +146,7 @@ impl CasStore {
             }
 
             // No fsync: see `write` for rationale.
-            ContentHash::from_hex(format!("{:x}", hasher.finalize()))?
+            ContentHash::from_hex(hex::encode(hasher.finalize()))?
         };
 
         let digest = Digest {

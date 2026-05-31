@@ -204,7 +204,9 @@ impl OutputHydrater<'_> {
         if state.local_cache_readable && archive_file.exists() {
             debug!(
                 task_target = self.task.target.as_str(),
-                hash, archive_file = ?archive_file, "Hydrating task outputs from local cache archive (legacy)"
+                hash,
+                archive_file = ?archive_file,
+                "Hydrating task outputs from local cache archive (legacy)"
             );
         } else if !state.local_cache_readable || !archive_file.exists() {
             debug!(

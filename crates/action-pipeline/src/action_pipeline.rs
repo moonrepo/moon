@@ -453,7 +453,7 @@ impl ActionPipeline {
             debug!(
                 lifetime = lifetime,
                 "Subscribing cache cleanup ({} enabled)",
-                color::property("runner.autoCleanCache"),
+                color::property("pipeline.autoCleanCache"),
             );
 
             self.emitter

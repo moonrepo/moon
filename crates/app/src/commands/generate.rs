@@ -17,7 +17,7 @@ use rustc_hash::FxHashMap;
 use starbase::AppResult;
 use starbase_utils::json::{self, JsonValue, serde_json};
 use std::path::PathBuf;
-use tracing::{debug, instrument};
+use tracing::{debug, info, instrument};
 
 #[derive(Args, Clone, Debug)]
 pub struct GenerateArgs {
@@ -79,7 +79,7 @@ pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
     }
 
     if args.dry_run {
-        debug!("Running in DRY MODE");
+        info!("Running in DRY MODE");
     }
 
     generator.load_templates().await?;

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use starbase_styles::color;
 use starbase_utils::json;
 use std::io::{IsTerminal, Read, stdin};
-use tracing::{debug, trace, warn};
+use tracing::{debug, warn};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -112,7 +112,7 @@ async fn query_changed_files_without_stdin(
     if !only_local {
         // Compare against previous commit
         if check_against_previous {
-            trace!(
+            debug!(
                 "Against previous revision, as we're on the default branch \"{}\"",
                 current_branch
             );
@@ -124,7 +124,7 @@ async fn query_changed_files_without_stdin(
         }
         // Otherwise against remote between 2 revisions
         else {
-            trace!(
+            debug!(
                 "Against remote using base \"{}\" with head \"{}\"",
                 base, head,
             );
@@ -134,7 +134,7 @@ async fn query_changed_files_without_stdin(
     }
 
     // Always include local changes
-    trace!("Against local index");
+    debug!("Against local index");
 
     changed_files_map.merge(vcs.get_changed_files().await?);
 

@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use starbase_utils::json;
 use std::path::{Path, PathBuf};
-use tracing::{debug, trace};
+use tracing::debug;
 
 pub struct CacheItem<T: Default + DeserializeOwned + Serialize> {
     pub data: T,
@@ -32,7 +32,7 @@ impl<T: Default + DeserializeOwned + Serialize> CacheItem<T> {
                 );
             }
         } else {
-            trace!(
+            debug!(
                 cache = ?path,
                 "Cache is not readable, skipping checks",
             );
@@ -50,7 +50,7 @@ impl<T: Default + DeserializeOwned + Serialize> CacheItem<T> {
 
             json::write_file(&self.path, &self.data, false)?;
         } else {
-            trace!(
+            debug!(
                 cache = ?self.path,
                 "Cache is not writeable, skipping save",
             );

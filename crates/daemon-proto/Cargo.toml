@@ -10,7 +10,7 @@ tonic = { workspace = true, features = ["channel", "codegen", "transport"] }
 tonic-prost = { workspace = true }
 
 [build-dependencies]
-tonic-prost-build = "0.14.5"
+tonic-prost-build = "0.14.6"
 
 [lints]
 workspace = true

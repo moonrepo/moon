@@ -2,6 +2,8 @@
 source: crates/cli/tests/run_legacy_test.rs
 expression: assert.output()
 ---
+▮▮▮▮ installing node 18.0.0
+▮▮▮▮ installing npm 8.19.0
 ▮▮▮▮ npm install
 ▮▮▮▮ outputStyles:buffer
        outputStyles:buffer | stdout

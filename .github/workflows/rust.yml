@@ -138,7 +138,6 @@ jobs:
         if: ${{ vars.ENABLE_SCCACHE == 'true' }}
       # Fixes issues where proto can't find a version because nothing is pinned globally
       - run: cp .prototools ~/.proto/.prototools
-      - run: bash ./scripts/ci/warmProtoToolchain.sh
       - name: Build plugins
         run: just build-wasm
       - name: Run tests

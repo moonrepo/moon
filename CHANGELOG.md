@@ -34,12 +34,28 @@
 
 - **JavaScript**
   - Added support for [Deno v2.8](https://deno.com/blog/v2.8):
-  - Will use `deno ci` for installs in CI when `deno.lock` exists and the configured Deno version
-    is >= v2.8.
-  - Will pass `--prod` to `deno install` for production installs when the configured Deno version
-    is >= v2.8.
-  - Will resolve `catalog:` references in `package.json` files using catalogs declared in a root
-    `deno.json`.
+    - Will use `deno ci` for installs in CI when `deno.lock` exists and the configured Deno version
+      is >= v2.8.
+    - Will pass `--prod` to `deno install` for production installs when the configured Deno version
+      is >= v2.8.
+    - Will resolve `catalog:` references in `package.json` files using catalogs declared in a root
+      `deno.json`.
+- **Python**
+  - Added unstable support for `uv pip`.
+    - Can be configured using `unstable_python.packageManager: 'uv-pip'` in `.moon/toolchains.*`.
+    - Will inherit install arguments from `unstable_pip.installArgs`.
+    - Will inherit sync arguments from `unstable_uv.syncArgs`.
+    - Will inherit venv arguments from `unstable_uv.venvArgs`.
+
+#### 🐞 Fixes
+
+- Fixed a glob regression where unbounded walks could be up to 10x slower.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.57.3](https://github.com/moonrepo/proto/releases/tag/v0.57.0) from 0.56.4.
+- Updated Rust to v1.96.0.
+- Updated dependencies.
 
 ## 2.2.6
 

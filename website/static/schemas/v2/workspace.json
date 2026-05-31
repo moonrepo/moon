@@ -186,13 +186,6 @@
       "description": "Configures aspects of the content-addressable storage (CAS) cache.",
       "type": "object",
       "properties": {
-        "mmapThreshold": {
-          "title": "mmapThreshold",
-          "description": "Byte threshold above which to use memory-mapped I/O for hashing. Files below this size are read into a stack buffer.",
-          "default": 4194304,
-          "type": "number",
-          "markdownDescription": "Byte threshold above which to use memory-mapped I/O for hashing. Files below this size are read into a stack buffer."
-        },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
           "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption.",

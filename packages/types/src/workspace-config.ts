@@ -7,13 +7,6 @@ import type { ExtendsFrom, Id } from './common';
 /** Configures aspects of the content-addressable storage (CAS) cache. */
 export interface CacheCasConfig {
 	/**
-	 * Byte threshold above which to use memory-mapped I/O for hashing.
-	 * Files below this size are read into a stack buffer.
-	 *
-	 * @default 4194304
-	 */
-	mmapThreshold?: number;
-	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.
 	 */
@@ -683,13 +676,6 @@ export interface WorkspaceConfig {
 
 /** Configures aspects of the content-addressable storage (CAS) cache. */
 export interface PartialCacheCasConfig {
-	/**
-	 * Byte threshold above which to use memory-mapped I/O for hashing.
-	 * Files below this size are read into a stack buffer.
-	 *
-	 * @default 4194304
-	 */
-	mmapThreshold?: number | null;
 	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.

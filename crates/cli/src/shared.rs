@@ -35,9 +35,9 @@ fn get_version() -> String {
 fn get_tracing_modules() -> Vec<String> {
     let bag = GlobalEnvBag::instance();
     let mut modules = string_vec![
-        "moon", "proto", // "schematic",
-        "starbase",
-        "warpgate",
+        "moon", "proto", "starbase", "warpgate", // HTTP testing
+        "h2", "hyper",
+        "reqwest",
         // Remote testing
         // "h2",
         // "hyper",

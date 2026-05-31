@@ -723,9 +723,9 @@ You can override the default explicitly with one of:
 - `ignored` - Ignore the dependency task's hash for cache invalidation. The current task is
   **never** invalidated by this dependency's changes.
 - `outputs` - Use the dependency task's outputs instead of its hash for cache invalidation. The
-  current task is only invalidated when the dependency's outputs change, not when its inputs
-  change. Useful for build tasks where you only care about a dependency's outputs, not what
-  triggered the dependency to run.
+  current task is only invalidated when the dependency's outputs change, not when its inputs change.
+  Useful for build tasks where you only care about a dependency's outputs, not what triggered the
+  dependency to run.
 
 ```yaml title="moon.yml" {4-6}
 tasks:

@@ -26,20 +26,19 @@ impl Default for ToolchainRegistry {
     fn default() -> Self {
         Self {
             config: Default::default(),
-            registry: Arc::new(PluginRegistry::new(
-                PluginType::Toolchain,
-                MoonHostData::default(),
-            )),
+            registry: Arc::new(
+                PluginRegistry::new(PluginType::Toolchain, MoonHostData::default()).unwrap(),
+            ),
         }
     }
 }
 
 impl ToolchainRegistry {
-    pub fn new(host_data: MoonHostData, config: Arc<ToolchainsConfig>) -> Self {
-        Self {
+    pub fn new(host_data: MoonHostData, config: Arc<ToolchainsConfig>) -> miette::Result<Self> {
+        Ok(Self {
             config,
-            registry: Arc::new(PluginRegistry::new(PluginType::Toolchain, host_data)),
-        }
+            registry: Arc::new(PluginRegistry::new(PluginType::Toolchain, host_data)?),
+        })
     }
 
     pub fn create_config(&self, id: &str) -> JsonValue {

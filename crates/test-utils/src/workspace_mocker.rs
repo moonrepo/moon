@@ -375,6 +375,7 @@ impl WorkspaceMocker {
             },
             Arc::new(self.extensions_config.clone()),
         )
+        .unwrap()
     }
 
     pub fn mock_toolchain_registry(&self) -> ToolchainRegistry {
@@ -389,6 +390,7 @@ impl WorkspaceMocker {
             },
             Arc::new(self.toolchains_config.clone()),
         )
+        .unwrap()
     }
 
     pub fn mock_vcs_adapter(&self) -> BoxedVcs {

@@ -398,6 +398,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ec2f1fc3ec205783a5da9a7e6c1509cc69dedf09a1949e412c1e18469326d00"
 dependencies = [
  "aws-lc-sys",
+ "untrusted 0.7.1",
  "zeroize",
 ]
 
@@ -4271,6 +4272,7 @@ version = "10.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eba32bfb4ffdeaca3e34431072faf01745c9b26d25504aa7a6cf5684334fc4fc"
 dependencies = [
+ "aws-lc-rs",
  "base64 0.22.1",
  "getrandom 0.2.17",
  "js-sys",
@@ -4307,9 +4309,9 @@ checksum = "a4933f3f57a8e9d9da04db23fb153356ecaf00cbd14aee46279c33dc80925c37"
 
 [[package]]
 name = "kqueue"
-version = "1.1.1"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eac30106d7dce88daf4a3fcb4879ea939476d5074a9b7ddd0fb97fa4bed5596a"
+checksum = "273c0752728918e0ac4976f2b275b6fefb9ecd400585dec929419f3844cd87b5"
 dependencies = [
  "kqueue-sys",
  "libc",
@@ -4456,9 +4458,9 @@ checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 
 [[package]]
 name = "lzma-rust2"
-version = "0.16.3"
+version = "0.16.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e9ceaec84b54518262de7cf06b8b43e83c808349960f1610b21b0bfc9640f20"
+checksum = "ce716bf1a316f47a280fc76295f6495b5bea4752bca01c3b3885e101b1c23c02"
 dependencies = [
  "sha2 0.11.0",
 ]
@@ -4730,7 +4732,7 @@ dependencies = [
  "moon_common",
  "moon_target",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "serde",
  "tokio",
 ]
@@ -4837,7 +4839,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "serde",
  "serial_test",
  "starbase_sandbox",
@@ -5201,6 +5203,7 @@ dependencies = [
  "schematic",
  "serde",
  "serde_path_to_error",
+ "starbase_utils",
  "tracing",
 ]
 
@@ -5348,7 +5351,7 @@ dependencies = [
  "moon_common",
  "regex",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "starbase_utils",
  "thiserror 2.0.18",
 ]
@@ -5545,7 +5548,7 @@ dependencies = [
  "moon_workspace_graph",
  "proto_core",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "serde",
  "serde_json",
  "starbase_sandbox",
@@ -5669,7 +5672,7 @@ dependencies = [
  "moon_workspace",
  "petgraph 0.8.3",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
@@ -5711,7 +5714,7 @@ dependencies = [
  "moon_task",
  "reqwest",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "serde",
  "starbase_utils",
  "thiserror 2.0.18",
@@ -5820,7 +5823,7 @@ dependencies = [
  "once_cell",
  "petgraph 0.8.3",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "thiserror 2.0.18",
  "tracing",
 ]
@@ -5998,7 +6001,7 @@ dependencies = [
  "moon_process",
  "regex",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "semver",
  "serde",
  "soft-canonicalize",
@@ -6081,7 +6084,7 @@ dependencies = [
  "moon_project_graph",
  "moon_query",
  "moon_task_graph",
- "scc 3.7.1",
+ "scc",
  "tracing",
 ]
 
@@ -6401,13 +6404,14 @@ dependencies = [
 
 [[package]]
 name = "oci-client"
-version = "0.16.1"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b7f8deaffcd3b0e3baf93dddcab3d18b91d46dc37d38a8b170089b234de5bb3"
+checksum = "5261a7fb43d9c53b8e63e6d5e86860719dad253d015d022066c72d585125aed8"
 dependencies = [
  "bytes",
  "chrono",
  "futures-util",
+ "hex",
  "http",
  "http-auth",
  "jsonwebtoken",
@@ -6418,7 +6422,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -7108,9 +7112,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.56.4"
+version = "0.57.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34127fc437c3aacbb37ce45db87ce84037f5a35d460f06a927c26f531a4bafaf"
+checksum = "02a38f4cef2d339694d56ff0bf2c4f058b09f5e7f7d2b1f2e97a8f7695ffa21b"
 dependencies = [
  "convert_case 0.11.0",
  "docker_credential",
@@ -7126,12 +7130,11 @@ dependencies = [
  "regex",
  "reqwest",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "schematic",
  "semver",
  "serde",
  "serde_json",
- "sha2 0.10.9",
  "shell-words",
  "starbase_archive",
  "starbase_console",
@@ -7169,9 +7172,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_test_utils"
-version = "0.44.2"
+version = "0.45.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05136d0efc40a87d85241a7bcb6a8940b6cf21aa93f72b75ba874a016c6570a3"
+checksum = "57e8e9e4c87e2b0d21bba35b388aa1959d9fe5f101abd532799f7061fa7fff83"
 dependencies = [
  "extism",
  "proto_core",
@@ -7660,7 +7663,7 @@ dependencies = [
  "cfg-if",
  "getrandom 0.2.17",
  "libc",
- "untrusted",
+ "untrusted 0.9.0",
  "windows-sys 0.52.0",
 ]
 
@@ -7929,7 +7932,7 @@ dependencies = [
  "aws-lc-rs",
  "ring",
  "rustls-pki-types",
- "untrusted",
+ "untrusted 0.9.0",
 ]
 
 [[package]]
@@ -7961,21 +7964,12 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "2.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46e6f046b7fef48e2660c57ed794263155d713de679057f2d0c169bfc6e756cc"
-dependencies = [
- "sdd 3.0.10",
-]
-
-[[package]]
-name = "scc"
 version = "3.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5bcd12b6caff5213cc3c03123cde8c3db5e413008a63b0c0ba35e6275825ea92"
 dependencies = [
  "saa",
- "sdd 4.8.6",
+ "sdd",
  "serde",
 ]
 
@@ -8064,12 +8058,6 @@ name = "scopeguard"
 version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
-
-[[package]]
-name = "sdd"
-version = "3.0.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "490dcfcbfef26be6800d11870ff2df8774fa6e86d047e3e8c8a76b25655e41ca"
 
 [[package]]
 name = "sdd"
@@ -8257,24 +8245,23 @@ dependencies = [
 
 [[package]]
 name = "serial_test"
-version = "3.4.0"
+version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "911bd979bf1070a3f3aa7b691a3b3e9968f339ceeec89e08c280a8a22207a32f"
+checksum = "699f4197115b8a7e7ff19c9a315a4bd6fffec26cc4626ef45ecaea389e081c6d"
 dependencies = [
  "futures-executor",
  "futures-util",
  "log",
  "once_cell",
  "parking_lot",
- "scc 2.4.0",
  "serial_test_derive",
 ]
 
 [[package]]
 name = "serial_test_derive"
-version = "3.4.0"
+version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a7d91949b85b0d2fb687445e448b40d322b6b3e4af6b44a29b21d9a5f33e6d9"
+checksum = "94e153fc76e1c6a068703d6d29c508a0b15c061c4b7e43da59cc097bc342673c"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8683,7 +8670,7 @@ dependencies = [
  "jwalk",
  "miette 7.6.0",
  "reqwest",
- "scc 3.7.1",
+ "scc",
  "serde",
  "serde_json",
  "serde_norway",
@@ -9558,6 +9545,12 @@ checksum = "b39abd59bf32521c7f2301b52d05a6a2c975b6003521cbd0c6dc1582f0a22104"
 
 [[package]]
 name = "untrusted"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
+
+[[package]]
+name = "untrusted"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
@@ -9723,15 +9716,16 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.30.5"
+version = "0.32.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47a82380b3b99182158aa0ca78247d73a075b136c541bd452f392e332ecbc84f"
+checksum = "7949cce72d018cf1befb2d1aba75d6b67137feba323ef1b4d790890df2f14b9e"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
  "compact_str 0.9.1",
  "docker_credential",
  "extism",
+ "hex",
  "http-cache-reqwest",
  "miette 7.6.0",
  "oci-client",
@@ -9742,11 +9736,11 @@ dependencies = [
  "reqwest-retry",
  "rust-netrc",
  "rustc-hash",
- "scc 3.7.1",
+ "scc",
  "schematic",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "starbase_archive",
  "starbase_shell",
  "starbase_styles",

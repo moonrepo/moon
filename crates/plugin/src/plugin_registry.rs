@@ -11,6 +11,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::Duration;
 use tracing::{debug, instrument};
 use warpgate::sort_virtual_paths;
 use warpgate::{
@@ -28,11 +29,13 @@ pub struct PluginRegistry<T: Plugin> {
 }
 
 impl<T: Plugin> PluginRegistry<T> {
-    pub fn new(type_of: PluginType, host_data: MoonHostData) -> Self {
+    pub fn new(type_of: PluginType, host_data: MoonHostData) -> miette::Result<Self> {
         debug!(
             plugin_type = type_of.get_label(),
             "Creating plugin registry"
         );
+
+        let config = host_data.proto_env.load_config()?;
 
         // Create the loader
         let mut loader = PluginLoader::new(
@@ -40,7 +43,12 @@ impl<T: Plugin> PluginRegistry<T> {
             &host_data.moon_env.temp_dir,
         );
 
+        if let Some(secs) = config.settings.cache_duration {
+            loader.set_cache_duration(Duration::from_secs(secs));
+        }
+
         loader.set_offline_checker(is_offline);
+        loader.add_registries(config.settings.registries.iter().cloned().collect());
 
         // Merge proto and moon virtual paths
         let mut paths = BTreeMap::new();
@@ -51,13 +59,13 @@ impl<T: Plugin> PluginRegistry<T> {
 
         sort_virtual_paths(&mut paths);
 
-        Self {
+        Ok(Self {
             loader,
             plugins: Arc::new(scc::HashMap::default()),
             host_data,
             type_of,
             virtual_paths: paths,
-        }
+        })
     }
 
     pub fn create_context(&self) -> MoonContext {

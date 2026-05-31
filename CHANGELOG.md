@@ -13,6 +13,9 @@
 - **MCP**
   - Added `get_template` and `get_templates` tools so AI coding assistants can discover templates
     and inspect their variable schemas before calling `generate`.
+- **Plugins**
+  - Updated plugin distribution to use ghcr.io instead of raw URLs, which should improve reliability
+    and performance of plugin downloads.
 - **Tasks**
   - Added tags support to tasks through new `tags` and `options.mergeTags` settings.
     - Added `taskTag` field support to MQL.
@@ -40,6 +43,15 @@
     is >= v2.8.
   - Will resolve `catalog:` references in `package.json` files using catalogs declared in a root
     `deno.json`.
+
+#### 🐞 Fixes
+
+- Fixed a glob regression where unbounded walks could be up to 10x slower.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.57.3](https://github.com/moonrepo/proto/releases/tag/v0.57.0) from 0.56.4.
+- Updated dependencies.
 
 ## 2.2.6
 

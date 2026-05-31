@@ -14,7 +14,7 @@ use starbase_archive::tar::TarPacker;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::task::{JoinSet, spawn_blocking};
-use tracing::{debug, instrument, trace, warn};
+use tracing::{debug, instrument, warn};
 
 /// Cache outputs to the `.moon/cache/outputs` folder and to the cloud,
 /// so that subsequent builds are faster, and any local outputs
@@ -120,7 +120,7 @@ impl OutputArchiver<'_> {
 
     #[instrument(skip(self))]
     async fn collect_output_blobs(&self, hash: &str) -> miette::Result<OutputTree> {
-        trace!(
+        debug!(
             task_target = self.task.target.as_str(),
             hash, "Collecting task output blobs"
         );

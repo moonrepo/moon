@@ -1,6 +1,6 @@
 use starbase_utils::fs::{self, FsError};
 use std::path::{Path, PathBuf};
-use tracing::trace;
+use tracing::debug;
 
 /// Get the daemon endpoint string for this workspace.
 ///
@@ -37,7 +37,7 @@ pub fn write_pid(pid_path: &Path, pid: u32) -> Result<(), FsError> {
 }
 
 pub fn cleanup_daemon_files(daemon_dir: &Path) -> Result<(), FsError> {
-    trace!(daemon_dir = ?daemon_dir, "Cleaning daemon files");
+    debug!(daemon_dir = ?daemon_dir, "Cleaning daemon files");
 
     fs::remove_dir_all(daemon_dir)?;
 

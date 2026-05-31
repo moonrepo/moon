@@ -11,7 +11,8 @@ pub fn create_moon_command_std<T: AsRef<Path>>(path: T) -> std::process::Command
 
     let mut cmd = std::process::Command::new(cargo_bin("moon"));
     cmd.current_dir(path);
-    cmd.env("RUST_BACKTRACE", "1");
+    cmd.env("RUST_BACKTRACE", "full");
+    cmd.env("WASMTIME_BACKTRACE_DETAILS", "1");
     cmd.env("NO_COLOR", "true");
     // Store plugins in the sandbox
     cmd.env("MOON_HOME", path.join(".moon-home"));

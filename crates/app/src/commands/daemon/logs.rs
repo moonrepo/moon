@@ -30,7 +30,7 @@ pub async fn logs(session: MoonSession) -> AppResult {
 async fn tail_logs(session: &MoonSession, log_path: &Path) -> AppResult {
     use moon_process::find_command_on_path;
 
-    if find_command_on_path("tail".into()).is_none() {
+    if find_command_on_path("tail").is_none() {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Failure) {

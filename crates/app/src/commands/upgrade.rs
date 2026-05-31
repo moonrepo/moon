@@ -143,7 +143,7 @@ pub async fn upgrade(session: MoonSession) -> AppResult {
         source_url = &download_url,
         dest_file = ?archive_file,
         target = target,
-        "Download archive"
+        "Downloading archive"
     );
 
     net::download_from_url(&download_url, &archive_file).await?;

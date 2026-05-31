@@ -617,7 +617,7 @@ impl Vcs for Git {
     }
 
     fn is_enabled(&self) -> bool {
-        self.worktree.git_dir.exists() && find_command_on_path("git".into()).is_some()
+        self.worktree.git_dir.exists() && find_command_on_path("git").is_some()
     }
 
     fn is_ignored(&self, file: &Path) -> bool {

@@ -11,7 +11,7 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
-hcl-rs = "0.19.6"
+hcl-rs = "0.19.7"
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }

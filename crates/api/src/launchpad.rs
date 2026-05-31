@@ -148,7 +148,7 @@ impl Launchpad {
         let version = &self.moon_version;
 
         debug!(
-            current_version = &version,
+            current_version = version,
             manifest_url = manifest_url,
             "Checking for a new version of moon"
         );

@@ -23,6 +23,7 @@ env:
   WARPGATE_PLUGINS_DIR: ${{ github.workspace }}/wasm
   WARPGATE_HTTP_NO_TIMEOUTS: true
   WARPGATE_OCI_NO_TIMEOUTS: true
+  MOON_DEBUG_WASM: true
   MOON_PLUGINS_USE_URL_DIST: true
   PROTO_PLUGINS_USE_URL_DIST: true
   # RUST_LOG: trace

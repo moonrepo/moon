@@ -4,10 +4,11 @@ package moon.daemon.v1;
 
 service MoonDaemon {
   rpc ArchiveTaskOutputs(ArchiveTaskOutputsRequest) returns (ArchiveTaskOutputsResponse);
+  rpc CleanCache(CleanCacheRequest) returns (CleanCacheResponse);
   rpc HashFiles(HashFilesRequest) returns (HashFilesResponse);
   rpc Start(StartRequest) returns (StartResponse);
-  rpc Stop(StopRequest) returns (StopResponse);
   rpc Status(StatusRequest) returns (StatusResponse);
+  rpc Stop(StopRequest) returns (StopResponse);
 }
 
 message ArchiveTaskOutputsRequest {
@@ -17,6 +18,16 @@ message ArchiveTaskOutputsRequest {
 
 message ArchiveTaskOutputsResponse {
   bool archived = 1;
+}
+
+message CleanCacheRequest {
+  bool all = 1;
+  string lifetime = 2;
+}
+
+message CleanCacheResponse {
+  uint32 files_deleted = 1;
+  uint64 bytes_saved = 2;
 }
 
 message HashFilesRequest {
@@ -37,12 +48,6 @@ message StartResponse {
   bool already_running = 3;
 }
 
-message StopRequest {}
-
-message StopResponse {
-  bool stopped = 1;
-}
-
 message StatusRequest {}
 
 message StatusResponse {
@@ -52,4 +57,10 @@ message StatusResponse {
   uint64 uptime_secs = 4;
   string moon_version = 5;
   string workspace_root = 6;
+}
+
+message StopRequest {}
+
+message StopResponse {
+  bool stopped = 1;
 }

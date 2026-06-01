@@ -22,7 +22,9 @@ Our smart hashing currently takes the following sources into account:
 - Input sources (`inputs`).
 - Output targets (`outputs`).
 - Environment variables (`env`).
-- Dependencies between projects (`dependsOn`) and tasks (`deps`).
+- Dependencies between projects (`dependsOn`) and tasks (`deps`). Task dependency contribution can
+  be tuned per-dependency via
+  [`cacheStrategy`](../config/project#cache-strategy).
 - **For Deno tasks**:
   - Deno version.
   - `deno.json`/`deps.ts` imports, import maps, and scopes.
@@ -54,6 +56,11 @@ timeline, where every point in time will have its own hash + archive that moon c
 Furthermore, if we receive a cache hit on the hash, and the hash is the same as the last run, and
 outputs exist, we exit early without hydrating and assume the project is already hydrated. In the
 terminal, you'll see a message for "cached".
+
+> As of v2.3, an experimental content-addressable storage (CAS) layer is also available that
+> replaces the tarball-based local cache with the same content-addressed format used by the remote
+> cache. Enable it via the
+> [`experiments.casOutputsCache`](../config/workspace#casoutputscache) setting.
 
 ## File structure
 

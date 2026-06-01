@@ -4782,6 +4782,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_daemon_client",
  "moon_notifier",
  "moon_process",
  "moon_project",

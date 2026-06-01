@@ -16,6 +16,7 @@ use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_common::{color, is_remote, is_test_env};
 use moon_console::Level;
+use moon_daemon_client::DaemonClient;
 use moon_process::{ProcessRegistry, SignalType};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -42,12 +43,17 @@ pub struct ActionPipeline {
     // Data
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
+    daemon_client: Option<DaemonClient>,
     emitter: Arc<EventEmitter>,
     workspace_graph: Arc<WorkspaceGraph>,
 }
 
 impl ActionPipeline {
-    pub fn new(app_context: Arc<AppContext>, workspace_graph: Arc<WorkspaceGraph>) -> Self {
+    pub fn new(
+        app_context: Arc<AppContext>,
+        workspace_graph: Arc<WorkspaceGraph>,
+        daemon_client: Option<DaemonClient>,
+    ) -> Self {
         debug!("Creating pipeline to run actions");
 
         Self {
@@ -56,6 +62,7 @@ impl ActionPipeline {
             app_context,
             bail: false,
             concurrency: num_cpus::get(),
+            daemon_client,
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
             quiet: false,
@@ -459,6 +466,7 @@ impl ActionPipeline {
             self.emitter
                 .subscribe(CleanupSubscriber::new(
                     Arc::clone(&self.app_context.cache_engine),
+                    self.daemon_client.clone(),
                     lifetime,
                 ))
                 .await;

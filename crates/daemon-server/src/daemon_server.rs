@@ -92,11 +92,35 @@ impl MoonDaemon for DaemonService {
         Ok(Response::new(ArchiveTaskOutputsResponse { archived }))
     }
 
+    async fn clean_cache(
+        &self,
+        request: Request<CleanCacheRequest>,
+    ) -> Result<Response<CleanCacheResponse>, Status> {
+        debug!("Received {} request", color::property("CleanCache"));
+
+        let request = request.into_inner();
+        let state = self.state.read().await;
+
+        let (files_deleted, bytes_saved) = state
+            .app_context
+            .cache_engine
+            .clean_stale_cache(&request.lifetime, request.all)
+            .await
+            .map_err(|error| Status::unknown(error.to_string()))?;
+
+        Ok(Response::new(CleanCacheResponse {
+            files_deleted: files_deleted as u32,
+            bytes_saved,
+        }))
+    }
+
     async fn hash_files(
         &self,
         request: Request<HashFilesRequest>,
     ) -> Result<Response<HashFilesResponse>, Status> {
         debug!("Received {} request", color::property("HashFiles"));
+
+        let state = self.state.read().await;
 
         let files = request
             .into_inner()
@@ -105,10 +129,7 @@ impl MoonDaemon for DaemonService {
             .map(WorkspaceRelativePathBuf::from)
             .collect::<Vec<_>>();
 
-        let hashed_files = self
-            .state
-            .read()
-            .await
+        let hashed_files = state
             .app_context
             .hash_files(&files)
             .await

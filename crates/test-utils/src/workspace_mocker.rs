@@ -330,6 +330,7 @@ impl WorkspaceMocker {
         ActionPipeline::new(
             self.mock_app_context().into(),
             self.mock_workspace_graph().await.into(),
+            None,
         )
     }
 

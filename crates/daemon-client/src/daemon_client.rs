@@ -19,6 +19,7 @@ fn map_rpc_error(error: Status) -> DaemonClientError {
     }
 }
 
+#[derive(Clone)]
 pub struct DaemonClient {
     inner: MoonDaemonClient<Channel>,
 }
@@ -67,6 +68,26 @@ impl DaemonClient {
     }
 
     #[instrument(skip(self))]
+    pub async fn clean_cache(
+        &mut self,
+        lifetime: &str,
+        all: bool,
+    ) -> miette::Result<CleanCacheResponse> {
+        debug!("Calling {} method", color::property("CleanCache"));
+
+        let response = self
+            .inner
+            .clean_cache(CleanCacheRequest {
+                lifetime: lifetime.to_owned(),
+                all,
+            })
+            .await
+            .map_err(map_rpc_error)?;
+
+        Ok(response.into_inner())
+    }
+
+    #[instrument(skip(self))]
     pub async fn start(&mut self, workspace_root: &str) -> miette::Result<StartResponse> {
         debug!("Calling {} method", color::property("Start"));
 
@@ -82,12 +103,12 @@ impl DaemonClient {
     }
 
     #[instrument(skip(self))]
-    pub async fn stop(&mut self) -> miette::Result<StopResponse> {
-        debug!("Calling {} method", color::property("Stop"));
+    pub async fn status(&mut self) -> miette::Result<StatusResponse> {
+        debug!("Calling {} method", color::property("Status"));
 
         let response = self
             .inner
-            .stop(StopRequest {})
+            .status(StatusRequest {})
             .await
             .map_err(map_rpc_error)?;
 
@@ -95,12 +116,12 @@ impl DaemonClient {
     }
 
     #[instrument(skip(self))]
-    pub async fn status(&mut self) -> miette::Result<StatusResponse> {
-        debug!("Calling {} method", color::property("Status"));
+    pub async fn stop(&mut self) -> miette::Result<StopResponse> {
+        debug!("Calling {} method", color::property("Stop"));
 
         let response = self
             .inner
-            .status(StatusRequest {})
+            .stop(StopRequest {})
             .await
             .map_err(map_rpc_error)?;
 

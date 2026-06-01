@@ -1,6 +1,6 @@
 ---
 slug: moon-v2.3
-title: moon v2.3 - Task tags, dependency cache strategies, native file hashing, and more
+title: moon v2.3 - Task tags, dep cache strategies, native file hashing, CAS cache, and more
 authors: [milesj]
 tags: [tasks, tags, targets, cache, dependencies, hashing, cas, mcp, performance]
 # image: ./img/moon/v2.3.png
@@ -176,15 +176,44 @@ Together, these let an agent discover what's available, inspect a template's con
 
 > Thanks to [ateirney-nz](https://github.com/ateirney-nz) for this contribution!
 
+## Unstable `uv pip` support for Python
+
+In the Python ecosystem, `pip` is the default package manager, but tools like `uv` are gaining
+traction for their speed and modern features. To better support Python developers, we've added
+experimental support for `uv pip` as a package manager in the Python toolchain, alongside `pip` and
+`uv`.
+
+This new option can be enabled via the `unstable_python.packageManager` setting in your project
+configuration:
+
+```yaml title=".moon/toolchains.yml"
+unstable_python:
+  packageManager: 'uv-pip'
+```
+
+Because `uv pip` is a combination of `uv` and `pip`, that offers the speed and efficiency of `uv`
+while maintaining compatibility with `pip`, the way it is configured is quite unique. For install
+related args, the `unstable_pip` toolchain is used (because `pip` compatibility), while sync and
+venv related args, the `unstable_uv` toolchain is used (because `uv` is used directly).
+
+```yaml title=".moon/toolchains.yml"
+unstable_python:
+  packageManager: 'uv-pip'
+
+unstable_pip:
+  installArgs: ['--group', 'dev']
+
+unstable_uv:
+  syncArgs: ['--check']
+  venvArgs: ['--clear']
+```
+
 ## Other changes
 
 View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.3.0) for a full list of
 changes.
 
 - Added Deno v2.8 support to the JavaScript toolchain.
-- Added unstable `uv pip` support to the Python toolchain, configurable via
-  `unstable_python.packageManager: 'uv-pip'`. Inherits install/sync/venv arguments from the
-  existing `unstable_pip` and `unstable_uv` settings.
 - Added Git SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256
   as the default hash algorithm.
 - Reduced task target memory footprint by 50-100%, further trimming the in-memory size of the

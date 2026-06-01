@@ -1,6 +1,6 @@
 {
   "name": "@moonrepo/types",
-  "version": "2.2.6",
+  "version": "2.3.0",
   "type": "commonjs",
   "description": "TypeScript types for moon and related packages.",
   "keywords": [

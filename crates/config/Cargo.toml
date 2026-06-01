@@ -1,6 +1,6 @@
 [package]
 name = "moon_config"
-version = "2.0.11"
+version = "2.0.12"
 edition = "2024"
 license = "MIT"
 description = "Core workspace, project, and moon configuration."
@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
-moon_common = { version = "2.0.5", path = "../common" }
+moon_common = { version = "2.0.6", path = "../common" }
 moon_target = { version = "2.1.1", path = "../target" }
 deserialize_untagged_verbose_error = "0.1.5"
 indexmap = { workspace = true }

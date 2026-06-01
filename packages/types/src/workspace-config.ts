@@ -255,6 +255,8 @@ export interface NotifierConfig {
 	terminalNotifications?: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
+	 * When enabled, will bypass the daemon and send webhooks in the
+	 * main process.
 	 * @since 1.38.0
 	 */
 	webhookAcknowledge?: boolean;
@@ -910,6 +912,8 @@ export interface PartialNotifierConfig {
 	terminalNotifications?: NotifierEventType | null;
 	/**
 	 * Whether webhook requests require acknowledgment (2xx response).
+	 * When enabled, will bypass the daemon and send webhooks in the
+	 * main process.
 	 * @since 1.38.0
 	 */
 	webhookAcknowledge?: boolean | null;

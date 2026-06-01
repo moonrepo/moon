@@ -607,7 +607,7 @@
         },
         "webhookAcknowledge": {
           "title": "webhookAcknowledge",
-          "description": "Whether webhook requests require acknowledgment (2xx response). @since 1.38.0",
+          "description": "Whether webhook requests require acknowledgment (2xx response). When enabled, will bypass the daemon and send webhooks in the main process. @since 1.38.0",
           "type": "boolean"
         },
         "webhookUrl": {

@@ -1,5 +1,6 @@
 use ci_env::{CiEnvironment, get_environment};
 use moon_common::color;
+use moon_daemon_client::DaemonClient;
 use moon_time::chrono::NaiveDateTime;
 use moon_time::now_timestamp;
 use serde::Serialize;
@@ -49,6 +50,7 @@ pub async fn notify_webhook(
 }
 
 pub struct WebhooksNotifier {
+    daemon_client: Option<DaemonClient>,
     enabled: bool,
     environment: Option<CiEnvironment>,
     requests: Vec<JoinHandle<()>>,
@@ -60,10 +62,15 @@ pub struct WebhooksNotifier {
 }
 
 impl WebhooksNotifier {
-    pub fn new(url: String, require_acknowledge: bool) -> Self {
+    pub fn new(
+        url: String,
+        require_acknowledge: bool,
+        daemon_client: Option<DaemonClient>,
+    ) -> Self {
         debug!("Creating webhooks notifier for {}", color::url(&url));
 
         WebhooksNotifier {
+            daemon_client,
             enabled: true,
             environment: get_environment(),
             requests: vec![],
@@ -117,15 +124,25 @@ impl WebhooksNotifier {
         } else {
             let url = self.url.to_owned();
 
-            self.requests.push(tokio::spawn(async move {
-                let _ = notify_webhook(&url, body, false).await;
-            }));
+            if let Some(daemon) = &mut self.daemon_client {
+                let _ = daemon.send_webhook(url, body).await;
+            } else {
+                self.requests.push(tokio::spawn(async move {
+                    let _ = notify_webhook(&url, body, false).await;
+                }));
+            }
         }
 
         Ok(())
     }
 
     pub async fn wait_for_requests(&mut self) {
+        if self.daemon_client.is_some() {
+            return;
+        }
+
+        debug!("Waiting for webhook requests to finish");
+
         for future in self.requests.drain(0..) {
             let _ = future.await;
         }

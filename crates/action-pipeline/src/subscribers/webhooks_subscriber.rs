@@ -1,16 +1,16 @@
 use crate::event_emitter::{Event, Subscriber};
 use async_trait::async_trait;
+use moon_daemon_client::DaemonClient;
 use moon_notifier::WebhooksNotifier;
-use tracing::debug;
 
 pub struct WebhooksSubscriber {
     notifier: WebhooksNotifier,
 }
 
 impl WebhooksSubscriber {
-    pub fn new(url: &str, require_acknowledge: bool) -> Self {
+    pub fn new(url: &str, require_acknowledge: bool, daemon_client: Option<DaemonClient>) -> Self {
         WebhooksSubscriber {
-            notifier: WebhooksNotifier::new(url.to_owned(), require_acknowledge),
+            notifier: WebhooksNotifier::new(url.to_owned(), require_acknowledge, daemon_client),
         }
     }
 }
@@ -21,8 +21,6 @@ impl Subscriber for WebhooksSubscriber {
         self.notifier.notify(event.get_type(), event).await?;
 
         if matches!(event, Event::PipelineCompleted { .. }) {
-            debug!("Waiting for webhook requests to finish");
-
             self.notifier.wait_for_requests().await;
         }
 

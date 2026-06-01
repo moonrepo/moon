@@ -182,6 +182,9 @@ View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.3.0
 changes.
 
 - Added Deno v2.8 support to the JavaScript toolchain.
+- Added unstable `uv pip` support to the Python toolchain, configurable via
+  `unstable_python.packageManager: 'uv-pip'`. Inherits install/sync/venv arguments from the
+  existing `unstable_pip` and `unstable_uv` settings.
 - Added Git SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256
   as the default hash algorithm.
 - Reduced task target memory footprint by 50-100%, further trimming the in-memory size of the

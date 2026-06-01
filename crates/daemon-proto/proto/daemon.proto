@@ -6,6 +6,7 @@ service MoonDaemon {
   rpc ArchiveTaskOutputs(ArchiveTaskOutputsRequest) returns (ArchiveTaskOutputsResponse);
   rpc CleanCache(CleanCacheRequest) returns (CleanCacheResponse);
   rpc HashFiles(HashFilesRequest) returns (HashFilesResponse);
+  rpc SendWebhook(SendWebhookRequest) returns (SendWebhookResponse);
   rpc Start(StartRequest) returns (StartResponse);
   rpc Status(StatusRequest) returns (StatusResponse);
   rpc Stop(StopRequest) returns (StopResponse);
@@ -36,6 +37,15 @@ message HashFilesRequest {
 
 message HashFilesResponse {
   map<string, string> files = 1;
+}
+
+message SendWebhookRequest {
+  string url = 1;
+  string body = 2;
+}
+
+message SendWebhookResponse {
+  bool success = 1;
 }
 
 message StartRequest {

@@ -50,8 +50,8 @@ impl DaemonClient {
     #[instrument(skip(self))]
     pub async fn archive_task_outputs(
         &mut self,
-        task_target: &str,
-        hash: &str,
+        task_target: String,
+        hash: String,
     ) -> miette::Result<ArchiveTaskOutputsResponse> {
         debug!("Calling {} method", color::property("ArchiveTaskOutputs"));
 
@@ -70,17 +70,14 @@ impl DaemonClient {
     #[instrument(skip(self))]
     pub async fn clean_cache(
         &mut self,
-        lifetime: &str,
+        lifetime: String,
         all: bool,
     ) -> miette::Result<CleanCacheResponse> {
         debug!("Calling {} method", color::property("CleanCache"));
 
         let response = self
             .inner
-            .clean_cache(CleanCacheRequest {
-                lifetime: lifetime.to_owned(),
-                all,
-            })
+            .clean_cache(CleanCacheRequest { lifetime, all })
             .await
             .map_err(map_rpc_error)?;
 
@@ -88,14 +85,29 @@ impl DaemonClient {
     }
 
     #[instrument(skip(self))]
-    pub async fn start(&mut self, workspace_root: &str) -> miette::Result<StartResponse> {
+    pub async fn send_webhook(
+        &mut self,
+        url: String,
+        body: String,
+    ) -> miette::Result<SendWebhookResponse> {
+        debug!("Calling {} method", color::property("SendWebhook"));
+
+        let response = self
+            .inner
+            .send_webhook(SendWebhookRequest { url, body })
+            .await
+            .map_err(map_rpc_error)?;
+
+        Ok(response.into_inner())
+    }
+
+    #[instrument(skip(self))]
+    pub async fn start(&mut self, workspace_root: String) -> miette::Result<StartResponse> {
         debug!("Calling {} method", color::property("Start"));
 
         let response = self
             .inner
-            .start(StartRequest {
-                workspace_root: workspace_root.to_owned(),
-            })
+            .start(StartRequest { workspace_root })
             .await
             .map_err(map_rpc_error)?;
 

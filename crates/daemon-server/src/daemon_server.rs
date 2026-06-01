@@ -9,6 +9,7 @@ use moon_daemon_proto::{
 };
 use moon_daemon_utils::{endpoint::*, sys::is_process_alive};
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
+use moon_notifier::notify_webhook;
 use moon_process::ProcessRegistry;
 use moon_target::Target;
 use moon_task_runner::{TaskRunState, output_archiver::OutputArchiver};
@@ -140,6 +141,23 @@ impl MoonDaemon for DaemonService {
                 .into_iter()
                 .map(|(path, hash)| (path.to_string(), hash))
                 .collect(),
+        }))
+    }
+
+    async fn send_webhook(
+        &self,
+        request: Request<SendWebhookRequest>,
+    ) -> Result<Response<SendWebhookResponse>, Status> {
+        debug!("Received {} request", color::property("SendWebhook"));
+
+        let request = request.into_inner();
+
+        let response = notify_webhook(&request.url, request.body, false)
+            .await
+            .map_err(|error| Status::unknown(error.to_string()))?;
+
+        Ok(Response::new(SendWebhookResponse {
+            success: response.status().is_success(),
         }))
     }
 

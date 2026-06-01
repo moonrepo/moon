@@ -39,7 +39,7 @@ impl Subscriber for CleanupSubscriber {
             debug!("Cleaning stale cache");
 
             if let Some(daemon) = &mut self.daemon_client {
-                daemon.clean_cache(&self.lifetime, false).await?;
+                daemon.clean_cache(self.lifetime.clone(), false).await?;
             } else {
                 self.cache_engine
                     .clean_stale_cache(&self.lifetime, false)

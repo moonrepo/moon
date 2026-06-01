@@ -434,7 +434,11 @@ impl ActionPipeline {
             );
 
             self.emitter
-                .subscribe(WebhooksSubscriber::new(webhook_url, require_acknowledge))
+                .subscribe(WebhooksSubscriber::new(
+                    webhook_url,
+                    require_acknowledge,
+                    self.daemon_client.clone(),
+                ))
                 .await;
         }
 

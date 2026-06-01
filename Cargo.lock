@@ -5389,7 +5389,7 @@ version = "2.0.2"
 
 [[package]]
 name = "moon_file_group"
-version = "2.0.3"
+version = "2.0.4"
 dependencies = [
  "common-path",
  "miette 7.6.0",
@@ -5597,7 +5597,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "2.0.4"
+version = "2.0.5"
 dependencies = [
  "miette 7.6.0",
  "moon_common",

@@ -23,8 +23,7 @@ Our smart hashing currently takes the following sources into account:
 - Output targets (`outputs`).
 - Environment variables (`env`).
 - Dependencies between projects (`dependsOn`) and tasks (`deps`). Task dependency contribution can
-  be tuned per-dependency via
-  [`cacheStrategy`](../config/project#cache-strategy).
+  be tuned per-dependency via [`cacheStrategy`](../config/project#cache-strategy).
 - **For Deno tasks**:
   - Deno version.
   - `deno.json`/`deps.ts` imports, import maps, and scopes.
@@ -59,8 +58,8 @@ terminal, you'll see a message for "cached".
 
 > As of v2.3, an experimental content-addressable storage (CAS) layer is also available that
 > replaces the tarball-based local cache with the same content-addressed format used by the remote
-> cache. Enable it via the
-> [`experiments.casOutputsCache`](../config/workspace#casoutputscache) setting.
+> cache. Enable it via the [`experiments.casOutputsCache`](../config/workspace#casoutputscache)
+> setting.
 
 ## File structure
 

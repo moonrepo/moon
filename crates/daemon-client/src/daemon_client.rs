@@ -53,7 +53,10 @@ impl DaemonClient {
         task_target: String,
         hash: String,
     ) -> miette::Result<ArchiveTaskOutputsResponse> {
-        debug!("Calling {} method", color::property("ArchiveTaskOutputs"));
+        debug!(
+            "Calling {} procedure",
+            color::property("ArchiveTaskOutputs")
+        );
 
         let response = self
             .inner
@@ -73,7 +76,7 @@ impl DaemonClient {
         lifetime: String,
         all: bool,
     ) -> miette::Result<CleanCacheResponse> {
-        debug!("Calling {} method", color::property("CleanCache"));
+        debug!("Calling {} procedure", color::property("CleanCache"));
 
         let response = self
             .inner
@@ -90,7 +93,7 @@ impl DaemonClient {
         url: String,
         body: String,
     ) -> miette::Result<SendWebhookResponse> {
-        debug!("Calling {} method", color::property("SendWebhook"));
+        debug!("Calling {} procedure", color::property("SendWebhook"));
 
         let response = self
             .inner
@@ -103,7 +106,7 @@ impl DaemonClient {
 
     #[instrument(skip(self))]
     pub async fn start(&mut self, workspace_root: String) -> miette::Result<StartResponse> {
-        debug!("Calling {} method", color::property("Start"));
+        debug!("Calling {} procedure", color::property("Start"));
 
         let response = self
             .inner
@@ -116,7 +119,7 @@ impl DaemonClient {
 
     #[instrument(skip(self))]
     pub async fn status(&mut self) -> miette::Result<StatusResponse> {
-        debug!("Calling {} method", color::property("Status"));
+        debug!("Calling {} procedure", color::property("Status"));
 
         let response = self
             .inner
@@ -129,7 +132,7 @@ impl DaemonClient {
 
     #[instrument(skip(self))]
     pub async fn stop(&mut self) -> miette::Result<StopResponse> {
-        debug!("Calling {} method", color::property("Stop"));
+        debug!("Calling {} procedure", color::property("Stop"));
 
         let response = self
             .inner

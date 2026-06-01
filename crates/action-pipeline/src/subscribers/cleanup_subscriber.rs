@@ -38,8 +38,10 @@ impl Subscriber for CleanupSubscriber {
         ) {
             debug!("Cleaning stale cache");
 
-            if let Some(daemon) = &mut self.daemon_client {
-                daemon.clean_cache(self.lifetime.clone(), false).await?;
+            if let Some(mut daemon) = self.daemon_client.clone() {
+                let lifetime = self.lifetime.clone();
+
+                tokio::spawn(async move { daemon.clean_cache(lifetime, false).await });
             } else {
                 self.cache_engine
                     .clean_stale_cache(&self.lifetime, false)

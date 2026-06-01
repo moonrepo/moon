@@ -38,6 +38,8 @@ config_struct!(
         pub webhook_url: Option<String>,
 
         /// Whether webhook requests require acknowledgment (2xx response).
+        /// When enabled, will bypass the daemon and send webhooks in the
+        /// main process.
         /// @since 1.38.0
         #[serde(default, skip_serializing_if = "is_false")]
         pub webhook_acknowledge: bool,

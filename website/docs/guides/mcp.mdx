@@ -130,6 +130,10 @@ mode.
 - `get_projects` - Get all projects.
 - `get_task` - Get a task by `target`.
 - `get_tasks` - Get all tasks.
+- `get_template` - Get a template and its merged variable schema by `id`, with the `extends` chain
+  resolved. <VersionLabel version="2.3.0" />
+- `get_templates` - Get all templates, with an optional case-insensitive filter regex (mirrors
+  `moon templates --filter`). <VersionLabel version="2.3.0" />
 - `get_changed_files` - Gets changed files between base and head revisions.
   <VersionLabel version="1.38.0" />
 - `sync_projects` - Runs the `SyncProject` action for one or many projects by `id`.

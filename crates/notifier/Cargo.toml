@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_daemon_client = { path = "../daemon-client" }
 moon_time = { path = "../time" }
 ci_env = { workspace = true }
 miette = { workspace = true }

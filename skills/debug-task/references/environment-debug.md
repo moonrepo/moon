@@ -201,6 +201,21 @@ moon query projects --stack frontend
 # Find all tasks across projects
 moon query tasks
 moon query tasks --project <project>
+
+# v2.3+: filter tasks by tag
+moon query tasks --tags quality
+```
+
+**MQL `tag` → `projectTag` rename** (v2.3+): the MQL field `tag` was renamed to `projectTag` so it
+can coexist with the new `taskTag` field. Stale queries error.
+
+```bash
+# Pre-v2.3
+moon query tasks --query "tag=quality"
+
+# v2.3+
+moon query tasks --query "projectTag=quality"  # by project tag
+moon query tasks --query "taskTag=quality"     # by task tag
 ```
 
 ---
@@ -240,7 +255,7 @@ Quick reference for where moon stores internal state:
 .moon/cache/
   daemon/                         # Daemon server state and logs
   hashes/<hash>.json              # Hash manifest — what was hashed
-  outputs/<hash>.tar.gz           # Archived task outputs
+  outputs/<hash>.tar.gz           # Archived task outputs (legacy / default)
   states/<project>/
     snapshot.json                 # Project snapshot (resolved tasks, config)
     <task>/
@@ -250,6 +265,10 @@ Quick reference for where moon stores internal state:
 ```
 
 All paths are relative to the workspace root. The `.moon/cache/` directory should be git-ignored.
+
+> When `experiments.casOutputsCache` is enabled (v2.3+), `outputs/` is replaced by a
+> content-addressable store sharded by hash prefix — the per-target `.tar.gz` files do not exist.
+> See `cache-issues.md` § Experimental caching layers.
 
 ---
 

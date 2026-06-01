@@ -1,14 +1,14 @@
 use crate::commands::upgrade::{InstalledWith, is_installed_with};
 use crate::session::MoonSession;
 use moon_api::Launchpad;
-use moon_common::{color, is_formatted_output, is_test_env};
+use moon_common::{color, is_ci, is_formatted_output, is_test_env};
 use moon_console::Checkpoint;
 use starbase::AppResult;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
 pub async fn check_for_new_version(session: &MoonSession, manifest_url: &str) -> AppResult {
-    if is_test_env() || is_formatted_output() {
+    if is_test_env() || is_formatted_output() || is_ci() {
         return Ok(None);
     }
 

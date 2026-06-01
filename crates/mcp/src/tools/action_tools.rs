@@ -20,7 +20,7 @@ async fn run_pipeline(
 ) -> miette::Result<Vec<Action>> {
     let (action_context, action_graph) = action_graph_builder.build();
 
-    let mut pipeline = ActionPipeline::new(app_context, workspace_graph);
+    let mut pipeline = ActionPipeline::new(app_context, workspace_graph, None);
     pipeline.bail = true;
     pipeline.quiet = true;
 

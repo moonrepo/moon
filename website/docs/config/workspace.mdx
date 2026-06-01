@@ -121,6 +121,32 @@ task targets.
 defaultProject: 'web'
 ```
 
+## `cache`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#cache" />
+
+Configures aspects of the caching engine and layer. These settings primarily tune the
+content-addressable storage (CAS) cache and the native file hasher.
+
+### `cas`
+
+<HeadingApiLink to="/api/types/interface/CacheConfig#cas" />
+
+Configures aspects of the content-addressable storage (CAS) cache.
+
+#### `verifyIntegrity`
+
+<HeadingApiLink to="/api/types/interface/CacheCasConfig#verifyIntegrity" />
+
+Re-verifies the hash of cached content on every read. When enabled, reads are slower but on-disk
+corruption is detected. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2,3}
+cache:
+  cas:
+    verifyIntegrity: true
+```
+
 ## `codeowners`<VersionLabel version="1.8.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#codeowners" />
@@ -343,6 +369,40 @@ experiments:
 ```
 
 Can also be enabled with the `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING` environment variable.
+
+### `casOutputsCache`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#casOutputsCache" />
+
+Stores task outputs in a local content-addressable storage (CAS) cache, instead of the legacy
+tarball-based local cache. This shares the same content-addressed format used by the remote cache,
+enabling deduplicated storage across tasks and faster hydration. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  casOutputsCache: true
+```
+
+Can also be enabled with the `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment variable.
+
+> The CAS layer can be tuned through the top-level [`cache`](#cache) setting.
+
+### `nativeFileHashing`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#nativeFileHashing" />
+
+Replaces the VCS-based file hashing mechanism with a custom native implementation that runs within
+moon's task pool. In our benchmarks this improves performance by 10-50% depending on workspace size
+and file count. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  nativeFileHashing: true
+```
+
+Can also be enabled with the `MOON_EXPERIMENT_NATIVE_FILE_HASHING` environment variable.
+
+> The hasher can be tuned through the top-level [`cache`](#cache) setting.
 
 ## `generator`
 

@@ -21,7 +21,9 @@ describes the mistake, why it happens, how to detect it, and how to fix it.
 12. [`os` platform filtering](#os-platform-filtering)
 13. [`outputStyle` and missing output](#outputstyle-and-missing-output)
 14. [Cache lifetime and cache key](#cache-lifetime-and-cache-key)
-15. [Task builder validation errors](#task-builder-validation-errors)
+15. [Task tags and `#tag` targets](#task-tags-and-tag-targets) — v2.3+
+16. [Task dep `cacheStrategy`](#task-dep-cachestrategy) — v2.3+
+17. [Task builder validation errors](#task-builder-validation-errors)
 
 ---
 
@@ -145,14 +147,15 @@ workspace:
 When a project overrides an inherited task, moon merges the configs using strategies. The defaults
 are:
 
-| Field        | Default merge strategy  |
-| ------------ | ----------------------- |
-| `args`       | `append`                |
-| `deps`       | `append`                |
-| `env`        | `append` (object merge) |
-| `inputs`     | `append`                |
-| `outputs`    | `append`                |
-| `toolchains` | `append`                |
+| Field                       | Default merge strategy  |
+| --------------------------- | ----------------------- |
+| `args`                      | `append`                |
+| `deps`                      | `append`                |
+| `env`                       | `append` (object merge) |
+| `inputs`                    | `append`                |
+| `outputs`                   | `append`                |
+| `tags` <sup>v2.3+</sup>     | `append`                |
+| `toolchains`                | `append`                |
 
 ```yaml
 # Global: args = ['--check']
@@ -644,6 +647,111 @@ tasks:
 
 Useful for: breaking the cache after a toolchain upgrade, config change outside moon's tracking, or
 any "just bust the cache" scenario.
+
+---
+
+## Task tags and `#tag` targets
+
+Available in v2.3+.
+
+Tasks can declare `tags` for categorization. Targets can then reference tasks by tag using `#`:
+
+```yaml
+tasks:
+  lint:
+    command: 'eslint'
+    tags: ['quality', 'ci']
+```
+
+```bash
+# Run every task with the `quality` tag, in every project
+moon run ':#quality'
+
+# Run quality-tagged tasks in upstream projects
+moon run '^:#quality'
+
+# Run quality-tagged tasks in a specific project
+moon run 'app:#quality'
+```
+
+> The `#` is a shell comment marker, so `#tag` targets must be quoted (or escaped with `\#`) on the
+> command line.
+
+### Common mistakes
+
+**The `#tag` target matches nothing**
+
+```bash
+moon task <project>:<task> --json
+# Inspect the `tags` field
+```
+
+If `tags` is missing or doesn't contain the tag you used in the target, the task won't match.
+
+**Tags lost during inheritance**
+
+By default `tags` merges with `append`, so global tasks contribute their tags and projects can add
+more. If `options.mergeTags: 'replace'` is set, the project's tags replace the global ones — which
+can silently drop tags you expected to inherit. Check `options.mergeTags` in
+`moon task <target> --json`.
+
+**Tag vs project tag confusion** <sup>MQL rename</sup>
+
+The MQL `tag` field was renamed to `projectTag` in v2.3. A new `taskTag` field queries by task tag.
+Stale queries using the old `tag=...` syntax now error.
+
+```bash
+# Pre-v2.3
+moon query tasks --query "tag=quality"
+
+# v2.3+
+moon query tasks --query "projectTag=quality"  # project tag
+moon query tasks --query "taskTag=quality"     # task tag
+moon query tasks --tags quality                # convenience flag
+```
+
+---
+
+## Task dep `cacheStrategy`
+
+Available in v2.3+.
+
+Each entry in `deps` can declare a `cacheStrategy` that controls whether the dep contributes to the
+current task's hash. The full breakdown is in `cache-issues.md` —
+[Dependency cache strategies](./cache-issues.md#dependency-cache-strategies). The summary:
+
+| Strategy    | This task's cache invalidates when…                              |
+| ----------- | ---------------------------------------------------------------- |
+| `'hash'`    | …the dep's hash changes (inputs, command, args, env).            |
+| `'ignored'` | …never. Dep is a sequencing edge only.                           |
+| `'outputs'` | …the dep's output files change.                                  |
+
+### The default changed in v2.3
+
+When `cacheStrategy` is omitted, the default is now chosen based on whether the dep declares
+outputs:
+
+- Dep **with** outputs → `'hash'` (same as before).
+- Dep **without** outputs → `'ignored'` (was `'hash'` before).
+
+If you upgraded from v2.2 and downstream tasks stop invalidating when an upstream `lint` / `test` /
+`typecheck` (no outputs) changes, this is why. Set `cacheStrategy: 'hash'` explicitly to restore
+the old behavior:
+
+```yaml
+tasks:
+  build:
+    deps:
+      - target: '~:lint'
+        cacheStrategy: 'hash'
+```
+
+### How to inspect
+
+```bash
+moon task <project>:<task> --json
+# Each `deps` entry shows its resolved cacheStrategy
+```
 
 ---
 

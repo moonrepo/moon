@@ -27,7 +27,8 @@ cat <project-root>/moon.yml  # or moon.json, moon.toml, etc.
 **Check 2: Should it be inherited from global tasks?**
 
 Global tasks live in `.moon/tasks/**/*`. Inheritance depends on `inheritedBy` conditions matching
-the project's `toolchains`, `stack`, `layer`, `language`, or `tags`.
+the project's `toolchains`, `stack`, `layer`, `language`, or `tags` (project tags — distinct from
+the per-task `tags` introduced in v2.3).
 
 ```bash
 # See what the project's metadata looks like
@@ -44,6 +45,9 @@ Common inheritance failures:
 - Project explicitly excludes the task via `workspace.inheritedTasks.exclude`
 - Project renames the task via `workspace.inheritedTasks.rename`
 - Project doesn't `include` the global task file (check for `include` directives)
+- <sup>v2.3+</sup> The user expected `:#tag` to match the task, but the task's own `tags` field is
+  missing the tag — or `options.mergeTags: 'replace'` dropped inherited tags. See
+  `config-mistakes.md` § Task tags and `#tag` targets.
 
 **Check 3: Is the task ID spelled correctly?**
 
@@ -181,6 +185,12 @@ moon run <project>:<task> --force
 
 > See `cache-issues.md` for detailed cache diagnosis.
 
+**The dep that changed has `cacheStrategy: 'ignored'`** <sup>v2.3+</sup>:
+
+In v2.3, deps without outputs default to `cacheStrategy: 'ignored'`, so changes to them don't
+invalidate this task. If you expected an upstream lint/test change to bust the cache, this is why.
+See `cache-issues.md` § Dependency cache strategies.
+
 **The output is missing files:**
 
 The task's `outputs` don't cover all files the build produces. moon only archives and restores
@@ -208,7 +218,7 @@ cat .moon/cache/states/<project>/snapshot.json
 
 The snapshot's `inherited.layers` field shows which global config files were merged for each task.
 Check merge strategies (`mergeArgs`, `mergeDeps`, `mergeEnv`, `mergeInputs`, `mergeOutputs`,
-`mergeToolchains`) — the default for args is `append`.
+`mergeTags` <sup>v2.3+</sup>, `mergeToolchains`) — the default for args is `append`.
 
 > See `config-mistakes.md` for common inheritance bugs.
 

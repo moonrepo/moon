@@ -17,7 +17,7 @@ compatibility: >-
   Requires moon >= 2.0.0 CLI installed and a configured moon workspace.
 metadata:
   moon-version-min: '2.0.0'
-  moon-version-tested: '2.2.0'
+  moon-version-tested: '2.3.0'
   category: 'debugging'
   ecosystem: 'moonrepo'
 ---
@@ -61,12 +61,17 @@ moon task <project>:<task> --json
   Check `state.defaultInputs` (true = using default `**/*`) and `state.emptyInputs` (true =
   explicitly set to `[]`).
 - `outputs` — are they declared for build tasks? Missing outputs means the cache can never hydrate
-  artifacts.
+  artifacts. In v2.3+, outputs also affect the **default `cacheStrategy`** of any task that depends
+  on this one (see Step 4).
 - `toolchains` — is the correct toolchain(s) assigned? An incorrect toolchain means wrong tool
   versions.
-- `deps` — are task dependencies correct and complete?
+- `deps` — are task dependencies correct and complete? In v2.3+, each dep entry can carry a
+  `cacheStrategy` (`hash` / `ignored` / `outputs`) that controls whether the dep contributes to
+  this task's cache hash. If omitted, the default depends on whether the dep declares outputs.
 - `options` — check `persistent`, `runInCI`, `cache`, `affectedFiles`, `mutex`, `timeout`,
   `retryCount`, `allowFailure`, and `os`.
+- `tags` <sup>v2.3+</sup> — labels for grouping tasks. Affects targets like `:#quality` and MQL
+  `taskTag` queries. If a task isn't matched by a `#tag` target you expected, check this list.
 - `type` — `build` (has outputs), `test` (default), or `run` (persistent)
 - `preset` — `server` or `utility` apply multiple option defaults at once.
 
@@ -141,9 +146,11 @@ Use this table to jump to the right reference:
 | Task doesn't exist                        | Inheritance not applied — check `inheritedBy` conditions in `.moon/tasks/**/*` against project's `toolchains`, `stack`, `layer`, `tags` via `moon project <name> --json` | `moon task <target> --json`                       | `references/config-mistakes.md` |
 | "Nothing to do"                           | `--affected` + no changes, `runInCI: false`, or `inheritedBy` mismatch (global task not inherited)                                                                       | Check flags, `options.runInCI`, and `inheritedBy` | `references/decision-tree.md`   |
 | Task errors on execution                  | Wrong `command`/`script`, bad toolchain                                                                                                                                  | `moon run <target> --log debug`                   | `references/config-mistakes.md` |
-| Stale cache (cached when it shouldn't be) | Inputs too narrow, missing `env` vars                                                                                                                                    | `moon hash <hash>`                                | `references/cache-issues.md`    |
-| Cache miss (re-runs every time)           | Inputs too broad, volatile outputs                                                                                                                                       | `moon hash <h1> <h2>`                             | `references/cache-issues.md`    |
+| Stale cache (cached when it shouldn't be) | Inputs too narrow, missing `env` vars, or dep `cacheStrategy: 'ignored'` (the v2.3 default for output-less deps)                                                          | `moon hash <hash>`                                | `references/cache-issues.md`    |
+| Cache miss (re-runs every time)           | Inputs too broad, volatile outputs, or dep `cacheStrategy: 'hash'` propagating upstream churn                                                                            | `moon hash <h1> <h2>`                             | `references/cache-issues.md`    |
 | Outputs not restored after cache hit      | `outputs` misconfigured                                                                                                                                                  | Check `.moon/cache/outputs/`                      | `references/cache-issues.md`    |
+| Build re-runs on every upstream input change <sup>v2.3+</sup> | Dep using default `cacheStrategy: 'hash'` instead of `'outputs'`                                                                                          | `moon task <target> --json` — inspect dep entries | `references/cache-issues.md`    |
+| Task not matched by `#tag` target <sup>v2.3+</sup>            | Missing `tags` on the task, or `mergeTags` dropped them during inheritance                                                                                | `moon task <target> --json` — check `tags`        | `references/config-mistakes.md` |
 | Task hangs / pipeline stuck               | Persistent task in `deps` chain (hard error in v2)                                                                                                                       | `moon action-graph <target>`                      | `references/config-mistakes.md` |
 | Task is slow                              | Dep chain bottleneck, no parallelism                                                                                                                                     | `moon action-graph <target>`                      | `references/decision-tree.md`   |
 | Task does nothing (no-op)                 | Command is `noop`/`nop`/`no-op`                                                                                                                                          | `moon task <target> --json`                       | `references/config-mistakes.md` |
@@ -196,6 +203,11 @@ These are the issues that come up most often. For details and fixes, see
   stderr at `.moon/cache/states/<project>/<task>/stderr.log`.
 - **`mutex` contention** — shared mutex serializes tasks; combined with deps can deadlock.
 - **`runInCI: 'only'`** — task silently skips when run locally (most surprising variant).
+- **Missing outputs flip dep `cacheStrategy`** <sup>v2.3+</sup> — a dep without `outputs` now
+  defaults to `cacheStrategy: 'ignored'`. Downstream tasks stop invalidating on its changes; set
+  `cacheStrategy: 'hash'` explicitly to restore the pre-v2.3 default.
+- **Stale MQL `tag=...` queries** <sup>v2.3+</sup> — `tag` was renamed to `projectTag`; a new
+  `taskTag` field was added. Old queries error.
 
 ---
 

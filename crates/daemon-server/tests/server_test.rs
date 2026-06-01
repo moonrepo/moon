@@ -237,7 +237,7 @@ mod windows_rpc {
         let mut client = DaemonClient::connect(&daemon_dir).await.unwrap();
 
         let response = client
-            .start(&workspace_root.to_string_lossy())
+            .start(workspace_root.to_string_lossy().to_string())
             .await
             .unwrap();
 

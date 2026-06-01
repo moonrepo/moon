@@ -58,6 +58,8 @@ jobs:
           bins: cargo-codspeed
           cache-target: release
 
+      - uses: arduino/setup-protoc@v3
+
       - name: Build the benchmark targets
         run: cargo codspeed build -m ${{ matrix.mode }} -p ${{ matrix.package }}
 

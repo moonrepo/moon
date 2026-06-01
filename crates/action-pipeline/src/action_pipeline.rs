@@ -7,7 +7,7 @@ use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::notifications_subscriber::NotificationsSubscriber;
 use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
-use crate::subscribers::telemetry_subscriber::TelemetrySubscriber;
+// use crate::subscribers::telemetry_subscriber::TelemetrySubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionNode, ActionPipelineStatus};
@@ -472,15 +472,16 @@ impl ActionPipeline {
                 .await;
         }
 
-        if self.app_context.workspace_config.telemetry {
-            debug!("Subscribing telemetry");
+        // TODO: Disabled for now as we've hit the posthog limit!
+        // if self.app_context.workspace_config.telemetry {
+        //     debug!("Subscribing telemetry");
 
-            self.emitter
-                .subscribe(TelemetrySubscriber::new(Arc::clone(
-                    &self.app_context.toolchains_config,
-                )))
-                .await;
-        }
+        //     self.emitter
+        //         .subscribe(TelemetrySubscriber::new(Arc::clone(
+        //             &self.app_context.toolchains_config,
+        //         )))
+        //         .await;
+        // }
     }
 }
 

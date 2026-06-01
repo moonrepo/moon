@@ -13,7 +13,6 @@ fn create_verified_store(sandbox: &starbase_sandbox::Sandbox) -> CasStore {
         sandbox.path().join("cas"),
         &CacheCasConfig {
             verify_integrity: true,
-            ..Default::default()
         },
     )
     .unwrap()

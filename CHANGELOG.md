@@ -4,9 +4,17 @@
 
 #### 🚀 Updates
 
-- Added a new experiment that replaces the VCS/Git based file hashing mechanism with a custom native
-  implementation that runs within our task pool. This can improve performance by 10-50%.
-  - Enable with the `experiments.nativeFileHashing` setting in `.moon/workspace.*`.
+- **Cache**
+  - Added a new experiment that stores task outputs in a local content-addressable storage (CAS)
+    cache, sharing the same format used by the remote cache. Enables deduplicated storage across
+    tasks and a unified cache shape locally and remotely.
+    - Enable with the `experiments.casOutputsCache` setting in `.moon/workspace.*`.
+  - Added a new top-level `cache` setting in `.moon/workspace.*` for tuning the content-addressable
+    storage (CAS) cache.
+- **Hash**
+  - Added a new experiment that replaces the VCS/Git based file hashing mechanism with a custom
+    native implementation that runs within our task pool. This can improve performance by 10-50%.
+    - Enable with the `experiments.nativeFileHashing` setting in `.moon/workspace.*`.
 - **Git**
   - Added SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256 as
     the default hash algorithm.

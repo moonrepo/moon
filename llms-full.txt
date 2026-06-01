@@ -37,7 +37,7 @@ moon run '#tag:task'
 # OR
 moon run \#tag:task
 # OR
-moon run :task --query "tag=tag"
+moon run :task --query "projectTag=tag"
 ```
 
 #### Run a task in a project
@@ -1741,6 +1741,7 @@ All option values are case-insensitive regex patterns.
 - `--project <regex>` - Filter tasks that belong to this project.
 - `--script <regex>` - Filter tasks that match this script.
 - `--toolchain <regex>` - Filter tasks of this toolchain. <VersionLabel version="1.31.0" />
+- `--tags <regex>` - Filter tasks that have the following tags. <VersionLabel version="2.3.0" />
 - `--type <regex>` - Filter tasks of this type.
 
 ### Configuration
@@ -2670,7 +2671,8 @@ Our smart hashing currently takes the following sources into account:
 - Input sources (`inputs`).
 - Output targets (`outputs`).
 - Environment variables (`env`).
-- Dependencies between projects (`dependsOn`) and tasks (`deps`).
+- Dependencies between projects (`dependsOn`) and tasks (`deps`). Task dependency contribution can
+  be tuned per-dependency via [`cacheStrategy`](../config/project#cache-strategy).
 - **For Deno tasks**:
   - Deno version.
   - `deno.json`/`deps.ts` imports, import maps, and scopes.
@@ -2702,6 +2704,11 @@ timeline, where every point in time will have its own hash + archive that moon c
 Furthermore, if we receive a cache hit on the hash, and the hash is the same as the last run, and
 outputs exist, we exit early without hydrating and assume the project is already hydrated. In the
 terminal, you'll see a message for "cached".
+
+> As of v2.3, an experimental content-addressable storage (CAS) layer is also available that
+> replaces the tarball-based local cache with the same content-addressed format used by the remote
+> cache. Enable it via the [`experiments.casOutputsCache`](../config/workspace#casoutputscache)
+> setting.
 
 ## File structure
 
@@ -3063,12 +3070,12 @@ The project stack, as defined in [`moon.*`](../config/project#stack).
 projectStack=frontend
 ```
 
-### `tag`
+### `projectTag`
 
 A tag within the project, as defined in [`moon.*`](../config/project#tags).
 
 ```
-tag~react-*
+projectTag~react-*
 ```
 
 ### `task`
@@ -3077,6 +3084,14 @@ ID/name of a task within the project.
 
 ```
 task=[build,test]
+```
+
+### `taskTag`<VersionLabel version="2.3.0" />
+
+A tag within the task, as defined in [`moon.*`](../config/project#tags-1).
+
+```
+taskTag=quality
 ```
 
 ### `taskToolchain`<VersionLabel version="1.31.0" />
@@ -3133,7 +3148,7 @@ task from that project.
 $ moon run app:lint
 ```
 
-### By tag<VersionLabel version="1.4.0" />
+### By project tag<VersionLabel version="1.4.0" />
 
 Another way to target projects is with the tag scope, which requires the name of a tag prefixed with
 `#`, and will run a specific task in all projects with that tag.
@@ -3149,6 +3164,17 @@ Because `#` is a special character in the terminal (is considered a comment), yo
 the target in quotes, or escape it like so `\#`.
 
 :::
+
+### By task tag<VersionLabel version="2.3.0" />
+
+Targets can also be scoped by task tags, which is similar to the project tag scope, but instead of
+targeting projects with a specific tag, it targets tasks with a specific tag, regardless of the
+project. This allows you to run specific tasks across different projects based on their tags.
+
+```shell
+# Run `#quality` tagged tasks in the app project
+$ moon run app:#quality
+```
 
 ## Run scopes
 
@@ -5088,6 +5114,55 @@ tasks:
         optional: true
 ```
 
+#### Cache strategy<VersionLabel version="2.3.0" />
+
+The `cacheStrategy` field controls how a dependency's changes invalidate the current task's cache.
+
+When omitted, the strategy is chosen for you based on whether the dependency declares outputs:
+
+- A dependency **with** outputs (e.g. a `build` task) defaults to `hash` — any change to the
+  dependency invalidates this task.
+- A dependency **without** outputs (e.g. a `lint` or `test` task) defaults to `ignored` — the
+  dependency is treated as a sequencing edge only and its changes never invalidate this task.
+
+You can override the default explicitly with one of:
+
+- `hash` - Use the dependency task's hash for cache invalidation. The current task is invalidated
+  whenever the dependency changes (inputs, command, args, env, etc.).
+- `ignored` - Ignore the dependency task's hash for cache invalidation. The current task is
+  **never** invalidated by this dependency's changes.
+- `outputs` - Use the dependency task's outputs instead of its hash for cache invalidation. The
+  current task is only invalidated when the dependency's outputs change, not when its inputs change.
+  Useful for build tasks where you only care about a dependency's outputs, not what triggered the
+  dependency to run.
+
+```yaml title="moon.yml" {4-6}
+tasks:
+  build:
+    command: 'webpack'
+    deps:
+      - target: 'apiClients:build'
+        cacheStrategy: 'outputs'
+```
+
+The most common use case for `cacheStrategy: outputs` is when you have build dependencies. Instead
+of rebuilding a project whenever an upstream task's inputs change, you rebuild only when the
+upstream task's outputs change:
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    command: 'npm run build'
+    inputs:
+      - 'src/**/*'
+    outputs:
+      - 'dist/**/*'
+    deps:
+      # Only invalidate if the dependency's dist/ changes, not if its src/ or other inputs change
+      - target: '^:build'
+        cacheStrategy: 'outputs'
+```
+
 ### `env`
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#env" />
@@ -5442,6 +5517,22 @@ more about [commands vs scripts](../concepts/task#commands-vs-scripts).
 
 :::
 
+### `tags`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#tags" />
+
+Tags are a simple mechanism for categorizing tasks. They can be used to group tasks together for
+[easier querying](../commands/query/tasks), referencing within targets, and more.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    command: 'eslint'
+    tags:
+      - 'quality'
+      - 'ci'
+```
+
 ### `toolchains`<VersionLabel version="1.31.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#toolchain" />
@@ -5764,7 +5855,14 @@ The [strategy](../concepts/task-inheritance#merge-strategies) to use when mergin
 The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
 [`outputs`](#outputs) list with an inherited task. Defaults to "append".
 
-#### `mergeToolchains`
+#### `mergeTags`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeTags" />
+
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`tags`](#tags) list with an inherited task. Defaults to "append".
+
+#### `mergeToolchains`<VersionLabel version="2.0.0" />
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeToolchains" />
 
@@ -7045,6 +7143,32 @@ task targets.
 defaultProject: 'web'
 ```
 
+## `cache`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#cache" />
+
+Configures aspects of the caching engine and layer. These settings primarily tune the
+content-addressable storage (CAS) cache and the native file hasher.
+
+### `cas`
+
+<HeadingApiLink to="/api/types/interface/CacheConfig#cas" />
+
+Configures aspects of the content-addressable storage (CAS) cache.
+
+#### `verifyIntegrity`
+
+<HeadingApiLink to="/api/types/interface/CacheCasConfig#verifyIntegrity" />
+
+Re-verifies the hash of cached content on every read. When enabled, reads are slower but on-disk
+corruption is detected. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2,3}
+cache:
+  cas:
+    verifyIntegrity: true
+```
+
 ## `codeowners`<VersionLabel version="1.8.0" />
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#codeowners" />
@@ -7267,6 +7391,40 @@ experiments:
 ```
 
 Can also be enabled with the `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING` environment variable.
+
+### `casOutputsCache`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#casOutputsCache" />
+
+Stores task outputs in a local content-addressable storage (CAS) cache, instead of the legacy
+tarball-based local cache. This shares the same content-addressed format used by the remote cache,
+enabling deduplicated storage across tasks and faster hydration. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  casOutputsCache: true
+```
+
+Can also be enabled with the `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment variable.
+
+> The CAS layer can be tuned through the top-level [`cache`](#cache) setting.
+
+### `nativeFileHashing`<VersionLabel version="2.3.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#nativeFileHashing" />
+
+Replaces the VCS-based file hashing mechanism with a custom native implementation that runs within
+moon's task pool. In our benchmarks this improves performance by 10-50% depending on workspace size
+and file count. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  nativeFileHashing: true
+```
+
+Can also be enabled with the `MOON_EXPERIMENT_NATIVE_FILE_HASHING` environment variable.
+
+> The hasher can be tuned through the top-level [`cache`](#cache) setting.
 
 ## `generator`
 
@@ -14861,6 +15019,10 @@ mode.
 - `get_projects` - Get all projects.
 - `get_task` - Get a task by `target`.
 - `get_tasks` - Get all tasks.
+- `get_template` - Get a template and its merged variable schema by `id`, with the `extends` chain
+  resolved. <VersionLabel version="2.3.0" />
+- `get_templates` - Get all templates, with an optional case-insensitive filter regex (mirrors
+  `moon templates --filter`). <VersionLabel version="2.3.0" />
 - `get_changed_files` - Gets changed files between base and head revisions.
   <VersionLabel version="1.38.0" />
 - `sync_projects` - Runs the `SyncProject` action for one or many projects by `id`.
@@ -19033,13 +19195,12 @@ the location, or use the `--tool-native` option to use a location unique to the 
 ### Options
 
 - `--resolve` - Resolve the version to a fully-qualified semantic version before pinning.
-- `--to` - [Location of `.prototools`](../config#locations) to update. Supports `global`, `local`,
-  and `user`.
-  <VersionLabel version="0.41.0" />
-- `--tool-native` - Pins the version in a tool specific location. Examples:
-  <VersionLabel version="0.55.0" />
-  - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc)
-    - Pins version in the `devEngines` field in the `package.json` file.
+- `--to` <VersionLabel version="0.41.0" /> - [Location of `.prototools`](../config#locations) to
+  update. Supports `global`, `local`, and `user`.
+- `--tool-native` <VersionLabel version="0.55.0" /> - Pins the version in a tool specific location.
+  Examples:
+  - JavaScript tooling (Node, Bun, Deno, npm, pnpm, Yarn, etc) - Pins version in the `devEngines`
+    field in the `package.json` file.
 
 ---
 
@@ -35176,3 +35337,221 @@ of changes.
 - Fixed an issue where `proto outdated --update` would overwrite aliases.
 - Added an extensive end-to-end test suite that exercises proto from the command line (not through
   Rust's testing framework) to better catch real-world regressions.
+
+---
+
+## moon v2.3 - Task tags, dep cache strategies, native file hashing, CAS cache, and more
+
+This release focuses on giving you more control over how tasks are organized, referenced, and
+cached. We're introducing first-class tags for tasks, a new cache strategy for task dependencies,
+and a pair of experimental layers — native file hashing and a local CAS — that lay the groundwork
+for further performance improvements.
+
+<!--truncate-->
+
+## Task tags
+
+Projects have supported tags since v1, but tasks themselves have never had first-class support for
+tags, until now. In v2.3, we're introducing [`tags`](/docs/config/project#tags-1) for tasks,
+allowing you to label and organize tasks in a more flexible way. This opens up new possibilities for
+filtering, grouping, and managing tasks based on their tags.
+
+```yaml title="moon.yml"
+tasks:
+  lint:
+    # ...
+    tags: ['quality', 'ci']
+```
+
+To start, targets have been updated to support the `#` tag syntax in the task scope, allowing you to
+do crazy things, such as:
+
+- `:#tag` - Reference all tasks with the `tag` tag.
+- `^:#tag` - Reference all tasks with the `tag` tag in upstream projects.
+- `project:#tag` - Reference all tasks with the `tag` tag in a specific project.
+- `#tag1:#tag2` - Reference all tasks with the `tag2` tag, in all projects with the `tag1` tag.
+
+These targets can be utilized on the command line, enabling you to curate exactly which tasks to run
+based on their tags.
+
+```shell
+$ moon run ':#quality'
+```
+
+Or they can be used in task dependencies, which will be expanded at runtime to a list of
+fully-qualified targets.
+
+```yaml title="moon.yml"
+tasks:
+  build:
+    # ...
+    deps: ['shared:#prereqs']
+```
+
+In addition to the new [`tags`](/docs/config/project#tags-1) setting, we've also added an
+[`options.mergeTags`](/docs/config/project#mergetags) setting to control how tags are merged during
+task inheritance, a [`taskTag`](/docs/concepts/query-lang#tasktag) field to MQL for querying tasks
+by their tags, and a `--tags` filter for [`moon query tasks`](/docs/commands/query/tasks).
+
+:::info
+
+Heads up: the existing MQL `tag` field has been renamed to
+[`projectTag`](/docs/concepts/query-lang#projecttag) to disambiguate from the new
+[`taskTag`](/docs/concepts/query-lang#tasktag) field.
+
+:::
+
+## Task dependency cache strategies
+
+When a task depends on another task, that dependency's changes need to invalidate the current task's
+cache — but how aggressively? Until now, moon always mixed the dependency's hash into the current
+task's hash. This meant that a `build` task depending on an upstream `build` would re-run any time
+the upstream task's _inputs_ changed, even if the upstream task's _outputs_ ended up identical. Even
+worse, depending on output-less tasks like `lint` or `test` invalidated builds for no real reason.
+
+In v2.3, task dependencies now support a [`cacheStrategy`](/docs/config/project#cache-strategy)
+field that controls exactly how a dependency contributes to cache invalidation:
+
+- `hash` - Use the dependency task's hash for cache invalidation. The current task is invalidated
+  whenever the dependency changes (inputs, command, args, env, etc.). This is the historical
+  behavior.
+- `ignored` - Ignore the dependency task's hash entirely. The current task is **never** invalidated
+  by this dependency's changes — the dependency is purely a sequencing edge.
+- `outputs` - Use the dependency task's _outputs_ instead of its hash. The current task is only
+  invalidated when the dependency's output files change, not when its inputs change.
+
+```yaml title="moon.yml" {4-6}
+tasks:
+  build:
+    command: 'webpack'
+    deps:
+      - target: '^:build'
+        cacheStrategy: 'outputs'
+```
+
+For build dependencies in particular, `outputs` is the strategy you almost certainly want. A change
+to an upstream project's source files that doesn't affect its compiled output should not force a
+downstream rebuild — and now it won't.
+
+### Behavior change
+
+To make this work for everyone out of the box, the default `cacheStrategy` is now chosen for you
+based on whether the dependency declares outputs:
+
+- A dependency **with** outputs (e.g. a `build` task) defaults to `hash`.
+- A dependency **without** outputs (e.g. a `lint` or `test` task) defaults to `ignored`.
+
+This is a behavior change from v2.2 and earlier, where the strategy was always effectively `hash`.
+In practice, this means tasks depending on output-less tasks will see fewer (correct!) cache
+invalidations going forward. If you want to restore the old behavior for a specific dependency, set
+`cacheStrategy: 'hash'` explicitly.
+
+## Experimental native file hashing
+
+For as long as moon has existed, file hashing has been delegated to the VCS (typically Git). This
+was a pragmatic choice — Git already has a hash for every file it tracks, so why hash them again?
+But shelling out to Git for every hashing operation has overhead, and Git's hashing doesn't run on
+moon's task pool, which means it can't take advantage of the parallelism we've spent the last few
+releases building out.
+
+In v2.3, we're introducing an experimental **native file hashing** implementation that runs directly
+within moon's task pool, sidestepping the VCS entirely. In our benchmarks, this delivers a **10-50%
+improvement** depending on workspace size and file count.
+
+Enable it in your workspace configuration:
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  nativeFileHashing: true
+```
+
+The CAS hasher can also be tuned via the new top-level [`cache`](/docs/config/workspace#cache)
+setting — see the workspace config docs for the available knobs.
+
+## Experimental local CAS for task outputs
+
+Speaking of caching — moon has shipped a remote content-addressable storage (CAS) backend since
+v1.30 for remote caching, but locally, task outputs were still archived as tarballs. In v2.3, we're
+introducing an experimental local CAS layer that stores task outputs in the same content-addressed
+format used by the remote cache. This means deduplicated storage across tasks, and a unified cache
+shape locally and remotely.
+
+Enable it in your workspace configuration:
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  casOutputsCache: true
+```
+
+This is a foundational change — most of the work in this release went into reshaping the cache,
+remote, and hashing internals around a shared CAS abstraction. Expect this to become the default in
+a future release once it's been battle-tested.
+
+:::warning
+
+At this time, the local CAS may be slower than the tarball approach, as we have more guardrails to
+prevent data loss and cache corruption. Additionally, archiving and hydration currently happen in
+the main thread, and not through the daemon. In subsequent releases, we plan to optimize the local
+CAS for performance and make it the default.
+
+:::
+
+## MCP tools for template discovery
+
+For AI agents working in moon repositories, code generation is one of the highest-leverage
+operations they can perform — but only if they know which templates exist and what variables those
+templates accept. v2.3 adds two new tools to the [MCP server](/docs/guides/mcp) that close this gap:
+
+- `get_templates` - Lists available templates with id, title, and description. Supports an optional
+  case-insensitive filter regex (mirroring `moon templates --filter`).
+- `get_template` - Returns the merged variable schema for a given template id, resolving the
+  `extends` chain. Variables marked `internal: true` are omitted.
+
+Together, these let an agent discover what's available, inspect a template's contract, and then call
+`generate` with the right inputs — no more guessing at template ids or required variables.
+
+> Thanks to [ateirney-nz](https://github.com/ateirney-nz) for this contribution!
+
+## Unstable `uv pip` support for Python
+
+In the Python ecosystem, `pip` is the default package manager, but tools like `uv` are gaining
+traction for their speed and modern features. To better support Python developers, we've added
+experimental support for `uv pip` as a package manager in the Python toolchain, alongside `pip` and
+`uv`.
+
+This new option can be enabled via the `unstable_python.packageManager` setting in your project
+configuration:
+
+```yaml title=".moon/toolchains.yml"
+unstable_python:
+  packageManager: 'uv-pip'
+```
+
+Because `uv pip` is a combination of `uv` and `pip`, that offers the speed and efficiency of `uv`
+while maintaining compatibility with `pip`, the way it is configured is quite unique. For install
+related args, the `unstable_pip` toolchain is used (because `pip` compatibility), while sync and
+venv related args, the `unstable_uv` toolchain is used (because `uv` is used directly).
+
+```yaml title=".moon/toolchains.yml"
+unstable_python:
+  packageManager: 'uv-pip'
+
+unstable_pip:
+  installArgs: ['--group', 'dev']
+
+unstable_uv:
+  syncArgs: ['--check']
+  venvArgs: ['--clear']
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.3.0) for a full list of
+changes.
+
+- Added Deno v2.8 support to the JavaScript toolchain.
+- Added Git SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256
+  as the default hash algorithm.
+- Reduced task target memory footprint by 50-100%, further trimming the in-memory size of the
+  project and task graphs.
+- Fixed a glob regression where unbounded walks could be up to 10x slower.

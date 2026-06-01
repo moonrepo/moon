@@ -8,6 +8,15 @@
       "default": "./cache/schemas/workspace.json",
       "type": "string"
     },
+    "cache": {
+      "title": "cache",
+      "description": "Configures aspects of the caching engine and layer. @since 2.3.0",
+      "allOf": [
+        {
+          "$ref": "#/definitions/CacheConfig"
+        }
+      ]
+    },
     "codeowners": {
       "title": "codeowners",
       "description": "Configures code ownership rules for generating a CODEOWNERS file. @since 1.8.0",
@@ -173,6 +182,37 @@
   },
   "additionalProperties": false,
   "definitions": {
+    "CacheCasConfig": {
+      "description": "Configures aspects of the content-addressable storage (CAS) cache.",
+      "type": "object",
+      "properties": {
+        "verifyIntegrity": {
+          "title": "verifyIntegrity",
+          "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption.",
+          "type": "boolean",
+          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption."
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache."
+    },
+    "CacheConfig": {
+      "description": "Configures aspects of the caching engine and layer.",
+      "type": "object",
+      "properties": {
+        "cas": {
+          "title": "cas",
+          "description": "Configures aspects of the content-addressable storage (CAS) cache.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/CacheCasConfig"
+            }
+          ],
+          "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache."
+        }
+      },
+      "additionalProperties": false
+    },
     "CodeownersConfig": {
       "description": "Configures code ownership rules for generating a CODEOWNERS file.",
       "type": "object",
@@ -435,6 +475,17 @@
           "title": "asyncGraphBuilding",
           "description": "Build the project and task graphs asynchronously.",
           "type": "boolean"
+        },
+        "casOutputsCache": {
+          "title": "casOutputsCache",
+          "description": "Store task outputs in a local CAS (content-addressable storage) cache.",
+          "type": "boolean",
+          "markdownDescription": "Store task outputs in a local CAS (content-addressable storage) cache."
+        },
+        "nativeFileHashing": {
+          "title": "nativeFileHashing",
+          "description": "Use native file hashing instead of using the VCS.",
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -556,7 +607,7 @@
         },
         "webhookAcknowledge": {
           "title": "webhookAcknowledge",
-          "description": "Whether webhook requests require acknowledgment (2xx response). @since 1.38.0",
+          "description": "Whether webhook requests require acknowledgment (2xx response). When enabled, will bypass the daemon and send webhooks in the main process. @since 1.38.0",
           "type": "boolean"
         },
         "webhookUrl": {
@@ -711,7 +762,7 @@
       "additionalProperties": false
     },
     "RemoteCacheConfig": {
-      "description": "Configures the action cache (AC) and content addressable cache (CAS). @since 1.30.0",
+      "description": "Configures the action cache (AC) and content-addressable cache (CAS). @since 1.30.0",
       "type": "object",
       "properties": {
         "compression": {
@@ -741,7 +792,8 @@
           "type": "boolean"
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "markdownDescription": "Configures the action cache (AC) and content-addressable cache (CAS). @since 1.30.0"
     },
     "RemoteCompression": {
       "description": "Supported blob compression levels for gRPC APIs. @since 1.31.0",
@@ -779,12 +831,13 @@
         },
         "cache": {
           "title": "cache",
-          "description": "Configures the action cache (AC) and content addressable cache (CAS).",
+          "description": "Configures the action cache (AC) and content-addressable cache (CAS).",
           "allOf": [
             {
               "$ref": "#/definitions/RemoteCacheConfig"
             }
-          ]
+          ],
+          "markdownDescription": "Configures the action cache (AC) and content-addressable cache (CAS)."
         },
         "host": {
           "title": "host",

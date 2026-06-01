@@ -2,11 +2,161 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-05-12T00:00:00.000Z</updated>
+    <updated>2026-06-01T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v2.3 - Task tags, dep cache strategies, native file hashing, CAS cache, and more]]></title>
+        <id>https://moonrepo.dev/blog/moon-v2.3</id>
+        <link href="https://moonrepo.dev/blog/moon-v2.3"/>
+        <updated>2026-06-01T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This release focuses on giving you more control over how tasks are organized, referenced, and]]></summary>
+        <content type="html"><![CDATA[<p>This release focuses on giving you more control over how tasks are organized, referenced, and
+cached. We're introducing first-class tags for tasks, a new cache strategy for task dependencies,
+and a pair of experimental layers — native file hashing and a local CAS — that lay the groundwork
+for further performance improvements.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="task-tags">Task tags<a href="https://moonrepo.dev/blog/moon-v2.3#task-tags" class="hash-link" aria-label="Direct link to Task tags" title="Direct link to Task tags" translate="no">​</a></h2>
+<p>Projects have supported tags since v1, but tasks themselves have never had first-class support for
+tags, until now. In v2.3, we're introducing <a class="" href="https://moonrepo.dev/docs/config/project#tags-1"><code>tags</code></a> for tasks,
+allowing you to label and organize tasks in a more flexible way. This opens up new possibilities for
+filtering, grouping, and managing tasks based on their tags.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">lint</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">tags</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'quality'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'ci'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<p>To start, targets have been updated to support the <code>#</code> tag syntax in the task scope, allowing you to
+do crazy things, such as:</p>
+<ul>
+<li class=""><code>:#tag</code> - Reference all tasks with the <code>tag</code> tag.</li>
+<li class=""><code>^:#tag</code> - Reference all tasks with the <code>tag</code> tag in upstream projects.</li>
+<li class=""><code>project:#tag</code> - Reference all tasks with the <code>tag</code> tag in a specific project.</li>
+<li class=""><code>#tag1:#tag2</code> - Reference all tasks with the <code>tag2</code> tag, in all projects with the <code>tag1</code> tag.</li>
+</ul>
+<p>These targets can be utilized on the command line, enabling you to curate exactly which tasks to run
+based on their tags.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run </span><span class="token string" style="color:#c9e166">':#quality'</span><br></span></code></pre></div></div>
+<p>Or they can be used in task dependencies, which will be expanded at runtime to a list of
+fully-qualified targets.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'shared:#prereqs'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<p>In addition to the new <a class="" href="https://moonrepo.dev/docs/config/project#tags-1"><code>tags</code></a> setting, we've also added an
+<a class="" href="https://moonrepo.dev/docs/config/project#mergetags"><code>options.mergeTags</code></a> setting to control how tags are merged during
+task inheritance, a <a class="" href="https://moonrepo.dev/docs/concepts/query-lang#tasktag"><code>taskTag</code></a> field to MQL for querying tasks
+by their tags, and a <code>--tags</code> filter for <a class="" href="https://moonrepo.dev/docs/commands/query/tasks"><code>moon query tasks</code></a>.</p>
+<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Heads up: the existing MQL <code>tag</code> field has been renamed to
+<a class="" href="https://moonrepo.dev/docs/concepts/query-lang#projecttag"><code>projectTag</code></a> to disambiguate from the new
+<a class="" href="https://moonrepo.dev/docs/concepts/query-lang#tasktag"><code>taskTag</code></a> field.</p></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="task-dependency-cache-strategies">Task dependency cache strategies<a href="https://moonrepo.dev/blog/moon-v2.3#task-dependency-cache-strategies" class="hash-link" aria-label="Direct link to Task dependency cache strategies" title="Direct link to Task dependency cache strategies" translate="no">​</a></h2>
+<p>When a task depends on another task, that dependency's changes need to invalidate the current task's
+cache — but how aggressively? Until now, moon always mixed the dependency's hash into the current
+task's hash. This meant that a <code>build</code> task depending on an upstream <code>build</code> would re-run any time
+the upstream task's <em>inputs</em> changed, even if the upstream task's <em>outputs</em> ended up identical. Even
+worse, depending on output-less tasks like <code>lint</code> or <code>test</code> invalidated builds for no real reason.</p>
+<p>In v2.3, task dependencies now support a <a class="" href="https://moonrepo.dev/docs/config/project#cache-strategy"><code>cacheStrategy</code></a>
+field that controls exactly how a dependency contributes to cache invalidation:</p>
+<ul>
+<li class=""><code>hash</code> - Use the dependency task's hash for cache invalidation. The current task is invalidated
+whenever the dependency changes (inputs, command, args, env, etc.). This is the historical
+behavior.</li>
+<li class=""><code>ignored</code> - Ignore the dependency task's hash entirely. The current task is <strong>never</strong> invalidated
+by this dependency's changes — the dependency is purely a sequencing edge.</li>
+<li class=""><code>outputs</code> - Use the dependency task's <em>outputs</em> instead of its hash. The current task is only
+invalidated when the dependency's output files change, not when its inputs change.</li>
+</ul>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">build</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">command</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'webpack'</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token key atrule">target</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'^:build'</span><span class="token plain"></span><br></span><span class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token key atrule">cacheStrategy</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'outputs'</span><br></span></code></pre></div></div>
+<p>For build dependencies in particular, <code>outputs</code> is the strategy you almost certainly want. A change
+to an upstream project's source files that doesn't affect its compiled output should not force a
+downstream rebuild — and now it won't.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="behavior-change">Behavior change<a href="https://moonrepo.dev/blog/moon-v2.3#behavior-change" class="hash-link" aria-label="Direct link to Behavior change" title="Direct link to Behavior change" translate="no">​</a></h3>
+<p>To make this work for everyone out of the box, the default <code>cacheStrategy</code> is now chosen for you
+based on whether the dependency declares outputs:</p>
+<ul>
+<li class="">A dependency <strong>with</strong> outputs (e.g. a <code>build</code> task) defaults to <code>hash</code>.</li>
+<li class="">A dependency <strong>without</strong> outputs (e.g. a <code>lint</code> or <code>test</code> task) defaults to <code>ignored</code>.</li>
+</ul>
+<p>This is a behavior change from v2.2 and earlier, where the strategy was always effectively <code>hash</code>.
+In practice, this means tasks depending on output-less tasks will see fewer (correct!) cache
+invalidations going forward. If you want to restore the old behavior for a specific dependency, set
+<code>cacheStrategy: 'hash'</code> explicitly.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="experimental-native-file-hashing">Experimental native file hashing<a href="https://moonrepo.dev/blog/moon-v2.3#experimental-native-file-hashing" class="hash-link" aria-label="Direct link to Experimental native file hashing" title="Direct link to Experimental native file hashing" translate="no">​</a></h2>
+<p>For as long as moon has existed, file hashing has been delegated to the VCS (typically Git). This
+was a pragmatic choice — Git already has a hash for every file it tracks, so why hash them again?
+But shelling out to Git for every hashing operation has overhead, and Git's hashing doesn't run on
+moon's task pool, which means it can't take advantage of the parallelism we've spent the last few
+releases building out.</p>
+<p>In v2.3, we're introducing an experimental <strong>native file hashing</strong> implementation that runs directly
+within moon's task pool, sidestepping the VCS entirely. In our benchmarks, this delivers a <strong>10-50%
+improvement</strong> depending on workspace size and file count.</p>
+<p>Enable it in your workspace configuration:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">nativeFileHashing</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<p>The CAS hasher can also be tuned via the new top-level <a class="" href="https://moonrepo.dev/docs/config/workspace#cache"><code>cache</code></a>
+setting — see the workspace config docs for the available knobs.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="experimental-local-cas-for-task-outputs">Experimental local CAS for task outputs<a href="https://moonrepo.dev/blog/moon-v2.3#experimental-local-cas-for-task-outputs" class="hash-link" aria-label="Direct link to Experimental local CAS for task outputs" title="Direct link to Experimental local CAS for task outputs" translate="no">​</a></h2>
+<p>Speaking of caching — moon has shipped a remote content-addressable storage (CAS) backend since
+v1.30 for remote caching, but locally, task outputs were still archived as tarballs. In v2.3, we're
+introducing an experimental local CAS layer that stores task outputs in the same content-addressed
+format used by the remote cache. This means deduplicated storage across tasks, and a unified cache
+shape locally and remotely.</p>
+<p>Enable it in your workspace configuration:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">casOutputsCache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
+<p>This is a foundational change — most of the work in this release went into reshaping the cache,
+remote, and hashing internals around a shared CAS abstraction. Expect this to become the default in
+a future release once it's been battle-tested.</p>
+<div class="theme-admonition theme-admonition-warning admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>warning</div><div class="admonitionContent_pbrs"><p>At this time, the local CAS may be slower than the tarball approach, as we have more guardrails to
+prevent data loss and cache corruption. Additionally, archiving and hydration currently happen in
+the main thread, and not through the daemon. In subsequent releases, we plan to optimize the local
+CAS for performance and make it the default.</p></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="mcp-tools-for-template-discovery">MCP tools for template discovery<a href="https://moonrepo.dev/blog/moon-v2.3#mcp-tools-for-template-discovery" class="hash-link" aria-label="Direct link to MCP tools for template discovery" title="Direct link to MCP tools for template discovery" translate="no">​</a></h2>
+<p>For AI agents working in moon repositories, code generation is one of the highest-leverage
+operations they can perform — but only if they know which templates exist and what variables those
+templates accept. v2.3 adds two new tools to the <a class="" href="https://moonrepo.dev/docs/guides/mcp">MCP server</a> that close this gap:</p>
+<ul>
+<li class=""><code>get_templates</code> - Lists available templates with id, title, and description. Supports an optional
+case-insensitive filter regex (mirroring <code>moon templates --filter</code>).</li>
+<li class=""><code>get_template</code> - Returns the merged variable schema for a given template id, resolving the
+<code>extends</code> chain. Variables marked <code>internal: true</code> are omitted.</li>
+</ul>
+<p>Together, these let an agent discover what's available, inspect a template's contract, and then call
+<code>generate</code> with the right inputs — no more guessing at template ids or required variables.</p>
+<blockquote>
+<p>Thanks to <a href="https://github.com/ateirney-nz" target="_blank" rel="noopener noreferrer" class="">ateirney-nz</a> for this contribution!</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="unstable-uv-pip-support-for-python">Unstable <code>uv pip</code> support for Python<a href="https://moonrepo.dev/blog/moon-v2.3#unstable-uv-pip-support-for-python" class="hash-link" aria-label="Direct link to unstable-uv-pip-support-for-python" title="Direct link to unstable-uv-pip-support-for-python" translate="no">​</a></h2>
+<p>In the Python ecosystem, <code>pip</code> is the default package manager, but tools like <code>uv</code> are gaining
+traction for their speed and modern features. To better support Python developers, we've added
+experimental support for <code>uv pip</code> as a package manager in the Python toolchain, alongside <code>pip</code> and
+<code>uv</code>.</p>
+<p>This new option can be enabled via the <code>unstable_python.packageManager</code> setting in your project
+configuration:</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchains.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'uv-pip'</span><br></span></code></pre></div></div>
+<p>Because <code>uv pip</code> is a combination of <code>uv</code> and <code>pip</code>, that offers the speed and efficiency of <code>uv</code>
+while maintaining compatibility with <code>pip</code>, the way it is configured is quite unique. For install
+related args, the <code>unstable_pip</code> toolchain is used (because <code>pip</code> compatibility), while sync and
+venv related args, the <code>unstable_uv</code> toolchain is used (because <code>uv</code> is used directly).</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchains.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_python</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'uv-pip'</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">unstable_pip</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">installArgs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'--group'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'dev'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">unstable_uv</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncArgs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'--check'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">venvArgs</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'--clear'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v2.3#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v2.3.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list of
+changes.</p>
+<ul>
+<li class="">Added Deno v2.8 support to the JavaScript toolchain.</li>
+<li class="">Added Git SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256
+as the default hash algorithm.</li>
+<li class="">Reduced task target memory footprint by 50-100%, further trimming the in-memory size of the
+project and task graphs.</li>
+<li class="">Fixed a glob regression where unbounded walks could be up to 10x slower.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="tasks" term="tasks"/>
+        <category label="tags" term="tags"/>
+        <category label="targets" term="targets"/>
+        <category label="cache" term="cache"/>
+        <category label="dependencies" term="dependencies"/>
+        <category label="hashing" term="hashing"/>
+        <category label="cas" term="cas"/>
+        <category label="mcp" term="mcp"/>
+        <category label="performance" term="performance"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.57 - OCI plugin distribution, cargo and npm backends]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.57</id>
@@ -2006,33 +2156,5 @@ of large releases. With that said, this is what we have tentatively planned for 
         <category label="glob" term="glob"/>
         <category label="git" term="git"/>
         <category label="experiment" term="experiment"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[moonbase has been sunset]]></title>
-        <id>https://moonrepo.dev/blog/moonbase-sunset</id>
-        <link href="https://moonrepo.dev/blog/moonbase-sunset"/>
-        <updated>2025-03-31T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[As mentioned in previous moon releases and announcements, we have sunset moonbase, our]]></summary>
-        <content type="html"><![CDATA[<p>As mentioned in previous moon releases and announcements, we have sunset <a class="" href="https://moonrepo.dev/moonbase">moonbase</a>, our
-remote caching service.</p>
-<p>A while back we had internal discussions on whether to rework moonbase so that it could be
-self-hosted (on-premises), or adopt the
-<a href="https://github.com/bazelbuild/remote-apis" target="_blank" rel="noopener noreferrer" class="">Bazel Remote Execution API</a> and utilize what the open
-source community has to offer. We ultimately decided with the latter, as it frees up resources on
-our end to focus on moon and proto, and also provides a better path forward for moon adoption.</p>
-<p>If you are currently using moonbase, we suggest migrating to our new
-<a class="" href="https://moonrepo.dev/docs/guides/remote-cache">remote caching options</a>. And if you have an active moonbase
-subscription, it will be cancelled within the week, and any partial billing for this month will be
-prorated.</p>
-<p>With that said, we have some ideas brewing on how to bring this back in another form. Perhaps our
-own implementation of the Bazel Remote Execution API that can be self-hosted and deeply integrate
-with moon.</p>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="moonbase" term="moonbase"/>
-        <category label="remote" term="remote"/>
-        <category label="cache" term="cache"/>
     </entry>
 </feed>

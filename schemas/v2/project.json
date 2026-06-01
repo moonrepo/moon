@@ -1186,6 +1186,21 @@
           ],
           "markdownDescription": "A script to run within a shell. A script is anything from a single command, to multiple commands, or shell specific syntax. Does not support arguments, merging, or inheritance. This overrides `command` and `args`. @since 1.27.0"
         },
+        "tags": {
+          "title": "tags",
+          "description": "A list of tags to categorize this task with. Tags are inherited and can be used for querying and filtering tasks. @since 2.3.0",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Id"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "toolchain": {
           "title": "toolchain",
           "description": "A toolchain, or list of toolchains, in which the task will inherit functionality from.",
@@ -1257,6 +1272,16 @@
         }
       ]
     },
+    "TaskDependencyCacheStrategy": {
+      "description": "Controls how a task dependency invalidates the current task's cache entry. When omitted, the effective strategy is Hash if the dependency declares outputs, or Ignored otherwise. @since 2.3.0",
+      "type": "string",
+      "enum": [
+        "hash",
+        "ignored",
+        "outputs"
+      ],
+      "markdownDescription": "Controls how a task dependency invalidates the current task's cache entry. When omitted, the effective strategy is `Hash` if the dependency declares outputs, or `Ignored` otherwise. @since 2.3.0"
+    },
     "TaskDependencyConfig": {
       "description": "Expanded information about a task dependency.",
       "type": "object",
@@ -1268,6 +1293,19 @@
           "items": {
             "type": "string"
           }
+        },
+        "cacheStrategy": {
+          "title": "cacheStrategy",
+          "description": "Controls how this dependency invalidates the current task's cache. When omitted, defaults to hash if the dependency declares outputs, otherwise ignored. @since 2.3.0",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskDependencyCacheStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "Controls how this dependency invalidates the current task's cache. When omitted, defaults to `hash` if the dependency declares outputs, otherwise `ignored`. @since 2.3.0"
         },
         "env": {
           "title": "env",
@@ -1642,6 +1680,20 @@
             }
           ],
           "markdownDescription": "The strategy to use when merging `outputs` with an inherited task."
+        },
+        "mergeTags": {
+          "title": "mergeTags",
+          "description": "The strategy to use when merging tags with an inherited task. @since 2.3.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `tags` with an inherited task. @since 2.3.0"
         },
         "mergeToolchains": {
           "title": "mergeToolchains",

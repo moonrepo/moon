@@ -4,12 +4,25 @@
 
 #### 🚀 Updates
 
-- Added a new experiment that replaces the VCS/Git based file hashing mechanism with a custom native
-  implementation that runs within our task pool. This can improve performance by 10-50%.
-  - Enable with the `experiments.nativeFileHashing` setting in `.moon/workspace.*`.
+- **Cache**
+  - Added a new experiment that stores task outputs in a local content-addressable storage (CAS)
+    cache, sharing the same format used by the remote cache. Enables deduplicated storage across
+    tasks and a unified cache shape locally and remotely.
+    - Enable with the `experiments.casOutputsCache` setting in `.moon/workspace.*`.
+  - Added a new top-level `cache` setting in `.moon/workspace.*` for tuning the content-addressable
+    storage (CAS) cache.
+- **Daemon**
+  - When `pipeline.autoCleanCache` is enabled (by default), the auto-clean will now run in the
+    daemon, instead of at the tail-end of the main process.
+  - When utilizing webhooks, the requests will now be made from the daemon, instead of the main
+    process.
 - **Git**
   - Added SHA256 support for commit hashes. This is in preparation for Git's transition to SHA256 as
     the default hash algorithm.
+- **Hash**
+  - Added a new experiment that replaces the VCS/Git based file hashing mechanism with a custom
+    native implementation that runs within our task pool. This can improve performance by 10-50%.
+    - Enable with the `experiments.nativeFileHashing` setting in `.moon/workspace.*`.
 - **MCP**
   - Added `get_template` and `get_templates` tools so AI coding assistants can discover templates
     and inspect their variable schemas before calling `generate`.
@@ -17,6 +30,8 @@
   - Added tags support to tasks through new `tags` and `options.mergeTags` settings.
     - Added `taskTag` field support to MQL.
     - Added `--tags` option support to `moon query tasks`.
+    - Updated targets to support the `#` tag syntax in the task scope, allowing you to reference
+      tasks by their tags. For example: `app:#quality`.
   - Added a `cacheStrategy` field to task dependencies that controls how a dependency's changes
     invalidate the current task's cache. Supports `hash`, `ignored`, and `outputs` — the latter
     mixes in the dependency's output files instead of its hash, so build tasks are only invalidated
@@ -25,21 +40,35 @@
       dependency declares outputs and `ignored` if it doesn't, instead of always `hash`. Tasks that
       depend on output-less tasks (e.g. lint, test) will see fewer cache invalidations. Set
       `cacheStrategy: 'hash'` explicitly to restore the previous behavior for a given dependency.
-  - Updated targets to support the `#` tag syntax in the task scope, allowing you to reference tasks
-    by their tags. For example: `app:#quality`.
 - **Performance**
   - Reduced task target memory footprint by 50-100%.
 
 #### 🧰 Toolchains
 
 - **JavaScript**
-  - Added support for [Deno v2.8](https://deno.com/blog/v2.8):
-  - Will use `deno ci` for installs in CI when `deno.lock` exists and the configured Deno version
-    is >= v2.8.
-  - Will pass `--prod` to `deno install` for production installs when the configured Deno version
-    is >= v2.8.
-  - Will resolve `catalog:` references in `package.json` files using catalogs declared in a root
-    `deno.json`.
+  - Added support for [Deno v2.8](https://deno.com/blog/v2.8).
+    - Will use `deno ci` for installs in CI when `deno.lock` exists and the configured Deno version
+      is >= v2.8.
+    - Will pass `--prod` to `deno install` for production installs when the configured Deno version
+      is >= v2.8.
+    - Will resolve `catalog:` references in `package.json` files using catalogs declared in a root
+      `deno.json`.
+- **Python**
+  - Added unstable support for `uv pip`.
+    - Can be configured using `unstable_python.packageManager: 'uv-pip'` in `.moon/toolchains.*`.
+    - Will inherit install arguments from `unstable_pip.installArgs`.
+    - Will inherit sync arguments from `unstable_uv.syncArgs`.
+    - Will inherit venv arguments from `unstable_uv.venvArgs`.
+
+#### 🐞 Fixes
+
+- Fixed a glob regression where unbounded walks could be up to 10x slower.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.57.3](https://github.com/moonrepo/proto/releases/tag/v0.57.0) from 0.56.4.
+- Updated Rust to v1.96.0.
+- Updated dependencies.
 
 ## 2.2.6
 

@@ -9,6 +9,7 @@ use moon_daemon_proto::{
 };
 use moon_daemon_utils::{endpoint::*, sys::is_process_alive};
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
+use moon_notifier::notify_webhook;
 use moon_process::ProcessRegistry;
 use moon_target::Target;
 use moon_task_runner::{TaskRunState, output_archiver::OutputArchiver};
@@ -92,11 +93,35 @@ impl MoonDaemon for DaemonService {
         Ok(Response::new(ArchiveTaskOutputsResponse { archived }))
     }
 
+    async fn clean_cache(
+        &self,
+        request: Request<CleanCacheRequest>,
+    ) -> Result<Response<CleanCacheResponse>, Status> {
+        debug!("Received {} request", color::property("CleanCache"));
+
+        let request = request.into_inner();
+        let state = self.state.read().await;
+
+        let (files_deleted, bytes_saved) = state
+            .app_context
+            .cache_engine
+            .clean_stale_cache(&request.lifetime, request.all)
+            .await
+            .map_err(|error| Status::unknown(error.to_string()))?;
+
+        Ok(Response::new(CleanCacheResponse {
+            files_deleted: files_deleted as u32,
+            bytes_saved,
+        }))
+    }
+
     async fn hash_files(
         &self,
         request: Request<HashFilesRequest>,
     ) -> Result<Response<HashFilesResponse>, Status> {
         debug!("Received {} request", color::property("HashFiles"));
+
+        let state = self.state.read().await;
 
         let files = request
             .into_inner()
@@ -105,10 +130,7 @@ impl MoonDaemon for DaemonService {
             .map(WorkspaceRelativePathBuf::from)
             .collect::<Vec<_>>();
 
-        let hashed_files = self
-            .state
-            .read()
-            .await
+        let hashed_files = state
             .app_context
             .hash_files(&files)
             .await
@@ -119,6 +141,23 @@ impl MoonDaemon for DaemonService {
                 .into_iter()
                 .map(|(path, hash)| (path.to_string(), hash))
                 .collect(),
+        }))
+    }
+
+    async fn send_webhook(
+        &self,
+        request: Request<SendWebhookRequest>,
+    ) -> Result<Response<SendWebhookResponse>, Status> {
+        debug!("Received {} request", color::property("SendWebhook"));
+
+        let request = request.into_inner();
+
+        let response = notify_webhook(&request.url, request.body, false)
+            .await
+            .map_err(|error| Status::unknown(error.to_string()))?;
+
+        Ok(Response::new(SendWebhookResponse {
+            success: response.status().is_success(),
         }))
     }
 

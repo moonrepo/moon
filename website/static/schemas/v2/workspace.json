@@ -186,13 +186,6 @@
       "description": "Configures aspects of the content-addressable storage (CAS) cache.",
       "type": "object",
       "properties": {
-        "mmapThreshold": {
-          "title": "mmapThreshold",
-          "description": "Byte threshold above which to use memory-mapped I/O for hashing. Files below this size are read into a stack buffer.",
-          "default": 4194304,
-          "type": "number",
-          "markdownDescription": "Byte threshold above which to use memory-mapped I/O for hashing. Files below this size are read into a stack buffer."
-        },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
           "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption.",
@@ -614,7 +607,7 @@
         },
         "webhookAcknowledge": {
           "title": "webhookAcknowledge",
-          "description": "Whether webhook requests require acknowledgment (2xx response). @since 1.38.0",
+          "description": "Whether webhook requests require acknowledgment (2xx response). When enabled, will bypass the daemon and send webhooks in the main process. @since 1.38.0",
           "type": "boolean"
         },
         "webhookUrl": {

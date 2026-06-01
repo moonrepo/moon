@@ -7,7 +7,7 @@ use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::notifications_subscriber::NotificationsSubscriber;
 use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
-use crate::subscribers::telemetry_subscriber::TelemetrySubscriber;
+// use crate::subscribers::telemetry_subscriber::TelemetrySubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
 use miette::IntoDiagnostic;
 use moon_action::{Action, ActionNode, ActionPipelineStatus};
@@ -16,6 +16,7 @@ use moon_action_graph::ActionGraph;
 use moon_app_context::AppContext;
 use moon_common::{color, is_remote, is_test_env};
 use moon_console::Level;
+use moon_daemon_client::DaemonClient;
 use moon_process::{ProcessRegistry, SignalType};
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -42,12 +43,17 @@ pub struct ActionPipeline {
     // Data
     app_context: Arc<AppContext>,
     action_context: Arc<ActionContext>,
+    daemon_client: Option<DaemonClient>,
     emitter: Arc<EventEmitter>,
     workspace_graph: Arc<WorkspaceGraph>,
 }
 
 impl ActionPipeline {
-    pub fn new(app_context: Arc<AppContext>, workspace_graph: Arc<WorkspaceGraph>) -> Self {
+    pub fn new(
+        app_context: Arc<AppContext>,
+        workspace_graph: Arc<WorkspaceGraph>,
+        daemon_client: Option<DaemonClient>,
+    ) -> Self {
         debug!("Creating pipeline to run actions");
 
         Self {
@@ -56,6 +62,7 @@ impl ActionPipeline {
             app_context,
             bail: false,
             concurrency: num_cpus::get(),
+            daemon_client,
             duration: None,
             emitter: Arc::new(EventEmitter::default()),
             quiet: false,
@@ -427,7 +434,11 @@ impl ActionPipeline {
             );
 
             self.emitter
-                .subscribe(WebhooksSubscriber::new(webhook_url, require_acknowledge))
+                .subscribe(WebhooksSubscriber::new(
+                    webhook_url,
+                    require_acknowledge,
+                    self.daemon_client.clone(),
+                ))
                 .await;
         }
 
@@ -459,20 +470,22 @@ impl ActionPipeline {
             self.emitter
                 .subscribe(CleanupSubscriber::new(
                     Arc::clone(&self.app_context.cache_engine),
+                    self.daemon_client.clone(),
                     lifetime,
                 ))
                 .await;
         }
 
-        if self.app_context.workspace_config.telemetry {
-            debug!("Subscribing telemetry");
+        // TODO: Disabled for now as we've hit the posthog limit!
+        // if self.app_context.workspace_config.telemetry {
+        //     debug!("Subscribing telemetry");
 
-            self.emitter
-                .subscribe(TelemetrySubscriber::new(Arc::clone(
-                    &self.app_context.toolchains_config,
-                )))
-                .await;
-        }
+        //     self.emitter
+        //         .subscribe(TelemetrySubscriber::new(Arc::clone(
+        //             &self.app_context.toolchains_config,
+        //         )))
+        //         .await;
+        // }
     }
 }
 

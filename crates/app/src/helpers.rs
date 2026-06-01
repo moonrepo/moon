@@ -78,6 +78,7 @@ pub async fn run_action_pipeline(
     let mut pipeline = ActionPipeline::new(
         session.get_app_context().await?,
         session.get_workspace_graph().await?,
+        session.connect_to_daemon().await?,
     );
 
     if let Some(concurrency) = &session.cli.concurrency {

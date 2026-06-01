@@ -10,7 +10,7 @@ publish = true
 
 [dependencies]
 moon_pdk_api = { version = "2.0.3", path = "../pdk-api" }
-moon_target = { version = "2.1.1", path = "../target" }
+moon_target = { version = "3.0.0", path = "../target" }
 extism = { workspace = true }
 proto_core = { workspace = true }
 proto_pdk_test_utils = { workspace = true }

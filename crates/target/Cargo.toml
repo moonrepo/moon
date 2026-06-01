@@ -1,6 +1,6 @@
 [package]
 name = "moon_target"
-version = "2.1.1"
+version = "3.0.0"
 edition = "2024"
 license = "MIT"
 description = "Project + task target identifier."

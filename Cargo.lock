@@ -5730,7 +5730,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "2.1.1"
+version = "3.0.0"
 dependencies = [
  "compact_str 0.9.1",
  "miette 7.6.0",

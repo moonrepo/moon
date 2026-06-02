@@ -99,7 +99,7 @@ impl DaemonConnector {
 
         self.wait_for_ready(&mut child).await?;
 
-        debug!(pid, "Daemon is ready");
+        // debug!(pid, "Daemon is ready");
 
         Ok(pid)
     }
@@ -233,7 +233,7 @@ impl DaemonConnector {
         // Err(DaemonError::StartTimedOut.into())
 
         // TODO: Why are we hitting this???
-        warn!("Timed out waiting for the daemon to start.");
+        warn!("Timed out waiting for the daemon to start!");
 
         Ok(())
     }

@@ -7,6 +7,11 @@
 - Updated plugin distribution to use ghcr.io instead of raw URLs, which should improve reliability
   and performance of plugin downloads.
 
+#### 🐞 Fixes
+
+- Reworked the daemon connect/ready logic to possibly fix some Windows connection issues.
+- Fixed an issue where locks created at `.moon/cache/locks` would not be cleaned up.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.57.4](https://github.com/moonrepo/proto/releases/tag/v0.57.4) from 0.57.3.

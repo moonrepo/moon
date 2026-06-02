@@ -1,5 +1,0 @@
-language: javascript
-
-tasks:
-  noop:
-    command: noop

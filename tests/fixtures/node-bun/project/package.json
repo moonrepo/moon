@@ -1,7 +1,0 @@
-{
-  "name": "test-node-bun-project",
-  "private": true,
-  "devDependencies": {
-    "prettier": "2.7.0"
-  }
-}

@@ -1,6 +1,0 @@
-workspace:
-  inheritedTasks:
-    include: [a, c]
-    exclude: [c]
-    rename:
-      a: only

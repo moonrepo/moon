@@ -1,2 +1,0 @@
-{{ object | json_encode() }}
-{{ array | json_encode() }}

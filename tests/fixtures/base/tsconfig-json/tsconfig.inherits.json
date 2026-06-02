@@ -1,8 +1,0 @@
-{
-  "extends": "./b/tsconfig.json",
-  "compilerOptions": {
-    "traceResolution": false,
-    "declaration": true,
-    "jsx": "react-jsxdev",
-  }
-}

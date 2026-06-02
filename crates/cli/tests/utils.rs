@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 
 use moon_common::{Id, is_ci};
-use moon_config::PartialToolchainPluginConfig;
+use moon_config::{PartialToolchainPluginConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
 use moon_test_utils2::{MoonSandbox, create_empty_moon_sandbox, create_moon_sandbox};
 use proto_core::UnresolvedVersionSpec;
+use rustc_hash::FxHashMap;
 
 pub fn create_projects_sandbox() -> MoonSandbox {
     let sandbox = create_moon_sandbox("projects");
@@ -34,6 +35,82 @@ pub fn create_tasks_sandbox() -> MoonSandbox {
 pub fn create_pipeline_sandbox() -> MoonSandbox {
     let sandbox = create_moon_sandbox("pipeline");
     sandbox.with_default_projects();
+    sandbox.enable_git();
+    sandbox
+}
+
+// Mirrors the legacy `get_cases_fixture_configs()`. The fixture's project
+// `moon.yml` files cross-reference each other (and the expected output uses)
+// camelCase ids, so we set an explicit sources map instead of glob discovery.
+fn apply_cases_config(sandbox: &MoonSandbox) {
+    sandbox.update_workspace_config(|config| {
+        config.projects = Some(PartialWorkspaceProjects::Sources(FxHashMap::from_iter([
+            (Id::raw("root"), ".".to_owned()),
+            (Id::raw("affected"), "affected".to_owned()),
+            (Id::raw("noAffected"), "no-affected".to_owned()),
+            (Id::raw("base"), "base".to_owned()),
+            (Id::raw("noop"), "noop".to_owned()),
+            (Id::raw("files"), "files".to_owned()),
+            (Id::raw("states"), "states".to_owned()),
+            (Id::raw("taskScript"), "task-script".to_owned()),
+            (Id::raw("taskOs"), "task-os".to_owned()),
+            // Runner
+            (Id::raw("interactive"), "interactive".to_owned()),
+            (Id::raw("mutex"), "mutex".to_owned()),
+            (Id::raw("passthroughArgs"), "passthrough-args".to_owned()),
+            // Project/task deps
+            (Id::raw("depsA"), "deps-a".to_owned()),
+            (Id::raw("depsB"), "deps-b".to_owned()),
+            (Id::raw("depsC"), "deps-c".to_owned()),
+            (Id::raw("dependsOn"), "depends-on".to_owned()),
+            (Id::raw("taskDeps"), "task-deps".to_owned()),
+            // Target scopes
+            (Id::raw("targetScopeA"), "target-scope-a".to_owned()),
+            (Id::raw("targetScopeB"), "target-scope-b".to_owned()),
+            (Id::raw("targetScopeC"), "target-scope-c".to_owned()),
+            // Outputs
+            (Id::raw("outputs"), "outputs".to_owned()),
+            (Id::raw("outputsFiltering"), "outputs-filtering".to_owned()),
+            (Id::raw("outputStyles"), "output-styles".to_owned()),
+        ])));
+    });
+
+    sandbox.update_toolchains_config(|config| {
+        let plugins = config.plugins.get_or_insert_default();
+        plugins.insert(
+            Id::raw("javascript"),
+            PartialToolchainPluginConfig::default(),
+        );
+        plugins.insert(
+            Id::raw("node"),
+            PartialToolchainPluginConfig {
+                version: Some(UnresolvedVersionSpec::parse("24.0.0").unwrap()),
+                ..Default::default()
+            },
+        );
+    });
+
+    // The legacy `tasks_config` injected a global inherited `noop` task.
+    sandbox.create_file(
+        ".moon/tasks/all.yml",
+        "tasks:\n  noop:\n    command: noop\n",
+    );
+}
+
+pub fn create_cases_sandbox() -> MoonSandbox {
+    let sandbox = create_moon_sandbox("cases");
+    apply_cases_config(&sandbox);
+    sandbox.enable_git();
+    sandbox
+}
+
+pub fn create_cases_sandbox_with_config<C>(callback: C) -> MoonSandbox
+where
+    C: FnOnce(&mut PartialWorkspaceConfig),
+{
+    let sandbox = create_moon_sandbox("cases");
+    apply_cases_config(&sandbox);
+    sandbox.update_workspace_config(callback);
     sandbox.enable_git();
     sandbox
 }

@@ -1,3 +1,0 @@
-dependsOn:
-  - 'base-no-src'
-  - 'base-src'

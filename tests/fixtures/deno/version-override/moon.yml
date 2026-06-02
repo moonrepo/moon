@@ -1,5 +1,0 @@
-language: javascript
-
-toolchains:
-  deno:
-    version: '2.0.0'

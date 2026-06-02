@@ -1,9 +1,0 @@
-{
-  "extends": "../tsconfig.inherits.json",
-  "compilerOptions": {
-    "traceResolution": false,
-    "declaration": true,
-    "jsx": "react-native",
-    "moduleResolution": "node"
-  }
-}

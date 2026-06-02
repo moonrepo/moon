@@ -1,5 +1,0 @@
-language: javascript
-
-toolchains:
-  node:
-    version: '19.0.0'

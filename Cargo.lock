@@ -5089,7 +5089,6 @@ dependencies = [
  "moon_env_var",
  "moon_task",
  "moon_task_runner",
- "moon_test_utils",
  "moon_test_utils2",
  "moon_vcs",
  "proto_core",

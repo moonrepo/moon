@@ -155,6 +155,24 @@ impl<T: Plugin> PluginRegistry<T> {
                     "Attempting to load and register plugin",
                 );
 
+                // Acquire a cross-process file lock before downloading the WASM plugin.
+                // Multiple parallel tests or CI jobs may attempt to download the same
+                // plugin file simultaneously; on Windows, concurrent file writes cause
+                // "uncategorized error" failures. The lock serializes writes so that
+                // any waiting process finds the file already cached on acquisition.
+                let lock_dir = self
+                    .host_data
+                    .moon_env
+                    .plugins_dir
+                    .join(self.type_of.get_dir_name())
+                    .join("locks");
+                fs::create_dir_all(&lock_dir)?;
+                let lock_path = lock_dir.join(format!("{}.lock", entry.key().as_str()));
+                let _plugin_lock =
+                    tokio::task::spawn_blocking(move || fs::lock_file(lock_path))
+                        .await
+                        .map_err(|e| miette::miette!("Plugin lock task panicked: {e}"))??;
+
                 // Load the WASM file (this must happen first because of async)
                 let plugin_file = self.loader.load_plugin(entry.key(), locator).await?;
 

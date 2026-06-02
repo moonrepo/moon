@@ -1,5 +1,0 @@
-language: javascript
-
-tasks:
-  version:
-    command: npm

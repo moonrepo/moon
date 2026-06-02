@@ -1,7 +1,0 @@
-{
-  "name": "test-typescript",
-  "private": true,
-  "workspaces": [
-    "*"
-  ]
-}

@@ -1,7 +1,0 @@
-env:
-  # Disable sccache
-  RUSTC_WRAPPER: ''
-
-tasks:
-  noop:
-    command: noop

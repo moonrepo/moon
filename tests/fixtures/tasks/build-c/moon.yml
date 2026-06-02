@@ -1,5 +1,0 @@
-language: javascript
-
-tasks:
-  build:
-    command: swc

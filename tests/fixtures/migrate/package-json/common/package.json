@@ -1,8 +1,0 @@
-{
-  "name": "test-package-json-common",
-  "scripts": {
-    "lint": "eslint .",
-    "lint:fix": "npm run lint -- --fix",
-    "preversion": "npm ci"
-  }
-}

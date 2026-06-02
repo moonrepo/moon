@@ -1,9 +1,0 @@
-language: javascript
-
-tasks:
-  build:
-    command: webpack
-  lint:
-    command: eslint
-  test:
-    command: jest

@@ -1,8 +1,0 @@
-[package]
-name = "path-deps"
-version = "0.0.1"
-edition = "2024"
-
-[dependencies]
-inherited-dep = { path = "../inherited-dep" }
-normal-dep = { path = "../normal-dep" }

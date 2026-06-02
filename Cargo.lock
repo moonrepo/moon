@@ -5894,22 +5894,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_test_utils"
-version = "0.0.1"
-dependencies = [
- "assert_cmd",
- "assert_fs",
- "insta",
- "moon_common",
- "moon_config",
- "predicates",
- "pretty_assertions",
- "rustc-hash",
- "serde_json",
- "starbase_utils",
-]
-
-[[package]]
 name = "moon_test_utils2"
 version = "0.0.1"
 dependencies = [

@@ -390,8 +390,8 @@ impl Cli {
             bag.set("EXTISM_COREDUMP", "wasm-plugin.core");
         }
 
-        if bag.has("MOON_PLUGINS_USE_URL_DIST") {
-            bag.set("PROTO_PLUGINS_USE_URL_DIST", "true");
+        if let Some(value) = bag.get("MOON_PLUGINS_USE_URL_DIST") {
+            bag.set("PROTO_PLUGINS_USE_URL_DIST", value);
         }
     }
 }

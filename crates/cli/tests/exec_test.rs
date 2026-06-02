@@ -2,7 +2,7 @@ mod utils;
 
 use moon_cache::CacheEngine;
 use moon_common::is_ci;
-use moon_config::CacheConfig;
+use moon_config::{CacheConfig, HasherWalkStrategy, PartialHasherConfig};
 use moon_task_runner::TaskRunCacheState;
 use moon_test_utils2::predicates::prelude::*;
 use starbase_utils::{fs, json};
@@ -587,6 +587,197 @@ mod exec {
                     .and(predicate::str::contains("Task shared:willFail failed to run.").not()),
             );
         }
+
+        #[test]
+        fn runs_noop() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("noop:noop");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("noop:noop").eval(&output));
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_noop_deps() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("noop:noopWithDeps");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("outputs:generateFile").eval(&output));
+            assert!(predicate::str::contains("noop:noopWithDeps").eval(&output));
+            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_a_root_level_task() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("root:oneOff");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("root-one-off").eval(&output));
+        }
+    }
+
+    mod target_scopes {
+        use super::*;
+
+        #[test]
+        fn errors_for_deps_scope() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("^:test");
+            });
+
+            assert.failure().stderr(predicate::str::contains(
+                "Dependencies scope (^:) is not supported in run contexts.",
+            ));
+        }
+
+        #[test]
+        fn errors_for_cwd() {
+            let sandbox = create_cases_sandbox();
+
+            fs::create_dir_all(sandbox.path().join("fakeDir")).unwrap();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("~:taskName")
+                    .current_dir(sandbox.path().join("fakeDir"));
+            });
+
+            assert.failure().stderr(predicate::str::contains(
+                "No project could be located starting from path fakeDir.",
+            ));
+        }
+
+        #[test]
+        fn supports_all_scope() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(":all");
+            });
+            let output = assert.output();
+
+            assert!(predicate::str::contains("targetScopeA:all").eval(&output));
+            assert!(predicate::str::contains("targetScopeB:all").eval(&output));
+            assert!(predicate::str::contains("targetScopeC:all").eval(&output));
+            assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
+        }
+
+        #[test]
+        fn supports_deps_scope_in_task() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("targetScopeA:deps");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
+            assert!(predicate::str::contains("depsA:standard").eval(&output));
+            assert!(predicate::str::contains("depsB:standard").eval(&output));
+            assert!(predicate::str::contains("depsC:standard").eval(&output));
+            assert!(predicate::str::contains("Tasks: 4 completed").eval(&output));
+        }
+
+        #[test]
+        fn supports_self_scope_in_task() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("targetScopeB:self");
+            });
+            let output = assert.output();
+
+            assert!(predicate::str::contains("targetScopeB:self").eval(&output));
+            assert!(predicate::str::contains("scope=self").eval(&output));
+            assert!(predicate::str::contains("targetScopeB:selfOther").eval(&output));
+            assert!(predicate::str::contains("selfOther").eval(&output));
+            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_closest_project_task_from_cwd() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("~:runFromProject")
+                    .current_dir(sandbox.path().join("base"));
+            });
+            let output = assert.output();
+
+            assert!(predicate::str::contains("base:runFromProject").eval(&output));
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_multiple_tasks_from_cwd() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("~:runFromProject")
+                    .arg("~:runFromWorkspace")
+                    .current_dir(sandbox.path().join("base"));
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("base:runFromProject").eval(&output));
+            assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
+            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+        }
+
+        #[test]
+        fn can_mix_cwd_tasks_and_targets() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("~:runFromProject")
+                    .arg("noop:noop")
+                    .current_dir(sandbox.path().join("base"));
+            });
+            let output = assert.output();
+
+            assert!(predicate::str::contains("base:runFromProject").eval(&output));
+            assert!(predicate::str::contains("noop:noop").eval(&output));
+            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_in_projects_with_tag() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("#standard:standard");
+            });
+            let output = assert.output();
+
+            assert!(predicate::str::contains("base:standard").eval(&output));
+            assert!(predicate::str::contains("dependsOn:standard").eval(&output));
+            assert!(predicate::str::contains("depsA:standard").eval(&output));
+            assert!(predicate::str::contains("depsB:standard").eval(&output));
+            assert!(predicate::str::contains("depsC:standard").eval(&output));
+            assert!(predicate::str::contains("Tasks: 5 completed").eval(&output));
+        }
     }
 
     mod caching {
@@ -725,6 +916,640 @@ mod exec {
                     .join(format!("{}.json", state.hash))
                     .exists()
             );
+        }
+
+        mod archive {
+            use super::*;
+
+            #[test]
+            fn archives_non_build_tasks() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:noOutput");
+                });
+
+                let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+                assert!(
+                    sandbox
+                        .path()
+                        .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
+                        .exists()
+                );
+            }
+
+            #[test]
+            fn archives_std_output() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:noOutput");
+                });
+
+                assert_eq!(
+                    fs::read_file(
+                        sandbox
+                            .path()
+                            .join(".moon/cache/states/outputs/noOutput/stdout.log")
+                    )
+                    .unwrap(),
+                    "No outputs!"
+                );
+            }
+
+            #[test]
+            fn can_hydrate_archives() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:noOutput");
+                });
+
+                let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:noOutput");
+                });
+
+                let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+                assert_eq!(hash1, hash2);
+            }
+        }
+
+        mod hydrate {
+            use super::*;
+
+            #[test]
+            fn reuses_cache_from_previous_run() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
+
+                assert_eq!(hash1, hash2);
+            }
+
+            #[test]
+            fn doesnt_keep_output_logs_in_project() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                assert!(!sandbox.path().join("outputs/stdout.log").exists());
+                assert!(!sandbox.path().join("outputs/stderr.log").exists());
+            }
+
+            #[test]
+            fn hydrates_missing_outputs_from_previous_run() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                // Remove outputs
+                fs::remove_dir_all(sandbox.path().join("outputs/both/a")).unwrap();
+                fs::remove_dir_all(sandbox.path().join("outputs/both/b")).unwrap();
+
+                assert!(!sandbox.path().join("outputs/both/a").exists());
+                assert!(!sandbox.path().join("outputs/both/b").exists());
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                // Outputs should come back
+                assert!(sandbox.path().join("outputs/both/a").exists());
+                assert!(sandbox.path().join("outputs/both/b").exists());
+            }
+
+            #[test]
+            fn hydrates_with_a_different_hash_cache() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
+                let contents1 =
+                    fs::read_file(sandbox.path().join("outputs/both/a/one.js")).unwrap();
+
+                // Create a file to trigger an inputs change
+                sandbox.create_file("outputs/trigger.js", "");
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
+                let contents2 =
+                    fs::read_file(sandbox.path().join("outputs/both/a/one.js")).unwrap();
+
+                // Hashes and contents should be different!
+                assert_ne!(hash1, hash2);
+                assert_ne!(contents1, contents2);
+
+                // Remove outputs
+                fs::remove_dir_all(sandbox.path().join("outputs/both/a")).unwrap();
+                fs::remove_dir_all(sandbox.path().join("outputs/both/b")).unwrap();
+
+                assert!(!sandbox.path().join("outputs/both/a").exists());
+                assert!(!sandbox.path().join("outputs/both/b").exists());
+
+                // Remove the trigger file
+                fs::remove_file(sandbox.path().join("outputs/trigger.js")).unwrap();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
+                });
+
+                let hash3 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
+                let contents3 =
+                    fs::read_file(sandbox.path().join("outputs/both/a/one.js")).unwrap();
+
+                // Hashes and contents should match the original!
+                assert_eq!(hash1, hash3);
+                assert_eq!(contents1, contents3);
+                assert_ne!(contents2, contents3);
+
+                // Outputs should come back
+                assert!(sandbox.path().join("outputs/both/a").exists());
+                assert!(sandbox.path().join("outputs/both/b").exists());
+            }
+
+            #[test]
+            fn ignores_files_negated_by_globs() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:negatedOutputGlob");
+                });
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("outputs:negatedOutputGlob");
+                });
+
+                assert!(sandbox.path().join("outputs/both/a/one.js").exists());
+
+                // Exists from first build and isn't deleted
+                assert!(sandbox.path().join("outputs/both/b/two.js").exists());
+            }
+        }
+    }
+
+    mod hashing {
+        use super::*;
+
+        #[test]
+        fn generates_diff_hashes_from_inputs() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:noOutput");
+            });
+
+            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:noOutput");
+            });
+
+            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+            assert_eq!(hash1, hash2);
+        }
+
+        #[test]
+        fn tracks_input_changes_for_env_files() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.create_file("outputs/.env", "FOO=123");
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:envFile");
+            });
+
+            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:envFile");
+            });
+
+            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
+
+            assert_eq!(hash1, hash2);
+
+            sandbox.create_file("outputs/.env", "FOO=456");
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:envFile");
+            });
+
+            let hash3 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
+
+            assert_ne!(hash1, hash3);
+            assert_ne!(hash2, hash3);
+        }
+
+        #[test]
+        fn supports_diff_walking_strategies() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:noOutput");
+            });
+
+            let hash_vcs = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+            // Run again with a different strategy
+            let sandbox = create_cases_sandbox_with_config(|workspace_config| {
+                workspace_config.hasher = Some(PartialHasherConfig {
+                    walk_strategy: Some(HasherWalkStrategy::Glob),
+                    ..PartialHasherConfig::default()
+                });
+            });
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:noOutput");
+            });
+
+            let hash_glob = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
+
+            // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
+            assert_ne!(hash_vcs, hash_glob);
+        }
+    }
+
+    mod affected {
+        use super::*;
+
+        #[test]
+        fn doesnt_run_if_not_affected() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("files:noop").arg("--affected");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
+        }
+
+        #[test]
+        fn doesnt_run_if_not_affected_by_multi_status() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("untracked")
+                    .arg("--status")
+                    .arg("deleted");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
+            assert!(predicate::str::contains("untracked").eval(&output));
+            assert!(predicate::str::contains("deleted").eval(&output));
+        }
+
+        #[test]
+        fn runs_if_forced() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("files:noop").arg("--force");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_if_not_affected_but_forced() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--force");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_if_affected() {
+            let sandbox = create_cases_sandbox();
+
+            change_files(&sandbox, ["files/other.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("files:noop").arg("--affected");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_if_affected_via_stdin() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--stdin")
+                    .write_stdin("files/other.txt");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn doesnt_run_affected_if_stdin_is_empty() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--stdin");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
+        }
+
+        #[test]
+        fn doesnt_run_affected_if_stdin_arg_is_not_passed() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    // .arg("--stdin")
+                    .write_stdin("files/other.txt");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
+        }
+
+        #[test]
+        fn runs_if_not_affected_but_a_dep_of_an_affected() {
+            let sandbox = create_cases_sandbox();
+
+            change_files(&sandbox, ["affected/primary.js"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("affected:primaryWithDeps")
+                    .arg("--affected");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("affected:dep").eval(&output));
+            assert!(predicate::str::contains("affected:primaryWithDeps").eval(&output));
+            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_if_affected_by_multi_status() {
+            let sandbox = create_cases_sandbox();
+
+            // Test modified
+            sandbox.create_file("files/file.txt", "modified");
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:affected")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("modified");
+            });
+
+            assert!(predicate::str::contains("\nfile.txt\n").eval(&assert.output()));
+
+            // Then test added
+            fs::remove_dir_all(sandbox.path().join(".moon/cache")).unwrap();
+
+            sandbox.create_file("files/other.txt", "added");
+            sandbox.run_git(|cmd| {
+                cmd.args(["add", "files/other.txt"]);
+            });
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:affected")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("added");
+            });
+
+            assert!(predicate::str::contains("\nother.txt\n").eval(&assert.output()));
+
+            // Then test both
+            fs::remove_dir_all(sandbox.path().join(".moon/cache")).unwrap();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:affected")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("modified")
+                    .arg("--status")
+                    .arg("added");
+            });
+            let envs = ["file.txt", "other.txt"].join(if cfg!(windows) { ";" } else { ":" });
+
+            assert!(predicate::str::contains(format!("\n{envs}\n")).eval(&assert.output()));
+        }
+
+        #[test]
+        fn doesnt_run_if_affected_but_wrong_status() {
+            let sandbox = create_cases_sandbox();
+
+            change_files(&sandbox, ["files/other.txt"]);
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("deleted");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("affected by changed files").eval(&output));
+            assert!(predicate::str::contains("deleted").eval(&output));
+        }
+
+        #[test]
+        fn handles_untracked() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.create_file("files/other.txt", "");
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("untracked");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn handles_added() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.create_file("files/other.txt", "");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["add", "files/other.txt"]);
+            });
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("added");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn handles_modified() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.create_file("files/file.txt", "modified");
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("modified");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        #[test]
+        fn handles_deleted() {
+            let sandbox = create_cases_sandbox();
+
+            fs::remove_file(sandbox.path().join("files/file.txt")).unwrap();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:noop")
+                    .arg("--affected")
+                    .arg("--status")
+                    .arg("deleted");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+        }
+
+        mod root_level {
+            use super::*;
+
+            #[test]
+            fn doesnt_run_if_not_affected() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("root:noop").arg("--affected");
+                });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("affected by changed files").eval(&output));
+            }
+
+            #[test]
+            fn runs_if_affected() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.create_file("tsconfig.json", "{}");
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("root:noop").arg("--affected");
+                });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
+            }
+
+            #[test]
+            fn doesnt_run_if_affected_but_wrong_status() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.create_file("tsconfig.json", "{}");
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec")
+                        .arg("root:noop")
+                        .arg("--affected")
+                        .arg("--status")
+                        .arg("deleted");
+                });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("affected by changed files").eval(&output));
+                assert!(predicate::str::contains("deleted").eval(&output));
+            }
         }
     }
 
@@ -874,6 +1699,142 @@ mod exec {
             assert.failure().stderr(predicate::str::contains(
                 "tasks: invalid type: integer `123`",
             ));
+        }
+    }
+
+    mod dependencies {
+        use super::*;
+
+        #[test]
+        fn runs_the_graph_in_order() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("depsA:dependencyOrder");
+            });
+
+            let output = assert.output();
+            let c = output.find("depsC:dependencyOrder");
+            let b = output.find("depsB:dependencyOrder");
+            let a = output.find("depsA:dependencyOrder");
+
+            // Runs C, then B, then A
+            assert!(c.is_some() && b.is_some() && a.is_some());
+            assert!(c < b && b < a);
+            assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
+        }
+
+        #[test]
+        fn runs_the_graph_in_order_not_from_head() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("depsB:dependencyOrder");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("depsC:dependencyOrder").eval(&output));
+            assert!(predicate::str::contains("depsB:dependencyOrder").eval(&output));
+            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
+        }
+
+        #[test]
+        fn can_run_deps_in_serial() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("dependsOn:serialDeps");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("depsA:standard").eval(&output));
+            assert!(predicate::str::contains("depsB:standard").eval(&output));
+            assert!(predicate::str::contains("depsC:standard").eval(&output));
+            assert!(predicate::str::contains("dependsOn:serialDeps").eval(&output));
+            assert!(predicate::str::contains("Tasks: 4 completed").eval(&output));
+        }
+
+        #[test]
+        fn generates_unique_hashes_for_each_target() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:withDeps");
+            });
+
+            let as_dep = extract_hash_from_run(sandbox.path(), "outputs:asDep");
+            let with_deps = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
+
+            assert_ne!(as_dep, with_deps);
+        }
+
+        #[test]
+        fn changes_primary_hash_if_deps_hash_changes() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:withDeps");
+            });
+
+            let h1 = extract_hash_from_run(sandbox.path(), "outputs:asDep");
+            let h2 = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
+
+            // Create an `inputs` file for `outputs:asDep`
+            sandbox.create_file("outputs/random.js", "");
+
+            sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:withDeps");
+            });
+
+            let h3 = extract_hash_from_run(sandbox.path(), "outputs:asDep");
+            let h4 = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
+
+            // `random.js` is an input of `asDep` (`*.js`), so its hash changes...
+            assert_ne!(h1, h3);
+            // ...but `withDeps` only hashes its own inputs (`*.mjs`), so its hash
+            // stays the same (matches the legacy snapshot behavior).
+            assert_eq!(h2, h4);
+        }
+
+        #[test]
+        fn can_depend_on_noop_task() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("dependsOn:depsOnNoop");
+            });
+
+            assert
+                .success()
+                .stderr(predicate::str::contains("Encountered a missing hash").not());
+        }
+
+        #[test]
+        fn can_depend_on_nocache_task() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("dependsOn:depsOnNoCache");
+            });
+
+            assert
+                .success()
+                .stderr(predicate::str::contains("Encountered a missing hash").not());
+        }
+
+        #[test]
+        fn can_depend_on_noop_and_nocache_task() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("dependsOn:depsOnNoopAndNoCache");
+            });
+
+            assert
+                .success()
+                .stderr(predicate::str::contains("Encountered a missing hash").not());
         }
     }
 
@@ -1234,424 +2195,6 @@ mod exec {
             }
         }
     }
-}
-
-mod cases {
-    use super::*;
-    use std::fs;
-
-    #[cfg(not(windows))]
-    mod general {
-        use super::*;
-        use moon_config::PartialPipelineConfig;
-
-        #[test]
-        fn logs_command_for_project_root() {
-            let sandbox = create_cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    log_running_command: Some(true),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("base:runFromProject");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("echo 'from project' (in ./base)").eval(&output));
-            assert!(predicate::str::contains("from project").eval(&output));
-        }
-
-        #[test]
-        fn logs_command_for_workspace_root() {
-            let sandbox = create_cases_sandbox_with_config(|cfg| {
-                cfg.pipeline = Some(PartialPipelineConfig {
-                    log_running_command: Some(true),
-                    ..PartialPipelineConfig::default()
-                });
-            });
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("base:runFromWorkspace");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("echo 'from workspace' (in workspace)").eval(&output));
-            assert!(predicate::str::contains("from workspace").eval(&output));
-        }
-    }
-
-    mod dependencies {
-        use super::*;
-
-        #[test]
-        fn runs_the_graph_in_order() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("depsA:dependencyOrder");
-            });
-
-            let output = assert.output();
-            let c = output.find("depsC:dependencyOrder");
-            let b = output.find("depsB:dependencyOrder");
-            let a = output.find("depsA:dependencyOrder");
-
-            // Runs C, then B, then A
-            assert!(c.is_some() && b.is_some() && a.is_some());
-            assert!(c < b && b < a);
-            assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_the_graph_in_order_not_from_head() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("depsB:dependencyOrder");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("depsC:dependencyOrder").eval(&output));
-            assert!(predicate::str::contains("depsB:dependencyOrder").eval(&output));
-            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-        }
-
-        #[test]
-        fn can_run_deps_in_serial() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("dependsOn:serialDeps");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("depsA:standard").eval(&output));
-            assert!(predicate::str::contains("depsB:standard").eval(&output));
-            assert!(predicate::str::contains("depsC:standard").eval(&output));
-            assert!(predicate::str::contains("dependsOn:serialDeps").eval(&output));
-            assert!(predicate::str::contains("Tasks: 4 completed").eval(&output));
-        }
-
-        #[test]
-        fn generates_unique_hashes_for_each_target() {
-            let sandbox = create_cases_sandbox();
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:withDeps");
-            });
-
-            let as_dep = extract_hash_from_run(sandbox.path(), "outputs:asDep");
-            let with_deps = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
-
-            assert_ne!(as_dep, with_deps);
-        }
-
-        #[test]
-        fn changes_primary_hash_if_deps_hash_changes() {
-            let sandbox = create_cases_sandbox();
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:withDeps");
-            });
-
-            let h1 = extract_hash_from_run(sandbox.path(), "outputs:asDep");
-            let h2 = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
-
-            // Create an `inputs` file for `outputs:asDep`
-            sandbox.create_file("outputs/random.js", "");
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:withDeps");
-            });
-
-            let h3 = extract_hash_from_run(sandbox.path(), "outputs:asDep");
-            let h4 = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
-
-            // `random.js` is an input of `asDep` (`*.js`), so its hash changes...
-            assert_ne!(h1, h3);
-            // ...but `withDeps` only hashes its own inputs (`*.mjs`), so its hash
-            // stays the same (matches the legacy snapshot behavior).
-            assert_eq!(h2, h4);
-        }
-
-        #[test]
-        fn can_depend_on_noop_task() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("dependsOn:depsOnNoop");
-            });
-
-            assert
-                .success()
-                .stderr(predicate::str::contains("Encountered a missing hash").not());
-        }
-
-        #[test]
-        fn can_depend_on_nocache_task() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("dependsOn:depsOnNoCache");
-            });
-
-            assert
-                .success()
-                .stderr(predicate::str::contains("Encountered a missing hash").not());
-        }
-
-        #[test]
-        fn can_depend_on_noop_and_nocache_task() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("dependsOn:depsOnNoopAndNoCache");
-            });
-
-            assert
-                .success()
-                .stderr(predicate::str::contains("Encountered a missing hash").not());
-        }
-    }
-
-    mod target_scopes {
-        use super::*;
-
-        #[test]
-        fn errors_for_deps_scope() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("^:test");
-            });
-
-            assert.failure().stderr(predicate::str::contains(
-                "Dependencies scope (^:) is not supported in run contexts.",
-            ));
-        }
-
-        #[test]
-        fn errors_for_cwd() {
-            let sandbox = create_cases_sandbox();
-
-            fs::create_dir(sandbox.path().join("fakeDir")).unwrap();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("~:taskName")
-                    .current_dir(sandbox.path().join("fakeDir"));
-            });
-
-            assert.failure().stderr(predicate::str::contains(
-                "No project could be located starting from path fakeDir.",
-            ));
-        }
-
-        #[test]
-        fn supports_all_scope() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg(":all");
-            });
-            let output = assert.output();
-
-            assert!(predicate::str::contains("targetScopeA:all").eval(&output));
-            assert!(predicate::str::contains("targetScopeB:all").eval(&output));
-            assert!(predicate::str::contains("targetScopeC:all").eval(&output));
-            assert!(predicate::str::contains("Tasks: 3 completed").eval(&output));
-        }
-
-        #[test]
-        fn supports_deps_scope_in_task() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("targetScopeA:deps");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("targetScopeA:deps").eval(&output));
-            assert!(predicate::str::contains("depsA:standard").eval(&output));
-            assert!(predicate::str::contains("depsB:standard").eval(&output));
-            assert!(predicate::str::contains("depsC:standard").eval(&output));
-            assert!(predicate::str::contains("Tasks: 4 completed").eval(&output));
-        }
-
-        #[test]
-        fn supports_self_scope_in_task() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("targetScopeB:self");
-            });
-            let output = assert.output();
-
-            assert!(predicate::str::contains("targetScopeB:self").eval(&output));
-            assert!(predicate::str::contains("scope=self").eval(&output));
-            assert!(predicate::str::contains("targetScopeB:selfOther").eval(&output));
-            assert!(predicate::str::contains("selfOther").eval(&output));
-            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_closest_project_task_from_cwd() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("~:runFromProject")
-                    .current_dir(sandbox.path().join("base"));
-            });
-            let output = assert.output();
-
-            assert!(predicate::str::contains("base:runFromProject").eval(&output));
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_multiple_tasks_from_cwd() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("~:runFromProject")
-                    .arg("~:runFromWorkspace")
-                    .current_dir(sandbox.path().join("base"));
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("base:runFromProject").eval(&output));
-            assert!(predicate::str::contains("base:runFromWorkspace").eval(&output));
-            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-        }
-
-        #[test]
-        fn can_mix_cwd_tasks_and_targets() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("~:runFromProject")
-                    .arg("noop:noop")
-                    .current_dir(sandbox.path().join("base"));
-            });
-            let output = assert.output();
-
-            assert!(predicate::str::contains("base:runFromProject").eval(&output));
-            assert!(predicate::str::contains("noop:noop").eval(&output));
-            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_in_projects_with_tag() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("#standard:standard");
-            });
-            let output = assert.output();
-
-            assert!(predicate::str::contains("base:standard").eval(&output));
-            assert!(predicate::str::contains("dependsOn:standard").eval(&output));
-            assert!(predicate::str::contains("depsA:standard").eval(&output));
-            assert!(predicate::str::contains("depsB:standard").eval(&output));
-            assert!(predicate::str::contains("depsC:standard").eval(&output));
-            assert!(predicate::str::contains("Tasks: 5 completed").eval(&output));
-        }
-    }
-
-    mod hashing {
-        use super::*;
-        use moon_config::{HasherWalkStrategy, PartialHasherConfig};
-
-        #[test]
-        fn generates_diff_hashes_from_inputs() {
-            let sandbox = create_cases_sandbox();
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:noOutput");
-            });
-
-            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:noOutput");
-            });
-
-            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-            assert_eq!(hash1, hash2);
-        }
-
-        #[test]
-        fn tracks_input_changes_for_env_files() {
-            let sandbox = create_cases_sandbox();
-
-            sandbox.create_file("outputs/.env", "FOO=123");
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:envFile");
-            });
-
-            let hash1 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:envFile");
-            });
-
-            let hash2 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
-
-            assert_eq!(hash1, hash2);
-
-            sandbox.create_file("outputs/.env", "FOO=456");
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:envFile");
-            });
-
-            let hash3 = extract_hash_from_run(sandbox.path(), "outputs:envFile");
-
-            assert_ne!(hash1, hash3);
-            assert_ne!(hash2, hash3);
-        }
-
-        #[test]
-        fn supports_diff_walking_strategies() {
-            let sandbox = create_cases_sandbox();
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:noOutput");
-            });
-
-            let hash_vcs = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-            // Run again with a different strategy
-            let sandbox = create_cases_sandbox_with_config(|workspace_config| {
-                workspace_config.hasher = Some(PartialHasherConfig {
-                    walk_strategy: Some(HasherWalkStrategy::Glob),
-                    ..PartialHasherConfig::default()
-                });
-            });
-
-            sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("outputs:noOutput");
-            });
-
-            let hash_glob = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-            // Hashes change because `.moon/workspace.yml` is different from `walk_strategy`
-            assert_ne!(hash_vcs, hash_glob);
-        }
-    }
 
     mod outputs {
         use super::*;
@@ -1954,252 +2497,6 @@ mod cases {
 
             assert!(!predicate::str::contains("cached").eval(&assert.output()));
         }
-
-        mod hydration {
-            use super::*;
-
-            #[test]
-            fn reuses_cache_from_previous_run() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-
-                assert_eq!(hash1, hash2);
-            }
-
-            #[test]
-            fn doesnt_keep_output_logs_in_project() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                assert!(!sandbox.path().join("outputs/stdout.log").exists());
-                assert!(!sandbox.path().join("outputs/stderr.log").exists());
-            }
-
-            #[test]
-            fn hydrates_missing_outputs_from_previous_run() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                // Remove outputs
-                fs::remove_dir_all(sandbox.path().join("outputs/both/a")).unwrap();
-                fs::remove_dir_all(sandbox.path().join("outputs/both/b")).unwrap();
-
-                assert!(!sandbox.path().join("outputs/both/a").exists());
-                assert!(!sandbox.path().join("outputs/both/b").exists());
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                // Outputs should come back
-                assert!(sandbox.path().join("outputs/both/a").exists());
-                assert!(sandbox.path().join("outputs/both/b").exists());
-            }
-
-            #[test]
-            fn hydrates_with_a_different_hash_cache() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                let hash1 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-                let contents1 =
-                    fs::read_to_string(sandbox.path().join("outputs/both/a/one.js")).unwrap();
-
-                // Create a file to trigger an inputs change
-                sandbox.create_file("outputs/trigger.js", "");
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                let hash2 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-                let contents2 =
-                    fs::read_to_string(sandbox.path().join("outputs/both/a/one.js")).unwrap();
-
-                // Hashes and contents should be different!
-                assert_ne!(hash1, hash2);
-                assert_ne!(contents1, contents2);
-
-                // Remove outputs
-                fs::remove_dir_all(sandbox.path().join("outputs/both/a")).unwrap();
-                fs::remove_dir_all(sandbox.path().join("outputs/both/b")).unwrap();
-
-                assert!(!sandbox.path().join("outputs/both/a").exists());
-                assert!(!sandbox.path().join("outputs/both/b").exists());
-
-                // Remove the trigger file
-                fs::remove_file(sandbox.path().join("outputs/trigger.js")).unwrap();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:generateFileAndFolder");
-                });
-
-                let hash3 = extract_hash_from_run(sandbox.path(), "outputs:generateFileAndFolder");
-                let contents3 =
-                    fs::read_to_string(sandbox.path().join("outputs/both/a/one.js")).unwrap();
-
-                // Hashes and contents should match the original!
-                assert_eq!(hash1, hash3);
-                assert_eq!(contents1, contents3);
-                assert_ne!(contents2, contents3);
-
-                // Outputs should come back
-                assert!(sandbox.path().join("outputs/both/a").exists());
-                assert!(sandbox.path().join("outputs/both/b").exists());
-            }
-
-            #[test]
-            fn ignores_files_negated_by_globs() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:negatedOutputGlob");
-                });
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:negatedOutputGlob");
-                });
-
-                assert!(sandbox.path().join("outputs/both/a/one.js").exists());
-
-                // Exists from first build and isn't deleted
-                assert!(sandbox.path().join("outputs/both/b/two.js").exists());
-            }
-        }
-
-        mod archiving {
-            use super::*;
-
-            #[test]
-            fn archives_non_build_tasks() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:noOutput");
-                });
-
-                let hash = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-                assert!(
-                    sandbox
-                        .path()
-                        .join(format!(".moon/cache/outputs/{hash}.tar.gz"))
-                        .exists()
-                );
-            }
-
-            #[test]
-            fn archives_std_output() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:noOutput");
-                });
-
-                assert_eq!(
-                    fs::read_to_string(
-                        sandbox
-                            .path()
-                            .join(".moon/cache/states/outputs/noOutput/stdout.log")
-                    )
-                    .unwrap(),
-                    "No outputs!"
-                );
-            }
-
-            #[test]
-            fn can_hydrate_archives() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:noOutput");
-                });
-
-                let hash1 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-                sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("outputs:noOutput");
-                });
-
-                let hash2 = extract_hash_from_run(sandbox.path(), "outputs:noOutput");
-
-                assert_eq!(hash1, hash2);
-            }
-        }
-    }
-
-    mod noop {
-        use super::*;
-
-        #[test]
-        fn runs_noop() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("noop:noop");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("noop:noop").eval(&output));
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_noop_deps() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("noop:noopWithDeps");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("outputs:generateFile").eval(&output));
-            assert!(predicate::str::contains("noop:noopWithDeps").eval(&output));
-            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-        }
-    }
-
-    mod root_level {
-        use super::*;
-
-        #[test]
-        fn runs_a_task() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("root:oneOff");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("root-one-off").eval(&output));
-        }
     }
 
     mod output_styles {
@@ -2283,361 +2580,6 @@ mod cases {
             assert!(predicate::str::contains("outputStyles:stream | stdout").eval(&output));
             assert!(predicate::str::contains("outputStyles:stream | stderr").eval(&output));
             assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-        }
-    }
-
-    mod affected {
-        use super::*;
-
-        #[test]
-        fn doesnt_run_if_not_affected() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("files:noop").arg("--affected");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("affected by changed files").eval(&output));
-        }
-
-        #[test]
-        fn doesnt_run_if_not_affected_by_multi_status() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("untracked")
-                    .arg("--status")
-                    .arg("deleted");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("affected by changed files").eval(&output));
-            assert!(predicate::str::contains("untracked").eval(&output));
-            assert!(predicate::str::contains("deleted").eval(&output));
-        }
-
-        #[test]
-        fn runs_if_forced() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("files:noop").arg("--force");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_if_not_affected_but_forced() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--force");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_if_affected() {
-            let sandbox = create_cases_sandbox();
-
-            change_files(&sandbox, ["files/other.txt"]);
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("files:noop").arg("--affected");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_if_affected_via_stdin() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--stdin")
-                    .write_stdin("files/other.txt");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn doesnt_run_affected_if_stdin_is_empty() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--stdin");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("affected by changed files").eval(&output));
-        }
-
-        #[test]
-        fn doesnt_run_affected_if_stdin_arg_is_not_passed() {
-            let sandbox = create_cases_sandbox();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    // .arg("--stdin")
-                    .write_stdin("files/other.txt");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("affected by changed files").eval(&output));
-        }
-
-        #[test]
-        fn runs_if_not_affected_but_a_dep_of_an_affected() {
-            let sandbox = create_cases_sandbox();
-
-            change_files(&sandbox, ["affected/primary.js"]);
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("affected:primaryWithDeps")
-                    .arg("--affected");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("affected:dep").eval(&output));
-            assert!(predicate::str::contains("affected:primaryWithDeps").eval(&output));
-            assert!(predicate::str::contains("Tasks: 2 completed").eval(&output));
-        }
-
-        #[test]
-        fn runs_if_affected_by_multi_status() {
-            let sandbox = create_cases_sandbox();
-
-            // Test modified
-            sandbox.create_file("files/file.txt", "modified");
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:affected")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("modified");
-            });
-
-            assert!(predicate::str::contains("\nfile.txt\n").eval(&assert.output()));
-
-            // Then test added
-            fs::remove_dir_all(sandbox.path().join(".moon/cache")).unwrap();
-
-            sandbox.create_file("files/other.txt", "added");
-            sandbox.run_git(|cmd| {
-                cmd.args(["add", "files/other.txt"]);
-            });
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:affected")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("added");
-            });
-
-            assert!(predicate::str::contains("\nother.txt\n").eval(&assert.output()));
-
-            // Then test both
-            fs::remove_dir_all(sandbox.path().join(".moon/cache")).unwrap();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:affected")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("modified")
-                    .arg("--status")
-                    .arg("added");
-            });
-            let envs = ["file.txt", "other.txt"].join(if cfg!(windows) { ";" } else { ":" });
-
-            assert!(predicate::str::contains(format!("\n{envs}\n")).eval(&assert.output()));
-        }
-
-        #[test]
-        fn doesnt_run_if_affected_but_wrong_status() {
-            let sandbox = create_cases_sandbox();
-
-            change_files(&sandbox, ["files/other.txt"]);
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("deleted");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("affected by changed files").eval(&output));
-            assert!(predicate::str::contains("deleted").eval(&output));
-        }
-
-        #[test]
-        fn handles_untracked() {
-            let sandbox = create_cases_sandbox();
-
-            sandbox.create_file("files/other.txt", "");
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("untracked");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn handles_added() {
-            let sandbox = create_cases_sandbox();
-
-            sandbox.create_file("files/other.txt", "");
-
-            sandbox.run_git(|cmd| {
-                cmd.args(["add", "files/other.txt"]);
-            });
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("added");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn handles_modified() {
-            let sandbox = create_cases_sandbox();
-
-            sandbox.create_file("files/file.txt", "modified");
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("modified");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        #[test]
-        fn handles_deleted() {
-            let sandbox = create_cases_sandbox();
-
-            fs::remove_file(sandbox.path().join("files/file.txt")).unwrap();
-
-            let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec")
-                    .arg("files:noop")
-                    .arg("--affected")
-                    .arg("--status")
-                    .arg("deleted");
-            });
-
-            let output = assert.output();
-
-            assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-        }
-
-        mod root_level {
-            use super::*;
-
-            #[test]
-            fn doesnt_run_if_not_affected() {
-                let sandbox = create_cases_sandbox();
-
-                let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("root:noop").arg("--affected");
-                });
-
-                let output = assert.output();
-
-                assert!(predicate::str::contains("affected by changed files").eval(&output));
-            }
-
-            #[test]
-            fn runs_if_affected() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.create_file("tsconfig.json", "{}");
-
-                let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec").arg("root:noop").arg("--affected");
-                });
-
-                let output = assert.output();
-
-                assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
-            }
-
-            #[test]
-            fn doesnt_run_if_affected_but_wrong_status() {
-                let sandbox = create_cases_sandbox();
-
-                sandbox.create_file("tsconfig.json", "{}");
-
-                let assert = sandbox.run_bin(|cmd| {
-                    cmd.arg("exec")
-                        .arg("root:noop")
-                        .arg("--affected")
-                        .arg("--status")
-                        .arg("deleted");
-                });
-
-                let output = assert.output();
-
-                assert!(predicate::str::contains("affected by changed files").eval(&output));
-                assert!(predicate::str::contains("deleted").eval(&output));
-            }
         }
     }
 
@@ -2958,7 +2900,7 @@ mod cases {
                 .success();
 
             assert_eq!(
-                fs::read_to_string(sandbox.path().join("task-script/file.txt")).unwrap(),
+                fs::read_file(sandbox.path().join("task-script/file.txt")).unwrap(),
                 "contents\n"
             );
         }

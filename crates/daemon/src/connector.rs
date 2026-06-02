@@ -3,6 +3,7 @@ use moon_daemon_client::DaemonClient;
 use moon_daemon_utils::{endpoint::*, sys::*};
 use std::io::Error;
 use std::path::PathBuf;
+use std::process::Child;
 use std::time::Duration;
 use tokio::time::{Instant, sleep};
 use tracing::{debug, instrument, trace, warn};
@@ -88,7 +89,7 @@ impl DaemonConnector {
             .env("MOON_DAEMON_RUNNING", "true")
             .current_dir(&self.workspace_root);
 
-        let child = command.spawn().map_err(|error| DaemonError::StartFailed {
+        let mut child = command.spawn().map_err(|error| DaemonError::StartFailed {
             error: Box::new(error),
         })?;
 
@@ -96,7 +97,7 @@ impl DaemonConnector {
 
         debug!(pid, "Daemon process spawned, waiting for readiness");
 
-        self.wait_for_ready(pid).await?;
+        self.wait_for_ready(&mut child).await?;
 
         debug!(pid, "Daemon is ready");
 
@@ -167,13 +168,49 @@ impl DaemonConnector {
     }
 
     #[instrument(skip(self))]
-    async fn wait_for_ready(&self, expected_pid: u32) -> miette::Result<()> {
+    async fn wait_for_ready(&self, child: &mut Child) -> miette::Result<()> {
+        let expected_pid = child.id();
         let pid_path = get_pid_path(&self.daemon_dir);
         let deadline = Instant::now() + STARTUP_TIMEOUT;
 
         while Instant::now() < deadline {
-            // Check that the child is still alive
-            if !is_process_alive(expected_pid) {
+            // Check for the PID file written by the server. This is useful
+            // for diagnostics, but the endpoint must accept connections
+            // before the daemon is actually ready.
+            if let Some(pid) = read_pid(&pid_path)
+                && pid == expected_pid
+            {
+                trace!(pid, "Daemon PID file detected");
+            }
+
+            // The spawned process may not be the final daemon process on
+            // Windows if the CLI delegates from a global binary to a local one.
+            if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
+                trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
+
+                return Ok(());
+            }
+
+            // Check that the direct child is still alive. This avoids an
+            // OpenProcess false negative on Windows for a process we spawned.
+            if child
+                .try_wait()
+                .map_err(|error| DaemonError::StartFailed {
+                    error: Box::new(error),
+                })?
+                .is_some()
+            {
+                // If another process won a concurrent daemon startup race,
+                // reuse it instead of failing this process.
+                if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
+                    trace!(
+                        pid = expected_pid,
+                        "Spawned daemon exited, but another daemon is ready"
+                    );
+
+                    return Ok(());
+                }
+
                 return Err(DaemonError::StartFailed {
                     error: Box::new(Error::other(
                         "Daemon process exited unexpectedly during startup",
@@ -182,28 +219,13 @@ impl DaemonConnector {
                 .into());
             }
 
-            // Check for the PID file written by the server
-            if let Some(pid) = read_pid(&pid_path)
-                && pid == expected_pid
-            {
-                trace!(pid, "Daemon PID file detected, daemon is ready");
-
-                return Ok(());
-            }
-
             sleep(POLL_INTERVAL).await;
         }
 
         // Final check: the tokio runtime may have been busy, causing sleep
         // to overshoot the deadline even though the daemon started in time
-        if is_process_alive(expected_pid)
-            && let Some(pid) = read_pid(&pid_path)
-            && pid == expected_pid
-        {
-            trace!(
-                pid,
-                "Daemon PID file detected (after deadline), daemon is ready"
-            );
+        if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
+            trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
 
             return Ok(());
         }

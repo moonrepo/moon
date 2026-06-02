@@ -60,9 +60,11 @@ pub fn create_hash_and_return_lock(
     let hash = hasher.generate_hash()?;
     let manifest_path = app_context.cache_engine.hash.get_manifest_path(&hash);
 
-    let lock = app_context
+    let mut lock = app_context
         .cache_engine
         .create_lock(format!("{}-{hash}", action.get_prefix()))?;
+
+    lock.remove_on_unlock();
 
     app_context.cache_engine.hash.save_manifest(&mut hasher)?;
 
@@ -83,9 +85,11 @@ pub fn create_hash_and_return_lock_if_changed(
     let hash = hasher.generate_hash()?;
     let manifest_path = app_context.cache_engine.hash.get_manifest_path(&hash);
 
-    let lock = app_context
+    let mut lock = app_context
         .cache_engine
         .create_lock(format!("{}-{hash}", action.get_prefix()))?;
+
+    lock.remove_on_unlock();
 
     // If the hash manifest exists, then it has run before. Check this after
     // locking so that concurrent processes wait for in-progress actions.

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Reworked the daemon connect/ready logic to possibly fix some Windows connection issues.
+- Fixed an issue where locks created at `.moon/cache/locks` would not be cleaned up.
+  - You'll need to manually clear this folder if you have stale locks.
+
 ## 2.3.0
 
 #### 🚀 Updates

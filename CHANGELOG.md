@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated plugin distribution to use ghcr.io instead of raw URLs, which should improve reliability
+  and performance of plugin downloads.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.57.4](https://github.com/moonrepo/proto/releases/tag/v0.57.4) from 0.57.3.
+
 ## 2.3.0
 
 #### 🚀 Updates

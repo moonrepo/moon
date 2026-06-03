@@ -389,5 +389,9 @@ impl Cli {
             bag.set("EXTISM_MEMDUMP", "wasm-plugin.mem");
             bag.set("EXTISM_COREDUMP", "wasm-plugin.core");
         }
+
+        if let Some(value) = bag.get("MOON_PLUGINS_USE_URL_DIST") {
+            bag.set("PROTO_PLUGINS_USE_URL_DIST", value);
+        }
     }
 }

@@ -21,7 +21,7 @@ pub async fn restart(session: MoonSession) -> AppResult {
 
     connector.stop_daemon().await?;
 
-    let pid = connector.start_daemon().await?;
+    let pid = connector.start_daemon(true).await?;
     let message = format!("Daemon has been restarted with process ID {pid}");
 
     session.console.render(element! {

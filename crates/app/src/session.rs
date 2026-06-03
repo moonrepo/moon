@@ -415,7 +415,7 @@ impl AppSession for MoonSession {
 
         // Start the daemon in the background
         if self.workspace_config.daemon && is_exec_command {
-            self.get_daemon_connector()?.start_daemon().await?;
+            self.get_daemon_connector()?.start_daemon(false).await?;
         }
 
         Ok(None)

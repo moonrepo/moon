@@ -6,7 +6,7 @@ use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
-use proto_core::flow::locate::{Locator, LocatorResponse};
+use proto_core::flow::locate::Locator;
 use proto_core::flow::manage::Manager;
 use proto_core::flow::resolve::Resolver;
 use proto_core::{
@@ -30,11 +30,9 @@ pub struct ToolchainPlugin {
     pub metadata: ToolchainMetadata,
 
     plugin: Arc<PluginContainer>,
-
-    #[allow(dead_code)]
     tool: Option<RwLock<Tool>>,
 
-    locations_cache: scc::HashMap<ToolSpec, LocatorResponse>,
+    globals_cache: scc::HashMap<VersionSpec, Option<PathBuf>>,
 }
 
 #[async_trait]
@@ -68,7 +66,7 @@ impl Plugin for ToolchainPlugin {
             },
             id: registration.id,
             locator: registration.locator,
-            locations_cache: scc::HashMap::new(),
+            globals_cache: scc::HashMap::new(),
             metadata,
             plugin,
         })
@@ -84,29 +82,23 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
-    async fn cache_locations(
-        &self,
-        tool: &Tool,
-        spec: &ToolSpec,
-    ) -> miette::Result<LocatorResponse> {
-        match self.locations_cache.entry_async(spec.to_owned()).await {
-            Entry::Occupied(entry) => Ok(entry.get().to_owned()),
-            Entry::Vacant(entry) => {
-                let locations = Locator::locate(tool, spec).await?;
-                entry.insert_entry(locations.clone());
-                Ok(locations)
-            }
-        }
-    }
-
-    async fn cache_location_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
+    async fn cache_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
         if let Some(tool) = &self.tool {
             let tool = tool.read().await;
+            let spec = ToolSpec::default();
 
-            return Ok(self
-                .cache_locations(&tool, &ToolSpec::default())
-                .await?
-                .globals_dir);
+            return match self
+                .globals_cache
+                .entry_async(spec.to_resolved_spec())
+                .await
+            {
+                Entry::Occupied(entry) => Ok(entry.get().to_owned()),
+                Entry::Vacant(entry) => {
+                    let locations = Locator::new(&tool, &spec).locate_globals_dir().await?;
+                    entry.insert_entry(locations.clone());
+                    Ok(locations)
+                }
+            };
         }
 
         Ok(None)
@@ -176,7 +168,7 @@ impl ToolchainPlugin {
 
             Resolver::resolve(&tool, &mut spec, false).await?;
 
-            let locations = self.cache_locations(&tool, &spec).await?;
+            let locations = Locator::locate(&tool, &spec).await?;
 
             if let Some(dir) = locations.exe_file.parent() {
                 paths.insert(dir.to_path_buf());
@@ -351,7 +343,7 @@ impl ToolchainPlugin {
         mut input: ExtendTaskCommandInput,
     ) -> miette::Result<ExtendCommandOutput> {
         input.globals_dir = self
-            .cache_location_globals_dir()
+            .cache_globals_dir()
             .await?
             .map(|dir| self.to_virtual_path(dir));
 
@@ -369,7 +361,7 @@ impl ToolchainPlugin {
         mut input: ExtendTaskScriptInput,
     ) -> miette::Result<ExtendTaskScriptOutput> {
         input.globals_dir = self
-            .cache_location_globals_dir()
+            .cache_globals_dir()
             .await?
             .map(|dir| self.to_virtual_path(dir));
 
@@ -501,7 +493,7 @@ impl ToolchainPlugin {
         mut input: SetupEnvironmentInput,
     ) -> miette::Result<SetupEnvironmentOutput> {
         input.globals_dir = self
-            .cache_location_globals_dir()
+            .cache_globals_dir()
             .await?
             .map(|dir| self.to_virtual_path(dir));
 

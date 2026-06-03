@@ -4,6 +4,7 @@
 
 #### 🚀 Updates
 
+- Added in-memory caching to certain toolchain operations, primarily around locating executables.
 - Updated plugin distribution to use ghcr.io instead of raw URLs, which should improve reliability
   and performance of plugin downloads.
 

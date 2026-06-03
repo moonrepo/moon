@@ -120,7 +120,8 @@ impl CacheEngine {
             bytes_saved: 0,
         };
 
-        let mut dirs = vec![&self.hash.hashes_dir, &self.hash.outputs_dir];
+        let locks_dir = self.cache_dir.join("locks");
+        let mut dirs = vec![&self.hash.hashes_dir, &self.hash.outputs_dir, &locks_dir];
 
         if all {
             dirs.push(&self.state.states_dir);

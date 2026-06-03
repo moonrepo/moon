@@ -22,6 +22,7 @@ pr-run-mode = "upload"
 publish-jobs = ["./release-npm"]
 allow-dirty = ["ci"]
 
+# We use older macos/ubuntu runners for libc compat!
 [dist.github-custom-runners]
 aarch64-apple-darwin = "depot-macos-14"
 x86_64-unknown-linux-gnu = "depot-ubuntu-22.04-8"

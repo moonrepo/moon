@@ -55,6 +55,30 @@ fn map_notify_error(error: notify_debouncer_full::notify::Error) -> DaemonServer
     }
 }
 
+fn create_file_event(workspace_root: &Path, path: &Path, kind: EventKind) -> Option<FileEvent> {
+    if is_ignored(path) {
+        return None;
+    }
+
+    let path_relative = match path.relative_to(workspace_root) {
+        Ok(path) => path,
+        Err(error) => {
+            warn!(
+                path = ?path,
+                "Ignoring file watcher event that cannot be converted to a relative path: {error}"
+            );
+
+            return None;
+        }
+    };
+
+    Some(FileEvent {
+        path_original: path.to_owned(),
+        path: path_relative,
+        kind,
+    })
+}
+
 /// Start watching the workspace root for file changes.
 ///
 /// File events are debounced and broadcast on `event_tx`. The watcher
@@ -91,26 +115,20 @@ pub async fn start_file_watcher(
                     Ok(events) => {
                         for event in events {
                             for path in &event.paths {
-                                if is_ignored(path) {
-                                    continue;
-                                }
+                                if let Some(file_event) =
+                                    create_file_event(&workspace_root, path, event.kind)
+                                {
+                                    // We only care about mutations, not access, etc
+                                    if file_event.is_mutated() {
+                                        trace!(
+                                            path = ?file_event.path,
+                                            kind = ?file_event.kind,
+                                            "File change event",
+                                        );
 
-                                let file_event = FileEvent {
-                                    path_original: path.clone(),
-                                    path: path.relative_to(&workspace_root).unwrap(),
-                                    kind: event.kind,
-                                };
-
-                                // We only care about mutations, not access, etc
-                                if file_event.is_mutated() {
-                                    trace!(
-                                        path = ?file_event.path,
-                                        kind = ?file_event.kind,
-                                        "File change event",
-                                    );
-
-                                    // Ignore send failures
-                                    let _ = event_tx.send(file_event);
+                                        // Ignore send failures
+                                        let _ = event_tx.send(file_event);
+                                    }
                                 }
                             }
                         }
@@ -226,5 +244,28 @@ mod tests {
         assert!(!is_ignored(&PathBuf::from(
             "/workspace/.moon/workspace.yml"
         )));
+    }
+
+    #[test]
+    fn creates_workspace_relative_file_event() {
+        let event = create_file_event(
+            Path::new("/workspace"),
+            Path::new("/workspace/src/main.rs"),
+            EventKind::Any,
+        )
+        .unwrap();
+
+        assert_eq!(event.path.as_str(), "src/main.rs");
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn skips_file_event_with_invalid_utf8_path() {
+        use std::ffi::OsStr;
+        use std::os::unix::ffi::OsStrExt;
+
+        let path = PathBuf::from(OsStr::from_bytes(b"/workspace/src/\xFF.rs"));
+
+        assert!(create_file_event(Path::new("/workspace"), &path, EventKind::Any,).is_none());
     }
 }

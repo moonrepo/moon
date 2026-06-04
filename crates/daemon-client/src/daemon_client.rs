@@ -50,7 +50,14 @@ impl DaemonClient {
     pub async fn test_connection(daemon_dir: &Path) -> bool {
         let endpoint = get_endpoint(daemon_dir);
 
-        connect_channel(&endpoint).await.is_ok()
+        let Ok(channel) = connect_channel(&endpoint).await else {
+            return false;
+        };
+
+        MoonDaemonClient::new(channel)
+            .status(StatusRequest {})
+            .await
+            .is_ok()
     }
 
     #[instrument(skip(self))]

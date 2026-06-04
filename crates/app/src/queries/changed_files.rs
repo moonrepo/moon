@@ -225,7 +225,8 @@ pub async fn query_changed_files_for_affected(
     let mut options = QueryChangedFilesOptions {
         default_branch: ci,
         local: !ci,
-        stdin: true,
+        // Only auto-read stdin for piped input, otherwise interactive terminals hang waiting for EOF.
+        stdin: !stdin().is_terminal(),
         ..Default::default()
     };
 

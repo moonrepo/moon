@@ -26,7 +26,7 @@ RUN moon docker setup --log debug
 COPY ./.moon/docker/sources .
 
 # Run something
-RUN moon run website:build --log debug
+RUN moon run website:build --log debug || (echo '=== daemon log ===' && cat .moon/cache/daemon/server.log; exit 1)
 
 # Prune workspace
 RUN moon docker prune --log debug

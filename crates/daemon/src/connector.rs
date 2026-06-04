@@ -5,6 +5,7 @@ use std::io::Error;
 use std::path::PathBuf;
 use std::process::Child;
 use std::time::Duration;
+use tokio::sync::Mutex;
 use tokio::time::{Instant, sleep};
 use tracing::{debug, instrument, trace, warn};
 
@@ -16,6 +17,13 @@ const POLL_INTERVAL: Duration = Duration::from_millis(150);
 
 /// Maximum time to wait for the daemon to shut down gracefully before killing.
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Process-wide single-flight for `start_daemon`. Without this, two
+/// concurrent callers (e.g. the background session and the action
+/// pipeline's `connect_to_daemon`) can both observe `is_running() == None`
+/// before the spawned daemon writes its PID file, both call
+/// `cleanup_daemon_files`, and both spawn — racing on the endpoint.
+static DAEMON_START_LOCK: Mutex<()> = Mutex::const_new(());
 
 pub struct DaemonConnector {
     pub daemon_dir: PathBuf,
@@ -32,11 +40,6 @@ impl DaemonConnector {
 
     #[instrument(skip(self))]
     pub async fn connect(&self) -> miette::Result<Option<DaemonClient>> {
-        // Ensure the server is running
-        if self.start_daemon(false).await?.is_none() {
-            return Ok(None);
-        }
-
         Ok(Some(DaemonClient::connect(&self.daemon_dir).await?))
     }
 
@@ -67,7 +70,15 @@ impl DaemonConnector {
 
     #[instrument(skip(self))]
     pub async fn start_daemon(&self, timeout: bool) -> miette::Result<Option<u32>> {
-        // If already running, return its PID
+        // Serialize concurrent start attempts within this process. Without
+        // this, two callers can both pass the `is_running` check, both
+        // `cleanup_daemon_files` (the second removing the first daemon's
+        // directory mid-startup), and both spawn — leaving them to race
+        // for the endpoint, with one failing to bind and exiting 1.
+        let _guard = DAEMON_START_LOCK.lock().await;
+
+        // Re-check under the lock: another caller may have just spawned and
+        // written the PID file while we were waiting.
         if let Some(pid) = self.is_running() {
             debug!(pid, "Daemon already running, skipping spawn");
 

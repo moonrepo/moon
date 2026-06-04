@@ -42,10 +42,7 @@ impl WorkspaceWatcher {
 
 #[async_trait]
 impl FileWatcher<AtomicDaemonState> for WorkspaceWatcher {
-    async fn on_init(&mut self, state: AtomicDaemonState) -> miette::Result<()> {
-        // Build the workspace graph on startup in a background thread
-        self.rebuild_graphs(&state).await?;
-
+    async fn on_init(&mut self, _state: AtomicDaemonState) -> miette::Result<()> {
         Ok(())
     }
 
@@ -58,8 +55,8 @@ impl FileWatcher<AtomicDaemonState> for WorkspaceWatcher {
             return Ok(());
         }
 
-        // Handle root `.prototools` changes
-        if event.path.as_str() == ".prototools" {
+        // Handle `.prototools` changes
+        if event.path.ends_with(".prototools") {
             self.reset_proto(&state).await?;
 
             return Ok(());

@@ -283,10 +283,18 @@ pub async fn start_daemon_server(
     info!(pid, endpoint, "Daemon server starting");
 
     #[cfg(unix)]
-    serve_unix(&endpoint, service, shutdown_signal).await?;
+    let res = serve_unix(&endpoint, service, shutdown_signal).await;
 
     #[cfg(windows)]
-    serve_windows(&endpoint, service, shutdown_signal).await?;
+    let res = serve_windows(&endpoint, service, shutdown_signal).await;
+
+    if let Err(error) = res {
+        error!("Daemon server failed: {error}");
+
+        cleanup_daemon_files(&daemon_dir)?;
+
+        return Ok(());
+    }
 
     // Wait for the file watcher and listener to finish
     match watcher_handle.await {

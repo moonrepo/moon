@@ -258,6 +258,10 @@ If you're using GitHub Actions as your CI provider, we suggest using our
 action will report the results of a [`moon ci`](../commands/ci) run to a pull request as a comment
 and workflow summary.
 
+When `moon ci` completes, moon writes the report to `.moon/cache/ciReport.json`. Other task
+execution commands, like `moon run`, `moon check`, and `moon exec`, write the same run report format
+to `.moon/cache/runReport.json`.
+
 ```yaml title=".github/workflows/ci.yml"
 # ...
 jobs:

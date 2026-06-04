@@ -10,6 +10,9 @@ environment, as it does all the heavy lifting necessary for effectively running 
 By default this will run all tasks that are affected by changed files and have the
 [`runInCI`](../config/project#runinci) task option enabled.
 
+After execution, moon writes the generated report to `.moon/cache/ciReport.json`. The non-CI task
+execution commands write the same report format to `.moon/cache/runReport.json`.
+
 ```shell
 $ moon ci
 ```

@@ -282,18 +282,11 @@ pub async fn start_daemon_server(
 
     info!(pid, endpoint, "Daemon server starting");
 
-    #[cfg(unix)]
-    let res = serve_unix(&endpoint, service, shutdown_signal).await;
-
-    #[cfg(windows)]
-    let res = serve_windows(&endpoint, service, shutdown_signal).await;
-
-    if let Err(error) = res {
+    if let Err(error) = serve(&endpoint, service, shutdown_signal).await {
         error!("Daemon server failed: {error}");
 
-        cleanup_daemon_files(&daemon_dir)?;
-
-        return Ok(());
+        watcher_handle.abort();
+        listener_handle.abort();
     }
 
     // Wait for the file watcher and listener to finish
@@ -348,6 +341,22 @@ fn remove_stale_endpoint(daemon_dir: &Path, endpoint: &str) -> miette::Result<()
     }
 
     Ok(())
+}
+
+pub async fn serve(
+    endpoint: &str,
+    service: DaemonService,
+    shutdown_signal: impl std::future::Future<Output = ()>,
+) -> miette::Result<()> {
+    #[cfg(unix)]
+    {
+        serve_unix(endpoint, service, shutdown_signal).await
+    }
+
+    #[cfg(windows)]
+    {
+        serve_windows(endpoint, service, shutdown_signal).await
+    }
 }
 
 #[cfg(unix)]

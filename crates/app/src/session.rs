@@ -7,7 +7,7 @@ use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_codegen::CodeGenerator;
-use moon_common::is_formatted_output;
+use moon_common::{is_docker, is_formatted_output, is_remote};
 use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
 use moon_config_loader::ConfigLoader;
 use moon_console::{Console, MoonReporter, create_console_theme};
@@ -128,7 +128,7 @@ impl MoonSession {
     }
 
     pub async fn connect_to_daemon(&self) -> miette::Result<Option<DaemonClient>> {
-        if !self.workspace_config.daemon || !self.is_pipeline_command() {
+        if !self.is_daemon_allowed() {
             return Ok(None);
         }
 
@@ -276,6 +276,10 @@ impl MoonSession {
             .map(Arc::clone)
     }
 
+    pub fn is_daemon_allowed(&self) -> bool {
+        self.workspace_config.daemon && self.is_pipeline_command() && !is_docker()
+    }
+
     pub fn is_pipeline_command(&self) -> bool {
         matches!(
             self.cli.command,
@@ -405,14 +409,14 @@ impl AppSession for MoonSession {
 
         analyze::extract_repo_info(&vcs).await?;
 
-        // Preload
+        // Preload components
         if self.requires_workspace_configured() {
             let _ = self.get_cache_engine()?;
+        }
 
-            // Start the daemon in the background
-            if self.workspace_config.daemon && self.is_pipeline_command() {
-                self.get_daemon_connector()?.start_daemon(false).await?;
-            }
+        // Start the daemon in the background
+        if self.is_daemon_allowed() {
+            self.get_daemon_connector()?.start_daemon(false).await?;
         }
 
         Ok(None)
@@ -429,6 +433,13 @@ impl AppSession for MoonSession {
     }
 
     async fn shutdown(&mut self) -> AppResult {
+        // Stop the daemon if it's running
+        if is_remote()
+            && let Some(mut daemon) = self.connect_to_daemon().await?
+        {
+            daemon.stop().await?;
+        }
+
         // Ensure all child processes have finished running
         ProcessRegistry::instance()
             .wait_for_running_to_shutdown()

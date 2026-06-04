@@ -9,7 +9,7 @@ use tracing::debug;
 pub fn get_endpoint(daemon_dir: &Path) -> String {
     #[cfg(unix)]
     {
-        daemon_dir.join("moond.sock").to_string_lossy().into_owned()
+        get_sock_path(daemon_dir).to_string_lossy().into_owned()
     }
 
     #[cfg(windows)]
@@ -21,6 +21,10 @@ pub fn get_endpoint(daemon_dir: &Path) -> String {
 
         format!(r"\\.\pipe\moon-daemon-{hash}")
     }
+}
+
+pub fn get_sock_path(daemon_dir: &Path) -> PathBuf {
+    daemon_dir.join("moond.sock")
 }
 
 pub fn get_pid_path(daemon_dir: &Path) -> PathBuf {
@@ -39,7 +43,8 @@ pub fn write_pid(pid_path: &Path, pid: u32) -> Result<(), FsError> {
 pub fn cleanup_daemon_files(daemon_dir: &Path) -> Result<(), FsError> {
     debug!(daemon_dir = ?daemon_dir, "Cleaning daemon files");
 
-    fs::remove_dir_all(daemon_dir)?;
+    fs::remove_file(get_pid_path(daemon_dir))?;
+    fs::remove_file(get_sock_path(daemon_dir))?;
 
     Ok(())
 }

@@ -435,10 +435,10 @@ impl AppSession for MoonSession {
     }
 
     async fn shutdown(&mut self) -> AppResult {
+        let is_local_debug_or_remote = cfg!(debug_assertions) || is_remote();
+
         // Stop the daemon if it's running
-        if is_remote()
-            && let Ok(Some(mut daemon)) = self.connect_to_daemon().await
-        {
+        if is_local_debug_or_remote && let Ok(Some(mut daemon)) = self.connect_to_daemon().await {
             daemon.stop().await?;
         }
 

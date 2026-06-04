@@ -56,9 +56,8 @@ We also suggest using our
 action. This action will report the results of a [`moon ci`](../commands/ci) run to a pull request
 as a comment and workflow summary.
 
-When `moon ci` completes, moon writes the report to `.moon/cache/ciReport.json`. Other task
-execution commands, like `moon run`, `moon check`, and `moon exec`, write the same run report format
-to `.moon/cache/runReport.json`.
+For the generated report file locations and caching caveats, refer to the
+[`moon ci` reports documentation](../commands/ci#reports).
 
 ```yaml title=".github/workflows/ci.yml"
 # ...

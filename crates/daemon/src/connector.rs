@@ -177,23 +177,11 @@ impl DaemonConnector {
         let deadline = Instant::now() + STARTUP_TIMEOUT;
 
         while Instant::now() < deadline {
-            // The spawned process may not be the final daemon process on
-            // Windows if the CLI delegates from a global binary to a local one.
-            if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
-                trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
-
-                return Ok(Some(expected_pid));
-            }
-
             // Check that the direct child is still alive. This avoids an
             // OpenProcess false negative on Windows for a process we spawned.
-            if child
-                .try_wait()
-                .map_err(|error| DaemonError::StartFailed {
-                    error: Box::new(error),
-                })?
-                .is_some()
-            {
+            if let Some(status) = child.try_wait().map_err(|error| DaemonError::StartFailed {
+                error: Box::new(error),
+            })? {
                 // If another process won a concurrent daemon startup race,
                 // reuse it instead of failing this process.
                 if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
@@ -209,11 +197,19 @@ impl DaemonConnector {
                 }
 
                 return Err(DaemonError::StartFailed {
-                    error: Box::new(Error::other(
-                        "Daemon process exited unexpectedly during startup",
-                    )),
+                    error: Box::new(Error::other(format!(
+                        "Daemon process exited unexpectedly during startup ({status})"
+                    ))),
                 }
                 .into());
+            }
+
+            // The spawned process may not be the final daemon process on
+            // Windows if the CLI delegates from a global binary to a local one.
+            if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
+                trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
+
+                return Ok(Some(expected_pid));
             }
 
             sleep(POLL_INTERVAL).await;

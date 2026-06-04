@@ -262,7 +262,7 @@ impl Task {
     }
 
     pub fn has_outputs(&self) -> bool {
-        !self.output_files.is_empty() || !self.output_globs.is_empty()
+        !self.outputs.is_empty() || !self.output_files.is_empty() || !self.output_globs.is_empty()
     }
 
     /// Return a list of all workspace-relative output files.

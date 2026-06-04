@@ -11,7 +11,12 @@
 #### 🐞 Fixes
 
 - Reworked the daemon connect/ready logic to possibly fix some Windows connection issues.
+- Fixed an issue where the task dependency `cacheStrategy` inferrence was not working correctly
+  based on what experiments are enabled.
 - Fixed an issue where locks created at `.moon/cache/locks` would not be cleaned up.
+- Fixed an issue where a task dependency that declares `outputs` would default to a `cacheStrategy`
+  of `ignored` instead of `hash`, causing the dependent task to serve stale cache hits when the
+  dependency's outputs changed.
 
 #### ⚙️ Internal
 

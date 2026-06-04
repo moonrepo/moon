@@ -276,6 +276,17 @@ impl MoonSession {
             .map(Arc::clone)
     }
 
+    pub fn is_pipeline_command(&self) -> bool {
+        matches!(
+            self.cli.command,
+            Commands::Ci(_)
+                | Commands::Check(_)
+                | Commands::Exec(_)
+                | Commands::Run(_)
+                | Commands::Sync { .. }
+        )
+    }
+
     pub fn is_telemetry_enabled(&self) -> bool {
         self.workspace_config.telemetry
     }
@@ -397,30 +408,21 @@ impl AppSession for MoonSession {
         // Preload
         if self.requires_workspace_configured() {
             let _ = self.get_cache_engine()?;
+
+            // Start the daemon in the background
+            if self.workspace_config.daemon && self.is_pipeline_command() {
+                self.get_daemon_connector()?.start_daemon(false).await?;
+            }
         }
 
         Ok(None)
     }
 
     async fn execute(&mut self) -> AppResult {
-        let is_exec_command = matches!(
-            self.cli.command,
-            Commands::Ci(_)
-                | Commands::Check(_)
-                | Commands::Exec(_)
-                | Commands::Run(_)
-                | Commands::Sync { .. }
-        );
-
         // Check for a new version and log to the console
-        if self.is_telemetry_enabled() && is_exec_command {
+        if self.is_telemetry_enabled() && self.is_pipeline_command() {
             execute::check_for_new_version(&self, &self.toolchains_config.moon.manifest_url)
                 .await?;
-        }
-
-        // Start the daemon in the background
-        if self.workspace_config.daemon && is_exec_command {
-            self.get_daemon_connector()?.start_daemon(false).await?;
         }
 
         Ok(None)

@@ -1793,9 +1793,10 @@ mod exec {
 
             // `random.js` is an input of `asDep` (`*.js`), so its hash changes...
             assert_ne!(h1, h3);
-            // ...but `withDeps` only hashes its own inputs (`*.mjs`), so its hash
-            // stays the same (matches the legacy snapshot behavior).
-            assert_eq!(h2, h4);
+            // ...and since `asDep` declares `outputs`, the `withDeps -> asDep`
+            // dependency defaults to a `hash` cache strategy, so `asDep`'s hash
+            // change propagates into `withDeps`'s hash as well.
+            assert_ne!(h2, h4);
         }
 
         #[test]

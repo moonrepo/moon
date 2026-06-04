@@ -16,7 +16,11 @@ pub async fn start(session: MoonSession) -> AppResult {
         return Ok(None);
     }
 
-    let pid = session.get_daemon_connector()?.start_daemon(true).await?;
+    let pid = session
+        .get_daemon_connector()?
+        .start_daemon(true)
+        .await?
+        .unwrap_or_default();
 
     session.console.render(element! {
         Container {

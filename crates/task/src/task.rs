@@ -292,7 +292,7 @@ impl Task {
 
     /// Return true if the task is a "build" type.
     pub fn is_build_type(&self) -> bool {
-        matches!(self.type_of, TaskType::Build) || !self.outputs.is_empty()
+        matches!(self.type_of, TaskType::Build) || self.has_outputs()
     }
 
     /// Return true if the task has been expanded.

@@ -20,7 +20,19 @@ pub async fn status(session: MoonSession) -> AppResult {
         return Ok(None);
     }
 
-    let status = connector.connect().await?.status().await?;
+    let Some(mut client) = connector.connect().await? else {
+        session.console.render(element! {
+            Container {
+                Notice(variant: Variant::Caution) {
+                    StyledText(content: "Unable to connect to the daemon")
+                }
+            }
+        })?;
+
+        return Ok(None);
+    };
+
+    let status = client.status().await?;
 
     session.console.render(element! {
         Container {

@@ -132,7 +132,7 @@ impl MoonSession {
 
         let client = self.get_daemon_connector()?.connect().await?;
 
-        Ok(Some(client))
+        Ok(client)
     }
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {

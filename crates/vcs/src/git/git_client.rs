@@ -75,8 +75,7 @@ impl Git {
         let workspace_root = workspace_root.as_ref();
 
         let mut process = ProcessCache::new("git", workspace_root);
-        // Temporarily disabled!
-        // process.env.insert("GIT_OPTIONAL_LOCKS".into(), "0".into());
+        process.env.insert("GIT_OPTIONAL_LOCKS".into(), "0".into());
         process.env.insert("GIT_PAGER".into(), "".into());
 
         debug!(

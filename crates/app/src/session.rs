@@ -128,7 +128,7 @@ impl MoonSession {
     }
 
     pub async fn connect_to_daemon(&self) -> miette::Result<Option<DaemonClient>> {
-        if !self.workspace_config.daemon {
+        if !self.workspace_config.daemon || !self.is_pipeline_command() {
             return Ok(None);
         }
 

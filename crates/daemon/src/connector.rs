@@ -195,7 +195,7 @@ impl DaemonConnector {
             })? {
                 // If another process won a concurrent daemon startup race,
                 // reuse it instead of failing this process.
-                if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
+                if DaemonClient::test_connection(&self.daemon_dir).await {
                     let pid = read_pid(&pid_path);
 
                     trace!(
@@ -217,7 +217,7 @@ impl DaemonConnector {
 
             // The spawned process may not be the final daemon process on
             // Windows if the CLI delegates from a global binary to a local one.
-            if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
+            if DaemonClient::test_connection(&self.daemon_dir).await {
                 trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
 
                 return Ok(Some(expected_pid));
@@ -228,7 +228,7 @@ impl DaemonConnector {
 
         // Final check: the tokio runtime may have been busy, causing sleep
         // to overshoot the deadline even though the daemon started in time
-        if DaemonClient::connect(&self.daemon_dir).await.is_ok() {
+        if DaemonClient::test_connection(&self.daemon_dir).await {
             trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
 
             return Ok(Some(expected_pid));

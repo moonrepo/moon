@@ -147,6 +147,12 @@ pub async fn start_file_listener<T: Clone + Send + 'static>(
 ) {
     debug!("File listener started");
 
+    for watcher in watchers.iter_mut() {
+        if let Err(error) = watcher.on_init(state.clone()).await {
+            error!("System watcher error: {error}");
+        }
+    }
+
     loop {
         tokio::select! {
             result = event_rx.recv() => {

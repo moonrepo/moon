@@ -42,6 +42,13 @@ impl WorkspaceWatcher {
 
 #[async_trait]
 impl FileWatcher<AtomicDaemonState> for WorkspaceWatcher {
+    async fn on_init(&mut self, state: AtomicDaemonState) -> miette::Result<()> {
+        // Build the workspace graph on startup in a background thread
+        self.rebuild_graphs(&state).await?;
+
+        Ok(())
+    }
+
     async fn on_file_event(
         &mut self,
         state: AtomicDaemonState,

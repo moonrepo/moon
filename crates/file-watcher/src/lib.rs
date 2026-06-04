@@ -28,6 +28,7 @@ impl FileEvent {
 
 #[async_trait]
 pub trait FileWatcher<T>: Send + Sync {
+    async fn on_init(&mut self, state: T) -> miette::Result<()>;
     async fn on_file_event(&mut self, state: T, event: &FileEvent) -> miette::Result<()>;
 }
 

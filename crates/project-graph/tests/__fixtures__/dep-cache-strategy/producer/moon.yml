@@ -1,0 +1,7 @@
+tasks:
+  build:
+    command: 'noop'
+    outputs:
+      - 'out.txt'
+  lint:
+    command: 'noop'

@@ -896,6 +896,32 @@ mod project_graph {
     mod dependencies {
         use super::*;
 
+        fn dep_with_strategy(
+            target: &str,
+            strategy: TaskDependencyCacheStrategy,
+        ) -> TaskDependencyConfig {
+            TaskDependencyConfig {
+                cache_strategy: Some(strategy),
+                ..TaskDependencyConfig::new(Target::parse(target).unwrap())
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn defaults_cache_strategy_from_dep_outputs() {
+            let (_sandbox, graph) = build_graph_from_fixture("dep-cache-strategy").await;
+            let task = graph.get_task_from_project("consumer", "check").unwrap();
+
+            // A dependency that declares `outputs` defaults to `hash`, while a
+            // dependency without outputs defaults to `ignored`.
+            assert_eq!(
+                task.deps,
+                [
+                    dep_with_strategy("producer:build", TaskDependencyCacheStrategy::Hash),
+                    dep_with_strategy("producer:lint", TaskDependencyCacheStrategy::Ignored),
+                ]
+            );
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn lists_ids_of_dependencies() {
             let (_sandbox, graph) = build_graph_from_fixture("dependencies").await;

@@ -7,7 +7,9 @@ pub async fn server(session: MoonSession) -> AppResult {
     start_daemon_server(
         DaemonState {
             app_context: session.get_app_context().await?,
-            workspace_graph: session.get_workspace_graph().await?,
+            // Loaded in the background within the workspace watcher,
+            // otherwise it causes this command to block for too long
+            workspace_graph: Default::default(),
         },
         vec![Box::new(WorkspaceWatcher::new(session))],
     )

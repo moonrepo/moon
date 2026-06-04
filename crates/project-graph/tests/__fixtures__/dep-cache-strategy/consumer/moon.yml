@@ -1,0 +1,6 @@
+tasks:
+  check:
+    command: 'noop'
+    deps:
+      - 'producer:build'
+      - 'producer:lint'

@@ -3,7 +3,9 @@ use moon_daemon_client::DaemonClient;
 use moon_daemon_utils::{endpoint::*, sys::*};
 use std::io::Error;
 use std::path::PathBuf;
+use std::process::Child;
 use std::time::Duration;
+use tokio::sync::Mutex;
 use tokio::time::{Instant, sleep};
 use tracing::{debug, instrument, trace, warn};
 
@@ -15,6 +17,13 @@ const POLL_INTERVAL: Duration = Duration::from_millis(150);
 
 /// Maximum time to wait for the daemon to shut down gracefully before killing.
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
+
+/// Process-wide single-flight for `start_daemon`. Without this, two
+/// concurrent callers (e.g. the background session and the action
+/// pipeline's `connect_to_daemon`) can both observe `is_running() == None`
+/// before the spawned daemon writes its PID file, both call
+/// `cleanup_daemon_files`, and both spawn — racing on the endpoint.
+static DAEMON_START_LOCK: Mutex<()> = Mutex::const_new(());
 
 pub struct DaemonConnector {
     pub daemon_dir: PathBuf,
@@ -30,11 +39,8 @@ impl DaemonConnector {
     }
 
     #[instrument(skip(self))]
-    pub async fn connect(&self) -> miette::Result<DaemonClient> {
-        // Ensure the server is running
-        self.start_daemon().await?;
-
-        DaemonClient::connect(&self.daemon_dir).await
+    pub async fn connect(&self) -> miette::Result<Option<DaemonClient>> {
+        Ok(Some(DaemonClient::connect(&self.daemon_dir).await?))
     }
 
     pub fn get_log_file(&self) -> PathBuf {
@@ -63,12 +69,20 @@ impl DaemonConnector {
     }
 
     #[instrument(skip(self))]
-    pub async fn start_daemon(&self) -> miette::Result<u32> {
-        // If already running, return its PID
+    pub async fn start_daemon(&self, timeout: bool) -> miette::Result<Option<u32>> {
+        // Serialize concurrent start attempts within this process. Without
+        // this, two callers can both pass the `is_running` check, both
+        // `cleanup_daemon_files` (the second removing the first daemon's
+        // directory mid-startup), and both spawn — leaving them to race
+        // for the endpoint, with one failing to bind and exiting 1.
+        let _guard = DAEMON_START_LOCK.lock().await;
+
+        // Re-check under the lock: another caller may have just spawned and
+        // written the PID file while we were waiting.
         if let Some(pid) = self.is_running() {
             debug!(pid, "Daemon already running, skipping spawn");
 
-            return Ok(pid);
+            return Ok(Some(pid));
         }
 
         // Clean up stale files from a previous crashed daemon
@@ -88,19 +102,16 @@ impl DaemonConnector {
             .env("MOON_DAEMON_RUNNING", "true")
             .current_dir(&self.workspace_root);
 
-        let child = command.spawn().map_err(|error| DaemonError::StartFailed {
+        let mut child = command.spawn().map_err(|error| DaemonError::StartFailed {
             error: Box::new(error),
         })?;
 
-        let pid = child.id();
+        debug!(
+            pid = child.id(),
+            "Daemon process spawned, waiting for readiness"
+        );
 
-        debug!(pid, "Daemon process spawned, waiting for readiness");
-
-        self.wait_for_ready(pid).await?;
-
-        debug!(pid, "Daemon is ready");
-
-        Ok(pid)
+        self.wait_for_ready(&mut child, timeout).await
     }
 
     #[instrument(skip(self))]
@@ -167,28 +178,49 @@ impl DaemonConnector {
     }
 
     #[instrument(skip(self))]
-    async fn wait_for_ready(&self, expected_pid: u32) -> miette::Result<()> {
+    async fn wait_for_ready(
+        &self,
+        child: &mut Child,
+        timeout: bool,
+    ) -> miette::Result<Option<u32>> {
+        let expected_pid = child.id();
         let pid_path = get_pid_path(&self.daemon_dir);
         let deadline = Instant::now() + STARTUP_TIMEOUT;
 
         while Instant::now() < deadline {
-            // Check that the child is still alive
-            if !is_process_alive(expected_pid) {
+            // Check that the direct child is still alive. This avoids an
+            // OpenProcess false negative on Windows for a process we spawned.
+            if let Some(status) = child.try_wait().map_err(|error| DaemonError::StartFailed {
+                error: Box::new(error),
+            })? {
+                // If another process won a concurrent daemon startup race,
+                // reuse it instead of failing this process.
+                if DaemonClient::test_connection(&self.daemon_dir).await {
+                    let pid = read_pid(&pid_path);
+
+                    trace!(
+                        pid = expected_pid,
+                        new_pid = pid,
+                        "Spawned daemon exited, but another daemon is ready"
+                    );
+
+                    return Ok(pid);
+                }
+
                 return Err(DaemonError::StartFailed {
-                    error: Box::new(Error::other(
-                        "Daemon process exited unexpectedly during startup",
-                    )),
+                    error: Box::new(Error::other(format!(
+                        "Daemon process exited unexpectedly during startup ({status})"
+                    ))),
                 }
                 .into());
             }
 
-            // Check for the PID file written by the server
-            if let Some(pid) = read_pid(&pid_path)
-                && pid == expected_pid
-            {
-                trace!(pid, "Daemon PID file detected, daemon is ready");
+            // The spawned process may not be the final daemon process on
+            // Windows if the CLI delegates from a global binary to a local one.
+            if DaemonClient::test_connection(&self.daemon_dir).await {
+                trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
 
-                return Ok(());
+                return Ok(Some(expected_pid));
             }
 
             sleep(POLL_INTERVAL).await;
@@ -196,23 +228,18 @@ impl DaemonConnector {
 
         // Final check: the tokio runtime may have been busy, causing sleep
         // to overshoot the deadline even though the daemon started in time
-        if is_process_alive(expected_pid)
-            && let Some(pid) = read_pid(&pid_path)
-            && pid == expected_pid
-        {
-            trace!(
-                pid,
-                "Daemon PID file detected (after deadline), daemon is ready"
-            );
+        if DaemonClient::test_connection(&self.daemon_dir).await {
+            trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
 
-            return Ok(());
+            return Ok(Some(expected_pid));
         }
 
-        // Err(DaemonError::StartTimedOut.into())
+        if timeout {
+            return Err(DaemonError::StartTimedOut.into());
+        }
 
-        // TODO: Why are we hitting this???
-        warn!("Timed out waiting for the daemon to start.");
+        warn!("Timed out waiting for the daemon to start!");
 
-        Ok(())
+        Ok(None)
     }
 }

@@ -4,8 +4,18 @@
 
 #### 🚀 Updates
 
+- Added in-memory caching to certain toolchain operations, primarily around locating executables.
+- Improved daemon startup performance by loading the workspace graph in the background after the
+  server is ready.
 - Updated plugin distribution to use ghcr.io instead of raw URLs, which should improve reliability
   and performance of plugin downloads.
+
+#### 🐞 Fixes
+
+- Reworked the daemon connect/ready logic to possibly fix some Windows connection issues.
+- Fixed an issue where the task dependency `cacheStrategy` inferrence was not working correctly
+  based on what experiments are enabled.
+- Fixed an issue where locks created at `.moon/cache/locks` would not be cleaned up.
 
 #### ⚙️ Internal
 

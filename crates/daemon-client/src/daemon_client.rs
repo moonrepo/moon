@@ -47,6 +47,12 @@ impl DaemonClient {
         })
     }
 
+    pub async fn test_connection(daemon_dir: &Path) -> bool {
+        let endpoint = get_endpoint(daemon_dir);
+
+        connect_channel(&endpoint).await.is_ok()
+    }
+
     #[instrument(skip(self))]
     pub async fn archive_task_outputs(
         &mut self,

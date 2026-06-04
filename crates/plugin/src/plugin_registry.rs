@@ -152,76 +152,82 @@ impl<T: Plugin> PluginRegistry<T> {
         let id = Id::raw(id.as_ref());
         let locator = locator.as_ref();
 
-        // Use an entry so that it creates a lock,
-        // and hopefully avoids parallel registrations
-        let instance = match self.plugins.entry_async(id).await {
+        // Return early if already registered. We must NOT hold a map lock (an
+        // scc entry guard) across the expensive, multi-second WASM load below:
+        // doing so serializes loads that collide on a bucket and can deadlock
+        // under concurrent loads (e.g. `load_many`), since a guard held across
+        // an `.await` blocks other tasks (and map resizes) from making progress.
+        if let Some(existing) = self.plugins.get_async(&id).await {
+            return Ok(Arc::clone(existing.get()));
+        }
+
+        debug!(
+            plugin_type = self.type_of.get_label(),
+            id = id.as_str(),
+            "Attempting to load and register plugin",
+        );
+
+        // Load the WASM file (this must happen first because of async)
+        let plugin_file = self.loader.load_plugin(&id, locator).await?;
+
+        // Create host functions (provided by warpgate)
+        let functions = create_host_functions(
+            self.host_data.clone(),
+            HostData {
+                cache_dir: self.host_data.moon_env.cache_dir.clone(),
+                http_client: self.loader.get_http_client()?.clone(),
+                virtual_paths: self.virtual_paths.clone(),
+                working_dir: self.host_data.moon_env.working_dir.clone(),
+            },
+        );
+
+        // Create the manifest and let the consumer configure it
+        let mut manifest = self.create_manifest(&id, plugin_file.clone())?;
+
+        op(&mut manifest)?;
+
+        debug!(
+            plugin_type = self.type_of.get_label(),
+            id = id.as_str(),
+            "Updated plugin manifest, attempting to register plugin",
+        );
+
+        // Create a new ID for the WASM manifest if it's prefixed with
+        // "unstable_". The reason for this is that proto's built-in tools
+        // expect a specific ID, for example "rust", and if we provide
+        // "unstable_rust", it breaks in weird ways.
+        let stable_id = Id::stable(id.as_str());
+
+        // Combine everything into the container and register
+        let plugin = T::new(PluginRegistration {
+            container: PluginContainer::new(stable_id.clone(), manifest, functions)?,
+            locator: locator.to_owned(),
+            id: id.clone(),
+            id_stable: stable_id,
+            moon_env: Arc::clone(&self.host_data.moon_env),
+            proto_env: Arc::clone(&self.host_data.proto_env),
+            wasm_file: plugin_file,
+        })
+        .await?;
+
+        debug!(
+            plugin_type = self.type_of.get_label(),
+            id = id.as_str(),
+            "Registered plugin",
+        );
+
+        let instance = Arc::new(plugin);
+
+        // Insert into the registry, holding the bucket lock only around the
+        // synchronous insert (never across an `.await`). If another task loaded
+        // the same plugin concurrently, discard ours and use the race winner.
+        Ok(match self.plugins.entry_async(id).await {
             Entry::Occupied(entry) => Arc::clone(entry.get()),
             Entry::Vacant(entry) => {
-                debug!(
-                    plugin_type = self.type_of.get_label(),
-                    id = entry.key().as_str(),
-                    "Attempting to load and register plugin",
-                );
-
-                // Load the WASM file (this must happen first because of async)
-                let plugin_file = self.loader.load_plugin(entry.key(), locator).await?;
-
-                // Create host functions (provided by warpgate)
-                let functions = create_host_functions(
-                    self.host_data.clone(),
-                    HostData {
-                        cache_dir: self.host_data.moon_env.cache_dir.clone(),
-                        http_client: self.loader.get_http_client()?.clone(),
-                        virtual_paths: self.virtual_paths.clone(),
-                        working_dir: self.host_data.moon_env.working_dir.clone(),
-                    },
-                );
-
-                // Create the manifest and let the consumer configure it
-                let mut manifest = self.create_manifest(entry.key(), plugin_file.clone())?;
-
-                op(&mut manifest)?;
-
-                debug!(
-                    plugin_type = self.type_of.get_label(),
-                    id = entry.key().as_str(),
-                    "Updated plugin manifest, attempting to register plugin",
-                );
-
-                // Create a new ID for the WASM manifest if it's prefixed with
-                // "unstable_". The reason for this is that proto's built-in tools
-                // expect a specific ID, for example "rust", and if we provide
-                // "unstable_rust", it breaks in weird ways.
-                let orig_id = entry.key().as_str();
-                let stable_id = Id::stable(orig_id);
-
-                // Combine everything into the container and register
-                let plugin = T::new(PluginRegistration {
-                    container: PluginContainer::new(stable_id.clone(), manifest, functions)?,
-                    locator: locator.to_owned(),
-                    id: entry.key().to_owned(),
-                    id_stable: stable_id,
-                    moon_env: Arc::clone(&self.host_data.moon_env),
-                    proto_env: Arc::clone(&self.host_data.proto_env),
-                    wasm_file: plugin_file,
-                })
-                .await?;
-
-                debug!(
-                    plugin_type = self.type_of.get_label(),
-                    id = orig_id,
-                    "Registered plugin",
-                );
-
-                let instance = Arc::new(plugin);
-
                 entry.insert_entry(Arc::clone(&instance));
-
                 instance
             }
-        };
-
-        Ok(instance)
+        })
     }
 
     pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<Arc<T>>

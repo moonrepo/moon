@@ -21,6 +21,10 @@ struct RecordingWatcher;
 
 #[async_trait]
 impl FileWatcher<TestState> for RecordingWatcher {
+    async fn on_init(&mut self, _state: TestState) -> miette::Result<()> {
+        Ok(())
+    }
+
     async fn on_file_event(&mut self, state: TestState, event: &FileEvent) -> miette::Result<()> {
         state
             .events
@@ -36,6 +40,10 @@ struct FailingWatcher;
 
 #[async_trait]
 impl FileWatcher<TestState> for FailingWatcher {
+    async fn on_init(&mut self, _state: TestState) -> miette::Result<()> {
+        Ok(())
+    }
+
     async fn on_file_event(&mut self, _state: TestState, _event: &FileEvent) -> miette::Result<()> {
         Err(miette::miette!("deliberate failure"))
     }
@@ -48,6 +56,10 @@ struct SecondRecordingWatcher {
 
 #[async_trait]
 impl FileWatcher<TestState> for SecondRecordingWatcher {
+    async fn on_init(&mut self, _state: TestState) -> miette::Result<()> {
+        Ok(())
+    }
+
     async fn on_file_event(&mut self, state: TestState, event: &FileEvent) -> miette::Result<()> {
         state
             .events

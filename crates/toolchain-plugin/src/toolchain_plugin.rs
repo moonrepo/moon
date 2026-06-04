@@ -13,6 +13,7 @@ use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
+use scc::hash_map::Entry;
 use starbase_utils::glob::{self, GlobSet};
 use std::fmt;
 use std::ops::Deref;
@@ -29,9 +30,9 @@ pub struct ToolchainPlugin {
     pub metadata: ToolchainMetadata,
 
     plugin: Arc<PluginContainer>,
-
-    #[allow(dead_code)]
     tool: Option<RwLock<Tool>>,
+
+    globals_cache: scc::HashMap<VersionSpec, Option<PathBuf>>,
 }
 
 #[async_trait]
@@ -65,6 +66,7 @@ impl Plugin for ToolchainPlugin {
             },
             id: registration.id,
             locator: registration.locator,
+            globals_cache: scc::HashMap::new(),
             metadata,
             plugin,
         })
@@ -80,6 +82,28 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
+    async fn cache_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
+        if let Some(tool) = &self.tool {
+            let tool = tool.read().await;
+            let spec = ToolSpec::default();
+
+            return match self
+                .globals_cache
+                .entry_async(spec.to_resolved_spec())
+                .await
+            {
+                Entry::Occupied(entry) => Ok(entry.get().to_owned()),
+                Entry::Vacant(entry) => {
+                    let locations = Locator::new(&tool, &spec).locate_globals_dir().await?;
+                    entry.insert_entry(locations.clone());
+                    Ok(locations)
+                }
+            };
+        }
+
+        Ok(None)
+    }
+
     fn handle_output_file(&self, file: &mut PathBuf) {
         *file = self.plugin.from_virtual_path(&file);
     }
@@ -318,14 +342,10 @@ impl ToolchainPlugin {
         &self,
         mut input: ExtendTaskCommandInput,
     ) -> miette::Result<ExtendCommandOutput> {
-        if let Some(tool) = &self.tool {
-            let tool = tool.read().await;
-
-            input.globals_dir = Locator::new(&tool, &ToolSpec::default())
-                .locate_globals_dir()
-                .await?
-                .map(|dir| self.to_virtual_path(dir));
-        }
+        input.globals_dir = self
+            .cache_globals_dir()
+            .await?
+            .map(|dir| self.to_virtual_path(dir));
 
         let output: ExtendCommandOutput = self
             .plugin
@@ -340,14 +360,10 @@ impl ToolchainPlugin {
         &self,
         mut input: ExtendTaskScriptInput,
     ) -> miette::Result<ExtendTaskScriptOutput> {
-        if let Some(tool) = &self.tool {
-            let tool = tool.read().await;
-
-            input.globals_dir = Locator::new(&tool, &ToolSpec::default())
-                .locate_globals_dir()
-                .await?
-                .map(|dir| self.to_virtual_path(dir));
-        }
+        input.globals_dir = self
+            .cache_globals_dir()
+            .await?
+            .map(|dir| self.to_virtual_path(dir));
 
         let output: ExtendTaskScriptOutput = self
             .plugin
@@ -476,14 +492,10 @@ impl ToolchainPlugin {
         &self,
         mut input: SetupEnvironmentInput,
     ) -> miette::Result<SetupEnvironmentOutput> {
-        if let Some(tool) = &self.tool {
-            let tool = tool.read().await;
-
-            input.globals_dir = Locator::new(&tool, &ToolSpec::default())
-                .locate_globals_dir()
-                .await?
-                .map(|dir| self.to_virtual_path(dir));
-        }
+        input.globals_dir = self
+            .cache_globals_dir()
+            .await?
+            .map(|dir| self.to_virtual_path(dir));
 
         let mut output: SetupEnvironmentOutput = self
             .plugin

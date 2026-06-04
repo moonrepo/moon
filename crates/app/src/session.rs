@@ -7,7 +7,7 @@ use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_codegen::CodeGenerator;
-use moon_common::is_formatted_output;
+use moon_common::{is_docker, is_formatted_output, is_remote};
 use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
 use moon_config_loader::ConfigLoader;
 use moon_console::{Console, MoonReporter, create_console_theme};
@@ -46,6 +46,7 @@ pub struct MoonSession {
 
     // Lazy components
     pub(crate) cache_engine: OnceLock<Arc<CacheEngine>>,
+    // pub(crate) daemon_client: OnceCell<Option<DaemonClient>>,
     pub(crate) extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     pub(crate) project_graph: OnceLock<Arc<ProjectGraph>>,
     pub(crate) task_graph: OnceLock<Arc<TaskGraph>>,
@@ -75,6 +76,7 @@ impl MoonSession {
             config_dir: PathBuf::new(),
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
+            // daemon_client: OnceCell::new(),
             extensions_config: Arc::new(ExtensionsConfig::default()),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
@@ -126,13 +128,18 @@ impl MoonSession {
     }
 
     pub async fn connect_to_daemon(&self) -> miette::Result<Option<DaemonClient>> {
-        if !self.workspace_config.daemon {
+        if !self.is_daemon_allowed() {
             return Ok(None);
         }
 
-        let client = self.get_daemon_connector()?.connect().await?;
+        // let client = self
+        //     .daemon_client
+        //     .get_or_try_init(async move || self.get_daemon_connector()?.connect().await)
+        //     .await?;
 
-        Ok(Some(client))
+        // Ok(client.clone())
+
+        self.get_daemon_connector()?.connect().await
     }
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {
@@ -271,6 +278,21 @@ impl MoonSession {
             .map(Arc::clone)
     }
 
+    pub fn is_daemon_allowed(&self) -> bool {
+        self.workspace_config.daemon && self.is_pipeline_command() && !is_docker()
+    }
+
+    pub fn is_pipeline_command(&self) -> bool {
+        matches!(
+            self.cli.command,
+            Commands::Ci(_)
+                | Commands::Check(_)
+                | Commands::Exec(_)
+                | Commands::Run(_)
+                | Commands::Sync { .. }
+        )
+    }
+
     pub fn is_telemetry_enabled(&self) -> bool {
         self.workspace_config.telemetry
     }
@@ -389,39 +411,37 @@ impl AppSession for MoonSession {
 
         analyze::extract_repo_info(&vcs).await?;
 
-        // Preload
+        // Preload components
         if self.requires_workspace_configured() {
             let _ = self.get_cache_engine()?;
+        }
+
+        // Start the daemon in the background
+        if self.is_daemon_allowed() {
+            self.get_daemon_connector()?.start_daemon(false).await?;
         }
 
         Ok(None)
     }
 
     async fn execute(&mut self) -> AppResult {
-        let is_exec_command = matches!(
-            self.cli.command,
-            Commands::Ci(_)
-                | Commands::Check(_)
-                | Commands::Exec(_)
-                | Commands::Run(_)
-                | Commands::Sync { .. }
-        );
-
         // Check for a new version and log to the console
-        if self.is_telemetry_enabled() && is_exec_command {
+        if self.is_telemetry_enabled() && self.is_pipeline_command() {
             execute::check_for_new_version(&self, &self.toolchains_config.moon.manifest_url)
                 .await?;
-        }
-
-        // Start the daemon in the background
-        if self.workspace_config.daemon && is_exec_command {
-            self.get_daemon_connector()?.start_daemon().await?;
         }
 
         Ok(None)
     }
 
     async fn shutdown(&mut self) -> AppResult {
+        // Stop the daemon if it's running
+        if is_remote()
+            && let Ok(Some(mut daemon)) = self.connect_to_daemon().await
+        {
+            daemon.stop().await?;
+        }
+
         // Ensure all child processes have finished running
         ProcessRegistry::instance()
             .wait_for_running_to_shutdown()

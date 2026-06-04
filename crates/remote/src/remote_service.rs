@@ -367,9 +367,15 @@ impl RemoteService {
 
     #[instrument(skip(self))]
     pub async fn wait_for_requests(&self) {
-        let mut requests = self.upload_requests.write().await;
+        let requests = {
+            self.upload_requests
+                .write()
+                .await
+                .drain(0..)
+                .collect::<Vec<_>>()
+        };
 
-        for future in requests.drain(0..) {
+        for future in requests {
             // We can ignore the errors because we handle them in
             // the tasks above by logging to the console
             let _ = future.await;

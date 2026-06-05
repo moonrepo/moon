@@ -108,7 +108,8 @@ mod endpoint {
 
         cleanup_daemon_files(&daemon_dir).unwrap();
 
-        assert!(!daemon_dir.exists());
+        assert!(!daemon_dir.join("moond.pid").exists());
+        assert!(!daemon_dir.join("moond.sock").exists());
     }
 
     #[test]

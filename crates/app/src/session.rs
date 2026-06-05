@@ -31,7 +31,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::OnceCell;
 use tokio::try_join;
-use tracing::debug;
+use tracing::{debug, warn};
 
 #[derive(Clone)]
 pub struct MoonSession {
@@ -139,7 +139,19 @@ impl MoonSession {
 
         // Ok(client.clone())
 
-        self.get_daemon_connector()?.connect().await
+        let daemon = match self.get_daemon_connector()?.connect().await {
+            Ok(inner) => inner,
+            Err(error) => {
+                warn!(
+                    error = error.to_string(),
+                    "Failed to connect to daemon, will continue without failing"
+                );
+
+                None
+            }
+        };
+
+        Ok(daemon)
     }
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {

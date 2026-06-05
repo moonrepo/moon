@@ -15,6 +15,14 @@
 - Fixed an issue with `project:^` inputs where resolved files would be excluded when project sources
   overlap.
 
+#### 🧰 Toolchains
+
+- **Go**
+  - Added an `inferRelationshipsPackages` setting to customize the package patterns passed to
+    `go list --deps`.
+  - Updated `go list --deps` relationship inference to scan all packages (`./...`) by default, so
+    dependencies imported only from subdirectories (`internal/`, `pkg/`, ...) are now inferred.
+
 ## 2.3.1
 
 #### 🚀 Updates

@@ -7,7 +7,7 @@ use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_codegen::CodeGenerator;
-use moon_common::{is_docker, is_formatted_output, is_remote};
+use moon_common::{is_docker, is_formatted_output, is_remote, is_test_env};
 use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
 use moon_config_loader::ConfigLoader;
 use moon_console::{Console, MoonReporter, create_console_theme};
@@ -292,7 +292,7 @@ impl MoonSession {
     }
 
     pub fn is_daemon_allowed(&self) -> bool {
-        self.workspace_config.daemon && self.is_pipeline_command() && !is_docker()
+        self.workspace_config.daemon && self.is_pipeline_command() && !is_docker() && !is_test_env()
     }
 
     pub fn is_pipeline_command(&self) -> bool {

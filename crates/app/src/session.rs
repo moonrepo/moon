@@ -46,7 +46,7 @@ pub struct MoonSession {
 
     // Lazy components
     pub(crate) cache_engine: OnceLock<Arc<CacheEngine>>,
-    // pub(crate) daemon_client: OnceCell<Option<DaemonClient>>,
+    pub(crate) daemon_client: OnceCell<Option<DaemonClient>>,
     pub(crate) extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     pub(crate) project_graph: OnceLock<Arc<ProjectGraph>>,
     pub(crate) task_graph: OnceLock<Arc<TaskGraph>>,
@@ -76,7 +76,7 @@ impl MoonSession {
             config_dir: PathBuf::new(),
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
-            // daemon_client: OnceCell::new(),
+            daemon_client: OnceCell::new(),
             extensions_config: Arc::new(ExtensionsConfig::default()),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
@@ -132,14 +132,14 @@ impl MoonSession {
             return Ok(None);
         }
 
-        // let client = self
-        //     .daemon_client
-        //     .get_or_try_init(async move || self.get_daemon_connector()?.connect().await)
-        //     .await?;
+        let client = self
+            .daemon_client
+            .get_or_try_init(async move || self.get_daemon_connector()?.connect().await)
+            .await?;
 
-        // Ok(client.clone())
+        Ok(client.clone())
 
-        self.get_daemon_connector()?.connect().await
+        // self.get_daemon_connector()?.connect().await
     }
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {
@@ -438,7 +438,10 @@ impl AppSession for MoonSession {
         let is_local_debug_or_remote = cfg!(debug_assertions) || is_remote();
 
         // Stop the daemon if it's running
-        if is_local_debug_or_remote && let Ok(Some(mut daemon)) = self.connect_to_daemon().await {
+        if is_local_debug_or_remote
+            && self.is_daemon_allowed()
+            && let Ok(Some(mut daemon)) = self.connect_to_daemon().await
+        {
             daemon.stop().await?;
         }
 

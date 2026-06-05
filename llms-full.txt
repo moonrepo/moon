@@ -363,6 +363,14 @@ utilize this command.
 
 :::
 
+### Reports
+
+After execution, moon writes the generated report to `.moon/cache/ciReport.json`. The non-CI task
+execution commands write the same report format to `.moon/cache/runReport.json`.
+
+These reports live in `.moon/cache`, so they may be overwritten or deleted between runs. Copy the
+report elsewhere if you need to persist it, like uploading it as a CI artifact.
+
 ### Arguments
 
 - `...[target]` - [Task targets](../concepts/target) to run.
@@ -9425,6 +9433,9 @@ If you're using GitHub Actions as your CI provider, we suggest using our
 action will report the results of a [`moon ci`](../commands/ci) run to a pull request as a comment
 and workflow summary.
 
+For the generated report file locations and caching caveats, refer to the
+[`moon ci` reports documentation](../commands/ci#reports).
+
 ```yaml title=".github/workflows/ci.yml"
 # ...
 jobs:
@@ -15185,6 +15196,9 @@ We also suggest using our
 [`moonrepo/run-report-action`](https://github.com/marketplace/actions/moon-ci-run-reports) GitHub
 action. This action will report the results of a [`moon ci`](../commands/ci) run to a pull request
 as a comment and workflow summary.
+
+For the generated report file locations and caching caveats, refer to the
+[`moon ci` reports documentation](../commands/ci#reports).
 
 ```yaml title=".github/workflows/ci.yml"
 # ...

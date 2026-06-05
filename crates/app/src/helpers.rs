@@ -15,6 +15,7 @@ use starbase_utils::{fs, json, toml, yaml};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tracing::warn;
 
 pub fn serialize_config_based_on_extension(
     plugin_id: &Id,
@@ -75,10 +76,18 @@ pub async fn run_action_pipeline(
     action_context: ActionContext,
     action_graph: ActionGraph,
 ) -> miette::Result<Vec<Action>> {
+    let daemon = match session.connect_to_daemon().await {
+        Ok(inner) => inner,
+        Err(error) => {
+            warn!("Failed to connect to daemon, will continue without failing: {error}");
+            None
+        }
+    };
+
     let mut pipeline = ActionPipeline::new(
         session.get_app_context().await?,
         session.get_workspace_graph().await?,
-        session.connect_to_daemon().await?,
+        daemon,
     );
 
     if let Some(concurrency) = &session.cli.concurrency {

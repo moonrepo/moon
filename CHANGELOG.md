@@ -10,7 +10,7 @@
 
 #### 🐞 Fixes
 
-- Potential fix for the daemon client refused connection error. If this problem persists,
+- Potential fix for the daemon client connection refused error. If this problem persists,
   temporarily disable the daemon and report an issue.
 
 ## 2.3.1

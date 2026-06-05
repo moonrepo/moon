@@ -304,7 +304,7 @@ pub async fn start_daemon_server(
 
     info!("Daemon server stopped");
 
-    cleanup_daemon_files(&daemon_dir)?;
+    let _ = cleanup_daemon_files(&daemon_dir);
 
     serve_result
 }

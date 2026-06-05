@@ -143,8 +143,8 @@ impl MoonSession {
             Ok(inner) => inner,
             Err(error) => {
                 warn!(
-                    error = error.to_string(),
-                    "Failed to connect to daemon, will continue without failing"
+                    ?error,
+                    "Failed to connect to daemon, will continue without it"
                 );
 
                 None

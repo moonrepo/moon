@@ -339,6 +339,7 @@ impl WorkspaceMocker {
             cli_version: Version::parse(env!("CARGO_PKG_VERSION")).unwrap(),
             cache_engine: Arc::new(self.mock_cache_engine()),
             config_dir: self.config_dir.clone(),
+            config_exts: self.config_loader.extensions.clone(),
             console: Arc::new(self.mock_console()),
             daemon_dir: self.config_dir.join("cache/daemon"),
             moon_env: Arc::new(self.moon_env.clone()),

@@ -19,6 +19,7 @@ pub struct AppContext {
 
     // Components
     pub cache_engine: Arc<CacheEngine>,
+    pub config_exts: Vec<String>,
     pub console: Arc<Console>,
     pub vcs: Arc<BoxedVcs>,
 

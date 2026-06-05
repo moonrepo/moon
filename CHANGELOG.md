@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added panic handling to the daemon server, to capture and log unexpected panics.
+- Updated the pipeline to continue if the daemon client cannot connect, instead of failing the whole
+  pipeline.
+
+#### 🐞 Fixes
+
+- Potential fix for the daemon client connection refused error. If this problem persists,
+  temporarily disable the daemon and report an issue.
+- Fixed an issue with `project:^` inputs where resolved files would be excluded when project sources
+  overlap.
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Added an `inferRelationshipsPackages` setting to customize the package patterns passed to
+    `go list --deps`.
+  - Updated `go list --deps` relationship inference to scan all packages (`./...`) by default, so
+    dependencies imported only from subdirectories (`internal/`, `pkg/`, ...) are now inferred.
+
 ## 2.3.1
 
 #### 🚀 Updates

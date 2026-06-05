@@ -32,3 +32,15 @@ codegen-units = 16
 
 # [registries.crates-io]
 # protocol = "sparse"
+
+# Disable git's fsmonitor for all test/build subprocesses. When a dev has
+# `core.fsmonitor = true` set globally, git commands run by test sandboxes
+# (e.g. `Sandbox::enable_git` via `std::process::Command::output`) spawn a
+# detached `fsmonitor--daemon` that inherits the stdout/stderr pipe. The pipe
+# never reaches EOF while the daemon runs, so `output()` blocks forever and
+# tests hang (intermittently, worse under high `-j`). Injecting the config via
+# git's env vars overrides the global setting for every git subprocess.
+[env]
+GIT_CONFIG_COUNT = "1"
+GIT_CONFIG_KEY_0 = "core.fsmonitor"
+GIT_CONFIG_VALUE_0 = "false"

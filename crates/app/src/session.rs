@@ -7,7 +7,7 @@ use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::CacheEngine;
 use moon_codegen::CodeGenerator;
-use moon_common::{is_docker, is_formatted_output, is_remote};
+use moon_common::{is_docker, is_formatted_output, is_remote, is_test_env};
 use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
 use moon_config_loader::ConfigLoader;
 use moon_console::{Console, MoonReporter, create_console_theme};
@@ -31,7 +31,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::OnceCell;
 use tokio::try_join;
-use tracing::debug;
+use tracing::{debug, warn};
 
 #[derive(Clone)]
 pub struct MoonSession {
@@ -139,7 +139,19 @@ impl MoonSession {
 
         // Ok(client.clone())
 
-        self.get_daemon_connector()?.connect().await
+        let daemon = match self.get_daemon_connector()?.connect().await {
+            Ok(inner) => inner,
+            Err(error) => {
+                warn!(
+                    ?error,
+                    "Failed to connect to daemon, will continue without it"
+                );
+
+                None
+            }
+        };
+
+        Ok(daemon)
     }
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {
@@ -164,6 +176,7 @@ impl MoonSession {
             cli_version: self.cli_version.clone(),
             cache_engine: self.get_cache_engine()?,
             config_dir: self.config_dir.clone(),
+            config_exts: self.config_loader.extensions.clone(),
             console: self.get_console()?,
             daemon_dir: self.config_dir.join("cache").join("daemon"),
             moon_env: Arc::clone(&self.moon_env),
@@ -279,7 +292,7 @@ impl MoonSession {
     }
 
     pub fn is_daemon_allowed(&self) -> bool {
-        self.workspace_config.daemon && self.is_pipeline_command() && !is_docker()
+        self.workspace_config.daemon && self.is_pipeline_command() && !is_docker() && !is_test_env()
     }
 
     pub fn is_pipeline_command(&self) -> bool {
@@ -416,14 +429,10 @@ impl AppSession for MoonSession {
             let _ = self.get_cache_engine()?;
         }
 
-        // Start the daemon in the background
-        if self.is_daemon_allowed() {
-            self.get_daemon_connector()?.start_daemon(false).await?;
-        }
-
         Ok(None)
     }
 
+    // This function runs in an async task (background thread)
     async fn execute(&mut self) -> AppResult {
         // Check for a new version and log to the console
         if self.is_telemetry_enabled() && self.is_pipeline_command() {
@@ -431,12 +440,20 @@ impl AppSession for MoonSession {
                 .await?;
         }
 
+        // Start the daemon
+        if self.is_daemon_allowed() {
+            self.get_daemon_connector()?.start_daemon(false).await?;
+        }
+
         Ok(None)
     }
 
     async fn shutdown(&mut self) -> AppResult {
+        let is_local_debug_or_remote = cfg!(debug_assertions) || is_remote();
+
         // Stop the daemon if it's running
-        if is_remote()
+        if is_local_debug_or_remote
+            && self.is_daemon_allowed()
             && let Ok(Some(mut daemon)) = self.connect_to_daemon().await
         {
             daemon.stop().await?;

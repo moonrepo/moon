@@ -282,7 +282,9 @@ pub async fn start_daemon_server(
 
     info!(pid, endpoint, "Daemon server starting");
 
-    if let Err(error) = serve(&endpoint, service, shutdown_signal).await {
+    let serve_result = serve(&endpoint, service, shutdown_signal).await;
+
+    if let Err(error) = &serve_result {
         error!("Daemon server failed: {error}");
 
         watcher_handle.abort();
@@ -302,9 +304,9 @@ pub async fn start_daemon_server(
 
     info!("Daemon server stopped");
 
-    cleanup_daemon_files(&daemon_dir)?;
+    let _ = cleanup_daemon_files(&daemon_dir);
 
-    Ok(())
+    serve_result
 }
 
 /// Remove a stale Unix socket (or check a stale PID file on Windows)

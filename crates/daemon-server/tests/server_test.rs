@@ -162,6 +162,31 @@ mod unix_rpc {
 
         assert!(result.is_err());
     }
+
+    #[tokio::test]
+    async fn test_start_server_returns_bind_error() {
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("x".repeat(128));
+        let workspace_root = sandbox.path().to_path_buf();
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let mocker = WorkspaceMocker::new(workspace_root);
+        let mut app_context = mocker.mock_app_context();
+
+        app_context.daemon_dir = daemon_dir;
+
+        let result = start_daemon_server(
+            DaemonState {
+                app_context: Arc::new(app_context),
+                workspace_graph: Arc::new(WorkspaceGraph::default()),
+            },
+            vec![],
+        )
+        .await;
+
+        assert!(result.is_err());
+    }
 }
 
 #[cfg(windows)]

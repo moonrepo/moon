@@ -1,0 +1,7 @@
+# Dependency project. Its source path `lib-extra` is a string prefix of the
+# consumer's source path `lib` (without a path-segment boundary), which
+# previously caused its files to be silently excluded from the consumer's
+# hash when using the VCS walk strategy. See moonrepo/moon#2554.
+fileGroups:
+  configs:
+    - '*.json'

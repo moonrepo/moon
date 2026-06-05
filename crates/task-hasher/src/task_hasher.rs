@@ -130,7 +130,7 @@ impl<'task> TaskHasher<'task> {
                     .task
                     .input_globs
                     .iter()
-                    .filter(|(glob, _)| !glob.as_str().starts_with(self.project.source.as_str()))
+                    .filter(|(glob, _)| !glob.starts_with(&self.project.source))
                     .collect::<FxHashMap<_, _>>();
 
                 if !workspace_globs.is_empty() {
@@ -170,11 +170,12 @@ impl<'task> TaskHasher<'task> {
     ) -> bool {
         // Don't invalidate existing hashes when moon.* changes
         // as we already hash the contents of each task!
-        if self.task.state.default_inputs
-            && (workspace_relative_path.ends_with("moon.yml")
-                || workspace_relative_path.ends_with("moon.pkl"))
-        {
-            return false;
+        if self.task.state.default_inputs {
+            for ext in &self.app_context.config_exts {
+                if workspace_relative_path.ends_with(format!("moon.{ext}")) {
+                    return false;
+                }
+            }
         }
 
         // Remove outputs first

@@ -436,6 +436,66 @@ mod task_hasher {
 
             assert_eq!(get_input_files(result.inputs), ["external/data.json"]);
         }
+
+        // The consumer `lib` has a source path (`lib`) that is a string prefix
+        // of the dependency `lib-extra`'s source path, without a path-segment
+        // boundary. The VCS walk strategy used to filter the dependency's input
+        // glob out via a raw string `starts_with`, silently dropping all of its
+        // files from the hash. Both walk strategies must include them.
+        // See moonrepo/moon#2554.
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_include_dependency_with_prefixed_source_via_scope() {
+            let sandbox = create_sandbox("projects");
+            sandbox.enable_git();
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, glob_config) = create_hasher_configs();
+            let project = wg.get_project("lib").unwrap();
+            let task = wg.get_task_from_project("lib", "prefixedDeps").unwrap();
+
+            let expected = [
+                "lib-extra/data.json",
+                "lib-extra/index.ts",
+                "lib-extra/moon.yml",
+            ];
+
+            // VCS (regressed before the fix: returned zero dependency files)
+            let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
+
+            assert_eq!(get_input_files(result.inputs), expected);
+
+            // Glob
+            let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
+
+            assert_eq!(get_input_files(result.inputs), expected);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn can_include_external_project_with_prefixed_source() {
+            let sandbox = create_sandbox("projects");
+            sandbox.enable_git();
+
+            let (wg, app) = mock_workspace(sandbox.path()).await;
+            let (vcs_config, glob_config) = create_hasher_configs();
+            let project = wg.get_project("lib").unwrap();
+            let task = wg.get_task_from_project("lib", "prefixedProject").unwrap();
+
+            let expected = [
+                "lib-extra/data.json",
+                "lib-extra/index.ts",
+                "lib-extra/moon.yml",
+            ];
+
+            // VCS (regressed before the fix: returned zero dependency files)
+            let result = generate_hash(&project, &task, &wg, &app, &vcs_config).await;
+
+            assert_eq!(get_input_files(result.inputs), expected);
+
+            // Glob
+            let result = generate_hash(&project, &task, &wg, &app, &glob_config).await;
+
+            assert_eq!(get_input_files(result.inputs), expected);
+        }
     }
 
     mod output_filtering {

@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added panic handling to the daemon server, to capture and log unexpected panics.
+- Updated the pipeline to continue if the daemon client cannot connect, instead of failing the whole
+  pipeline.
+
+#### 🐞 Fixes
+
+- Potential fix for the daemon client refused connection error. If this problem persists,
+  temporarily disable the daemon and report an issue.
+
 ## 2.3.1
 
 #### 🚀 Updates

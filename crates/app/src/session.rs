@@ -419,6 +419,7 @@ impl AppSession for MoonSession {
         Ok(None)
     }
 
+    // This function runs in an async task (background thread)
     async fn execute(&mut self) -> AppResult {
         // Check for a new version and log to the console
         if self.is_telemetry_enabled() && self.is_pipeline_command() {
@@ -426,7 +427,7 @@ impl AppSession for MoonSession {
                 .await?;
         }
 
-        // Start the daemon in the background
+        // Start the daemon
         if self.is_daemon_allowed() {
             self.get_daemon_connector()?.start_daemon(false).await?;
         }

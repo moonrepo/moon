@@ -130,7 +130,7 @@ impl<'task> TaskHasher<'task> {
                     .task
                     .input_globs
                     .iter()
-                    .filter(|(glob, _)| !glob.as_str().starts_with(self.project.source.as_str()))
+                    .filter(|(glob, _)| !glob.starts_with(&self.project.source))
                     .collect::<FxHashMap<_, _>>();
 
                 if !workspace_globs.is_empty() {

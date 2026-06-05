@@ -1,0 +1,14 @@
+dependsOn:
+  - 'lib-extra'
+
+tasks:
+  # `project://^` resolves to the `lib-extra` dependency, whose source path
+  # `lib-extra` is string-prefixed by this project's source `lib`.
+  prefixedDeps:
+    inputs:
+      - 'project://^'
+
+  # Same dependency referenced explicitly.
+  prefixedProject:
+    inputs:
+      - project: 'lib-extra'

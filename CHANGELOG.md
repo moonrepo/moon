@@ -12,6 +12,8 @@
 
 - Potential fix for the daemon client connection refused error. If this problem persists,
   temporarily disable the daemon and report an issue.
+- Fixed an issue with `project:^` inputs where resolved files would be excluded when project sources
+  overlap.
 
 ## 2.3.1
 

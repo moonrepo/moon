@@ -1194,4 +1194,9 @@ export default defineConfig({
 		useTabs: true,
 		ignorePatterns,
 	},
+	test: {
+    include: ['packages/**/*.test.ts'],
+		environment: 'node',
+		globals: false,
+	},
 });

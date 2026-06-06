@@ -1,4 +1,5 @@
 import type { Action } from '@moonrepo/types';
+import { describe, expect, it } from 'vitest';
 
 import { isFlaky, isSlow } from '../src';
 

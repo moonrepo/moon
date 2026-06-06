@@ -71,17 +71,11 @@ tasks:
       runInCI: false
 
   test:
-    command: 'jest'
-    args:
-      - '--cache'
-      - '--color'
-      - '--preset'
-      - 'jest-preset-moon'
-      - '--passWithNoTests'
+    command: 'vp test run --passWithNoTests'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
-      - 'jest.config.*'
+      - '/vite.config.ts'
 
   typecheck:
     command: 'tsc --build'

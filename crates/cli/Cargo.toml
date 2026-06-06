@@ -61,7 +61,7 @@ moon_codegen = { path = "../codegen" }
 moon_config = { path = "../config" }
 moon_task = { path = "../task" }
 moon_task_runner = { path = "../task-runner" }
-moon_test_utils2 = { path = "../test-utils" }
+moon_test_utils = { path = "../test-utils" }
 moon_vcs = { path = "../vcs" }
 httpmock = "0.8.3"
 proto_core = { workspace = true }

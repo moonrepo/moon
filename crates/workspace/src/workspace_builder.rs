@@ -1064,7 +1064,7 @@ mod tests {
     use moon_config::CacheConfig;
     use moon_extension_plugin::ExtensionRegistry;
     use moon_graph_utils::GraphConnections;
-    use moon_test_utils2::create_empty_moon_sandbox;
+    use moon_test_utils::create_empty_moon_sandbox;
     use moon_toolchain_plugin::ToolchainRegistry;
 
     #[tokio::test(flavor = "multi_thread")]

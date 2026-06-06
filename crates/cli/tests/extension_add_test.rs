@@ -1,4 +1,4 @@
-use moon_test_utils2::create_empty_moon_sandbox;
+use moon_test_utils::create_empty_moon_sandbox;
 use starbase_sandbox::{assert_snapshot, predicates::prelude::*};
 use std::fs;
 

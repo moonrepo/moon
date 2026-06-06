@@ -1,4 +1,4 @@
-/* eslint-disable promise/prefer-await-to-then */
+/* oxlint-disable promise/prefer-await-to-then */
 import React, { ChangeEvent, ChangeEventHandler, FormEvent, useCallback, useState } from 'react';
 import cx from 'clsx';
 

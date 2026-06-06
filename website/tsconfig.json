@@ -8,7 +8,7 @@
     "noEmit": false,
     "outDir": "../.moon/cache/types/website",
     "verbatimModuleSyntax": false,
-    "baseUrl": ".",
+    "baseUrl": null,
     "paths": {
       "@site/*": [
         "./*"

@@ -1,4 +1,4 @@
-/* eslint-disable promise/prefer-await-to-then */
+/* oxlint-disable promise/prefer-await-to-then */
 
 import React, { ChangeEvent, useCallback, useState } from 'react';
 import YC from '../../../../static/img/logo-yc.svg';

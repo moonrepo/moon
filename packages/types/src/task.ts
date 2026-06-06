@@ -74,7 +74,7 @@ export interface TaskFileOutput {
 	optional?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// oxlint-disable-next-line @typescript-eslint/no-empty-interface
 export interface TaskGlobOutput {}
 
 export interface Task {

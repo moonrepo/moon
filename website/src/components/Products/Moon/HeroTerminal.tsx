@@ -1,4 +1,4 @@
-/* eslint-disable sort-keys */
+/* oxlint-disable sort-keys */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 

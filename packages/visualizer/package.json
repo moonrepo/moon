@@ -26,7 +26,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build"
+    "build": "vp build"
   },
   "dependencies": {
     "@moonrepo/types": "workspace:^",
@@ -43,7 +43,8 @@
     "autoprefixer": "^10.4.24",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
-    "vite": "^8.0.16",
-    "vite-plugin-css-injected-by-js": "^5.0.1"
+    "vite": "catalog:",
+    "vite-plugin-css-injected-by-js": "^5.0.1",
+    "vite-plus": "catalog:"
   }
 }

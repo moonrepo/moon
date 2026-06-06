@@ -1,4 +1,4 @@
-/* eslint-disable promise/prefer-await-to-then */
+/* oxlint-disable promise/prefer-await-to-then */
 
 import React, { useEffect, useState } from 'react';
 import Link from '@docusaurus/Link';

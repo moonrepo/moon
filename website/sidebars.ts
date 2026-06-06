@@ -1,4 +1,4 @@
-/* eslint-disable sort-keys */
+/* oxlint-disable sort-keys */
 import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
 const sidebars: SidebarsConfig = {

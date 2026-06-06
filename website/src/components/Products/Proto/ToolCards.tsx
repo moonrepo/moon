@@ -11,7 +11,7 @@ export default function ToolCards(props: ToolCardsProps) {
 	const isThirdParty = props.data === 'third-party';
 
 	useEffect(() => {
-		// eslint-disable-next-line promise/prefer-await-to-then
+		// oxlint-disable-next-line promise/prefer-await-to-then
 		loadToolsData(props.data).then(setTools).catch(console.error);
 	}, []);
 

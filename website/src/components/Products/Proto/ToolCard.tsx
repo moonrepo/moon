@@ -13,7 +13,7 @@ export interface ToolCardProps {
 	builtin?: boolean;
 }
 
-// eslint-disable-next-line complexity
+// oxlint-disable-next-line complexity
 export default function ToolCard({ id, tool, builtin }: ToolCardProps) {
 	const bins = tool.bins ?? [];
 	const dirs = tool.globalsDirs ?? [];

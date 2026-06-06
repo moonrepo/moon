@@ -9581,6 +9581,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"globals@npm:^17.6.0":
+  version: 17.6.0
+  resolution: "globals@npm:17.6.0"
+  checksum: 10/2bf0febf31c942edee6f4eca7e939a9c885f8ecfb767048b1c4dd2a32008d0ab136e6076665d76b44b29c2571bbbc1681371caab05fd8ee0067c7618e841b89d
+  languageName: node
+  linkType: hard
+
 "globby@npm:^11.1.0":
   version: 11.1.0
   resolution: "globby@npm:11.1.0"
@@ -13252,6 +13259,7 @@ __metadata:
     "@types/node": "npm:^22.19.11"
     babel-preset-moon: "npm:^3.1.4"
     execa: "npm:^6.1.0"
+    globals: "npm:^17.6.0"
     jest: "npm:^29.7.0"
     jest-preset-moon: "npm:^3.1.0"
     packemon: "npm:^4.1.2"

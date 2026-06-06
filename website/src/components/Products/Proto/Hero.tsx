@@ -20,7 +20,7 @@ export default function Hero() {
 	useEffect(() => {
 		void fetch('https://raw.githubusercontent.com/moonrepo/proto/master/version')
 			.then((res) => res.text())
-			.then((text) => void setVersion(text.trim()))
+			.then((text) =>  setVersion(text.trim()))
 			.catch(console.error);
 	}, []);
 

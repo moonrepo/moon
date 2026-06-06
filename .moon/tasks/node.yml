@@ -1,92 +1,92 @@
-$schema: "../cache/schemas/tasks.json"
+$schema: '../cache/schemas/tasks.json'
 
 inheritedBy:
-  toolchains: "node"
+  toolchains: 'node'
 
 implicitDeps:
-  - "^:build"
+  - '^:build'
 
 fileGroups:
   configs:
-    - "*.{js,json}"
+    - '*.{js,json}'
   sources:
-    - "src/**/*"
-    - "types/**/*"
+    - 'src/**/*'
+    - 'types/**/*'
   tests:
-    - "tests/**/*"
+    - 'tests/**/*'
 
 tasks:
   build:
-    command: "packemon build --addFiles --addExports --declaration"
+    command: 'packemon build --addFiles --addExports --declaration'
     env:
-      NODE_ENV: "production"
+      NODE_ENV: 'production'
     inputs:
-      - "@globs(sources)"
-      - "package.json"
-      - "tsconfig.json"
-      - "tsconfig.*.json"
-      - "/tsconfig.options.json"
+      - '@globs(sources)'
+      - 'package.json'
+      - 'tsconfig.json'
+      - 'tsconfig.*.json'
+      - '/tsconfig.options.json'
     outputs:
-      - "cjs"
+      - 'cjs'
 
   format:
-    command: "vp fmt --check ."
+    command: 'vp fmt --check .'
     inputs:
-      - "@globs(sources)"
-      - "@globs(tests)"
-      - "/vite.config.ts"
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '/vite.config.ts'
 
   format-write:
-    extends: "format"
-    args: "--write"
+    extends: 'format'
+    args: '--write'
     options:
       runInCI: false
 
   lint:
-    command: "eslint"
+    command: 'eslint'
     args:
-      - "--cache"
-      - "--cache-location"
-      - "./.eslintcache"
-      - "--color"
-      - "--ext"
-      - ".js,.ts,.tsx"
-      - "--exit-on-fatal-error"
-      - "--no-error-on-unmatched-pattern"
+      - '--cache'
+      - '--cache-location'
+      - './.eslintcache'
+      - '--color'
+      - '--ext'
+      - '.js,.ts,.tsx'
+      - '--exit-on-fatal-error'
+      - '--no-error-on-unmatched-pattern'
       # - '--report-unused-disable-directives'
-      - "."
+      - '.'
     inputs:
-      - "@globs(sources)"
-      - "@globs(tests)"
-      - "*.{js,cjs,mjs,ts}"
-      - "tsconfig.json"
-      - "/eslint.config.mjs"
-      - "/tsconfig.eslint.json"
-      - "/tsconfig.options.json"
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - '*.{js,cjs,mjs,ts}'
+      - 'tsconfig.json'
+      - '/eslint.config.mjs'
+      - '/tsconfig.eslint.json'
+      - '/tsconfig.options.json'
 
   lint-fix:
-    extends: "lint"
-    args: "--fix"
+    extends: 'lint'
+    args: '--fix'
     options:
       runInCI: false
 
   test:
-    command: "jest"
+    command: 'jest'
     args:
-      - "--cache"
-      - "--color"
-      - "--preset"
-      - "jest-preset-moon"
-      - "--passWithNoTests"
+      - '--cache'
+      - '--color'
+      - '--preset'
+      - 'jest-preset-moon'
+      - '--passWithNoTests'
     inputs:
-      - "@globs(sources)"
-      - "@globs(tests)"
-      - "jest.config.*"
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'jest.config.*'
 
   typecheck:
-    command: "tsc --build"
+    command: 'tsc --build'
     inputs:
-      - "@globs(sources)"
-      - "@globs(tests)"
-      - "tsconfig.json"
-      - "/tsconfig.options.json"
+      - '@globs(sources)'
+      - '@globs(tests)'
+      - 'tsconfig.json'
+      - '/tsconfig.options.json'

@@ -20,6 +20,7 @@
     "@types/node": "^22.19.11",
     "babel-preset-moon": "^3.1.4",
     "execa": "^6.1.0",
+    "globals": "^17.6.0",
     "jest": "^29.7.0",
     "jest-preset-moon": "^3.1.0",
     "packemon": "^4.1.2",

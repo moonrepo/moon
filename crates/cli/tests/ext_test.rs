@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_config::PartialExtensionPluginConfig;
-use moon_test_utils2::{create_moon_sandbox, predicates};
+use moon_test_utils::{create_moon_sandbox, predicates};
 use proto_core::{PluginLocator, warpgate::FileLocator};
 use std::path::PathBuf;
 

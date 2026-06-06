@@ -3,7 +3,7 @@ use moon_action_context::ActionContext;
 use moon_actions::actions::sync_workspace;
 use moon_common::is_ci;
 use moon_env_var::GlobalEnvBag;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 
 fn create_workspace() -> (Sandbox, WorkspaceMocker) {

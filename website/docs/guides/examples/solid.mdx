@@ -25,7 +25,7 @@ transforming. To enable the preset for the entire monorepo, add the preset to a 
 
 ```js
 module.exports = {
-  presets: ['solid'],
+	presets: ['solid'],
 };
 ```
 
@@ -36,10 +36,10 @@ project root.
 
 ```json title="<project>/tsconfig.json"
 {
-  "compilerOptions": {
-    "jsx": "preserve",
-    "jsxImportSource": "solid-js"
-  }
+	"compilerOptions": {
+		"jsx": "preserve",
+		"jsxImportSource": "solid-js"
+	}
 }
 ```
 
@@ -54,7 +54,7 @@ import { defineConfig } from 'vite';
 import solidPlugin from 'vite-plugin-solid';
 
 export default defineConfig({
-  // ...
-  plugins: [solidPlugin()],
+	// ...
+	plugins: [solidPlugin()],
 });
 ```

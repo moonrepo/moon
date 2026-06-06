@@ -1,6 +1,6 @@
-import React, { CSSProperties } from 'react';
-import cx from 'clsx';
 import { Icon as BaseIcon, IconProps as BaseIconProps } from '@iconify/react';
+import cx from 'clsx';
+import React, { CSSProperties } from 'react';
 
 export interface IconProps extends BaseIconProps {
 	className?: string;

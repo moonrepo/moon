@@ -88,17 +88,17 @@ In the end, this file should only contain 3 fields: `extends`, `files` (an empty
 
 ```json file="tsconfig.json"
 {
-  "extends": "./tsconfig.options.json",
-  "files": [],
-  "references": [
-    {
-      "path": "apps/foo"
-    },
-    {
-      "path": "packages/bar"
-    }
-    // ... more
-  ]
+	"extends": "./tsconfig.options.json",
+	"files": [],
+	"references": [
+		{
+			"path": "apps/foo"
+		},
+		{
+			"path": "packages/bar"
+		}
+		// ... more
+	]
 }
 ```
 
@@ -137,16 +137,16 @@ defines common compiler options and may be used here.
 
 ```json file="tsconfig.options.json"
 {
-  "compilerOptions": {
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
-    "incremental": true,
-    "noEmitOnError": true,
-    "skipLibCheck": true
-    // ... others
-  }
+	"compilerOptions": {
+		"composite": true,
+		"declaration": true,
+		"declarationMap": true,
+		"emitDeclarationOnly": true,
+		"incremental": true,
+		"noEmitOnError": true,
+		"skipLibCheck": true
+		// ... others
+	}
 }
 ```
 
@@ -161,16 +161,16 @@ support with interoperability with the ecosystem.
 
 ```json file="tsconfig.options.json"
 {
-  "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "isolatedModules": true,
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "target": "esnext"
-    // ... others
-  }
+	"compilerOptions": {
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"isolatedModules": true,
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"target": "esnext"
+		// ... others
+	}
 }
 ```
 
@@ -217,12 +217,12 @@ importing files from an application. If this use case ever arises, move those fi
 
 ```json title="apps/foo/tsconfig.json"
 {
-  "extends": "../../../../tsconfig.options.json",
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "include": [],
-  "references": []
+	"extends": "../../../../tsconfig.options.json",
+	"compilerOptions": {
+		"noEmit": true
+	},
+	"include": [],
+	"references": []
 }
 ```
 
@@ -235,13 +235,13 @@ declarations that external projects would reference. This location is typically
 
 ```json title="packages/bar/tsconfig.json"
 {
-  "extends": "../../../../tsconfig.options.json",
-  "compilerOptions": {
-    "emitDeclarationOnly": true,
-    "outDir": "./lib"
-  },
-  "include": [],
-  "references": []
+	"extends": "../../../../tsconfig.options.json",
+	"compilerOptions": {
+		"emitDeclarationOnly": true,
+		"outDir": "./lib"
+	},
+	"include": [],
+	"references": []
 }
 ```
 
@@ -266,8 +266,8 @@ source, like configuration.
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "include": ["src/**/*", "tests/**/*", "*.js", "*.ts"]
+	// ...
+	"include": ["src/**/*", "tests/**/*", "*.js", "*.ts"]
 }
 ```
 
@@ -280,18 +280,18 @@ boundary.
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "references": [
-    {
-      "path": "../../foo"
-    },
-    {
-      "path": "../../bar"
-    },
-    {
-      "path": "../../../../baz"
-    }
-  ]
+	// ...
+	"references": [
+		{
+			"path": "../../foo"
+		},
+		{
+			"path": "../../bar"
+		},
+		{
+			"path": "../../../../baz"
+		}
+	]
 }
 ```
 
@@ -300,14 +300,14 @@ to add includes for referenced projects as well.
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "include": [
-    // ...
-    "src/**/*",
-    "../../foo/src/**/*",
-    "../../bar/src/**/*",
-    "../../../../baz/src/**/*"
-  ]
+	// ...
+	"include": [
+		// ...
+		"src/**/*",
+		"../../foo/src/**/*",
+		"../../bar/src/**/*",
+		"../../../../baz/src/**/*"
+	]
 }
 ```
 
@@ -334,8 +334,8 @@ Given this `package.json`...
 
 ```json title="<project>/package.json"
 {
-  // ...
-  "types": "./lib/index.d.ts"
+	// ...
+	"types": "./lib/index.d.ts"
 }
 ```
 
@@ -343,12 +343,12 @@ Our `tsconfig.build.json` may look like...
 
 ```json title="<project>/tsconfig.build.json"
 {
-  "extends": "../../../../tsconfig.options.json",
-  "compilerOptions": {
-    "outDir": "lib",
-    "rootDir": "src"
-  },
-  "include": ["src/**/*"]
+	"extends": "../../../../tsconfig.options.json",
+	"compilerOptions": {
+		"outDir": "lib",
+		"rootDir": "src"
+	},
+	"include": ["src/**/*"]
 }
 ```
 
@@ -369,13 +369,13 @@ reference to `tsconfig.json`.
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "references": [
-    {
-      "path": "./tsconfig.build.json"
-    }
-    // ... others
-  ]
+	// ...
+	"references": [
+		{
+			"path": "./tsconfig.build.json"
+		}
+		// ... others
+	]
 }
 ```
 
@@ -439,22 +439,22 @@ import, and also plays nice with the mandatory `baseUrl` compiler option.
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "compilerOptions": {
-    // ...
-    "baseUrl": ".",
-    "paths": {
-      // Within the project
-      ":components/*": ["./src/components/*"],
-      // To a referenced project
-      ":shared/*": ["../../shared/code/*"]
-    }
-  },
-  "references": [
-    {
-      "path": "../../shared/code"
-    }
-  ]
+	// ...
+	"compilerOptions": {
+		// ...
+		"baseUrl": ".",
+		"paths": {
+			// Within the project
+			":components/*": ["./src/components/*"],
+			// To a referenced project
+			":shared/*": ["../../shared/code/*"]
+		}
+	},
+	"references": [
+		{
+			"path": "../../shared/code"
+		}
+	]
 }
 ```
 
@@ -495,21 +495,21 @@ defining a `paths` alias that maps the `package.json` name to its source files, 
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "compilerOptions": {
-    // ...
-    "paths": {
-      // Index import
-      "@scope/name": ["../../shared/package/src/index.ts"],
-      // Deep imports
-      "@scope/name/*": ["../../shared/package/src/*"]
-    }
-  },
-  "references": [
-    {
-      "path": "../../shared/package"
-    }
-  ]
+	// ...
+	"compilerOptions": {
+		// ...
+		"paths": {
+			// Index import
+			"@scope/name": ["../../shared/package/src/index.ts"],
+			// Deep imports
+			"@scope/name/*": ["../../shared/package/src/*"]
+		}
+	},
+	"references": [
+		{
+			"path": "../../shared/package"
+		}
+	]
 }
 ```
 
@@ -534,8 +534,8 @@ some of these types.
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "include": ["src/**/*", "../../../../types/**/*"]
+	// ...
+	"include": ["src/**/*", "../../../../types/**/*"]
 }
 ```
 
@@ -583,10 +583,10 @@ apps) in the [`tsconfig.options.json`](#tsconfigoptionsjson) file.
 
 ```json file="tsconfig.options.json"
 {
-  "compilerOptions": {
-    // ...
-    "moduleResolution": "nodenext"
-  }
+	"compilerOptions": {
+		// ...
+		"moduleResolution": "nodenext"
+	}
 }
 ```
 
@@ -601,16 +601,16 @@ and it's the first condition in the mapping! We also suggest including `main` an
 
 ```json title="package.json"
 {
-  // ...
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "types": "./lib/index.d.ts",
-      "node": "./lib/index.js"
-    }
-  }
+	// ...
+	"main": "./lib/index.js",
+	"types": "./lib/index.d.ts",
+	"exports": {
+		"./package.json": "./package.json",
+		".": {
+			"types": "./lib/index.d.ts",
+			"node": "./lib/index.js"
+		}
+	}
 }
 ```
 
@@ -680,8 +680,8 @@ failures.
 
 ```json title=".vscode/settings.json"
 {
-  "typescript.tsdk": "node_modules/typescript/lib"
-  // Or "Select TypeScript version" from the command palette
+	"typescript.tsdk": "node_modules/typescript/lib"
+	// Or "Select TypeScript version" from the command palette
 }
 ```
 
@@ -715,9 +715,9 @@ files. This approach is also known as "internal packages".
 
 ```json title="package.json"
 {
-  // ...
-  "main": "./src/index.tsx",
-  "types": "./src/index.tsx"
+	// ...
+	"main": "./src/index.tsx",
+	"types": "./src/index.tsx"
 }
 ```
 

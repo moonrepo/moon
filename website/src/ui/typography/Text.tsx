@@ -1,4 +1,5 @@
 import cx from 'clsx';
+
 import {
 	TypographyAlign,
 	TypographyOverflow,

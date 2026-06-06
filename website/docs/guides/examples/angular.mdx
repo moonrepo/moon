@@ -67,9 +67,9 @@ be made. Begin be installing the dependencies that the
 application's `package.json`.
 
 <AddDepsTabs
-  dep="@angular-eslint/builder @angular-eslint/eslint-plugin @angular-eslint/eslint-plugin-template @angular-eslint/schematics @angular-eslint/template-parser"
-  package="<project>"
-  dev
+	dep="@angular-eslint/builder @angular-eslint/eslint-plugin @angular-eslint/eslint-plugin-template @angular-eslint/schematics @angular-eslint/template-parser"
+	package="<project>"
+	dev
 />
 
 Since Angular has some specific rules, we'll need to tell the ESLint package to overrides the
@@ -77,47 +77,47 @@ default ones. This can be achieved with a project-level `.eslintrc.json` file.
 
 ```json title="<project>/.eslintrc.json"
 {
-  "root": true,
-  "ignorePatterns": ["projects/**/*"],
-  "overrides": [
-    {
-      "files": ["*.ts"],
-      "extends": [
-        "eslint:recommended",
-        "plugin:@typescript-eslint/recommended",
-        "plugin:@angular-eslint/recommended",
-        // This is required if you use inline templates in Components
-        "plugin:@angular-eslint/template/process-inline-templates"
-      ],
-      "rules": {
-        /**
-         * Any TypeScript source code (NOT TEMPLATE) related rules you wish to use/reconfigure over and above the
-         * recommended set provided by the @angular-eslint project would go here.
-         */
-        "@angular-eslint/directive-selector": [
-          "error",
-          { "type": "attribute", "prefix": "app", "style": "camelCase" }
-        ],
-        "@angular-eslint/component-selector": [
-          "error",
-          { "type": "element", "prefix": "app", "style": "kebab-case" }
-        ]
-      }
-    },
-    {
-      "files": ["*.html"],
-      "extends": [
-        "plugin:@angular-eslint/template/recommended",
-        "plugin:@angular-eslint/template/accessibility"
-      ],
-      "rules": {
-        /**
-         * Any template/HTML related rules you wish to use/reconfigure over and above the
-         * recommended set provided by the @angular-eslint project would go here.
-         */
-      }
-    }
-  ]
+	"root": true,
+	"ignorePatterns": ["projects/**/*"],
+	"overrides": [
+		{
+			"files": ["*.ts"],
+			"extends": [
+				"eslint:recommended",
+				"plugin:@typescript-eslint/recommended",
+				"plugin:@angular-eslint/recommended",
+				// This is required if you use inline templates in Components
+				"plugin:@angular-eslint/template/process-inline-templates"
+			],
+			"rules": {
+				/**
+				 * Any TypeScript source code (NOT TEMPLATE) related rules you wish to use/reconfigure over and above the
+				 * recommended set provided by the @angular-eslint project would go here.
+				 */
+				"@angular-eslint/directive-selector": [
+					"error",
+					{ "type": "attribute", "prefix": "app", "style": "camelCase" }
+				],
+				"@angular-eslint/component-selector": [
+					"error",
+					{ "type": "element", "prefix": "app", "style": "kebab-case" }
+				]
+			}
+		},
+		{
+			"files": ["*.html"],
+			"extends": [
+				"plugin:@angular-eslint/template/recommended",
+				"plugin:@angular-eslint/template/accessibility"
+			],
+			"rules": {
+				/**
+				 * Any template/HTML related rules you wish to use/reconfigure over and above the
+				 * recommended set provided by the @angular-eslint project would go here.
+				 */
+			}
+		}
+	]
 }
 ```
 
@@ -165,18 +165,18 @@ the file patterns that should be linted.
 
 ```json title="<project>/angular.json"
 {
-  "projects": {
-    "angular-app": {
-      "architect": {
-        "lint": {
-          "builder": "@angular-eslint/builder:lint",
-          "options": {
-            "lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
-          }
-        }
-      }
-    }
-  }
+	"projects": {
+		"angular-app": {
+			"architect": {
+				"lint": {
+					"builder": "@angular-eslint/builder:lint",
+					"options": {
+						"lintFilePatterns": ["src/**/*.ts", "src/**/*.html"]
+					}
+				}
+			}
+		}
+	}
 }
 ```
 

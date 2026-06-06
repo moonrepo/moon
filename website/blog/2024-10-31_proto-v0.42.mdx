@@ -64,33 +64,33 @@ a bit of a learning curve for new users. To ease the plugin authoring process, w
 and YAML based plugins! To demonstrate this, here's our official moon plugin in all 3 formats:
 
 <NonWasmTabs
-  title="moon"
-  data={{
-    name: 'moon',
-    type: 'cli',
-    platform: {
-      linux: {
-        downloadFile: 'moon-{arch}-unknown-linux-{libc}',
-      },
-      macos: {
-        downloadFile: 'moon-{arch}-apple-darwin',
-      },
-      windows: {
-        downloadFile: 'moon-{arch}-pc-windows-msvc.exe',
-      },
-    },
-    install: {
-      downloadUrl: 'https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}',
-      downloadUrlCanary:
-        'https://github.com/moonrepo/moon/releases/download/canary/{download_file}',
-    },
-    resolve: {
-      gitUrl: 'https://github.com/moonrepo/moon',
-    },
-    metadata: {
-      selfUpgradeCommands: ['upgrade'],
-    },
-  }}
+	title="moon"
+	data={{
+		name: 'moon',
+		type: 'cli',
+		platform: {
+			linux: {
+				downloadFile: 'moon-{arch}-unknown-linux-{libc}',
+			},
+			macos: {
+				downloadFile: 'moon-{arch}-apple-darwin',
+			},
+			windows: {
+				downloadFile: 'moon-{arch}-pc-windows-msvc.exe',
+			},
+		},
+		install: {
+			downloadUrl: 'https://github.com/moonrepo/moon/releases/download/v{version}/{download_file}',
+			downloadUrlCanary:
+				'https://github.com/moonrepo/moon/releases/download/canary/{download_file}',
+		},
+		resolve: {
+			gitUrl: 'https://github.com/moonrepo/moon',
+		},
+		metadata: {
+			selfUpgradeCommands: ['upgrade'],
+		},
+	}}
 />
 
 > JSON and YAML use camelCase keys, while TOML uses kebab-case.

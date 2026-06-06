@@ -1,6 +1,6 @@
+import cx from 'clsx';
 /* oxlint-disable promise/prefer-await-to-then */
 import React, { ChangeEvent, ChangeEventHandler, FormEvent, useCallback, useState } from 'react';
-import cx from 'clsx';
 
 export interface FieldProps {
 	label: string;

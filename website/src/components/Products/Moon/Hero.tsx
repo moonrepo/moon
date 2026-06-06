@@ -1,5 +1,6 @@
 import Link from '@docusaurus/Link';
 import Text from '@site/src/ui/typography/Text';
+
 import LogoIcon from '../../../../static/brand/moon/icon.svg';
 import TextVector from '../../../../static/brand/moon/text-vector.svg';
 import YC from '../../../../static/img/logo-yc.svg';

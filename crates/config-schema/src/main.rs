@@ -12,13 +12,10 @@ fn main() {
     #[cfg(feature = "typescript")]
     generate_typescript_types(cwd.join("packages/types/src")).unwrap();
 
-    // Run prettier
-    let prettier = cwd.join("node_modules/.bin/prettier");
+    // Run formatter
+    let mut cmd = Command::new("vp");
+    cmd.args(["fmt"]);
+    cmd.current_dir(cwd);
+    cmd.output().unwrap();
 
-    if prettier.exists() {
-        let mut cmd = Command::new(prettier);
-        cmd.args(["--write", "packages/types"]);
-        cmd.current_dir(cwd);
-        cmd.output().unwrap();
-    }
 }

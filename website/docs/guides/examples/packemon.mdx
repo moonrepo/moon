@@ -59,13 +59,13 @@ declaration output directory.
 
 ```json title="tsconfig.esm.json"
 {
-  "extends": "../../tsconfig.options.json",
-  "compilerOptions": {
-    "outDir": "esm",
-    "rootDir": "src"
-  },
-  "include": ["src/**/*"],
-  "references": []
+	"extends": "../../tsconfig.options.json",
+	"compilerOptions": {
+		"outDir": "esm",
+		"rootDir": "src"
+	},
+	"include": ["src/**/*"],
+	"references": []
 }
 ```
 
@@ -77,11 +77,11 @@ formats must also be listed as `outputs` in the task.
 
 ```json title="package.json"
 {
-  "name": "package",
-  // ...
-  "packemon": {
-    "format": "esm",
-    "platform": "browser"
-  }
+	"name": "package",
+	// ...
+	"packemon": {
+		"format": "esm",
+		"platform": "browser"
+	}
 }
 ```

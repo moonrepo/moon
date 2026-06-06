@@ -147,15 +147,15 @@ workspace:
 When a project overrides an inherited task, moon merges the configs using strategies. The defaults
 are:
 
-| Field                       | Default merge strategy  |
-| --------------------------- | ----------------------- |
-| `args`                      | `append`                |
-| `deps`                      | `append`                |
-| `env`                       | `append` (object merge) |
-| `inputs`                    | `append`                |
-| `outputs`                   | `append`                |
-| `tags` <sup>v2.3+</sup>     | `append`                |
-| `toolchains`                | `append`                |
+| Field                   | Default merge strategy  |
+| ----------------------- | ----------------------- |
+| `args`                  | `append`                |
+| `deps`                  | `append`                |
+| `env`                   | `append` (object merge) |
+| `inputs`                | `append`                |
+| `outputs`               | `append`                |
+| `tags` <sup>v2.3+</sup> | `append`                |
+| `toolchains`            | `append`                |
 
 ```yaml
 # Global: args = ['--check']
@@ -720,11 +720,11 @@ Each entry in `deps` can declare a `cacheStrategy` that controls whether the dep
 current task's hash. The full breakdown is in `cache-issues.md` —
 [Dependency cache strategies](./cache-issues.md#dependency-cache-strategies). The summary:
 
-| Strategy    | This task's cache invalidates when…                              |
-| ----------- | ---------------------------------------------------------------- |
-| `'hash'`    | …the dep's hash changes (inputs, command, args, env).            |
-| `'ignored'` | …never. Dep is a sequencing edge only.                           |
-| `'outputs'` | …the dep's output files change.                                  |
+| Strategy    | This task's cache invalidates when…                   |
+| ----------- | ----------------------------------------------------- |
+| `'hash'`    | …the dep's hash changes (inputs, command, args, env). |
+| `'ignored'` | …never. Dep is a sequencing edge only.                |
+| `'outputs'` | …the dep's output files change.                       |
 
 ### The default changed in v2.3
 
@@ -735,8 +735,8 @@ outputs:
 - Dep **without** outputs → `'ignored'` (was `'hash'` before).
 
 If you upgraded from v2.2 and downstream tasks stop invalidating when an upstream `lint` / `test` /
-`typecheck` (no outputs) changes, this is why. Set `cacheStrategy: 'hash'` explicitly to restore
-the old behavior:
+`typecheck` (no outputs) changes, this is why. Set `cacheStrategy: 'hash'` explicitly to restore the
+old behavior:
 
 ```yaml
 tasks:

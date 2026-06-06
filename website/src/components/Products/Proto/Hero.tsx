@@ -1,7 +1,8 @@
 /* oxlint-disable promise/prefer-await-to-then */
 
-import React, { useEffect, useState } from 'react';
 import Link from '@docusaurus/Link';
+import React, { useEffect, useState } from 'react';
+
 import LogoIcon from '../../../../static/brand/proto/icon.svg';
 import TextVector from '../../../../static/brand/proto/text-vector.svg';
 import YC from '../../../../static/img/logo-yc.svg';

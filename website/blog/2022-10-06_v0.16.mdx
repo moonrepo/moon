@@ -74,11 +74,11 @@ For example, a project at "packages/components" will route to the following outp
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "compilerOptions": {
-    // ...
-    "outDir": "../../.moon/cache/types/packages/components"
-  }
+	// ...
+	"compilerOptions": {
+		// ...
+		"outDir": "../../.moon/cache/types/packages/components"
+	}
 }
 ```
 
@@ -100,19 +100,19 @@ with:
 
 ```json title="<project>/tsconfig.json"
 {
-  // ...
-  "compilerOptions": {
-    // ...
-    "paths": {
-      "@brand/components": ["../shared/components/src/index.ts"],
-      "@brand/components/*": ["../shared/components/src/*"]
-    }
-  },
-  "references": [
-    {
-      "path": "../shared/components"
-    }
-  ]
+	// ...
+	"compilerOptions": {
+		// ...
+		"paths": {
+			"@brand/components": ["../shared/components/src/index.ts"],
+			"@brand/components/*": ["../shared/components/src/*"]
+		}
+	},
+	"references": [
+		{
+			"path": "../shared/components"
+		}
+	]
 }
 ```
 

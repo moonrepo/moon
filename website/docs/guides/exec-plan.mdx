@@ -39,10 +39,10 @@ values when omitted. Unknown fields are rejected.
 
 ```json
 {
-  "affected": {},
-  "graph": {},
-  "pipeline": {},
-  "targets": []
+	"affected": {},
+	"graph": {},
+	"pipeline": {},
+	"targets": []
 }
 ```
 
@@ -55,7 +55,7 @@ In its simplest form, `targets` is an array of target strings:
 
 ```json
 {
-  "targets": ["app:build", "lib:build"]
+	"targets": ["app:build", "lib:build"]
 }
 ```
 
@@ -65,9 +65,9 @@ For advanced use cases, `targets` can be an object with one of two strategies:
 
 ```json
 {
-  "targets": {
-    "include": ["app:build", "#frontend:test"]
-  }
+	"targets": {
+		"include": ["app:build", "#frontend:test"]
+	}
 }
 ```
 
@@ -76,12 +76,12 @@ For advanced use cases, `targets` can be an object with one of two strategies:
 
 ```json
 {
-  "targets": {
-    "jobs": [
-      ["app:build", "app:test"],
-      ["lib:build", "lib:test"]
-    ]
-  }
+	"targets": {
+		"jobs": [
+			["app:build", "app:test"],
+			["lib:build", "lib:test"]
+		]
+	}
 }
 ```
 
@@ -134,7 +134,7 @@ The simplest plan — just list the targets to run:
 
 ```json
 {
-  "targets": ["app:build", "lib:build"]
+	"targets": ["app:build", "lib:build"]
 }
 ```
 
@@ -144,14 +144,14 @@ Only run tests affected by changes between the base branch and HEAD:
 
 ```json
 {
-  "affected": {
-    "base": "main",
-    "source": "remote"
-  },
-  "pipeline": {
-    "ci": true
-  },
-  "targets": [":test"]
+	"affected": {
+		"base": "main",
+		"source": "remote"
+	},
+	"pipeline": {
+		"ci": true
+	},
+	"targets": [":test"]
 }
 ```
 
@@ -162,13 +162,13 @@ via the CLI or an environment variable:
 
 ```json
 {
-  "pipeline": {
-    "ci": true,
-    "jobTotal": 3
-  },
-  "targets": {
-    "jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
-  }
+	"pipeline": {
+		"ci": true,
+		"jobTotal": 3
+	},
+	"targets": {
+		"jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
+	}
 }
 ```
 
@@ -191,11 +191,11 @@ Run all lint tasks, continuing past failures so you get the full list of issues:
 
 ```json
 {
-  "pipeline": {
-    "concurrency": 4,
-    "onFailure": "continue"
-  },
-  "targets": [":lint"]
+	"pipeline": {
+		"concurrency": 4,
+		"onFailure": "continue"
+	},
+	"targets": [":lint"]
 }
 ```
 
@@ -205,11 +205,11 @@ Build a target along with all of its upstream dependencies and downstream depend
 
 ```json
 {
-  "graph": {
-    "upstream": "deep",
-    "downstream": "deep"
-  },
-  "targets": ["core:build"]
+	"graph": {
+		"upstream": "deep",
+		"downstream": "deep"
+	},
+	"targets": ["core:build"]
 }
 ```
 
@@ -219,25 +219,25 @@ Combine all blocks — run affected tests in CI across partitioned jobs, with fu
 
 ```json
 {
-  "affected": {
-    "base": "main",
-    "head": "HEAD",
-    "includeRelations": true,
-    "source": "remote",
-    "status": ["modified", "added"]
-  },
-  "graph": {
-    "upstream": "deep",
-    "downstream": "direct"
-  },
-  "pipeline": {
-    "ci": true,
-    "concurrency": 8,
-    "jobTotal": 3,
-    "onFailure": "continue"
-  },
-  "targets": {
-    "jobs": [["app:test", "app:lint"], ["#frontend:test"], ["lib:test", "core:test"]]
-  }
+	"affected": {
+		"base": "main",
+		"head": "HEAD",
+		"includeRelations": true,
+		"source": "remote",
+		"status": ["modified", "added"]
+	},
+	"graph": {
+		"upstream": "deep",
+		"downstream": "direct"
+	},
+	"pipeline": {
+		"ci": true,
+		"concurrency": 8,
+		"jobTotal": 3,
+		"onFailure": "continue"
+	},
+	"targets": {
+		"jobs": [["app:test", "app:lint"], ["#frontend:test"], ["lib:test", "core:test"]]
+	}
 }
 ```

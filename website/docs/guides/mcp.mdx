@@ -26,15 +26,15 @@ Or create an `.mcp.json` file in your project directory.
 
 ```json
 {
-  "mcpServers": {
-    "moon": {
-      "command": "moon",
-      "args": ["mcp"],
-      "env": {
-        "MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
-      }
-    }
-  }
+	"mcpServers": {
+		"moon": {
+			"command": "moon",
+			"args": ["mcp"],
+			"env": {
+				"MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
+			}
+		}
+	}
 }
 ```
 
@@ -46,15 +46,15 @@ following content:
 
 ```json title=".cursor/mcp.json"
 {
-  "mcpServers": {
-    "moon": {
-      "command": "moon",
-      "args": ["mcp"],
-      "env": {
-        "MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
-      }
-    }
-  }
+	"mcpServers": {
+		"moon": {
+			"command": "moon",
+			"args": ["mcp"],
+			"env": {
+				"MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
+			}
+		}
+	}
 }
 ```
 
@@ -69,19 +69,19 @@ Once installed, create a `.vscode/mcp.json` file with the following content:
 
 ```json title=".vscode/mcp.json"
 {
-  "servers": {
-    "moon": {
-      "type": "stdio",
-      "command": "moon",
-      "args": ["mcp"],
-      // >= 1.102 (June 2025)
-      "cwd": "${workspaceFolder}",
-      // Older versions
-      "env": {
-        "MOON_WORKSPACE_ROOT": "${workspaceFolder}"
-      }
-    }
-  }
+	"servers": {
+		"moon": {
+			"type": "stdio",
+			"command": "moon",
+			"args": ["mcp"],
+			// >= 1.102 (June 2025)
+			"cwd": "${workspaceFolder}",
+			// Older versions
+			"env": {
+				"MOON_WORKSPACE_ROOT": "${workspaceFolder}"
+			}
+		}
+	}
 }
 ```
 
@@ -99,17 +99,17 @@ project directory, or `~/.config/zed/settings.json` globally, with the following
 
 ```json title=".zed/settings.json"
 {
-  "context_servers": {
-    "moon": {
-      "command": {
-        "path": "moon",
-        "args": ["mcp"],
-        "env": {
-          "MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
-        }
-      }
-    }
-  }
+	"context_servers": {
+		"moon": {
+			"command": {
+				"path": "moon",
+				"args": ["mcp"],
+				"env": {
+					"MOON_WORKSPACE_ROOT": "/absolute/path/to/your/moon/workspace"
+				}
+			}
+		}
+	}
 }
 ```
 

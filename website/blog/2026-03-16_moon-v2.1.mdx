@@ -23,12 +23,12 @@ pipeline behavior — and pass it with a single flag:
 
 ```json title="plan.json"
 {
-  "pipeline": {
-    "jobTotal": 3
-  },
-  "targets": {
-    "jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
-  }
+	"pipeline": {
+		"jobTotal": 3
+	},
+	"targets": {
+		"jobs": [["app:build", "app:test"], ["lib:build", "lib:test"], ["docs:build"]]
+	}
 }
 ```
 

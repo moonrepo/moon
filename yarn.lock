@@ -13255,7 +13255,6 @@ __metadata:
     jest: "npm:^29.7.0"
     jest-preset-moon: "npm:^3.1.0"
     packemon: "npm:^4.1.2"
-    prettier-config-moon: "npm:^1.2.2"
     tsconfig-moon: "npm:^1.4.2"
     typescript: "npm:5.9.3"
     vite-plus: "catalog:"
@@ -15228,13 +15227,6 @@ __metadata:
   version: 1.1.2
   resolution: "prelude-ls@npm:1.1.2"
   checksum: 10/946a9f60d3477ca6b7d4c5e8e452ad1b98dc8aaa992cea939a6b926ac16cc4129d7217c79271dc808b5814b1537ad0af37f29a942e2eafbb92cfc5a1c87c38cb
-  languageName: node
-  linkType: hard
-
-"prettier-config-moon@npm:^1.2.2":
-  version: 1.2.2
-  resolution: "prettier-config-moon@npm:1.2.2"
-  checksum: 10/bc26558ba930d3520cb85cbb6057c66b54e49610699495dd3a7005fffc4ab6cb41fc6844c1fbb86c97dc4743dba6b9761118e068041e43548f1e7f117d4adb7b
   languageName: node
   linkType: hard
 

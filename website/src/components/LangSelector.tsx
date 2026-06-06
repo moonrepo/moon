@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
 import { useLocation } from '@docusaurus/router';
+import React, { useCallback, useEffect, useState } from 'react';
 
 const STARTED_ROUTES = [
 	'/docs/install',

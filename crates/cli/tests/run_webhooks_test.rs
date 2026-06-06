@@ -2,7 +2,7 @@ mod utils;
 
 use httpmock::prelude::*;
 use moon_config::PartialNotifierConfig;
-use moon_test_utils2::MoonSandbox;
+use moon_test_utils::MoonSandbox;
 use utils::create_tasks_sandbox;
 
 fn create_webhooks_sandbox(url: String) -> MoonSandbox {

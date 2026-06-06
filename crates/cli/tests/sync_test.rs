@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_test_utils2::{MoonSandbox, create_empty_moon_sandbox};
+use moon_test_utils::{MoonSandbox, create_empty_moon_sandbox};
 use rustc_hash::FxHashMap;
 use utils::create_projects_sandbox;
 

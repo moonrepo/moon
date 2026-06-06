@@ -2,7 +2,7 @@
 
 use moon_common::{Id, is_ci};
 use moon_config::{PartialToolchainPluginConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
-use moon_test_utils2::{MoonSandbox, create_empty_moon_sandbox, create_moon_sandbox};
+use moon_test_utils::{MoonSandbox, create_empty_moon_sandbox, create_moon_sandbox};
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 

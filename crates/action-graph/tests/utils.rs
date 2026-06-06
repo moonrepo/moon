@@ -1,5 +1,5 @@
 use moon_action_graph::*;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use moon_workspace_graph::WorkspaceGraph;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

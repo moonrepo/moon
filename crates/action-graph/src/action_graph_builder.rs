@@ -1431,7 +1431,7 @@ impl ActionGraphBuilder<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moon_test_utils2::WorkspaceMocker;
+    use moon_test_utils::WorkspaceMocker;
     use starbase_sandbox::create_sandbox;
     use std::fs;
 

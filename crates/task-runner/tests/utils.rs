@@ -13,7 +13,7 @@ use moon_task_runner::command_builder::CommandBuilder;
 use moon_task_runner::command_executor::CommandExecutor;
 use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
-use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
+use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use starbase_archive::Archiver;
 use starbase_sandbox::{Sandbox, create_sandbox};
 use std::fs;

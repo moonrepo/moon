@@ -6,7 +6,7 @@ use moon_config::{
     TemplateVariableEnumSetting, TemplateVariableEnumValue, TemplateVariableNumberSetting,
     TemplateVariableStringSetting,
 };
-use moon_test_utils2::{create_moon_sandbox, predicates::prelude::*};
+use moon_test_utils::{create_moon_sandbox, predicates::prelude::*};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::assert_snapshot;
 use std::fs;

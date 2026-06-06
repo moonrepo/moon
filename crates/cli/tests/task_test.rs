@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_test_utils2::predicates::prelude::*;
+use moon_test_utils::predicates::prelude::*;
 use starbase_sandbox::assert_snapshot;
 use utils::create_projects_sandbox;
 

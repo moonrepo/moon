@@ -1,7 +1,7 @@
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use moon_bench_utils::{create_simple_workspace, handle_unwrap};
 use moon_common::{is_ci, is_local};
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync};
 use tokio::runtime::Runtime;
 

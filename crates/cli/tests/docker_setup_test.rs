@@ -1,4 +1,4 @@
-use moon_test_utils2::{create_moon_sandbox, predicates};
+use moon_test_utils::{create_moon_sandbox, predicates};
 
 mod docker_setup {
     use super::*;

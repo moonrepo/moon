@@ -1,4 +1,4 @@
-use moon_test_utils2::{MoonSandbox, create_moon_sandbox, predicates};
+use moon_test_utils::{MoonSandbox, create_moon_sandbox, predicates};
 use starbase_utils::fs;
 
 mod docker_prune {

@@ -4,7 +4,7 @@ use moon_config::{GlobPath, HasherConfig, HasherWalkStrategy, PortablePath};
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_hasher::{TaskFingerprint, TaskHasher};
-use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
+use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::fs;

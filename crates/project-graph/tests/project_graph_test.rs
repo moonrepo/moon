@@ -7,7 +7,7 @@ use moon_project::{FileGroup, Project, ProjectAlias};
 use moon_project_graph::*;
 use moon_query::build_query;
 use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
-use moon_test_utils2::{
+use moon_test_utils::{
     MoonSandbox, WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker, create_moon_sandbox,
 };
 use moon_workspace::WorkspaceProjectsCacheState;

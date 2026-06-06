@@ -6,7 +6,7 @@ use moon_config::{
 use moon_file_group::FileGroup;
 use moon_project::Project;
 use moon_project_builder::ProjectBuilder;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use starbase_sandbox::create_sandbox;
 use std::collections::BTreeMap;
 use std::path::Path;

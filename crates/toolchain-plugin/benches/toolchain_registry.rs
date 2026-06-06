@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use moon_bench_utils::handle_unwrap;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use starbase_sandbox::create_empty_sandbox;
 use tokio::runtime::Runtime;
 

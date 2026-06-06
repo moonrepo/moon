@@ -4,7 +4,7 @@
 use moon_daemon_client::DaemonClient;
 use moon_daemon_server::*;
 use moon_daemon_utils::endpoint::*;
-use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
+use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};

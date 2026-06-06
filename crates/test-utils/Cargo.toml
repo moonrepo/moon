@@ -1,5 +1,5 @@
 [package]
-name = "moon_test_utils2"
+name = "moon_test_utils"
 version = "0.0.1"
 edition = "2024"
 license = "MIT"

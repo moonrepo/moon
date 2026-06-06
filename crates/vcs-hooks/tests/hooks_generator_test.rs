@@ -1,5 +1,5 @@
 use moon_config::VcsConfig;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use moon_vcs_hooks::HooksGenerator;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};

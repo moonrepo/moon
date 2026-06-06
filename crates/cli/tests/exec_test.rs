@@ -4,7 +4,7 @@ use moon_cache::CacheEngine;
 use moon_common::is_ci;
 use moon_config::{CacheConfig, HasherWalkStrategy, PartialHasherConfig};
 use moon_task_runner::TaskRunCacheState;
-use moon_test_utils2::predicates::prelude::*;
+use moon_test_utils::predicates::prelude::*;
 use starbase_utils::{fs, json};
 use std::path::{MAIN_SEPARATOR_STR, Path};
 use utils::{

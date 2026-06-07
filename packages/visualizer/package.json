@@ -25,9 +25,6 @@
   "files": [
     "dist"
   ],
-  "scripts": {
-    "build": "vp build"
-  },
   "dependencies": {
     "@moonrepo/types": "workspace:^",
     "cytoscape": "^3.31.1",

@@ -17,7 +17,7 @@ fileGroups:
 
 tasks:
   build:
-    command: 'packemon build --addFiles --addExports --declaration'
+    command: 'vp pack'
     env:
       NODE_ENV: 'production'
     inputs:
@@ -26,6 +26,7 @@ tasks:
       - 'tsconfig.json'
       - 'tsconfig.*.json'
       - '/tsconfig.options.json'
+      - '/vite.config.ts'
     outputs:
       - 'cjs'
 

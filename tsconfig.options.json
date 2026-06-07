@@ -1,8 +1,10 @@
 {
   "extends": "tsconfig-moon/tsconfig.projects.json",
   "compilerOptions": {
+    "isolatedDeclarations": true,
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "sourceMap": true,
     "target": "esnext",
     "verbatimModuleSyntax": false
   }

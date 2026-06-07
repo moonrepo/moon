@@ -65,11 +65,23 @@ export default defineConfig({
 		sortImports: true,
 		sortPackageJson: false,
 		useTabs: true,
-		ignorePatterns,
+		ignorePatterns: [...ignorePatterns, '**/*.json'],
 	},
 	test: {
 		include: ['packages/**/*.test.ts'],
 		environment: 'node',
 		globals: false,
+	},
+	pack: {
+		dts: {
+			build: true,
+		},
+		exports: {
+			legacy: true,
+		},
+		format: ['cjs'],
+		outDir: 'cjs',
+		platform: 'browser',
+		sourcemap: true,
 	},
 });

@@ -22,11 +22,6 @@
     "cjs/**/*",
     "src/**/*"
   ],
-  "packemon": {
-    "format": "cjs",
-    "platform": "node",
-    "bundle": true
-  },
   "dependencies": {
     "@moonrepo/types": "workspace:^"
   },

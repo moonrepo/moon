@@ -10,12 +10,8 @@ node:
   version: '22.14.0'
 
 yarn:
-  version: '4.12.0'
+  version: '4.16.0'
 
 typescript:
   routeOutDirToCache: true
   syncProjectReferences: true
-# unstable_python:
-#   packageManager: pip
-
-# unstable_pip: {}

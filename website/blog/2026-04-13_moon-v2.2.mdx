@@ -100,44 +100,44 @@ becomes more significant, with a speedup of 40-170%. Over time, and with the int
 daemon, this will only get better!
 
 <table>
-	<tr>
-		<th>Benchmark</th>
-		<th colspan="2">Average time</th>
-		<th colspan="2">Total suite time</th>
-		<th>Speedup</th>
-	</tr>
-	<tr>
-		<td> </td>
-		<td>Sync</td>
-		<td>Async</td>
-		<td>Sync</td>
-		<td>Async</td>
-		<td> </td>
-	</tr>
-	<tr>
-		<td>100 projects / 400 tasks</td>
-		<td>78ms</td>
-		<td>51ms</td>
-		<td>9.7s</td>
-		<td>5.1s</td>
-		<td>41.8%</td>
-	</tr>
-	<tr>
-		<td>1,000 projects / 4,000 tasks</td>
-		<td>514.5ms</td>
-		<td>119ms</td>
-		<td>57.4s</td>
-		<td>12s</td>
-		<td>125%</td>
-	</tr>
-	<tr>
-		<td>5,000 projects / 20,000 tasks</td>
-		<td>5.7s</td>
-		<td>457ms</td>
-		<td>602.6s</td>
-		<td>46s</td>
-		<td>170%</td>
-	</tr>
+  <tr>
+    <th>Benchmark</th>
+    <th colspan="2">Average time</th>
+    <th colspan="2">Total suite time</th>
+    <th>Speedup</th>
+  </tr>
+  <tr>
+    <td> </td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td> </td>
+  </tr>
+  <tr>
+    <td>100 projects / 400 tasks</td>
+    <td>78ms</td>
+    <td>51ms</td>
+    <td>9.7s</td>
+    <td>5.1s</td>
+    <td>41.8%</td>
+  </tr>
+  <tr>
+    <td>1,000 projects / 4,000 tasks</td>
+    <td>514.5ms</td>
+    <td>119ms</td>
+    <td>57.4s</td>
+    <td>12s</td>
+    <td>125%</td>
+  </tr>
+  <tr>
+    <td>5,000 projects / 20,000 tasks</td>
+    <td>5.7s</td>
+    <td>457ms</td>
+    <td>602.6s</td>
+    <td>46s</td>
+    <td>170%</td>
+  </tr>
 </table>
 
 ### Caveats
@@ -185,84 +185,84 @@ the increments diminish, as we're most likely hitting the upper limits of how mu
 parallelize the work.
 
 <table>
-	<tr>
-		<th>Benchmark</th>
-		<th colspan="2">Average time</th>
-		<th colspan="2">Total suite time</th>
-		<th>Speedup</th>
-	</tr>
-	<tr>
-		<td> </td>
-		<td>Sync</td>
-		<td>Async</td>
-		<td>Sync</td>
-		<td>Async</td>
-		<td> </td>
-	</tr>
-	<tr>
-		<td>10 projects</td>
-		<td>47.9ms</td>
-		<td>47.3ms</td>
-		<td>4.2s</td>
-		<td>4.2s</td>
-		<td>0%</td>
-	</tr>
-	<tr>
-		<td>30 tasks</td>
-		<td>105.08ms</td>
-		<td>61.75ms</td>
-		<td>10.4s</td>
-		<td>5.6s</td>
-		<td>+51.9%</td>
-	</tr>
-	<tr>
-		<td>100 projects</td>
-		<td>60.02ms</td>
-		<td>60.41ms</td>
-		<td>6s</td>
-		<td>6s</td>
-		<td>0%</td>
-	</tr>
-	<tr>
-		<td>300 tasks</td>
-		<td>585.62ms</td>
-		<td>131.43ms</td>
-		<td>58.6s</td>
-		<td>13.1s</td>
-		<td>+126.6%</td>
-	</tr>
-	<tr>
-		<td>1,000 projects</td>
-		<td>202.14ms</td>
-		<td>199.52ms</td>
-		<td>21.6s</td>
-		<td>20s</td>
-		<td>+1.3%</td>
-	</tr>
-	<tr>
-		<td>3,000 tasks</td>
-		<td>5.5s</td>
-		<td>901ms</td>
-		<td>553.4s</td>
-		<td>88.5s</td>
-		<td>+143.75%</td>
-	</tr>
-	<tr>
-		<td>5,000 projects</td>
-		<td>1.1s</td>
-		<td>1s</td>
-		<td>127.8s</td>
-		<td>111.3s</td>
-		<td>+13.8%</td>
-	</tr>
-	<tr>
-		<td>15,000 tasks</td>
-		<td>29s</td>
-		<td>4.5s</td>
-		<td>2,866s (47m)</td>
-		<td>476s (7.9m)</td>
-		<td>+146%</td>
-	</tr>
+  <tr>
+    <th>Benchmark</th>
+    <th colspan="2">Average time</th>
+    <th colspan="2">Total suite time</th>
+    <th>Speedup</th>
+  </tr>
+  <tr>
+    <td> </td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td>Sync</td>
+    <td>Async</td>
+    <td> </td>
+  </tr>
+  <tr>
+    <td>10 projects</td>
+    <td>47.9ms</td>
+    <td>47.3ms</td>
+    <td>4.2s</td>
+    <td>4.2s</td>
+    <td>0%</td>
+  </tr>
+  <tr>
+    <td>30 tasks</td>
+    <td>105.08ms</td>
+    <td>61.75ms</td>
+    <td>10.4s</td>
+    <td>5.6s</td>
+    <td>+51.9%</td>
+  </tr>
+  <tr>
+    <td>100 projects</td>
+    <td>60.02ms</td>
+    <td>60.41ms</td>
+    <td>6s</td>
+    <td>6s</td>
+    <td>0%</td>
+  </tr>
+  <tr>
+    <td>300 tasks</td>
+    <td>585.62ms</td>
+    <td>131.43ms</td>
+    <td>58.6s</td>
+    <td>13.1s</td>
+    <td>+126.6%</td>
+  </tr>
+  <tr>
+    <td>1,000 projects</td>
+    <td>202.14ms</td>
+    <td>199.52ms</td>
+    <td>21.6s</td>
+    <td>20s</td>
+    <td>+1.3%</td>
+  </tr>
+  <tr>
+    <td>3,000 tasks</td>
+    <td>5.5s</td>
+    <td>901ms</td>
+    <td>553.4s</td>
+    <td>88.5s</td>
+    <td>+143.75%</td>
+  </tr>
+  <tr>
+    <td>5,000 projects</td>
+    <td>1.1s</td>
+    <td>1s</td>
+    <td>127.8s</td>
+    <td>111.3s</td>
+    <td>+13.8%</td>
+  </tr>
+  <tr>
+    <td>15,000 tasks</td>
+    <td>29s</td>
+    <td>4.5s</td>
+    <td>2,866s (47m)</td>
+    <td>476s (7.9m)</td>
+    <td>+146%</td>
+  </tr>
 </table>
 
 ## Other changes

@@ -47,34 +47,34 @@ This information is also included in the run report at `.moon/cache/runReport.js
 
 ```json
 {
-	"projects": {
-		"website": {
-			"files": ["website/blog/2024-10-01_moon-v1.29.mdx"],
-			"other": true
-		},
-		"runtime": {
-			"downstream": ["website"],
-			"other": true
-		},
-		"types": {
-			"downstream": ["website", "runtime"],
-			"other": true
-		}
-	},
-	"tasks": {
-		"website:build": {
-			"files": ["website/blog/2024-10-01_moon-v1.29.mdx"],
-			"other": false
-		},
-		"types:build": {
-			"downstream": ["website:build"],
-			"other": false
-		},
-		"runtime:build": {
-			"downstream": ["website:build"],
-			"other": false
-		}
-	}
+  "projects": {
+    "website": {
+      "files": ["website/blog/2024-10-01_moon-v1.29.mdx"],
+      "other": true
+    },
+    "runtime": {
+      "downstream": ["website"],
+      "other": true
+    },
+    "types": {
+      "downstream": ["website", "runtime"],
+      "other": true
+    }
+  },
+  "tasks": {
+    "website:build": {
+      "files": ["website/blog/2024-10-01_moon-v1.29.mdx"],
+      "other": false
+    },
+    "types:build": {
+      "downstream": ["website:build"],
+      "other": false
+    },
+    "runtime:build": {
+      "downstream": ["website:build"],
+      "other": false
+    }
+  }
 }
 ```
 

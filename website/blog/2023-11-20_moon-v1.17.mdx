@@ -95,7 +95,7 @@ For example, if the TypeScript root is `/`, and shared types is `/types`, then a
 
 ```json title="packages/example/tsconfig.json"
 {
-	"include": ["../../types/**/*"]
+  "include": ["../../types/**/*"]
 }
 ```
 
@@ -126,8 +126,8 @@ this project depends on 2 other projects: ui and utils.
 
 ```json title="packages/example/tsconfig.json"
 {
-	"compilerOptions": {},
-	"include": ["src/**/*"]
+  "compilerOptions": {},
+  "include": ["src/**/*"]
 }
 ```
 
@@ -136,9 +136,9 @@ sources, like so.
 
 ```json title="packages/example/tsconfig.json"
 {
-	"compilerOptions": {},
-	"include": ["src/**/*", "../ui/**/*", "../utils/**/*"],
-	"references": [{ "path": "../ui" }, { "path": "../utils" }]
+  "compilerOptions": {},
+  "include": ["src/**/*", "../ui/**/*", "../utils/**/*"],
+  "references": [{ "path": "../ui" }, { "path": "../utils" }]
 }
 ```
 

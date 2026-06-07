@@ -73,12 +73,12 @@ mode, declaration emitting, and incremental builds.
 
 ```json title="tsconfig.options.json"
 {
-	"extends": "tsconfig-moon/tsconfig.projects.json",
-	"compilerOptions": {
-		// Your custom options
-		"moduleResolution": "nodenext",
-		"target": "es2022"
-	}
+  "extends": "tsconfig-moon/tsconfig.projects.json",
+  "compilerOptions": {
+    // Your custom options
+    "moduleResolution": "nodenext",
+    "target": "es2022"
+  }
 }
 ```
 
@@ -87,10 +87,10 @@ editors and tooling for deep integrations.
 
 ```json title="tsconfig.json"
 {
-	"extends": "./tsconfig.options.json",
-	"files": [],
-	// All project references in the repo
-	"references": []
+  "extends": "./tsconfig.options.json",
+  "files": [],
+  // All project references in the repo
+  "references": []
 }
 ```
 
@@ -106,16 +106,16 @@ Every project will require a `tsconfig.json`, as TypeScript itself requires it. 
 
 ```json title="<project>/tsconfig.json"
 {
-	// Extend the root compiler options
-	"extends": "../../tsconfig.options.json",
-	"compilerOptions": {
-		// Declarations are written here
-		"outDir": "lib"
-	},
-	// Include files in the project
-	"include": ["src/**/*", "tests/**/*"],
-	// Depends on other projects
-	"references": []
+  // Extend the root compiler options
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    // Declarations are written here
+    "outDir": "lib"
+  },
+  // Include files in the project
+  "include": ["src/**/*", "tests/**/*"],
+  // Depends on other projects
+  "references": []
 }
 ```
 
@@ -137,10 +137,10 @@ following content.
 
 ```json title="packages/tsconfig-company/tsconfig.json"
 {
-	"compilerOptions": {
-		// ...
-		"lib": ["esnext"]
-	}
+  "compilerOptions": {
+    // ...
+    "lib": ["esnext"]
+  }
 }
 ```
 
@@ -148,7 +148,7 @@ Within another `tsconfig.json`, you can extend this package to inherit the setti
 
 ```json title="tsconfig.json"
 {
-	"extends": "tsconfig-company/tsconfig.json"
+  "extends": "tsconfig-company/tsconfig.json"
 }
 ```
 

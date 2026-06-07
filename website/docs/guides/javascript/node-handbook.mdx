@@ -281,10 +281,10 @@ use `*` for npm).
 
 ```json
 {
-	"name": "@company/consumer",
-	"dependencies": {
-		"@company/provider": "workspace:^"
-	}
+  "name": "@company/consumer",
+  "dependencies": {
+    "@company/provider": "workspace:^"
+  }
 }
 ```
 
@@ -356,12 +356,12 @@ import path from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	// ...
-	resolve: {
-		alias: {
-			'@company/utils': path.join(__dirname, '../packages/utils/src'),
-		},
-	},
+  // ...
+  resolve: {
+    alias: {
+      '@company/utils': path.join(__dirname, '../packages/utils/src'),
+    },
+  },
 });
 ```
 
@@ -372,12 +372,12 @@ export default defineConfig({
 const path = require('path');
 
 module.exports = {
-	// ...
-	resolve: {
-		alias: {
-			'@company/utils': path.join(__dirname, '../packages/utils/src'),
-		},
-	},
+  // ...
+  resolve: {
+    alias: {
+      '@company/utils': path.join(__dirname, '../packages/utils/src'),
+    },
+  },
 };
 ```
 

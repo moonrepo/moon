@@ -29,14 +29,14 @@ Every webhook event is posted with the following request body, known as a payloa
 
 ```json
 {
-	"type": "...",
-	"environment": "...",
-	"event": {
-		// ...
-	},
-	"createdAt": "...",
-	"uuid": "...",
-	"trace": "..."
+  "type": "...",
+  "environment": "...",
+  "event": {
+    // ...
+  },
+  "createdAt": "...",
+  "uuid": "...",
+  "trace": "..."
 }
 ```
 
@@ -77,13 +77,13 @@ detailed information about the actions. Use the [`action.*`](#actionstarted) eve
 
 ```json
 {
-	"type": "pipeline.started",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"actionsCount": 15
-	},
-	"uuid": "..."
+  "type": "pipeline.started",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "actionsCount": 15
+  },
+  "uuid": "..."
 }
 ```
 
@@ -100,27 +100,27 @@ want to also catch crashes.
 
 ```json
 {
-	"type": "pipeline.finished",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"cachedCount": 10,
-		"baselineDuration": {
-			"secs": 60,
-			"nanos": 3591693
-		},
-		"duration": {
-			"secs": 120,
-			"nanos": 3591693
-		},
-		"estimatedSavings": {
-			"secs": 60,
-			"nanos": 0
-		},
-		"failedCount": 1,
-		"passedCount": 4
-	},
-	"uuid": "..."
+  "type": "pipeline.finished",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "cachedCount": 10,
+    "baselineDuration": {
+      "secs": 60,
+      "nanos": 3591693
+    },
+    "duration": {
+      "secs": 120,
+      "nanos": 3591693
+    },
+    "estimatedSavings": {
+      "secs": 60,
+      "nanos": 0
+    },
+    "failedCount": 1,
+    "passedCount": 4
+  },
+  "uuid": "..."
 }
 ```
 
@@ -133,13 +133,13 @@ critical action failing.
 
 ```json
 {
-	"type": "pipeline.aborted",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"error": "..."
-	},
-	"uuid": "..."
+  "type": "pipeline.aborted",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": "..."
+  },
+  "uuid": "..."
 }
 ```
 
@@ -155,33 +155,33 @@ Triggered when an action within the pipeline has started to run.
 
 ```json
 {
-	"type": "action.started",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"action": {
-			"attempts": null,
-			"createdAt": "...",
-			"duration": {
-				"secs": 0,
-				"nanos": 3591693
-			},
-			"error": null,
-			"label": "InstallWorkspaceDeps(node:18.0.0)",
-			"nodeIndex": 5,
-			"status": "passed"
-		},
-		"node": {
-			"action": "InstallDeps",
-			"params": [
-				{
-					"toolchain": "Node",
-					"version": "18.0.0"
-				}
-			]
-		}
-	},
-	"uuid": "..."
+  "type": "action.started",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "action": {
+      "attempts": null,
+      "createdAt": "...",
+      "duration": {
+        "secs": 0,
+        "nanos": 3591693
+      },
+      "error": null,
+      "label": "InstallWorkspaceDeps(node:18.0.0)",
+      "nodeIndex": 5,
+      "status": "passed"
+    },
+    "node": {
+      "action": "InstallDeps",
+      "params": [
+        {
+          "toolchain": "Node",
+          "version": "18.0.0"
+        }
+      ]
+    }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -194,32 +194,32 @@ If the action failed, the `error` field will be set with the error message.
 
 ```json
 {
-	"type": "action.finished",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"action": {
-			"attempts": null,
-			"createdAt": "...",
-			"duration": {
-				"secs": 0,
-				"nanos": 3591693
-			},
-			"error": null,
-			"label": "InstallWorkspaceDeps(node:18.0.0)",
-			"nodeIndex": 5,
-			"status": "passed"
-		},
-		"error": null,
-		"node": {
-			"action": "InstallDeps",
-			"params": {
-				"toolchain": "Node",
-				"version": "18.0.0"
-			}
-		}
-	},
-	"uuid": "..."
+  "type": "action.finished",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "action": {
+      "attempts": null,
+      "createdAt": "...",
+      "duration": {
+        "secs": 0,
+        "nanos": 3591693
+      },
+      "error": null,
+      "label": "InstallWorkspaceDeps(node:18.0.0)",
+      "nodeIndex": 5,
+      "status": "passed"
+    },
+    "error": null,
+    "node": {
+      "action": "InstallDeps",
+      "params": {
+        "toolchain": "Node",
+        "version": "18.0.0"
+      }
+    }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -232,22 +232,22 @@ project, the `project` field will be set, otherwise `null` for the entire worksp
 
 ```json
 {
-	"type": "dependencies.installing",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"project": {
-			"id": "server"
-			// ...
-		},
-		"runtime": {
-			"toolchain": "Node",
-			"version": "18.0.0"
-		},
-		"root": ".",
-		"toolchain": "node"
-	},
-	"uuid": "..."
+  "type": "dependencies.installing",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "project": {
+      "id": "server"
+      // ...
+    },
+    "runtime": {
+      "toolchain": "Node",
+      "version": "18.0.0"
+    },
+    "root": ".",
+    "toolchain": "node"
+  },
+  "uuid": "..."
 }
 ```
 
@@ -264,20 +264,20 @@ Installed deps can be scoped with the `InstallDeps(...)` labels.
 
 ```json
 {
-	"type": "dependencies.installed",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"error": null,
-		"project": null,
-		"runtime": {
-			"toolchain": "Node",
-			"version": "18.0.0"
-		},
-		"root": ".",
-		"toolchain": "node"
-	},
-	"uuid": "..."
+  "type": "dependencies.installed",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null,
+    "project": null,
+    "runtime": {
+      "toolchain": "Node",
+      "version": "18.0.0"
+    },
+    "root": ".",
+    "toolchain": "node"
+  },
+  "uuid": "..."
 }
 ```
 
@@ -290,18 +290,18 @@ Triggered when an environment is being setup for a toolchain. When targeting a p
 
 ```json
 {
-	"type": "environment.initializing",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"project": {
-			"id": "server"
-			// ...
-		},
-		"root": ".",
-		"toolchain": "node"
-	},
-	"uuid": "..."
+  "type": "environment.initializing",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "project": {
+      "id": "server"
+      // ...
+    },
+    "root": ".",
+    "toolchain": "node"
+  },
+  "uuid": "..."
 }
 ```
 
@@ -318,16 +318,16 @@ Installed deps can be scoped with the `SetupEnvironment(...)` labels.
 
 ```json
 {
-	"type": "environment.initialized",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"error": null,
-		"project": null,
-		"root": ".",
-		"toolchain": "node"
-	},
-	"uuid": "..."
+  "type": "environment.initialized",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null,
+    "project": null,
+    "root": ".",
+    "toolchain": "node"
+  },
+  "uuid": "..."
 }
 ```
 
@@ -340,20 +340,20 @@ automatically before a project's task is ran.
 
 ```json
 {
-	"type": "project.syncing",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"project": {
-			"id": "client"
-			// ...
-		},
-		"runtime": {
-			"toolchain": "Node",
-			"version": "18.0.0"
-		}
-	},
-	"uuid": "..."
+  "type": "project.syncing",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "project": {
+      "id": "client"
+      // ...
+    },
+    "runtime": {
+      "toolchain": "Node",
+      "version": "18.0.0"
+    }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -369,21 +369,21 @@ Synced projects can be scoped with the `SyncProject(...)` labels.
 
 ```json
 {
-	"type": "project.synced",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"error": null,
-		"project": {
-			"id": "client"
-			// ...
-		},
-		"runtime": {
-			"toolchain": "Node",
-			"version": "18.0.0"
-		}
-	},
-	"uuid": "..."
+  "type": "project.synced",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null,
+    "project": {
+      "id": "client"
+      // ...
+    },
+    "runtime": {
+      "toolchain": "Node",
+      "version": "18.0.0"
+    }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -399,16 +399,16 @@ For an accurate state, use the [`action.finished`](#actionfinished) event. If th
 
 ```json
 {
-	"type": "toolchain.installing",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"spec": {
-			"id": "node",
-			"req": "18.0.0"
-		}
-	},
-	"uuid": "..."
+  "type": "toolchain.installing",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "spec": {
+      "id": "node",
+      "req": "18.0.0"
+    }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -424,17 +424,17 @@ Tools can be scoped with the `SetupToolchain(...)` labels.
 
 ```json
 {
-	"type": "toolchain.installed",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"error": null,
-		"spec": {
-			"id": "node",
-			"req": "18.0.0"
-		}
-	},
-	"uuid": "..."
+  "type": "toolchain.installed",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null,
+    "spec": {
+      "id": "node",
+      "req": "18.0.0"
+    }
+  },
+  "uuid": "..."
 }
 ```
 
@@ -447,13 +447,13 @@ similar command).
 
 ```json
 {
-	"type": "task.running",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"target": "app:build"
-	},
-	"uuid": "..."
+  "type": "task.running",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "target": "app:build"
+  },
+  "uuid": "..."
 }
 ```
 
@@ -470,14 +470,14 @@ labels.
 
 ```json
 {
-	"type": "task.ran",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"error": null,
-		"target": "app:build"
-	},
-	"uuid": "..."
+  "type": "task.ran",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null,
+    "target": "app:build"
+  },
+  "uuid": "..."
 }
 ```
 
@@ -489,13 +489,13 @@ Triggered when the workspace is being synced.
 
 ```json
 {
-	"type": "workspace.syncing",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"target": "app:build"
-	},
-	"uuid": "..."
+  "type": "workspace.syncing",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "target": "app:build"
+  },
+  "uuid": "..."
 }
 ```
 
@@ -508,12 +508,12 @@ set with the error message.
 
 ```json
 {
-	"type": "workspace.synced",
-	"createdAt": "...",
-	"environment": "...",
-	"event": {
-		"error": null
-	},
-	"uuid": "..."
+  "type": "workspace.synced",
+  "createdAt": "...",
+  "environment": "...",
+  "event": {
+    "error": null
+  },
+  "uuid": "..."
 }
 ```

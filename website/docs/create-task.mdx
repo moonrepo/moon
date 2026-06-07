@@ -39,14 +39,14 @@ import BaseRuby from './__partials__/create-task/ruby/base.mdx';
 import BaseRust from './__partials__/create-task/rust/base.mdx';
 
 <LangPartials>
-	<BaseBun key="bun" />
-	<BaseDeno key="deno" />
-	<BaseGo key="go" />
-	<BaseNode key="node" />
-	<BasePHP key="php" />
-	<BasePython key="python" />
-	<BaseRuby key="ruby" />
-	<BaseRust key="rust" />
+  <BaseBun key="bun" />
+  <BaseDeno key="deno" />
+  <BaseGo key="go" />
+  <BaseNode key="node" />
+  <BasePHP key="php" />
+  <BasePython key="python" />
+  <BaseRuby key="ruby" />
+  <BaseRust key="rust" />
 </LangPartials>
 
 By itself, this isn't doing much, so let's add some arguments. Arguments can also be defined with
@@ -62,14 +62,14 @@ import ArgsRuby from './__partials__/create-task/ruby/args.mdx';
 import ArgsRust from './__partials__/create-task/rust/args.mdx';
 
 <LangPartials>
-	<ArgsBun key="bun" />
-	<ArgsDeno key="deno" />
-	<ArgsGo key="go" />
-	<ArgsNode key="node" />
-	<ArgsPHP key="php" />
-	<ArgsPython key="python" />
-	<ArgsRuby key="ruby" />
-	<ArgsRust key="rust" />
+  <ArgsBun key="bun" />
+  <ArgsDeno key="deno" />
+  <ArgsGo key="go" />
+  <ArgsNode key="node" />
+  <ArgsPHP key="php" />
+  <ArgsPython key="python" />
+  <ArgsRuby key="ruby" />
+  <ArgsRust key="rust" />
 </LangPartials>
 
 With this, the task can be ran from the command line with
@@ -99,14 +99,14 @@ import InputsRuby from './__partials__/create-task/ruby/inputs.mdx';
 import InputsRust from './__partials__/create-task/rust/inputs.mdx';
 
 <LangPartials>
-	<InputsBun key="bun" />
-	<InputsDeno key="deno" />
-	<InputsGo key="go" />
-	<InputsNode key="node" />
-	<InputsPHP key="php" />
-	<InputsPython key="python" />
-	<InputsRuby key="ruby" />
-	<InputsRust key="rust" />
+  <InputsBun key="bun" />
+  <InputsDeno key="deno" />
+  <InputsGo key="go" />
+  <InputsNode key="node" />
+  <InputsPHP key="php" />
+  <InputsPython key="python" />
+  <InputsRuby key="ruby" />
+  <InputsRust key="rust" />
 </LangPartials>
 
 This list of inputs may look complicated, but they are merely run checks. For example, when moon
@@ -149,14 +149,14 @@ import OutputsRuby from './__partials__/create-task/ruby/outputs.mdx';
 import OutputsRust from './__partials__/create-task/rust/outputs.mdx';
 
 <LangPartials>
-	<OutputsBun key="bun" />
-	<OutputsDeno key="deno" />
-	<OutputsGo key="go" />
-	<OutputsNode key="node" />
-	<OutputsPHP key="php" />
-	<OutputsPython key="python" />
-	<OutputsRuby key="ruby" />
-	<OutputsRust key="rust" />
+  <OutputsBun key="bun" />
+  <OutputsDeno key="deno" />
+  <OutputsGo key="go" />
+  <OutputsNode key="node" />
+  <OutputsPHP key="php" />
+  <OutputsPython key="python" />
+  <OutputsRuby key="ruby" />
+  <OutputsRust key="rust" />
 </LangPartials>
 
 ## Depending on other tasks
@@ -217,14 +217,14 @@ import FilegroupsRuby from './__partials__/create-task/ruby/filegroups.mdx';
 import FilegroupsRust from './__partials__/create-task/rust/filegroups.mdx';
 
 <LangPartials>
-	<FilegroupsBun key="bun" />
-	<FilegroupsDeno key="deno" />
-	<FilegroupsGo key="go" />
-	<FilegroupsNode key="node" />
-	<FilegroupsPHP key="php" />
-	<FilegroupsPython key="python" />
-	<FilegroupsRuby key="ruby" />
-	<FilegroupsRust key="rust" />
+  <FilegroupsBun key="bun" />
+  <FilegroupsDeno key="deno" />
+  <FilegroupsGo key="go" />
+  <FilegroupsNode key="node" />
+  <FilegroupsPHP key="php" />
+  <FilegroupsPython key="python" />
+  <FilegroupsRuby key="ruby" />
+  <FilegroupsRust key="rust" />
 </LangPartials>
 
 With file groups (and tokens), you're able to reduce the amount of configuration required _and_
@@ -233,27 +233,27 @@ encourage certain file structures for consuming projects!
 ## Next steps
 
 <NextSteps
-	links={[
-		{ icon: 'run-task', label: 'Run a task', url: './run-task' },
-		{
-			icon: 'project-config-global',
-			label: (
-				<span>
-					Configure <code>.moon/tasks/**/*</code> further
-				</span>
-			),
-			url: './config/tasks',
-		},
-		{
-			icon: 'project-config',
-			label: (
-				<span>
-					Configure <code>moon.*</code> further
-				</span>
-			),
-			url: './config/project',
-		},
-		{ icon: 'task', label: 'Learn about tasks', url: './concepts/task' },
-		{ icon: 'token', label: 'Learn about tokens', url: './concepts/token' },
-	]}
+  links={[
+    { icon: 'run-task', label: 'Run a task', url: './run-task' },
+    {
+      icon: 'project-config-global',
+      label: (
+        <span>
+          Configure <code>.moon/tasks/**/*</code> further
+        </span>
+      ),
+      url: './config/tasks',
+    },
+    {
+      icon: 'project-config',
+      label: (
+        <span>
+          Configure <code>moon.*</code> further
+        </span>
+      ),
+      url: './config/project',
+    },
+    { icon: 'task', label: 'Learn about tasks', url: './concepts/task' },
+    { icon: 'token', label: 'Learn about tokens', url: './concepts/token' },
+  ]}
 />

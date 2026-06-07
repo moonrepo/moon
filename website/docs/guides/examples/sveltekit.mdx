@@ -63,12 +63,12 @@ Be sure to enable the Svelte parser and plugin in a project local ESLint configu
 
 ```js title=".eslintrc.cjs"
 module.exports = {
-	plugins: ['svelte3'],
-	ignorePatterns: ['*.cjs'],
-	settings: {
-		'svelte3/typescript': () => require('typescript'),
-	},
-	overrides: [{ files: ['*.svelte'], processor: 'svelte3/svelte3' }],
+  plugins: ['svelte3'],
+  ignorePatterns: ['*.cjs'],
+  settings: {
+    'svelte3/typescript': () => require('typescript'),
+  },
+  overrides: [{ files: ['*.svelte'], processor: 'svelte3/svelte3' }],
 };
 ```
 
@@ -111,17 +111,17 @@ In case Svelte doesn't automatically create a `tsconfig.json`, you can use the f
 
 ```json title="<project>/tsconfig.json"
 {
-	"extends": "./.svelte-kit/tsconfig.json",
-	"compilerOptions": {
-		"allowJs": true,
-		"checkJs": true,
-		"esModuleInterop": true,
-		"forceConsistentCasingInFileNames": true,
-		"resolveJsonModule": true,
-		"skipLibCheck": true,
-		"sourceMap": true,
-		"strict": true
-	}
+  "extends": "./.svelte-kit/tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true
+  }
 }
 ```
 
@@ -144,13 +144,13 @@ import { vitePreprocess } from '@sveltejs/kit/vite';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	// Consult https://kit.svelte.dev/docs/integrations#preprocessors
-	// for more information about preprocessors
-	preprocess: vitePreprocess(),
+  // Consult https://kit.svelte.dev/docs/integrations#preprocessors
+  // for more information about preprocessors
+  preprocess: vitePreprocess(),
 
-	kit: {
-		adapter: adapter(),
-	},
+  kit: {
+    adapter: adapter(),
+  },
 };
 
 export default config;

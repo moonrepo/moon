@@ -64,22 +64,22 @@ choose to extend the Vite config, you can do so by passing in `viteFinal`:
 import { mergeConfig } from 'vite';
 
 export default {
-	stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
-	addons: ['@storybook/addon-links', '@storybook/addon-essentials'],
-	core: {
-		builder: '@storybook/builder-vite',
-	},
-	async viteFinal(config) {
-		// Merge custom configuration into the default config
-		return mergeConfig(config, {
-			// Use the same "resolve" configuration as your app
-			resolve: (await import('../vite.config.js')).default.resolve,
-			// Add dependencies to pre-optimization
-			optimizeDeps: {
-				include: ['storybook-dark-mode'],
-			},
-		});
-	},
+  stories: ['../stories/**/*.stories.mdx', '../stories/**/*.stories.@(js|jsx|ts|tsx)'],
+  addons: ['@storybook/addon-links', '@storybook/addon-essentials'],
+  core: {
+    builder: '@storybook/builder-vite',
+  },
+  async viteFinal(config) {
+    // Merge custom configuration into the default config
+    return mergeConfig(config, {
+      // Use the same "resolve" configuration as your app
+      resolve: (await import('../vite.config.js')).default.resolve,
+      // Add dependencies to pre-optimization
+      optimizeDeps: {
+        include: ['storybook-dark-mode'],
+      },
+    });
+  },
 };
 ```
 
@@ -95,9 +95,9 @@ package and updating configuration.
 
 ```ts title=".storybook/main.ts"
 export default {
-	core: {
-		builder: '@storybook/builder-webpack5',
-	},
+  core: {
+    builder: '@storybook/builder-webpack5',
+  },
 };
 ```
 
@@ -112,9 +112,9 @@ plugins for improved developer experience.
 Install the test runner and any relevant packages:
 
 <AddDepsTabs
-	dev
-	dep="@storybook/addon-interactions @storybook/addon-coverage @storybook/jest@next @storybook/testing-library@next @storybook/test-runner@next"
-	package="<project>"
+  dev
+  dep="@storybook/addon-interactions @storybook/addon-coverage @storybook/jest@next @storybook/testing-library@next @storybook/test-runner@next"
+  package="<project>"
 />
 
 Add the test task to your project:
@@ -131,15 +131,15 @@ Then enable plugins and interactions in your Storybook project:
 
 ```ts title=".storybook/main.ts"
 export default {
-	stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
-	addons: [
-		// Other Storybook addons
-		'@storybook/addon-interactions', // Addon is registered here
-		'@storybook/addon-coverage',
-	],
-	features: {
-		interactionsDebugger: true, // Enable playback controls
-	},
+  stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
+  addons: [
+    // Other Storybook addons
+    '@storybook/addon-interactions', // Addon is registered here
+    '@storybook/addon-coverage',
+  ],
+  features: {
+    interactionsDebugger: true, // Enable playback controls
+  },
 };
 ```
 

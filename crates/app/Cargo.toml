@@ -51,13 +51,13 @@ async-trait = { workspace = true }
 bytes = "1.11.1"
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
-	"color",
-	"env",
-	"help",
-	"string",
-	"suggestions",
-	"usage",
-	"wrap_help",
+  "color",
+  "env",
+  "help",
+  "string",
+  "suggestions",
+  "usage",
+  "wrap_help",
 ] }
 clap_complete = { workspace = true }
 clap_complete_nushell = "4.6.0"

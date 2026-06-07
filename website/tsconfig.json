@@ -10,7 +10,7 @@
       "@site/*": ["./*"]
     }
   },
-  "include": [".eslintrc.cjs", "*.config.js", "*.config.ts", "sidebars.ts", "src/**/*"],
+  "include": ["*.config.js", "*.config.ts", "sidebars.ts", "src/**/*"],
   "exclude": ["**/*.mdx"],
   "references": [
     {

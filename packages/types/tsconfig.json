@@ -3,5 +3,5 @@
   "compilerOptions": {
     "outDir": "../../.moon/cache/types/packages/types"
   },
-  "include": [".eslintrc.cjs", "src/**/*"]
+  "include": ["src/**/*"]
 }

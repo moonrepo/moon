@@ -1,11 +1,11 @@
 implicitDeps = [
-	"project:task-a",
-	{ target = "project:task-b", optional = true },
-	"project:task-c",
-	{ target = "project:task-d", args = [
-		"--foo",
-		"--bar",
-	], env = { KEY = "value" } },
+  "project:task-a",
+  { target = "project:task-b", optional = true },
+  "project:task-c",
+  { target = "project:task-d", args = [
+    "--foo",
+    "--bar",
+  ], env = { KEY = "value" } },
 ]
 
 implicitInputs = ["$ENV", "$ENV_*", "file.txt", "file.*", "/file.txt", "/file.*"]

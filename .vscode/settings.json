@@ -24,7 +24,5 @@
   },
   "oxc.fmt.configPath": "./vite.config.ts",
   "oxc.enable.oxlint": true,
-  "oxc.enable.oxfmt": true,
-  "oxc.path.oxlint": "vp",
-  "oxc.path.oxfmt": "vp"
+  "oxc.enable.oxfmt": true
 }

@@ -1,3 +1,9 @@
 {
-  "extends": "tsconfig-moon/tsconfig.projects.json"
+  "extends": "tsconfig-moon/tsconfig.projects.json",
+  "compilerOptions": {
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "esnext",
+    "verbatimModuleSyntax": false
+  }
 }

@@ -6,10 +6,5 @@
   "include": [
     ".eslintrc.cjs",
     "src/**/*"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.cjs.json"
-    }
   ]
 }

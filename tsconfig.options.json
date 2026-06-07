@@ -1,7 +1,7 @@
 {
   "extends": "tsconfig-moon/tsconfig.projects.json",
   "compilerOptions": {
-    "isolatedDeclarations": true,
+    "isolatedDeclarations": false,
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "sourceMap": true,

@@ -5,10 +5,9 @@
   ],
   "compilerOptions": {
     "emitDeclarationOnly": true,
+    "isolatedDeclarations": false,
     "noEmit": false,
     "outDir": "../.moon/cache/types/website",
-    "verbatimModuleSyntax": false,
-    "baseUrl": null,
     "paths": {
       "@site/*": [
         "./*"

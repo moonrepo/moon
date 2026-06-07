@@ -11,7 +11,7 @@
   ],
   "author": "Miles Johnson",
   "license": "MIT",
-  "main": "./cjs/index.cjs",
+  "main": "./cjs/index.js",
   "types": "./cjs/index.d.ts",
   "repository": {
     "type": "git",
@@ -29,11 +29,7 @@
     "node": ">=18.12.0"
   },
   "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "types": "./cjs/index.d.ts",
-      "import": "./cjs/index-wrapper.mjs",
-      "default": "./cjs/index.cjs"
-    }
+    ".": "./cjs/index.js",
+    "./package.json": "./package.json"
   }
 }

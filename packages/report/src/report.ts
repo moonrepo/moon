@@ -3,7 +3,7 @@ import type { ActionStatus, Duration, RunReport } from '@moonrepo/types';
 import { getIconForStatus, isFlaky, isSlow } from './action';
 import { formatDuration, getDurationInMillis } from './time';
 
-export function sortReport(report: RunReport, sortBy: 'label' | 'time', sortDir: 'asc' | 'desc') {
+export function sortReport(report: RunReport, sortBy: 'label' | 'time', sortDir: 'asc' | 'desc'): void {
 	const isAsc = sortDir === 'asc';
 
 	report.actions.sort((a, d) => {

@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.options.json",
   "compilerOptions": {
     "emitDeclarationOnly": true,
+    "isolatedDeclarations": false,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
     "lib": [
@@ -9,8 +10,7 @@
       "DOM.Iterable",
       "ESNext"
     ],
-    "outDir": "../../.moon/cache/types/packages/visualizer",
-    "useDefineForClassFields": true
+    "outDir": "../../.moon/cache/types/packages/visualizer"
   },
   "include": [
     "src/**/*"

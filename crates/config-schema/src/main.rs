@@ -16,6 +16,5 @@ fn main() {
     let mut cmd = Command::new("vp");
     cmd.args(["fmt"]);
     cmd.current_dir(cwd);
-    cmd.output().unwrap();
-
+    let _ = cmd.output();
 }

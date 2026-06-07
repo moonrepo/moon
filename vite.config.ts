@@ -25,6 +25,7 @@ const ignorePatterns = [
 	'**/*.d.ts',
 	'crates/config/templates/',
 	'packages/visualizer/*timestamp*',
+	'scenarios/',
 ];
 
 export default defineConfig({
@@ -48,7 +49,7 @@ export default defineConfig({
 			commonjs: true,
 		},
 		globals: mapGlobals({
-			...globals.browser,
+			...globals.node,
 		}),
 		ignorePatterns: [
 			...ignorePatterns,
@@ -81,7 +82,7 @@ export default defineConfig({
 		},
 		format: ['cjs'],
 		outDir: 'cjs',
-		platform: 'browser',
+		platform: 'node',
 		sourcemap: true,
 	},
 });

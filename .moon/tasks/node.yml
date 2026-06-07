@@ -44,26 +44,14 @@ tasks:
       runInCI: false
 
   lint:
-    command: 'eslint'
-    args:
-      - '--cache'
-      - '--cache-location'
-      - './.eslintcache'
-      - '--color'
-      - '--ext'
-      - '.js,.ts,.tsx'
-      - '--exit-on-fatal-error'
-      - '--no-error-on-unmatched-pattern'
-      # - '--report-unused-disable-directives'
-      - '.'
+    command: 'vp lint'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
       - '*.{js,cjs,mjs,ts}'
       - 'tsconfig.json'
-      - '/eslint.config.mjs'
-      - '/tsconfig.eslint.json'
       - '/tsconfig.options.json'
+      - '/vite.config.ts'
 
   lint-fix:
     extends: 'lint'

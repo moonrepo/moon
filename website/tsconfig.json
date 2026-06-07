@@ -4,6 +4,7 @@
     "@docusaurus/tsconfig"
   ],
   "compilerOptions": {
+    "baseUrl": null,
     "emitDeclarationOnly": true,
     "isolatedDeclarations": false,
     "noEmit": false,

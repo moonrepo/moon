@@ -5,7 +5,7 @@
   "scripts": {
     "moon": "target/debug/moon --log trace",
     "type": "target/debug/moon --log trace run :typecheck",
-    "clean": "rm -rf packages/*/{cjs,dist,dts,.eslintcache,tsconfig.*.tsbuildinfo}",
+    "clean": "rm -rf packages/*/{cjs,dist,dts,tsconfig.*.tsbuildinfo}",
     "build:types": "cd packages/types && NODE_ENV=production vp pack"
   },
   "workspaces": [
@@ -18,7 +18,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.11",
-    "babel-preset-moon": "^3.1.4",
     "execa": "^6.1.0",
     "globals": "^17.6.0",
     "tsconfig-moon": "^1.4.2",

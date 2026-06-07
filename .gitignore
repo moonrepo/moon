@@ -27,7 +27,6 @@ umd/
 dist/
 
 # Artifacts
-.eslintcache
 *.map
 *.min.js
 *.tsbuildinfo

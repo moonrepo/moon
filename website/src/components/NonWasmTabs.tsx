@@ -25,7 +25,7 @@ export interface NonWasmTabsProps {
 	title?: string;
 }
 
-export default function NonWasmTabs({ data = {}, title }: NonWasmTabsProps) {
+export default function NonWasmTabs({ data, title }: NonWasmTabsProps) {
 	return (
 		<Tabs
 			groupId="non-wasm-type"

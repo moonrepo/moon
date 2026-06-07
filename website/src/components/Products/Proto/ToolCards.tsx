@@ -14,7 +14,7 @@ export default function ToolCards(props: ToolCardsProps) {
 	useEffect(() => {
 		// oxlint-disable-next-line promise/prefer-await-to-then
 		loadToolsData(props.data).then(setTools).catch(console.error);
-	}, []);
+	}, [props.data]);
 
 	return (
 		<div className="grid grid-cols-2 gap-2">

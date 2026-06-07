@@ -14,3 +14,7 @@ tasks:
   format:
     command: 'vp fmt --write'
     preset: 'utility'
+
+workspace:
+  inheritedTasks:
+    exclude: ['build', 'test', 'typecheck']

@@ -10,7 +10,8 @@ function mapGlobals(
 }
 
 const ignorePatterns = [
-	'!.moon/cache',
+	'.moon/cache/',
+	'.moon/docker/',
 	'**/.docusaurus/',
 	'**/coverage/',
 	'**/build/',
@@ -26,6 +27,8 @@ const ignorePatterns = [
 	'**/*.d.ts',
 	'crates/config/templates/',
 	'packages/visualizer/*timestamp*',
+	'target/',
+	'wasm/target/',
 ];
 
 export default defineConfig({

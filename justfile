@@ -34,8 +34,11 @@ lint-fix:
 
 # TESTING
 
-test $MOON_TEST="true" $STARBASE_TEST="true" name="":
-	cargo nextest run --workspace --no-fail-fast -j 10 --config-file ./.cargo/nextest.toml {{name}}
+test $MOON_TEST="true" $STARBASE_TEST="true" filter="":
+	cargo nextest run --workspace --no-fail-fast --config-file ./.cargo/nextest.toml {{filter}}
+
+test-package name $MOON_TEST="true" $STARBASE_TEST="true":
+	cargo nextest run --package {{name}} --no-fail-fast -j 4 --config-file ./.cargo/nextest.toml
 
 test-ci $MOON_TEST="true" $STARBASE_TEST="true":
 	cargo nextest run --workspace --config-file ./.cargo/nextest.toml --profile ci

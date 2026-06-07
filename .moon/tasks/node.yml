@@ -18,46 +18,14 @@ fileGroups:
 tasks:
   build:
     command: 'vp pack'
-    env:
-      NODE_ENV: 'production'
     inputs:
       - '@globs(sources)'
       - 'package.json'
       - 'tsconfig.json'
-      - 'tsconfig.*.json'
       - '/tsconfig.options.json'
       - '/vite.config.ts'
     outputs:
       - 'cjs'
-
-  format:
-    command: 'vp fmt --check .'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '/vite.config.ts'
-
-  format-write:
-    extends: 'format'
-    args: '--write'
-    options:
-      runInCI: false
-
-  lint:
-    command: 'vp lint'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '*.{js,cjs,mjs,ts}'
-      - 'tsconfig.json'
-      - '/tsconfig.options.json'
-      - '/vite.config.ts'
-
-  lint-fix:
-    extends: 'lint'
-    args: '--fix'
-    options:
-      runInCI: false
 
   test:
     command: 'vp test run --passWithNoTests'

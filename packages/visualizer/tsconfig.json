@@ -5,16 +5,10 @@
     "isolatedDeclarations": false,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ESNext"
-    ],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "outDir": "../../.moon/cache/types/packages/visualizer"
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "**/*.css",
     "**/*.html",

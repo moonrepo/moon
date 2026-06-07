@@ -14,5 +14,8 @@
     {
       "path": "./website"
     }
-  ]
+  ],
+  "compilerOptions": {
+    "outDir": ".moon/cache/types"
+  }
 }

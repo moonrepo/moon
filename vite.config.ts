@@ -48,9 +48,7 @@ export default defineConfig({
 			builtin: true,
 			commonjs: true,
 		},
-		globals: mapGlobals({
-			...globals.node,
-		}),
+		globals: mapGlobals(globals.node),
 		ignorePatterns: [
 			...ignorePatterns,
 			'**/*.json',
@@ -61,12 +59,25 @@ export default defineConfig({
 		],
 	},
 	fmt: {
-		proseWrap: 'always',
 		singleQuote: true,
 		sortImports: true,
 		sortPackageJson: false,
 		useTabs: true,
-		ignorePatterns: [...ignorePatterns, '**/*.json'],
+		ignorePatterns,
+		overrides: [
+			{
+				files: ['**/*.json'],
+				options: {
+					useTabs: false,
+				},
+			},
+			{
+				files: ['**/*.md'],
+				options: {
+					proseWrap: 'always',
+				},
+			},
+		],
 	},
 	test: {
 		include: ['packages/**/*.test.ts'],

@@ -1,6 +1,7 @@
 {
   "name": "moon",
   "private": true,
+  "type": "module",
   "packageManager": "yarn@4.16.0",
   "scripts": {
     "moon": "target/debug/moon --log trace",
@@ -14,11 +15,10 @@
     "website"
   ],
   "engines": {
-    "node": ">=22.14.0"
+    "node": ">=22.18.0"
   },
   "devDependencies": {
-    "@types/node": "^22.19.11",
-    "execa": "^6.1.0",
+    "@types/node": "^22.19.20",
     "globals": "^17.6.0",
     "tsconfig-moon": "^1.4.2",
     "typescript": "^6.0.3",

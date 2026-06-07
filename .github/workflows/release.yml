@@ -70,8 +70,7 @@ jobs:
         # we specify bash to get pipefail; it guards against the `curl` command
         # failing. otherwise `sh` won't catch that `curl` returned non-0
         shell: bash
-        run:
-          "curl --proto '=https' --tlsv1.2 -LsSf
+        run: "curl --proto '=https' --tlsv1.2 -LsSf
           https://github.com/axodotdev/cargo-dist/releases/download/v0.30.3/cargo-dist-installer.sh
           | sh"
       - name: Cache dist
@@ -102,8 +101,7 @@ jobs:
     # Let the initial task tell us to not run (currently very blunt)
     needs:
       - plan
-    if:
-      ${{ fromJson(needs.plan.outputs.val).ci.github.artifacts_matrix.include != null &&
+    if: ${{ fromJson(needs.plan.outputs.val).ci.github.artifacts_matrix.include != null &&
       (needs.plan.outputs.publishing == 'true' ||
       fromJson(needs.plan.outputs.val).ci.github.pr_run_mode == 'upload') }}
     strategy:
@@ -237,8 +235,7 @@ jobs:
       - build-local-artifacts
       - build-global-artifacts
     # Only run if we're "publishing", and only if plan, local and global didn't fail (skipped is fine)
-    if:
-      ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publishing == 'true' &&
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.publishing == 'true' &&
       (needs.build-global-artifacts.result == 'skipped' || needs.build-global-artifacts.result ==
       'success') && (needs.build-local-artifacts.result == 'skipped' ||
       needs.build-local-artifacts.result == 'success') }}
@@ -327,8 +324,7 @@ jobs:
     # use "always() && ..." to allow us to wait for all publish jobs while
     # still allowing individual publish jobs to skip themselves (for prereleases).
     # "host" however must run to completion, no skipping allowed!
-    if:
-      ${{ always() && needs.host.result == 'success' && (needs.custom-release-npm.result ==
+    if: ${{ always() && needs.host.result == 'success' && (needs.custom-release-npm.result ==
       'skipped' || needs.custom-release-npm.result == 'success') }}
     runs-on: 'ubuntu-22.04'
     env:

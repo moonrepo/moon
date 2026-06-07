@@ -1,0 +1,16 @@
+id: 'root'
+
+tasks:
+  check:
+    command: 'vp check'
+    inputs:
+      - 'packages/**/*'
+      - '**/*.{md,yml,yaml}'
+
+  lint:
+    command: 'vp lint --fix'
+    preset: 'utility'
+
+  format:
+    command: 'vp fmt --write'
+    preset: 'utility'

@@ -3,11 +3,7 @@
   "compilerOptions": {
     "outDir": "../../.moon/cache/types/packages/report"
   },
-  "include": [
-    ".eslintrc.cjs",
-    "src/**/*",
-    "tests/**/*"
-  ],
+  "include": [".eslintrc.cjs", "src/**/*", "tests/**/*"],
   "references": [
     {
       "path": "../types"

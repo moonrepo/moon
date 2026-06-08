@@ -9,7 +9,7 @@ import { defineConfig } from 'vite-plus';
 export default defineConfig({
 	build: {
 		outDir: 'dist',
-		rollupOptions: {
+		rolldownOptions: {
 			output: {
 				assetFileNames: `assets/[name].[ext]`,
 				chunkFileNames: `assets/[name].js`,

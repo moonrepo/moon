@@ -4,28 +4,23 @@ layer: library
 fileGroups:
   vite:
     - 'src/**/*'
-    - 'env.d.ts'
     - 'index.html'
     - 'vite.config.*'
 
 tasks:
   dev:
-    command: 'vite dev'
+    command: 'vp dev'
     preset: 'server'
 
   build:
-    command: 'vite build'
+    command: 'vp build'
     inputs:
       - '@group(vite)'
     outputs:
       - 'dist'
 
   serve:
-    command:
-      - vite
-      - preview
-      - '--port'
-      - '5000'
+    command: 'vp preview --port 5000'
     deps:
       - '~:build'
     preset: 'server'

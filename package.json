@@ -22,8 +22,7 @@
     "globals": "^17.6.0",
     "tsconfig-moon": "^1.4.2",
     "typescript": "^6.0.3",
-    "vite-plus": "catalog:",
-    "vitest": "^4.1.8"
+    "vite-plus": "catalog:"
   },
   "resolutions": {
     "vite": "npm:@voidzero-dev/vite-plus-core@latest",

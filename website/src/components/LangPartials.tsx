@@ -1,5 +1,6 @@
-import React, { Children } from 'react';
 import Admonition from '@theme/Admonition';
+import React, { Children } from 'react';
+
 import { useSelectedLanguage } from './LangSelector';
 
 const LABELS: Record<string, string> = {

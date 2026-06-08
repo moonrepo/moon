@@ -143,14 +143,7 @@
     "FileGroupInputFormat": {
       "description": "Available formats to resolve the file group into.",
       "type": "string",
-      "enum": [
-        "static",
-        "dirs",
-        "envs",
-        "files",
-        "globs",
-        "root"
-      ]
+      "enum": ["static", "dirs", "envs", "files", "globs", "root"]
     },
     "FileInput": {
       "description": "A file path input.",
@@ -776,14 +769,7 @@
     "StackType": {
       "description": "The technology stack of the project, for categorizing.",
       "type": "string",
-      "enum": [
-        "backend",
-        "data",
-        "frontend",
-        "infrastructure",
-        "systems",
-        "unknown"
-      ]
+      "enum": ["backend", "data", "frontend", "infrastructure", "systems", "unknown"]
     },
     "TaskArgs": {
       "description": "Configures a command and its arguments to execute.",
@@ -1056,11 +1042,7 @@
     "TaskDependencyCacheStrategy": {
       "description": "Controls how a task dependency invalidates the current task's cache entry. When omitted, the effective strategy is Hash if the dependency declares outputs, or Ignored otherwise. @since 2.3.0",
       "type": "string",
-      "enum": [
-        "hash",
-        "ignored",
-        "outputs"
-      ],
+      "enum": ["hash", "ignored", "outputs"],
       "markdownDescription": "Controls how a task dependency invalidates the current task's cache entry. When omitted, the effective strategy is `Hash` if the dependency declares outputs, or `Ignored` otherwise. @since 2.3.0"
     },
     "TaskDependencyConfig": {
@@ -1130,21 +1112,12 @@
     "TaskMergeStrategy": {
       "description": "The strategy in which to merge a specific task option.",
       "type": "string",
-      "enum": [
-        "append",
-        "prepend",
-        "preserve",
-        "replace"
-      ]
+      "enum": ["append", "prepend", "preserve", "replace"]
     },
     "TaskOperatingSystem": {
       "description": "The operating system in which to only run this task on.",
       "type": "string",
-      "enum": [
-        "linux",
-        "macos",
-        "windows"
-      ]
+      "enum": ["linux", "macos", "windows"]
     },
     "TaskOptionAffectedFilesConfig": {
       "description": "Expanded information about affected files handling.",
@@ -1180,10 +1153,7 @@
             },
             {
               "type": "string",
-              "enum": [
-                "args",
-                "env"
-              ]
+              "enum": ["args", "env"]
             }
           ]
         },
@@ -1224,10 +1194,7 @@
             },
             {
               "type": "string",
-              "enum": [
-                "args",
-                "env"
-              ]
+              "enum": ["args", "env"]
             }
           ]
         },
@@ -1291,10 +1258,7 @@
                 },
                 {
                   "type": "string",
-                  "enum": [
-                    "local",
-                    "remote"
-                  ]
+                  "enum": ["local", "remote"]
                 }
               ]
             },
@@ -1611,12 +1575,7 @@
                 },
                 {
                   "type": "string",
-                  "enum": [
-                    "always",
-                    "affected",
-                    "only",
-                    "skip"
-                  ]
+                  "enum": ["always", "affected", "only", "skip"]
                 }
               ]
             },
@@ -1697,70 +1656,32 @@
     "TaskOutputStyle": {
       "description": "The style in which task output will be printed to the console.",
       "type": "string",
-      "enum": [
-        "buffer",
-        "buffer-only-failure",
-        "hash",
-        "none",
-        "stream"
-      ]
+      "enum": ["buffer", "buffer-only-failure", "hash", "none", "stream"]
     },
     "TaskPreset": {
       "description": "Preset options to inherit.",
       "type": "string",
-      "enum": [
-        "utility",
-        "server"
-      ]
+      "enum": ["utility", "server"]
     },
     "TaskPriority": {
       "description": "The priority levels a task can be bucketed into when running in the action pipeline.",
       "type": "string",
-      "enum": [
-        "critical",
-        "high",
-        "normal",
-        "low"
-      ]
+      "enum": ["critical", "high", "normal", "low"]
     },
     "TaskType": {
       "description": "The type of task.",
       "type": "string",
-      "enum": [
-        "build",
-        "run",
-        "test"
-      ]
+      "enum": ["build", "run", "test"]
     },
     "TaskUnixShell": {
       "description": "A list of available shells on Unix.",
       "type": "string",
-      "enum": [
-        "bash",
-        "elvish",
-        "fish",
-        "ion",
-        "murex",
-        "nu",
-        "pwsh",
-        "sh",
-        "xonsh",
-        "zsh"
-      ]
+      "enum": ["bash", "elvish", "fish", "ion", "murex", "nu", "pwsh", "sh", "xonsh", "zsh"]
     },
     "TaskWindowsShell": {
       "description": "A list of available shells on Windows.",
       "type": "string",
-      "enum": [
-        "bash",
-        "elvish",
-        "fish",
-        "murex",
-        "nu",
-        "pwsh",
-        "powershell",
-        "xonsh"
-      ]
+      "enum": ["bash", "elvish", "fish", "murex", "nu", "pwsh", "powershell", "xonsh"]
     }
   }
 }

@@ -3,15 +3,8 @@
   "compilerOptions": {
     "outDir": "../../.moon/cache/types/packages/report"
   },
-  "include": [
-    ".eslintrc.cjs",
-    "src/**/*",
-    "tests/**/*"
-  ],
+  "include": ["src/**/*", "tests/**/*"],
   "references": [
-    {
-      "path": "./tsconfig.cjs.json"
-    },
     {
       "path": "../types"
     }

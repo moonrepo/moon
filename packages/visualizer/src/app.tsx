@@ -1,5 +1,6 @@
 import './app.css';
 import { useState } from 'preact/hooks';
+
 import { Graph } from './components/Graph';
 
 const SUPPORTED_LAYOUTS = ['dagre', 'klay', 'breadthfirst', 'grid'];

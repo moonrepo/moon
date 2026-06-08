@@ -4,8 +4,8 @@ Contributions are always welcome, no matter how large or small!
 
 ## Prerequisites
 
-- Node.js >= v22.14
-- Rust >= 1.92
+- Node.js >= v22.18
+- Rust >= 1.96
 - Git >= 2.28 (for `test-coverage`)
 - Just
 
@@ -13,15 +13,15 @@ Contributions are always welcome, no matter how large or small!
 
 On your first checkout of the repository, you'll need to install dependencies and build the project.
 
-Before following the rest of this guide you will need to install
-[Just](https://github.com/casey/just)
+Before following the rest of this guide you'll need to install
+[Just](https://github.com/casey/just).
 
 ### Rust
 
 moon is built on Rust and requires `rustup` and `cargo` to exist in your environment. You can
 [install Rust from the official website](https://www.rust-lang.org/tools/install).
 
-We also require the following 3rd-party Cargo commands, which can be installed with the following.
+We also require 3rd-party Cargo commands, which can be installed with the following.
 
 ```bash
 just init
@@ -33,10 +33,10 @@ Once setup, we suggest building the Rust binary, as it's required for everything
 just build
 ```
 
-### Node.js
+### JavaScript
 
-Contributing to our `@moonrepo` npm packages requires Node.js and Yarn. We suggest
-[installing both with proto](https://moonrepo.dev/proto).
+Contributing to our `@moonrepo` npm packages requires Node.js, Yarn, and
+[Vite+](https://viteplus.dev/). We suggest [installing some with proto](https://moonrepo.dev/proto).
 
 ```bash
 proto install node
@@ -45,10 +45,10 @@ proto install yarn
 proto install
 ```
 
-Once setup, install dependencies build initial packages.
+Once setup, install dependencies and build initial packages.
 
 ```bash
-yarn install
+vp install
 ```
 
 ## How to
@@ -60,8 +60,9 @@ send pull requests which go through the same review process.
 
 ### Branch organization
 
-Submit all pull requests directly to the `master` branch. We only use separate branches for upcoming
-releases / breaking changes, otherwise, everything points to master.
+Submit all pull requests directly to the `master` branch (bug fixes) or `develop-x.x` branch (new
+features). We only use separate branches for upcoming releases / breaking changes, otherwise,
+everything points to master.
 
 Code that lands in master must be compatible with the latest stable release. It may contain
 additional features, but no breaking changes. We should be able to release a new minor version from
@@ -126,16 +127,16 @@ _a ton_ of `*.profraw` files in the repository (do not commit these!).
 From here you can generate an HTML coverage report to `./coverage` with `just gen-html`. Open the
 `index.html` file to browse line-by-line coverage.
 
-### Node.js
+### JavaScript
 
 This repo is powered by moon itself, which means that each npm package is a distinct moon project.
 The list of projects can be found in [.moon/workspace.yml](./.moon/workspace.yml).
 
-- `yarn moon run <project>:build` - Builds the package for distribution.
-- `yarn moon run <project>:format` - Formats code.
-- `yarn moon run <project>:lint` - Runs the linter.
-- `yarn moon run <project>:test` - Runs unit tests.
-- `yarn moon run <project>:typecheck` - Runs the type-checker.
+- `cargo run -- run <project>:build` - Builds the package.
+- `cargo run -- run <project>:test` - Runs unit tests.
+- `cargo run -- run <project>:typecheck` - Runs the type-checker.
+- `cargo run -- run root:format` - Formats all code.
+- `cargo run -- run root:lint` - Lints all code.
 
 Running all of these commands individually for _all_ packages is quite involved, so you can also
 drop the project name to run the task in _all_ projects. For example: `yarn moon run :lint`
@@ -147,17 +148,17 @@ first, as valid typed code results in valid tests and lints.
 
 #### Testing
 
-Tests are written with [Jest](https://jestjs.io/). For every function or class, we expect an
+Tests are written with [Vitest](https://vitest.dev/). For every function or class, we expect an
 associated `*.test.ts` test file in the package's tests folder. We also write unit tests, not
 integration tests.
 
 #### Linting
 
-Linting is performed by [ESLint](https://eslint.org/). Most rules are errors, but those that are
-warnings should _not_ be fixed, as they are informational. They primarily denote browser differences
-and things that should be polyfilled.
+Linting is performed by [oxlint](https://oxc.rs/docs/guide/usage/linter.html). Most rules are
+errors, but those that are warnings should _not_ be fixed, as they are informational. They primarily
+denote browser differences and things that should be polyfilled.
 
 #### Formatting
 
-Code formatting is performed by [Prettier](https://prettier.io/). We prefer to run Prettier within
-our code editors using `format-on-save` functionality.
+Code formatting is performed by [oxfmt](https://oxc.rs/docs/guide/usage/formatter.html). We prefer
+to run oxfmt within our code editors using `format-on-save` functionality.

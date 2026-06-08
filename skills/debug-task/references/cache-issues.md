@@ -14,8 +14,10 @@ what you think they should.
 1. [Unexpected cache hit](#unexpected-cache-hit) — task uses stale results
 2. [Unexpected cache miss](#unexpected-cache-miss) — task re-runs every time
 3. [Outputs not restored](#outputs-not-restored) — cache hit but files missing
-4. [Dependency cache strategies](#dependency-cache-strategies) — controlling how deps invalidate the hash (v2.3+)
-5. [Experimental caching layers](#experimental-caching-layers) — native file hashing, local CAS (v2.3+)
+4. [Dependency cache strategies](#dependency-cache-strategies) — controlling how deps invalidate the
+   hash (v2.3+)
+5. [Experimental caching layers](#experimental-caching-layers) — native file hashing, local CAS
+   (v2.3+)
 6. [Debugging tools](#debugging-tools) — commands for any cache issue
 
 ---
@@ -214,8 +216,8 @@ tar tzf .moon/cache/outputs/<hash>.tar.gz
 ```
 
 > If `experiments.casOutputsCache` is enabled (v2.3+), outputs are stored in a content-addressable
-> store rather than per-hash tarballs — see [Experimental caching layers](#experimental-caching-layers)
-> for what to look for instead.
+> store rather than per-hash tarballs — see
+> [Experimental caching layers](#experimental-caching-layers) for what to look for instead.
 
 ### Common causes
 
@@ -273,11 +275,11 @@ Available in v2.3+.
 Each entry in `deps` can declare a `cacheStrategy` that controls how that dep contributes to the
 current task's cache hash:
 
-| Strategy    | Effect on this task's hash                                                                                            | Use when                                                            |
-| ----------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `'hash'`    | Mixes in the dep's full hash. Any change to the dep (inputs, command, args, env) invalidates this task.               | You want any upstream change to force a rebuild.                    |
-| `'ignored'` | Dep is a sequencing edge only; its changes never invalidate this task.                                                | The dep produces no artifact you care about (e.g. lint, test).      |
-| `'outputs'` | Mixes in the dep's output files instead of its hash. This task is only invalidated when upstream **outputs** change.  | Build tasks that consume a dep's artifacts but not its source.      |
+| Strategy    | Effect on this task's hash                                                                                           | Use when                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `'hash'`    | Mixes in the dep's full hash. Any change to the dep (inputs, command, args, env) invalidates this task.              | You want any upstream change to force a rebuild.               |
+| `'ignored'` | Dep is a sequencing edge only; its changes never invalidate this task.                                               | The dep produces no artifact you care about (e.g. lint, test). |
+| `'outputs'` | Mixes in the dep's output files instead of its hash. This task is only invalidated when upstream **outputs** change. | Build tasks that consume a dep's artifacts but not its source. |
 
 ### The v2.3 default change
 
@@ -327,8 +329,8 @@ tasks:
 **Build invalidated by a `test` dep**
 
 You declared `deps: ['~:test']` on a build task in pre-v2.3 expecting the lint/test changes to
-invalidate. v2.3 makes this `ignored` by default. Set `cacheStrategy: 'hash'` explicitly if you
-need the old behavior.
+invalidate. v2.3 makes this `ignored` by default. Set `cacheStrategy: 'hash'` explicitly if you need
+the old behavior.
 
 ---
 
@@ -336,9 +338,8 @@ need the old behavior.
 
 Available in v2.3+.
 
-Two opt-in experiments can change how the local cache stores and verifies content. If a user
-reports unexpected cache behavior, check whether either of these is enabled in
-`.moon/workspace.yml`:
+Two opt-in experiments can change how the local cache stores and verifies content. If a user reports
+unexpected cache behavior, check whether either of these is enabled in `.moon/workspace.yml`:
 
 ```yaml
 experiments:

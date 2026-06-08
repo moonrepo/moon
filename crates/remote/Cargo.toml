@@ -33,11 +33,11 @@ zstd = "0.13.3"
 async-stream = { workspace = true }
 http = "1.4.1"
 tonic = { workspace = true, features = [
-    "channel",
-    "codegen",
-    "gzip",
-    "tls-aws-lc",
-    "tls-native-roots",
+  "channel",
+  "codegen",
+  "gzip",
+  "tls-aws-lc",
+  "tls-native-roots",
 ] }
 tower = { workspace = true, features = ["retry", "timeout"] }
 

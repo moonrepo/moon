@@ -1,9 +1,9 @@
-import kebabCase from 'lodash/kebabCase';
-import TOML from 'smol-toml';
-import YAML from 'yaml';
 import CodeBlock from '@theme/CodeBlock';
 import TabItem from '@theme/TabItem';
 import Tabs from '@theme/Tabs';
+import kebabCase from 'lodash/kebabCase';
+import TOML from 'smol-toml';
+import YAML from 'yaml';
 
 function convertToKebabCase(data: object, parentKey?: string): object {
 	const result: Record<string, unknown> = {};
@@ -25,7 +25,7 @@ export interface NonWasmTabsProps {
 	title?: string;
 }
 
-export default function NonWasmTabs({ data = {}, title }: NonWasmTabsProps) {
+export default function NonWasmTabs({ data, title }: NonWasmTabsProps) {
 	return (
 		<Tabs
 			groupId="non-wasm-type"

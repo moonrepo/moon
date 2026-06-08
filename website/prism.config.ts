@@ -1,6 +1,7 @@
-/* eslint-disable sort-keys */
+/* oxlint-disable sort-keys */
 
 import type { PrismTheme } from 'prism-react-renderer';
+
 import tailwind from './tailwind.config';
 
 const colors = tailwind.theme!.colors as Record<string, string>;

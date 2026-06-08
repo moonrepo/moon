@@ -1,0 +1,6 @@
+releases:
+  "@moonrepo/report": patch
+  "@moonrepo/visualizer": patch
+
+declined:
+  - "@moonrepo/types"

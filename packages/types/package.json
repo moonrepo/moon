@@ -22,6 +22,9 @@
     "cjs/**/*",
     "src/**/*"
   ],
+  "scripts": {
+    "build": "vp pack"
+  },
   "engines": {
     "node": ">=18.12.0"
   },

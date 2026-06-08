@@ -3102,6 +3102,7 @@ __metadata:
   resolution: "@moonrepo/report@workspace:packages/report"
   dependencies:
     "@moonrepo/types": "workspace:^"
+    vitest: "catalog:"
   languageName: unknown
   linkType: soft
 
@@ -4495,7 +4496,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@voidzero-dev/vite-plus-test@npm:0.1.24":
+"@voidzero-dev/vite-plus-test@npm:0.1.24, vitest@npm:@voidzero-dev/vite-plus-test@latest":
   version: 0.1.24
   resolution: "@voidzero-dev/vite-plus-test@npm:0.1.24"
   dependencies:

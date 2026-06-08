@@ -22,13 +22,7 @@ regex = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
 starbase_archive = { workspace = true }
-starbase_utils = { workspace = true, features = [
-    "editor-config",
-    "glob",
-    "json",
-    "net",
-    "yaml",
-] }
+starbase_utils = { workspace = true, features = ["editor-config", "glob", "json", "net", "yaml"] }
 tera = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

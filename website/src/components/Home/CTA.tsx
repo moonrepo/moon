@@ -1,5 +1,5 @@
-import clsx from 'clsx';
 import Link from '@docusaurus/Link';
+import clsx from 'clsx';
 
 export interface CTAProps {
 	children: React.ReactNode;

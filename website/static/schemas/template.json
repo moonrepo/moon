@@ -108,14 +108,7 @@
           "description": "The default value of the variable if none was provided.",
           "type": "array",
           "items": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
+            "type": ["boolean", "object", "array", "number", "string", "integer"]
           }
         },
         "defaultValue": {
@@ -123,14 +116,7 @@
           "description": "The default value of the variable if none was provided.",
           "type": "array",
           "items": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
+            "type": ["boolean", "object", "array", "number", "string", "integer"]
           }
         },
         "internal": {
@@ -422,14 +408,7 @@
           "description": "The default value of the variable if none was provided.",
           "type": "object",
           "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
+            "type": ["boolean", "object", "array", "number", "string", "integer"]
           },
           "propertyNames": {
             "type": "string"
@@ -440,14 +419,7 @@
           "description": "The default value of the variable if none was provided.",
           "type": "object",
           "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
+            "type": ["boolean", "object", "array", "number", "string", "integer"]
           },
           "propertyNames": {
             "type": "string"

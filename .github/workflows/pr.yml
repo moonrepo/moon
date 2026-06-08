@@ -2,8 +2,8 @@ name: PR
 on:
   pull_request:
 env:
-  MOON_DEBUG: "true"
-  PROTO_DEBUG: "true"
+  MOON_DEBUG: 'true'
+  PROTO_DEBUG: 'true'
 jobs:
   installer:
     name: Install script check

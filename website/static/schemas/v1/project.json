@@ -183,21 +183,12 @@
     "DependencyScope": {
       "description": "The scope and or relationship of the dependency.",
       "type": "string",
-      "enum": [
-        "build",
-        "development",
-        "peer",
-        "production",
-        "root"
-      ]
+      "enum": ["build", "development", "peer", "production", "root"]
     },
     "DependencySource": {
       "description": "The source where the dependency comes from. Either explicitly defined in configuration, or implicitly derived from source files.",
       "type": "string",
-      "enum": [
-        "explicit",
-        "implicit"
-      ]
+      "enum": ["explicit", "implicit"]
     },
     "FileGroupInput": {
       "description": "A file group input.",
@@ -238,14 +229,7 @@
     "FileGroupInputFormat": {
       "description": "Available formats to resolve the file group into.",
       "type": "string",
-      "enum": [
-        "static",
-        "dirs",
-        "envs",
-        "files",
-        "globs",
-        "root"
-      ]
+      "enum": ["static", "dirs", "envs", "files", "globs", "root"]
     },
     "FileInput": {
       "description": "A file path input.",
@@ -538,15 +522,7 @@
     "PlatformType": {
       "description": "Platforms that each programming language can belong to.",
       "type": "string",
-      "enum": [
-        "bun",
-        "deno",
-        "node",
-        "python",
-        "rust",
-        "system",
-        "unknown"
-      ]
+      "enum": ["bun", "deno", "node", "python", "rust", "system", "unknown"]
     },
     "PluginLocator": {
       "description": "Strategies and protocols for locating plugins.",
@@ -775,14 +751,7 @@
           "description": "Custom metadata fields.",
           "type": "object",
           "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
+            "type": ["boolean", "object", "array", "number", "string", "integer"]
           },
           "propertyNames": {
             "type": "string"
@@ -1038,13 +1007,7 @@
     "StackType": {
       "description": "The technology stack of the project, for categorizing.",
       "type": "string",
-      "enum": [
-        "backend",
-        "frontend",
-        "infrastructure",
-        "systems",
-        "unknown"
-      ]
+      "enum": ["backend", "frontend", "infrastructure", "systems", "unknown"]
     },
     "TaskArgs": {
       "description": "Configures a command to execute, and its arguments.",
@@ -1335,21 +1298,12 @@
     "TaskMergeStrategy": {
       "description": "The strategy in which to merge a specific task option.",
       "type": "string",
-      "enum": [
-        "append",
-        "prepend",
-        "preserve",
-        "replace"
-      ]
+      "enum": ["append", "prepend", "preserve", "replace"]
     },
     "TaskOperatingSystem": {
       "description": "The operating system in which to only run this task on.",
       "type": "string",
-      "enum": [
-        "linux",
-        "macos",
-        "windows"
-      ]
+      "enum": ["linux", "macos", "windows"]
     },
     "TaskOptionEnvFile": {
       "anyOf": [
@@ -1382,10 +1336,7 @@
                 },
                 {
                   "type": "string",
-                  "enum": [
-                    "args",
-                    "env"
-                  ]
+                  "enum": ["args", "env"]
                 }
               ]
             },
@@ -1430,10 +1381,7 @@
                 },
                 {
                   "type": "string",
-                  "enum": [
-                    "local",
-                    "remote"
-                  ]
+                  "enum": ["local", "remote"]
                 }
               ]
             },
@@ -1722,12 +1670,7 @@
                 },
                 {
                   "type": "string",
-                  "enum": [
-                    "always",
-                    "affected",
-                    "only",
-                    "skip"
-                  ]
+                  "enum": ["always", "affected", "only", "skip"]
                 }
               ]
             },
@@ -1795,68 +1738,32 @@
     "TaskOutputStyle": {
       "description": "The style in which task output will be printed to the console.",
       "type": "string",
-      "enum": [
-        "buffer",
-        "buffer-only-failure",
-        "hash",
-        "none",
-        "stream"
-      ]
+      "enum": ["buffer", "buffer-only-failure", "hash", "none", "stream"]
     },
     "TaskPreset": {
       "description": "Preset options to inherit.",
       "type": "string",
-      "enum": [
-        "server",
-        "watcher"
-      ]
+      "enum": ["server", "watcher"]
     },
     "TaskPriority": {
       "description": "The priority levels a task can be bucketed into.",
       "type": "string",
-      "enum": [
-        "critical",
-        "high",
-        "normal",
-        "low"
-      ]
+      "enum": ["critical", "high", "normal", "low"]
     },
     "TaskType": {
       "description": "The type of task.",
       "type": "string",
-      "enum": [
-        "build",
-        "run",
-        "test"
-      ]
+      "enum": ["build", "run", "test"]
     },
     "TaskUnixShell": {
       "description": "A list of available shells on Unix.",
       "type": "string",
-      "enum": [
-        "bash",
-        "elvish",
-        "fish",
-        "ion",
-        "murex",
-        "nu",
-        "pwsh",
-        "xonsh",
-        "zsh"
-      ]
+      "enum": ["bash", "elvish", "fish", "ion", "murex", "nu", "pwsh", "xonsh", "zsh"]
     },
     "TaskWindowsShell": {
       "description": "A list of available shells on Windows.",
       "type": "string",
-      "enum": [
-        "bash",
-        "elvish",
-        "fish",
-        "murex",
-        "nu",
-        "pwsh",
-        "xonsh"
-      ]
+      "enum": ["bash", "elvish", "fish", "murex", "nu", "pwsh", "xonsh"]
     },
     "ToolchainPluginConfig": {
       "description": "Configures an individual toolchain.",
@@ -1867,14 +1774,7 @@
           "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
           "type": "object",
           "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
+            "type": ["boolean", "object", "array", "number", "string", "integer"]
           },
           "propertyNames": {
             "type": "string"

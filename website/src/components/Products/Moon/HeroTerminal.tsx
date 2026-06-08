@@ -1,4 +1,4 @@
-/* eslint-disable sort-keys */
+/* oxlint-disable sort-keys */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -102,7 +102,7 @@ export default function HeroTerminal() {
 			setStartTime(Date.now());
 			setTargetIndex(0);
 		}
-	}, [typingIndex]);
+	}, [typingIndex, runTimeout]);
 
 	// Emulate a bunch of targets running
 	useEffect(() => {
@@ -139,7 +139,7 @@ export default function HeroTerminal() {
 		runTimeout(() => {
 			setTargetIndex((prev) => prev + 1);
 		}, longestDuration + 100);
-	}, [targetIndex]);
+	}, [targetIndex, runTimeout]);
 
 	// Scroll to bottom when lines change
 	useEffect(() => {

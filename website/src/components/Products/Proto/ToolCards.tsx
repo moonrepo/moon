@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+
 import { getAuthorName, loadToolsData, ProtoTool } from '../../../data/proto-tools';
 import ToolCard from './ToolCard';
 
@@ -11,9 +12,9 @@ export default function ToolCards(props: ToolCardsProps) {
 	const isThirdParty = props.data === 'third-party';
 
 	useEffect(() => {
-		// eslint-disable-next-line promise/prefer-await-to-then
+		// oxlint-disable-next-line promise/prefer-await-to-then
 		loadToolsData(props.data).then(setTools).catch(console.error);
-	}, []);
+	}, [props.data]);
 
 	return (
 		<div className="grid grid-cols-2 gap-2">

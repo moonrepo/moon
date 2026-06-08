@@ -10,6 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
+      - uses: voidzero-dev/setup-vp@v1
       - run: yarn install --immutable
       - run: bash ./scripts/release/buildPackages.sh
       - uses: peaceiris/actions-gh-pages@v4

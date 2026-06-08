@@ -23,7 +23,6 @@ mjs/
 umd/
 
 # Artifacts
-.eslintcache
 *.map
 *.min.js
 *.tsbuildinfo

@@ -216,10 +216,7 @@
     "CodeownersOrderBy": {
       "description": "How to order ownership rules within the generated file.",
       "type": "string",
-      "enum": [
-        "file-source",
-        "project-name"
-      ]
+      "enum": ["file-source", "project-name"]
     },
     "ConstraintsConfig": {
       "description": "Configures boundaries and constraints between projects.",
@@ -399,14 +396,7 @@
           "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
           "type": "object",
           "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
+            "type": ["boolean", "object", "array", "number", "string", "integer"]
           },
           "propertyNames": {
             "type": "string"
@@ -503,18 +493,12 @@
     "HasherOptimization": {
       "description": "The optimization to use when hashing.",
       "type": "string",
-      "enum": [
-        "accuracy",
-        "performance"
-      ]
+      "enum": ["accuracy", "performance"]
     },
     "HasherWalkStrategy": {
       "description": "The strategy to use when walking the file system.",
       "type": "string",
-      "enum": [
-        "glob",
-        "vcs"
-      ]
+      "enum": ["glob", "vcs"]
     },
     "Id": {
       "type": "string"
@@ -560,13 +544,7 @@
     "NotifierEventType": {
       "description": "The types of events in which to send notifications.",
       "type": "string",
-      "enum": [
-        "never",
-        "always",
-        "failure",
-        "success",
-        "task-failure"
-      ]
+      "enum": ["never", "always", "failure", "success", "task-failure"]
     },
     "PipelineActionSwitch": {
       "description": "Toggles the state of actions within the pipeline.",
@@ -671,10 +649,7 @@
     "RemoteApi": {
       "description": "The API format of the remote service.",
       "type": "string",
-      "enum": [
-        "grpc",
-        "http"
-      ]
+      "enum": ["grpc", "http"]
     },
     "RemoteAuthConfig": {
       "description": "Configures basic HTTP authentication.",
@@ -742,10 +717,7 @@
     "RemoteCompression": {
       "description": "Supported blob compression levels for gRPC APIs.",
       "type": "string",
-      "enum": [
-        "none",
-        "zstd"
-      ]
+      "enum": ["none", "zstd"]
     },
     "RemoteConfig": {
       "description": "Configures the remote service, powered by the Bazel Remote Execution API.",
@@ -965,27 +937,17 @@
     "VcsHookFormat": {
       "description": "The format to use for generated VCS hook files.",
       "type": "string",
-      "enum": [
-        "bash",
-        "native"
-      ]
+      "enum": ["bash", "native"]
     },
     "VcsManager": {
       "description": "The VCS being utilized by the repository.",
       "type": "string",
-      "enum": [
-        "git"
-      ]
+      "enum": ["git"]
     },
     "VcsProvider": {
       "description": "The upstream version control provider, where the repository source code is stored.",
       "type": "string",
-      "enum": [
-        "bitbucket",
-        "github",
-        "gitlab",
-        "other"
-      ]
+      "enum": ["bitbucket", "github", "gitlab", "other"]
     },
     "WorkspaceProjects": {
       "description": "Configures projects in the workspace.",

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
+
 import { render } from '../helpers/render';
 import type { GraphInfo } from '../helpers/types';
 

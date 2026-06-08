@@ -12,12 +12,12 @@ export default function prismIncludeLanguages(PrismObject) {
 	// avoid polluting global namespace.
 	// You can mutate PrismObject: registering plugins, deleting languages... As
 	// long as you don't re-assign it
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+	// oxlint-disable-next-line @typescript-eslint/no-unsafe-assignment
 	globalThis.Prism = PrismObject;
 
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+	// oxlint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 	additionalLanguages.forEach((lang) => {
-		// eslint-disable-next-line unicorn/prefer-module
+		// oxlint-disable-next-line unicorn/prefer-module
 		require(`prismjs/components/prism-${lang}`);
 	});
 

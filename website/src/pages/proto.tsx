@@ -1,10 +1,11 @@
-/* eslint-disable sort-keys */
+/* oxlint-disable sort-keys */
 
 import Features, { Feature } from '@site/src/components/Products/Features';
 import Hero from '@site/src/components/Products/Proto/Hero';
 import ToolsGrid from '@site/src/components/Products/Proto/ToolsGrid';
 import CodeBlock from '@theme/CodeBlock';
 import Layout from '@theme/Layout';
+
 import Heading from '../ui/typography/Heading';
 import Link from '../ui/typography/Link';
 import Text from '../ui/typography/Text';

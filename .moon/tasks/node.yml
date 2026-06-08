@@ -17,80 +17,22 @@ fileGroups:
 
 tasks:
   build:
-    command: 'packemon build --addFiles --addExports --declaration'
-    env:
-      NODE_ENV: 'production'
+    command: 'vp pack'
     inputs:
       - '@globs(sources)'
       - 'package.json'
       - 'tsconfig.json'
-      - 'tsconfig.*.json'
       - '/tsconfig.options.json'
+      - '/vite.config.ts'
     outputs:
       - 'cjs'
 
-  format:
-    command: 'prettier'
-    args:
-      - '--check'
-      - '--config'
-      - '@in(3)'
-      - '--ignore-path'
-      - '@in(2)'
-      - '--no-error-on-unmatched-pattern'
-      - '.'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '/.prettierignore'
-      - '/prettier.config.js'
-
-  format-write:
-    extends: 'format'
-    args: '--write'
-    options:
-      runInCI: false
-
-  lint:
-    command: 'eslint'
-    args:
-      - '--cache'
-      - '--cache-location'
-      - './.eslintcache'
-      - '--color'
-      - '--ext'
-      - '.js,.ts,.tsx'
-      - '--exit-on-fatal-error'
-      - '--no-error-on-unmatched-pattern'
-      # - '--report-unused-disable-directives'
-      - '.'
-    inputs:
-      - '@globs(sources)'
-      - '@globs(tests)'
-      - '*.{js,cjs,mjs,ts}'
-      - 'tsconfig.json'
-      - '/eslint.config.mjs'
-      - '/tsconfig.eslint.json'
-      - '/tsconfig.options.json'
-
-  lint-fix:
-    extends: 'lint'
-    args: '--fix'
-    options:
-      runInCI: false
-
   test:
-    command: 'jest'
-    args:
-      - '--cache'
-      - '--color'
-      - '--preset'
-      - 'jest-preset-moon'
-      - '--passWithNoTests'
+    command: 'vp test run --passWithNoTests'
     inputs:
       - '@globs(sources)'
       - '@globs(tests)'
-      - 'jest.config.*'
+      - '/vite.config.ts'
 
   typecheck:
     command: 'tsc --build'

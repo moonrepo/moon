@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🛡️ Security
+
+- Fixed a security issue where task outputs being hydrated from the remote cache can overwrite files
+  outside the output list, if the manifest in the remote cache has been compromised.
+
 ## 2.3.2
 
 #### 🚀 Updates

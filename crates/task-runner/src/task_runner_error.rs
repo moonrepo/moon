@@ -35,7 +35,7 @@ pub enum TaskRunnerError {
 
     #[diagnostic(code(task_runner::output::symlink_outside_workspace))]
     #[error(
-        "Unable to cache output, as the file {} is a symlink to {}, which exists outside of the workspace.",
+        "Invalid task output, as the file {} is a symlink to {}, which exists outside of the workspace.",
         .output.style(Style::Path),
         .target.style(Style::Path),
     )]
@@ -43,8 +43,16 @@ pub enum TaskRunnerError {
 
     #[diagnostic(code(task_runner::output::file_outside_workspace))]
     #[error(
-        "Unable to cache output, as the file {} exists outside of the workspace.",
+        "Invalid task output, as the file {} exists outside of the workspace.",
         .output.style(Style::Path),
     )]
     OutputFileOutsideOfWorkspace { output: PathBuf },
+
+    #[diagnostic(code(task_runner::output::undeclared_output))]
+    #[error(
+        "Unable to hydrate cached output for task {}, as the file {} is not declared as an output.",
+        .target.style(Style::Label),
+        .output.style(Style::Path),
+    )]
+    OutputFileNotDeclared { target: Target, output: PathBuf },
 }

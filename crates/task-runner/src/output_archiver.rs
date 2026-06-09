@@ -20,11 +20,18 @@ use tracing::{debug, instrument, warn};
 /// so that subsequent builds are faster, and any local outputs
 /// can be hydrated easily.
 pub struct OutputArchiver<'task> {
-    pub app_context: &'task Arc<AppContext>,
-    pub task: &'task Arc<Task>,
+    app_context: &'task Arc<AppContext>,
+    task: &'task Arc<Task>,
 }
 
 impl OutputArchiver<'_> {
+    pub fn new<'task>(
+        app_context: &'task Arc<AppContext>,
+        task: &'task Arc<Task>,
+    ) -> miette::Result<OutputArchiver<'task>> {
+        Ok(OutputArchiver { task, app_context })
+    }
+
     #[instrument(skip(self, state))]
     pub async fn archive(&self, hash: &str, state: &TaskRunState) -> miette::Result<bool> {
         // Check that outputs actually exist

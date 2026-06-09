@@ -1,9 +1,11 @@
 name: Nix
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
+      - feat/nix-flake
     paths:
       - flake.nix
       - flake.lock

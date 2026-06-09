@@ -18,11 +18,8 @@
           overlays = [ rust-overlay.overlays.default ];
         };
 
-        # Honors the pinned channel (1.96.0) and profile from rust-toolchain.toml.
         rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
 
-        # reqwest enables native-tls-vendored for musl targets; on glibc Linux we
-        # disable vendoring and let pkg-config find the system openssl instead.
         nativeDeps = with pkgs; [ pkg-config protobuf ];
         buildDeps = with pkgs; [ openssl ];
       in
@@ -37,21 +34,38 @@
 
           cargoLock.lockFile = ./Cargo.lock;
 
-          # Build only the CLI package; the wasm/ dir is a separate workspace and excluded.
-          cargoBuildFlags = [ "--package" "moon_cli" ];
-
-          nativeBuildInputs = nativeDeps;
+          nativeBuildInputs = nativeDeps ++ (with pkgs; [
+            installShellFiles
+            writableTmpDirAsHomeHook
+          ]);
           buildInputs = buildDeps;
 
-          OPENSSL_NO_VENDOR = "1";
+          env = {
+            RUSTFLAGS = "-C strip=symbols";
+            OPENSSL_NO_VENDOR = 1;
+          };
+
+          postInstall = pkgs.lib.optionalString
+            (pkgs.stdenv.hostPlatform.emulatorAvailable pkgs.buildPackages)
+            (
+              let emulator = pkgs.stdenv.hostPlatform.emulator pkgs.buildPackages;
+              in ''
+                installShellCompletion --cmd moon \
+                  --bash <(${emulator} $out/bin/moon completions --shell bash) \
+                  --fish <(${emulator} $out/bin/moon completions --shell fish) \
+                  --zsh <(${emulator} $out/bin/moon completions --shell zsh)
+              ''
+            );
+
+          doCheck = false;
 
           meta = with pkgs.lib; {
             description = "A monorepo build system and task runner for the web ecosystem";
-            homepage = "https://moonrepo.dev/moon";
-            changelog = "https://github.com/moonrepo/moon/blob/master/CHANGELOG.md";
+            mainProgram = "moon";
+            homepage = "https://github.com/moonrepo/moon";
+            changelog = "https://github.com/moonrepo/moon/releases/tag/v2.3.2";
             license = licenses.mit;
             maintainers = [ ];
-            mainProgram = "moon";
             platforms = platforms.linux;
           };
         };
@@ -64,9 +78,10 @@
           ];
           buildInputs = buildDeps;
 
-          OPENSSL_NO_VENDOR = "1";
-          # Needed by rust-analyzer and cargo doc.
-          RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+          env = {
+            OPENSSL_NO_VENDOR = "1";
+            RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+          };
         };
       }
     );

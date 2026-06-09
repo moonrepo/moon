@@ -69,8 +69,8 @@ impl<'task> TaskRunner<'task> {
         Ok(Self {
             state: TaskRunState::new(app_context, task),
             cache,
-            archiver: OutputArchiver { app_context, task },
-            hydrater: OutputHydrater { app_context, task },
+            archiver: OutputArchiver::new(app_context, task)?,
+            hydrater: OutputHydrater::new(app_context, task)?,
             project,
             report: TaskReportItem {
                 output_style: task.options.output_style,

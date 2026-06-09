@@ -138,6 +138,8 @@ mod output_hydrater {
 
     mod local_cas {
         use super::*;
+        use bazel_remote_apis::build::bazel::remote::execution::v2::OutputFile;
+        use moon_remote::LocalDigestExt;
         use starbase_utils::json::serde_json;
 
         fn setup_cas_state(state: &mut TaskRunState) {
@@ -304,6 +306,179 @@ mod output_hydrater {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn hydrates_file_inside_declared_output_directory() {
+            let container = TaskRunnerContainer::new("archive", "output-one-dir").await;
+            container
+                .sandbox
+                .create_file("project/dir/file.txt", "contents");
+
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            populate_cas(&container, &state).await;
+
+            fs::remove_dir_all(container.sandbox.path().join("project/dir")).unwrap();
+
+            let result = read_action_result(&container, &state);
+
+            assert!(
+                container
+                    .create_hydrator()
+                    .hydrate(&mut HydrateFrom::LocalCache(result), "hash123", &state)
+                    .await
+                    .unwrap()
+            );
+
+            assert_eq!(
+                fs::read_to_string(container.sandbox.path().join("project/dir/file.txt")).unwrap(),
+                "contents"
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn rejects_untrusted_action_result_path_outside_workspace() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            let outside_name = format!(
+                "{}-remote-cache-outside-marker.txt",
+                container
+                    .sandbox
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+            );
+            let outside_path = container
+                .sandbox
+                .path()
+                .parent()
+                .unwrap()
+                .join(&outside_name);
+            let _ = fs::remove_file(&outside_path);
+
+            let digest = container
+                .app_context
+                .cache_engine
+                .cas
+                .write_bytes(b"REMOTE_CACHE_OUTSIDE_WORKSPACE_WRITE")
+                .unwrap();
+
+            let mut result = ActionResult::default();
+            result.output_files.push(OutputFile {
+                path: format!("../{outside_name}"),
+                digest: Some(digest.to_remote_digest()),
+                ..Default::default()
+            });
+
+            assert!(!outside_path.exists());
+
+            assert!(
+                container
+                    .create_hydrator()
+                    .hydrate(&mut HydrateFrom::LocalCache(result), "hash123", &state)
+                    .await
+                    .is_err()
+            );
+
+            assert!(!outside_path.exists());
+
+            let _ = fs::remove_file(&outside_path);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn rejects_untrusted_action_result_absolute_path_outside_workspace() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            let outside_name = format!(
+                "{}-remote-cache-absolute-marker.txt",
+                container
+                    .sandbox
+                    .path()
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+            );
+            let outside_path = container
+                .sandbox
+                .path()
+                .parent()
+                .unwrap()
+                .join(&outside_name);
+            let _ = fs::remove_file(&outside_path);
+
+            let digest = container
+                .app_context
+                .cache_engine
+                .cas
+                .write_bytes(b"REMOTE_CACHE_ABSOLUTE_PATH_WORKSPACE_WRITE")
+                .unwrap();
+
+            let mut result = ActionResult::default();
+            result.output_files.push(OutputFile {
+                path: outside_path.to_string_lossy().to_string(),
+                digest: Some(digest.to_remote_digest()),
+                ..Default::default()
+            });
+
+            assert!(!outside_path.exists());
+
+            assert!(
+                container
+                    .create_hydrator()
+                    .hydrate(&mut HydrateFrom::LocalCache(result), "hash123", &state)
+                    .await
+                    .is_err()
+            );
+
+            assert!(!outside_path.exists());
+
+            let _ = fs::remove_file(&outside_path);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn rejects_untrusted_action_result_undeclared_workspace_output() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            let undeclared_path = container.sandbox.path().join("project/runner.js");
+            let _ = fs::remove_file(&undeclared_path);
+
+            let digest = container
+                .app_context
+                .cache_engine
+                .cas
+                .write_bytes(b"REMOTE_CACHE_UNDECLARED_WORKSPACE_OUTPUT")
+                .unwrap();
+
+            let mut result = ActionResult::default();
+            result.output_files.push(OutputFile {
+                path: "project/runner.js".to_owned(),
+                digest: Some(digest.to_remote_digest()),
+                ..Default::default()
+            });
+
+            assert!(!undeclared_path.exists());
+
+            assert!(
+                container
+                    .create_hydrator()
+                    .hydrate(&mut HydrateFrom::LocalCache(result), "hash123", &state)
+                    .await
+                    .is_err()
+            );
+
+            assert!(!undeclared_path.exists());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn hydrates_empty_files_even_when_empty_blob_missing_from_cas() {
             // Action results downloaded from a remote cache reference content
             // by digest, but the bytes only land at output paths (not in the
@@ -311,9 +486,6 @@ mod output_hydrater {
             // reason, an empty output file's digest (e3b0c4…) would not
             // resolve in local CAS — the hydrater must handle that without
             // erroring.
-            use bazel_remote_apis::build::bazel::remote::execution::v2::OutputFile;
-            use moon_remote::LocalDigestExt;
-
             let container = TaskRunnerContainer::new("archive", "output-many-files").await;
 
             let mut state = container.create_state();

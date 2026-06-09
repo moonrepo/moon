@@ -1,15 +1,20 @@
 use crate::remote_compat::*;
 use crate::run_state::TaskRunState;
+use crate::task_runner_error::TaskRunnerError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_common::color;
+use moon_common::{
+    color,
+    path::{PathExt, clean_components},
+};
 use moon_remote::{RemoteDigestExt, RemoteService};
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarUnpacker;
-use starbase_utils::fs;
+use starbase_utils::{fs, glob::GlobSet};
 use std::fmt::Debug;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
@@ -34,11 +39,23 @@ impl Debug for HydrateFrom {
 }
 
 pub struct OutputHydrater<'task> {
-    pub app_context: &'task Arc<AppContext>,
-    pub task: &'task Arc<Task>,
+    app_context: &'task Arc<AppContext>,
+    task: &'task Arc<Task>,
+    task_output_globset: GlobSet<'static>,
 }
 
 impl OutputHydrater<'_> {
+    pub fn new<'task>(
+        app_context: &'task Arc<AppContext>,
+        task: &'task Arc<Task>,
+    ) -> miette::Result<OutputHydrater<'task>> {
+        Ok(OutputHydrater {
+            task_output_globset: GlobSet::new_owned(task.output_globs.keys())?,
+            task,
+            app_context,
+        })
+    }
+
     #[instrument(skip(self, state))]
     pub async fn hydrate(
         &self,
@@ -276,24 +293,76 @@ impl OutputHydrater<'_> {
     fn write_outputs(&self, result: &ActionResult) -> miette::Result<()> {
         for file in &result.output_files {
             if file.digest.is_some() {
-                write_output_file(
-                    self.app_context.workspace_root.join(&file.path),
-                    &file.contents,
-                    file,
-                )?;
+                let output_path = self.resolve_declared_output_path(&file.path)?;
+
+                write_output_file(output_path, &file.contents, file)?;
             }
         }
 
         // Create symlinks after output files have been written,
         // as the link target may reference one of these outputs
         for link in &result.output_symlinks {
-            link_output_file(
-                self.app_context.workspace_root.join(&link.target),
-                self.app_context.workspace_root.join(&link.path),
-                link,
-            )?;
+            let target_path = self.resolve_workspace_path(&link.target).map_err(|_| {
+                TaskRunnerError::OutputSymlinkOutsideOfWorkspace {
+                    output: PathBuf::from(&link.path),
+                    target: PathBuf::from(&link.target),
+                }
+            })?;
+            let link_path = self.resolve_declared_output_path(&link.path)?;
+
+            link_output_file(target_path, link_path, link)?;
         }
 
         Ok(())
+    }
+
+    fn resolve_workspace_path(&self, raw_path: &str) -> miette::Result<PathBuf> {
+        let raw_path = Path::new(raw_path);
+
+        if raw_path.is_absolute() {
+            return Err(TaskRunnerError::OutputFileOutsideOfWorkspace {
+                output: raw_path.to_path_buf(),
+            }
+            .into());
+        }
+
+        let output_path = clean_components(self.app_context.workspace_root.join(raw_path));
+
+        if !output_path.starts_with(&self.app_context.workspace_root) {
+            return Err(TaskRunnerError::OutputFileOutsideOfWorkspace {
+                output: output_path,
+            }
+            .into());
+        }
+
+        Ok(output_path)
+    }
+
+    fn resolve_declared_output_path(&self, raw_path: &str) -> miette::Result<PathBuf> {
+        let output_path = self.resolve_workspace_path(raw_path)?;
+        let rel_path = output_path
+            .relative_to(&self.app_context.workspace_root)
+            .into_diagnostic()?;
+
+        if self.task.output_files.contains_key(&rel_path) {
+            return Ok(output_path);
+        }
+
+        for declared_output in self.task.output_files.keys() {
+            if rel_path.starts_with(declared_output) {
+                return Ok(output_path);
+            }
+        }
+
+        if !self.task.output_globs.is_empty() && self.task_output_globset.matches(rel_path.as_str())
+        {
+            return Ok(output_path);
+        }
+
+        Err(TaskRunnerError::OutputFileNotDeclared {
+            target: self.task.target.clone(),
+            output: output_path,
+        }
+        .into())
     }
 }

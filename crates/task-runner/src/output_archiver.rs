@@ -362,7 +362,7 @@ impl OutputArchiver<'_> {
 
                 for digest in chunk {
                     let bytes = cache_engine.cas.read_bytes(&digest.hash)?;
-                    blobs.push(Blob { bytes, digest });
+                    blobs.push(Blob::new(digest, bytes));
                 }
 
                 Ok::<_, miette::Report>(blobs)

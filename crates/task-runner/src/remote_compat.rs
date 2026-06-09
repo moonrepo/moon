@@ -108,10 +108,7 @@ pub fn create_action_result(
 //
 // Hopefully this doesn't cause issues!
 pub fn create_action_blob(digest: &Digest, bytes: &[u8]) -> Blob {
-    Blob {
-        digest: digest.clone(),
-        bytes: bytes.to_owned(),
-    }
+    Blob::new(digest.clone(), bytes.to_owned())
 }
 
 #[cfg(unix)]

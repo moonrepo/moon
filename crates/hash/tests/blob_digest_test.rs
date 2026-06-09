@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use moon_hash::{Blob, ContentHash, Digest};
 use serde::Serialize;
 use starbase_sandbox::create_empty_sandbox;
@@ -124,7 +125,7 @@ mod blob {
     fn from_bytes_retains_bytes_and_digest() {
         let blob = Blob::from_bytes(b"abc".to_vec()).unwrap();
 
-        assert_eq!(blob.bytes, b"abc");
+        assert_eq!(blob.bytes, Bytes::from("abc"));
         assert_eq!(blob.digest.hash.as_hex(), ABC_SHA256);
         assert_eq!(blob.digest.size, 3);
     }
@@ -154,7 +155,7 @@ mod blob {
 
         let blob = Blob::from_file(sandbox.path().join("payload.bin")).unwrap();
 
-        assert_eq!(blob.bytes, b"hello bytes");
+        assert_eq!(blob.bytes, Bytes::from("hello bytes"));
         assert_eq!(blob.digest.size, "hello bytes".len() as i64);
         assert_eq!(
             blob.digest.hash,

@@ -5,6 +5,7 @@ mod fingerprint;
 mod hash_error;
 
 pub use blob_digest::*;
+pub use bytes::Bytes;
 pub use content_hash::*;
 pub use content_hasher::*;
 pub use hash_error::*;

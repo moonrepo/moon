@@ -5444,6 +5444,7 @@ dependencies = [
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [
+ "bytes",
  "compact_str 0.9.1",
  "hex",
  "miette 7.6.0",

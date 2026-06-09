@@ -349,7 +349,7 @@ impl RemoteService {
                     dig.hash.as_str() == blob.digest.hash.as_str()
                         && dig.size_bytes == blob.digest.size
                 }) {
-                    result.stderr_raw = blob.inner.bytes;
+                    result.stderr_raw = blob.inner.bytes.to_vec();
                     continue;
                 }
 
@@ -357,7 +357,7 @@ impl RemoteService {
                     dig.hash.as_str() == blob.digest.hash.as_str()
                         && dig.size_bytes == blob.digest.size
                 }) {
-                    result.stdout_raw = blob.inner.bytes;
+                    result.stdout_raw = blob.inner.bytes.to_vec();
                 }
             }
         }
@@ -669,7 +669,7 @@ async fn batch_download_blobs(
         // Clone (don't remove): a blob may be referenced by multiple
         // output files when they share identical content.
         if let Some(bytes) = blob_map.get(&digest.hash) {
-            file.contents = bytes.to_owned();
+            file.contents = bytes.clone().to_vec();
         } else {
             warn!(
                 hash = action_digest.hash.as_str(),

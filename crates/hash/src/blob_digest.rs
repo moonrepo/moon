@@ -1,4 +1,5 @@
 use crate::content_hash::ContentHash;
+use bytes::Bytes;
 use miette::IntoDiagnostic;
 use serde::Serialize;
 use starbase_utils::{fs, json};
@@ -7,19 +8,26 @@ use std::path::Path;
 
 #[derive(Clone)]
 pub struct Blob {
-    pub bytes: Vec<u8>,
+    pub bytes: Bytes,
     pub digest: Digest,
 }
 
 impl Blob {
+    pub fn new(digest: Digest, bytes: Vec<u8>) -> Self {
+        Blob {
+            digest,
+            bytes: Bytes::from(bytes),
+        }
+    }
+
     pub fn from_bytes(bytes: Vec<u8>) -> miette::Result<Self> {
-        Ok(Blob {
-            digest: Digest {
+        Ok(Blob::new(
+            Digest {
                 hash: ContentHash::hash_bytes(&bytes)?,
                 size: bytes.len() as i64,
             },
             bytes,
-        })
+        ))
     }
 
     pub fn from_data<T: Serialize>(data: T) -> miette::Result<Self> {

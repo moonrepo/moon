@@ -32,9 +32,9 @@ export class LastRunProvider implements vscode.WebviewViewProvider {
 				new vscode.RelativePattern(folder.uri, workspace.getMoonDirPath('cache/runReport.json')),
 			);
 
-			watcher.onDidChange(this.renderView, this);
-			watcher.onDidCreate(this.renderView, this);
-			watcher.onDidDelete(this.renderView, this);
+			watcher.onDidChange(this.renderView.bind(this), this);
+			watcher.onDidCreate(this.renderView.bind(this), this);
+			watcher.onDidDelete(this.renderView.bind(this), this);
 
 			return watcher;
 		});
@@ -74,7 +74,7 @@ export class LastRunProvider implements vscode.WebviewViewProvider {
 					<meta name="viewport" content="width=device-width, initial-scale=1.0">
 					<title>moon - Last run report</title>
 					<script type="module" src="https://unpkg.com/@vscode/webview-ui-toolkit@latest"></script>
-					<link href="${cssUri}" rel="stylesheet">
+					<link href="${cssUri?.toString()}" rel="stylesheet">
 				</head>
 				<body class="body">
 					${content}

@@ -149,7 +149,7 @@ class ProjectItem extends TreeItem {
 		const { project: metadata } = project.config;
 
 		if (metadata) {
-			this.tooltip = `${metadata.title || metadata.name} - ${metadata.description}`;
+			this.tooltip = `${metadata.title || (metadata.name as string)} - ${metadata.description}`;
 		}
 
 		this.tasks = Object.values(project.tasks ?? {})
@@ -296,14 +296,19 @@ export class ProjectsProvider implements vscode.TreeDataProvider<TreeItem> {
 		const commandPrefix = type === 'category' ? 'projectCategory' : 'projectTag';
 
 		context.subscriptions.push(
-			vscode.commands.registerCommand(`moon.${commandPrefix}.refreshProjects`, this.refresh, this),
-			vscode.commands.registerCommand(`moon.${commandPrefix}.runTask`, this.runTask, this),
+			vscode.commands.registerCommand(
+				`moon.${commandPrefix}.refreshProjects`,
+				this.refresh.bind(this),
+			),
+			vscode.commands.registerCommand(`moon.${commandPrefix}.runTask`, this.runTask.bind(this)),
 			vscode.commands.registerCommand(
 				`moon.${commandPrefix}.checkProject`,
-				this.checkProject,
-				this,
+				this.checkProject.bind(this),
 			),
-			vscode.commands.registerCommand(`moon.${commandPrefix}.viewProject`, this.viewProject, this),
+			vscode.commands.registerCommand(
+				`moon.${commandPrefix}.viewProject`,
+				this.viewProject.bind(this),
+			),
 		);
 
 		workspace.onDidChangeWorkspace((folder) => {
@@ -323,8 +328,8 @@ export class ProjectsProvider implements vscode.TreeDataProvider<TreeItem> {
 				new vscode.RelativePattern(folder.uri, '**/moon.*'),
 			);
 
-			watcher1.onDidChange(this.refresh, this);
-			watcher2.onDidChange(this.refresh, this);
+			watcher1.onDidChange(this.refresh.bind(this), this);
+			watcher2.onDidChange(this.refresh.bind(this), this);
 
 			return Disposable.from(watcher1, watcher2);
 		});
@@ -338,7 +343,7 @@ export class ProjectsProvider implements vscode.TreeDataProvider<TreeItem> {
 		return null;
 	}
 
-	async getChildren(element?: TreeItem | undefined): Promise<TreeItem[]> {
+	async getChildren(element?: TreeItem): Promise<TreeItem[]> {
 		if (!this.workspace.root) {
 			return [];
 		}

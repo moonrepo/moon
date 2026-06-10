@@ -61,7 +61,7 @@ export class GraphVisualizerView {
 		/>
 		<script type="module" src="https://unpkg.com/@vscode/webview-ui-toolkit@latest"></script>
 		<script type="module" src="https://unpkg.com/@moonrepo/visualizer@latest"></script>
-		<link href="${cssUri}" rel="stylesheet">
+		<link href="${cssUri?.toString()}" rel="stylesheet">
 	</head>
 	<body class="dark bg-slate-800 text-gray-50">
 		<script>

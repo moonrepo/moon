@@ -5746,6 +5746,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_storage"
+version = "0.0.1"
+dependencies = [
+ "miette 7.6.0",
+ "moon_hash",
+ "serde",
+ "serial_test",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tracing",
+]
+
+[[package]]
 name = "moon_target"
 version = "3.0.0"
 dependencies = [

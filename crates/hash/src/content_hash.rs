@@ -2,8 +2,9 @@ use crate::hash_error::HashError;
 use compact_str::CompactString;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use starbase_utils::fs;
+use starbase_utils::fs::{self, FsError};
 use std::fmt;
+use std::io::Read;
 use std::ops::Deref;
 use std::path::Path;
 
@@ -23,6 +24,25 @@ impl ContentHash {
 
     /// Hash a file's contents to produce a `ContentHash`.
     pub fn hash_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
+        let path = path.as_ref();
+        let mut sha = Sha256::new();
+        let mut file = fs::open_file(path)?;
+        let mut buffer = [0u8; 64 * 1024];
+
+        // Read in chunks instead of pulling the entire file into memory
+        loop {
+            let n = file.read(&mut buffer).map_err(|error| FsError::Read {
+                path: path.to_path_buf(),
+                error: Box::new(error),
+            })?;
+
+            if n == 0 {
+                break;
+            }
+
+            sha.update(&buffer[..n]);
+        }
+
         // let mut hasher = blake3::Hasher::new();
 
         // // Note: don't use starbase as it logs too much!
@@ -44,9 +64,7 @@ impl ContentHash {
         //     hasher.update(&bytes);
         // }
 
-        let bytes = fs::read_file_bytes(path.as_ref())?;
-
-        ContentHash::hash_bytes(&bytes)
+        ContentHash::from_hex(hex::encode(sha.finalize()))
     }
 
     /// Create a `ContentHash` from a hex string, validating format.

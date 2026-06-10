@@ -71,9 +71,13 @@ impl Digest {
     }
 
     pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
-        let bytes = fs::read_file_bytes(path.as_ref())?;
+        let metadata = fs::metadata(path.as_ref())?;
+        let size = metadata.len() as i64;
 
-        Self::from_bytes(&bytes)
+        Ok(Digest {
+            hash: ContentHash::hash_file(path)?,
+            size,
+        })
     }
 
     pub fn is_valid(&self) -> bool {

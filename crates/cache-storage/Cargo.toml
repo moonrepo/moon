@@ -1,0 +1,23 @@
+[package]
+name = "moon_storage"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "Cache storage/backend utilities."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_hash = { path = "../hash" }
+miette = { workspace = true }
+serde = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
+tracing = { workspace = true }
+
+[dev-dependencies]
+serial_test = { workspace = true }
+starbase_sandbox = { workspace = true }
+
+[lints]
+workspace = true

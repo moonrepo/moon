@@ -30,12 +30,36 @@
   "sponsor": {
     "url": "https://github.com/moonrepo/dev"
   },
-  "qna": "https://github.com/moonrepo/dev/discussions",
   "homepage": "https://github.com/moonrepo/dev/tree/master/packages/vscode-extension",
   "repository": {
     "type": "git",
     "url": "https://github.com/moonrepo/moon.git",
     "directory": "packages/vscode-extension"
+  },
+  "scripts": {
+    "package": "vp pack && vsce package --no-dependencies",
+    "publish": "yarn run publish:ovsx && yarn run publish:vsce",
+    "publish:vsce": "vsce publish --no-dependencies --no-git-tag-version --message 'Release [ci skip]'",
+    "publish:ovsx": "ovsx publish --no-dependencies -p $OPENVSX_TOKEN"
+  },
+  "dependencies": {
+    "@moonrepo/report": "workspace:^",
+    "execa": "^5.1.1",
+    "semver": "^7.8.4"
+  },
+  "devDependencies": {
+    "@moonrepo/types": "workspace:^",
+    "@types/semver": "^7.7.1",
+    "@types/vscode": "1.103.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.9.2",
+    "ovsx": "^0.10.12"
+  },
+  "main": "./cjs/index.cjs",
+  "types": "./cjs/index.d.cts",
+  "exports": {
+    ".": "./cjs/index.cjs",
+    "./package.json": "./package.json"
   },
   "activationEvents": [
     "workspaceContains:.moon",
@@ -45,7 +69,6 @@
   "extensionDependencies": [
     "redhat.vscode-yaml"
   ],
-  "main": "./lib/extension.js",
   "contributes": {
     "yamlValidation": [
       {
@@ -348,27 +371,5 @@
         "when": "moon.inWorkspaceRoot && !moon.hasBinary"
       }
     ]
-  },
-  "scripts": {
-    "compile": "rm -rf lib && esbuild src/extension.ts --bundle --outfile=lib/extension.js --external:vscode --format=cjs --platform=node --target=node14",
-    "watch": "yarn run compile --sourcemap --watch",
-    "package": "yarn run compile && vsce package --no-dependencies",
-    "publish": "yarn run publish:ovsx && yarn run publish:vsce",
-    "publish:vsce": "vsce publish --no-dependencies --no-git-tag-version --message 'Release [ci skip]'",
-    "publish:ovsx": "ovsx publish --no-dependencies -p $OPENVSX_TOKEN"
-  },
-  "dependencies": {
-    "@moonrepo/report": "workspace:^",
-    "execa": "^5.1.1",
-    "semver": "^7.8.4"
-  },
-  "devDependencies": {
-    "@moonrepo/types": "workspace:^",
-    "@types/semver": "^7.7.1",
-    "@types/vscode": "1.103.0",
-    "@vscode/test-electron": "^2.5.2",
-    "@vscode/vsce": "^3.9.2",
-    "esbuild": "^0.28.0",
-    "ovsx": "^0.10.12"
   }
 }

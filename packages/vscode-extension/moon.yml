@@ -7,17 +7,3 @@ tags:
 project:
   title: VS Code extension
   description: This is to purely test metadata in the extension.
-
-workspace:
-  inheritedTasks:
-    exclude:
-      - build
-      - test
-
-tasks:
-  build:
-    command: yarn run compile
-    inputs:
-      - src/**/*
-    outputs:
-      - lib

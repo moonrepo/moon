@@ -7,6 +7,11 @@
 - Fixed a security issue where task outputs being hydrated from the remote cache can overwrite files
   outside the output list, if the manifest in the remote cache has been compromised.
 
+#### 🧰 Toolchains
+
+- **Go**
+  - Fixed a `go.mod` parsing regression that failed to parse `tool ()`.
+
 ## 2.3.2
 
 #### 🚀 Updates

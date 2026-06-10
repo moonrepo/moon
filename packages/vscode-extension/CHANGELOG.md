@@ -60,7 +60,8 @@
 ## 0.10.0
 
 - Added YAML file validation for all moon configuration files.
-  - Requires the `redhat.vscode-yaml` extension to be installed. VSCode should prompt you to install it.
+  - Requires the `redhat.vscode-yaml` extension to be installed. VSCode should prompt you to install
+    it.
 
 ## 0.9.0
 

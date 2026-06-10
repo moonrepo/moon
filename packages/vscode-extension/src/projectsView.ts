@@ -1,5 +1,13 @@
 import fs from 'fs';
 import path from 'path';
+
+import type {
+	LanguageType,
+	LayerType,
+	Project,
+	StackType,
+	Task as ProjectTask,
+} from '@moonrepo/types';
 import { satisfies } from 'semver';
 import vscode, {
 	Disposable,
@@ -12,13 +20,7 @@ import vscode, {
 	TreeItemCollapsibleState,
 	Uri,
 } from 'vscode';
-import type {
-	LanguageType,
-	LayerType,
-	Project,
-	StackType,
-	Task as ProjectTask,
-} from '@moonrepo/types';
+
 import { checkProject, runTask } from './commands';
 import type { Workspace } from './workspace';
 

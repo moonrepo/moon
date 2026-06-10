@@ -1,8 +1,10 @@
 import fs from 'fs';
 import path from 'path';
-import vscode from 'vscode';
+
 import { formatDuration, prepareReportActions } from '@moonrepo/report';
 import type { RunReport } from '@moonrepo/types';
+import vscode from 'vscode';
+
 import type { Workspace } from './workspace';
 
 const SLOW_THRESHOLD_SECS = 120;

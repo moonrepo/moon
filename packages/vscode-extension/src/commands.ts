@@ -1,7 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+
 import { satisfies } from 'semver';
 import vscode, { ShellExecution, Task, TaskScope } from 'vscode';
+
 import { GraphVisualizerView } from './graphVisualizerView';
 import type { Workspace } from './workspace';
 

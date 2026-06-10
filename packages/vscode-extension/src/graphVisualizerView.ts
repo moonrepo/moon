@@ -1,5 +1,6 @@
 import { satisfies } from 'semver';
 import vscode, { ViewColumn } from 'vscode';
+
 import type { Workspace } from './workspace';
 
 export type GraphType = 'action-graph' | 'project-graph' | 'task-graph';

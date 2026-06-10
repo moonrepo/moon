@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 moon_action = { path = "../action" }
+moon_blob = { path = "../blob" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }

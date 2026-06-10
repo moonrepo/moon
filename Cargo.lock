@@ -5033,6 +5033,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_blob"
+version = "0.0.1"
+dependencies = [
+ "bytes",
+ "miette 7.6.0",
+ "moon_hash",
+ "serde",
+ "starbase_sandbox",
+ "starbase_utils",
+]
+
+[[package]]
 name = "moon_cache"
 version = "0.0.1"
 dependencies = [
@@ -5075,6 +5087,7 @@ version = "0.0.1"
 dependencies = [
  "fastrand",
  "miette 7.6.0",
+ "moon_blob",
  "moon_common",
  "moon_config",
  "moon_hash",
@@ -5444,7 +5457,6 @@ dependencies = [
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [
- "bytes",
  "compact_str 0.9.1",
  "hex",
  "miette 7.6.0",
@@ -5723,6 +5735,7 @@ dependencies = [
  "http",
  "miette 7.6.0",
  "moon_action",
+ "moon_blob",
  "moon_common",
  "moon_config",
  "moon_env_var",
@@ -5898,6 +5911,7 @@ dependencies = [
  "moon_affected",
  "moon_api",
  "moon_app_context",
+ "moon_blob",
  "moon_cache",
  "moon_cache_item",
  "moon_common",

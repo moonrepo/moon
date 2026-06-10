@@ -1,7 +1,8 @@
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::compressor;
+use moon_blob::{Blob, Bytes};
 use moon_config::RemoteCompression;
-use moon_hash::{Blob, Bytes, Digest};
+use moon_hash::Digest;
 use std::ops::Deref;
 
 #[derive(Clone)]

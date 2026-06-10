@@ -1,7 +1,8 @@
 use crate::cas_error::CasError;
 use crate::gc::GcResult;
+use moon_blob::Blob;
 use moon_config::CacheCasConfig;
-use moon_hash::{Blob, ContentHash, Digest, Sha256, ShaDigest, hash_sha256, hex};
+use moon_hash::{ContentHash, Digest, Sha256, ShaDigest, hash_sha256, hex};
 use starbase_utils::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};

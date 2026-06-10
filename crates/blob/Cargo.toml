@@ -1,26 +1,23 @@
 [package]
-name = "moon_hash"
+name = "moon_blob"
 version = "0.0.1"
 edition = "2024"
 license = "MIT"
-description = "Content hashing engine."
+description = "Binary large objects."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
-moon_common = { path = "../common" }
-compact_str = { workspace = true }
-hex = { workspace = true }
+moon_hash = { path = "../hash" }
+bytes = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }
-sha2 = { workspace = true }
-starbase_utils = { workspace = true, features = ["json"] }
-thiserror = { workspace = true }
-tracing = { workspace = true }
+starbase_utils = { workspace = true }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }
+starbase_utils = { workspace = true }
 
 [lints]
 workspace = true

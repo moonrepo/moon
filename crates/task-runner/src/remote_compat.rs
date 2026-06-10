@@ -3,7 +3,8 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Action, ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
 };
 use moon_action::Operation;
-use moon_hash::{Blob, Digest};
+use moon_blob::Blob;
+use moon_hash::Digest;
 use moon_remote::{LocalDigestExt, create_timestamp, create_timestamp_from_naive};
 use starbase_utils::fs::{self, FsError};
 use std::fs::{self as fs_std, File, Metadata};

@@ -8,9 +8,10 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Action, ActionResult, ServerCapabilities, digest_function,
 };
 use miette::IntoDiagnostic;
+use moon_blob::Blob;
 use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
-use moon_hash::{Blob, Digest};
+use moon_hash::Digest;
 use moon_process::ProcessRegistry;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::{Path, PathBuf};

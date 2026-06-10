@@ -28,15 +28,16 @@
     "Other"
   ],
   "sponsor": {
-    "url": "https://github.com/moonrepo/dev"
+    "url": "https://github.com/moonrepo/moon"
   },
-  "homepage": "https://github.com/moonrepo/dev/tree/master/packages/vscode-extension",
+  "homepage": "https://github.com/moonrepo/moon/tree/master/packages/vscode-extension",
   "repository": {
     "type": "git",
     "url": "https://github.com/moonrepo/moon.git",
     "directory": "packages/vscode-extension"
   },
   "scripts": {
+    "build": "vp pack",
     "package": "vp pack && vsce package --no-dependencies",
     "publish": "yarn run publish:ovsx && yarn run publish:vsce",
     "publish:vsce": "vsce publish --no-dependencies --no-git-tag-version --message 'Release [ci skip]'",

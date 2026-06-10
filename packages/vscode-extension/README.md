@@ -16,7 +16,7 @@ Each project can then be expanded to view all available tasks. Tasks can be ran 
 icon, or using the command palette.
 
 <img
-src="https://raw.githubusercontent.com/moonrepo/dev/master/packages/vscode-extension/images/projects-view.png"
+src="https://raw.githubusercontent.com/moonrepo/moon/master/packages/vscode-extension/images/projects-view.png"
 alt="Screenshot of projects view" width="300px" />
 
 > This view is available in both the "Explorer" and "moon" sections.
@@ -26,7 +26,7 @@ alt="Screenshot of projects view" width="300px" />
 Similar to the projects view, the tags view displays projects grouped by their `tags`.
 
 <img
-src="https://raw.githubusercontent.com/moonrepo/dev/master/packages/vscode-extension/images/tags-view.png"
+src="https://raw.githubusercontent.com/moonrepo/moon/master/packages/vscode-extension/images/tags-view.png"
 alt="Screenshot of tags view" width="300px" />
 
 > This view is only available in the "moon" section.
@@ -36,7 +36,7 @@ alt="Screenshot of tags view" width="300px" />
 Information about the last ran task will be displayed in a beautiful table with detailed stats.
 
 <img
-src="https://raw.githubusercontent.com/moonrepo/dev/master/packages/vscode-extension/images/last-run-view.png"
+src="https://raw.githubusercontent.com/moonrepo/moon/master/packages/vscode-extension/images/last-run-view.png"
 alt="Screenshot of last run view" width="300px" />
 
 > This view is only available in the "moon" section.
@@ -47,7 +47,7 @@ To provide the best experience, all major features, enhancements, and integratio
 within the moon specific control panel. Simply click the moon icon in the activity bar!
 
 <img
-src="https://raw.githubusercontent.com/moonrepo/dev/master/packages/vscode-extension/images/activity-icon.png"
+src="https://raw.githubusercontent.com/moonrepo/moon/master/packages/vscode-extension/images/activity-icon.png"
 alt="Screenshot of moon activity" width="50px"  />
 
 ## Requirements

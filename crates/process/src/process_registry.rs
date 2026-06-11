@@ -206,6 +206,6 @@ async fn kill_processes(processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>) {
         });
     }
 
-    processes.write().await.clear();
     set.join_all().await;
+    processes.write().await.clear();
 }

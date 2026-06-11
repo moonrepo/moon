@@ -94,6 +94,7 @@ export default defineConfig({
 		exports: {
 			legacy: true,
 		},
+		external: ['vscode'],
 		format: ['cjs'],
 		outDir: 'cjs',
 		platform: 'node',

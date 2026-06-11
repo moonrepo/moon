@@ -1,4 +1,4 @@
-use super::common::clean_git_version;
+use super::common::{clean_git_version, validate_revision};
 use super::git_error::GitError;
 use super::tree::*;
 use crate::changed_files::*;
@@ -53,7 +53,7 @@ pub struct Git {
     pub repository_root: PathBuf,
 
     /// List of submodule trees within the repository.
-    pub submodules: Vec<GitTree>,
+    pub submodules: Vec<Arc<GitTree>>,
 
     /// Root of the moon workspace. This may be nested within
     /// the repository root, or worktree root.
@@ -61,7 +61,7 @@ pub struct Git {
 
     /// The current working tree. Either a worktree checkout,
     /// or the root of the repository itself.
-    pub worktree: GitTree,
+    pub worktree: Arc<GitTree>,
 }
 
 impl Git {
@@ -194,32 +194,31 @@ impl Git {
             }
         };
 
-        // Create the instance and load ignore files
-        let mut git = Git {
-            default_branch: Arc::new(default_branch.as_ref().to_owned()),
-            remote_candidates: remote_candidates.to_owned(),
-            repository_root,
-            submodules,
-            workspace_root: workspace_root.to_path_buf(),
-            worktree,
-        };
-
+        // Load ignore files and create the instance. Trees are wrapped
+        // in `Arc` so they can be cheaply shared with spawned tasks.
         let process = Arc::new(process);
 
-        for tree in &mut git.submodules {
+        for tree in &mut submodules {
             tree.process = Some(Arc::clone(&process));
             tree.load_ignore()?;
         }
 
-        git.worktree.process = Some(process);
-        git.worktree.load_ignore()?;
+        worktree.process = Some(process);
+        worktree.load_ignore()?;
 
-        Ok(git)
+        Ok(Git {
+            default_branch: Arc::new(default_branch.as_ref().to_owned()),
+            remote_candidates: remote_candidates.to_owned(),
+            repository_root,
+            submodules: submodules.into_iter().map(Arc::new).collect(),
+            workspace_root: workspace_root.to_path_buf(),
+            worktree: Arc::new(worktree),
+        })
     }
 
-    fn get_all_trees(&self) -> Vec<GitTree> {
-        let mut trees = vec![self.worktree.clone()];
-        trees.extend(self.submodules.clone());
+    fn get_all_trees(&self) -> Vec<Arc<GitTree>> {
+        let mut trees = vec![Arc::clone(&self.worktree)];
+        trees.extend(self.submodules.iter().cloned());
         trees
     }
 
@@ -386,11 +385,11 @@ impl Vcs for Git {
 
         let output = process.run_command(command, true).await?;
 
-        for (i, hash) in output.split('\n').enumerate() {
+        for (hash, object) in output.split('\n').zip(&objects) {
             if !hash.is_empty() {
                 map.insert(
                     work_dir
-                        .join(&objects[i])
+                        .join(object)
                         .relative_to(&self.workspace_root)
                         .into_diagnostic()?,
                     hash.to_owned(),
@@ -407,7 +406,7 @@ impl Vcs for Git {
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         let mut paths = vec![];
 
-        // Use an absolute path t avoid issues where moon is nested
+        // Use an absolute path to avoid issues where moon is nested
         // within the repository and not at the root
         let abs_dir = dir.to_logical_path(&self.workspace_root);
 
@@ -502,6 +501,8 @@ impl Vcs for Git {
         &self,
         revision: &str,
     ) -> miette::Result<ChangedFiles> {
+        validate_revision(revision)?;
+
         let revision = if self.is_default_branch(revision) {
             "HEAD"
         } else {
@@ -568,7 +569,7 @@ impl Vcs for Git {
                     let head = head_tree.remove(&submodule.work_dir).unwrap_or_default();
 
                     if base != head {
-                        let submodule = submodule.to_owned();
+                        let submodule = Arc::clone(submodule);
                         set.spawn(async move { submodule.exec_diff(&base, &head).await });
                     }
                 }

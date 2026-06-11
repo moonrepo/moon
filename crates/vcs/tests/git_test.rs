@@ -5,6 +5,7 @@ use soft_canonicalize::soft_canonicalize;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fs;
+use std::sync::Arc;
 
 fn create_git_test_sandbox(bare: bool) -> Sandbox {
     let sandbox = create_empty_sandbox();
@@ -141,20 +142,20 @@ mod git {
             assert_eq!(
                 git.submodules,
                 vec![
-                    GitTree {
+                    Arc::new(GitTree {
                         git_dir: sandbox.path().join(".git/modules/submodules/mono"),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("submodules/mono"),
                         ..Default::default()
-                    },
-                    GitTree {
+                    }),
+                    Arc::new(GitTree {
                         git_dir: sandbox.path().join(".git/modules/submodules/poly"),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("submodules/poly"),
                         ..Default::default()
-                    }
+                    })
                 ]
             )
         }
@@ -333,7 +334,7 @@ mod git {
             assert_eq!(
                 git.submodules,
                 vec![
-                    GitTree {
+                    Arc::new(GitTree {
                         git_dir: soft_canonicalize(
                             sandbox
                                 .path()
@@ -344,8 +345,8 @@ mod git {
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/mono"),
                         ..Default::default()
-                    },
-                    GitTree {
+                    }),
+                    Arc::new(GitTree {
                         git_dir: soft_canonicalize(
                             sandbox
                                 .path()
@@ -356,7 +357,7 @@ mod git {
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/poly"),
                         ..Default::default()
-                    }
+                    })
                 ]
             )
         }
@@ -380,22 +381,22 @@ mod git {
             assert_eq!(
                 git.submodules,
                 vec![
-                    GitTree {
+                    Arc::new(GitTree {
                         git_dir: soft_canonicalize(sandbox.path().join("modules/submodules/mono"))
                             .unwrap(),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/mono"),
                         ..Default::default()
-                    },
-                    GitTree {
+                    }),
+                    Arc::new(GitTree {
                         git_dir: soft_canonicalize(sandbox.path().join("modules/submodules/poly"))
                             .unwrap(),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/poly"),
                         ..Default::default()
-                    }
+                    })
                 ]
             )
         }

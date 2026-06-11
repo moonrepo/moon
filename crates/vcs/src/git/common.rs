@@ -1,3 +1,4 @@
+use super::git_error::GitError;
 use regex::Regex;
 use std::sync::LazyLock;
 
@@ -12,6 +13,19 @@ pub static DIFF_SCORE_PATTERN: LazyLock<Regex> =
 
 pub static VERSION_CLEAN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\.(windows|win|msysgit|msys|vfs)(\.\d+){1,2}").unwrap());
+
+/// Validate that a revision (typically user provided) doesn't look like a
+/// command line option, otherwise it can be abused for argument injection,
+/// like `--output=file`. Valid revisions can never start with a dash.
+pub fn validate_revision(revision: &str) -> Result<(), GitError> {
+    if revision.starts_with('-') {
+        return Err(GitError::InvalidRevision {
+            revision: revision.to_owned(),
+        });
+    }
+
+    Ok(())
+}
 
 pub fn clean_git_version(version: String) -> String {
     let version = if let Some(index) = version.find('(') {

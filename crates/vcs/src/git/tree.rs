@@ -124,6 +124,9 @@ impl GitTree {
         base_revision: &str,
         head_revision: &str,
     ) -> miette::Result<ChangedFiles<PathBuf>> {
+        validate_revision(base_revision)?;
+        validate_revision(head_revision)?;
+
         let process = self.get_process();
         let mut args = vec![
             "diff",
@@ -151,28 +154,25 @@ impl GitTree {
         }
 
         let mut files = FxHashMap::default();
-        let mut last_status = "A";
+        let mut tokens = output.split('\0');
 
-        // Lines AND statuses are terminated by a NUL byte
+        // Statuses AND paths are terminated by a NUL byte, and strictly
+        // alternate, so consume them in pairs (or triples for copies/renames)
         //  X\0file\0
         //  X000\0file\0
         //  X000\0file\0renamed_file\0
-        for line in output.split('\0') {
-            if line.is_empty() {
+        while let Some(token) = tokens.next() {
+            if token.is_empty() {
                 continue;
             }
 
             // X\0
             // X000\0
-            if DIFF_SCORE_PATTERN.is_match(line) || DIFF_PATTERN.is_match(line) {
-                last_status = &line[0..1];
+            if !DIFF_SCORE_PATTERN.is_match(token) && !DIFF_PATTERN.is_match(token) {
                 continue;
             }
 
-            let x = last_status.chars().next().unwrap_or_default();
-
-            // Paths are relative from the cwd
-            let file = self.work_dir.join(line);
+            let x = token.chars().next().unwrap_or_default();
             let mut statuses = vec![];
 
             match x {
@@ -194,7 +194,18 @@ impl GitTree {
                 _ => {}
             }
 
-            files.insert(file, statuses);
+            // Copies and renames are followed by both the source
+            // and destination paths, all other statuses by one path
+            let path_count = if x == 'C' || x == 'R' { 2 } else { 1 };
+
+            for _ in 0..path_count {
+                if let Some(path) = tokens.next()
+                    && !path.is_empty()
+                {
+                    // Paths are relative from the cwd
+                    files.insert(self.work_dir.join(path), statuses.clone());
+                }
+            }
         }
 
         Ok(ChangedFiles { files })
@@ -260,6 +271,8 @@ impl GitTree {
     //    - Run in the submodule root.
     #[instrument(skip(self))]
     pub async fn exec_ls_tree(&self, revision: &str) -> miette::Result<BTreeMap<PathBuf, String>> {
+        validate_revision(revision)?;
+
         let process = self.get_process();
         let output = process
             .run_command(
@@ -270,14 +283,17 @@ impl GitTree {
 
         let mut tree = BTreeMap::default();
 
+        // Lines are formatted as:
+        //  <mode> <type> <hash>\t<path>\0
         for line in output.split('\0') {
             if line.is_empty() {
                 continue;
             }
 
-            let parts = line.split(" ");
-
-            if let Some((hash, path)) = parts.last().and_then(|part| part.split_once("\t")) {
+            // Split on the tab first, as the path may contain spaces
+            if let Some((meta, path)) = line.split_once('\t')
+                && let Some((_, hash)) = meta.rsplit_once(' ')
+            {
                 tree.insert(self.work_dir.join(path), hash.to_owned());
             }
         }
@@ -292,6 +308,9 @@ impl GitTree {
         head_revision: &str,
         remote_candidates: &[String],
     ) -> miette::Result<Option<Arc<String>>> {
+        validate_revision(base_revision)?;
+        validate_revision(head_revision)?;
+
         let mut args = vec!["merge-base".to_owned(), head_revision.to_owned()];
         let mut candidates = vec![base_revision.to_owned()];
 
@@ -301,20 +320,39 @@ impl GitTree {
 
         // To start, we need to find a working base
         let mut set = JoinSet::new();
+        let mut resolved = vec![None; candidates.len()];
 
-        for candidate in candidates {
+        for (index, candidate) in candidates.into_iter().enumerate() {
             let process = Arc::clone(self.process.as_ref().unwrap());
             let command = process
                 .create_command_in_cwd(["merge-base", &candidate, head_revision], &self.work_dir);
 
-            set.spawn(async move { process.run_command(command, true).await.map(|_| candidate) });
+            set.spawn(async move {
+                (
+                    index,
+                    process.run_command(command, true).await.map(|_| candidate),
+                )
+            });
         }
 
+        // Tasks complete in any order, so preserve the candidate
+        // order to keep the final command deterministic
         while let Some(result) = set.join_next().await {
-            if let Ok(candidate) = result.into_diagnostic()? {
-                args.push(candidate);
+            let (index, result) = result.into_diagnostic()?;
+
+            if let Ok(candidate) = result {
+                resolved[index] = Some(candidate);
             }
         }
+
+        let resolved = resolved.into_iter().flatten().collect::<Vec<_>>();
+
+        // No candidates resolved, so a merge base can't be found
+        if resolved.is_empty() {
+            return Ok(None);
+        }
+
+        args.extend(resolved);
 
         // Then we need to run it again and extract the base hash.
         // This is necessary to support comparisons between forks!

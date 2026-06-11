@@ -6,7 +6,7 @@ use std::sync::{Arc, OnceLock};
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout};
 use tokio::sync::Mutex;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ChildExit {
     Completed(ExitStatus),
     Interrupted,

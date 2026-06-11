@@ -14,11 +14,12 @@ mod format_command_line {
 
     #[test]
     fn labels_relative_working_dir() {
-        let line = format_command_line(
-            "git status",
-            Path::new("/root"),
-            Path::new("/root/packages/foo"),
-        );
+        // Join with the native separator, as a forward slash literal
+        // would be preserved as-is on Windows and never match
+        let workspace_root = Path::new("/root");
+        let working_dir = workspace_root.join("packages").join("foo");
+
+        let line = format_command_line("git status", workspace_root, &working_dir);
 
         assert!(line.contains(&format!(
             "(in .{}packages{}foo)",

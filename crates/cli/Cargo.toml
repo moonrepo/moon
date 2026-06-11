@@ -52,7 +52,7 @@ wiggle = "~41.0.4"
 liblzma = { version = "0.4.6", features = ["static"] }
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.186"
+libc = { workspace = true }
 
 [dev-dependencies]
 moon_affected = { path = "../affected" }

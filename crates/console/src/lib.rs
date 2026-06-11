@@ -7,6 +7,7 @@ use std::ops::DerefMut;
 
 pub use reporter::*;
 pub use starbase_console::ConsoleError;
+pub use starbase_console::ConsoleStream;
 pub use starbase_console::ui;
 pub use theme::*;
 

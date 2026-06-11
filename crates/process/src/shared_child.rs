@@ -6,7 +6,7 @@ use std::sync::{Arc, OnceLock};
 use tokio::process::{Child, ChildStderr, ChildStdin, ChildStdout};
 use tokio::sync::Mutex;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ChildExit {
     Completed(ExitStatus),
     Interrupted,
@@ -90,7 +90,7 @@ impl SharedChild {
         let mut child = self.inner.lock().await;
         let status = child.wait().await?;
 
-        Ok(convert_exit_status(status, self.signal.clone()))
+        Ok(convert_exit_status(status, self.signal.get().copied()))
     }
 
     // This method re-implements the tokio `wait_with_output` method
@@ -122,22 +122,22 @@ impl SharedChild {
         drop(stderr_pipe);
 
         Ok(Output {
-            exit: convert_exit_status(status, self.signal.clone()),
+            exit: convert_exit_status(status, self.signal.get().copied()),
             stdout,
             stderr,
         })
     }
 }
 
-fn convert_exit_status(status: ExitStatus, raw_signal: Arc<OnceLock<SignalType>>) -> ChildExit {
+fn convert_exit_status(status: ExitStatus, raw_signal: Option<SignalType>) -> ChildExit {
     #[cfg(unix)]
     {
         use std::os::unix::process::ExitStatusExt;
 
         if let Some(signal) = status.signal() {
             return match signal {
-                2 => ChildExit::Interrupted, // SIGINT
-                9 => ChildExit::Killed,      // SIGKILL
+                libc::SIGINT => ChildExit::Interrupted,
+                libc::SIGKILL => ChildExit::Killed,
                 _ => ChildExit::Terminated,
             };
         }
@@ -146,7 +146,7 @@ fn convert_exit_status(status: ExitStatus, raw_signal: Arc<OnceLock<SignalType>>
     // The Unix signal above sometimes doesn't capture the correct
     // wait status, so to support those edges, and Windows in general,
     // we'll read the raw signal that we explicitly used
-    if let Some(signal) = raw_signal.get() {
+    if let Some(signal) = raw_signal {
         return match signal {
             SignalType::Interrupt => ChildExit::Interrupted,
             SignalType::Kill => ChildExit::Killed,

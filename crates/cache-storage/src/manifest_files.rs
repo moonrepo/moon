@@ -1,4 +1,4 @@
-use crate::digest_compat::{LocalDigestExt, RemoteDigestExt};
+use crate::digest_compat::{InternalDigestExt, ExternalDigestExt};
 use crate::helpers::{create_from_timestamp, create_timestamp};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     NodeProperties, OutputFile, OutputSymlink,
@@ -25,7 +25,7 @@ impl ManifestFile {
         Ok(Self {
             bytes: file.contents,
             digest: match file.digest {
-                Some(digest) => Some(digest.to_local_digest()?),
+                Some(digest) => Some(digest.to_internal_digest()?),
                 None => None,
             },
             is_executable: file.is_executable,
@@ -38,7 +38,7 @@ impl ManifestFile {
     pub fn into_bazel_file(self) -> OutputFile {
         OutputFile {
             contents: self.bytes,
-            digest: self.digest.map(|digest| digest.to_remote_digest()),
+            digest: self.digest.map(|digest| digest.to_external_digest()),
             is_executable: self.is_executable,
             path: self.path.to_string(),
             node_properties: Some(NodeProperties {

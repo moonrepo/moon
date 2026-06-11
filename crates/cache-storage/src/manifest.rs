@@ -1,4 +1,4 @@
-use crate::digest_compat::{LocalDigestExt, RemoteDigestExt};
+use crate::digest_compat::{InternalDigestExt, ExternalDigestExt};
 use crate::manifest_files::{ManifestFile, ManifestSymlink};
 use bazel_remote_apis::build::bazel::remote::execution::v2::{Action, ActionResult};
 use moon_hash::Digest;
@@ -12,7 +12,7 @@ impl Manifest {
     pub fn from_bazel_action(action: Action) -> miette::Result<Self> {
         Ok(Self {
             digest: match action.command_digest {
-                Some(digest) => Some(digest.to_local_digest()?),
+                Some(digest) => Some(digest.to_internal_digest()?),
                 None => None,
             },
         })
@@ -20,7 +20,7 @@ impl Manifest {
 
     pub fn into_bazel_action(self) -> Action {
         Action {
-            command_digest: self.digest.as_ref().map(|digest| digest.to_remote_digest()),
+            command_digest: self.digest.map(|digest| digest.to_external_digest()),
             ..Default::default()
         }
     }
@@ -53,11 +53,11 @@ impl ManifestResult {
             symlinks,
             exit_code: result.exit_code,
             stderr_digest: match result.stderr_digest {
-                Some(digest) => Some(digest.to_local_digest()?),
+                Some(digest) => Some(digest.to_internal_digest()?),
                 None => None,
             },
             stdout_digest: match result.stdout_digest {
-                Some(digest) => Some(digest.to_local_digest()?),
+                Some(digest) => Some(digest.to_internal_digest()?),
                 None => None,
             },
             ..Default::default()
@@ -77,8 +77,8 @@ impl ManifestResult {
                 .map(|symlink| symlink.into_bazel_symlink())
                 .collect(),
             exit_code: self.exit_code,
-            stderr_digest: self.stderr_digest.map(|digest| digest.to_remote_digest()),
-            stdout_digest: self.stdout_digest.map(|digest| digest.to_remote_digest()),
+            stderr_digest: self.stderr_digest.map(|digest| digest.to_external_digest()),
+            stdout_digest: self.stdout_digest.map(|digest| digest.to_external_digest()),
             ..Default::default()
         }
     }

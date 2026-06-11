@@ -1,1 +1,1 @@
-
+pub trait StorageBackend {}

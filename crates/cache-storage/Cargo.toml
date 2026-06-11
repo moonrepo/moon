@@ -9,7 +9,10 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_common = { path = "../common" }
 moon_hash = { path = "../hash" }
+bazel-remote-apis = { workspace = true }
+chrono = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }

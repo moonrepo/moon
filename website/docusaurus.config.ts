@@ -177,16 +177,12 @@ const config: Config = {
 							to: 'https://github.com/moonrepo/moon/releases',
 						},
 						{
+							label: 'Plugins repository',
+							href: 'https://github.com/moonrepo/plugins',
+						},
+						{
 							label: 'Shared configs',
 							to: 'https://github.com/moonrepo/moon-configs',
-						},
-						{
-							label: 'Developer tools',
-							href: 'https://github.com/moonrepo/dev',
-						},
-						{
-							label: 'Examples repository',
-							href: 'https://github.com/moonrepo/examples',
 						},
 					],
 				},

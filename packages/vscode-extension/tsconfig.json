@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.options.json",
+  "compilerOptions": {
+    "outDir": "../../.moon/cache/types/packages/vscode-extension"
+  },
+  "references": [
+    {
+      "path": "../report"
+    },
+    {
+      "path": "../types"
+    }
+  ]
+}

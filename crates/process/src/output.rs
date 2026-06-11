@@ -3,7 +3,7 @@ use crate::shared_child::ChildExit;
 use std::process::ExitStatus;
 pub use std::process::Output as NativeOutput;
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Output {
     pub exit: ChildExit,
     pub stdout: Vec<u8>,
@@ -64,7 +64,7 @@ impl Output {
 
 #[inline]
 pub fn output_to_string(data: &[u8]) -> String {
-    String::from_utf8(data.to_vec()).unwrap_or_default()
+    String::from_utf8_lossy(data).into_owned()
 }
 
 #[inline]

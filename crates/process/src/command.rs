@@ -408,26 +408,11 @@ impl Command {
         match &self.exe {
             CommandExecutable::Binary(bin) => bin.value.to_string_lossy().to_string(),
             CommandExecutable::Script(script) => {
-                if let Some(inner) = script.to_str() {
-                    match inner.find(' ') {
-                        Some(index) => &inner[0..index],
-                        None => inner,
-                    }
-                    .into()
-                } else {
-                    let mut bytes = vec![];
+                let script = script.to_string_lossy();
 
-                    for ch in script.as_encoded_bytes() {
-                        if *ch == b' ' {
-                            break;
-                        }
-
-                        bytes.push(*ch);
-                    }
-
-                    unsafe { OsString::from_encoded_bytes_unchecked(bytes) }
-                        .to_string_lossy()
-                        .to_string()
+                match script.find(' ') {
+                    Some(index) => script[0..index].to_string(),
+                    None => script.into_owned(),
                 }
             }
         }
@@ -436,42 +421,59 @@ impl Command {
     pub fn get_cache_key(&self) -> String {
         let mut hasher = FxHasher::default();
 
-        let mut write = |value: &OsString| {
-            hasher.write(value.as_os_str().as_encoded_bytes());
-        };
+        // Length-prefix each field, otherwise consecutive values hash
+        // ambiguously, like ("ab", "c") and ("a", "bc")
+        fn write(hasher: &mut FxHasher, value: &OsStr) {
+            let bytes = value.as_encoded_bytes();
+            hasher.write_usize(bytes.len());
+            hasher.write(bytes);
+        }
 
-        for (key, value) in &self.env {
-            write(key);
+        // Sort env vars, as map iteration order is not guaranteed,
+        // and the key must be stable for identical commands
+        let mut env = self.env.iter().collect::<Vec<_>>();
+        env.sort_by(|a, b| a.0.cmp(b.0));
+
+        for (key, value) in env {
+            write(&mut hasher, key);
 
             match value {
-                Env::Set(value) => write(value),
-                Env::SetIfMissing(value) => write(value),
-                Env::Unset => {}
+                Env::Set(value) => {
+                    hasher.write_u8(1);
+                    write(&mut hasher, value);
+                }
+                Env::SetIfMissing(value) => {
+                    hasher.write_u8(2);
+                    write(&mut hasher, value);
+                }
+                Env::Unset => {
+                    hasher.write_u8(0);
+                }
             };
         }
 
         match &self.exe {
             CommandExecutable::Binary(exe) => {
-                write(&exe.value);
+                write(&mut hasher, &exe.value);
             }
             CommandExecutable::Script(exe) => {
-                write(exe);
+                write(&mut hasher, exe);
             }
         };
 
         for arg in &self.args {
-            write(&arg.value);
+            write(&mut hasher, &arg.value);
         }
 
         if let Some(cwd) = &self.cwd {
-            write(cwd);
+            write(&mut hasher, cwd);
         }
 
         for arg in &self.input {
-            write(arg);
+            write(&mut hasher, arg);
         }
 
-        format!("{}", hasher.finish())
+        hasher.finish().to_string()
     }
 
     pub fn get_command_line(&self, with_shell: bool, with_input: bool) -> String {
@@ -479,6 +481,9 @@ impl Command {
         let use_shell = with_shell && (self.shell.is_some() || self.exe.requires_shell());
         let mut line = OsString::new();
 
+        // Curly quotes are intentional, so that the shell wrapper is
+        // distinguishable from real quoting within the command itself.
+        // This output is only used for logs, never executed!
         if use_shell {
             line.push(shell.to_string());
             line.push(" -c “");

@@ -1,8 +1,7 @@
 mod command;
 mod exec_command;
-mod output;
-// mod output_stream;
 mod helpers;
+mod output;
 mod process_error;
 mod process_registry;
 mod shared_child;

@@ -1,0 +1,376 @@
+{
+  "private": true,
+  "version": "0.16.6",
+  "name": "moon-console",
+  "publisher": "moonrepo",
+  "displayName": "moon console",
+  "description": "Control panel and integrated console for moon.",
+  "icon": "assets/moon-banner.png",
+  "galleryBanner": {
+    "color": "#00111e",
+    "theme": "dark"
+  },
+  "markdown": "github",
+  "keywords": [
+    "moon",
+    "moonrepo",
+    "build",
+    "system",
+    "console",
+    "projects",
+    "tasks"
+  ],
+  "engines": {
+    "vscode": "^1.103.0"
+  },
+  "categories": [
+    "Testing",
+    "Other"
+  ],
+  "sponsor": {
+    "url": "https://github.com/moonrepo/moon"
+  },
+  "homepage": "https://github.com/moonrepo/moon/tree/master/packages/vscode-extension",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moonrepo/moon.git",
+    "directory": "packages/vscode-extension"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "package": "vp pack && vsce package --no-dependencies",
+    "publish": "yarn run publish:ovsx && yarn run publish:vsce",
+    "publish:vsce": "vsce publish --no-dependencies --no-git-tag-version --message 'Release [ci skip]'",
+    "publish:ovsx": "ovsx publish --no-dependencies -p $OPENVSX_TOKEN"
+  },
+  "dependencies": {
+    "@moonrepo/report": "workspace:^",
+    "execa": "^5.1.1",
+    "semver": "^7.8.4"
+  },
+  "devDependencies": {
+    "@moonrepo/types": "workspace:^",
+    "@types/semver": "^7.7.1",
+    "@types/vscode": "1.103.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.9.2",
+    "ovsx": "^0.10.12"
+  },
+  "main": "./cjs/index.cjs",
+  "types": "./cjs/index.d.cts",
+  "exports": {
+    ".": "./cjs/index.cjs",
+    "./package.json": "./package.json"
+  },
+  "activationEvents": [
+    "workspaceContains:.moon",
+    "workspaceContains:.config/moon",
+    "workspaceContains:**/moon.*"
+  ],
+  "extensionDependencies": [
+    "redhat.vscode-yaml"
+  ],
+  "contributes": {
+    "yamlValidation": [
+      {
+        "fileMatch": "moon.*",
+        "url": "https://moonrepo.dev/schemas/v2/project.json"
+      },
+      {
+        "fileMatch": "template.*",
+        "url": "https://moonrepo.dev/schemas/v2/template.json"
+      },
+      {
+        "fileMatch": ".moon/extensions.*",
+        "url": "https://moonrepo.dev/schemas/v2/extensions.json"
+      },
+      {
+        "fileMatch": ".moon/tasks.*",
+        "url": "https://moonrepo.dev/schemas/v2/tasks.json"
+      },
+      {
+        "fileMatch": ".moon/tasks/**/*",
+        "url": "https://moonrepo.dev/schemas/v2/tasks.json"
+      },
+      {
+        "fileMatch": ".moon/toolchains.*",
+        "url": "https://moonrepo.dev/schemas/v2/toolchains.json"
+      },
+      {
+        "fileMatch": ".moon/workspace.*",
+        "url": "https://moonrepo.dev/schemas/v2/workspace.json"
+      }
+    ],
+    "configuration": {
+      "id": "moon",
+      "type": "object",
+      "title": "moon",
+      "properties": {
+        "moon.binPath": {
+          "type": "string",
+          "default": "node_modules/@moonrepo/cli/moon",
+          "markdownDescription": "Path to the moon binary, relative from the `moon.rootPrefixes` setting."
+        },
+        "moon.hideTasks": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "List of tasks to hide in the projects panel. Accepts fully-qualified or partial targets."
+        },
+        "moon.logLevel": {
+          "type": "string",
+          "default": "info",
+          "markdownDescription": "The log level to apply to all moon executed commands."
+        },
+        "moon.rootPrefixes": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "Relative paths from the editor root to find moon's [workspace root](https://moonrepo.dev/docs/concepts/workspace)."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "moon.openSettings",
+        "title": "moon: Open settings"
+      },
+      {
+        "command": "moon.appendSchemasConfig",
+        "title": "moon: Append YAML schemas configuration to settings"
+      },
+      {
+        "command": "moon.runTaskByInput",
+        "title": "moon: Run one or many tasks"
+      },
+      {
+        "command": "moon.viewActionGraph",
+        "title": "moon: View action graph",
+        "icon": "$(gather)"
+      },
+      {
+        "command": "moon.viewProjectGraph",
+        "title": "moon: View project graph",
+        "icon": "$(group-by-ref-type)"
+      },
+      {
+        "command": "moon.viewTaskGraph",
+        "title": "moon: View task graph",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
+        "command": "moon.projectCategory.refreshProjects",
+        "title": "moon: Refresh projects",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "moon.projectCategory.checkProject",
+        "title": "moon: Run all buildable and testable tasks for a project",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "moon.projectCategory.runTask",
+        "title": "moon: Run the task",
+        "icon": "$(run)"
+      },
+      {
+        "command": "moon.projectCategory.viewProject",
+        "title": "moon: View selected project",
+        "icon": "$(open-preview)"
+      },
+      {
+        "command": "moon.projectTag.refreshProjects",
+        "title": "moon: Refresh projects",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "moon.projectTag.checkProject",
+        "title": "moon: Run all buildable and testable tasks for a project",
+        "icon": "$(run-all)"
+      },
+      {
+        "command": "moon.projectTag.runTask",
+        "title": "moon: Run the task",
+        "icon": "$(run)"
+      },
+      {
+        "command": "moon.projectTag.viewProject",
+        "title": "moon: View selected project",
+        "icon": "$(open-preview)"
+      }
+    ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "moonMcpProvider",
+        "label": "moon MCP Server Provider"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "moon.runTaskByInput",
+          "when": "moon.hasBinary"
+        },
+        {
+          "command": "moon.viewActionGraph",
+          "when": "moon.hasBinary"
+        },
+        {
+          "command": "moon.viewProjectGraph",
+          "when": "moon.hasBinary"
+        },
+        {
+          "command": "moon.viewTaskGraph",
+          "when": "moon.hasBinary"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "moon.projectTag.refreshProjects",
+          "when": "view == moonTags && moon.hasBinary",
+          "group": "navigation"
+        },
+        {
+          "command": "moon.projectCategory.refreshProjects",
+          "when": "view == moonProjects && moon.hasBinary",
+          "group": "navigation"
+        },
+        {
+          "command": "moon.projectCategory.refreshProjects",
+          "when": "view == moonProjectsExternal && moon.hasBinary",
+          "group": "navigation"
+        },
+        {
+          "command": "moon.viewActionGraph",
+          "when": "view == moonProjects && moon.hasBinary",
+          "group": "navigation"
+        },
+        {
+          "command": "moon.viewActionGraph",
+          "when": "view == moonProjectsExternal && moon.hasBinary",
+          "group": "navigation"
+        },
+        {
+          "command": "moon.viewProjectGraph",
+          "when": "view == moonProjects && moon.hasBinary",
+          "group": "navigation"
+        },
+        {
+          "command": "moon.viewProjectGraph",
+          "when": "view == moonProjectsExternal && moon.hasBinary",
+          "group": "navigation"
+        },
+        {
+          "command": "moon.viewTaskGraph",
+          "when": "view == moonProjects && moon.hasBinary",
+          "group": "navigation"
+        },
+        {
+          "command": "moon.viewTaskGraph",
+          "when": "view == moonProjectsExternal && moon.hasBinary",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "moon.projectTag.runTask",
+          "when": "view == moonTags && viewItem == projectTask",
+          "group": "inline"
+        },
+        {
+          "command": "moon.projectTag.viewProject",
+          "when": "view == moonTags && viewItem == project",
+          "group": "inline@0"
+        },
+        {
+          "command": "moon.projectTag.checkProject",
+          "when": "view == moonTags && viewItem == project",
+          "group": "inline@1"
+        },
+        {
+          "command": "moon.projectCategory.runTask",
+          "when": "view == moonProjects && viewItem == projectTask",
+          "group": "inline"
+        },
+        {
+          "command": "moon.projectCategory.viewProject",
+          "when": "view == moonProjects && viewItem == project",
+          "group": "inline@0"
+        },
+        {
+          "command": "moon.projectCategory.checkProject",
+          "when": "view == moonProjects && viewItem == project",
+          "group": "inline@1"
+        },
+        {
+          "command": "moon.projectCategory.runTask",
+          "when": "view == moonProjectsExternal && viewItem == projectTask",
+          "group": "inline"
+        },
+        {
+          "command": "moon.projectCategory.viewProject",
+          "when": "view == moonProjectsExternal && viewItem == project",
+          "group": "inline@0"
+        },
+        {
+          "command": "moon.projectCategory.checkProject",
+          "when": "view == moonProjectsExternal && viewItem == project",
+          "group": "inline@1"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "moonConsole",
+          "title": "moon console",
+          "icon": "assets/moon.svg"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "moonProjectsExternal",
+          "name": "moon"
+        }
+      ],
+      "moonConsole": [
+        {
+          "id": "moonProjects",
+          "name": "Projects"
+        },
+        {
+          "id": "moonTags",
+          "name": "Tags"
+        },
+        {
+          "id": "moonLastRun",
+          "name": "Last run",
+          "type": "webview",
+          "when": "moon.inWorkspaceRoot"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "moonProjects",
+        "contents": "Unable to find the workspace root. Has moon been installed? Try opening a file.\n[Install moon](https://moonrepo.dev/docs/install)\nIf moon was installed in a sub-folder, update the [moon.rootPrefixes](command:moon.openSettings) setting.",
+        "when": "!moon.inWorkspaceRoot"
+      },
+      {
+        "view": "moonProjects",
+        "contents": "Unable to find moon's binary. Has the [@moonrepo/cli](https://www.npmjs.com/package/@moonrepo/cli) package or `moon` global been installed?\n[Learn more](https://moonrepo.dev/docs/install)\nThe path to moon's binary can be customized with the [moon.binPath](command:moon.openSettings) setting.",
+        "when": "moon.inWorkspaceRoot && !moon.hasBinary"
+      },
+      {
+        "view": "moonProjectsExternal",
+        "contents": "Unable to find the workspace root. Has moon been installed? Try opening a file.\n[Install moon](https://moonrepo.dev/docs/install)\nIf moon was installed in a sub-folder, update the [moon.rootPrefixes](command:moon.openSettings) setting.",
+        "when": "!moon.inWorkspaceRoot"
+      },
+      {
+        "view": "moonProjectsExternal",
+        "contents": "Unable to find moon's binary. Has the [@moonrepo/cli](https://www.npmjs.com/package/@moonrepo/cli) package or `moon` global been installed?\n[Learn more](https://moonrepo.dev/docs/install)\nThe path to moon's binary can be customized with the [moon.binPath](command:moon.openSettings) setting.",
+        "when": "moon.inWorkspaceRoot && !moon.hasBinary"
+      }
+    ]
+  }
+}

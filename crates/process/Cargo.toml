@@ -32,7 +32,7 @@ tokio = { workspace = true, features = [
 libc = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61.2", default-features = false, features = [
+windows-sys = { workspace = true, features = [
 	# "Win32_System_Console",
 	"Win32_System_Threading",
 ] }

@@ -88,6 +88,7 @@ tower = "0.5.3"
 tracing = "0.1.44"
 url = "2.5.8"
 uuid = { version = "1.23.2", features = ["v4"] }
+windows-sys = { version = "0.61.2", default-features = false }
 
 # proto/plugin related
 extism = "=1.21.0"

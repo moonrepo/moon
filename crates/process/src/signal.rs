@@ -61,7 +61,7 @@ mod unix {
 
             // "No such process" error, so it may have been killed already
             // https://man7.org/linux/man-pages/man3/errno.3.html
-            if error.raw_os_error().is_some_and(|code| code == 3) {
+            if error.raw_os_error().is_some_and(|code| code == libc::ESRCH) {
                 return Ok(());
             }
 

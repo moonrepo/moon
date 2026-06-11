@@ -1,12 +1,12 @@
 use crate::command::{Command, CommandExecutable, Env};
 use crate::helpers::format_command_line;
-// use crate::output_stream::capture_stream;
 use crate::output::Output;
 use crate::process_error::ProcessError;
 use crate::process_registry::ProcessRegistry;
 use crate::shared_child::SharedChild;
 use miette::IntoDiagnostic;
 use moon_common::color;
+use moon_console::ConsoleStream;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::FxHashMap;
 use starbase_shell::join_exe_args;
@@ -14,9 +14,8 @@ use std::env;
 use std::ffi::{OsStr, OsString};
 use std::path::PathBuf;
 use std::process::{Command as StdCommand, Stdio};
-use std::sync::{Arc, RwLock};
 use std::time::Instant;
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command as TokioCommand};
 use tokio::task::{self, JoinHandle};
 use tracing::{debug, enabled, trace};
@@ -120,41 +119,8 @@ impl Command {
             Ok(())
         });
 
-        let stdout_handle: JoinHandle<miette::Result<Vec<String>>> = task::spawn(async move {
-            let mut logs = vec![];
-            let mut lines = BufReader::new(stdout.unwrap()).lines();
-
-            loop {
-                match lines.next_line().await {
-                    Ok(Some(line)) => logs.push(line),
-                    Ok(None) => break,
-                    Err(error) => {
-                        trace!("Failed to read stdout line: {error}");
-                        break;
-                    }
-                }
-            }
-
-            Ok(logs)
-        });
-
-        let stderr_handle: JoinHandle<miette::Result<Vec<String>>> = task::spawn(async move {
-            let mut logs = vec![];
-            let mut lines = BufReader::new(stderr.unwrap()).lines();
-
-            loop {
-                match lines.next_line().await {
-                    Ok(Some(line)) => logs.push(line),
-                    Ok(None) => break,
-                    Err(error) => {
-                        trace!("Failed to read stderr line: {error}");
-                        break;
-                    }
-                }
-            }
-
-            Ok(logs)
-        });
+        let stdout_handle = spawn_capture_lines(stdout, "stdout");
+        let stderr_handle = spawn_capture_lines(stderr, "stderr");
 
         // Attempt to create the child output
         let result = shared_child
@@ -177,12 +143,12 @@ impl Command {
             exit,
             stdout: stdout_handle
                 .await
-                .into_diagnostic()??
+                .into_diagnostic()?
                 .join("\n")
                 .into_bytes(),
             stderr: stderr_handle
                 .await
-                .into_diagnostic()??
+                .into_diagnostic()?
                 .join("\n")
                 .into_bytes(),
         };
@@ -270,109 +236,36 @@ impl Command {
 
         let shared_child = registry.add_running(child).await;
 
+        self.pre_log_command(&shared_child);
+
         // We need to log the child process output to the parent terminal
         // AND capture stdout/stderr so that we can cache it for future runs.
-        // This doesn't seem to be supported natively by `Stdio`, so I have
-        // this *real ugly* implementation to solve it. There's gotta be a
-        // better way to do this?
+        // This isn't supported natively by `Stdio`, so we stream each pipe
+        // through a task that writes to the console while capturing lines.
         // https://stackoverflow.com/a/49063262
-        let stderr = BufReader::new(shared_child.take_stderr().await.unwrap());
-        let stdout = BufReader::new(shared_child.take_stdout().await.unwrap());
-        let mut handles = vec![];
-
-        let captured_stderr = Arc::new(RwLock::new(vec![]));
-        let captured_stdout = Arc::new(RwLock::new(vec![]));
-        let captured_stderr_clone = Arc::clone(&captured_stderr);
-        let captured_stdout_clone = Arc::clone(&captured_stdout);
-
-        let prefix = Arc::new(self.get_prefix().map(|prefix| prefix.to_owned()));
-        let stderr_prefix = Arc::clone(&prefix);
-        let stdout_prefix = Arc::clone(&prefix);
-
         let console = self
             .console
             .as_ref()
             .expect("A console is required when streaming output!");
-        let stderr_stream = Arc::new(console.stderr().to_owned());
-        let stdout_stream = Arc::new(console.stdout().to_owned());
+        let prefix = self.get_prefix().map(|prefix| prefix.to_owned());
 
-        handles.push(task::spawn(async move {
-            let mut lines = stderr.lines();
-            let mut captured_lines = vec![];
+        let stderr_handle = spawn_stream_capture_lines(
+            shared_child.take_stderr().await,
+            console.stderr(),
+            prefix.clone(),
+            "stderr",
+        );
+        let stdout_handle = spawn_stream_capture_lines(
+            shared_child.take_stdout().await,
+            console.stdout(),
+            prefix,
+            "stdout",
+        );
 
-            loop {
-                match lines.next_line().await {
-                    Ok(Some(line)) => {
-                        let _ = if let Some(prefix) = &*stderr_prefix {
-                            stderr_stream.write_line_with_prefix(&line, prefix)
-                        } else {
-                            stderr_stream.write_line(&line)
-                        };
-
-                        captured_lines.push(line);
-                    }
-                    Ok(None) => break,
-                    Err(error) => {
-                        // Don't break on read errors - dropping the BufReader here would close
-                        // the read-end of the pipe while the child process is still writing,
-                        // causing it to receive EPIPE and potentially exit with a non-zero code.
-                        // Continue reading until we get a natural EOF (Ok(None)).
-                        trace!("Failed to read stderr line: {error}");
-                    }
-                }
-            }
-
-            // Flush any remaining buffered output to ensure all streamed
-            // content is visible before the next flow is printed
-            let _ = stderr_stream.flush();
-
-            captured_stderr_clone
-                .write()
-                .unwrap()
-                .extend(captured_lines);
-        }));
-
-        handles.push(task::spawn(async move {
-            let mut lines = stdout.lines();
-            let mut captured_lines = vec![];
-
-            loop {
-                match lines.next_line().await {
-                    Ok(Some(line)) => {
-                        let _ = if let Some(prefix) = &*stdout_prefix {
-                            stdout_stream.write_line_with_prefix(&line, prefix)
-                        } else {
-                            stdout_stream.write_line(&line)
-                        };
-
-                        captured_lines.push(line);
-                    }
-                    Ok(None) => break,
-                    Err(error) => {
-                        // Don't break on read errors - dropping the BufReader here would close
-                        // the read-end of the pipe while the child process is still writing,
-                        // causing it to receive EPIPE and potentially exit with a non-zero code.
-                        // Continue reading until we get a natural EOF (Ok(None)).
-                        trace!("Failed to read stdout line: {error}");
-                    }
-                }
-            }
-
-            // Flush any remaining buffered output to ensure all streamed
-            // content is visible before the next flow is printed
-            let _ = stdout_stream.flush();
-
-            captured_stdout_clone
-                .write()
-                .unwrap()
-                .extend(captured_lines);
-        }));
-
-        for handle in handles {
-            let _ = handle.await;
-        }
-
-        self.pre_log_command(&shared_child);
+        // Wait for the pipes to hit EOF before waiting on the child,
+        // otherwise output may be lost
+        let captured_stderr = stderr_handle.await.unwrap_or_default();
+        let captured_stdout = stdout_handle.await.unwrap_or_default();
 
         // Attempt to create the child output
         let result = shared_child
@@ -390,119 +283,14 @@ impl Command {
         let exit = result?;
         let output = Output {
             exit,
-            stdout: captured_stdout.read().unwrap().join("\n").into_bytes(),
-            stderr: captured_stderr.read().unwrap().join("\n").into_bytes(),
+            stdout: captured_stdout.join("\n").into_bytes(),
+            stderr: captured_stderr.join("\n").into_bytes(),
         };
 
         self.handle_nonzero_status(&output, true)?;
 
         Ok(output)
     }
-
-    // pub async fn exec_stream_and_capture_output_new(&mut self) -> miette::Result<Output> {
-    //     let registry = ProcessRegistry::instance();
-    //     let (mut command, line) = self.create_async_command();
-
-    //     let mut child = command
-    //         .stdin(if self.should_pass_stdin() {
-    //             Stdio::piped()
-    //         } else {
-    //             Stdio::inherit()
-    //         })
-    //         .stderr(Stdio::piped())
-    //         .stdout(Stdio::piped())
-    //         .spawn()
-    //         .map_err(|error| ProcessError::StreamCapture {
-    //             bin: self.get_bin_name(),
-    //             error: Box::new(error),
-    //         })?;
-
-    //     if self.should_pass_stdin() {
-    //         self.write_input_to_child(&mut child, &line).await?;
-    //     }
-
-    //     let shared_child = registry.add_running(child).await;
-
-    //     // Stream and attempt to capture the output
-    //     let stderr = shared_child.take_stderr().await.unwrap();
-    //     let mut stderr_buffer = Vec::new();
-    //     let mut stderr_pos = 0;
-
-    //     let stdout = shared_child.take_stdout().await.unwrap();
-    //     let mut stdout_buffer = Vec::new();
-    //     let mut stdout_pos = 0;
-
-    //     let prefix = self.get_prefix();
-    //     let console = self
-    //         .console
-    //         .as_ref()
-    //         .expect("A console is required when streaming output!");
-
-    //     capture_stream(stdout, stderr, &mut |is_out, data, eof| {
-    //         let (pos, buf) = if is_out {
-    //             (&mut stdout_pos, &mut stdout_buffer)
-    //         } else {
-    //             (&mut stderr_pos, &mut stderr_buffer)
-    //         };
-
-    //         let idx = if eof {
-    //             data.len()
-    //         } else {
-    //             match data[*pos..].iter().rposition(|b| *b == b'\n') {
-    //                 Some(i) => *pos + i + 1,
-    //                 None => {
-    //                     *pos = data.len();
-    //                     return;
-    //                 }
-    //             }
-    //         };
-
-    //         let new_lines = &data[..idx];
-
-    //         for line in String::from_utf8_lossy(new_lines).lines() {
-    //             let stream = if is_out { &console.out } else { &console.err };
-
-    //             let _ = if let Some(p) = &prefix {
-    //                 stream.write_line_with_prefix(line.trim(), p)
-    //             } else {
-    //                 stream.write_line(line.trim())
-    //             };
-    //         }
-
-    //         buf.extend(new_lines);
-    //         data.drain(..idx);
-    //         *pos = 0;
-    //     })
-    //     .await
-    //     .map_err(|error| ProcessError::StreamCapture {
-    //         bin: self.get_bin_name(),
-    //         error: Box::new(error),
-    //     })?;
-
-    // self.log_command(&line, &shared_child);
-
-    //     // Attempt to create the child output
-    //     let result = shared_child
-    //         .wait()
-    //         .await
-    //         .map_err(|error| ProcessError::StreamCapture {
-    //             bin: self.get_bin_name(),
-    //             error: Box::new(error),
-    //         });
-
-    //     registry.remove_running(shared_child).await;
-
-    //     let status = result?;
-    //     let output = Output {
-    //         status,
-    //         stdout: stdout_buffer,
-    //         stderr: stderr_buffer,
-    //     };
-
-    //     self.handle_nonzero_status(&output, true)?;
-
-    //     Ok(output)
-    // }
 
     fn create_sync_command(&self) -> miette::Result<StdCommand> {
         // When the command is wrapped in a shell, we need to create a single
@@ -675,4 +463,80 @@ impl Command {
 
         Ok(())
     }
+}
+
+fn spawn_capture_lines<R>(reader: Option<R>, label: &'static str) -> JoinHandle<Vec<String>>
+where
+    R: AsyncRead + Unpin + Send + 'static,
+{
+    task::spawn(async move {
+        let mut logs = vec![];
+
+        let Some(reader) = reader else {
+            return logs;
+        };
+
+        let mut lines = BufReader::new(reader).lines();
+
+        loop {
+            match lines.next_line().await {
+                Ok(Some(line)) => logs.push(line),
+                Ok(None) => break,
+                Err(error) => {
+                    trace!("Failed to read {label} line: {error}");
+                    break;
+                }
+            }
+        }
+
+        logs
+    })
+}
+
+fn spawn_stream_capture_lines<R>(
+    reader: Option<R>,
+    stream: ConsoleStream,
+    prefix: Option<String>,
+    label: &'static str,
+) -> JoinHandle<Vec<String>>
+where
+    R: AsyncRead + Unpin + Send + 'static,
+{
+    task::spawn(async move {
+        let mut captured_lines = vec![];
+
+        let Some(reader) = reader else {
+            return captured_lines;
+        };
+
+        let mut lines = BufReader::new(reader).lines();
+
+        loop {
+            match lines.next_line().await {
+                Ok(Some(line)) => {
+                    let _ = if let Some(prefix) = &prefix {
+                        stream.write_line_with_prefix(&line, prefix)
+                    } else {
+                        stream.write_line(&line)
+                    };
+
+                    captured_lines.push(line);
+                }
+                Ok(None) => break,
+                Err(error) => {
+                    // Don't break on read errors - dropping the BufReader here would close
+                    // the read-end of the pipe while the child process is still writing,
+                    // causing it to receive EPIPE and potentially exit with a non-zero code.
+                    // Continue reading until we get a natural EOF (Ok(None)).
+                    trace!("Failed to read {label} line: {error}");
+                }
+            }
+        }
+
+        // Flush any remaining buffered output to ensure all streamed
+        // content is visible before the next flow is printed
+        let _ = stream.flush();
+
+        captured_lines
+    })
 }

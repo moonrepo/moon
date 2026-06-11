@@ -64,7 +64,7 @@ impl Output {
 
 #[inline]
 pub fn output_to_string(data: &[u8]) -> String {
-    String::from_utf8(data.to_vec()).unwrap_or_default()
+    String::from_utf8_lossy(data).into_owned()
 }
 
 #[inline]

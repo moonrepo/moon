@@ -18,10 +18,18 @@ starbase_shell = { workspace = true }
 system_env = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
-tokio = { workspace = true, features = ["io-util", "signal", "sync"] }
+tokio = { workspace = true, features = [
+	"io-util",
+	"macros",
+	"process",
+	"rt",
+	"signal",
+	"sync",
+	"time",
+] }
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2.186"
+libc = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61.2", default-features = false, features = [

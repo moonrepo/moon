@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- **Processes**
+  - Improved our "stream and capture output" child process handling to operate on bytes instead of
+    lines, which should resolve some edge cases with output not being written to the console, or
+    being written out of order.
+- **VCS**
+
 ## 2.3.3
 
 #### 🛡️ Security

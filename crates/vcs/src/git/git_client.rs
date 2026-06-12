@@ -19,7 +19,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::debug;
+use tracing::{debug, warn};
 
 fn get_repository_root(common_dir: &Path) -> PathBuf {
     // Worktrees trail with "../.." so we need to remove them
@@ -549,10 +549,18 @@ impl Vcs for Git {
                 &self.remote_candidates,
             )
             .await?;
-        let merge_base_revision = merge_base
-            .as_ref()
-            .map(|rev| rev.as_str())
-            .unwrap_or(base_revision);
+        let merge_base_revision = match &merge_base {
+            Some(rev) => rev.as_str(),
+            None => {
+                warn!(
+                    base = base_revision,
+                    head = resolved_head_revision,
+                    "Unable to resolve a merge base between the base and head revisions, so diffing directly against the base, which may include changes outside of this range. This can happen with shallow clones, or when the base hasn't been fetched.",
+                );
+
+                base_revision
+            }
+        };
 
         // Load from root repo. Pass the head as-is, as an empty value
         // implies a comparison against the current working tree

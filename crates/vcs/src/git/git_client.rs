@@ -78,6 +78,21 @@ impl Git {
         process.env.insert("GIT_OPTIONAL_LOCKS".into(), "0".into());
         process.env.insert("GIT_PAGER".into(), "".into());
 
+        // We run non-interactively, so error immediately instead of
+        // hanging forever if a command ever prompts for credentials
+        process.env.insert("GIT_TERMINAL_PROMPT".into(), "0".into());
+
+        // Disable the fsmonitor daemon (git >= 2.31, ignored by older
+        // versions), as it inherits our captured stdout/stderr pipes
+        // and keeps them open, blocking output capture indefinitely
+        process.env.insert("GIT_CONFIG_COUNT".into(), "1".into());
+        process
+            .env
+            .insert("GIT_CONFIG_KEY_0".into(), "core.fsmonitor".into());
+        process
+            .env
+            .insert("GIT_CONFIG_VALUE_0".into(), "false".into());
+
         debug!(
             starting_dir = ?workspace_root,
             "Attempting to find a .git directory or file"
@@ -577,8 +592,20 @@ impl Vcs for Git {
             // Since submodules are separate repos with their own history,
             // we need to extract the base/head revisions from their history,
             // using the changes in the current repo
-            let mut base_tree = self.worktree.exec_ls_tree(merge_base_revision).await?;
-            let mut head_tree = self.worktree.exec_ls_tree(resolved_head_revision).await?;
+            let submodule_paths = self
+                .submodules
+                .iter()
+                .map(|submodule| submodule.path.as_str())
+                .collect::<Vec<_>>();
+
+            let mut base_tree = self
+                .worktree
+                .exec_ls_tree(merge_base_revision, &submodule_paths)
+                .await?;
+            let mut head_tree = self
+                .worktree
+                .exec_ls_tree(resolved_head_revision, &submodule_paths)
+                .await?;
 
             for submodule in &self.submodules {
                 let (base, head) = match (

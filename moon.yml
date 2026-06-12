@@ -3,9 +3,9 @@ id: 'root'
 tasks:
   check:
     command: 'vp check'
-    inputs:
-      - 'packages/**/*'
-      - '**/*.{md,yml,yaml}'
+    inputs: []
+    options:
+      cache: false
 
   lint:
     command: 'vp lint --fix'

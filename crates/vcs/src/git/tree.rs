@@ -135,6 +135,11 @@ impl GitTree {
             "--relative",
             // Ignore submodules since they would have different revisions
             "--ignore-submodules",
+            // Disable rename detection, as it requires content comparisons
+            // (slow, and triggers blob fetches in partial clones). Renames
+            // are instead reported as a deletion and an addition, which is
+            // more accurate for change detection anyway
+            "--no-renames",
             // We use this option so that file names with special characters
             // are displayed as-is and are not quoted/escaped
             "-z",
@@ -157,18 +162,16 @@ impl GitTree {
         let mut tokens = output.split('\0');
 
         // Statuses AND paths are terminated by a NUL byte, and strictly
-        // alternate, so consume them in pairs (or triples for copies/renames)
+        // alternate, so consume them in pairs (renames and copies are
+        // disabled above, so a status is always followed by one path)
         //  X\0file\0
-        //  X000\0file\0
-        //  X000\0file\0renamed_file\0
         while let Some(token) = tokens.next() {
             if token.is_empty() {
                 continue;
             }
 
             // X\0
-            // X000\0
-            if !DIFF_SCORE_PATTERN.is_match(token) && !DIFF_PATTERN.is_match(token) {
+            if !DIFF_PATTERN.is_match(token) {
                 continue;
             }
 
@@ -176,7 +179,7 @@ impl GitTree {
             let mut statuses = vec![];
 
             match x {
-                'A' | 'C' => {
+                'A' => {
                     statuses.push(ChangedStatus::Added);
                     statuses.push(ChangedStatus::Staged);
                 }
@@ -184,7 +187,7 @@ impl GitTree {
                     statuses.push(ChangedStatus::Deleted);
                     statuses.push(ChangedStatus::Staged);
                 }
-                'M' | 'R' | 'T' => {
+                'M' | 'T' => {
                     statuses.push(ChangedStatus::Modified);
                     statuses.push(ChangedStatus::Staged);
                 }
@@ -194,17 +197,11 @@ impl GitTree {
                 _ => {}
             }
 
-            // Copies and renames are followed by both the source
-            // and destination paths, all other statuses by one path
-            let path_count = if x == 'C' || x == 'R' { 2 } else { 1 };
-
-            for _ in 0..path_count {
-                if let Some(path) = tokens.next()
-                    && !path.is_empty()
-                {
-                    // Paths are relative from the cwd
-                    files.insert(self.work_dir.join(path), statuses.clone());
-                }
+            if let Some(path) = tokens.next()
+                && !path.is_empty()
+            {
+                // Paths are relative from the cwd
+                files.insert(self.work_dir.join(path), statuses);
             }
         }
 
@@ -286,22 +283,28 @@ impl GitTree {
 
     // https://git-scm.com/docs/git-ls-tree
     //
+    // Extracts submodule (gitlink) entries at the provided paths, mapping
+    // the absolute path of each submodule to its commit hash. We pass the
+    // paths as pathspecs instead of recursing with `-r`, as the latter
+    // would list every file in the repository.
+    //
     // Requirements:
     //  Root/Worktree:
-    //    - Run at the worktree root.
-    //    - Includes submodule directories in the output, but not their files.
-    //  Submodule:
-    //    - Run in the submodule root.
+    //    - Run at the worktree root, with paths relative from it.
     #[instrument(skip(self))]
-    pub async fn exec_ls_tree(&self, revision: &str) -> miette::Result<BTreeMap<PathBuf, String>> {
+    pub async fn exec_ls_tree(
+        &self,
+        revision: &str,
+        paths: &[&str],
+    ) -> miette::Result<BTreeMap<PathBuf, String>> {
         validate_revision(revision)?;
 
         let process = self.get_process();
+        let mut args = vec!["ls-tree", "-z", revision, "--"];
+        args.extend(paths.iter().copied());
+
         let output = process
-            .run_command(
-                process.create_command_in_cwd(["ls-tree", "-r", "-z", revision], &self.work_dir),
-                false,
-            )
+            .run_command(process.create_command_in_cwd(args, &self.work_dir), false)
             .await?;
 
         let mut tree = BTreeMap::default();
@@ -315,7 +318,10 @@ impl GitTree {
 
             // Split on the tab first, as the path may contain spaces
             if let Some((meta, path)) = line.split_once('\t')
-                && let Some((_, hash)) = meta.rsplit_once(' ')
+                && let Some((mode_type, hash)) = meta.rsplit_once(' ')
+                // Only include submodule entries, as a path may point to
+                // a regular directory in revisions before it was added
+                && mode_type.ends_with(" commit")
             {
                 tree.insert(self.work_dir.join(path), hash.to_owned());
             }

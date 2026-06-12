@@ -554,8 +554,13 @@ impl Vcs for Git {
             .map(|rev| rev.as_str())
             .unwrap_or(base_revision);
 
-        // Load from root repo
-        changed_files.merge(self.worktree.exec_diff(merge_base_revision, "").await?);
+        // Load from root repo. Pass the head as-is, as an empty value
+        // implies a comparison against the current working tree
+        changed_files.merge(
+            self.worktree
+                .exec_diff(merge_base_revision, head_revision)
+                .await?,
+        );
 
         // Load from each submodule
         if !self.submodules.is_empty() {

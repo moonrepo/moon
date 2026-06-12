@@ -1183,6 +1183,43 @@ mod git {
         }
 
         #[tokio::test]
+        async fn respects_an_explicit_head_revision() {
+            let (sandbox, git) = create_git_sandbox("changed");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["checkout", "-b", "feature"]);
+            });
+
+            sandbox.create_file("existing.txt", "modified");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["add", "existing.txt"]);
+            });
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["commit", "-m", "Modify"]);
+            });
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["checkout", "master"]);
+            });
+
+            // The working tree (master) is clean, so the
+            // changes must come from the head revision
+            assert_eq!(
+                git.get_changed_files_between_revisions("master", "feature")
+                    .await
+                    .unwrap(),
+                ChangedFiles {
+                    files: create_changed_map(
+                        [ChangedStatus::Modified, ChangedStatus::Staged],
+                        ["existing.txt"]
+                    ),
+                }
+            );
+        }
+
+        #[tokio::test]
         async fn handles_root_commits_when_diffing_against_previous() {
             let (_sandbox, git) = create_git_sandbox("changed");
 

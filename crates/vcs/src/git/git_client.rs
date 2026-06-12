@@ -730,21 +730,25 @@ impl Vcs for Git {
             ..Default::default()
         };
 
-        // Check if the path has already been configured
+        // The hooks directory that moon owns and manages
+        let hooks_dir = self.workspace_root.join(".moon").join("hooks");
+
+        // Check if the path has already been configured. Only accept the
+        // exact moon-owned directory, otherwise we may adopt a directory
+        // managed by another tool (husky, lefthook, etc), and inadvertently
+        // overwrite or delete its files!
         if let Ok(output) = self
             .exec_config(
                 GitConfigAction::Get("core.hooksPath".into()),
                 vec!["--worktree".into()],
             )
             .await
+            && !output.is_empty()
+            && Path::new(output.as_str()) == hooks_dir
         {
-            let dir = PathBuf::from(output.as_str());
+            env.hooks_dir = hooks_dir;
 
-            if !output.is_empty() && dir.starts_with(&self.workspace_root) {
-                env.hooks_dir = dir;
-
-                return Ok(Some(env));
-            }
+            return Ok(Some(env));
         }
 
         // Enable config support for worktrees, otherwise `--worktree` fails
@@ -760,8 +764,6 @@ impl Vcs for Git {
         }
 
         // Otherwise update the config with the path
-        let hooks_dir = self.workspace_root.join(".moon").join("hooks");
-
         self.exec_config(
             GitConfigAction::Set(
                 "core.hooksPath".into(),

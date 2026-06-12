@@ -31,6 +31,13 @@
 - Fixed an issue where Git submodules added between 2 revisions were not included when diffing.
 - Fixed an issue where Git hooks could not be set up from the primary working tree when other
   worktrees exist.
+- Fixed an issue where moon would take over a hooks directory managed by another tool (husky,
+  lefthook, etc) when `core.hooksPath` was already configured, overwriting its hook files, and
+  deleting the entire directory when hooks were disabled.
+- Fixed an issue where Windows hook wrappers would not forward arguments containing spaces
+  correctly, and would arbitrarily cap forwarding at 5 arguments.
+- Fixed an issue where PowerShell hooks would mangle user variables that start with `$ARG`, like
+  `$ARGS`.
 
 ## 2.3.3
 

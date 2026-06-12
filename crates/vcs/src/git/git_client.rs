@@ -226,37 +226,35 @@ impl Git {
         self.worktree.get_process()
     }
 
+    fn has_linked_worktrees(&self) -> bool {
+        self.worktree
+            .git_dir
+            .join("worktrees")
+            .read_dir()
+            .is_ok_and(|mut entries| entries.next().is_some())
+    }
+
     pub async fn get_remote_default_branch(&self) -> miette::Result<Arc<String>> {
-        let extract_branch = |result: Arc<String>| -> Option<Arc<String>> {
-            if let Some(branch) = result.strip_prefix("origin/") {
-                return Some(Arc::new(branch.to_owned()));
-            } else if let Some(branch) = result.strip_prefix("upstream/") {
-                return Some(Arc::new(branch.to_owned()));
+        // This only reads the local ref, and does not query the remote,
+        // so it will only resolve if the repository was cloned, or the
+        // remote HEAD was explicitly set
+        for remote in &self.remote_candidates {
+            if let Ok(result) = self
+                .get_process()
+                .run(
+                    [
+                        "symbolic-ref",
+                        &format!("refs/remotes/{remote}/HEAD"),
+                        "--short",
+                    ],
+                    true,
+                )
+                .await
+                && let Some(branch) = result.strip_prefix(&format!("{remote}/"))
+            {
+                return Ok(Arc::new(branch.to_owned()));
             }
-
-            None
-        };
-
-        if let Ok(result) = self
-            .get_process()
-            .run(["rev-parse", "--abbrev-ref", "origin/HEAD"], true)
-            .await
-            && let Some(branch) = extract_branch(result)
-        {
-            return Ok(branch);
-        };
-
-        if let Ok(result) = self
-            .get_process()
-            .run(
-                ["symbolic-ref", "refs/remotes/origin/HEAD", "--short"],
-                true,
-            )
-            .await
-            && let Some(branch) = extract_branch(result)
-        {
-            return Ok(branch);
-        };
+        }
 
         Ok(self.default_branch.clone())
     }
@@ -509,15 +507,15 @@ impl Vcs for Git {
             revision
         };
 
-        // If there's only 1 commit on the revision,
-        // then the diff command will error. So let's
-        // extract the commit count and handle accordingly.
+        // If the revision is a root commit (no parent), then the diff
+        // command will error, so detect this by counting the commits.
+        // The count is capped to avoid walking the entire history!
         let output = self
             .get_process()
-            .run(["rev-list", "--count", revision], true)
+            .run(["rev-list", "--count", "--max-count=2", revision], true)
             .await?;
 
-        let prev_revision = if output.as_str() == "0" || output.is_empty() {
+        let prev_revision = if matches!(output.as_str(), "" | "0" | "1") {
             revision.to_owned()
         } else {
             format!("{revision}~1")
@@ -534,10 +532,22 @@ impl Vcs for Git {
     ) -> miette::Result<ChangedFiles> {
         let mut changed_files = ChangedFiles::default();
 
+        // An empty head implies the current working tree, but the merge base
+        // and tree commands below require a real revision, so use HEAD
+        let resolved_head_revision = if head_revision.is_empty() {
+            "HEAD"
+        } else {
+            head_revision
+        };
+
         // Determine the merge base revision based on the base/head
         let merge_base = self
             .worktree
-            .exec_merge_base(base_revision, head_revision, &self.remote_candidates)
+            .exec_merge_base(
+                base_revision,
+                resolved_head_revision,
+                &self.remote_candidates,
+            )
             .await?;
         let merge_base_revision = merge_base
             .as_ref()
@@ -555,24 +565,34 @@ impl Vcs for Git {
             // we need to extract the base/head revisions from their history,
             // using the changes in the current repo
             let mut base_tree = self.worktree.exec_ls_tree(merge_base_revision).await?;
-            let mut head_tree = self
-                .worktree
-                .exec_ls_tree(if head_revision.is_empty() {
-                    "HEAD"
-                } else {
-                    head_revision
-                })
-                .await?;
+            let mut head_tree = self.worktree.exec_ls_tree(resolved_head_revision).await?;
 
             for submodule in &self.submodules {
-                if let Some(base) = base_tree.remove(&submodule.work_dir) {
-                    let head = head_tree.remove(&submodule.work_dir).unwrap_or_default();
+                let (base, head) = match (
+                    base_tree.remove(&submodule.work_dir),
+                    head_tree.remove(&submodule.work_dir),
+                ) {
+                    (Some(base), Some(head)) => {
+                        if base == head {
+                            continue;
+                        }
 
-                    if base != head {
-                        let submodule = Arc::clone(submodule);
-                        set.spawn(async move { submodule.exec_diff(&base, &head).await });
+                        (base, head)
                     }
-                }
+                    // Added between the revisions, so use the empty tree as
+                    // the base so that all of its files are considered changed
+                    (None, Some(head)) => {
+                        (submodule.exec_hash_empty_tree().await?.to_string(), head)
+                    }
+                    // Removed between the revisions, so compare the
+                    // base against the current working tree
+                    (Some(base), None) => (base, String::new()),
+                    (None, None) => continue,
+                };
+
+                let submodule = Arc::clone(submodule);
+
+                set.spawn(async move { submodule.exec_diff(&base, &head).await });
             }
 
             if !set.is_empty() {
@@ -642,12 +662,22 @@ impl Vcs for Git {
 
             result.as_str() == "true"
         } else {
+            // A checkout is shallow when a `shallow` file exists in the
+            // .git directory. `--git-path` resolves the file correctly
+            // for all checkout types (worktrees, submodules, etc)
             let result = self
                 .get_process()
-                .run(["rev-parse", "--git-dir"], true)
+                .run(["rev-parse", "--git-path", "shallow"], true)
                 .await?;
 
-            result.contains("shallow")
+            let file = PathBuf::from(result.as_str());
+
+            if file.is_absolute() {
+                file.exists()
+            } else {
+                // Relative from the cwd, which is the workspace root
+                self.workspace_root.join(file).exists()
+            }
         };
 
         Ok(result)
@@ -677,8 +707,11 @@ impl Vcs for Git {
             }
         }
 
-        // Enable config support for worktrees
-        if self.worktree.is_worktree() {
+        // Enable config support for worktrees, otherwise `--worktree` fails
+        // when the repository has multiple working trees. Note that enabling
+        // this extension may require migrating `core.bare` / `core.worktree`:
+        // https://git-scm.com/docs/git-worktree#_configuration_file
+        if self.worktree.is_worktree() || self.has_linked_worktrees() {
             self.exec_config(
                 GitConfigAction::Set("extensions.worktreeConfig".into(), "true".into()),
                 vec![],
@@ -704,11 +737,22 @@ impl Vcs for Git {
     }
 
     async fn teardown_hooks(&self) -> miette::Result<()> {
-        self.exec_config(
-            GitConfigAction::Unset("core.hooksPath".into()),
-            vec!["--worktree".into()],
-        )
-        .await?;
+        // Unsetting a config key that doesn't exist errors,
+        // so only unset when it has actually been set
+        if self
+            .exec_config(
+                GitConfigAction::Get("core.hooksPath".into()),
+                vec!["--worktree".into()],
+            )
+            .await
+            .is_ok()
+        {
+            self.exec_config(
+                GitConfigAction::Unset("core.hooksPath".into()),
+                vec!["--worktree".into()],
+            )
+            .await?;
+        }
 
         Ok(())
     }

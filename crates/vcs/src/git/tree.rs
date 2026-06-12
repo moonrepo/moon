@@ -5,7 +5,7 @@ use crate::process_cache::ProcessCache;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::IntoDiagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -211,6 +211,18 @@ impl GitTree {
         Ok(ChangedFiles { files })
     }
 
+    // Hash the empty tree, respecting the repository's object format
+    // (sha1 or sha256). Used as a diff base when no other revision exists.
+    #[instrument(skip(self))]
+    pub async fn exec_hash_empty_tree(&self) -> miette::Result<Arc<String>> {
+        let process = self.get_process();
+        let mut command =
+            process.create_command_in_cwd(["hash-object", "-t", "tree", "--stdin"], &self.work_dir);
+        command.input([""]);
+
+        process.run_command(command, true).await
+    }
+
     // https://git-scm.com/docs/git-ls-files
     //
     // Requirements:
@@ -231,6 +243,9 @@ impl GitTree {
             // Includes untracked files
             "--others",
             "--exclude-standard",
+            // We use this option so that file names with special characters
+            // are displayed as-is and are not quoted/escaped
+            "-z",
             // This doesn't work with the `--modified` and `--others`
             // flags, so we need to drill into each submodule manually
             // "--recurse-submodules",
@@ -246,17 +261,25 @@ impl GitTree {
             .run_command(process.create_command_in_cwd(args, &self.work_dir), false)
             .await?;
 
-        let paths = output
-            .split('\n')
-            .filter_map(|file| {
-                // Paths are relative from the cwd
-                let path = self.work_dir.join(file);
+        let mut paths = vec![];
+        let mut seen = FxHashSet::default();
 
-                // Do not include directories, which will be included in this list
-                // when git encounters a submodule (it doesn't traverse into it)
-                if path.is_file() { Some(path) } else { None }
-            })
-            .collect::<Vec<_>>();
+        for file in output.split('\0') {
+            // Files are listed once for each criteria above that they
+            // match, so any duplicates must be filtered out
+            if file.is_empty() || !seen.insert(file) {
+                continue;
+            }
+
+            // Paths are relative from the cwd
+            let path = self.work_dir.join(file);
+
+            // Do not include directories, which will be included in this list
+            // when git encounters a submodule (it doesn't traverse into it)
+            if path.is_file() {
+                paths.push(path);
+            }
+        }
 
         Ok(paths)
     }
@@ -311,14 +334,14 @@ impl GitTree {
         validate_revision(base_revision)?;
         validate_revision(head_revision)?;
 
-        let mut args = vec!["merge-base".to_owned(), head_revision.to_owned()];
         let mut candidates = vec![base_revision.to_owned()];
 
         for remote in remote_candidates {
             candidates.push(format!("{remote}/{base_revision}"));
         }
 
-        // To start, we need to find a working base
+        // To start, find all the candidates that share history
+        // with the head, and extract their merge base
         let mut set = JoinSet::new();
         let mut resolved = vec![None; candidates.len()];
 
@@ -330,7 +353,10 @@ impl GitTree {
             set.spawn(async move {
                 (
                     index,
-                    process.run_command(command, true).await.map(|_| candidate),
+                    process
+                        .run_command(command, true)
+                        .await
+                        .map(|hash| (candidate, hash)),
                 )
             });
         }
@@ -340,22 +366,37 @@ impl GitTree {
         while let Some(result) = set.join_next().await {
             let (index, result) = result.into_diagnostic()?;
 
-            if let Ok(candidate) = result {
-                resolved[index] = Some(candidate);
+            if let Ok(pair) = result {
+                resolved[index] = Some(pair);
             }
         }
 
-        let resolved = resolved.into_iter().flatten().collect::<Vec<_>>();
+        let mut resolved = resolved.into_iter().flatten();
 
         // No candidates resolved, so a merge base can't be found
-        if resolved.is_empty() {
+        let Some((first_candidate, first_hash)) = resolved.next() else {
             return Ok(None);
+        };
+
+        let other_candidates = resolved.map(|(candidate, _)| candidate).collect::<Vec<_>>();
+
+        // Only 1 candidate resolved, so reuse the merge base from its probe
+        if other_candidates.is_empty() {
+            return Ok(Some(first_hash));
         }
 
-        args.extend(resolved);
+        // Otherwise run it again with all the viable candidates. When given
+        // multiple commits, Git computes the merge base between the head and
+        // a hypothetical merge of all the others, which surfaces the most
+        // recent divergence point when the candidates are out of sync. This
+        // is necessary to support stale local branches and forks!
+        let mut args = vec![
+            "merge-base".to_owned(),
+            head_revision.to_owned(),
+            first_candidate,
+        ];
+        args.extend(other_candidates);
 
-        // Then we need to run it again and extract the base hash.
-        // This is necessary to support comparisons between forks!
         let process = self.get_process();
 
         if let Ok(hash) = process
@@ -365,7 +406,9 @@ impl GitTree {
             return Ok(Some(hash));
         }
 
-        Ok(None)
+        // The combined command failed unexpectedly, so fall
+        // back to the first candidate's merge base
+        Ok(Some(first_hash))
     }
 
     // https://git-scm.com/docs/git-status#_short_format
@@ -405,27 +448,29 @@ impl GitTree {
         }
 
         let mut files = FxHashMap::default();
+        let mut tokens = output.split('\0');
 
-        // Lines are terminated by a NUL byte:
+        // Lines are terminated by a NUL byte, and rename/copy entries
+        // are followed by the original path as a separate token:
         //  XY file\0
         //  XY file\0orig_file\0
-        for line in output.split('\0') {
-            if line.is_empty() {
+        while let Some(token) = tokens.next() {
+            if token.is_empty() {
                 continue;
             }
 
-            // orig_file\0
-            if !STATUS_PATTERN.is_match(line) {
+            // Unknown token (the original path should be consumed below)
+            if !STATUS_PATTERN.is_match(token) {
                 continue;
             }
 
             // XY file\0
-            let mut chars = line.chars();
+            let mut chars = token.chars();
             let x = chars.next().unwrap_or_default(); // 0
             let y = chars.next().unwrap_or_default(); // 1
 
             // Paths are relative from the cwd
-            let file = self.work_dir.join(&line[3..]);
+            let file = self.work_dir.join(&token[3..]);
             let mut statuses = vec![];
 
             match x {
@@ -437,9 +482,13 @@ impl GitTree {
                     statuses.push(ChangedStatus::Deleted);
                     statuses.push(ChangedStatus::Staged);
                 }
-                'M' | 'R' => {
+                'M' | 'R' | 'T' => {
                     statuses.push(ChangedStatus::Modified);
                     statuses.push(ChangedStatus::Staged);
+                }
+                // Unmerged (conflicted)
+                'U' => {
+                    statuses.push(ChangedStatus::Unstaged);
                 }
                 _ => {}
             }
@@ -453,14 +502,39 @@ impl GitTree {
                     statuses.push(ChangedStatus::Deleted);
                     statuses.push(ChangedStatus::Unstaged);
                 }
-                'M' | 'R' => {
+                'M' | 'R' | 'T' => {
                     statuses.push(ChangedStatus::Modified);
+                    statuses.push(ChangedStatus::Unstaged);
+                }
+                // Unmerged (conflicted)
+                'U' => {
                     statuses.push(ChangedStatus::Unstaged);
                 }
                 '?' => {
                     statuses.push(ChangedStatus::Untracked);
                 }
                 _ => {}
+            }
+
+            // Renames and copies are followed by the original path, so
+            // consume it. For renames the original path no longer exists,
+            // so also mark it as deleted.
+            if (x == 'R' || x == 'C' || y == 'R' || y == 'C')
+                && let Some(orig) = tokens.next()
+                && !orig.is_empty()
+                && (x == 'R' || y == 'R')
+            {
+                files.insert(
+                    self.work_dir.join(orig),
+                    vec![
+                        ChangedStatus::Deleted,
+                        if x == 'R' {
+                            ChangedStatus::Staged
+                        } else {
+                            ChangedStatus::Unstaged
+                        },
+                    ],
+                );
             }
 
             files.insert(file, statuses);

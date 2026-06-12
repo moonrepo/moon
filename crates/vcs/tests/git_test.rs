@@ -859,6 +859,17 @@ mod git {
         }
 
         #[tokio::test]
+        async fn includes_files_with_special_characters() {
+            let (sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+            sandbox.create_file("baz/spä ce.txt", "");
+
+            let tree = git.get_file_tree(RelativePath::new("baz")).await.unwrap();
+
+            assert!(tree.contains(&WorkspaceRelativePathBuf::from("baz/spä ce.txt")));
+        }
+
+        #[tokio::test]
         async fn includes_untracked() {
             let (sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
@@ -988,6 +999,29 @@ mod git {
                 };
                 map.files
                     .insert("renamed.txt".into(), vec![ChangedStatus::Untracked]);
+                map
+            });
+        }
+
+        #[tokio::test]
+        async fn handles_staged_renamed() {
+            let (sandbox, git) = create_git_sandbox("changed");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["mv", "rename-me.txt", "renamed.txt"]);
+            });
+
+            assert_eq!(git.get_changed_files().await.unwrap(), {
+                let mut map = ChangedFiles {
+                    files: create_changed_map(
+                        [ChangedStatus::Modified, ChangedStatus::Staged],
+                        ["renamed.txt"],
+                    ),
+                };
+                map.files.insert(
+                    "rename-me.txt".into(),
+                    vec![ChangedStatus::Deleted, ChangedStatus::Staged],
+                );
                 map
             });
         }
@@ -1145,6 +1179,36 @@ mod git {
                         ["rename-me.txt"]
                     ),
                 }
+            );
+        }
+
+        #[tokio::test]
+        async fn handles_root_commits_when_diffing_against_previous() {
+            let (_sandbox, git) = create_git_sandbox("changed");
+
+            // Only 1 commit exists, so a previous revision doesn't exist
+            assert_eq!(
+                git.get_changed_files_against_previous_revision("master")
+                    .await
+                    .unwrap(),
+                ChangedFiles::default()
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_on_option_like_revisions() {
+            let (_sandbox, git) = create_git_sandbox("changed");
+
+            assert!(
+                git.get_changed_files_between_revisions("--output=file", "")
+                    .await
+                    .is_err()
+            );
+
+            assert!(
+                git.get_changed_files_against_previous_revision("--output=file")
+                    .await
+                    .is_err()
             );
         }
     }

@@ -128,4 +128,16 @@ mod tests {
     fn other() {
         assert_eq!(clean_git_version("git version 1.8.3.1".into()), "1.8.3");
     }
+
+    #[test]
+    fn revisions() {
+        assert!(validate_revision("master").is_ok());
+        assert!(validate_revision("HEAD~1").is_ok());
+        assert!(validate_revision("v1.2.3").is_ok());
+        assert!(validate_revision("a1b2c3d").is_ok());
+        assert!(validate_revision("").is_ok());
+
+        assert!(validate_revision("-x").is_err());
+        assert!(validate_revision("--output=file").is_err());
+    }
 }

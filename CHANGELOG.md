@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- **Processes**
+  - Improved our "stream and capture output" child process handling to operate on bytes instead of
+    lines, which should resolve some edge cases with output not being written to the console, or
+    being written out of order.
+- **VCS**
+  - Hardened all executed Git commands: revisions are validated against argument injection,
+    credential prompts now fail immediately instead of hanging, and the fsmonitor daemon is now
+    disabled to avoid it blocking process pipes.
+  - Reworked merge base resolution to be more accurate and performant. The most recent divergence
+    point is now preferred when local and remote branches are out of sync, and a warning is now
+    logged when a merge base could not be resolved, as diffs may be inaccurate without one.
+  - Reworked how renames are handled. When diffing between revisions, the old path is now reported
+    as "deleted" and the new path as "added", instead of both being "modified". For statuses, the
+    old path is now reported as "deleted", instead of being omitted entirely. Additionally, type
+    changes and unmerged files are now reported, instead of being omitted.
+
+#### 🐞 Fixes
+
+- Fixed an issue where an explicit head revision was ignored when diffing between revisions, and the
+  current working tree was compared against instead.
+- Fixed an issue where diffing against the previous revision would fail in repositories with a
+  single commit.
+- Fixed an issue where file names with spaces or special characters were excluded from file tree
+  results.
+- Fixed an issue where Git submodules added between 2 revisions were not included when diffing.
+- Fixed an issue where Git hooks could not be set up from the primary working tree when other
+  worktrees exist.
+- Fixed an issue where moon would take over a hooks directory managed by another tool (husky,
+  lefthook, etc) when `core.hooksPath` was already configured, overwriting its hook files, and
+  deleting the entire directory when hooks were disabled.
+- Fixed an issue where Windows hook wrappers would not forward arguments containing spaces
+  correctly, and would arbitrarily cap forwarding at 5 arguments.
+- Fixed an issue where PowerShell hooks would mangle user variables that start with `$ARG`, like
+  `$ARGS`.
+
 ## 2.3.5
 
 #### 🐞 Fixes

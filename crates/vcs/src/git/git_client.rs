@@ -1,4 +1,4 @@
-use super::common::clean_git_version;
+use super::common::{clean_git_version, validate_revision};
 use super::git_error::GitError;
 use super::tree::*;
 use crate::changed_files::*;
@@ -19,7 +19,7 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::debug;
+use tracing::{debug, warn};
 
 fn get_repository_root(common_dir: &Path) -> PathBuf {
     // Worktrees trail with "../.." so we need to remove them
@@ -53,7 +53,7 @@ pub struct Git {
     pub repository_root: PathBuf,
 
     /// List of submodule trees within the repository.
-    pub submodules: Vec<GitTree>,
+    pub submodules: Vec<Arc<GitTree>>,
 
     /// Root of the moon workspace. This may be nested within
     /// the repository root, or worktree root.
@@ -61,7 +61,7 @@ pub struct Git {
 
     /// The current working tree. Either a worktree checkout,
     /// or the root of the repository itself.
-    pub worktree: GitTree,
+    pub worktree: Arc<GitTree>,
 }
 
 impl Git {
@@ -77,6 +77,21 @@ impl Git {
         let mut process = ProcessCache::new("git", workspace_root);
         process.env.insert("GIT_OPTIONAL_LOCKS".into(), "0".into());
         process.env.insert("GIT_PAGER".into(), "".into());
+
+        // We run non-interactively, so error immediately instead of
+        // hanging forever if a command ever prompts for credentials
+        process.env.insert("GIT_TERMINAL_PROMPT".into(), "0".into());
+
+        // Disable the fsmonitor daemon (git >= 2.31, ignored by older
+        // versions), as it inherits our captured stdout/stderr pipes
+        // and keeps them open, blocking output capture indefinitely
+        process.env.insert("GIT_CONFIG_COUNT".into(), "1".into());
+        process
+            .env
+            .insert("GIT_CONFIG_KEY_0".into(), "core.fsmonitor".into());
+        process
+            .env
+            .insert("GIT_CONFIG_VALUE_0".into(), "false".into());
 
         debug!(
             starting_dir = ?workspace_root,
@@ -194,32 +209,31 @@ impl Git {
             }
         };
 
-        // Create the instance and load ignore files
-        let mut git = Git {
-            default_branch: Arc::new(default_branch.as_ref().to_owned()),
-            remote_candidates: remote_candidates.to_owned(),
-            repository_root,
-            submodules,
-            workspace_root: workspace_root.to_path_buf(),
-            worktree,
-        };
-
+        // Load ignore files and create the instance. Trees are wrapped
+        // in `Arc` so they can be cheaply shared with spawned tasks.
         let process = Arc::new(process);
 
-        for tree in &mut git.submodules {
+        for tree in &mut submodules {
             tree.process = Some(Arc::clone(&process));
             tree.load_ignore()?;
         }
 
-        git.worktree.process = Some(process);
-        git.worktree.load_ignore()?;
+        worktree.process = Some(process);
+        worktree.load_ignore()?;
 
-        Ok(git)
+        Ok(Git {
+            default_branch: Arc::new(default_branch.as_ref().to_owned()),
+            remote_candidates: remote_candidates.to_owned(),
+            repository_root,
+            submodules: submodules.into_iter().map(Arc::new).collect(),
+            workspace_root: workspace_root.to_path_buf(),
+            worktree: Arc::new(worktree),
+        })
     }
 
-    fn get_all_trees(&self) -> Vec<GitTree> {
-        let mut trees = vec![self.worktree.clone()];
-        trees.extend(self.submodules.clone());
+    fn get_all_trees(&self) -> Vec<Arc<GitTree>> {
+        let mut trees = vec![Arc::clone(&self.worktree)];
+        trees.extend(self.submodules.iter().cloned());
         trees
     }
 
@@ -227,37 +241,35 @@ impl Git {
         self.worktree.get_process()
     }
 
+    fn has_linked_worktrees(&self) -> bool {
+        self.worktree
+            .git_dir
+            .join("worktrees")
+            .read_dir()
+            .is_ok_and(|mut entries| entries.next().is_some())
+    }
+
     pub async fn get_remote_default_branch(&self) -> miette::Result<Arc<String>> {
-        let extract_branch = |result: Arc<String>| -> Option<Arc<String>> {
-            if let Some(branch) = result.strip_prefix("origin/") {
-                return Some(Arc::new(branch.to_owned()));
-            } else if let Some(branch) = result.strip_prefix("upstream/") {
-                return Some(Arc::new(branch.to_owned()));
+        // This only reads the local ref, and does not query the remote,
+        // so it will only resolve if the repository was cloned, or the
+        // remote HEAD was explicitly set
+        for remote in &self.remote_candidates {
+            if let Ok(result) = self
+                .get_process()
+                .run(
+                    [
+                        "symbolic-ref",
+                        &format!("refs/remotes/{remote}/HEAD"),
+                        "--short",
+                    ],
+                    true,
+                )
+                .await
+                && let Some(branch) = result.strip_prefix(&format!("{remote}/"))
+            {
+                return Ok(Arc::new(branch.to_owned()));
             }
-
-            None
-        };
-
-        if let Ok(result) = self
-            .get_process()
-            .run(["rev-parse", "--abbrev-ref", "origin/HEAD"], true)
-            .await
-            && let Some(branch) = extract_branch(result)
-        {
-            return Ok(branch);
-        };
-
-        if let Ok(result) = self
-            .get_process()
-            .run(
-                ["symbolic-ref", "refs/remotes/origin/HEAD", "--short"],
-                true,
-            )
-            .await
-            && let Some(branch) = extract_branch(result)
-        {
-            return Ok(branch);
-        };
+        }
 
         Ok(self.default_branch.clone())
     }
@@ -386,11 +398,11 @@ impl Vcs for Git {
 
         let output = process.run_command(command, true).await?;
 
-        for (i, hash) in output.split('\n').enumerate() {
+        for (hash, object) in output.split('\n').zip(&objects) {
             if !hash.is_empty() {
                 map.insert(
                     work_dir
-                        .join(&objects[i])
+                        .join(object)
                         .relative_to(&self.workspace_root)
                         .into_diagnostic()?,
                     hash.to_owned(),
@@ -407,7 +419,7 @@ impl Vcs for Git {
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>> {
         let mut paths = vec![];
 
-        // Use an absolute path t avoid issues where moon is nested
+        // Use an absolute path to avoid issues where moon is nested
         // within the repository and not at the root
         let abs_dir = dir.to_logical_path(&self.workspace_root);
 
@@ -502,21 +514,23 @@ impl Vcs for Git {
         &self,
         revision: &str,
     ) -> miette::Result<ChangedFiles> {
+        validate_revision(revision)?;
+
         let revision = if self.is_default_branch(revision) {
             "HEAD"
         } else {
             revision
         };
 
-        // If there's only 1 commit on the revision,
-        // then the diff command will error. So let's
-        // extract the commit count and handle accordingly.
+        // If the revision is a root commit (no parent), then the diff
+        // command will error, so detect this by counting the commits.
+        // The count is capped to avoid walking the entire history!
         let output = self
             .get_process()
-            .run(["rev-list", "--count", revision], true)
+            .run(["rev-list", "--count", "--max-count=2", revision], true)
             .await?;
 
-        let prev_revision = if output.as_str() == "0" || output.is_empty() {
+        let prev_revision = if matches!(output.as_str(), "" | "0" | "1") {
             revision.to_owned()
         } else {
             format!("{revision}~1")
@@ -533,18 +547,43 @@ impl Vcs for Git {
     ) -> miette::Result<ChangedFiles> {
         let mut changed_files = ChangedFiles::default();
 
+        // An empty head implies the current working tree, but the merge base
+        // and tree commands below require a real revision, so use HEAD
+        let resolved_head_revision = if head_revision.is_empty() {
+            "HEAD"
+        } else {
+            head_revision
+        };
+
         // Determine the merge base revision based on the base/head
         let merge_base = self
             .worktree
-            .exec_merge_base(base_revision, head_revision, &self.remote_candidates)
+            .exec_merge_base(
+                base_revision,
+                resolved_head_revision,
+                &self.remote_candidates,
+            )
             .await?;
-        let merge_base_revision = merge_base
-            .as_ref()
-            .map(|rev| rev.as_str())
-            .unwrap_or(base_revision);
+        let merge_base_revision = match &merge_base {
+            Some(rev) => rev.as_str(),
+            None => {
+                warn!(
+                    base = base_revision,
+                    head = resolved_head_revision,
+                    "Unable to resolve a merge base between the base and head revisions, so diffing directly against the base, which may include changes outside of this range. This can happen with shallow clones, or when the base hasn't been fetched.",
+                );
 
-        // Load from root repo
-        changed_files.merge(self.worktree.exec_diff(merge_base_revision, "").await?);
+                base_revision
+            }
+        };
+
+        // Load from root repo. Pass the head as-is, as an empty value
+        // implies a comparison against the current working tree
+        changed_files.merge(
+            self.worktree
+                .exec_diff(merge_base_revision, head_revision)
+                .await?,
+        );
 
         // Load from each submodule
         if !self.submodules.is_empty() {
@@ -553,25 +592,47 @@ impl Vcs for Git {
             // Since submodules are separate repos with their own history,
             // we need to extract the base/head revisions from their history,
             // using the changes in the current repo
-            let mut base_tree = self.worktree.exec_ls_tree(merge_base_revision).await?;
+            let submodule_paths = self
+                .submodules
+                .iter()
+                .map(|submodule| submodule.path.as_str())
+                .collect::<Vec<_>>();
+
+            let mut base_tree = self
+                .worktree
+                .exec_ls_tree(merge_base_revision, &submodule_paths)
+                .await?;
             let mut head_tree = self
                 .worktree
-                .exec_ls_tree(if head_revision.is_empty() {
-                    "HEAD"
-                } else {
-                    head_revision
-                })
+                .exec_ls_tree(resolved_head_revision, &submodule_paths)
                 .await?;
 
             for submodule in &self.submodules {
-                if let Some(base) = base_tree.remove(&submodule.work_dir) {
-                    let head = head_tree.remove(&submodule.work_dir).unwrap_or_default();
+                let (base, head) = match (
+                    base_tree.remove(&submodule.work_dir),
+                    head_tree.remove(&submodule.work_dir),
+                ) {
+                    (Some(base), Some(head)) => {
+                        if base == head {
+                            continue;
+                        }
 
-                    if base != head {
-                        let submodule = submodule.to_owned();
-                        set.spawn(async move { submodule.exec_diff(&base, &head).await });
+                        (base, head)
                     }
-                }
+                    // Added between the revisions, so use the empty tree as
+                    // the base so that all of its files are considered changed
+                    (None, Some(head)) => {
+                        (submodule.exec_hash_empty_tree().await?.to_string(), head)
+                    }
+                    // Removed between the revisions, so compare the
+                    // base against the current working tree
+                    (Some(base), None) => (base, String::new()),
+                    (None, None) => continue,
+                };
+
+                let submodule = Arc::clone(submodule);
+
+                set.spawn(async move { submodule.exec_diff(&base, &head).await });
             }
 
             if !set.is_empty() {
@@ -641,12 +702,22 @@ impl Vcs for Git {
 
             result.as_str() == "true"
         } else {
+            // A checkout is shallow when a `shallow` file exists in the
+            // .git directory. `--git-path` resolves the file correctly
+            // for all checkout types (worktrees, submodules, etc)
             let result = self
                 .get_process()
-                .run(["rev-parse", "--git-dir"], true)
+                .run(["rev-parse", "--git-path", "shallow"], true)
                 .await?;
 
-            result.contains("shallow")
+            let file = PathBuf::from(result.as_str());
+
+            if file.is_absolute() {
+                file.exists()
+            } else {
+                // Relative from the cwd, which is the workspace root
+                self.workspace_root.join(file).exists()
+            }
         };
 
         Ok(result)
@@ -659,25 +730,32 @@ impl Vcs for Git {
             ..Default::default()
         };
 
-        // Check if the path has already been configured
+        // The hooks directory that moon owns and manages
+        let hooks_dir = self.workspace_root.join(".moon").join("hooks");
+
+        // Check if the path has already been configured. Only accept the
+        // exact moon-owned directory, otherwise we may adopt a directory
+        // managed by another tool (husky, lefthook, etc), and inadvertently
+        // overwrite or delete its files!
         if let Ok(output) = self
             .exec_config(
                 GitConfigAction::Get("core.hooksPath".into()),
                 vec!["--worktree".into()],
             )
             .await
+            && !output.is_empty()
+            && Path::new(output.as_str()) == hooks_dir
         {
-            let dir = PathBuf::from(output.as_str());
+            env.hooks_dir = hooks_dir;
 
-            if !output.is_empty() && dir.starts_with(&self.workspace_root) {
-                env.hooks_dir = dir;
-
-                return Ok(Some(env));
-            }
+            return Ok(Some(env));
         }
 
-        // Enable config support for worktrees
-        if self.worktree.is_worktree() {
+        // Enable config support for worktrees, otherwise `--worktree` fails
+        // when the repository has multiple working trees. Note that enabling
+        // this extension may require migrating `core.bare` / `core.worktree`:
+        // https://git-scm.com/docs/git-worktree#_configuration_file
+        if self.worktree.is_worktree() || self.has_linked_worktrees() {
             self.exec_config(
                 GitConfigAction::Set("extensions.worktreeConfig".into(), "true".into()),
                 vec![],
@@ -686,8 +764,6 @@ impl Vcs for Git {
         }
 
         // Otherwise update the config with the path
-        let hooks_dir = self.workspace_root.join(".moon").join("hooks");
-
         self.exec_config(
             GitConfigAction::Set(
                 "core.hooksPath".into(),
@@ -703,11 +779,22 @@ impl Vcs for Git {
     }
 
     async fn teardown_hooks(&self) -> miette::Result<()> {
-        self.exec_config(
-            GitConfigAction::Unset("core.hooksPath".into()),
-            vec!["--worktree".into()],
-        )
-        .await?;
+        // Unsetting a config key that doesn't exist errors,
+        // so only unset when it has actually been set
+        if self
+            .exec_config(
+                GitConfigAction::Get("core.hooksPath".into()),
+                vec!["--worktree".into()],
+            )
+            .await
+            .is_ok()
+        {
+            self.exec_config(
+                GitConfigAction::Unset("core.hooksPath".into()),
+                vec!["--worktree".into()],
+            )
+            .await?;
+        }
 
         Ok(())
     }

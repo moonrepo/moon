@@ -58,7 +58,8 @@ pub trait Vcs: Debug {
         revision: &str,
     ) -> miette::Result<ChangedFiles>;
 
-    /// Determine changed files between 2 revisions.
+    /// Determine changed files between 2 revisions. An empty head
+    /// revision implies the current working tree.
     async fn get_changed_files_between_revisions(
         &self,
         base_revision: &str,

@@ -30,7 +30,7 @@ pub struct QueryAffectedArgs {
 
 #[instrument(skip(session))]
 pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> SessionResult {
-    let vcs = session.get_vcs_adapter()?;
+    let vcs = session.get_vcs_adapter().await?;
 
     let mut affected_tracker = AffectedTracker::new(
         session.get_workspace_graph().await?,

@@ -85,7 +85,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> SessionResult 
 
     // Filter down to affected tasks only
     if let Some(by) = &args.affected {
-        let vcs = session.get_vcs_adapter()?;
+        let vcs = session.get_vcs_adapter().await?;
         let changed_files = query_changed_files_for_affected(&vcs, by.as_ref()).await?;
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);

@@ -1,3 +1,4 @@
+use crate::PluginType;
 use extism::{CurrentPlugin, Error, Function, UserData, Val, ValType};
 use moon_common::{Id, color};
 use moon_config::{
@@ -11,9 +12,12 @@ use proto_core::ProtoEnvironment;
 use rustc_hash::FxHashMap;
 use starbase_utils::json::merge as json_merge;
 use std::fmt;
+use std::path::PathBuf;
+use std::process::Command;
 use std::sync::{Arc, OnceLock};
 use tracing::{instrument, trace};
-use warpgate::host::{HostData, create_host_functions as create_shared_host_functions};
+use warpgate::{from_virtual_path, host::HostData};
+use warpgate_api::{ExecCommandInput, ExecCommandOutput};
 
 #[derive(Clone, Default)]
 pub struct MoonHostData {
@@ -37,9 +41,35 @@ impl fmt::Debug for MoonHostData {
     }
 }
 
-pub fn create_host_functions(data: MoonHostData, shared_data: HostData) -> Vec<Function> {
-    let mut functions = vec![];
-    functions.extend(create_shared_host_functions(shared_data));
+#[derive(Clone)]
+struct VcsHostData {
+    shared: HostData,
+    workspace_root: PathBuf,
+}
+
+pub fn create_host_functions(
+    plugin_type: PluginType,
+    data: MoonHostData,
+    shared_data: HostData,
+) -> Vec<Function> {
+    let mut functions = warpgate::host::create_host_functions(shared_data.clone());
+
+    if matches!(plugin_type, PluginType::Vcs) {
+        functions.retain(|function| function.name() == "host_log");
+        functions.push(Function::new(
+            "exec_command",
+            [ValType::I64],
+            [ValType::I64],
+            UserData::new(VcsHostData {
+                shared: shared_data,
+                workspace_root: data.moon_env.workspace_root.clone(),
+            }),
+            exec_vcs_command,
+        ));
+
+        return functions;
+    }
+
     functions.extend(vec![
         Function::new(
             "load_extension_config_by_id",
@@ -85,6 +115,229 @@ pub fn create_host_functions(data: MoonHostData, shared_data: HostData) -> Vec<F
         ),
     ]);
     functions
+}
+
+fn exec_vcs_command(
+    plugin: &mut CurrentPlugin,
+    inputs: &[Val],
+    outputs: &mut [Val],
+    user_data: UserData<VcsHostData>,
+) -> Result<(), Error> {
+    let input: ExecCommandInput = serde_json::from_str(plugin.memory_get_val(&inputs[0])?)?;
+    validate_vcs_command(&input)?;
+
+    let data = user_data.get()?;
+    let data = data.lock().unwrap();
+    let cwd = input
+        .cwd
+        .as_ref()
+        .map(|path| from_virtual_path(&data.shared.virtual_paths, path))
+        .unwrap_or_else(|| data.shared.working_dir.clone());
+    let workspace_root = data.workspace_root.canonicalize()?;
+    let cwd = cwd.canonicalize()?;
+
+    if !cwd.starts_with(&workspace_root) {
+        return Err(Error::msg(
+            "VCS plugin command working directory must be inside the workspace",
+        ));
+    }
+
+    let mut command = Command::new(&input.command);
+    command.args(&input.args).current_dir(cwd);
+
+    if input.command == "git" {
+        command
+            .env("GIT_OPTIONAL_LOCKS", "0")
+            .env("GIT_PAGER", "")
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .env("GIT_CONFIG_COUNT", "2")
+            .env("GIT_CONFIG_KEY_0", "core.fsmonitor")
+            .env("GIT_CONFIG_VALUE_0", "false")
+            .env("GIT_CONFIG_KEY_1", "status.relativePaths")
+            .env("GIT_CONFIG_VALUE_1", "false");
+    }
+
+    let result = command.output()?;
+    let output = ExecCommandOutput {
+        command: input.command,
+        exit_code: result.status.code().unwrap_or(-1),
+        stderr: String::from_utf8_lossy(&result.stderr).into_owned(),
+        stdout: String::from_utf8_lossy(&result.stdout).into_owned(),
+        streamed: false,
+    };
+
+    plugin.memory_set_val(&mut outputs[0], serde_json::to_string(&output)?)?;
+
+    Ok(())
+}
+
+fn validate_vcs_command(input: &ExecCommandInput) -> Result<(), Error> {
+    if input.shell.is_some()
+        || input.stream
+        || input.set_executable
+        || !input.env.is_empty()
+        || !input.paths.is_empty()
+    {
+        return Err(Error::msg(
+            "VCS plugins may only execute a guarded piped command without host overrides",
+        ));
+    }
+
+    match input.command.as_str() {
+        "git" => validate_git_command(&input.args),
+        "jj" => validate_jj_command(&input.args),
+        command => Err(Error::msg(format!(
+            "VCS plugins may not execute `{command}`"
+        ))),
+    }
+}
+
+fn validate_git_command(args: &[String]) -> Result<(), Error> {
+    let Some(subcommand) = args.first().map(String::as_str) else {
+        return Err(Error::msg("VCS plugin git command has no subcommand"));
+    };
+
+    if subcommand == "--version" && args.len() == 1 {
+        return Ok(());
+    }
+
+    if args.iter().any(|arg| {
+        matches!(
+            arg.as_str(),
+            "-C" | "-c"
+                | "--config-env"
+                | "--exec-path"
+                | "--git-dir"
+                | "--html-path"
+                | "--info-path"
+                | "--man-path"
+                | "--namespace"
+                | "--paginate"
+                | "--super-prefix"
+                | "--work-tree"
+                | "--ext-diff"
+                | "--no-index"
+                | "--output"
+                | "--textconv"
+        ) || arg.starts_with("--config-env=")
+            || arg.starts_with("--exec-path=")
+            || arg.starts_with("--git-dir=")
+            || arg.starts_with("--namespace=")
+            || arg.starts_with("--output=")
+            || arg.starts_with("--super-prefix=")
+            || arg.starts_with("--work-tree=")
+    }) {
+        return Err(Error::msg(
+            "VCS plugin git command contains a forbidden option",
+        ));
+    }
+
+    match subcommand {
+        "branch" if matches!(args, [command, option] if command == "branch" && option == "--show-current") => {
+            Ok(())
+        }
+        "remote" if matches!(args, [command, operation, _] if command == "remote" && operation == "get-url") => {
+            Ok(())
+        }
+        "diff" | "diff-tree" | "ls-files" | "ls-tree" | "merge-base" | "rev-list" | "rev-parse"
+        | "status" => Ok(()),
+        "config" if valid_git_hooks_config(args) => Ok(()),
+        _ => Err(Error::msg(format!(
+            "VCS plugins may not execute `git {subcommand}`"
+        ))),
+    }
+}
+
+fn valid_git_hooks_config(args: &[String]) -> bool {
+    matches!(
+        args,
+        [command, key, value]
+            if command == "config" && key == "core.hooksPath" && valid_git_hooks_path(value)
+    ) || matches!(
+        args,
+        [command, worktree, key, value]
+            if command == "config"
+                && worktree == "--worktree"
+                && key == "core.hooksPath"
+                && valid_git_hooks_path(value)
+    ) || matches!(
+        args,
+        [command, unset, key]
+            if command == "config" && unset == "--unset" && key == "core.hooksPath"
+    ) || matches!(
+        args,
+        [command, worktree, unset, key]
+            if command == "config"
+                && worktree == "--worktree"
+                && unset == "--unset"
+                && key == "core.hooksPath"
+    ) || matches!(
+        args,
+        [command, key, value]
+            if command == "config"
+                && key == "extensions.worktreeConfig"
+                && value == "true"
+    )
+}
+
+fn valid_git_hooks_path(path: &str) -> bool {
+    (path == ".moon/hooks"
+        || path.ends_with("/.moon/hooks")
+        || path == ".config/moon/hooks"
+        || path.ends_with("/.config/moon/hooks"))
+        && !path.starts_with('/')
+        && !path.contains('\\')
+        && !path.contains(':')
+        && !path.split('/').any(|part| matches!(part, "" | "." | ".."))
+}
+
+fn validate_jj_command(args: &[String]) -> Result<(), Error> {
+    if matches!(args, [option] if option == "--version") {
+        return Ok(());
+    }
+
+    if args.iter().any(|arg| {
+        matches!(
+            arg.as_str(),
+            "--config" | "--config-file" | "--repository" | "-R" | "--tool"
+        ) || arg.starts_with("--config=")
+            || arg.starts_with("--config-file=")
+            || arg.starts_with("--repository=")
+            || arg.starts_with("-R")
+            || arg.starts_with("--tool=")
+    }) {
+        return Err(Error::msg(
+            "VCS plugin jj command contains a forbidden option",
+        ));
+    }
+
+    let mut args = args.iter();
+    let mut isolated_operation = false;
+    let subcommand = loop {
+        let Some(arg) = args.next() else {
+            return Err(Error::msg("VCS plugin jj command has no subcommand"));
+        };
+
+        if arg == "--ignore-working-copy" || arg.starts_with("--at-operation=") {
+            continue;
+        }
+
+        if arg == "--no-integrate-operation" {
+            isolated_operation = true;
+            continue;
+        }
+
+        break arg.as_str();
+    };
+
+    match subcommand {
+        "root" | "log" | "diff" => Ok(()),
+        "op" if args.next().is_some_and(|arg| arg == "log") => Ok(()),
+        "new" if isolated_operation => Ok(()),
+        _ => Err(Error::msg(format!(
+            "VCS plugins may not execute `jj {subcommand}`"
+        ))),
+    }
 }
 
 fn map_error(error: miette::Report) -> Error {
@@ -387,4 +640,100 @@ fn load_toolchain_config_by_id(
     );
 
     Ok(())
+}
+
+#[cfg(test)]
+mod vcs_host_tests {
+    use super::*;
+
+    #[test]
+    fn allows_read_only_jj_operations() {
+        for args in [
+            vec!["--version"],
+            vec!["--ignore-working-copy", "root"],
+            vec!["--at-operation=abc", "log", "-r", "@"],
+            vec!["--at-operation=abc", "diff", "-r", "@"],
+            vec!["op", "log", "-n", "1"],
+            vec![
+                "--at-operation=abc",
+                "--no-integrate-operation",
+                "new",
+                "left",
+                "right",
+            ],
+        ] {
+            assert!(validate_vcs_command(&ExecCommandInput::pipe("jj", args)).is_ok());
+        }
+    }
+
+    #[test]
+    fn allows_required_git_operations() {
+        for args in [
+            vec!["--version"],
+            vec!["branch", "--show-current"],
+            vec!["diff", "--name-status", "base", "head"],
+            vec!["diff-tree", "--root", "head"],
+            vec!["ls-files", "--stage", "-z"],
+            vec!["ls-tree", "head", "submodule"],
+            vec!["merge-base", "base", "head"],
+            vec!["remote", "get-url", "origin"],
+            vec!["rev-list", "--parents", "head"],
+            vec!["rev-parse", "--show-toplevel"],
+            vec!["status", "--porcelain=v1"],
+            vec!["config", "--worktree", "core.hooksPath", ".moon/hooks"],
+            vec![
+                "config",
+                "--worktree",
+                "core.hooksPath",
+                "workspace/.moon/hooks",
+            ],
+            vec!["config", "core.hooksPath", ".config/moon/hooks"],
+            vec!["config", "extensions.worktreeConfig", "true"],
+        ] {
+            assert!(validate_vcs_command(&ExecCommandInput::pipe("git", args)).is_ok());
+        }
+    }
+
+    #[test]
+    fn rejects_mutating_or_escaping_git_operations() {
+        for args in [
+            vec!["branch", "--delete", "main"],
+            vec!["remote", "add", "origin", "https://example.com/repo"],
+            vec!["diff", "--ext-diff", "base", "head"],
+            vec!["diff", "--no-index", "/etc/passwd", "/dev/null"],
+            vec!["diff", "--output=/tmp/leak", "base", "head"],
+            vec!["config", "core.hooksPath", "../.moon/hooks"],
+            vec!["config", "core.hooksPath", "/tmp/.moon/hooks"],
+        ] {
+            assert!(validate_vcs_command(&ExecCommandInput::pipe("git", args)).is_err());
+        }
+    }
+
+    #[test]
+    fn rejects_other_commands_and_mutating_jj_operations() {
+        assert!(validate_vcs_command(&ExecCommandInput::pipe("sh", ["-c", "true"])).is_err());
+        assert!(
+            validate_vcs_command(&ExecCommandInput::pipe("jj", ["util", "exec", "sh"])).is_err()
+        );
+        assert!(validate_vcs_command(&ExecCommandInput::pipe("jj", ["new"])).is_err());
+    }
+
+    #[test]
+    fn rejects_jj_configuration_and_external_tools() {
+        assert!(
+            validate_vcs_command(&ExecCommandInput::pipe(
+                "jj",
+                ["log", "--config", "aliases.x='util exec sh'"],
+            ))
+            .is_err()
+        );
+        assert!(
+            validate_vcs_command(&ExecCommandInput::pipe("jj", ["diff", "--tool=malicious"],))
+                .is_err()
+        );
+        assert!(
+            validate_vcs_command(&ExecCommandInput::pipe("jj", ["root", "-R/tmp/external"],))
+                .is_err()
+        );
+    }
 }

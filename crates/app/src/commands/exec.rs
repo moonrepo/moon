@@ -304,7 +304,7 @@ impl ExecWorkflow {
     async fn load_changed_files(&mut self) -> miette::Result<FxHashSet<WorkspaceRelativePathBuf>> {
         self.print_step("Loading changed files")?;
 
-        let vcs = self.session.get_vcs_adapter()?;
+        let vcs = self.session.get_vcs_adapter().await?;
 
         if !vcs.is_enabled() {
             self.affected = false;

@@ -1,0 +1,13 @@
+[package]
+name = "vcs_jj_prototype"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+extism-pdk = { workspace = true }
+moon_pdk_api = { workspace = true }
+warpgate_pdk = { workspace = true }

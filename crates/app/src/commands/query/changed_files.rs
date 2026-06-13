@@ -42,7 +42,7 @@ pub struct QueryChangedFilesArgs {
 
 #[instrument(skip(session))]
 pub async fn changed_files(session: MoonSession, args: QueryChangedFilesArgs) -> SessionResult {
-    let vcs = session.get_vcs_adapter()?;
+    let vcs = session.get_vcs_adapter().await?;
     let ci = is_ci();
 
     let result = query_changed_files(

@@ -66,6 +66,10 @@ pub struct Git {
 }
 
 impl Git {
+    pub fn is_repository(root: &Path) -> bool {
+        gix::discover(root).is_ok()
+    }
+
     pub fn load<R: AsRef<Path>, B: AsRef<str>>(
         workspace_root: R,
         default_branch: B,

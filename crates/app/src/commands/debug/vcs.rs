@@ -1,7 +1,7 @@
 use crate::session::{MoonSession, SessionResult};
 
 pub async fn debug_vcs(session: MoonSession) -> SessionResult {
-    let vcs = session.get_vcs_adapter()?;
+    let vcs = session.get_vcs_adapter().await?;
 
     println!("config");
     dbg!(&session.workspace_config.vcs);

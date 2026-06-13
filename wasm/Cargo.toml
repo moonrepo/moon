@@ -11,6 +11,7 @@ moon_pdk_api = { path = "../crates/pdk-api" }
 moon_target = { path = "../crates/target" }
 extism = "=1.30.0"
 extism-pdk = "1.4.1"
+warpgate_pdk = "0.16.4"
 
 [profile.release]
 codegen-units = 1

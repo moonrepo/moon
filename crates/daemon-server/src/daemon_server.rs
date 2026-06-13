@@ -82,13 +82,11 @@ impl MoonDaemon for DaemonService {
         // TODO populate the action digest/bytes!
         let task_state = TaskRunState::new(&state.app_context, &task);
 
-        let archived = OutputArchiver {
-            app_context: &state.app_context,
-            task: &task,
-        }
-        .archive(&req.hash, &task_state)
-        .await
-        .map_err(|error| Status::unknown(error.to_string()))?;
+        let archived = OutputArchiver::new(&state.app_context, &task)
+            .map_err(|error| Status::unknown(error.to_string()))?
+            .archive(&req.hash, &task_state)
+            .await
+            .map_err(|error| Status::unknown(error.to_string()))?;
 
         Ok(Response::new(ArchiveTaskOutputsResponse { archived }))
     }

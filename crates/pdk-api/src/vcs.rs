@@ -24,7 +24,7 @@ use warpgate_api::{api_enum, api_struct, api_unit_enum};
 /// VCS plugins use lockstep protocol generations. Adding fields without safe
 /// serde defaults, changing lifecycle semantics, or assigning new change-mask
 /// bits requires incrementing this version.
-pub const VCS_PLUGIN_PROTOCOL_VERSION: u16 = 6;
+pub const VCS_PLUGIN_PROTOCOL_VERSION: u16 = 7;
 
 api_struct!(
     /// Input passed to `register_vcs` before any other provider operation.
@@ -48,6 +48,9 @@ api_struct!(
         pub plugin_version: String,
         /// Exact protocol generation implemented by the provider.
         pub protocol_version: u16,
+        /// Native executables required by this provider.
+        #[serde(default)]
+        pub process_capabilities: Vec<crate::ProcessCapabilityDeclaration>,
     }
 );
 

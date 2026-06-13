@@ -24,7 +24,7 @@ use moon_process::ProcessRegistry;
 use moon_project_graph::ProjectGraph;
 use moon_task_graph::TaskGraph;
 use moon_toolchain_plugin::*;
-use moon_vcs::{BoxedVcs, git::Git};
+use moon_vcs::{BoxedVcs, JjAwareGit, git::Git};
 use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync, WorkspaceBuilderContext};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
@@ -310,13 +310,23 @@ impl MoonSession {
         if self.vcs_adapter.get().is_none() {
             let config = &self.workspace_config.vcs;
 
-            let git: BoxedVcs = Box::new(Git::load(
+            let git = Git::load(
                 &self.workspace_root,
                 &config.default_branch,
                 &config.remote_candidates,
-            )?);
+            )?;
 
-            let _ = self.vcs_adapter.set(Arc::new(git));
+            // Inside a Jujutsu workspace (colocated or secondary), wrap the Git
+            // backend so working-copy/revision ops route through jj — correct
+            // even in a secondary workspace, where git sees the parent repo.
+            // Plain-git checkouts are unaffected.
+            let vcs: BoxedVcs = if JjAwareGit::is_jj_workspace(&git) {
+                Box::new(JjAwareGit::new(git))
+            } else {
+                Box::new(git)
+            };
+
+            let _ = self.vcs_adapter.set(Arc::new(vcs));
         }
 
         Ok(self.vcs_adapter.get().map(Arc::clone).unwrap())

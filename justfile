@@ -1,5 +1,7 @@
 set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
+cargo_target_dir := env_var_or_default("CARGO_TARGET_DIR", "wasm/target")
+
 init:
 	cargo install cargo-binstall
 	cargo binstall cargo-insta cargo-nextest cargo-llvm-cov
@@ -10,7 +12,8 @@ build:
 	cargo build --workspace
 
 build-wasm:
-	cd wasm && cargo build --workspace --target wasm32-wasip1 --release
+	cargo build --manifest-path wasm/Cargo.toml --workspace --target wasm32-wasip1 --release
+	cp "{{cargo_target_dir}}/wasm32-wasip1/release/process_host.wasm" crates/plugin/tests/__fixtures__/wasm/process_host.wasm
 
 # CHECKING
 

@@ -20,3 +20,7 @@ debug = false
 lto = true
 opt-level = 3
 panic = "abort"
+
+[profile.release.package.process_host]
+opt-level = "z"
+strip = "symbols"

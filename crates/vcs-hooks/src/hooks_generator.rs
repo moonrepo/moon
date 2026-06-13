@@ -84,7 +84,7 @@ impl<'app> HooksGenerator<'app> {
             // Only remove the directory itself when moon owns it. State from
             // older moon versions may reference a directory managed by another
             // tool (husky, lefthook, etc), which we should not delete!
-            if dir == ".moon/hooks" && hooks_dir.exists() {
+            if (dir == ".moon/hooks" || dir == ".config/moon/hooks") && hooks_dir.exists() {
                 fs::remove_dir_all(hooks_dir)?;
             }
         }

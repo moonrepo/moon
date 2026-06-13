@@ -954,7 +954,7 @@ mod exec {
                             .join(".moon/cache/states/outputs/noOutput/stdout.log")
                     )
                     .unwrap(),
-                    "No outputs!"
+                    "No outputs!\n"
                 );
             }
 

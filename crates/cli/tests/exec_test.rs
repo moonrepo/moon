@@ -442,13 +442,17 @@ mod exec {
                 cmd.arg("exec").arg(target("syntaxVar"));
             });
 
-            assert
-                .success()
-                .stdout(predicate::str::contains(if cfg!(windows) {
-                    "substituted-value\nin substituted-value quotes\nprefixed-substituted-value\nsubstituted-value-suffixed"
-                } else {
-                    "substituted-value in substituted-value quotes prefixed-substituted-value substituted-value-suffixed"
-                }));
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
+            let expected = if cfg!(windows) {
+                "substituted-value\nin substituted-value quotes\nprefixed-substituted-value\nsubstituted-value-suffixed"
+            } else {
+                "substituted-value in substituted-value quotes prefixed-substituted-value substituted-value-suffixed"
+            };
+
+            assert!(stdout.contains(expected), "stdout: {stdout}");
         }
 
         #[test]
@@ -1564,6 +1568,10 @@ mod exec {
                 cmd.arg("exec").arg(target("affectedFiles"));
             });
 
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
             let root = sandbox.path().join(PROJECT_DIR);
 
             let mut files = fs::read_dir(&root)
@@ -1587,9 +1595,13 @@ mod exec {
                 .join(" ");
             let envs = files.join(if cfg!(windows) { ";" } else { ":" });
 
-            assert.success().stdout(
-                predicate::str::contains(format!("Args: {args}\n"))
-                    .and(predicate::str::contains(format!("Env: {envs}\n"))),
+            assert!(
+                stdout.contains(&format!("Args: {args}\n")),
+                "stdout: {stdout}"
+            );
+            assert!(
+                stdout.contains(&format!("Env: {envs}\n")),
+                "stdout: {stdout}"
             );
         }
 
@@ -1612,9 +1624,17 @@ mod exec {
             });
             let envs = ["input1.txt", "input2.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
-            assert.success().stdout(
-                predicate::str::contains("Args: ./input1.txt ./input2.txt\n")
-                    .and(predicate::str::contains(format!("Env: {envs}\n"))),
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
+            assert!(
+                stdout.contains("Args: ./input1.txt ./input2.txt\n"),
+                "stdout: {stdout}"
+            );
+            assert!(
+                stdout.contains(&format!("Env: {envs}\n")),
+                "stdout: {stdout}"
             );
         }
 
@@ -1636,10 +1656,15 @@ mod exec {
                     .arg("--affected");
             });
 
-            assert.success().stdout(
-                predicate::str::contains("Args: ./input1.txt ./input2.txt\n")
-                    .and(predicate::str::contains("Env: \n")),
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
+            assert!(
+                stdout.contains("Args: ./input1.txt ./input2.txt\n"),
+                "stdout: {stdout}"
             );
+            assert!(stdout.contains("Env: \n"), "stdout: {stdout}");
         }
 
         #[test]
@@ -1661,9 +1686,14 @@ mod exec {
             });
             let envs = ["input1.txt", "input2.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
-            assert.success().stdout(
-                predicate::str::contains("Args: \n")
-                    .and(predicate::str::contains(format!("Env: {envs}\n"))),
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
+            assert!(stdout.contains("Args: \n"), "stdout: {stdout}");
+            assert!(
+                stdout.contains(&format!("Env: {envs}\n")),
+                "stdout: {stdout}"
             );
         }
     }

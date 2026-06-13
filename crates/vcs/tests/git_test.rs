@@ -5,6 +5,7 @@ use soft_canonicalize::soft_canonicalize;
 use starbase_sandbox::{Sandbox, create_empty_sandbox, create_sandbox};
 use std::collections::BTreeMap;
 use std::fs;
+use std::sync::Arc;
 
 fn create_git_test_sandbox(bare: bool) -> Sandbox {
     let sandbox = create_empty_sandbox();
@@ -141,20 +142,20 @@ mod git {
             assert_eq!(
                 git.submodules,
                 vec![
-                    GitTree {
+                    Arc::new(GitTree {
                         git_dir: sandbox.path().join(".git/modules/submodules/mono"),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("submodules/mono"),
                         ..Default::default()
-                    },
-                    GitTree {
+                    }),
+                    Arc::new(GitTree {
                         git_dir: sandbox.path().join(".git/modules/submodules/poly"),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("submodules/poly"),
                         ..Default::default()
-                    }
+                    })
                 ]
             )
         }
@@ -333,7 +334,7 @@ mod git {
             assert_eq!(
                 git.submodules,
                 vec![
-                    GitTree {
+                    Arc::new(GitTree {
                         git_dir: soft_canonicalize(
                             sandbox
                                 .path()
@@ -344,8 +345,8 @@ mod git {
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/mono"),
                         ..Default::default()
-                    },
-                    GitTree {
+                    }),
+                    Arc::new(GitTree {
                         git_dir: soft_canonicalize(
                             sandbox
                                 .path()
@@ -356,7 +357,7 @@ mod git {
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/poly"),
                         ..Default::default()
-                    }
+                    })
                 ]
             )
         }
@@ -380,22 +381,22 @@ mod git {
             assert_eq!(
                 git.submodules,
                 vec![
-                    GitTree {
+                    Arc::new(GitTree {
                         git_dir: soft_canonicalize(sandbox.path().join("modules/submodules/mono"))
                             .unwrap(),
                         path: "submodules/mono".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/mono"),
                         ..Default::default()
-                    },
-                    GitTree {
+                    }),
+                    Arc::new(GitTree {
                         git_dir: soft_canonicalize(sandbox.path().join("modules/submodules/poly"))
                             .unwrap(),
                         path: "submodules/poly".into(),
                         type_of: GitTreeType::Submodule,
                         work_dir: sandbox.path().join("trees/one/submodules/poly"),
                         ..Default::default()
-                    }
+                    })
                 ]
             )
         }
@@ -880,6 +881,17 @@ mod git {
         }
 
         #[tokio::test]
+        async fn includes_files_with_special_characters() {
+            let (sandbox, git) = create_git_sandbox_with_ignored("vcs");
+
+            sandbox.create_file("baz/spä ce.txt", "");
+
+            let tree = git.get_file_tree(RelativePath::new("baz")).await.unwrap();
+
+            assert!(tree.contains(&WorkspaceRelativePathBuf::from("baz/spä ce.txt")));
+        }
+
+        #[tokio::test]
         async fn includes_untracked() {
             let (sandbox, git) = create_git_sandbox_with_ignored("vcs");
 
@@ -1009,6 +1021,29 @@ mod git {
                 };
                 map.files
                     .insert("renamed.txt".into(), vec![ChangedStatus::Untracked]);
+                map
+            });
+        }
+
+        #[tokio::test]
+        async fn handles_staged_renamed() {
+            let (sandbox, git) = create_git_sandbox("changed");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["mv", "rename-me.txt", "renamed.txt"]);
+            });
+
+            assert_eq!(git.get_changed_files().await.unwrap(), {
+                let mut map = ChangedFiles {
+                    files: create_changed_map(
+                        [ChangedStatus::Modified, ChangedStatus::Staged],
+                        ["renamed.txt"],
+                    ),
+                };
+                map.files.insert(
+                    "rename-me.txt".into(),
+                    vec![ChangedStatus::Deleted, ChangedStatus::Staged],
+                );
                 map
             });
         }
@@ -1166,6 +1201,73 @@ mod git {
                         ["rename-me.txt"]
                     ),
                 }
+            );
+        }
+
+        #[tokio::test]
+        async fn respects_an_explicit_head_revision() {
+            let (sandbox, git) = create_git_sandbox("changed");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["checkout", "-b", "feature"]);
+            });
+
+            sandbox.create_file("existing.txt", "modified");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["add", "existing.txt"]);
+            });
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["commit", "-m", "Modify"]);
+            });
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["checkout", "master"]);
+            });
+
+            // The working tree (master) is clean, so the
+            // changes must come from the head revision
+            assert_eq!(
+                git.get_changed_files_between_revisions("master", "feature")
+                    .await
+                    .unwrap(),
+                ChangedFiles {
+                    files: create_changed_map(
+                        [ChangedStatus::Modified, ChangedStatus::Staged],
+                        ["existing.txt"]
+                    ),
+                }
+            );
+        }
+
+        #[tokio::test]
+        async fn handles_root_commits_when_diffing_against_previous() {
+            let (_sandbox, git) = create_git_sandbox("changed");
+
+            // Only 1 commit exists, so a previous revision doesn't exist
+            assert_eq!(
+                git.get_changed_files_against_previous_revision("master")
+                    .await
+                    .unwrap(),
+                ChangedFiles::default()
+            );
+        }
+
+        #[tokio::test]
+        async fn errors_on_option_like_revisions() {
+            let (_sandbox, git) = create_git_sandbox("changed");
+
+            assert!(
+                git.get_changed_files_between_revisions("--output=file", "")
+                    .await
+                    .is_err()
+            );
+
+            assert!(
+                git.get_changed_files_against_previous_revision("--output=file")
+                    .await
+                    .is_err()
             );
         }
     }

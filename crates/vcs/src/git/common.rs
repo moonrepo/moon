@@ -1,3 +1,4 @@
+use super::git_error::GitError;
 use regex::Regex;
 use std::sync::LazyLock;
 
@@ -7,11 +8,21 @@ pub static STATUS_PATTERN: LazyLock<Regex> =
 pub static DIFF_PATTERN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^(A|D|M|T|U|X)$").unwrap());
 
-pub static DIFF_SCORE_PATTERN: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^(C|M|R)(\d{3})$").unwrap());
-
 pub static VERSION_CLEAN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\.(windows|win|msysgit|msys|vfs)(\.\d+){1,2}").unwrap());
+
+/// Validate that a revision (typically user provided) doesn't look like a
+/// command line option, otherwise it can be abused for argument injection,
+/// like `--output=file`. Valid revisions can never start with a dash.
+pub fn validate_revision(revision: &str) -> Result<(), GitError> {
+    if revision.starts_with('-') {
+        return Err(GitError::InvalidRevision {
+            revision: revision.to_owned(),
+        });
+    }
+
+    Ok(())
+}
 
 pub fn clean_git_version(version: String) -> String {
     let version = if let Some(index) = version.find('(') {
@@ -113,5 +124,17 @@ mod tests {
     #[test]
     fn other() {
         assert_eq!(clean_git_version("git version 1.8.3.1".into()), "1.8.3");
+    }
+
+    #[test]
+    fn revisions() {
+        assert!(validate_revision("master").is_ok());
+        assert!(validate_revision("HEAD~1").is_ok());
+        assert!(validate_revision("v1.2.3").is_ok());
+        assert!(validate_revision("a1b2c3d").is_ok());
+        assert!(validate_revision("").is_ok());
+
+        assert!(validate_revision("-x").is_err());
+        assert!(validate_revision("--output=file").is_err());
     }
 }

@@ -99,10 +99,15 @@ async fn query_changed_files_without_stdin(
         && vcs.is_default_branch(&current_branch)
         && options.default_branch;
 
-    // Don't check for shallow if base is set,
-    // since we can assume the user knows what they're doing
+    // Don't bail on shallow if base is set, since we can assume the
+    // user knows what they're doing, but still warn them, as the diff
+    // may be inaccurate without a merge base
     if base_value.is_none() {
         check_shallow!(vcs);
+    } else if vcs.is_shallow_checkout().await? {
+        warn!(
+            "Detected a shallow checkout while comparing against an explicit base, changed files may be inaccurate. A full Git history is recommended, e.g. a fetch depth of 0."
+        );
     }
 
     let only_local = options.local && base_value.is_none();

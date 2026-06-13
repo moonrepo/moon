@@ -210,7 +210,10 @@ impl Command {
         Ok(output)
     }
 
+    #[allow(unused, unreachable_code)]
     pub async fn exec_stream_and_capture_output(&mut self) -> miette::Result<Output> {
+        return self.exec_stream_and_capture_output_bytes().await;
+
         let registry = ProcessRegistry::instance();
         let instant = Instant::now();
         let mut command = self.create_async_command()?;

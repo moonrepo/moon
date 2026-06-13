@@ -132,7 +132,7 @@ mod exec_stream_and_capture_output {
             .unwrap();
 
         assert!(output.success());
-        assert_eq!(output.stdout, b"a\nb");
+        assert_eq!(output.stdout, b"a\nb\n");
         assert_eq!(output.stderr, b"err");
     }
 }

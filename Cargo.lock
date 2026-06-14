@@ -6074,6 +6074,7 @@ dependencies = [
  "moon_test_utils",
  "moon_toolchain",
  "proto_core",
+ "proto_pdk_api",
  "rustc-hash",
  "scc",
  "starbase_sandbox",

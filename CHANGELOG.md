@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where projects with the same name/ID as their underlying toolchain package would cause issues when pruning within Docker.
+- Fixed an issue where remote caching wasn't being updated unless the `casOutputsCache` experiment was enabled.
+
+#### 🧰 Toolchains
+
+- **Python**
+  - Updated `uv sync` to use `--no-dev` when installing production only dependencies.
+- **Rust**
+  - Updated `cargo-binstall` installation to use `--locked`.
+
 ## 2.3.3
 
 #### 🛡️ Security

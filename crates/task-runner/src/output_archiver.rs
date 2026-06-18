@@ -66,19 +66,19 @@ impl OutputArchiver<'_> {
             return Ok(false);
         }
 
-        if state.local_cas_enabled {
-            // Collect all outputs (streams each file directly into the CAS)
-            let outputs = self.collect_output_blobs(hash).await?;
-            let archived = !outputs.is_empty();
+        // Collect all outputs (streams each file directly into the CAS)
+        let outputs = self.collect_output_blobs(hash).await?;
+        let mut archived = !outputs.is_empty();
 
-            // Store action + result in local and/or remote caches
-            self.save_in_cas(hash, state, outputs).await?;
-
-            return Ok(archived);
-        }
+        // Store action + result in local and/or remote caches
+        self.save_in_cas(hash, state, outputs).await?;
 
         // Create the archive file (temporary)
-        self.pack_local_archive(hash, state).await
+        if !state.local_cas_enabled {
+            archived = self.pack_local_archive(hash, state).await?;
+        }
+
+        Ok(archived)
     }
 
     #[instrument(skip(self))]

@@ -1187,15 +1187,15 @@ mod project_graph {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_set_alias_if_same_as_id() {
+        async fn sets_alias_if_same_as_id() {
             let (_sandbox, graph) = build_aliases_graph().await;
 
-            assert!(
-                graph
-                    .get_project("alias-same-id")
-                    .unwrap()
-                    .aliases
-                    .is_empty()
+            assert_eq!(
+                graph.get_project("alias-same-id").unwrap().aliases,
+                [ProjectAlias {
+                    alias: "alias-same-id".into(),
+                    plugin: Id::raw("javascript"),
+                }]
             );
         }
 

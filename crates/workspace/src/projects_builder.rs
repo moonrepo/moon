@@ -806,11 +806,6 @@ impl WorkspaceProjectsBuilder {
         plugin_id: &Id,
         projects_data: &mut ProjectBuildDataMap,
     ) -> miette::Result<()> {
-        // Skip aliases that match its own ID
-        if alias == id.as_str() {
-            return Ok(());
-        }
-
         // Skip aliases that are an invalid ID format
         if let Err(error) = Id::new(&alias) {
             debug!(
@@ -822,8 +817,8 @@ impl WorkspaceProjectsBuilder {
             return Ok(());
         }
 
-        // Skip aliases that would override an ID
-        if projects_data.contains_key(alias.as_str()) {
+        // Skip aliases that would override a different ID
+        if alias != id.as_str() && projects_data.contains_key(alias.as_str()) {
             debug!(
                 "Skipping alias {} for project {} as it conflicts with the existing project {}",
                 color::label(&alias),
@@ -859,7 +854,9 @@ impl WorkspaceProjectsBuilder {
             .aliases
             .insert(alias.clone(), plugin_id.to_owned());
 
-        self.aliases_to_ids.insert(alias, id.to_owned());
+        if alias != id.as_str() {
+            self.aliases_to_ids.insert(alias, id.to_owned());
+        }
 
         Ok(())
     }

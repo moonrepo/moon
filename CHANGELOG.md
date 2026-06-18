@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where projects with the same name/ID as their underlying toolchain package would cause issues when pruning within Docker.
+
 ## 2.3.3
 
 #### 🛡️ Security

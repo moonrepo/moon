@@ -1,0 +1,101 @@
+---
+slug: proto-v0.58
+title: proto v0.58 - OpenTelemetry and agent-friendly output
+authors: [milesj]
+tags: [otel, opentelemetry, telemetry, reporter, ndjson, agents, macos]
+# image: ./img/proto/v0.58.png
+---
+
+In this release, we're focusing on observability, and making proto easier to consume from automated
+and AI-driven workflows.
+
+<!--truncate-->
+
+## OpenTelemetry support
+
+[OpenTelemetry](https://opentelemetry.io/) (OTEL) has become the industry standard for collecting
+traces, logs, and metrics from applications. With this release, proto now ships with built-in OTEL
+support, allowing you to export this data over
+[OTLP](https://opentelemetry.io/docs/specs/otlp/) to any compatible backend (Grafana, Honeycomb,
+Datadog, and so on).
+
+To enable it, pass the new `--otel` global option (or set the `PROTO_OTEL` environment variable),
+and configure the destination using the standard `OTEL_EXPORTER_OTLP_*` environment variables.
+
+```shell
+$ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
+$ proto --otel install node
+```
+
+This will export traces and metrics. If you'd also like log events exported as OTLP logs, enable
+the `--otel-logs` option (or `PROTO_OTEL_LOGS`). And to distinguish proto from other services in your
+telemetry backend, set a custom service name with `--otel-service-name` (or
+`PROTO_OTEL_SERVICE_NAME`).
+
+Out of the box, we record metrics for the operations that matter most:
+
+- Tool installs (and individual install steps)
+- Tool uninstalls
+- Plugin loads
+
+Each metric tracks both attempt counts and durations, tagged with attributes like the tool,
+strategy, cache hit/miss, and success/error status — enough to start spotting slow installs or flaky
+plugins across your team or CI.
+
+## Agent-friendly output
+
+Since proto's inception, output has been tuned for humans reading a terminal. But more and more,
+proto is being driven by scripts, CI pipelines, and AI agents — none of which care about colors,
+spinners, or progress bars.
+
+To better serve these consumers, we've introduced a new console reporting layer, exposed through a
+global `--reporter` option (and `PROTO_REPORTER` environment variable), for controlling how proto
+prints output. It supports three formats:
+
+- `text` (default) - Human-readable output with styling.
+- `json` - A single JSON document, printed once the command completes.
+- `ndjson` - Newline-delimited JSON, where each line is a standalone JSON object, streamed as the
+  command runs.
+
+```shell
+$ proto --reporter json outdated
+```
+
+NDJSON is particularly well-suited to streaming consumers, since each event can be parsed the moment
+it's emitted, instead of waiting for the entire command to finish. To make this seamless, proto now
+detects when it's being run by an AI agent or bot, and automatically switches the default reporter to
+`ndjson` — no flag required. Errors are also serialized as JSON in this mode, so a failed command
+still parses cleanly.
+
+## macOS `.pkg` and `.dmg` support
+
+proto installs the majority of tools as pre-built archives (`.tar.gz`, `.zip`, and friends), but some
+tools on macOS are only distributed as `.pkg` installers or `.dmg` disk images. In this release,
+we've taught proto how to unpack both formats, expanding the range of tools that can be installed
+without a bespoke plugin.
+
+For plugin authors, we've also added a new `post_script_args` field to the `DownloadPrebuiltOutput`
+of the [WASM API](/docs/proto/wasm-plugin#downloading-pre-builts), which lets you pass a list of
+arguments to the post-install script that runs after a prebuilt has been unpacked.
+
+## Detecting executable name collisions
+
+proto links a single shim and bin for each executable name, which means two configured tools that
+resolve to the same name (for example, the same identifier provided by two different backends) will
+silently shadow one another — whichever is linked last wins.
+
+We've reworked the internal bin/shim registry to better detect these collisions, and
+[`proto diagnose`](/docs/proto/commands/diagnose) now surfaces them as warnings, so you can resolve
+the ambiguity before it bites you.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.58.0) for a full list
+of changes.
+
+- Improved the performance of checksum file hashing by streaming files, instead of reading them
+  entirely into memory.
+- Reduced log verbosity for `proto exec`, `run`, and `shell`, so executed command output stays clean.
+- Fixed an issue where uninstalling a tool by version could leave around a stale/dangling bin file in
+  `~/.proto/bin`.
+- Updated wasmtime to v43 (from v41).

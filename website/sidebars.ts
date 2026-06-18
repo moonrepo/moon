@@ -328,6 +328,7 @@ const sidebars: SidebarsConfig = {
 		'proto/config',
 		'proto/tool-spec',
 		'proto/detection',
+		'proto/reporting',
 		'proto/tools',
 		{
 			type: 'category',

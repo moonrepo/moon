@@ -2,11 +2,98 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-06-01T00:00:00.000Z</updated>
+    <updated>2026-06-18T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.58 - OpenTelemetry and agent-friendly output]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.58</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.58"/>
+        <updated>2026-06-18T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we're focusing on observability, and making proto easier to consume from automated]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we're focusing on observability, and making proto easier to consume from automated
+and AI-driven workflows.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="opentelemetry-support">OpenTelemetry support<a href="https://moonrepo.dev/blog/proto-v0.58#opentelemetry-support" class="hash-link" aria-label="Direct link to OpenTelemetry support" title="Direct link to OpenTelemetry support" translate="no">​</a></h2>
+<p><a href="https://opentelemetry.io/" target="_blank" rel="noopener noreferrer" class="">OpenTelemetry</a> (OTEL) has become the industry standard for collecting
+traces, logs, and metrics from applications. With this release, proto now ships with built-in OTEL
+support, allowing you to export this data over <a href="https://opentelemetry.io/docs/specs/otlp/" target="_blank" rel="noopener noreferrer" class="">OTLP</a> to
+any compatible backend (Grafana, Honeycomb, Datadog, and so on).</p>
+<p>To enable it, pass the new <code>--otel</code> global option (or set the <code>PROTO_OTEL</code> environment variable),
+and configure the destination using the standard <code>OTEL_EXPORTER_OTLP_*</code> environment variables.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">export</span><span class="token plain"> </span><span class="token assign-left variable" style="color:#fef9c3">OTEL_EXPORTER_OTLP_ENDPOINT</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token string" style="color:#c9e166">"http://localhost:4317"</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token parameter variable" style="color:#fef9c3">--otel</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><br></span></code></pre></div></div>
+<p>This will export traces and metrics. If you'd also like log events exported as OTLP logs, enable the
+<code>--otel-logs</code> option (or <code>PROTO_OTEL_LOGS</code>). And to distinguish proto from other services in your
+telemetry backend, set a custom service name with <code>--otel-service-name</code> (or
+<code>PROTO_OTEL_SERVICE_NAME</code>).</p>
+<p>Out of the box, we record metrics for the operations that matter most:</p>
+<ul>
+<li class="">Tool installs (and individual install steps)</li>
+<li class="">Tool uninstalls</li>
+<li class="">Plugin loads</li>
+</ul>
+<p>Each metric tracks both attempt counts and durations, tagged with attributes like the tool,
+strategy, cache hit/miss, and success/error status — enough to start spotting slow installs or flaky
+plugins across your team or CI.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="agent-friendly-output">Agent-friendly output<a href="https://moonrepo.dev/blog/proto-v0.58#agent-friendly-output" class="hash-link" aria-label="Direct link to Agent-friendly output" title="Direct link to Agent-friendly output" translate="no">​</a></h2>
+<p>Since proto's inception, output has been tuned for humans reading a terminal. But more and more,
+proto is being driven by scripts, CI pipelines, and AI agents — none of which care about colors,
+spinners, or progress bars.</p>
+<p>To better serve these consumers, we've introduced a new console reporting layer, exposed through a
+global <code>--reporter</code> option (and <code>PROTO_REPORTER</code> environment variable), for controlling how proto
+prints output. It supports three formats:</p>
+<ul>
+<li class=""><code>text</code> (default) - Human-readable output with styling.</li>
+<li class=""><code>json</code> - A single JSON document, printed once the command completes.</li>
+<li class=""><code>ndjson</code> - Newline-delimited JSON, where each line is a standalone JSON object, streamed as the
+command runs.</li>
+</ul>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token parameter variable" style="color:#fef9c3">--reporter</span><span class="token plain"> json outdated</span><br></span></code></pre></div></div>
+<p>NDJSON is particularly well-suited to streaming consumers, since each event can be parsed the moment
+it's emitted, instead of waiting for the entire command to finish. To make this seamless, proto now
+detects when it's being run by an AI agent or bot, and automatically switches the default reporter
+to <code>ndjson</code> — no flag required. Errors are also serialized as JSON in this mode, so a failed command
+still parses cleanly.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="macos-pkg-and-dmg-support">macOS <code>.pkg</code> and <code>.dmg</code> support<a href="https://moonrepo.dev/blog/proto-v0.58#macos-pkg-and-dmg-support" class="hash-link" aria-label="Direct link to macos-pkg-and-dmg-support" title="Direct link to macos-pkg-and-dmg-support" translate="no">​</a></h2>
+<p>proto installs the majority of tools as pre-built archives (<code>.tar.gz</code>, <code>.zip</code>, and friends), but
+some tools on macOS are only distributed as <code>.pkg</code> installers or <code>.dmg</code> disk images. In this
+release, we've taught proto how to unpack both formats, expanding the range of tools that can be
+installed without a bespoke plugin.</p>
+<p>For plugin authors, we've also added a new <code>post_script_args</code> field to the <code>DownloadPrebuiltOutput</code>
+of the <a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin#downloading-pre-builts">WASM API</a>, which lets you pass a list of
+arguments to the post-install script that runs after a prebuilt has been unpacked.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="detecting-executable-name-collisions">Detecting executable name collisions<a href="https://moonrepo.dev/blog/proto-v0.58#detecting-executable-name-collisions" class="hash-link" aria-label="Direct link to Detecting executable name collisions" title="Direct link to Detecting executable name collisions" translate="no">​</a></h2>
+<p>proto links a single shim and bin for each executable name, which means two configured tools that
+resolve to the same name (for example, the same identifier provided by two different backends) will
+silently shadow one another — whichever is linked last wins.</p>
+<p>We've reworked the internal bin/shim registry to better detect these collisions, and
+<a class="" href="https://moonrepo.dev/docs/proto/commands/diagnose"><code>proto diagnose</code></a> now surfaces them as warnings, so you can resolve
+the ambiguity before it bites you.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.58#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.58.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
+of changes.</p>
+<ul>
+<li class="">Improved the performance of checksum file hashing by streaming files, instead of reading them
+entirely into memory.</li>
+<li class="">Reduced log verbosity for <code>proto exec</code>, <code>run</code>, and <code>shell</code>, so executed command output stays
+clean.</li>
+<li class="">Fixed an issue where uninstalling a tool by version could leave around a stale/dangling bin file
+in <code>~/.proto/bin</code>.</li>
+<li class="">Updated wasmtime to v43 (from v41).</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="otel" term="otel"/>
+        <category label="opentelemetry" term="opentelemetry"/>
+        <category label="telemetry" term="telemetry"/>
+        <category label="reporter" term="reporter"/>
+        <category label="ndjson" term="ndjson"/>
+        <category label="agents" term="agents"/>
+        <category label="macos" term="macos"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v2.3 - Task tags, dep cache strategies, native file hashing, CAS cache, and more]]></title>
         <id>https://moonrepo.dev/blog/moon-v2.3</id>
@@ -2035,126 +2122,5 @@ platform into a toolchain.</p>
         <category label="experiment" term="experiment"/>
         <category label="terminal" term="terminal"/>
         <category label="theme" term="theme"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[moon v1.34 - Action customization, faster globs, better Git, and more!]]></title>
-        <id>https://moonrepo.dev/blog/moon-v1.34</id>
-        <link href="https://moonrepo.dev/blog/moon-v1.34"/>
-        <updated>2025-03-31T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[With this release, we're introducing a handful of performance and customization improvements!]]></summary>
-        <content type="html"><![CDATA[<p>With this release, we're introducing a handful of performance and customization improvements!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="moonbase-has-been-sunset">moonbase has been sunset<a href="https://moonrepo.dev/blog/moon-v1.34#moonbase-has-been-sunset" class="hash-link" aria-label="Direct link to moonbase has been sunset" title="Direct link to moonbase has been sunset" translate="no">​</a></h2>
-<p>As mentioned in previous releases, we have sunset <a class="" href="https://moonrepo.dev/moonbase">moonbase</a>, our remote caching service.
-A while back we had internal discussions on whether to rework moonbase so that it could be
-self-hosted (on-premises), or adopt the
-<a href="https://github.com/bazelbuild/remote-apis" target="_blank" rel="noopener noreferrer" class="">Bazel Remote Execution API</a> and utilize what the open
-source community has to offer. We ultimately decided with the latter, as it frees up resources on
-our end to focus on moon and proto, and also provides a better path forward for moon adoption.</p>
-<p>If you are currently using moonbase, we suggest migrating to our new
-<a class="" href="https://moonrepo.dev/docs/guides/remote-cache">remote caching options</a>. And if you have an active moonbase
-subscription, it will be cancelled within the week, and any partial billing for this month will be
-prorated.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="customize-actions-in-the-pipeline">Customize actions in the pipeline<a href="https://moonrepo.dev/blog/moon-v1.34#customize-actions-in-the-pipeline" class="hash-link" aria-label="Direct link to Customize actions in the pipeline" title="Direct link to Customize actions in the pipeline" translate="no">​</a></h2>
-<p>When a task is ran in moon, we create an <a class="" href="https://moonrepo.dev/docs/how-it-works/action-graph">action graph</a> (not a task
-graph) of actions, which are operations required to run to ensure a successful execution. This
-includes non-task related functionality, like project and workspace syncing, installing
-dependencies, and ensuring the toolchain has been setup. While these actions only take milliseconds
-to execute (on a cache hit), they can become quite a barrier and source of friction (on cache miss).</p>
-<p>Until now, there wasn't anyway to disable/skip these extra actions -- besides some non-documented
-environment variables that didn't actually omit the actions (they were still in the graph), but
-simply skipped the inner execution. In this release, we're introducing 4 new settings for
-<a class="" href="https://moonrepo.dev/docs/config/workspace#pipeline"><code>pipeline</code></a> (formerly <code>runner</code>) in
-<a class="" href="https://moonrepo.dev/docs/config/workspace"><code>.moon/workspace.yml</code></a>.</p>
-<ul>
-<li class=""><code>installDependencies</code> setting toggles the inclusion of the <code>InstallWorkspaceDeps</code> and
-<code>InstallProjectDeps</code> actions, and can be scoped to toolchain IDs.</li>
-<li class=""><code>syncProjects</code> setting toggles the inclusion of the <code>SyncProject</code> actions, and can be scoped to
-project IDs.</li>
-<li class=""><code>syncProjectDependencies</code> setting toggles whether to recursively create <code>SyncProject</code> actions for
-each dependency of a project, or just for itself.</li>
-<li class=""><code>syncWorkspace</code> setting toggles the inclusion of the root <code>SyncWorkspace</code> action.</li>
-</ul>
-<p>For example, if you want to disable all of these actions entirely, you can do this:</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">pipeline</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">installDependencies</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncProjects</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncProjectDependencies</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncWorkspace</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></span></code></pre></div></div>
-<p>And as mentioned above, the <code>installDependencies</code> and <code>syncProjects</code> settings support configuring a
-list of IDs, which acts as an allow list. Any IDs not listed here will not create actions.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">pipeline</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token comment" style="color:#97a1af;font-style:italic"># Only install Node.js dependencies</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">installDependencies</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'node'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token comment" style="color:#97a1af;font-style:italic"># Only sync the `app` project</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncProjects</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'app'</span><span class="token punctuation" style="color:#cad4e2">]</span><br></span></code></pre></div></div>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>Even if you disable actions with the <code>pipeline</code> setting, the <a class="" href="https://moonrepo.dev/docs/commands/sync"><code>moon sync</code></a>
-commands can still be used to run sync operations, as they ignore that setting. This provides a
-solution where you want to avoid the overhead when running a task, but still take advantage of
-moon's syncing to ensure a healthy repository state.</p></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new---no-actions-flag">New <code>--no-actions</code> flag<a href="https://moonrepo.dev/blog/moon-v1.34#new---no-actions-flag" class="hash-link" aria-label="Direct link to new---no-actions-flag" title="Direct link to new---no-actions-flag" translate="no">​</a></h3>
-<p>To expand upon the above, we're introducing a <code>--no-actions</code> flag to
-<a class="" href="https://moonrepo.dev/docs/commands/run"><code>moon run</code></a>, that will run the task without the other actions being added to
-the graph. We suggest only using this flag once dependencies have been installed, and the toolchain
-has been setup!</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon run app:start --no-actions</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-experiments">New experiments<a href="https://moonrepo.dev/blog/moon-v1.34#new-experiments" class="hash-link" aria-label="Direct link to New experiments" title="Direct link to New experiments" translate="no">​</a></h2>
-<p>It's been a while since we've added new experiments, and in this release, we've got 2! We encourage
-everyone to enable these experiments to ensure they are working correctly, but do note that these
-are a work in progress and may be buggy.</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="faster-glob-walking">Faster glob walking<a href="https://moonrepo.dev/blog/moon-v1.34#faster-glob-walking" class="hash-link" aria-label="Direct link to Faster glob walking" title="Direct link to Faster glob walking" translate="no">​</a></h3>
-<p>We've been monitoring glob performance for sometime now, as walking the filesystem has been one of
-the largest bottlenecks, especially in large codebases. We felt it was about time to tackle the
-problem.</p>
-<p>With this new implementation, we are doing a few things to increase performance. To start, we are
-parallelizing walking per directory, where previously this would happen serially. Next, we partition
-globs based on a common ancestor directory, which reduces the amount of unnecessary walking. And
-lastly, we cache common globs to avoid walking all together.</p>
-<p>In our benchmarks and tests (moon itself is already using it), we are seeing performance increases
-by 1.5-2x! To start using this new glob implementation, enable the new <code>fasterGlobWalk</code> experiment.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">fasterGlobWalk</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="better-git-integration">Better Git integration<a href="https://moonrepo.dev/blog/moon-v1.34#better-git-integration" class="hash-link" aria-label="Direct link to Better Git integration" title="Direct link to Better Git integration" translate="no">​</a></h3>
-<p>Our current Git integration works, assuming you're not doing anything complex, like using submodules
-or worktrees. If you are using the latter, things have been buggy. We're not happy about this, as we
-want to support all the different ways a repository can be architected.</p>
-<p>So we started over from scratch! We even created
-<a href="https://github.com/moonrepo/git-test" target="_blank" rel="noopener noreferrer" class="">real repositories</a> to ensure our understanding and
-implementation of these features is accurate. This new implementation achieves the following:</p>
-<ul>
-<li class="">Supports submodules, subtrees, and worktees (unique among build systems).<!-- -->
-<ul>
-<li class="">Our competitors don't support these, and we expect them to "borrow" our implementation in the
-future (like they have with other features).</li>
-</ul>
-</li>
-<li class="">Git commands are parallelized when applicable.</li>
-<li class="">Touched files within submodules are now properly extracted.</li>
-<li class="">File discovery and hashing is more performant.</li>
-</ul>
-<p>If you'd like to try this new Git implementation (moon itself already is), enable the <code>gitV2</code>
-experiment.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><span class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></span><span class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">gitV2</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></span></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.34#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.34.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added a <code>--json</code> flag to <code>moon templates</code>.</li>
-<li class="">Integrated a new console rendering system with new terminal styles, prompts, and output.</li>
-<li class="">Improved the performance of environment variable substitution.</li>
-<li class="">Improved toolchain plugin loading to be on-demand.</li>
-<li class="">Improved sync cache invalidation for codeowners, config schemas, and VCS hooks.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.34#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?" translate="no">​</a></h2>
-<p>Going forward, we plan to release new updates on a bi-weekly schedule, instead of a monthly
-schedule. This will result in less features each release, but will reduce the burden and complexity
-of large releases. With that said, this is what we have tentatively planned for the next release!</p>
-<ul>
-<li class="">Migrate the Rust toolchain to a WASM plugin.</li>
-<li class="">Investigate a new args/command line parser.</li>
-<li class="">Add Poetry support for the Python toolchain.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="moonbase" term="moonbase"/>
-        <category label="remote" term="remote"/>
-        <category label="cache" term="cache"/>
-        <category label="action" term="action"/>
-        <category label="pipeline" term="pipeline"/>
-        <category label="glob" term="glob"/>
-        <category label="git" term="git"/>
-        <category label="experiment" term="experiment"/>
     </entry>
 </feed>

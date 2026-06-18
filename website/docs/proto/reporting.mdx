@@ -1,0 +1,81 @@
+---
+title: Reporting
+toc_max_heading_level: 6
+---
+
+import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.58.0" header />
+
+By default, proto prints rich, human-readable output to your terminal. But proto is increasingly run
+by scripts, CI pipelines, and AI agents, so we also support machine-readable output formats, and the
+ability to export telemetry to observability backends.
+
+## Reporters
+
+The global `--reporter` option (or the `PROTO_REPORTER` environment variable) controls the format
+that proto prints output in. Three formats are supported:
+
+- `text` (default) - Human-readable output with colors and styling.
+- `json` - A single JSON document, printed once the command has completed.
+- `ndjson` - Newline-delimited JSON, where each line is a standalone JSON object, streamed as the
+  command runs.
+
+```shell
+$ proto --reporter json outdated
+# Or
+$ PROTO_REPORTER=json proto outdated
+```
+
+Both `json` and `ndjson` produce machine-readable output. The difference is _when_ it's emitted:
+`json` buffers everything and prints once at the end, while `ndjson` streams each event as it
+happens, which is better suited to long-running commands and streaming consumers. When a command
+fails while using `ndjson`, the error is also serialized as JSON, so consumers can parse it instead
+of choking on a stack trace.
+
+:::info
+
+The older `--json` global flag (and `PROTO_JSON` environment variable) is still supported, and is
+equivalent to `--reporter json`.
+
+:::
+
+### AI agents and bots
+
+proto automatically detects when it's being run by an AI agent or bot, and switches the default
+reporter to `ndjson` in that environment — no flag required. You can always override this by
+explicitly passing `--reporter` (or setting `PROTO_REPORTER`).
+
+## OpenTelemetry
+
+proto can export [OpenTelemetry](https://opentelemetry.io/) (OTEL) traces, logs, and metrics over
+[OTLP](https://opentelemetry.io/docs/specs/otlp/), for integration with observability backends like
+Grafana, Honeycomb, or Datadog.
+
+This is opt-in, and enabled with the following global options (or environment variables):
+
+- `--otel` (`PROTO_OTEL`) - Export traces and metrics over OTLP.
+- `--otel-logs` (`PROTO_OTEL_LOGS`) - Also export log events as OTLP logs.
+- `--otel-service-name <name>` (`PROTO_OTEL_SERVICE_NAME`) - The service name to report.
+
+The OTLP destination and transport are configured using the standard `OTEL_EXPORTER_OTLP_*`
+environment variables, like `OTEL_EXPORTER_OTLP_ENDPOINT`.
+
+```shell
+$ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
+$ proto --otel install node
+```
+
+### Metrics
+
+When OTEL is enabled, proto records the following metrics. Names ending in `.attempts` are counters,
+while names ending in `.duration` are histograms measured in milliseconds.
+
+| Operation         | Metrics                                                                | Attributes                     |
+| ----------------- | ---------------------------------------------------------------------- | ------------------------------ |
+| Tool install      | `proto.tool.install.attempts`, `proto.tool.install.duration`           | tool, strategy, status, cache  |
+| Tool install step | `proto.tool.install.step.attempts`, `proto.tool.install.step.duration` | tool, step, status             |
+| Tool uninstall    | `proto.tool.uninstall.attempts`, `proto.tool.uninstall.duration`       | tool, scope, status, cache     |
+| Plugin load       | `proto.plugin.load.duration`                                           | plugin, locator, status, cache |
+| Plugin create     | `proto.plugin.create.duration`                                         | plugin, locator, status        |

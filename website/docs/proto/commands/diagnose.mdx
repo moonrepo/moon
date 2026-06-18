@@ -23,6 +23,11 @@ Errors ────────────────────────�
     Comment: Runtime version detection will not work correctly unless shims are used
 ```
 
+Among other checks, proto inspects your `PATH` ordering and shell setup, and looks for executable
+name collisions — multiple configured tools that resolve to the same shim and bin name (for example,
+the same identifier provided by two different backends). Since only one can be linked, the others
+are silently shadowed, so these are reported as warnings. <VersionLabel version="0.58.0" />
+
 ### Options
 
 - `--shell` - The shell to diagnose (will detect automatically).

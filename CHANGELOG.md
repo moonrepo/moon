@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where projects with the same name/ID as their underlying toolchain package would cause issues when pruning within Docker.
+- Fixed an issue where remote caching wasn't being updated unless the `casOutputsCache` experiment was enabled.
 
 #### 🧰 Toolchains
 

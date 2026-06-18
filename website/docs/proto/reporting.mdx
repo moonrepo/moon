@@ -72,10 +72,10 @@ $ proto --otel install node
 When OTEL is enabled, proto records the following metrics. Names ending in `.attempts` are counters,
 while names ending in `.duration` are histograms measured in milliseconds.
 
-| Operation         | Metrics                                                         | Attributes                     |
-| ----------------- | -------------------------------------------------------------- | ------------------------------ |
-| Tool install      | `proto.tool.install.attempts`, `proto.tool.install.duration`   | tool, strategy, status, cache  |
-| Tool install step | `proto.tool.install.step.attempts`, `proto.tool.install.step.duration` | tool, step, status     |
-| Tool uninstall    | `proto.tool.uninstall.attempts`, `proto.tool.uninstall.duration` | tool, scope, status, cache   |
-| Plugin load       | `proto.plugin.load.duration`                                   | plugin, locator, status, cache |
-| Plugin create     | `proto.plugin.create.duration`                                 | plugin, locator, status        |
+| Operation         | Metrics                                                                | Attributes                     |
+| ----------------- | ---------------------------------------------------------------------- | ------------------------------ |
+| Tool install      | `proto.tool.install.attempts`, `proto.tool.install.duration`           | tool, strategy, status, cache  |
+| Tool install step | `proto.tool.install.step.attempts`, `proto.tool.install.step.duration` | tool, step, status             |
+| Tool uninstall    | `proto.tool.uninstall.attempts`, `proto.tool.uninstall.duration`       | tool, scope, status, cache     |
+| Plugin load       | `proto.plugin.load.duration`                                           | plugin, locator, status, cache |
+| Plugin create     | `proto.plugin.create.duration`                                         | plugin, locator, status        |

@@ -15,9 +15,8 @@ and AI-driven workflows.
 
 [OpenTelemetry](https://opentelemetry.io/) (OTEL) has become the industry standard for collecting
 traces, logs, and metrics from applications. With this release, proto now ships with built-in OTEL
-support, allowing you to export this data over
-[OTLP](https://opentelemetry.io/docs/specs/otlp/) to any compatible backend (Grafana, Honeycomb,
-Datadog, and so on).
+support, allowing you to export this data over [OTLP](https://opentelemetry.io/docs/specs/otlp/) to
+any compatible backend (Grafana, Honeycomb, Datadog, and so on).
 
 To enable it, pass the new `--otel` global option (or set the `PROTO_OTEL` environment variable),
 and configure the destination using the standard `OTEL_EXPORTER_OTLP_*` environment variables.
@@ -27,8 +26,8 @@ $ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 $ proto --otel install node
 ```
 
-This will export traces and metrics. If you'd also like log events exported as OTLP logs, enable
-the `--otel-logs` option (or `PROTO_OTEL_LOGS`). And to distinguish proto from other services in your
+This will export traces and metrics. If you'd also like log events exported as OTLP logs, enable the
+`--otel-logs` option (or `PROTO_OTEL_LOGS`). And to distinguish proto from other services in your
 telemetry backend, set a custom service name with `--otel-service-name` (or
 `PROTO_OTEL_SERVICE_NAME`).
 
@@ -63,16 +62,16 @@ $ proto --reporter json outdated
 
 NDJSON is particularly well-suited to streaming consumers, since each event can be parsed the moment
 it's emitted, instead of waiting for the entire command to finish. To make this seamless, proto now
-detects when it's being run by an AI agent or bot, and automatically switches the default reporter to
-`ndjson` — no flag required. Errors are also serialized as JSON in this mode, so a failed command
+detects when it's being run by an AI agent or bot, and automatically switches the default reporter
+to `ndjson` — no flag required. Errors are also serialized as JSON in this mode, so a failed command
 still parses cleanly.
 
 ## macOS `.pkg` and `.dmg` support
 
-proto installs the majority of tools as pre-built archives (`.tar.gz`, `.zip`, and friends), but some
-tools on macOS are only distributed as `.pkg` installers or `.dmg` disk images. In this release,
-we've taught proto how to unpack both formats, expanding the range of tools that can be installed
-without a bespoke plugin.
+proto installs the majority of tools as pre-built archives (`.tar.gz`, `.zip`, and friends), but
+some tools on macOS are only distributed as `.pkg` installers or `.dmg` disk images. In this
+release, we've taught proto how to unpack both formats, expanding the range of tools that can be
+installed without a bespoke plugin.
 
 For plugin authors, we've also added a new `post_script_args` field to the `DownloadPrebuiltOutput`
 of the [WASM API](/docs/proto/wasm-plugin#downloading-pre-builts), which lets you pass a list of
@@ -95,7 +94,8 @@ of changes.
 
 - Improved the performance of checksum file hashing by streaming files, instead of reading them
   entirely into memory.
-- Reduced log verbosity for `proto exec`, `run`, and `shell`, so executed command output stays clean.
-- Fixed an issue where uninstalling a tool by version could leave around a stale/dangling bin file in
-  `~/.proto/bin`.
+- Reduced log verbosity for `proto exec`, `run`, and `shell`, so executed command output stays
+  clean.
+- Fixed an issue where uninstalling a tool by version could leave around a stale/dangling bin file
+  in `~/.proto/bin`.
 - Updated wasmtime to v43 (from v41).

@@ -5082,6 +5082,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_cache_local"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "miette 7.6.0",
+ "moon_blob",
+ "moon_cache_storage",
+ "moon_cas",
+ "moon_common",
+ "moon_config",
+ "moon_hash",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
+name = "moon_cache_storage"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "bazel-remote-apis",
+ "chrono",
+ "miette 7.6.0",
+ "moon_blob",
+ "moon_common",
+ "moon_hash",
+ "serde",
+ "serial_test",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "moon_cas"
 version = "0.0.1"
 dependencies = [
@@ -5756,22 +5791,6 @@ dependencies = [
  "tracing",
  "uuid",
  "zstd",
-]
-
-[[package]]
-name = "moon_storage"
-version = "0.0.1"
-dependencies = [
- "bazel-remote-apis",
- "chrono",
- "miette 7.6.0",
- "moon_common",
- "moon_hash",
- "serde",
- "serial_test",
- "starbase_sandbox",
- "starbase_utils",
- "tracing",
 ]
 
 [[package]]

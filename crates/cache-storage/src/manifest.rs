@@ -6,9 +6,24 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use bazel_remote_apis::google::protobuf::UInt32Value;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::Digest;
+use serde::{Deserialize, Serialize};
 use std::time::SystemTime;
 
-#[derive(Debug, Default)]
+pub enum ManifestSource {
+    Local(Manifest),
+    // LocalShared(Manifest),
+    Remote(Manifest),
+}
+
+impl ManifestSource {
+    pub fn as_manifest(&self) -> &Manifest {
+        match self {
+            Self::Local(inner) | Self::Remote(inner) => inner,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
     pub files: Vec<ManifestFile>,
     pub symlinks: Vec<ManifestSymlink>,
@@ -65,7 +80,7 @@ impl Manifest {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct ManifestFile {
     pub bytes: Vec<u8>,
     pub digest: Option<Digest>,
@@ -107,7 +122,7 @@ impl ManifestFile {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct ManifestSymlink {
     pub modified_at: Option<SystemTime>,
     pub path: WorkspaceRelativePathBuf,

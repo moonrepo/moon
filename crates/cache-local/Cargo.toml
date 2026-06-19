@@ -1,29 +1,24 @@
 [package]
-name = "moon_cache_storage"
+name = "moon_cache_local"
 version = "0.0.1"
 edition = "2024"
 license = "MIT"
-description = "Cache storage/backend utilities."
+description = "Local cache storage."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
 moon_blob = { path = "../blob" }
+moon_cache_storage = { path = "../cache-storage" }
+moon_cas = { path = "../cas" }
 moon_common = { path = "../common" }
+moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }
 async-trait = { workspace = true }
-bazel-remote-apis = { workspace = true }
-chrono = { workspace = true }
 miette = { workspace = true }
-serde = { workspace = true }
-starbase_utils = { workspace = true, features = ["json"] }
-tokio = { workspace = true }
+serde_json = { workspace = true }
 tracing = { workspace = true }
-
-[dev-dependencies]
-serial_test = { workspace = true }
-starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

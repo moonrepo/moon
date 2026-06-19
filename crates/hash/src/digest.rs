@@ -1,11 +1,11 @@
 use crate::content_hash::ContentHash;
 use miette::IntoDiagnostic;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
 use std::fmt::Debug;
 use std::path::Path;
 
-#[derive(Debug, Default, Clone, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct Digest {
     pub hash: ContentHash,
     pub size: i64,
@@ -40,5 +40,11 @@ impl Digest {
 
     pub fn is_valid(&self) -> bool {
         self.size >= 0 && !self.hash.is_empty()
+    }
+}
+
+impl AsRef<ContentHash> for Digest {
+    fn as_ref(&self) -> &ContentHash {
+        &self.hash
     }
 }

@@ -13,7 +13,7 @@ pub fn hash_sha256<T: AsRef<[u8]>>(bytes: T) -> String {
 }
 
 /// A SHA-256 content hash: 64-character hex string.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq, Hash, Serialize)]
 pub struct ContentHash(CompactString);
 
 impl ContentHash {

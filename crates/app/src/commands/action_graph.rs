@@ -1,10 +1,10 @@
 use crate::commands::graph::run_server;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use moon_action_graph::{GraphToDot, GraphToJson, RunRequirements};
 use moon_affected::DownstreamScope;
 use moon_task::Target;
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -39,7 +39,7 @@ pub struct ActionGraphArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> AppResult {
+pub async fn action_graph(session: MoonSession, args: ActionGraphArgs) -> SessionResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut action_graph_builder = session.build_action_graph().await?;
 

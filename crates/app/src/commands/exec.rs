@@ -4,6 +4,7 @@ use crate::helpers::run_action_pipeline;
 use crate::prompts::select_targets;
 use crate::queries::changed_files::{QueryChangedFilesOptions, query_changed_files};
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use ci_env::CiOutput;
 use clap::{Args, ValueEnum};
 use iocraft::prelude::element;
@@ -21,7 +22,6 @@ use moon_task::{Target, TargetLocator};
 use moon_vcs::ChangedStatus;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase::AppResult;
 use starbase_utils::json;
 use std::fmt;
 use std::sync::Arc;
@@ -87,7 +87,7 @@ pub struct ExecArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn exec(session: MoonSession, args: ExecArgs) -> AppResult {
+pub async fn exec(session: MoonSession, args: ExecArgs) -> SessionResult {
     let mut plan = ExecutionPlan::default();
 
     // Load the execution plan if provided

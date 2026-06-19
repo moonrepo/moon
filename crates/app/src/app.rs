@@ -321,7 +321,7 @@ pub struct Cli {
         help_heading = "Global options",
         default_value_t
     )]
-    pub log: LogLevel,
+    pub log: starbase::tracing::LogLevel,
 
     #[arg(
         long,

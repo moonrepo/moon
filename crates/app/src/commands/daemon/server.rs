@@ -1,7 +1,7 @@
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use crate::watchers::WorkspaceWatcher;
 use moon_daemon::{DaemonState, start_daemon_server};
-use starbase::AppResult;
 
 fn install_daemon_panic_hook() {
     let previous_hook = std::panic::take_hook();
@@ -32,7 +32,7 @@ fn install_daemon_panic_hook() {
     }));
 }
 
-pub async fn server(session: MoonSession) -> AppResult {
+pub async fn server(session: MoonSession) -> SessionResult {
     install_daemon_panic_hook();
 
     start_daemon_server(

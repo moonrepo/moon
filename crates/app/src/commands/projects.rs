@@ -1,8 +1,8 @@
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use iocraft::prelude::{Size, element};
 use moon_console::ui::*;
-use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -13,7 +13,7 @@ pub struct ProjectsArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn projects(session: MoonSession, args: ProjectsArgs) -> AppResult {
+pub async fn projects(session: MoonSession, args: ProjectsArgs) -> SessionResult {
     let mut projects = session.get_workspace_graph().await?.get_projects()?;
 
     projects.sort_by(|a, d| a.id.cmp(&d.id));

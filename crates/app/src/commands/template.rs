@@ -1,5 +1,6 @@
 use crate::prompts::select_identifier;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_codegen::{Template, TemplateContext};
@@ -8,7 +9,6 @@ use moon_config::TemplateVariable;
 use moon_console::ui::{
     Container, Entry, List, ListItem, Section, SelectOption, SelectProps, Stack, Style, StyledText,
 };
-use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -22,7 +22,7 @@ pub struct TemplateArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn template(session: MoonSession, args: TemplateArgs) -> AppResult {
+pub async fn template(session: MoonSession, args: TemplateArgs) -> SessionResult {
     let mut generator = session.build_code_generator();
     generator.load_templates().await?;
 

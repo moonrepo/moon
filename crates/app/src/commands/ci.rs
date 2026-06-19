@@ -1,11 +1,11 @@
 use super::exec::*;
 use crate::app_options::SummaryOption;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_task::TargetLocator;
-use starbase::AppResult;
 use tracing::instrument;
 
 #[with_affected_args(always_affected)]
@@ -17,7 +17,7 @@ pub struct CiArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn ci(session: MoonSession, args: CiArgs) -> AppResult {
+pub async fn ci(session: MoonSession, args: CiArgs) -> SessionResult {
     let mut targets = args.targets.clone();
 
     if targets.is_empty() && args.plan.is_none() {

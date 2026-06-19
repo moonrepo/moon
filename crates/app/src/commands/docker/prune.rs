@@ -1,10 +1,10 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use moon_actions::plugins::{ExecCommandOptions, exec_plugin_command};
 use moon_pdk_api::{InstallDependenciesInput, LocateDependenciesRootInput, PruneDockerInput};
 use moon_project::Project;
 use moon_toolchain_plugin::ToolchainPlugin;
-use starbase::AppResult;
 use starbase_utils::json;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -207,7 +207,7 @@ pub async fn prune_toolchains(
 }
 
 #[instrument(skip_all)]
-pub async fn prune(session: MoonSession) -> AppResult {
+pub async fn prune(session: MoonSession) -> SessionResult {
     let manifest_path = session.workspace_root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {

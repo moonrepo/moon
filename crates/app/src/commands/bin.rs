@@ -1,9 +1,9 @@
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use moon_common::Id;
 use moon_env_var::GlobalEnvBag;
 use moon_process_augment::AugmentedCommand;
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -13,7 +13,7 @@ pub struct BinArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn bin(session: MoonSession, args: BinArgs) -> AppResult {
+pub async fn bin(session: MoonSession, args: BinArgs) -> SessionResult {
     session.console.quiet();
 
     let app_context = session.get_app_context().await?;

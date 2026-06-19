@@ -1,6 +1,7 @@
 use super::exec::*;
 use crate::prompts::select_identifiers;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
@@ -8,7 +9,6 @@ use moon_common::Id;
 use moon_console::ui::{SelectOption, SelectProps};
 use moon_project::Project;
 use moon_task::TargetLocator;
-use starbase::AppResult;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -30,7 +30,7 @@ pub struct CheckArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn check(session: MoonSession, args: CheckArgs) -> AppResult {
+pub async fn check(session: MoonSession, args: CheckArgs) -> SessionResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut projects: Vec<Arc<Project>> = vec![];
 

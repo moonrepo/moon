@@ -1,6 +1,7 @@
 use crate::app_error::AppError;
 use crate::components::{ApiList, ConfigSettings};
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_common::{Id, is_test_env};
@@ -8,7 +9,6 @@ use moon_config_loader::ExtensionsConfigExt;
 use moon_console::ui::*;
 use moon_extension_plugin::ExtensionPlugin;
 use proto_core::PluginLocator;
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -21,7 +21,7 @@ pub struct ExtensionInfoArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> AppResult {
+pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> SessionResult {
     let Some(locator) = args
         .plugin
         .or_else(|| ExtensionsConfigExt::get_plugin_locator(&args.id))

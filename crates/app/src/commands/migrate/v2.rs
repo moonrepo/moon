@@ -1,12 +1,12 @@
 #![allow(clippy::collapsible_if, clippy::single_match)]
 
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_config::{LayerType, StackType};
 use moon_console::ui::Confirm;
-use starbase::AppResult;
 use starbase_utils::yaml::{self, YamlMapping, YamlValue};
 use starbase_utils::{fs, glob};
 use std::path::Path;
@@ -21,7 +21,7 @@ pub struct MigrateV2Args {
 }
 
 #[instrument(skip(session))]
-pub async fn v2(session: MoonSession, args: MigrateV2Args) -> AppResult {
+pub async fn v2(session: MoonSession, args: MigrateV2Args) -> SessionResult {
     let skip_prompts = args.yes;
 
     // Configuration

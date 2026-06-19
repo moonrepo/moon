@@ -817,9 +817,9 @@ dependencies = [
 
 [[package]]
 name = "cd_env"
-version = "0.3.1"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a300d5848d3661304fad2dfa9b03be2ae25677684ecbefeb991395094b021f6"
+checksum = "9ea718cf984ee9214279fc4e3f6b0eb86671488c88175d11b57d0b45ec9e2224"
 dependencies = [
  "serde",
 ]
@@ -897,9 +897,9 @@ checksum = "6e4de3bc4ea267985becf712dc6d9eed8b04c953b3fcfb339ebc87acd9804901"
 
 [[package]]
 name = "ci_env"
-version = "0.4.1"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5a33731d34016866e86aef134dac88e25328c57b3b632958f1b7da2ec04ff69"
+checksum = "751350244a17b2e42948deca418f9009250586beb9d11375cef3cc6a4fb88a16"
 dependencies = [
  "serde",
 ]
@@ -8527,14 +8527,16 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starbase"
-version = "0.11.4"
+version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9845c3cb12424f31c4aa65d55d55da77fff0c585c25962c99872fe51f268063"
+checksum = "5bcd5012790c6798415cd564bbe10ccfbe8949e9bc977a13b1ddaeb1ee2cdbc2"
 dependencies = [
  "async-trait",
  "chrono",
+ "clap",
  "miette 7.6.0",
  "starbase_styles",
+ "thiserror 2.0.18",
  "tokio",
  "tracing",
  "tracing-chrome",

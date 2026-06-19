@@ -1,6 +1,7 @@
 #![allow(clippy::disallowed_types)]
 
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use iocraft::prelude::{FlexDirection, View, element};
 use moon_common::path::{clean_components, locate_config_dir};
@@ -11,7 +12,6 @@ use schematic::schema::{
     ArrayType, EnumType, LiteralValue, Schema, SchemaGenerator, SchemaType, StringType,
     TemplateOptions, UnionType, YamlTemplateRenderer,
 };
-use starbase::AppResult;
 use starbase_utils::{fs, string_vec};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -33,7 +33,7 @@ pub struct InitArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn init(session: MoonSession, args: InitArgs) -> AppResult {
+pub async fn init(session: MoonSession, args: InitArgs) -> SessionResult {
     let dest_dir = clean_components(if args.dest.is_absolute() {
         args.dest.clone()
     } else {

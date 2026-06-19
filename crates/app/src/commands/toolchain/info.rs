@@ -1,6 +1,7 @@
 use crate::app_error::AppError;
 use crate::components::{ApiList, ConfigSettings};
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_common::{Id, is_test_env};
@@ -8,7 +9,6 @@ use moon_config_loader::ToolchainsConfigExt;
 use moon_console::ui::*;
 use moon_toolchain_plugin::ToolchainPlugin;
 use proto_core::PluginLocator;
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -21,7 +21,7 @@ pub struct ToolchainInfoArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> AppResult {
+pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> SessionResult {
     let Some(locator) = args
         .plugin
         .or_else(|| ToolchainsConfigExt::get_plugin_locator(&args.id))

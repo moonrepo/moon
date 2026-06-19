@@ -1,14 +1,14 @@
 use crate::helpers::run_action_pipeline;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use iocraft::prelude::element;
 use moon_action::ActionStatus;
 use moon_action_graph::ActionGraphBuilderOptions;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 use tracing::instrument;
 
 #[instrument(skip(session))]
-pub async fn setup(session: MoonSession) -> AppResult {
+pub async fn setup(session: MoonSession) -> SessionResult {
     let mut action_graph_builder = session
         .build_action_graph_with_options(ActionGraphBuilderOptions {
             // Only enable toolchain setup for this command

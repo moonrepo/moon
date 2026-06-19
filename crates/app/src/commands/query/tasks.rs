@@ -3,10 +3,10 @@ use crate::app_options::AffectedOption;
 use crate::queries::changed_files::*;
 use crate::queries::tasks::*;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_common::Id;
-use starbase::AppResult;
 use starbase_utils::json;
 use std::collections::BTreeMap;
 use tracing::instrument;
@@ -69,7 +69,7 @@ pub struct QueryTasksArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> AppResult {
+pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> SessionResult {
     let workspace_graph = session.get_workspace_graph().await?;
 
     let mut options = QueryTasksOptions {

@@ -1,7 +1,7 @@
 use crate::session::MoonSession;
-use starbase::AppResult;
+use crate::session::SessionResult;
 
-pub async fn debug_config(session: MoonSession) -> AppResult {
+pub async fn debug_config(session: MoonSession) -> SessionResult {
     dbg!(&session.moon_env);
 
     dbg!(&session.proto_env);

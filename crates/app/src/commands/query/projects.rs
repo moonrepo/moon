@@ -3,9 +3,9 @@ use crate::app_options::AffectedOption;
 use crate::queries::changed_files::*;
 use crate::queries::projects::*;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
-use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -70,7 +70,7 @@ pub struct QueryProjectsArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> AppResult {
+pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> SessionResult {
     let workspace_graph = session.get_workspace_graph().await?;
 
     let mut options = QueryProjectsOptions {

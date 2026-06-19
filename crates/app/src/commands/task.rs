@@ -1,6 +1,7 @@
 use crate::app_error::AppError;
 use crate::prompts::select_target;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_action::{ActionNode, RunTaskNode};
@@ -14,7 +15,6 @@ use moon_process::Command;
 use moon_project::Project;
 use moon_task::{Target, Task};
 use moon_task_runner::command_builder::CommandBuilder;
-use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -28,7 +28,7 @@ pub struct TaskArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn task(session: MoonSession, args: TaskArgs) -> AppResult {
+pub async fn task(session: MoonSession, args: TaskArgs) -> SessionResult {
     let workspace_graph = session.get_workspace_graph().await?;
 
     let target = select_target(&session.console, &args.target, || {

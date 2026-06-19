@@ -1,8 +1,8 @@
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -15,7 +15,7 @@ pub struct CleanArgs {
 }
 
 #[instrument(skip_all)]
-pub async fn clean(session: MoonSession, args: CleanArgs) -> AppResult {
+pub async fn clean(session: MoonSession, args: CleanArgs) -> SessionResult {
     let lifetime = if args.all { "1 second" } else { &args.lifetime };
 
     let (files_deleted, bytes_saved) = session

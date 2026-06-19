@@ -3,6 +3,7 @@
 use crate::app_error::AppError;
 use crate::prompts::select_identifier;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::{
     Arg, ArgAction, Args, Command as Clap,
     builder::{BoolValueParser, PossibleValuesParser, RangedI64ValueParser, StringValueParser},
@@ -14,7 +15,6 @@ use moon_common::*;
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
 use moon_console::{Console, ui::*};
 use rustc_hash::FxHashMap;
-use starbase::AppResult;
 use starbase_utils::json::{self, JsonValue, serde_json};
 use std::path::PathBuf;
 use tracing::{debug, info, instrument};
@@ -51,7 +51,7 @@ pub struct GenerateArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn generate(session: MoonSession, args: GenerateArgs) -> AppResult {
+pub async fn generate(session: MoonSession, args: GenerateArgs) -> SessionResult {
     let console = &session.console;
     let mut generator = session.build_code_generator();
 

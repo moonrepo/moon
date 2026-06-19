@@ -1,9 +1,9 @@
 use crate::app_options::AffectedOption;
 use crate::queries::changed_files::*;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
-use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -30,7 +30,7 @@ pub struct QueryAffectedArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> AppResult {
+pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> SessionResult {
     let vcs = session.get_vcs_adapter()?;
 
     let mut affected_tracker = AffectedTracker::new(

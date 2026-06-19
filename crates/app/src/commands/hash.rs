@@ -1,9 +1,9 @@
 use crate::app_error::AppError;
 use crate::session::MoonSession;
+use crate::session::SessionResult;
 use clap::Args;
 use moon_common::color;
 use serde::{Deserialize, Serialize};
-use starbase::AppResult;
 use starbase_utils::{
     fs,
     json::{self, JsonValue},
@@ -24,7 +24,7 @@ pub struct HashArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn hash(session: MoonSession, args: HashArgs) -> AppResult {
+pub async fn hash(session: MoonSession, args: HashArgs) -> SessionResult {
     match &args.diff_hash {
         Some(other_hash) => diff_hashes(&session, &args.hash, other_hash, args.json).await?,
         None => view_hash(&session, &args.hash, args.json).await?,

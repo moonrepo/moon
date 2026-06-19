@@ -25,9 +25,6 @@
   "dependencies": {
     "@moonrepo/types": "workspace:^"
   },
-  "devDependencies": {
-    "vitest": "catalog:"
-  },
   "scripts": {
     "build": "vp pack"
   },

@@ -40,6 +40,10 @@
 - Fixed an issue where PowerShell hooks would mangle user variables that start with `$ARG`, like
   `$ARGS`.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.58.0](https://github.com/moonrepo/proto/releases/tag/v0.58.0) from 0.57.4.
+
 ## 2.3.4
 
 #### 🐞 Fixes

@@ -460,7 +460,7 @@ impl AppSession for MoonSession {
             && self.is_daemon_allowed()
             && let Ok(Some(mut daemon)) = self.connect_to_daemon().await
         {
-            daemon.stop().await?;
+            let _ = daemon.stop().await;
         }
 
         // Ensure all child processes have finished running

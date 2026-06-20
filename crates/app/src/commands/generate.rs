@@ -2,8 +2,7 @@
 
 use crate::app_error::AppError;
 use crate::prompts::select_identifier;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::{
     Arg, ArgAction, Args, Command as Clap,
     builder::{BoolValueParser, PossibleValuesParser, RangedI64ValueParser, StringValueParser},

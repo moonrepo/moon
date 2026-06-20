@@ -1,5 +1,4 @@
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_console::ui::*;
 use moon_time::elapsed;

@@ -1,6 +1,5 @@
 use crate::commands::docker::docker_error::AppDockerError;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::element;
 use moon_common::Id;

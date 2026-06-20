@@ -1,5 +1,4 @@
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 
 pub async fn debug_vcs(session: MoonSession) -> SessionResult {
     let vcs = session.get_vcs_adapter()?;

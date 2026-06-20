@@ -1,7 +1,6 @@
 use crate::app_error::AppError;
 use crate::components::{ApiList, ConfigSettings};
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_common::{Id, is_test_env};

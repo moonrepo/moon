@@ -1,6 +1,5 @@
 use crate::app_error::AppError;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_common::color;
 use serde::{Deserialize, Serialize};

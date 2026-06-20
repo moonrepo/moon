@@ -1,7 +1,6 @@
 #![allow(clippy::disallowed_types)]
 
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::{FlexDirection, View, element};
 use moon_common::path::{clean_components, locate_config_dir};

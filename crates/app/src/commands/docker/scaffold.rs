@@ -1,6 +1,5 @@
 use super::{DockerManifest, MANIFEST_NAME};
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use async_recursion::async_recursion;
 use clap::Args;
 use moon_common::Id;

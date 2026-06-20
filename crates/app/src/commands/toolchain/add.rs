@@ -1,8 +1,7 @@
 use crate::app_error::AppError;
 use crate::helpers::append_plugin_to_config_file;
 use crate::prompts::*;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::element;
 use moon_common::Id;

@@ -1,5 +1,4 @@
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use crate::watchers::WorkspaceWatcher;
 use moon_daemon::{DaemonState, start_daemon_server};
 

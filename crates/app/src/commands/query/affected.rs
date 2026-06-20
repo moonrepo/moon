@@ -1,7 +1,6 @@
 use crate::app_options::AffectedOption;
 use crate::queries::changed_files::*;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use starbase_utils::json;

@@ -1,6 +1,5 @@
 use crate::commands::graph::run_server;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_common::Id;
 use moon_project_graph::{GraphToDot, GraphToJson};

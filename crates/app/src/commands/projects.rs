@@ -1,5 +1,4 @@
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::{Size, element};
 use moon_console::ui::*;

@@ -1,5 +1,4 @@
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 
 pub async fn debug_config(session: MoonSession) -> SessionResult {
     dbg!(&session.moon_env);

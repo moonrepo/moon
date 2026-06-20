@@ -1,6 +1,5 @@
 use crate::helpers::run_action_pipeline;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_action_graph::{ActionGraphBuilderOptions, RunRequirements};
 use moon_console::ui::{Container, Notice, StyledText, Variant};

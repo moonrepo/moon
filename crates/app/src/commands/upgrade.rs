@@ -1,7 +1,6 @@
 use crate::app_error::AppError;
 use crate::helpers::create_progress_loader;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_api::Launchpad;

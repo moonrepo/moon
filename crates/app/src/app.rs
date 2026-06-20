@@ -7,6 +7,7 @@ use crate::commands::clean::CleanArgs;
 use crate::commands::completions::CompletionsArgs;
 use crate::commands::daemon::DaemonCommands;
 use crate::commands::debug::DebugCommands;
+use starbase::tracing::LogLevel;
 use crate::commands::docker::DockerCommands;
 use crate::commands::exec::ExecArgs;
 use crate::commands::ext::ExtArgs;
@@ -321,7 +322,7 @@ pub struct Cli {
         help_heading = "Global options",
         default_value_t
     )]
-    pub log: starbase::tracing::LogLevel,
+    pub log: LogLevel,
 
     #[arg(
         long,

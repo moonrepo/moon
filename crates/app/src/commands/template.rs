@@ -1,6 +1,5 @@
 use crate::prompts::select_identifier;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::{View, element};
 use moon_codegen::{Template, TemplateContext};

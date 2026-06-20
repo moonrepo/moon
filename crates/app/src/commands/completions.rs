@@ -1,6 +1,5 @@
 use crate::app::Cli;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::{Args, CommandFactory};
 use clap_complete::{Shell, generate};
 use clap_complete_nushell::Nushell;

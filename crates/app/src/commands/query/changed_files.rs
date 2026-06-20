@@ -1,6 +1,5 @@
 use crate::queries::changed_files::*;
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_common::is_ci;
 use moon_vcs::ChangedStatus;

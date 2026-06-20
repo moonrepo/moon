@@ -1,6 +1,5 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
-use crate::session::MoonSession;
-use crate::session::SessionResult;
+use crate::session::{MoonSession, SessionResult};
 use moon_actions::plugins::{ExecCommandOptions, exec_plugin_command};
 use moon_pdk_api::{InstallDependenciesInput, LocateDependenciesRootInput, PruneDockerInput};
 use moon_project::Project;

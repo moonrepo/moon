@@ -16,7 +16,7 @@ moon_hash = { path = "../hash" }
 fastrand = "2.4.1"
 miette = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true }
+starbase_utils = { workspace = true, features = ["hash"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

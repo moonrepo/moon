@@ -2,8 +2,8 @@ use crate::cas_error::CasError;
 use crate::gc::GcResult;
 use moon_blob::Blob;
 use moon_config::CacheCasConfig;
-use moon_hash::{ContentHash, Digest, Sha256, ShaDigest, hash_sha256, hex};
-use starbase_utils::fs;
+use moon_hash::{ContentHash, Digest};
+use starbase_utils::{hash::{self, hex, sha256::native::{Sha256, Digest as ShaDigest}}, fs};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
@@ -286,7 +286,7 @@ impl CasStore {
         expected: &ContentHash,
         bytes: &[u8],
     ) -> miette::Result<()> {
-        let actual = hash_sha256(bytes);
+        let actual = hash::sha256::from_bytes(bytes);
 
         if actual != expected.as_hex() {
             return Err(CasError::IntegrityMismatch {

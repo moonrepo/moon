@@ -1,5 +1,6 @@
-use moon_hash::{ContentHash, hash_sha256};
+use moon_hash::ContentHash;
 use starbase_sandbox::create_empty_sandbox;
+use starbase_utils::hash;
 
 // Known SHA-256 digests for fixed inputs. Hard-coding these guards against an
 // accidental hash algorithm swap or change in canonical encoding.
@@ -97,15 +98,15 @@ mod hash_sha256_fn {
         // Free-function `hash_sha256` is also a public API surface — pin it
         // separately so future refactors that route through different code
         // paths still produce the same digest.
-        assert_eq!(hash_sha256(b"abc"), ABC_SHA256);
-        assert_eq!(hash_sha256(b""), EMPTY_SHA256);
+        assert_eq!(hash::sha256::from_bytes(b"abc"), ABC_SHA256);
+        assert_eq!(hash::sha256::from_bytes(b""), EMPTY_SHA256);
     }
 
     #[test]
     fn agrees_with_content_hash_hash_bytes() {
         // Cross-checks the two public hashing entry points so they can't
         // diverge silently.
-        let direct = hash_sha256(b"some payload");
+        let direct = hash::sha256::from_bytes(b"some payload");
         let via_content = ContentHash::hash_bytes(b"some payload").unwrap();
         assert_eq!(direct, via_content.as_hex());
     }

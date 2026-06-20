@@ -11,11 +11,9 @@ publish = false
 [dependencies]
 moon_common = { path = "../common" }
 compact_str = { workspace = true }
-hex = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }
-sha2 = { workspace = true }
-starbase_utils = { workspace = true, features = ["json"] }
+starbase_utils = { workspace = true, features = ["hash", "json"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 

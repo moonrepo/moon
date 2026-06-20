@@ -48,3 +48,9 @@ impl AsRef<ContentHash> for Digest {
         &self.hash
     }
 }
+
+impl AsRef<str> for Digest {
+    fn as_ref(&self) -> &str {
+        &self.hash
+    }
+}

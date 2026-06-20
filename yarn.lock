@@ -3278,7 +3278,6 @@ __metadata:
   resolution: "@moonrepo/report@workspace:packages/report"
   dependencies:
     "@moonrepo/types": "workspace:^"
-    vitest: "catalog:"
   languageName: unknown
   linkType: soft
 

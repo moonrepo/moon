@@ -1,10 +1,21 @@
 use bytes::Bytes;
 use miette::IntoDiagnostic;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::Digest;
 use serde::Serialize;
 use starbase_utils::{fs, json};
 use std::fmt::Debug;
 use std::path::Path;
+
+pub struct BlobSource {
+    pub content: BlobContent,
+    pub digest: Digest,
+}
+
+pub enum BlobContent {
+    Inline(Bytes),
+    File(WorkspaceRelativePathBuf),
+}
 
 #[derive(Clone)]
 pub struct Blob {

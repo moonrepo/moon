@@ -3,6 +3,7 @@ use miette::IntoDiagnostic;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
 use std::fmt::Debug;
+use std::ops::Deref;
 use std::path::Path;
 
 #[derive(Clone, Debug, Default, Deserialize, Eq, Hash, PartialEq, Serialize)]
@@ -51,6 +52,14 @@ impl AsRef<ContentHash> for Digest {
 
 impl AsRef<str> for Digest {
     fn as_ref(&self) -> &str {
+        &self.hash
+    }
+}
+
+impl Deref for Digest {
+    type Target = ContentHash;
+
+    fn deref(&self) -> &Self::Target {
         &self.hash
     }
 }

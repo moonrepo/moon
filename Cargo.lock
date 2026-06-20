@@ -5038,6 +5038,7 @@ version = "0.0.1"
 dependencies = [
  "bytes",
  "miette 7.6.0",
+ "moon_common",
  "moon_hash",
  "serde",
  "starbase_sandbox",

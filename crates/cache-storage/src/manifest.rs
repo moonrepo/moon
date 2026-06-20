@@ -4,6 +4,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, NodeProperties, OutputFile, OutputSymlink,
 };
 use bazel_remote_apis::google::protobuf::UInt32Value;
+use moon_blob::{BlobContent, BlobSource, Bytes};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::Digest;
 use serde::{Deserialize, Serialize};
@@ -28,7 +29,9 @@ pub struct Manifest {
     pub files: Vec<ManifestFile>,
     pub symlinks: Vec<ManifestSymlink>,
     pub exit_code: i32,
+    pub stderr_bytes: Vec<u8>,
     pub stderr_digest: Option<Digest>,
+    pub stdout_bytes: Vec<u8>,
     pub stdout_digest: Option<Digest>,
 }
 
@@ -49,14 +52,16 @@ impl Manifest {
             files,
             symlinks,
             exit_code: result.exit_code,
+            stderr_bytes: result.stderr_raw,
             stderr_digest: match result.stderr_digest {
                 Some(digest) => Some(digest.to_internal_digest()?),
                 None => None,
             },
+            stdout_bytes: result.stdout_raw,
             stdout_digest: match result.stdout_digest {
                 Some(digest) => Some(digest.to_internal_digest()?),
                 None => None,
-            }
+            },
         })
     }
 
@@ -77,6 +82,35 @@ impl Manifest {
             stdout_digest: self.stdout_digest.map(|digest| digest.to_external_digest()),
             ..Default::default()
         }
+    }
+
+    pub fn collect_blob_sources(&self) -> Vec<BlobSource> {
+        let mut sources = vec![];
+
+        if let (Some(digest), bytes) = (&self.stderr_digest, &self.stderr_bytes) {
+            sources.push(BlobSource {
+                content: BlobContent::Inline(Bytes::from(bytes.to_vec())),
+                digest: digest.to_owned(),
+            });
+        }
+
+        if let (Some(digest), bytes) = (&self.stdout_digest, &self.stdout_bytes) {
+            sources.push(BlobSource {
+                content: BlobContent::Inline(Bytes::from(bytes.to_vec())),
+                digest: digest.to_owned(),
+            });
+        }
+
+        for file in &self.files {
+            if let Some(digest) = &file.digest {
+                sources.push(BlobSource {
+                    content: BlobContent::File(file.path.clone()),
+                    digest: digest.to_owned(),
+                });
+            }
+        }
+
+        sources
     }
 }
 

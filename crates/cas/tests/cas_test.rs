@@ -222,6 +222,136 @@ mod cas {
         }
     }
 
+    mod write_path {
+        use super::*;
+
+        fn count_temp_files(store: &CasStore) -> usize {
+            std::fs::read_dir(&store.temp_dir)
+                .map(|dir| dir.count())
+                .unwrap_or(0)
+        }
+
+        #[test]
+        fn round_trip() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, b"path content").unwrap();
+
+            let digest = store.write_path(&source).unwrap();
+            let read_back = store.read_bytes(&digest.hash).unwrap();
+
+            assert_eq!(read_back, b"path content");
+        }
+
+        #[test]
+        fn populates_digest_size() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"sized path";
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, data).unwrap();
+
+            let digest = store.write_path(&source).unwrap();
+
+            assert_eq!(digest.size, data.len() as i64);
+        }
+
+        #[test]
+        fn matches_write_bytes() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"consistent hashing";
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, data).unwrap();
+
+            let digest_bytes = store.write_bytes(data).unwrap();
+            let digest_path = store.write_path(&source).unwrap();
+
+            assert_eq!(digest_bytes, digest_path);
+        }
+
+        #[test]
+        fn handles_payload_larger_than_buffer() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            // Spans several 64 KiB hash chunks, and isn't an exact multiple.
+            let data: Vec<u8> = (0..(64 * 1024 * 3 + 137))
+                .map(|i| (i % 251) as u8)
+                .collect();
+            let source = sandbox.path().join("input.bin");
+            std::fs::write(&source, &data).unwrap();
+
+            let digest_path = store.write_path(&source).unwrap();
+            let digest_bytes = store.write_bytes(&data).unwrap();
+
+            assert_eq!(digest_path, digest_bytes);
+            assert_eq!(digest_path.size, data.len() as i64);
+            assert_eq!(store.read_bytes(&digest_path.hash).unwrap(), data);
+        }
+
+        #[test]
+        fn empty_file() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("empty.txt");
+            std::fs::write(&source, b"").unwrap();
+
+            let digest = store.write_path(&source).unwrap();
+
+            assert_eq!(digest.size, 0);
+            assert!(store.contains_object(&digest.hash));
+        }
+
+        #[test]
+        fn cold_cache_writes_one_temp_then_commits() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, b"first write").unwrap();
+
+            let digest = store.write_path(&source).unwrap();
+
+            // The temp file was renamed into the store, never left behind.
+            assert!(store.contains_object(&digest.hash));
+            assert_eq!(count_temp_files(&store), 0);
+        }
+
+        #[test]
+        fn warm_cache_creates_no_temp_file() {
+            // Regression: a file already present in the store must short-circuit
+            // *before* any temp file is created. Streaming used to write the
+            // whole file to a throwaway temp and then delete it on a cache hit.
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, b"already stored").unwrap();
+
+            // Prime the store.
+            let first = store.write_path(&source).unwrap();
+
+            // Remove the temp dir entirely. A correct warm-cache write never
+            // touches it; the old streaming path would recreate it (via
+            // create_file's create_dir_all) to stage a throwaway temp.
+            std::fs::remove_dir_all(&store.temp_dir).unwrap();
+
+            let second = store.write_path(&source).unwrap();
+
+            assert_eq!(first, second);
+            assert!(
+                !store.temp_dir.exists(),
+                "warm-cache write must not create a temp file"
+            );
+        }
+    }
+
     mod contains {
         use super::*;
 

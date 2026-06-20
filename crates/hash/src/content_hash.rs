@@ -6,7 +6,6 @@ use std::fmt;
 use std::ops::Deref;
 use std::path::Path;
 
-
 /// A SHA-256 content hash: 64-character hex string.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq, Hash, Serialize)]
 pub struct ContentHash(CompactString);

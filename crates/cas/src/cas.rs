@@ -3,7 +3,11 @@ use crate::gc::GcResult;
 use moon_blob::Blob;
 use moon_config::CacheCasConfig;
 use moon_hash::{ContentHash, Digest};
-use starbase_utils::{hash::{self, hex, sha256::native::{Sha256, Digest as ShaDigest}}, fs};
+use starbase_utils::fs;
+use starbase_utils::hash::{
+    self, hex,
+    sha256::native::{Digest as ShaDigest, Sha256},
+};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
@@ -112,8 +116,58 @@ impl CasStore {
         Ok(blob)
     }
 
+    /// Store content from a file by streaming it through the store.
+    ///
+    /// Unlike [`Self::write_stream`], the file is hashed up front in a single
+    /// read-only pass (in 64 KiB chunks, never materialized in memory), so an
+    /// object that already exists short-circuits *before* any temp file is
+    /// created. Only a genuine cache miss copies the bytes into the store.
+    ///
+    /// Prefer this over `write_stream` whenever the source is a real file: it
+    /// avoids the wasteful temp-file create/write/remove churn that streaming
+    /// incurs on a warm cache, where the hash isn't known until after the
+    /// throwaway temp has already been written.
+    #[instrument(skip(self))]
+    pub fn write_path(&self, path: &Path) -> miette::Result<Digest> {
+        // Content is addressed by hash, so the file must be read to know
+        // whether the store already holds it. Hash without writing anything.
+        let digest = Digest::from_file(path)?;
+
+        // Warm cache: object already present, so skip all temp-file work.
+        if self.contains_object(&digest.hash) {
+            return Ok(digest);
+        }
+
+        // Cold cache: copy the file into a temp file, then atomically commit.
+        // Outputs are stable at archive time, so re-reading here is safe and
+        // the bytes are almost certainly still warm in the OS page cache.
+        let mut guard = self.create_temp_file()?;
+
+        {
+            let mut source = fs::open_file(path)?;
+            let mut file = fs::create_file(&guard.path)?;
+
+            std::io::copy(&mut source, &mut file).map_err(|error| CasError::WriteFailed {
+                path: guard.path.clone(),
+                error: Box::new(error),
+            })?;
+        }
+
+        // No fsync: see `write` for rationale.
+        self.commit_temp_file(&digest.hash, &mut guard)?;
+
+        trace!(hash = digest.hash.as_str(), path = ?path, "Stored object from file stream");
+
+        Ok(digest)
+    }
+
     /// Store content from a streaming reader.
     /// Hashes and writes simultaneously in 64 KiB chunks.
+    ///
+    /// The hash of a stream isn't known until it is fully consumed, so this
+    /// always writes a temp file and only then checks for an existing object —
+    /// discarding the temp on a hit. When the source is a file, prefer
+    /// [`Self::write_path`], which avoids that churn.
     pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<Digest> {
         let mut guard = self.create_temp_file()?;
         let mut size = 0;

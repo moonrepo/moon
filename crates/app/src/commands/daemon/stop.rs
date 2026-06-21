@@ -1,9 +1,8 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 
-pub async fn stop(session: MoonSession) -> AppResult {
+pub async fn stop(session: MoonSession) -> SessionResult {
     let stopped = session.get_daemon_connector()?.stop_daemon().await?;
 
     if stopped {

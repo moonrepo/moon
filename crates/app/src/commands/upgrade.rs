@@ -1,6 +1,6 @@
 use crate::app_error::AppError;
 use crate::helpers::create_progress_loader;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_api::Launchpad;
@@ -8,7 +8,6 @@ use moon_common::path;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
 use moon_process::Command;
-use starbase::AppResult;
 use starbase_archive::Archiver;
 use starbase_utils::fs::FsError;
 use starbase_utils::{fs, net};
@@ -44,7 +43,7 @@ pub fn is_installed_with(session: &MoonSession) -> miette::Result<InstalledWith>
 }
 
 #[instrument(skip(session))]
-pub async fn upgrade(session: MoonSession) -> AppResult {
+pub async fn upgrade(session: MoonSession) -> SessionResult {
     if proto_core::is_offline() {
         return Err(AppError::UpgradeRequiresInternet.into());
     }

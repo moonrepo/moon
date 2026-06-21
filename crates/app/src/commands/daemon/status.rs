@@ -1,11 +1,10 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_console::ui::*;
 use moon_time::elapsed;
-use starbase::AppResult;
 use std::time::Duration;
 
-pub async fn status(session: MoonSession) -> AppResult {
+pub async fn status(session: MoonSession) -> SessionResult {
     let connector = session.get_daemon_connector()?;
 
     if connector.is_running().is_none() {

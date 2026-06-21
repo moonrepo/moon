@@ -1,10 +1,9 @@
 use crate::app::Cli;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::{Args, CommandFactory};
 use clap_complete::{Shell, generate};
 use clap_complete_nushell::Nushell;
 use miette::IntoDiagnostic;
-use starbase::AppResult;
 use starbase_shell::ShellType;
 use tracing::instrument;
 
@@ -15,7 +14,7 @@ pub struct CompletionsArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn completions(session: MoonSession, args: CompletionsArgs) -> AppResult {
+pub async fn completions(session: MoonSession, args: CompletionsArgs) -> SessionResult {
     let shell = match args.shell {
         Some(value) => value,
         None => ShellType::try_detect().into_diagnostic()?,

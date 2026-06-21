@@ -121,7 +121,9 @@ impl CasStore {
     /// Unlike [`Self::write_stream`], the file is hashed up front in a single
     /// read-only pass (in 64 KiB chunks, never materialized in memory), so an
     /// object that already exists short-circuits *before* any temp file is
-    /// created. Only a genuine cache miss copies the bytes into the store.
+    /// created. Only a genuine cache miss writes to the store, and it does so
+    /// with a reflink (copy-on-write clone) that shares blocks instead of
+    /// copying bytes wherever the filesystem supports it.
     ///
     /// Prefer this over `write_stream` whenever the source is a real file: it
     /// avoids the wasteful temp-file create/write/remove churn that streaming
@@ -138,20 +140,16 @@ impl CasStore {
             return Ok(digest);
         }
 
-        // Cold cache: copy the file into a temp file, then atomically commit.
-        // Outputs are stable at archive time, so re-reading here is safe and
-        // the bytes are almost certainly still warm in the OS page cache.
+        // Cold cache: reflink (copy-on-write clone) the file into a temp file,
+        // then atomically commit. On a reflink-capable filesystem this shares
+        // blocks instead of copying bytes, so ingesting a fresh output is
+        // near-instant and costs no extra disk space; `reflink_file` falls back
+        // to a plain copy otherwise. We still stage through a temp + rename so
+        // readers never observe a partial object and the non-atomic copy
+        // fallback stays safe.
         let mut guard = self.create_temp_file()?;
 
-        {
-            let mut source = fs::open_file(path)?;
-            let mut file = fs::create_file(&guard.path)?;
-
-            std::io::copy(&mut source, &mut file).map_err(|error| CasError::WriteFailed {
-                path: guard.path.clone(),
-                error: Box::new(error),
-            })?;
-        }
+        fs::reflink_file(path, &guard.path)?;
 
         // No fsync: see `write` for rationale.
         self.commit_temp_file(&digest.hash, &mut guard)?;
@@ -266,6 +264,36 @@ impl CasStore {
             }
             .into()
         })
+    }
+
+    /// Materialize the object for `hash` at `dest`, overwriting any existing
+    /// file. Uses a reflink (copy-on-write clone) so the destination shares
+    /// storage with the stored object: near-instant and zero extra disk space
+    /// on a reflink-capable filesystem, falling back to a plain copy otherwise.
+    ///
+    /// This is the fast path for hydrating cached outputs back into the
+    /// workspace — far cheaper than `read_bytes` + write, which round-trips the
+    /// entire file through memory. Integrity is verified first if configured.
+    #[instrument(skip(self))]
+    pub fn hydrate(&self, hash: &ContentHash, dest: &Path) -> miette::Result<()> {
+        let path = self.object_path_with_exists_check(hash)?;
+
+        if self.config.verify_integrity {
+            let bytes = fs::read_file_bytes(&path)?;
+            self.verify_integrity(&path, hash, &bytes)?;
+        }
+
+        // A reflink only takes the fast clone path when the destination doesn't
+        // exist; clear any stale file so we never silently fall back to a copy.
+        if dest.symlink_metadata().is_ok() {
+            fs::remove_file(dest)?;
+        }
+
+        fs::reflink_file(&path, dest)?;
+
+        trace!(hash = hash.as_str(), dest = ?dest, "Hydrated object to path");
+
+        Ok(())
     }
 
     // ---- Lifecycle ----

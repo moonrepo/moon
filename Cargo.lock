@@ -5109,6 +5109,7 @@ dependencies = [
  "moon_blob",
  "moon_common",
  "moon_hash",
+ "moon_process",
  "serde",
  "serial_test",
  "starbase_sandbox",

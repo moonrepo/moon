@@ -12,6 +12,7 @@ publish = false
 moon_blob = { path = "../blob" }
 moon_common = { path = "../common" }
 moon_hash = { path = "../hash" }
+moon_process = { path = "../process" }
 async-trait = { workspace = true }
 bazel-remote-apis = { workspace = true }
 chrono = { workspace = true }

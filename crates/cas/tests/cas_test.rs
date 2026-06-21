@@ -352,6 +352,69 @@ mod cas {
         }
     }
 
+    mod hydrate {
+        use super::*;
+
+        #[test]
+        fn round_trip() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let digest = store.write_bytes(b"hydrate me").unwrap();
+            let dest = sandbox.path().join("out/restored.txt");
+
+            store.hydrate(&digest.hash, &dest).unwrap();
+
+            assert_eq!(std::fs::read(&dest).unwrap(), b"hydrate me");
+            // The object stays in the store; hydration is a clone, not a move.
+            assert!(store.contains_object(&digest.hash));
+        }
+
+        #[test]
+        fn overwrites_existing_destination() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let digest = store.write_bytes(b"new content").unwrap();
+            let dest = sandbox.path().join("restored.txt");
+            std::fs::write(&dest, b"stale content").unwrap();
+
+            store.hydrate(&digest.hash, &dest).unwrap();
+
+            assert_eq!(std::fs::read(&dest).unwrap(), b"new content");
+        }
+
+        #[test]
+        fn errors_for_missing_object() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let hash = ContentHash::from_hex("0".repeat(64)).unwrap();
+            let dest = sandbox.path().join("restored.txt");
+
+            let err = store.hydrate(&hash, &dest).unwrap_err();
+            let cas_err = err.downcast_ref::<CasError>().unwrap();
+
+            assert!(matches!(cas_err, CasError::NotFound { .. }));
+            assert!(!dest.exists());
+        }
+
+        #[test]
+        fn detects_corruption_when_verifying() {
+            let sandbox = create_empty_sandbox();
+            let store = create_verified_store(&sandbox);
+
+            let digest = store.write_bytes(b"trustworthy").unwrap();
+            std::fs::write(store.object_path(&digest.hash), b"tampered").unwrap();
+
+            let dest = sandbox.path().join("restored.txt");
+            let err = store.hydrate(&digest.hash, &dest).unwrap_err();
+            let cas_err = err.downcast_ref::<CasError>().unwrap();
+
+            assert!(matches!(cas_err, CasError::IntegrityMismatch { .. }));
+        }
+    }
+
     mod contains {
         use super::*;
 

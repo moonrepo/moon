@@ -10,8 +10,8 @@ pub use bazel_remote_apis::build::bazel::remote::execution::v2::{
 // Only define fields that we care about!
 pub struct CacheCapabilities {
     pub digest_functions: Vec<DigestFunction>,
-    pub max_batch_total_size_bytes: i64,
-    pub max_cas_blob_size_bytes: i64,
+    pub max_batch_total_size_bytes: usize,
+    pub max_cas_blob_size_bytes: usize,
     pub store_manifests: bool,
     pub supported_batch_update_compressors: Vec<Compressor>,
     pub supported_compressors: Vec<Compressor>,
@@ -43,8 +43,8 @@ impl CacheCapabilities {
                 .into_iter()
                 .map(|v| v as i32)
                 .collect(),
-            max_batch_total_size_bytes: self.max_batch_total_size_bytes,
-            max_cas_blob_size_bytes: self.max_cas_blob_size_bytes,
+            max_batch_total_size_bytes: self.max_batch_total_size_bytes as i64,
+            max_cas_blob_size_bytes: self.max_cas_blob_size_bytes as i64,
             supported_batch_update_compressors: self
                 .supported_batch_update_compressors
                 .into_iter()

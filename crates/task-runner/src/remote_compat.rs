@@ -182,6 +182,22 @@ pub fn write_output_file(
     Ok(())
 }
 
+/// Re-apply an output file's recorded node properties (mtime, permissions) to
+/// a file already on disk. Used after hydrating via reflink, where the bytes
+/// are cloned from the CAS but the original metadata must still be restored.
+pub fn apply_output_file_properties(output_path: &Path, file: &OutputFile) -> miette::Result<()> {
+    if let Some(props) = &file.node_properties {
+        let mut fd = fs::open_file_for_writing(output_path)?;
+
+        apply_node_properties(&mut fd, props).map_err(|error| FsError::Write {
+            path: output_path.to_path_buf(),
+            error: Box::new(error),
+        })?;
+    }
+
+    Ok(())
+}
+
 pub fn link_output_file(
     from_path: PathBuf,
     to_path: PathBuf,

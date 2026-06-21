@@ -560,6 +560,29 @@ mod git {
             // so verify a command that fans out across all trees still works.
             git.get_changed_files().await.unwrap();
         }
+
+        #[tokio::test]
+        async fn changed_files_with_inherited_relative_git_index_file() {
+            use moon_env_var::GlobalEnvBag;
+
+            // Submodules are checked out, so each submodule's `.git` is a FILE
+            // (a gitdir pointer), not a directory.
+            let (_sandbox, git) = create_root_sandbox(false);
+
+            // Simulate what git exports into a hook's environment: a RELATIVE
+            // `GIT_INDEX_FILE`. When moon fans `git status` out into a submodule
+            // directory, the inherited `.git/index` resolves to
+            // `<submodule>/.git/index` and git aborts with
+            // "index file open failed: Not a directory" unless moon strips it.
+            let bag = GlobalEnvBag::instance();
+            bag.set("GIT_INDEX_FILE", ".git/index");
+
+            let result = git.get_changed_files().await;
+
+            bag.remove("GIT_INDEX_FILE");
+
+            result.unwrap();
+        }
     }
 
     mod root_detection {

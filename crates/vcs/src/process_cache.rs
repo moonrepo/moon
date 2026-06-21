@@ -38,6 +38,25 @@ impl ProcessCache {
         let mut command = Command::new(&self.bin);
         command.args(args);
         command.envs(&self.env);
+        // Strip git's per-invocation environment (no-op outside of hooks).
+        // When moon runs inside a git hook, git exports GIT_DIR / GIT_INDEX_FILE /
+        // etc. into the environment, often as paths RELATIVE to the hook's repo
+        // root. Because we run commands with the cwd set to a project directory
+        // (see `create_command_in_cwd`), an inherited relative
+        // `GIT_INDEX_FILE=.git/index` resolves against the wrong directory — and
+        // for projects that are git submodules, `.git` is a FILE (a gitdir
+        // pointer), so the call fails with
+        // `fatal: .git/index: index file open failed: Not a directory`,
+        // aborting the hook. Removing these lets each git call discover its own
+        // repository from its cwd, which is what moon intends.
+        command.envs_remove([
+            "GIT_DIR",
+            "GIT_WORK_TREE",
+            "GIT_INDEX_FILE",
+            "GIT_PREFIX",
+            "GIT_OBJECT_DIRECTORY",
+            "GIT_COMMON_DIR",
+        ]);
         // Run from workspace root instead of git root so that we can avoid
         // prefixing all file paths to ensure everything is relative and accurate.
         command.cwd(&self.workspace_root);

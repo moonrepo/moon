@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where running a task from a git hook (`pre-commit`, etc.) would fail in workspaces
+  with submodule projects, because of inherited `GIT_*` environment variables.
+
 ## 2.3.4
 
 #### 🐞 Fixes

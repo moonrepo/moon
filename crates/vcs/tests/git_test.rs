@@ -560,6 +560,28 @@ mod git {
             // so verify a command that fans out across all trees still works.
             git.get_changed_files().await.unwrap();
         }
+
+        #[tokio::test]
+        async fn changed_files_with_inherited_relative_git_index_file() {
+            use moon_env_var::GlobalEnvBag;
+
+            // Submodules are checked out, so each submodule's `.git` is a file
+            // (a gitdir pointer), not a directory.
+            let (_sandbox, git) = create_root_sandbox(false);
+
+            // In a hook, git sets a relative GIT_INDEX_FILE. A status run in a
+            // submodule (where `.git` is a file) resolves `.git/index` to
+            // `<submodule>/.git/index` and fails unless the inherited value is
+            // stripped.
+            let bag = GlobalEnvBag::instance();
+            bag.set("GIT_INDEX_FILE", ".git/index");
+
+            let result = git.get_changed_files().await;
+
+            bag.remove("GIT_INDEX_FILE");
+
+            result.unwrap();
+        }
     }
 
     mod root_detection {

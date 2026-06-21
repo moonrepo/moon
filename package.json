@@ -25,7 +25,6 @@
     "vite-plus": "catalog:"
   },
   "resolutions": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-    "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.1"
   }
 }

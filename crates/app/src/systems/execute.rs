@@ -3,17 +3,19 @@ use crate::session::MoonSession;
 use moon_api::Launchpad;
 use moon_common::{color, is_ci, is_formatted_output, is_test_env};
 use moon_console::Checkpoint;
-use starbase::AppResult;
 use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
-pub async fn check_for_new_version(session: &MoonSession, manifest_url: &str) -> AppResult {
+pub async fn check_for_new_version(
+    session: &MoonSession,
+    manifest_url: &str,
+) -> miette::Result<()> {
     if is_test_env() || is_formatted_output() || is_ci() {
-        return Ok(None);
+        return Ok(());
     }
 
     let Some(launchpad) = Launchpad::instance() else {
-        return Ok(None);
+        return Ok(());
     };
 
     let console = &session.console;
@@ -25,7 +27,7 @@ pub async fn check_for_new_version(session: &MoonSession, manifest_url: &str) ->
     {
         Ok(Some(result)) => {
             if !result.update_available {
-                return Ok(None);
+                return Ok(());
             }
 
             console.print_checkpoint(
@@ -81,5 +83,5 @@ pub async fn check_for_new_version(session: &MoonSession, manifest_url: &str) ->
         _ => {}
     };
 
-    Ok(None)
+    Ok(())
 }

@@ -33,6 +33,7 @@ use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
+use starbase::tracing::LogLevel;
 use starbase_styles::color::Color as ColorType;
 use std::env;
 use std::path::PathBuf;

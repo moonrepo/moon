@@ -1081,9 +1081,9 @@ dependencies = [
 
 [[package]]
 name = "proto_pdk_api"
-version = "0.31.12"
+version = "0.31.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47ac113aec83418cc191d7bc4359697f1d5fc2cb77b1afdb38d88287ed11521f"
+checksum = "50ac6c5862ce4f4b6ac4c6146807b8fb94b12790839005af4a91edf548e97176"
 dependencies = [
  "derive_setters",
  "rustc-hash",
@@ -1151,9 +1151,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.12.3"
+version = "1.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e10754a14b9137dd7b1e3e5b0493cc9171fdd105e0ab477f51b72e7f3ac0e276"
+checksum = "f1292b7759ae1cb9ec195452d1390a074f0cd8541ab7a5a8c31cd6db45d4a6ba"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1174,9 +1174,9 @@ dependencies = [
 
 [[package]]
 name = "regex-syntax"
-version = "0.8.10"
+version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc897dd8d9e8bd1ed8cdad82b5966c3e0ecae09fb1907d58efaa013543185d0a"
+checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
 name = "relative-path"
@@ -1474,9 +1474,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starbase_id"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adbda8097f04bbec272031a9e6d1d49ecc5965d512e31b872a829f49d7e1ac91"
+checksum = "1103807a46e56e6370158e2163ac3e77d6cd8581501c31e694e2f13f1da0ff43"
 dependencies = [
  "compact_str 0.9.1",
  "miette",
@@ -1862,9 +1862,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_api"
-version = "0.17.4"
+version = "0.17.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfeeb4a197e9878dc4005354693d6b117fb217060697f24d2e141e1df790de54"
+checksum = "80b6157682a6d17daa7076264e012527d1bba56168e34bbb2cbfbd887b0a5bf8"
 dependencies = [
  "anyhow",
  "derive_setters",
@@ -1879,9 +1879,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate_pdk"
-version = "0.16.3"
+version = "0.16.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a6d58e8a9c463a975a291861a79728f0a01b42f7dff54551ce55e92bb1244b5"
+checksum = "3895c7242eb77a06f0aa70f3b004191629250bb06c6e63e90c684d0941e15751"
 dependencies = [
  "extism-pdk",
  "serde",

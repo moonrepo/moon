@@ -5,14 +5,15 @@ exclude = ["tests/fixtures", "wasm/test-plugin"]
 default-members = ["crates/cli"]
 
 [workspace.dependencies]
+ai_env = "0.1.1"
 async-recursion = "1.1.1"
 async-stream = "0.3.6"
 blake3 = { version = "1.8.5", features = ["mmap"] }
 bazel-remote-apis = { version = "0.27.0", features = ["serde"] }
 async-trait = "0.1.89"
 chrono = { version = "0.4.44", features = ["serde"] }
-cd_env = "0.3.1"
-ci_env = "0.4.1"
+cd_env = "0.4.1"
+ci_env = "0.5.1"
 clap = { version = "4.6.1", default-features = false, features = [
   "derive",
   "std",
@@ -52,7 +53,7 @@ semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 sha2 = "0.11.0"
-starbase = { version = "0.11.1" }
+starbase = { version = "0.12.2", features = ["clap", "miette"] }
 starbase_archive = { version = "0.13.1", default-features = false, features = [
   "miette",
   "tar-all",
@@ -91,17 +92,17 @@ uuid = { version = "1.23.2", features = ["v4"] }
 windows-sys = { version = "0.61.2", default-features = false }
 
 # proto/plugin related
-extism = "=1.21.0"
+extism = "=1.30.0"
 extism-pdk = "1.4.1"
-proto_core = "0.57.5"
-proto_pdk_api = "0.31.12"
-proto_pdk_test_utils = "0.45.1"
+proto_core = "0.58.0"
+proto_pdk_api = "0.31.13"
+proto_pdk_test_utils = "0.46.0"
 proto_shim = "0.8.2"
 system_env = "0.10.0"
 version_spec = "0.10.3"
-warpgate = "0.32.3"
-warpgate_api = "0.17.4"
-warpgate_pdk = "0.16.3"
+warpgate = "0.33.0"
+warpgate_api = "0.17.5"
+warpgate_pdk = "0.16.4"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_pdk_api = { path = "../proto/crates/pdk-api" }

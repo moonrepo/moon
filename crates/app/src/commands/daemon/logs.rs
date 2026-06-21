@@ -1,11 +1,10 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_process::Command;
-use starbase::AppResult;
 use std::path::Path;
 
-pub async fn logs(session: MoonSession) -> AppResult {
+pub async fn logs(session: MoonSession) -> SessionResult {
     let connector = session.get_daemon_connector()?;
     let log_path = connector.get_log_file();
 
@@ -27,7 +26,7 @@ pub async fn logs(session: MoonSession) -> AppResult {
 }
 
 #[cfg(unix)]
-async fn tail_logs(session: &MoonSession, log_path: &Path) -> AppResult {
+async fn tail_logs(session: &MoonSession, log_path: &Path) -> SessionResult {
     use moon_process::find_command_on_path;
 
     if find_command_on_path("tail").is_none() {
@@ -52,7 +51,7 @@ async fn tail_logs(session: &MoonSession, log_path: &Path) -> AppResult {
 }
 
 #[cfg(windows)]
-async fn tail_logs(_session: &MoonSession, log_path: &Path) -> AppResult {
+async fn tail_logs(_session: &MoonSession, log_path: &Path) -> SessionResult {
     use moon_process::get_default_shell;
 
     Command::new("Get-Content")

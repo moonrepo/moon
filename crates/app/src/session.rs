@@ -33,6 +33,8 @@ use tokio::sync::OnceCell;
 use tokio::try_join;
 use tracing::{debug, warn};
 
+pub type SessionResult = AppResult<miette::Report>;
+
 #[derive(Clone)]
 pub struct MoonSession {
     pub cli: Cli,
@@ -357,8 +359,10 @@ impl MoonSession {
 
 #[async_trait]
 impl AppSession for MoonSession {
+    type Error = miette::Report;
+
     /// Setup initial state for the session. Order is very important!!!
-    async fn startup(&mut self) -> AppResult {
+    async fn startup(&mut self) -> AppResult<Self::Error> {
         self.console.set_reporter(MoonReporter::default());
         self.console.set_theme(create_console_theme());
 
@@ -415,7 +419,7 @@ impl AppSession for MoonSession {
     }
 
     /// Analyze the current state and install/registery necessary functionality.
-    async fn analyze(&mut self) -> AppResult {
+    async fn analyze(&mut self) -> AppResult<Self::Error> {
         if let Some(constraint) = &self.workspace_config.version_constraint {
             analyze::validate_version_constraint(constraint, &self.cli_version)?;
         }
@@ -433,7 +437,7 @@ impl AppSession for MoonSession {
     }
 
     // This function runs in an async task (background thread)
-    async fn execute(&mut self) -> AppResult {
+    async fn execute(&mut self) -> AppResult<Self::Error> {
         // Check for a new version and log to the console
         if self.is_telemetry_enabled() && self.is_pipeline_command() {
             execute::check_for_new_version(&self, &self.toolchains_config.moon.manifest_url)
@@ -448,7 +452,7 @@ impl AppSession for MoonSession {
         Ok(None)
     }
 
-    async fn shutdown(&mut self) -> AppResult {
+    async fn shutdown(&mut self) -> AppResult<Self::Error> {
         let is_local_debug_or_remote = cfg!(debug_assertions) || is_remote();
 
         // Stop the daemon if it's running
@@ -456,7 +460,7 @@ impl AppSession for MoonSession {
             && self.is_daemon_allowed()
             && let Ok(Some(mut daemon)) = self.connect_to_daemon().await
         {
-            daemon.stop().await?;
+            let _ = daemon.stop().await;
         }
 
         // Ensure all child processes have finished running

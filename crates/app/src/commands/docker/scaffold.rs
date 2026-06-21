@@ -1,5 +1,5 @@
 use super::{DockerManifest, MANIFEST_NAME};
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use async_recursion::async_recursion;
 use clap::Args;
 use moon_common::Id;
@@ -8,7 +8,6 @@ use moon_pdk_api::{DefineDockerMetadataInput, ScaffoldDockerInput, ScaffoldDocke
 use moon_project::Project;
 use moon_project_graph::{GraphConnections, ProjectGraph};
 use rustc_hash::FxHashSet;
-use starbase::AppResult;
 use starbase_styles::color;
 use starbase_utils::{fs, glob, json};
 use std::path::Path;
@@ -384,7 +383,7 @@ fn check_docker_ignore(workspace_root: &Path) -> miette::Result<()> {
 }
 
 #[instrument(skip(session))]
-pub async fn scaffold(session: MoonSession, args: DockerScaffoldArgs) -> AppResult {
+pub async fn scaffold(session: MoonSession, args: DockerScaffoldArgs) -> SessionResult {
     check_docker_ignore(&session.workspace_root)?;
 
     let docker_root = session.config_dir.join("docker");

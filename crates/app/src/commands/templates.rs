@@ -1,11 +1,10 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::{Size, element};
 use miette::IntoDiagnostic;
 use moon_console::ui::{
     Container, Notice, Style, StyledText, Table, TableCol, TableHeader, TableRow, Variant,
 };
-use starbase::AppResult;
 use starbase_utils::json;
 use std::collections::BTreeMap;
 use tracing::instrument;
@@ -20,7 +19,7 @@ pub struct TemplatesArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn templates(session: MoonSession, args: TemplatesArgs) -> AppResult {
+pub async fn templates(session: MoonSession, args: TemplatesArgs) -> SessionResult {
     let mut generator = session.build_code_generator();
     generator.load_templates().await?;
 

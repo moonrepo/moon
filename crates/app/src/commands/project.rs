@@ -1,5 +1,5 @@
 use crate::prompts::select_identifier;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use convert_case::{Case, Casing};
 use iocraft::prelude::{View, element};
@@ -8,7 +8,6 @@ use moon_console::ui::{
     Container, Entry, List, ListItem, Map, MapItem, Section, SelectOption, SelectProps, Style,
     StyledText,
 };
-use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -25,7 +24,7 @@ pub struct ProjectArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn project(session: MoonSession, args: ProjectArgs) -> AppResult {
+pub async fn project(session: MoonSession, args: ProjectArgs) -> SessionResult {
     let workspace_graph = session.get_workspace_graph().await?;
 
     let id = select_identifier(&session.console, &args.id, || {

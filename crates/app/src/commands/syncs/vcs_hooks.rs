@@ -1,9 +1,8 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::element;
 use moon_actions::operations::{sync_vcs_hooks, unsync_vcs_hooks};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -16,7 +15,7 @@ pub struct SyncVcsHooksArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn sync(session: MoonSession, args: SyncVcsHooksArgs) -> AppResult {
+pub async fn sync(session: MoonSession, args: SyncVcsHooksArgs) -> SessionResult {
     if session.workspace_config.vcs.hooks.is_empty() {
         session.console.render(element! {
             Container {

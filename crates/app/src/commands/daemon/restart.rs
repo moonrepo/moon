@@ -1,9 +1,8 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 
-pub async fn restart(session: MoonSession) -> AppResult {
+pub async fn restart(session: MoonSession) -> SessionResult {
     if !session.workspace_config.daemon {
         session.console.render(element! {
             Container {

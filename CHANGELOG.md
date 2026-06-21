@@ -1,6 +1,5 @@
 # Changelog
 
-
 ## Unreleased
 
 #### 🚀 Updates
@@ -40,12 +39,18 @@
 - Fixed an issue where PowerShell hooks would mangle user variables that start with `$ARG`, like
   `$ARGS`.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.58.0](https://github.com/moonrepo/proto/releases/tag/v0.58.0) from 0.57.4.
+
 ## 2.3.4
 
 #### 🐞 Fixes
 
-- Fixed an issue where projects with the same name/ID as their underlying toolchain package would cause issues when pruning within Docker.
-- Fixed an issue where remote caching wasn't being updated unless the `casOutputsCache` experiment was enabled.
+- Fixed an issue where projects with the same name/ID as their underlying toolchain package would
+  cause issues when pruning within Docker.
+- Fixed an issue where remote caching wasn't being updated unless the `casOutputsCache` experiment
+  was enabled.
 
 #### 🧰 Toolchains
 

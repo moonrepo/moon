@@ -1,9 +1,8 @@
 use crate::queries::changed_files::*;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_common::is_ci;
 use moon_vcs::ChangedStatus;
-use starbase::AppResult;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -42,7 +41,7 @@ pub struct QueryChangedFilesArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn changed_files(session: MoonSession, args: QueryChangedFilesArgs) -> AppResult {
+pub async fn changed_files(session: MoonSession, args: QueryChangedFilesArgs) -> SessionResult {
     let vcs = session.get_vcs_adapter()?;
     let ci = is_ci();
 

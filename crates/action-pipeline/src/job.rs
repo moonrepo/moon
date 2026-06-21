@@ -27,13 +27,16 @@ impl Job {
         // is cancelled, immediately terminating the process, and ignoring
         // any signals we attempt to pass down!
 
-        if run_action(
+        // Box the future to avoid bloating the (spawned) job future with the
+        // entire action state machine, which otherwise overflows the type
+        // layout recursion limit. See `run_action` for the nested branches.
+        if Box::pin(run_action(
             &mut action,
             self.action_context,
             self.app_context,
             self.context.workspace_graph.clone(),
             self.context.emitter.clone(),
-        )
+        ))
         .await
         .is_err()
         {

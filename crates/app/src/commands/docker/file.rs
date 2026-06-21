@@ -1,5 +1,5 @@
 use crate::commands::docker::docker_error::AppDockerError;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::element;
 use moon_common::Id;
@@ -7,7 +7,6 @@ use moon_console::ui::{Input, Notice, Select, SelectOption, StyledText, Variant}
 use moon_docker::*;
 use moon_pdk_api::DefineDockerMetadataInput;
 use moon_project::Project;
-use starbase::AppResult;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument};
@@ -52,7 +51,7 @@ pub struct DockerFileArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn file(session: MoonSession, args: DockerFileArgs) -> AppResult {
+pub async fn file(session: MoonSession, args: DockerFileArgs) -> SessionResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let workspace_docker = &session.workspace_config.docker;
     let console = &session.console;

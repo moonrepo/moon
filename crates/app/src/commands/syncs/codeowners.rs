@@ -1,9 +1,8 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::element;
 use moon_actions::operations::{sync_codeowners, unsync_codeowners};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -16,7 +15,7 @@ pub struct SyncCodeownersArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn sync(session: MoonSession, args: SyncCodeownersArgs) -> AppResult {
+pub async fn sync(session: MoonSession, args: SyncCodeownersArgs) -> SessionResult {
     let context = session.get_app_context().await?;
 
     let message = if args.clean {

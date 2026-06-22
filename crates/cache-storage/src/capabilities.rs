@@ -33,6 +33,36 @@ impl Default for CacheCapabilities {
 }
 
 impl CacheCapabilities {
+    pub fn from_bazel_capabilities(capabilities: BazelCacheCapabilities) -> Self {
+        Self {
+            digest_functions: capabilities
+                .digest_functions
+                .into_iter()
+                .filter_map(|v| DigestFunction::try_from(v).ok())
+                .collect(),
+            max_batch_total_size_bytes: capabilities.max_batch_total_size_bytes as usize,
+            max_cas_blob_size_bytes: capabilities.max_cas_blob_size_bytes as usize,
+            store_manifests: capabilities
+                .action_cache_update_capabilities
+                .map(|c| c.update_enabled)
+                .unwrap_or_default(),
+            supported_batch_update_compressors: capabilities
+                .supported_batch_update_compressors
+                .into_iter()
+                .filter_map(|v| Compressor::try_from(v).ok())
+                .collect(),
+            supported_compressors: capabilities
+                .supported_compressors
+                .into_iter()
+                .filter_map(|v| Compressor::try_from(v).ok())
+                .collect(),
+            symlink_absolute_path_strategy: AbsoluteSymlinkStrategy::try_from(
+                capabilities.symlink_absolute_path_strategy,
+            )
+            .unwrap_or(AbsoluteSymlinkStrategy::Disallowed),
+        }
+    }
+
     pub fn into_bazel_capabilities(self) -> BazelCacheCapabilities {
         BazelCacheCapabilities {
             action_cache_update_capabilities: Some(ActionCacheUpdateCapabilities {

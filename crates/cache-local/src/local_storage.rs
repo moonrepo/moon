@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_blob::{Blob, BlobContent, BlobSource};
-use moon_cache_storage::{CacheCapabilities, Manifest, ManifestSource, StorageBackend};
+use moon_cache_storage::{CacheCapabilities, Manifest, StorageBackend};
 use moon_cas::CasStore;
 use moon_common::Id;
 use moon_config::CacheConfig;
@@ -9,8 +9,8 @@ use moon_hash::Digest;
 use std::path::{Path, PathBuf};
 
 pub struct LocalStorage {
-    blobs: CasStore,
     id: Id,
+    blobs: CasStore,
     manifests: CasStore,
     workspace_root: PathBuf,
 }
@@ -43,12 +43,12 @@ impl StorageBackend for LocalStorage {
         Ok(CacheCapabilities::default())
     }
 
-    async fn retrieve_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
+    async fn retrieve_manifest(&self, digest: &Digest) -> miette::Result<Option<Manifest>> {
         if self.manifests.contains_object(digest) {
             let blob = self.manifests.read_bytes(digest)?;
             let manifest: Manifest = serde_json::from_slice(&blob).into_diagnostic()?;
 
-            return Ok(Some(ManifestSource::Local(manifest)));
+            return Ok(Some(manifest));
         }
 
         Ok(None)
@@ -76,21 +76,30 @@ impl StorageBackend for LocalStorage {
         Ok(missing_digests)
     }
 
-    async fn store_blobs(&self, blob_sources: &[BlobSource]) -> miette::Result<()> {
+    async fn retrieve_blobs(&self, blob_digests: &[Digest]) -> miette::Result<Vec<Blob>> {
+        todo!("TODO");
+    }
+
+    async fn store_blobs(&self, blob_sources: &[BlobSource]) -> miette::Result<u16> {
+        let mut count = 0;
+
         for source in blob_sources {
             match &source.content {
-                BlobContent::Inline(bytes) => {
-                    self.blobs.write(&source.digest, bytes)?;
-                }
                 BlobContent::File(rel_path) => {
                     let abs_path = rel_path.to_logical_path(&self.workspace_root);
 
                     // TODO reuse existing digest
                     self.blobs.write_path(&abs_path)?;
+                    count += 1;
+                }
+                BlobContent::Inline(bytes) => {
+                    if self.blobs.write(&source.digest, bytes)? {
+                        count += 1;
+                    }
                 }
             };
         }
 
-        Ok(())
+        Ok(count)
     }
 }

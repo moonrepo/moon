@@ -38,6 +38,19 @@ impl ProcessCache {
         let mut command = Command::new(&self.bin);
         command.args(args);
         command.envs(&self.env);
+        // Strip git's per-invocation environment. In a hook, git sets a relative
+        // GIT_INDEX_FILE (.git/index); since we run with the cwd in a project
+        // directory, for a submodule (where `.git` is a file) that resolves to
+        // `<submodule>/.git/index` and fails with "index file open failed: Not a
+        // directory". Clearing it lets each call resolve its repo from its cwd.
+        command.envs_remove([
+            "GIT_DIR",
+            "GIT_WORK_TREE",
+            "GIT_INDEX_FILE",
+            "GIT_PREFIX",
+            "GIT_OBJECT_DIRECTORY",
+            "GIT_COMMON_DIR",
+        ]);
         // Run from workspace root instead of git root so that we can avoid
         // prefixing all file paths to ensure everything is relative and accurate.
         command.cwd(&self.workspace_root);

@@ -86,7 +86,7 @@ impl StorageBackend for LocalStorage {
         Ok(missing_digests)
     }
 
-    async fn retrieve_blobs(&self, blob_digests: &[Digest]) -> miette::Result<Vec<Blob>> {
+    async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>> {
         todo!("TODO");
     }
 

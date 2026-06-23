@@ -141,26 +141,26 @@ impl Manifest {
         self.collect_unhydrated_blob_digests().is_empty()
     }
 
-    pub fn collect_unhydrated_blob_digests(&self) -> Vec<&Digest> {
+    pub fn collect_unhydrated_blob_digests(&self) -> Vec<Digest> {
         let mut digests = vec![];
 
         if self.stderr_bytes.is_none()
             && let Some(digest) = &self.stderr_digest
         {
-            digests.push(digest);
+            digests.push(digest.to_owned());
         }
 
         if self.stdout_bytes.is_none()
             && let Some(digest) = &self.stdout_digest
         {
-            digests.push(digest);
+            digests.push(digest.to_owned());
         }
 
         for file in &self.files {
             if file.bytes.is_none()
                 && let Some(digest) = &file.digest
             {
-                digests.push(digest);
+                digests.push(digest.to_owned());
             }
         }
 

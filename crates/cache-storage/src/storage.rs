@@ -1,18 +1,15 @@
-use crate::helpers::{Partition, partition_into_batches};
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobContent, BlobSource, Bytes};
-use moon_common::Id;
+use moon_blob::{BlobContent, BlobSource, Bytes};
 use moon_hash::Digest;
-use moon_process::ProcessRegistry;
 use rustc_hash::FxHashMap;
 use std::collections::VecDeque;
 use std::sync::Arc;
 use std::time::SystemTime;
 use tokio::sync::Mutex;
-use tokio::task::{JoinHandle, JoinSet};
-use tracing::{debug, trace, warn};
+use tokio::task::JoinHandle;
+use tracing::{debug, warn};
 
 pub struct Storage {
     local_backends: Vec<BoxedStorageBackend>,
@@ -72,9 +69,12 @@ impl Storage {
     pub async fn hydrate_manifest(
         &self,
         digest: &Digest,
-        mut manifest: Manifest,
-        storage_id: Id,
+        manifest_source: ManifestSource,
     ) -> miette::Result<Option<Manifest>> {
+        let ManifestSource {
+            mut manifest,
+            storage_id,
+        } = manifest_source;
         let mut backends = VecDeque::from_iter(self.get_backends());
 
         let original_backend = match backends
@@ -151,7 +151,7 @@ async fn archive_manifest_in_backend(
 
     manifest.upload_completed_at = Some(SystemTime::now());
 
-    if !uploaded {
+    if uploaded.is_none() {
         return Ok(());
     }
 
@@ -180,74 +180,15 @@ async fn hydrate_manifest_from_backend(
     digest: &Digest,
     manifest: &mut Manifest,
 ) -> miette::Result<FxHashMap<Digest, Bytes>> {
-    let cap = backend.load_capabilities().await?;
-    let mut set = JoinSet::new();
+    // Retrieve all blobs for digests that have yet to be hydrated
+    let blobs_map = Arc::clone(backend)
+        .retrieve_blobs_batched(digest.clone(), manifest.collect_unhydrated_blob_digests())
+        .await?
+        .into_iter()
+        .map(|blob| (blob.digest, blob.bytes))
+        .collect::<FxHashMap<_, _>>();
 
-    // Before we hydrate the manifest, we should ensure all associated blobs are
-    // retrieved in parallel based on unhydrated digests within the manifest
-    let batches = partition_into_batches(
-        manifest
-            .collect_unhydrated_blob_digests()
-            .into_iter()
-            .cloned()
-            .collect(),
-        cap.max_batch_total_size_bytes,
-        |digest| digest.size as usize,
-    );
-
-    for batch in batches {
-        set.spawn(Box::pin(retrieve_blobs_batch_from_backend(
-            Arc::clone(&backend),
-            digest.clone(),
-            batch,
-        )));
-    }
-
-    // Retrieve each batch in parallel, and if any fail, continue retrieving the rest
-    // as we'll attempt to retrieve the missing blobs from other backends
-    let mut signal_receiver = ProcessRegistry::instance().receive_signal();
-    let mut download_errors = vec![];
-    let mut blobs_map = FxHashMap::default();
-    let mut abort = false;
-
-    while let Some(result) = set.join_next().await {
-        if signal_receiver.try_recv().is_ok() {
-            abort = true;
-            break;
-        }
-
-        match result {
-            Ok(Ok(blobs)) => {
-                for blob in blobs {
-                    blobs_map.insert(blob.digest, blob.bytes);
-                }
-            }
-            Ok(Err(error)) => {
-                download_errors.push(error.to_string());
-            }
-            Err(error) => {
-                download_errors.push(error.to_string());
-            }
-        };
-    }
-
-    // If we received a shutdown signal, we should abort receiving the blobs
-    if abort {
-        set.shutdown().await;
-
-        return Ok(blobs_map);
-    }
-
-    if !download_errors.is_empty() {
-        debug!(
-            storage = backend.get_id().as_str(),
-            hash = digest.hash.as_str(),
-            errors = ?download_errors,
-            "Failed to retrieve blobs for cache manifest, will attempt to retrieve remaining from other storage backends",
-        );
-    }
-
-    // Otherwise hydrate the manifest by copying the blobs into it
+    // And then copy their data into the manifest
     manifest.hydrate(&blobs_map);
 
     Ok(blobs_map)
@@ -261,12 +202,7 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
 ) -> miette::Result<()> {
     // Collect the unhydrated blob digests from the manifest before hydrating,
     // so we can compare which are missing and attempt to copy them
-    let unhydrated_digests = manifest
-        .collect_unhydrated_blob_digests()
-        .into_iter()
-        .cloned()
-        .collect::<Vec<_>>();
-
+    let unhydrated_digests = manifest.collect_unhydrated_blob_digests();
     let blobs_map = hydrate_manifest_from_backend(backend, digest, manifest).await?;
 
     // Loop through and create the blob sources for the missing blobs
@@ -281,54 +217,12 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
         }
     }
 
+    // Then store them in the original backend in which they were missing
     if !blob_sources.is_empty() {
-        // store_blobs_in_backend(
-        //     Arc::clone(original_backend),
-        //     digest.to_owned(),
-        //     blob_sources,
-        // )
-        // .await?;
+        Arc::clone(original_backend)
+            .store_blobs_batched(digest.to_owned(), blob_sources)
+            .await?;
     }
 
     Ok(())
-}
-
-async fn retrieve_blobs_batch_from_backend(
-    backend: BoxedStorageBackend,
-    digest: Digest,
-    batch: Partition<Digest>,
-) -> miette::Result<Vec<Blob>> {
-    trace!(
-        storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
-        blobs = batch.items.len(),
-        "Retrieving blobs (batch {})",
-        batch.key,
-    );
-
-    match backend.retrieve_blobs(&batch.items).await {
-        Ok(blobs) => {
-            trace!(
-                storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
-                blobs = blobs.len(),
-                missing = batch.items.len() - blobs.len(),
-                "Retrieved blobs (batch {})",
-                batch.key,
-            );
-
-            Ok(blobs)
-        }
-        Err(error) => {
-            trace!(
-                storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
-                error = error.to_string(),
-                "Failed to retrieve blobs (batch {})",
-                batch.key,
-            );
-
-            Err(error)
-        }
-    }
 }

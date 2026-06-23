@@ -5,10 +5,11 @@ use starbase_utils::hash;
 use std::fmt;
 use std::ops::Deref;
 use std::path::Path;
+use std::sync::Arc;
 
 /// A SHA-256 content hash: 64-character hex string.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq, Hash, Serialize)]
-pub struct ContentHash(CompactString);
+pub struct ContentHash(Arc<CompactString>);
 
 impl ContentHash {
     /// Hash a byte slice to produce a `ContentHash`.
@@ -53,7 +54,7 @@ impl ContentHash {
             .into());
         }
 
-        Ok(Self(hex.into()))
+        Ok(Self(Arc::new(hex.into())))
     }
 
     // /// Create a `ContentHash` from a BLAKE3 hash output.

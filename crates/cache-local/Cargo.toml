@@ -17,6 +17,7 @@ moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }
 async-trait = { workspace = true }
 miette = { workspace = true }
+rustc-hash = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
 

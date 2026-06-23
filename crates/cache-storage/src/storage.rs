@@ -1,6 +1,6 @@
 use crate::helpers::{Partition, partition_into_batches};
 use crate::manifest::{Manifest, ManifestSource};
-use crate::storage_backend::StorageBackend;
+use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
 use moon_blob::{Blob, BlobContent, BlobSource, Bytes};
 use moon_common::Id;
@@ -13,8 +13,6 @@ use std::time::SystemTime;
 use tokio::sync::Mutex;
 use tokio::task::{JoinHandle, JoinSet};
 use tracing::{debug, trace, warn};
-
-type BoxedStorageBackend = Arc<dyn StorageBackend>;
 
 pub struct Storage {
     local_backends: Vec<BoxedStorageBackend>,
@@ -143,18 +141,13 @@ async fn archive_manifest_in_backend(
     digest: Digest,
     mut manifest: Manifest,
 ) -> miette::Result<()> {
-    let cap = backend.load_capabilities().await?;
-
     manifest.upload_started_at = Some(SystemTime::now());
 
     // Before we store the manifest, we should ensure all associated blobs are stored.
     // This ensures we don't end up with dangling manifests that reference missing blobs.
-    let uploaded = store_blobs_in_backend(
-        Arc::clone(&backend),
-        digest.clone(),
-        manifest.collect_blob_sources(),
-    )
-    .await?;
+    let uploaded = Arc::clone(&backend)
+        .store_blobs_batched(digest.clone(), manifest.collect_blob_sources())
+        .await?;
 
     manifest.upload_completed_at = Some(SystemTime::now());
 
@@ -162,8 +155,8 @@ async fn archive_manifest_in_backend(
         return Ok(());
     }
 
-    if cap.store_manifests {
-        if let Err(error) = backend.store_manifest(&digest, manifest).await {
+    if backend.get_capabilities().store_manifests {
+        if let Err(error) = backend.store_manifest(digest.clone(), manifest).await {
             warn!(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
@@ -180,131 +173,6 @@ async fn archive_manifest_in_backend(
     }
 
     Ok(())
-}
-
-async fn store_blobs_in_backend(
-    backend: BoxedStorageBackend,
-    digest: Digest,
-    blob_sources: Vec<BlobSource>,
-) -> miette::Result<bool> {
-    let cap = backend.load_capabilities().await?;
-    let mut set = JoinSet::new();
-
-    // Before we store the manifest, we should ensure all associated blobs are stored.
-    // This ensures we don't end up with dangling manifests that reference missing blobs.
-    let batches = partition_into_batches(blob_sources, cap.max_batch_total_size_bytes, |source| {
-        source.digest.size as usize
-    });
-    let batch_total = batches.len();
-
-    for (index, mut batch) in batches {
-        batch.key = format!("{}:{batch_total}", index + 1);
-
-        set.spawn(Box::pin(store_blobs_batch_in_backend(
-            Arc::clone(&backend),
-            digest.clone(),
-            batch,
-        )));
-    }
-
-    // Store each batch in parallel, and if any fail, continue storing the rest
-    // but don't store the manifest and return early with a warning.
-    let mut signal_receiver = ProcessRegistry::instance().receive_signal();
-    let mut upload_errors = vec![];
-    let mut abort = false;
-
-    while let Some(result) = set.join_next().await {
-        if signal_receiver.try_recv().is_ok() {
-            abort = true;
-            break;
-        }
-
-        match result {
-            Ok(Ok(_)) => {}
-            Ok(Err(error)) => {
-                upload_errors.push(error.to_string());
-            }
-            Err(error) => {
-                upload_errors.push(error.to_string());
-            }
-        };
-    }
-
-    // If we received a shutdown signal, we should abort storing the blobs
-    if abort {
-        set.shutdown().await;
-
-        return Ok(false);
-    }
-
-    if !upload_errors.is_empty() {
-        warn!(
-            storage = backend.get_id().as_str(),
-            hash = digest.hash.as_str(),
-            errors = ?upload_errors,
-            "Failed to store blobs for cache manifest",
-        );
-
-        return Ok(false);
-    }
-
-    Ok(true)
-}
-
-async fn store_blobs_batch_in_backend(
-    backend: BoxedStorageBackend,
-    digest: Digest,
-    mut batch: Partition<BlobSource>,
-) -> miette::Result<bool> {
-    // Before we store blobs, we should ensure that they don't already exists in the backend
-    let missing_digests = backend.find_missing_blobs(&batch.items).await?;
-
-    if missing_digests.is_empty() {
-        return Ok(true);
-    }
-
-    // Reduce the current batch to only the missing blobs
-    batch
-        .items
-        .retain(|source| missing_digests.contains(&source.digest));
-
-    // Calculate the true batch size for logging
-    let size: i64 = batch.items.iter().map(|source| source.digest.size).sum();
-
-    trace!(
-        storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
-        blobs = batch.items.len(),
-        size,
-        "Storing blobs (batch {})",
-        batch.key,
-    );
-
-    match backend.store_blobs(&batch.items).await {
-        Ok(count) => {
-            trace!(
-                storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
-                blobs = count,
-                missing = batch.items.len() - (count as usize),
-                "Stored blobs (batch {})",
-                batch.key,
-            );
-
-            Ok(true)
-        }
-        Err(error) => {
-            trace!(
-                storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
-                error = error.to_string(),
-                "Failed to store blobs (batch {})",
-                batch.key,
-            );
-
-            Err(error)
-        }
-    }
 }
 
 async fn hydrate_manifest_from_backend(
@@ -326,11 +194,8 @@ async fn hydrate_manifest_from_backend(
         cap.max_batch_total_size_bytes,
         |digest| digest.size as usize,
     );
-    let batch_total = batches.len();
 
-    for (index, mut batch) in batches {
-        batch.key = format!("{}:{batch_total}", index + 1);
-
+    for batch in batches {
         set.spawn(Box::pin(retrieve_blobs_batch_from_backend(
             Arc::clone(&backend),
             digest.clone(),
@@ -417,12 +282,12 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
     }
 
     if !blob_sources.is_empty() {
-        store_blobs_in_backend(
-            Arc::clone(original_backend),
-            digest.to_owned(),
-            blob_sources,
-        )
-        .await?;
+        // store_blobs_in_backend(
+        //     Arc::clone(original_backend),
+        //     digest.to_owned(),
+        //     blob_sources,
+        // )
+        // .await?;
     }
 
     Ok(())

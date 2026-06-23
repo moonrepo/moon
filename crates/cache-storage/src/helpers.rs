@@ -38,7 +38,7 @@ pub fn partition_into_batches<T>(
     items: Vec<T>,
     max_size: usize,
     get_size: impl Fn(&T) -> usize,
-) -> BTreeMap<usize, Partition<T>> {
+) -> Vec<Partition<T>> {
     let mut batches = BTreeMap::<usize, Partition<T>>::default();
 
     for item in items {
@@ -75,5 +75,11 @@ pub fn partition_into_batches<T>(
         batch.items.push(item);
     }
 
-    batches
+    let total = batches.len();
+
+    for (index, batch) in &mut batches {
+        batch.key = format!("{}:{total}", index + 1);
+    }
+
+    batches.into_values().collect()
 }

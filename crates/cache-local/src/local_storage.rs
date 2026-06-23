@@ -6,9 +6,11 @@ use moon_cas::CasStore;
 use moon_common::Id;
 use moon_config::CacheConfig;
 use moon_hash::Digest;
+use rustc_hash::FxHashSet;
 use std::path::{Path, PathBuf};
 
 pub struct LocalStorage {
+    capabilities: CacheCapabilities,
     id: Id,
     blobs: CasStore,
     manifests: CasStore,
@@ -25,6 +27,7 @@ impl LocalStorage {
         let cache_dir = cache_dir.as_ref();
 
         Ok(Self {
+            capabilities: CacheCapabilities::default(),
             id: Id::raw("local-cache"),
             blobs: CasStore::new(cache_dir.join("blobs"), &config.cas)?,
             manifests: CasStore::new(cache_dir.join("manifests"), &config.cas)?,
@@ -35,6 +38,10 @@ impl LocalStorage {
 
 #[async_trait]
 impl StorageBackend for LocalStorage {
+    fn get_capabilities(&self) -> &CacheCapabilities {
+        &self.capabilities
+    }
+
     fn get_id(&self) -> &Id {
         &self.id
     }
@@ -54,22 +61,25 @@ impl StorageBackend for LocalStorage {
         Ok(None)
     }
 
-    async fn store_manifest(&self, digest: &Digest, manifest: Manifest) -> miette::Result<()> {
-        if !self.manifests.contains_object(digest) {
+    async fn store_manifest(&self, digest: Digest, manifest: Manifest) -> miette::Result<()> {
+        if !self.manifests.contains_object(&digest) {
             let blob = Blob::from_data(manifest)?;
 
-            self.manifests.write(digest, &blob.bytes)?;
+            self.manifests.write(&digest, &blob.bytes)?;
         }
 
         Ok(())
     }
 
-    async fn find_missing_blobs(&self, blob_sources: &[BlobSource]) -> miette::Result<Vec<Digest>> {
-        let mut missing_digests = vec![];
+    async fn find_missing_blobs(
+        &self,
+        blob_digests: Vec<Digest>,
+    ) -> miette::Result<FxHashSet<Digest>> {
+        let mut missing_digests = FxHashSet::default();
 
-        for source in blob_sources {
-            if !self.blobs.contains_object(&source.digest) {
-                missing_digests.push(source.digest.clone());
+        for digest in blob_digests {
+            if !self.blobs.contains_object(&digest) {
+                missing_digests.insert(digest);
             }
         }
 
@@ -80,7 +90,7 @@ impl StorageBackend for LocalStorage {
         todo!("TODO");
     }
 
-    async fn store_blobs(&self, blob_sources: &[BlobSource]) -> miette::Result<u16> {
+    async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16> {
         let mut count = 0;
 
         for source in blob_sources {

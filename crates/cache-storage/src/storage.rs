@@ -6,8 +6,8 @@ use moon_hash::Digest;
 use rustc_hash::FxHashMap;
 use std::collections::VecDeque;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::SystemTime;
-use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 use tracing::{debug, warn};
 
@@ -26,11 +26,10 @@ impl Storage {
         self.remote_backends.push(Arc::new(backend));
     }
 
-    pub fn get_backends(&self) -> Vec<&BoxedStorageBackend> {
-        let mut list = vec![];
-        list.extend(self.local_backends.iter());
-        list.extend(self.remote_backends.iter());
-        list
+    pub fn get_backends(&self) -> impl Iterator<Item = &BoxedStorageBackend> {
+        self.local_backends
+            .iter()
+            .chain(self.remote_backends.iter())
     }
 
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
@@ -51,7 +50,7 @@ impl Storage {
         digest: &Digest,
         manifest: Manifest,
     ) -> miette::Result<()> {
-        let mut background_tasks = self.background_tasks.lock().await;
+        let mut background_tasks = self.background_tasks.lock().unwrap();
 
         // Store the manifest in all backends in parallel, but if any fail,
         // continue storing the rest for failover/redundancy in the future
@@ -113,7 +112,7 @@ impl Storage {
         let background_tasks = {
             self.background_tasks
                 .lock()
-                .await
+                .unwrap()
                 .drain(0..)
                 .collect::<Vec<_>>()
         };

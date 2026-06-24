@@ -5096,6 +5096,7 @@ dependencies = [
  "moon_hash",
  "rustc-hash",
  "serde_json",
+ "tokio",
  "tracing",
 ]
 
@@ -5105,7 +5106,6 @@ version = "0.0.1"
 dependencies = [
  "async-trait",
  "bazel-remote-apis",
- "chrono",
  "miette 7.6.0",
  "moon_blob",
  "moon_common",

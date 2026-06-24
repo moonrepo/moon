@@ -292,8 +292,9 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
         hash = digest.hash.as_str(),
         blobs = blob_count,
         size = batch.size,
-        "Storing blobs (batch {})",
-        batch.key,
+        "Storing blobs (batch {}:{})",
+        batch.index,
+        batch.total,
     );
 
     match backend.store_blobs(batch.items).await {
@@ -303,8 +304,9 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
                 hash = digest.hash.as_str(),
                 blobs = count,
                 missing = blob_count - (count as usize),
-                "Stored blobs (batch {})",
-                batch.key,
+                "Stored blobs (batch {}:{})",
+                batch.index,
+                batch.total,
             );
 
             Ok(count)
@@ -314,8 +316,9 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
                 error = error.to_string(),
-                "Failed to store blobs (batch {})",
-                batch.key,
+                "Failed to store blobs (batch {}:{})",
+                batch.index,
+                batch.total,
             );
 
             Err(error)
@@ -335,8 +338,9 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
         hash = digest.hash.as_str(),
         blobs = blob_count,
         size = batch.size,
-        "Retrieving blobs (batch {})",
-        batch.key,
+        "Retrieving blobs (batch {}:{})",
+        batch.index,
+        batch.total,
     );
 
     match backend.retrieve_blobs(batch.items).await {
@@ -346,8 +350,9 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
                 hash = digest.hash.as_str(),
                 blobs = blobs.len(),
                 missing = blob_count - blobs.len(),
-                "Retrieved blobs (batch {})",
-                batch.key,
+                "Retrieved blobs (batch {}:{})",
+                batch.index,
+                batch.total,
             );
 
             Ok(blobs)
@@ -357,8 +362,9 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
                 error = error.to_string(),
-                "Failed to retrieve blobs (batch {})",
-                batch.key,
+                "Failed to retrieve blobs (batch {}:{})",
+                batch.index,
+                batch.total,
             );
 
             Err(error)

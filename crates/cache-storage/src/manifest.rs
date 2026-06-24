@@ -25,9 +25,11 @@ pub struct Manifest {
 
     // Process
     pub exit_code: i32,
-    pub stderr_bytes: Option<Vec<u8>>,
+    #[serde(skip)]
+    pub stderr_bytes: Option<Bytes>,
     pub stderr_digest: Option<Digest>,
-    pub stdout_bytes: Option<Vec<u8>>,
+    #[serde(skip)]
+    pub stdout_bytes: Option<Bytes>,
     pub stdout_digest: Option<Digest>,
 
     // Timings
@@ -53,7 +55,7 @@ impl Manifest {
             symlinks,
             exit_code: result.exit_code,
             stderr_bytes: if result.stderr_digest.is_some() {
-                Some(result.stderr_raw)
+                Some(Bytes::from(result.stderr_raw))
             } else {
                 None
             },
@@ -62,7 +64,7 @@ impl Manifest {
                 None => None,
             },
             stdout_bytes: if result.stdout_digest.is_some() {
-                Some(result.stdout_raw)
+                Some(Bytes::from(result.stdout_raw))
             } else {
                 None
             },
@@ -97,9 +99,15 @@ impl Manifest {
                 .collect(),
             exit_code: self.exit_code,
             stderr_digest: self.stderr_digest.map(|digest| digest.to_external_digest()),
-            stderr_raw: self.stderr_bytes.unwrap_or_default(),
+            stderr_raw: self
+                .stderr_bytes
+                .map(|bytes| bytes.to_vec())
+                .unwrap_or_default(),
             stdout_digest: self.stdout_digest.map(|digest| digest.to_external_digest()),
-            stdout_raw: self.stdout_bytes.unwrap_or_default(),
+            stdout_raw: self
+                .stdout_bytes
+                .map(|bytes| bytes.to_vec())
+                .unwrap_or_default(),
             execution_metadata: Some(ExecutedActionMetadata {
                 worker: "moon".into(),
                 output_upload_completed_timestamp: self
@@ -117,14 +125,14 @@ impl Manifest {
             && let Some(digest) = &self.stderr_digest
             && let Some(bytes) = blobs.get(digest)
         {
-            self.stderr_bytes = Some(bytes.to_vec());
+            self.stderr_bytes = Some(bytes.clone());
         }
 
         if self.stdout_bytes.is_none()
             && let Some(digest) = &self.stdout_digest
             && let Some(bytes) = blobs.get(digest)
         {
-            self.stdout_bytes = Some(bytes.to_vec());
+            self.stdout_bytes = Some(bytes.clone());
         }
 
         for file in &mut self.files {
@@ -132,13 +140,18 @@ impl Manifest {
                 && let Some(digest) = &file.digest
                 && let Some(bytes) = blobs.get(digest)
             {
-                file.bytes = Some(bytes.to_vec());
+                file.bytes = Some(bytes.clone());
             }
         }
     }
 
     pub fn is_hydrated(&self) -> bool {
-        self.collect_unhydrated_blob_digests().is_empty()
+        (self.stderr_bytes.is_some() || self.stderr_digest.is_none())
+            && (self.stdout_bytes.is_some() || self.stdout_digest.is_none())
+            && self
+                .files
+                .iter()
+                .all(|file| file.bytes.is_some() || file.digest.is_none())
     }
 
     pub fn collect_unhydrated_blob_digests(&self) -> Vec<Digest> {
@@ -172,14 +185,14 @@ impl Manifest {
 
         if let (Some(digest), Some(bytes)) = (&self.stderr_digest, &self.stderr_bytes) {
             sources.push(BlobSource {
-                content: BlobContent::Inline(Bytes::from(bytes.to_vec())),
+                content: BlobContent::Inline(bytes.clone()),
                 digest: digest.to_owned(),
             });
         }
 
         if let (Some(digest), Some(bytes)) = (&self.stdout_digest, &self.stdout_bytes) {
             sources.push(BlobSource {
-                content: BlobContent::Inline(Bytes::from(bytes.to_vec())),
+                content: BlobContent::Inline(bytes.clone()),
                 digest: digest.to_owned(),
             });
         }
@@ -188,7 +201,7 @@ impl Manifest {
             if let Some(digest) = &file.digest {
                 if let Some(bytes) = &file.bytes {
                     sources.push(BlobSource {
-                        content: BlobContent::Inline(Bytes::from(bytes.to_vec())),
+                        content: BlobContent::Inline(bytes.clone()),
                         digest: digest.to_owned(),
                     });
                 } else {
@@ -206,7 +219,8 @@ impl Manifest {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct ManifestFile {
-    pub bytes: Option<Vec<u8>>,
+    #[serde(skip)]
+    pub bytes: Option<Bytes>,
     pub digest: Option<Digest>,
     pub is_executable: bool,
     pub modified_at: Option<SystemTime>,
@@ -219,8 +233,12 @@ impl ManifestFile {
         let props = file.node_properties.unwrap_or_default();
 
         Ok(Self {
-            bytes: if file.digest.is_some() {
-                Some(file.contents)
+            // Only retain inline bytes the action result actually inlined. An
+            // empty `contents` with a digest means the blob lives on disk and
+            // must be sourced from its path (see `collect_blob_sources`), not
+            // stored as an empty inline blob under the real (non-empty) digest.
+            bytes: if file.digest.is_some() && !file.contents.is_empty() {
+                Some(Bytes::from(file.contents))
             } else {
                 None
             },
@@ -237,7 +255,7 @@ impl ManifestFile {
 
     pub fn into_bazel_file(self) -> OutputFile {
         OutputFile {
-            contents: self.bytes.unwrap_or_default(),
+            contents: self.bytes.map(|bytes| bytes.to_vec()).unwrap_or_default(),
             digest: self.digest.map(|digest| digest.to_external_digest()),
             is_executable: self.is_executable,
             path: self.path.to_string(),

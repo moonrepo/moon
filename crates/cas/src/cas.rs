@@ -146,7 +146,7 @@ impl CasStore {
     /// The hash of a stream isn't known until it is fully consumed, so this
     /// always writes a temp file and only then checks for an existing object —
     /// discarding the temp on a hit. When the source is a file, prefer
-    /// [`Self::write_path`], which avoids that churn.
+    /// [`Self::store_file`], which avoids that churn.
     pub fn store_stream<R: Read>(&self, mut reader: R) -> miette::Result<Digest> {
         let mut guard = self.create_temp_file()?;
         let mut size = 0;
@@ -208,7 +208,7 @@ impl CasStore {
     ///
     /// This is a pure existence check; it does not verify the on-disk content
     /// against the hash even when `verify_integrity` is enabled. Verification
-    /// happens lazily on read (via `read_bytes`, etc). Putting it here
+    /// happens lazily on read (via `read`, etc). Putting it here
     /// would force a full file read + rehash on every write to a hash that
     /// already exists, which dominates the cost of a warm cache.
     pub fn contains_object(&self, hash: &ContentHash) -> bool {

@@ -27,7 +27,7 @@ pub fn create_action(command_digest: &Digest) -> Action {
 ///   stderr/stdout). Always small.
 /// - `output_digests`: digests of output files. The bytes live in the local
 ///   CAS (the streaming collection step wrote them there); load on demand
-///   via `cas.read_bytes(&digest.hash)` if you need to upload them.
+///   via `cas.read(&digest.hash)` if you need to upload them.
 pub fn create_action_result(
     operation: &Operation,
     outputs: OutputTree,

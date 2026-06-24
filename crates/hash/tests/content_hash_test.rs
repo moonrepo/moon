@@ -145,3 +145,39 @@ mod hash_file {
         assert!(result.is_err());
     }
 }
+
+mod serialization {
+    use super::*;
+    use starbase_utils::json::serde_json;
+
+    #[test]
+    fn serializes_as_a_bare_hex_string() {
+        // The inner `Arc<CompactString>` must not leak into the wire format.
+        // ContentHash has to serialize as a plain JSON string (exactly as the
+        // older `ContentHash(CompactString)` newtype did) so cache manifests
+        // and action results stay forward/backward compatible.
+        let hex = "a".repeat(64);
+        let hash = ContentHash::from_hex(&hex).unwrap();
+
+        assert_eq!(serde_json::to_string(&hash).unwrap(), format!("\"{hex}\""));
+    }
+
+    #[test]
+    fn round_trips_through_json() {
+        let hash = ContentHash::hash_bytes(b"round trip").unwrap();
+
+        let json = serde_json::to_string(&hash).unwrap();
+        let restored: ContentHash = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(hash, restored);
+    }
+
+    #[test]
+    fn deserializes_from_a_plain_string() {
+        let hex = "b".repeat(64);
+
+        let restored: ContentHash = serde_json::from_str(&format!("\"{hex}\"")).unwrap();
+
+        assert_eq!(restored.as_hex(), hex);
+    }
+}

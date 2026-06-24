@@ -292,7 +292,7 @@ impl OutputArchiver<'_> {
     /// Collect outputs into an `OutputTree`, streaming each file's bytes
     /// directly into the local CAS as we hash it. After this returns, each
     /// digest in the tree refers to a blob already on disk in the CAS —
-    /// callers can read bytes back via `cas.read_bytes(&digest.hash)` without
+    /// callers can read bytes back via `cas.read(&digest.hash)` without
     /// re-touching the source file.
     async fn batch_read_blobs_for_local(
         &self,

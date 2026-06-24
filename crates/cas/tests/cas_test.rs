@@ -19,10 +19,16 @@ fn create_verified_store(sandbox: &starbase_sandbox::Sandbox) -> CasStore {
     .unwrap()
 }
 
+fn count_temp_files(store: &CasStore) -> usize {
+    std::fs::read_dir(&store.temp_dir)
+        .map(|dir| dir.count())
+        .unwrap_or(0)
+}
+
 mod cas {
     use super::*;
 
-    mod write_bytes {
+    mod store_bytes {
         use super::*;
 
         #[test]
@@ -84,7 +90,7 @@ mod cas {
         }
     }
 
-    mod write_blob {
+    mod store_blob {
         use super::*;
 
         #[test]
@@ -115,7 +121,7 @@ mod cas {
         }
     }
 
-    mod write_file {
+    mod store_file {
         use super::*;
 
         #[test]
@@ -124,31 +130,136 @@ mod cas {
             let store = create_store(&sandbox);
 
             let source = sandbox.path().join("input.txt");
-            std::fs::write(&source, b"file content").unwrap();
+            std::fs::write(&source, b"path content").unwrap();
 
-            let blob = store.write_file(&source).unwrap();
-            let read_back = store.read(&blob.digest.hash).unwrap();
+            let digest = store.store_file(&source).unwrap();
+            let read_back = store.read(&digest.hash).unwrap();
 
-            assert_eq!(read_back, b"file content");
+            assert_eq!(read_back, b"path content");
         }
 
         #[test]
-        fn matches_write_bytes() {
+        fn populates_digest_size() {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let data = b"same content";
+            let data = b"sized path";
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, data).unwrap();
+
+            let digest = store.store_file(&source).unwrap();
+
+            assert_eq!(digest.size, data.len() as i64);
+        }
+
+        #[test]
+        fn matches_store_bytes() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"consistent hashing";
             let source = sandbox.path().join("input.txt");
             std::fs::write(&source, data).unwrap();
 
             let digest_bytes = store.store_bytes(data).unwrap();
-            let blob = store.write_file(&source).unwrap();
+            let digest_file = store.store_file(&source).unwrap();
 
-            assert_eq!(digest_bytes.hash, blob.digest.hash);
+            assert_eq!(digest_bytes, digest_file);
+        }
+
+        #[test]
+        fn idempotent() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, b"stored twice").unwrap();
+
+            let digest1 = store.store_file(&source).unwrap();
+            let digest2 = store.store_file(&source).unwrap();
+
+            assert_eq!(digest1, digest2);
+        }
+
+        #[test]
+        fn handles_payload_larger_than_buffer() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            // Spans several 64 KiB hash chunks, and isn't an exact multiple.
+            let data: Vec<u8> = (0..(64 * 1024 * 3 + 137))
+                .map(|i| (i % 251) as u8)
+                .collect();
+            let source = sandbox.path().join("input.bin");
+            std::fs::write(&source, &data).unwrap();
+
+            let digest_file = store.store_file(&source).unwrap();
+            let digest_bytes = store.store_bytes(&data).unwrap();
+
+            assert_eq!(digest_file, digest_bytes);
+            assert_eq!(digest_file.size, data.len() as i64);
+            assert_eq!(store.read(&digest_file.hash).unwrap(), data);
+        }
+
+        #[test]
+        fn empty_file() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("empty.txt");
+            std::fs::write(&source, b"").unwrap();
+
+            let digest = store.store_file(&source).unwrap();
+
+            assert_eq!(digest.size, 0);
+            assert!(store.contains_object(&digest.hash));
+        }
+
+        #[test]
+        fn cold_cache_writes_one_temp_then_commits() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, b"first write").unwrap();
+
+            let digest = store.store_file(&source).unwrap();
+
+            // The temp file was renamed into the store, never left behind.
+            assert!(store.contains_object(&digest.hash));
+            assert_eq!(count_temp_files(&store), 0);
+        }
+
+        #[test]
+        fn warm_cache_creates_no_temp_file() {
+            // Regression: a file already present in the store must short-circuit
+            // *before* any temp file is created. Streaming used to write the
+            // whole file to a throwaway temp and then delete it on a cache hit.
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, b"already stored").unwrap();
+
+            // Prime the store.
+            let first = store.store_file(&source).unwrap();
+
+            // Remove the temp dir entirely. A correct warm-cache write never
+            // touches it; the old streaming path would recreate it (via
+            // create_file's create_dir_all) to stage a throwaway temp.
+            std::fs::remove_dir_all(&store.temp_dir).unwrap();
+
+            let second = store.store_file(&source).unwrap();
+
+            assert_eq!(first, second);
+            assert!(
+                !store.temp_dir.exists(),
+                "warm-cache write must not create a temp file"
+            );
         }
     }
 
-    mod write_stream {
+    mod store_stream {
         use super::*;
 
         #[test]
@@ -177,7 +288,7 @@ mod cas {
         }
 
         #[test]
-        fn matches_write_bytes() {
+        fn matches_store_bytes() {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
@@ -222,137 +333,125 @@ mod cas {
         }
     }
 
-    mod write_path {
+    mod write {
         use super::*;
 
-        fn count_temp_files(store: &CasStore) -> usize {
-            std::fs::read_dir(&store.temp_dir)
-                .map(|dir| dir.count())
-                .unwrap_or(0)
+        #[test]
+        fn returns_true_for_new_blob() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"fresh";
+            let hash = ContentHash::hash_bytes(data).unwrap();
+
+            assert!(store.write(&hash, data).unwrap());
         }
+
+        #[test]
+        fn returns_false_when_already_present() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"already there";
+            let hash = ContentHash::hash_bytes(data).unwrap();
+
+            // First write commits to disk.
+            assert!(store.write(&hash, data).unwrap());
+
+            // Second write short-circuits — the existence check makes it a no-op.
+            assert!(!store.write(&hash, data).unwrap());
+        }
+    }
+
+    mod write_file {
+        use super::*;
+
+        #[test]
+        fn returns_true_for_new_object() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"reflink me";
+            let source = sandbox.path().join("source.txt");
+            std::fs::write(&source, data).unwrap();
+            let hash = ContentHash::hash_bytes(data).unwrap();
+
+            assert!(store.write_file(&hash, &source).unwrap());
+
+            // The file's bytes were cloned into the store under `hash`.
+            assert_eq!(store.read(&hash).unwrap(), data);
+        }
+
+        #[test]
+        fn returns_false_when_already_present() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"already cloned";
+            let source = sandbox.path().join("source.txt");
+            std::fs::write(&source, data).unwrap();
+            let hash = ContentHash::hash_bytes(data).unwrap();
+
+            assert!(store.write_file(&hash, &source).unwrap());
+
+            // Second call short-circuits on the existence check; the source
+            // is never touched again.
+            assert!(!store.write_file(&hash, &source).unwrap());
+        }
+
+        #[test]
+        fn warm_cache_creates_no_temp_file() {
+            // Like `store_file`, an object already in the store must short
+            // circuit before any temp file is staged.
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"present";
+            let source = sandbox.path().join("source.txt");
+            std::fs::write(&source, data).unwrap();
+            let hash = ContentHash::hash_bytes(data).unwrap();
+
+            assert!(store.write_file(&hash, &source).unwrap());
+
+            std::fs::remove_dir_all(&store.temp_dir).unwrap();
+
+            assert!(!store.write_file(&hash, &source).unwrap());
+            assert!(
+                !store.temp_dir.exists(),
+                "warm-cache write_file must not create a temp file"
+            );
+        }
+    }
+
+    mod read {
+        use super::*;
 
         #[test]
         fn round_trip() {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let source = sandbox.path().join("input.txt");
-            std::fs::write(&source, b"path content").unwrap();
+            let digest = store.store_bytes(b"readable").unwrap();
 
-            let digest = store.write_path(&source).unwrap();
-            let read_back = store.read(&digest.hash).unwrap();
-
-            assert_eq!(read_back, b"path content");
+            assert_eq!(store.read(&digest.hash).unwrap(), b"readable");
         }
 
         #[test]
-        fn populates_digest_size() {
+        fn not_found() {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let data = b"sized path";
-            let source = sandbox.path().join("input.txt");
-            std::fs::write(&source, data).unwrap();
+            let hash = ContentHash::from_hex("1".repeat(64)).unwrap();
+            let result = store.read(&hash);
 
-            let digest = store.write_path(&source).unwrap();
-
-            assert_eq!(digest.size, data.len() as i64);
-        }
-
-        #[test]
-        fn matches_write_bytes() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let data = b"consistent hashing";
-            let source = sandbox.path().join("input.txt");
-            std::fs::write(&source, data).unwrap();
-
-            let digest_bytes = store.store_bytes(data).unwrap();
-            let digest_path = store.write_path(&source).unwrap();
-
-            assert_eq!(digest_bytes, digest_path);
-        }
-
-        #[test]
-        fn handles_payload_larger_than_buffer() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            // Spans several 64 KiB hash chunks, and isn't an exact multiple.
-            let data: Vec<u8> = (0..(64 * 1024 * 3 + 137))
-                .map(|i| (i % 251) as u8)
-                .collect();
-            let source = sandbox.path().join("input.bin");
-            std::fs::write(&source, &data).unwrap();
-
-            let digest_path = store.write_path(&source).unwrap();
-            let digest_bytes = store.store_bytes(&data).unwrap();
-
-            assert_eq!(digest_path, digest_bytes);
-            assert_eq!(digest_path.size, data.len() as i64);
-            assert_eq!(store.read(&digest_path.hash).unwrap(), data);
-        }
-
-        #[test]
-        fn empty_file() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let source = sandbox.path().join("empty.txt");
-            std::fs::write(&source, b"").unwrap();
-
-            let digest = store.write_path(&source).unwrap();
-
-            assert_eq!(digest.size, 0);
-            assert!(store.contains_object(&digest.hash));
-        }
-
-        #[test]
-        fn cold_cache_writes_one_temp_then_commits() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let source = sandbox.path().join("input.txt");
-            std::fs::write(&source, b"first write").unwrap();
-
-            let digest = store.write_path(&source).unwrap();
-
-            // The temp file was renamed into the store, never left behind.
-            assert!(store.contains_object(&digest.hash));
-            assert_eq!(count_temp_files(&store), 0);
-        }
-
-        #[test]
-        fn warm_cache_creates_no_temp_file() {
-            // Regression: a file already present in the store must short-circuit
-            // *before* any temp file is created. Streaming used to write the
-            // whole file to a throwaway temp and then delete it on a cache hit.
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let source = sandbox.path().join("input.txt");
-            std::fs::write(&source, b"already stored").unwrap();
-
-            // Prime the store.
-            let first = store.write_path(&source).unwrap();
-
-            // Remove the temp dir entirely. A correct warm-cache write never
-            // touches it; the old streaming path would recreate it (via
-            // create_file's create_dir_all) to stage a throwaway temp.
-            std::fs::remove_dir_all(&store.temp_dir).unwrap();
-
-            let second = store.write_path(&source).unwrap();
-
-            assert_eq!(first, second);
-            assert!(
-                !store.temp_dir.exists(),
-                "warm-cache write must not create a temp file"
-            );
+            assert!(result.is_err());
+            let err = result.unwrap_err();
+            let cas_err = err.downcast_ref::<CasError>().unwrap();
+            assert!(matches!(cas_err, CasError::NotFound { .. }));
         }
     }
 
-    mod hydrate {
+    mod read_file {
         use super::*;
 
         #[test]
@@ -361,12 +460,13 @@ mod cas {
             let store = create_store(&sandbox);
 
             let digest = store.store_bytes(b"hydrate me").unwrap();
+            // Nested path also exercises parent-dir creation.
             let dest = sandbox.path().join("out/restored.txt");
 
-            store.hydrate(&digest.hash, &dest).unwrap();
+            store.read_file(&digest.hash, &dest).unwrap();
 
             assert_eq!(std::fs::read(&dest).unwrap(), b"hydrate me");
-            // The object stays in the store; hydration is a clone, not a move.
+            // The object stays in the store; this is a clone, not a move.
             assert!(store.contains_object(&digest.hash));
         }
 
@@ -379,7 +479,7 @@ mod cas {
             let dest = sandbox.path().join("restored.txt");
             std::fs::write(&dest, b"stale content").unwrap();
 
-            store.hydrate(&digest.hash, &dest).unwrap();
+            store.read_file(&digest.hash, &dest).unwrap();
 
             assert_eq!(std::fs::read(&dest).unwrap(), b"new content");
         }
@@ -392,7 +492,7 @@ mod cas {
             let hash = ContentHash::from_hex("0".repeat(64)).unwrap();
             let dest = sandbox.path().join("restored.txt");
 
-            let err = store.hydrate(&hash, &dest).unwrap_err();
+            let err = store.read_file(&hash, &dest).unwrap_err();
             let cas_err = err.downcast_ref::<CasError>().unwrap();
 
             assert!(matches!(cas_err, CasError::NotFound { .. }));
@@ -408,10 +508,84 @@ mod cas {
             std::fs::write(store.object_path(&digest.hash), b"tampered").unwrap();
 
             let dest = sandbox.path().join("restored.txt");
-            let err = store.hydrate(&digest.hash, &dest).unwrap_err();
+            let err = store.read_file(&digest.hash, &dest).unwrap_err();
             let cas_err = err.downcast_ref::<CasError>().unwrap();
 
             assert!(matches!(cas_err, CasError::IntegrityMismatch { .. }));
+            // Integrity is checked before the destination is touched.
+            assert!(!dest.exists());
+        }
+    }
+
+    mod retrieve_blob {
+        use super::*;
+
+        #[test]
+        fn round_trip() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"blob bytes";
+            let digest = store.store_bytes(data).unwrap();
+
+            let blob = store.retrieve_blob(&digest.hash).unwrap();
+
+            assert_eq!(blob.bytes.to_vec(), data);
+            assert_eq!(blob.digest.hash, digest.hash);
+            assert_eq!(blob.digest.size, data.len() as i64);
+        }
+
+        #[test]
+        fn not_found() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let hash = ContentHash::from_hex("2".repeat(64)).unwrap();
+            let err = store.retrieve_blob(&hash).unwrap_err();
+            let cas_err = err.downcast_ref::<CasError>().unwrap();
+
+            assert!(matches!(cas_err, CasError::NotFound { .. }));
+        }
+
+        #[test]
+        fn detects_corruption_when_verifying() {
+            let sandbox = create_empty_sandbox();
+            let store = create_verified_store(&sandbox);
+
+            let digest = store.store_bytes(b"valid").unwrap();
+            std::fs::write(store.object_path(&digest.hash), b"tampered").unwrap();
+
+            let err = store.retrieve_blob(&digest.hash).unwrap_err();
+            let cas_err = err.downcast_ref::<CasError>().unwrap();
+
+            assert!(matches!(cas_err, CasError::IntegrityMismatch { .. }));
+        }
+    }
+
+    mod retrieve_bytes {
+        use super::*;
+
+        #[test]
+        fn round_trip() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let data = b"retrieved bytes";
+            let digest = store.store_bytes(data).unwrap();
+
+            assert_eq!(store.retrieve_bytes(&digest.hash).unwrap(), data);
+        }
+
+        #[test]
+        fn not_found() {
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let hash = ContentHash::from_hex("3".repeat(64)).unwrap();
+            let err = store.retrieve_bytes(&hash).unwrap_err();
+            let cas_err = err.downcast_ref::<CasError>().unwrap();
+
+            assert!(matches!(cas_err, CasError::NotFound { .. }));
         }
     }
 
@@ -457,8 +631,8 @@ mod cas {
         fn does_not_auto_delete_corrupt_blob() {
             // The previous implementation removed corrupt blobs from inside
             // contains_object. The optimized version leaves them alone — the
-            // file still exists after the check, and the next read_bytes is
-            // what surfaces the integrity error.
+            // file still exists after the check, and the next read is what
+            // surfaces the integrity error.
             let sandbox = create_empty_sandbox();
             let store = create_verified_store(&sandbox);
 
@@ -471,54 +645,6 @@ mod cas {
             let _ = store.contains_object(&digest.hash);
 
             assert!(path.exists());
-        }
-    }
-
-    mod write {
-        use super::*;
-
-        #[test]
-        fn returns_true_for_new_blob() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let data = b"fresh";
-            let hash = ContentHash::hash_bytes(data).unwrap();
-
-            assert!(store.write(&hash, data).unwrap());
-        }
-
-        #[test]
-        fn returns_false_when_already_present() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let data = b"already there";
-            let hash = ContentHash::hash_bytes(data).unwrap();
-
-            // First write commits to disk.
-            assert!(store.write(&hash, data).unwrap());
-
-            // Second write short-circuits — the existence check makes it a no-op.
-            assert!(!store.write(&hash, data).unwrap());
-        }
-    }
-
-    mod read_bytes {
-        use super::*;
-
-        #[test]
-        fn not_found() {
-            let sandbox = create_empty_sandbox();
-            let store = create_store(&sandbox);
-
-            let hash = ContentHash::from_hex("1".repeat(64)).unwrap();
-            let result = store.read(&hash);
-
-            assert!(result.is_err());
-            let err = result.unwrap_err();
-            let cas_err = err.downcast_ref::<CasError>().unwrap();
-            assert!(matches!(cas_err, CasError::NotFound { .. }));
         }
     }
 

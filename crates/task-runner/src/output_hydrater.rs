@@ -137,7 +137,7 @@ impl OutputHydrater<'_> {
 
         // Materialize output files by reflinking them out of the local CAS — a
         // copy-on-write clone that avoids round-tripping each file's bytes
-        // through memory the way `read_bytes` + write would.
+        // through memory the way `read` + write would.
         self.hydrate_outputs_from_cas(&action_result)?;
 
         *result = action_result;

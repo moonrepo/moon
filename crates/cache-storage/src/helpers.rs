@@ -1,5 +1,5 @@
 use bazel_remote_apis::google::protobuf::Timestamp;
-use chrono::NaiveDateTime;
+// use chrono::NaiveDateTime;
 use std::collections::BTreeMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -12,14 +12,14 @@ pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
         })
 }
 
-pub fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
-    let utc = time.and_utc();
+// pub fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
+//     let utc = time.and_utc();
 
-    Some(Timestamp {
-        seconds: utc.timestamp(),
-        nanos: utc.timestamp_subsec_nanos() as i32,
-    })
-}
+//     Some(Timestamp {
+//         seconds: utc.timestamp(),
+//         nanos: utc.timestamp_subsec_nanos() as i32,
+//     })
+// }
 
 pub fn create_from_timestamp(timestamp: Timestamp) -> SystemTime {
     UNIX_EPOCH + Duration::new(timestamp.seconds as u64, timestamp.nanos as u32)
@@ -62,7 +62,7 @@ pub fn partition_into_batches<T>(
 
         // If no partition available, create a new one
         let batch = batches
-            .entry(index_to_use.unwrap_or_else(|| batches.len()))
+            .entry(index_to_use.unwrap_or(batches.len()))
             .or_insert_with(|| Partition {
                 key: String::new(),
                 items: vec![],

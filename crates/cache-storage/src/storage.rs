@@ -35,10 +35,10 @@ impl Storage {
 
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
         for backend in self.get_backends() {
-            if let Some(manifest) = backend.retrieve_manifest(digest).await? {
+            if let Some(manifest) = backend.retrieve_manifest(digest.to_owned()).await? {
                 return Ok(Some(ManifestSource {
+                    backend: Arc::clone(backend),
                     manifest,
-                    storage_id: backend.get_id().to_owned(),
                 }));
             }
         }
@@ -73,23 +73,13 @@ impl Storage {
     ) -> miette::Result<Option<Manifest>> {
         let ManifestSource {
             mut manifest,
-            storage_id,
+            backend: original_backend,
         } = manifest_source;
         let mut backends = VecDeque::from_iter(self.get_backends());
 
-        let original_backend = match backends
-            .iter()
-            .position(|backend| backend.get_id() == &storage_id)
-        {
-            Some(index) => backends.remove(index),
-            None => None,
-        };
-
         // Hydrate the manifest from the backend it was originally loaded from,
         // as that's the most likely to have all the blobs available
-        if let Some(original_backend) = original_backend {
-            hydrate_manifest_from_backend(original_backend, digest, &mut manifest).await?;
-        }
+        hydrate_manifest_from_backend(&original_backend, digest, &mut manifest).await?;
 
         // If the original backend doesn't have all the blobs available,
         // we should attempt to hydrate from the other backends,
@@ -97,17 +87,17 @@ impl Storage {
         while !manifest.is_hydrated()
             && let Some(backend) = backends.pop_front()
         {
-            if let Some(original_backend) = original_backend {
-                hydrate_manifest_from_backend_and_copy_to_original(
-                    original_backend,
-                    backend,
-                    digest,
-                    &mut manifest,
-                )
-                .await?;
-            } else {
-                hydrate_manifest_from_backend(backend, digest, &mut manifest).await?;
+            if backend.get_id() == original_backend.get_id() {
+                continue;
             }
+
+            hydrate_manifest_from_backend_and_copy_to_original(
+                &original_backend,
+                backend,
+                digest,
+                &mut manifest,
+            )
+            .await?;
         }
 
         // If the manifest is fully hydrated, return it, otherwise return None to

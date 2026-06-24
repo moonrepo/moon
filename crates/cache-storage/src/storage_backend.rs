@@ -27,7 +27,7 @@ where
     /// Retrieve the manifest for the given digest if it exists, otherwise return `None`.
     /// This *does not* retrieve all the associated blobs for the manifest, only the manifest
     /// itself. Use `retrieve_blobs` to retrieve the blobs after retrieving the manifest.
-    async fn retrieve_manifest(&self, digest: &Digest) -> miette::Result<Option<Manifest>>;
+    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>>;
 
     /// Store the manifest for the given digest. This *does not* store the associated blobs for the
     /// manifest, only the manifest itself. Use `store_blobs` to store the blobs before the

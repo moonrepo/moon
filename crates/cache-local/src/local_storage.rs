@@ -50,9 +50,9 @@ impl StorageBackend for LocalStorage {
         Ok(CacheCapabilities::default())
     }
 
-    async fn retrieve_manifest(&self, digest: &Digest) -> miette::Result<Option<Manifest>> {
-        if self.manifests.contains_object(digest) {
-            let blob = self.manifests.read_bytes(digest)?;
+    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
+        if self.manifests.contains_object(&digest) {
+            let blob = self.manifests.read_bytes(&digest)?;
             let manifest: Manifest = serde_json::from_slice(&blob).into_diagnostic()?;
 
             return Ok(Some(manifest));
@@ -87,7 +87,14 @@ impl StorageBackend for LocalStorage {
     }
 
     async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>> {
-        todo!("TODO");
+        let mut blobs = vec![];
+
+        for digest in blob_digests {
+            let bytes = self.blobs.read_bytes(&digest)?;
+            blobs.push(Blob::new(digest, bytes));
+        }
+
+        Ok(blobs)
     }
 
     async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16> {

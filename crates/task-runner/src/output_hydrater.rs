@@ -116,7 +116,7 @@ impl OutputHydrater<'_> {
                 && action_result.stderr_raw.is_empty()
                 && digest.size > 0
             {
-                action_result.stderr_raw = app_context.cache_engine.cas.read_bytes(&digest.hash)?;
+                action_result.stderr_raw = app_context.cache_engine.cas.read(&digest.hash)?;
             }
 
             // Hydrate stdout
@@ -127,7 +127,7 @@ impl OutputHydrater<'_> {
                 && action_result.stdout_raw.is_empty()
                 && digest.size > 0
             {
-                action_result.stdout_raw = app_context.cache_engine.cas.read_bytes(&digest.hash)?;
+                action_result.stdout_raw = app_context.cache_engine.cas.read(&digest.hash)?;
             }
 
             Ok::<_, miette::Report>(action_result)
@@ -317,7 +317,7 @@ impl OutputHydrater<'_> {
                 // write it directly rather than reflinking from the CAS.
                 write_output_file(output_path, b"", file)?;
             } else {
-                cas.hydrate(&digest.hash, &output_path)?;
+                cas.read_file(&digest.hash, &output_path)?;
 
                 // The reflink clones content but not the original mtime/mode.
                 apply_output_file_properties(&output_path, file)?;

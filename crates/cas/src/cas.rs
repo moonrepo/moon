@@ -58,7 +58,7 @@ impl CasStore {
 
     // ---- Write operations ----
 
-    #[instrument(skip(self, bytes), fields(len = bytes.len()))]
+    #[instrument(skip(self, bytes), fields(size = bytes.len()))]
     pub fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<bool> {
         if self.contains_object(hash) {
             return Ok(false);
@@ -84,60 +84,10 @@ impl CasStore {
         Ok(true)
     }
 
-    /// Store raw bytes from the provided blob.
-    pub fn write_blob(&self, blob: &Blob) -> miette::Result<()> {
-        if self.write(&blob.digest.hash, &blob.bytes)? {
-            trace!(hash = blob.digest.hash.as_str(), "Stored object from blob");
-        }
-
-        Ok(())
-    }
-
-    /// Store raw bytes and return the content hash.
-    pub fn write_bytes(&self, bytes: &[u8]) -> miette::Result<Digest> {
-        let digest = Digest::from_bytes(bytes)?;
-
-        if self.write(&digest.hash, bytes)? {
-            trace!(hash = digest.hash.as_str(), "Stored object from bytes");
-        }
-
-        Ok(digest)
-    }
-
-    /// Store content read from a file and return a blob.
     #[instrument(skip(self))]
-    pub fn write_file(&self, path: &Path) -> miette::Result<Blob> {
-        let blob = Blob::from_file(path)?;
-
-        if self.write(&blob.digest.hash, &blob.bytes)? {
-            trace!(hash = blob.digest.hash.as_str(), path = ?path, "Stored object from file");
-        }
-
-        Ok(blob)
-    }
-
-    /// Store content from a file by streaming it through the store.
-    ///
-    /// Unlike [`Self::write_stream`], the file is hashed up front in a single
-    /// read-only pass (in 64 KiB chunks, never materialized in memory), so an
-    /// object that already exists short-circuits *before* any temp file is
-    /// created. Only a genuine cache miss writes to the store, and it does so
-    /// with a reflink (copy-on-write clone) that shares blocks instead of
-    /// copying bytes wherever the filesystem supports it.
-    ///
-    /// Prefer this over `write_stream` whenever the source is a real file: it
-    /// avoids the wasteful temp-file create/write/remove churn that streaming
-    /// incurs on a warm cache, where the hash isn't known until after the
-    /// throwaway temp has already been written.
-    #[instrument(skip(self))]
-    pub fn write_path(&self, path: &Path) -> miette::Result<Digest> {
-        // Content is addressed by hash, so the file must be read to know
-        // whether the store already holds it. Hash without writing anything.
-        let digest = Digest::from_file(path)?;
-
-        // Warm cache: object already present, so skip all temp-file work.
-        if self.contains_object(&digest.hash) {
-            return Ok(digest);
+    pub fn write_file(&self, hash: &ContentHash, source: &Path) -> miette::Result<bool> {
+        if self.contains_object(hash) {
+            return Ok(false);
         }
 
         // Cold cache: reflink (copy-on-write clone) the file into a temp file,
@@ -149,12 +99,43 @@ impl CasStore {
         // fallback stays safe.
         let mut guard = self.create_temp_file()?;
 
-        fs::reflink_file(path, &guard.path)?;
+        fs::reflink_file(source, &guard.path)?;
 
         // No fsync: see `write` for rationale.
-        self.commit_temp_file(&digest.hash, &mut guard)?;
+        self.commit_temp_file(hash, &mut guard)?;
 
-        trace!(hash = digest.hash.as_str(), path = ?path, "Stored object from file stream");
+        Ok(true)
+    }
+
+    /// Store raw bytes from the provided blob.
+    pub fn store_blob(&self, blob: &Blob) -> miette::Result<()> {
+        if self.write(&blob.digest, &blob.bytes)? {
+            trace!(hash = blob.digest.hash.as_str(), "Stored object from blob");
+        }
+
+        Ok(())
+    }
+
+    /// Store raw bytes and return the associated digest.
+    pub fn store_bytes(&self, bytes: &[u8]) -> miette::Result<Digest> {
+        let digest = Digest::from_bytes(bytes)?;
+
+        if self.write(&digest, bytes)? {
+            trace!(hash = digest.hash.as_str(), "Stored object from bytes");
+        }
+
+        Ok(digest)
+    }
+
+    /// Store the contents of a file and return the associated digest.
+    /// Internally this will attempt to reflink (copy-on-write clone) the file into
+    /// the store, falling back to a plain copy if the filesystem doesn't support it.
+    pub fn store_file(&self, path: &Path) -> miette::Result<Digest> {
+        let digest = Digest::from_file(path)?;
+
+        if self.write_file(&digest, path)? {
+            trace!(hash = digest.hash.as_str(), path = ?path, "Stored object from file");
+        }
 
         Ok(digest)
     }
@@ -166,7 +147,7 @@ impl CasStore {
     /// always writes a temp file and only then checks for an existing object —
     /// discarding the temp on a hit. When the source is a file, prefer
     /// [`Self::write_path`], which avoids that churn.
-    pub fn write_stream<R: Read>(&self, mut reader: R) -> miette::Result<Digest> {
+    pub fn store_stream<R: Read>(&self, mut reader: R) -> miette::Result<Digest> {
         let mut guard = self.create_temp_file()?;
         let mut size = 0;
 
@@ -227,7 +208,7 @@ impl CasStore {
     ///
     /// This is a pure existence check; it does not verify the on-disk content
     /// against the hash even when `verify_integrity` is enabled. Verification
-    /// happens lazily on read (via `read_bytes` / `open`). Putting it here
+    /// happens lazily on read (via `read_bytes`, etc). Putting it here
     /// would force a full file read + rehash on every write to a hash that
     /// already exists, which dominates the cost of a warm cache.
     pub fn contains_object(&self, hash: &ContentHash) -> bool {
@@ -236,51 +217,29 @@ impl CasStore {
 
     /// Read the full blob into memory. Verifies integrity if configured.
     #[instrument(skip(self))]
-    pub fn read_bytes(&self, hash: &ContentHash) -> miette::Result<Vec<u8>> {
+    pub fn read(&self, hash: &ContentHash) -> miette::Result<Vec<u8>> {
         let path = self.object_path_with_exists_check(hash)?;
         let bytes = fs::read_file_bytes(&path)?;
 
         if self.config.verify_integrity {
-            self.verify_integrity(&path, hash, &bytes)?;
+            self.verify_integrity(&path, hash, hash::sha256::from_bytes(&bytes))?;
         }
 
         Ok(bytes)
     }
 
-    /// Open the blob as a [`std::fs::File`] handle for streaming reads.
-    /// Verifies integrity before returning the handle if configured.
-    pub fn open(&self, hash: &ContentHash) -> miette::Result<std::fs::File> {
-        let path = self.object_path_with_exists_check(hash)?;
-
-        if self.config.verify_integrity {
-            let bytes = fs::read_file_bytes(&path)?;
-            self.verify_integrity(&path, hash, &bytes)?;
-        }
-
-        std::fs::File::open(&path).map_err(|error| {
-            CasError::ReadFailed {
-                path,
-                error: Box::new(error),
-            }
-            .into()
-        })
-    }
-
-    /// Materialize the object for `hash` at `dest`, overwriting any existing
-    /// file. Uses a reflink (copy-on-write clone) so the destination shares
+    /// Read the object from the cache and write it to the destination path.
+    /// Verifies integrity if configured.
+    ///
+    /// Uses a reflink (copy-on-write clone) so the destination shares
     /// storage with the stored object: near-instant and zero extra disk space
     /// on a reflink-capable filesystem, falling back to a plain copy otherwise.
-    ///
-    /// This is the fast path for hydrating cached outputs back into the
-    /// workspace — far cheaper than `read_bytes` + write, which round-trips the
-    /// entire file through memory. Integrity is verified first if configured.
     #[instrument(skip(self))]
-    pub fn hydrate(&self, hash: &ContentHash, dest: &Path) -> miette::Result<()> {
+    pub fn read_file(&self, hash: &ContentHash, dest: &Path) -> miette::Result<()> {
         let path = self.object_path_with_exists_check(hash)?;
 
         if self.config.verify_integrity {
-            let bytes = fs::read_file_bytes(&path)?;
-            self.verify_integrity(&path, hash, &bytes)?;
+            self.verify_integrity(&path, hash, hash::sha256::from_file(&path)?)?;
         }
 
         // A reflink only takes the fast clone path when the destination doesn't
@@ -291,9 +250,25 @@ impl CasStore {
 
         fs::reflink_file(&path, dest)?;
 
-        trace!(hash = hash.as_str(), dest = ?dest, "Hydrated object to path");
-
         Ok(())
+    }
+
+    /// Retrieve the bytes of an object by its hash and return a blob.
+    pub fn retrieve_blob(&self, hash: &ContentHash) -> miette::Result<Blob> {
+        let bytes = self.read(hash)?;
+
+        Ok(Blob::new(
+            Digest {
+                hash: hash.clone(),
+                size: bytes.len() as i64,
+            },
+            bytes,
+        ))
+    }
+
+    /// Retrieve the bytes of an object by its hash.
+    pub fn retrieve_bytes(&self, hash: &ContentHash) -> miette::Result<Vec<u8>> {
+        self.read(hash)
     }
 
     // ---- Lifecycle ----
@@ -322,7 +297,7 @@ impl CasStore {
         Ok(())
     }
 
-    // ---- Internal helpers ----
+    // ---- Helpers ----
 
     pub fn object_path(&self, hash: &ContentHash) -> PathBuf {
         self.objects_dir.join(hash.prefix()).join(hash.suffix())
@@ -340,6 +315,8 @@ impl CasStore {
 
         Ok(path)
     }
+
+    // ---- Internal helpers ----
 
     fn create_temp_file(&self) -> miette::Result<TempGuard> {
         let key: String = std::iter::repeat_with(fastrand::alphanumeric)
@@ -365,12 +342,12 @@ impl CasStore {
     fn verify_integrity(
         &self,
         path: &Path,
-        expected: &ContentHash,
-        bytes: &[u8],
+        hash: &ContentHash,
+        actual: String,
     ) -> miette::Result<()> {
-        let actual = hash::sha256::from_bytes(bytes);
+        let expected = hash.as_hex();
 
-        if actual != expected.as_hex() {
+        if actual != expected {
             return Err(CasError::IntegrityMismatch {
                 path: path.to_owned(),
                 expected: expected.to_string(),

@@ -228,7 +228,7 @@ impl OutputArchiver<'_> {
         let action_blob = create_action_blob(&state.digest, &state.bytes);
 
         if state.local_cache_writable & state.local_cas_enabled {
-            cache_engine.cas.write_blob(&action_blob)?;
+            cache_engine.cas.store_blob(&action_blob)?;
         }
 
         if state.remote_cache_writable
@@ -269,7 +269,7 @@ impl OutputArchiver<'_> {
             // Inline blobs (stderr/stdout) still need to be written to the CAS;
             // output file blobs were already streamed there during collection.
             for blob in &inline_blobs {
-                cache_engine.cas.write_blob(blob)?;
+                cache_engine.cas.store_blob(blob)?;
             }
         }
 
@@ -362,7 +362,7 @@ impl OutputArchiver<'_> {
                 let mut blobs = Vec::with_capacity(chunk.len());
 
                 for digest in chunk {
-                    let bytes = cache_engine.cas.read_bytes(&digest.hash)?;
+                    let bytes = cache_engine.cas.read(&digest.hash)?;
                     blobs.push(Blob::new(digest, bytes));
                 }
 

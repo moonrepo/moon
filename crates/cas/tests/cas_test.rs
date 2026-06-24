@@ -31,8 +31,8 @@ mod cas {
             let store = create_store(&sandbox);
 
             let data = b"hello world";
-            let digest = store.write_bytes(data).unwrap();
-            let read_back = store.read_bytes(&digest.hash).unwrap();
+            let digest = store.store_bytes(data).unwrap();
+            let read_back = store.read(&digest.hash).unwrap();
 
             assert_eq!(read_back, data);
         }
@@ -43,7 +43,7 @@ mod cas {
             let store = create_store(&sandbox);
 
             let data = b"sized payload";
-            let digest = store.write_bytes(data).unwrap();
+            let digest = store.store_bytes(data).unwrap();
 
             assert_eq!(digest.size, data.len() as i64);
         }
@@ -53,8 +53,8 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let digest = store.write_bytes(b"").unwrap();
-            let read_back = store.read_bytes(&digest.hash).unwrap();
+            let digest = store.store_bytes(b"").unwrap();
+            let read_back = store.read(&digest.hash).unwrap();
 
             assert!(read_back.is_empty());
             assert_eq!(digest.size, 0);
@@ -66,8 +66,8 @@ mod cas {
             let store = create_store(&sandbox);
 
             let data = b"duplicate content";
-            let digest1 = store.write_bytes(data).unwrap();
-            let digest2 = store.write_bytes(data).unwrap();
+            let digest1 = store.store_bytes(data).unwrap();
+            let digest2 = store.store_bytes(data).unwrap();
 
             assert_eq!(digest1, digest2);
         }
@@ -77,8 +77,8 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let digest1 = store.write_bytes(b"aaa").unwrap();
-            let digest2 = store.write_bytes(b"bbb").unwrap();
+            let digest1 = store.store_bytes(b"aaa").unwrap();
+            let digest2 = store.store_bytes(b"bbb").unwrap();
 
             assert_ne!(digest1, digest2);
         }
@@ -94,9 +94,9 @@ mod cas {
 
             let blob = Blob::from_bytes(b"blob content".to_vec()).unwrap();
 
-            store.write_blob(&blob).unwrap();
+            store.store_blob(&blob).unwrap();
 
-            let read_back = store.read_bytes(&blob.digest.hash).unwrap();
+            let read_back = store.read(&blob.digest.hash).unwrap();
 
             assert_eq!(read_back, b"blob content");
         }
@@ -108,8 +108,8 @@ mod cas {
 
             let blob = Blob::from_bytes(b"twice".to_vec()).unwrap();
 
-            store.write_blob(&blob).unwrap();
-            store.write_blob(&blob).unwrap();
+            store.store_blob(&blob).unwrap();
+            store.store_blob(&blob).unwrap();
 
             assert!(store.contains_object(&blob.digest.hash));
         }
@@ -127,7 +127,7 @@ mod cas {
             std::fs::write(&source, b"file content").unwrap();
 
             let blob = store.write_file(&source).unwrap();
-            let read_back = store.read_bytes(&blob.digest.hash).unwrap();
+            let read_back = store.read(&blob.digest.hash).unwrap();
 
             assert_eq!(read_back, b"file content");
         }
@@ -141,7 +141,7 @@ mod cas {
             let source = sandbox.path().join("input.txt");
             std::fs::write(&source, data).unwrap();
 
-            let digest_bytes = store.write_bytes(data).unwrap();
+            let digest_bytes = store.store_bytes(data).unwrap();
             let blob = store.write_file(&source).unwrap();
 
             assert_eq!(digest_bytes.hash, blob.digest.hash);
@@ -159,8 +159,8 @@ mod cas {
             let data = b"stream content";
             let cursor = Cursor::new(data);
 
-            let digest = store.write_stream(cursor).unwrap();
-            let read_back = store.read_bytes(&digest.hash).unwrap();
+            let digest = store.store_stream(cursor).unwrap();
+            let read_back = store.read(&digest.hash).unwrap();
 
             assert_eq!(read_back, data.as_slice());
         }
@@ -171,7 +171,7 @@ mod cas {
             let store = create_store(&sandbox);
 
             let data = b"sized stream";
-            let digest = store.write_stream(Cursor::new(data)).unwrap();
+            let digest = store.store_stream(Cursor::new(data)).unwrap();
 
             assert_eq!(digest.size, data.len() as i64);
         }
@@ -182,8 +182,8 @@ mod cas {
             let store = create_store(&sandbox);
 
             let data = b"consistent hashing";
-            let digest_bytes = store.write_bytes(data).unwrap();
-            let digest_stream = store.write_stream(Cursor::new(data)).unwrap();
+            let digest_bytes = store.store_bytes(data).unwrap();
+            let digest_stream = store.store_stream(Cursor::new(data)).unwrap();
 
             assert_eq!(digest_bytes, digest_stream);
         }
@@ -200,13 +200,13 @@ mod cas {
                 .map(|i| (i % 251) as u8)
                 .collect();
 
-            let digest_stream = store.write_stream(Cursor::new(&data)).unwrap();
-            let digest_bytes = store.write_bytes(&data).unwrap();
+            let digest_stream = store.store_stream(Cursor::new(&data)).unwrap();
+            let digest_bytes = store.store_bytes(&data).unwrap();
 
             assert_eq!(digest_stream, digest_bytes);
             assert_eq!(digest_stream.size, data.len() as i64);
 
-            let read_back = store.read_bytes(&digest_stream.hash).unwrap();
+            let read_back = store.read(&digest_stream.hash).unwrap();
             assert_eq!(read_back, data);
         }
 
@@ -215,7 +215,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let digest = store.write_stream(Cursor::new(b"")).unwrap();
+            let digest = store.store_stream(Cursor::new(b"")).unwrap();
 
             assert_eq!(digest.size, 0);
             assert!(store.contains_object(&digest.hash));
@@ -240,7 +240,7 @@ mod cas {
             std::fs::write(&source, b"path content").unwrap();
 
             let digest = store.write_path(&source).unwrap();
-            let read_back = store.read_bytes(&digest.hash).unwrap();
+            let read_back = store.read(&digest.hash).unwrap();
 
             assert_eq!(read_back, b"path content");
         }
@@ -268,7 +268,7 @@ mod cas {
             let source = sandbox.path().join("input.txt");
             std::fs::write(&source, data).unwrap();
 
-            let digest_bytes = store.write_bytes(data).unwrap();
+            let digest_bytes = store.store_bytes(data).unwrap();
             let digest_path = store.write_path(&source).unwrap();
 
             assert_eq!(digest_bytes, digest_path);
@@ -287,11 +287,11 @@ mod cas {
             std::fs::write(&source, &data).unwrap();
 
             let digest_path = store.write_path(&source).unwrap();
-            let digest_bytes = store.write_bytes(&data).unwrap();
+            let digest_bytes = store.store_bytes(&data).unwrap();
 
             assert_eq!(digest_path, digest_bytes);
             assert_eq!(digest_path.size, data.len() as i64);
-            assert_eq!(store.read_bytes(&digest_path.hash).unwrap(), data);
+            assert_eq!(store.read(&digest_path.hash).unwrap(), data);
         }
 
         #[test]
@@ -360,7 +360,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let digest = store.write_bytes(b"hydrate me").unwrap();
+            let digest = store.store_bytes(b"hydrate me").unwrap();
             let dest = sandbox.path().join("out/restored.txt");
 
             store.hydrate(&digest.hash, &dest).unwrap();
@@ -375,7 +375,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let digest = store.write_bytes(b"new content").unwrap();
+            let digest = store.store_bytes(b"new content").unwrap();
             let dest = sandbox.path().join("restored.txt");
             std::fs::write(&dest, b"stale content").unwrap();
 
@@ -404,7 +404,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_verified_store(&sandbox);
 
-            let digest = store.write_bytes(b"trustworthy").unwrap();
+            let digest = store.store_bytes(b"trustworthy").unwrap();
             std::fs::write(store.object_path(&digest.hash), b"tampered").unwrap();
 
             let dest = sandbox.path().join("restored.txt");
@@ -423,7 +423,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
-            let digest = store.write_bytes(b"exists").unwrap();
+            let digest = store.store_bytes(b"exists").unwrap();
             assert!(store.contains_object(&digest.hash));
         }
 
@@ -444,7 +444,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_verified_store(&sandbox);
 
-            let digest = store.write_bytes(b"original").unwrap();
+            let digest = store.store_bytes(b"original").unwrap();
 
             // Corrupt the on-disk blob.
             std::fs::write(store.object_path(&digest.hash), b"tampered").unwrap();
@@ -462,7 +462,7 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_verified_store(&sandbox);
 
-            let digest = store.write_bytes(b"original").unwrap();
+            let digest = store.store_bytes(b"original").unwrap();
             let path = store.object_path(&digest.hash);
 
             std::fs::write(&path, b"tampered").unwrap();
@@ -513,7 +513,7 @@ mod cas {
             let store = create_store(&sandbox);
 
             let hash = ContentHash::from_hex("1".repeat(64)).unwrap();
-            let result = store.read_bytes(&hash);
+            let result = store.read(&hash);
 
             assert!(result.is_err());
             let err = result.unwrap_err();
@@ -530,8 +530,8 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_verified_store(&sandbox);
 
-            let digest = store.write_bytes(b"valid content").unwrap();
-            let result = store.read_bytes(&digest.hash);
+            let digest = store.store_bytes(b"valid content").unwrap();
+            let result = store.read(&digest.hash);
 
             assert!(result.is_ok());
         }
@@ -541,12 +541,12 @@ mod cas {
             let sandbox = create_empty_sandbox();
             let store = create_verified_store(&sandbox);
 
-            let digest = store.write_bytes(b"original content").unwrap();
+            let digest = store.store_bytes(b"original content").unwrap();
             let path = store.object_path(&digest.hash);
 
             std::fs::write(&path, b"corrupted!").unwrap();
 
-            let result = store.read_bytes(&digest.hash);
+            let result = store.read(&digest.hash);
             assert!(result.is_err());
             let err = result.unwrap_err();
             let cas_err = err.downcast_ref::<CasError>().unwrap();
@@ -567,7 +567,7 @@ mod cas {
 
             std::thread::scope(|s| {
                 let handles: Vec<_> = (0..8)
-                    .map(|_| s.spawn(|| store.write_bytes(data).unwrap()))
+                    .map(|_| s.spawn(|| store.store_bytes(data).unwrap()))
                     .collect();
 
                 let digests: Vec<_> = handles.into_iter().map(|h| h.join().unwrap()).collect();
@@ -580,7 +580,7 @@ mod cas {
             });
 
             // Only one blob on disk.
-            let digest = store.write_bytes(data).unwrap();
+            let digest = store.store_bytes(data).unwrap();
             assert!(store.contains_object(&digest.hash));
         }
     }

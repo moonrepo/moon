@@ -62,7 +62,7 @@ impl OutputTree {
         // object already in the store short-circuits without creating a temp
         // file; only a cache miss copies bytes in.
         self.files
-            .insert(self.convert_path(&abs_path)?, cas.write_path(&abs_path)?);
+            .insert(self.convert_path(&abs_path)?, cas.store_file(&abs_path)?);
 
         Ok(())
     }

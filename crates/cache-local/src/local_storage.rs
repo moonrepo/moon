@@ -52,7 +52,7 @@ impl StorageBackend for LocalStorage {
 
     async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
         if self.manifests.contains_object(&digest) {
-            let blob = self.manifests.read_bytes(&digest)?;
+            let blob = self.manifests.read(&digest)?;
             let manifest: Manifest = serde_json::from_slice(&blob).into_diagnostic()?;
 
             return Ok(Some(manifest));
@@ -73,25 +73,18 @@ impl StorageBackend for LocalStorage {
 
     async fn find_missing_blobs(
         &self,
-        blob_digests: Vec<Digest>,
+        mut blob_digests: Vec<Digest>,
     ) -> miette::Result<FxHashSet<Digest>> {
-        let mut missing_digests = FxHashSet::default();
+        blob_digests.retain(|digest| !self.blobs.contains_object(digest));
 
-        for digest in blob_digests {
-            if !self.blobs.contains_object(&digest) {
-                missing_digests.insert(digest);
-            }
-        }
-
-        Ok(missing_digests)
+        Ok(blob_digests.into_iter().collect())
     }
 
     async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>> {
         let mut blobs = vec![];
 
         for digest in blob_digests {
-            let bytes = self.blobs.read_bytes(&digest)?;
-            blobs.push(Blob::new(digest, bytes));
+            blobs.push(self.blobs.retrieve_blob(&digest)?);
         }
 
         Ok(blobs)
@@ -105,9 +98,9 @@ impl StorageBackend for LocalStorage {
                 BlobContent::File(rel_path) => {
                     let abs_path = rel_path.to_logical_path(&self.workspace_root);
 
-                    // TODO reuse existing digest
-                    self.blobs.write_path(&abs_path)?;
-                    count += 1;
+                    if self.blobs.write_file(&source.digest, &abs_path)? {
+                        count += 1;
+                    }
                 }
                 BlobContent::Inline(bytes) => {
                     if self.blobs.write(&source.digest, bytes)? {

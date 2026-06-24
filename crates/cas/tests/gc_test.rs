@@ -21,7 +21,7 @@ mod gc {
         let sandbox = create_empty_sandbox();
         let store = create_store(&sandbox);
 
-        let digest = store.write_bytes(b"stale").unwrap();
+        let digest = store.store_bytes(b"stale").unwrap();
         let path = store.object_path(&digest.hash);
 
         // Backdate the mtime to 2 hours ago.
@@ -38,7 +38,7 @@ mod gc {
         let sandbox = create_empty_sandbox();
         let store = create_store(&sandbox);
 
-        let digest = store.write_bytes(b"fresh").unwrap();
+        let digest = store.store_bytes(b"fresh").unwrap();
         let result = store.gc(Duration::from_secs(3600)).await.unwrap();
 
         assert_eq!(result.blobs_removed, 0);
@@ -50,7 +50,7 @@ mod gc {
         let sandbox = create_empty_sandbox();
         let store = create_store(&sandbox);
 
-        let digest = store.write_bytes(b"touched").unwrap();
+        let digest = store.store_bytes(b"touched").unwrap();
         let path = store.object_path(&digest.hash);
 
         // Backdate, then touch.
@@ -67,9 +67,9 @@ mod gc {
         let sandbox = create_empty_sandbox();
         let store = create_store(&sandbox);
 
-        store.write_bytes(b"one").unwrap();
-        store.write_bytes(b"two").unwrap();
-        store.write_bytes(b"three").unwrap();
+        store.store_bytes(b"one").unwrap();
+        store.store_bytes(b"two").unwrap();
+        store.store_bytes(b"three").unwrap();
 
         let result = store.purge().await.unwrap();
 

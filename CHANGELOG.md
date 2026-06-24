@@ -4,6 +4,9 @@
 
 #### 🚀 Updates
 
+- **CAS**
+  - Further improvements to the content-addressable storage (CAS) cache, including better error handling and performance improvements, and a new API for local/remote storage interoperability.
+  - When copying files to/from the CAS, we now use OS reflink's when available, which can improve performance and reduce disk space usage.
 - **Processes**
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or

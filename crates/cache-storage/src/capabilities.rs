@@ -22,7 +22,7 @@ impl Default for CacheCapabilities {
     fn default() -> Self {
         Self {
             digest_functions: vec![DigestFunction::Sha256],
-            max_batch_total_size_bytes: 4194304, // 4mb
+            max_batch_total_size_bytes: 0,
             max_cas_blob_size_bytes: 0,
             store_manifests: true,
             supported_batch_update_compressors: vec![Compressor::Identity],

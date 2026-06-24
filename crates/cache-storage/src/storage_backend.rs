@@ -1,5 +1,5 @@
 use crate::capabilities::CacheCapabilities;
-use crate::helpers::{Partition, partition_into_batches};
+use crate::helpers::{Batch, create_batches};
 use crate::manifest::Manifest;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
@@ -56,7 +56,7 @@ where
             "Finding missing blobs",
         );
 
-        for batch in partition_into_batches(
+        for batch in create_batches(
             blob_digests,
             cap.max_batch_total_size_bytes,
             // We are using the length of the digest itself, not the size of the blob,
@@ -133,11 +133,9 @@ where
         let mut set = JoinSet::new();
 
         // Store the blobs in batches based on the max batch size
-        for batch in
-            partition_into_batches(blob_sources, cap.max_batch_total_size_bytes, |source| {
-                source.digest.size as usize
-            })
-        {
+        for batch in create_batches(blob_sources, cap.max_batch_total_size_bytes, |source| {
+            source.digest.size as usize
+        }) {
             set.spawn(Box::pin(store_blobs_batch(
                 Arc::clone(&self),
                 digest.clone(),
@@ -212,11 +210,9 @@ where
         let mut set = JoinSet::new();
 
         // Retrieve the blobs in batches based on the max batch size
-        for batch in
-            partition_into_batches(blob_digests, cap.max_batch_total_size_bytes, |digest| {
-                digest.size as usize
-            })
-        {
+        for batch in create_batches(blob_digests, cap.max_batch_total_size_bytes, |digest| {
+            digest.size as usize
+        }) {
             set.spawn(Box::pin(retrieve_blobs_batch(
                 Arc::clone(&self),
                 digest.clone(),
@@ -283,7 +279,7 @@ fn get_digests_from_sources(blob_sources: &[BlobSource]) -> Vec<Digest> {
 async fn store_blobs_batch<T: StorageBackend + ?Sized>(
     backend: Arc<T>,
     digest: Digest,
-    batch: Partition<BlobSource>,
+    batch: Batch<BlobSource>,
 ) -> miette::Result<u16> {
     let blob_count = batch.items.len();
 
@@ -329,7 +325,7 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
 async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
     backend: Arc<T>,
     digest: Digest,
-    batch: Partition<Digest>,
+    batch: Batch<Digest>,
 ) -> miette::Result<Vec<Blob>> {
     let blob_count = batch.items.len();
 

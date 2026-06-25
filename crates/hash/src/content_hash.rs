@@ -1,24 +1,20 @@
 use crate::hash_error::HashError;
 use compact_str::CompactString;
-use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
-use starbase_utils::fs;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use starbase_utils::hash;
 use std::fmt;
 use std::ops::Deref;
 use std::path::Path;
-
-pub fn hash_sha256<T: AsRef<[u8]>>(bytes: T) -> String {
-    hex::encode(Sha256::digest(bytes))
-}
+use std::sync::Arc;
 
 /// A SHA-256 content hash: 64-character hex string.
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ContentHash(CompactString);
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+pub struct ContentHash(Arc<CompactString>);
 
 impl ContentHash {
     /// Hash a byte slice to produce a `ContentHash`.
     pub fn hash_bytes<T: AsRef<[u8]>>(bytes: T) -> miette::Result<Self> {
-        ContentHash::from_hex(hash_sha256(bytes))
+        ContentHash::from_hex(hash::sha256::from_bytes(bytes))
     }
 
     /// Hash a file's contents to produce a `ContentHash`.
@@ -44,9 +40,7 @@ impl ContentHash {
         //     hasher.update(&bytes);
         // }
 
-        let bytes = fs::read_file_bytes(path.as_ref())?;
-
-        ContentHash::hash_bytes(&bytes)
+        ContentHash::from_hex(hash::sha256::from_file(path.as_ref())?)
     }
 
     /// Create a `ContentHash` from a hex string, validating format.
@@ -60,7 +54,7 @@ impl ContentHash {
             .into());
         }
 
-        Ok(Self(hex.into()))
+        Ok(Self(Arc::new(hex.into())))
     }
 
     // /// Create a `ContentHash` from a BLAKE3 hash output.
@@ -86,6 +80,28 @@ impl ContentHash {
     /// Remaining 62 hex chars (blob filename).
     pub fn suffix(&self) -> &str {
         &self.0[2..]
+    }
+}
+
+// `Arc<CompactString>` doesn't implement serde, and we don't want to leak the
+// `Arc` into the wire format anyway. Serialize as a plain hex string, exactly
+// as the previous `ContentHash(CompactString)` newtype did, so existing cache
+// manifests and action results stay readable.
+impl Serialize for ContentHash {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.0)
+    }
+}
+
+impl<'de> Deserialize<'de> for ContentHash {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Self(Arc::new(CompactString::deserialize(deserializer)?)))
     }
 }
 

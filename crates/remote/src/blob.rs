@@ -1,7 +1,8 @@
 use crate::remote_error::RemoteError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::compressor;
+use moon_blob::{Blob, Bytes};
 use moon_config::RemoteCompression;
-use moon_hash::{Blob, Digest};
+use moon_hash::Digest;
 use std::ops::Deref;
 
 #[derive(Clone)]
@@ -13,7 +14,7 @@ pub struct CompressableBlob {
 impl CompressableBlob {
     pub fn new(digest: Digest, bytes: Vec<u8>) -> Self {
         Self {
-            inner: Blob { bytes, digest },
+            inner: Blob::new(digest, bytes),
             compression: RemoteCompression::None,
         }
     }
@@ -48,12 +49,12 @@ impl CompressableBlob {
             }
             RemoteCompression::Zstd => {
                 self.inner.bytes =
-                    zstd::encode_all(self.inner.bytes.as_slice(), 1).map_err(|error| {
-                        RemoteError::CompressFailed {
+                    Bytes::from(zstd::encode_all(self.inner.bytes.as_ref(), 1).map_err(
+                        |error| RemoteError::CompressFailed {
                             format: compression,
                             error: Box::new(error),
-                        }
-                    })?
+                        },
+                    )?)
             }
         };
 
@@ -77,13 +78,14 @@ impl CompressableBlob {
                 // N/A
             }
             RemoteCompression::Zstd => {
-                self.inner.bytes =
-                    zstd::decode_all(self.inner.bytes.as_slice()).map_err(|error| {
+                self.inner.bytes = Bytes::from(
+                    zstd::decode_all(self.inner.bytes.as_ref()).map_err(|error| {
                         RemoteError::CompressFailed {
                             format: self.compression,
                             error: Box::new(error),
                         }
-                    })?
+                    })?,
+                )
             }
         };
 

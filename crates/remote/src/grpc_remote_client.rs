@@ -556,7 +556,7 @@ impl RemoteClient for GrpcRemoteClient {
                 requests: blobs
                     .into_iter()
                     .map(|blob| batch_update_blobs_request::Request {
-                        data: blob.inner.bytes,
+                        data: blob.inner.bytes.to_vec(),
                         digest: Some(blob.inner.digest.into_remote_digest()),
                         compressor: get_compressor(compression),
                     })
@@ -644,7 +644,7 @@ impl RemoteClient for GrpcRemoteClient {
         let stream_error_clone = stream_error.clone();
 
         let stream = async_stream::stream! {
-            let reader = ReaderStream::new(blob.inner.bytes.as_slice());
+            let reader = ReaderStream::new(blob.inner.bytes.as_ref());
             let mut written_bytes: i64 = 0;
 
             for await read_result in reader {

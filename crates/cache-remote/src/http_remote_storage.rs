@@ -234,7 +234,11 @@ impl StorageBackend for HttpRemoteStorage {
         Ok(FxHashSet::from_iter(blob_digests))
     }
 
-    async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>> {
+    async fn retrieve_blobs(
+        &self,
+        blob_digests: Vec<Digest>,
+        _stream: bool,
+    ) -> miette::Result<Vec<Blob>> {
         let mut set = JoinSet::<miette::Result<Option<Bytes>>>::new();
         let debug_enabled = self.context.remote_debug;
 
@@ -278,7 +282,11 @@ impl StorageBackend for HttpRemoteStorage {
         Ok(blobs)
     }
 
-    async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16> {
+    async fn store_blobs(
+        &self,
+        blob_sources: Vec<BlobSource>,
+        _stream: bool,
+    ) -> miette::Result<u16> {
         let mut set = JoinSet::<miette::Result<Option<Digest>>>::new();
         let debug_enabled = self.context.remote_debug;
 

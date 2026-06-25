@@ -199,7 +199,8 @@ where
     }
 
     /// Store the blobs from the given list of blob sources.
-    async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16>;
+    async fn store_blobs(&self, blob_sources: Vec<BlobSource>, stream: bool)
+    -> miette::Result<u16>;
 
     //---------- RECEIVING BLOBS ----------//
 
@@ -241,7 +242,36 @@ where
 
             match result {
                 Ok(Ok(batched_blobs)) => {
-                    downloaded_blobs.extend(batched_blobs);
+                    for blob in batched_blobs {
+                        if blob.bytes.len() != blob.digest.size as usize {
+                            trace!(
+                                hash = digest.hash.as_str(),
+                                blob_hash = blob.digest.hash.as_str(),
+                                expected_size = blob.digest.size,
+                                actual_size = blob.bytes.len(),
+                                "Integrity failure, mismatched file sizes",
+                            );
+
+                            abort = true;
+                            break;
+                        } else {
+                            let actual_digest = Digest::from_bytes(&blob.bytes)?;
+
+                            if actual_digest != blob.digest {
+                                trace!(
+                                    hash = digest.hash.as_str(),
+                                    blob_hash = blob.digest.hash.as_str(),
+                                    actual_hash = actual_digest.hash.as_str(),
+                                    "Integrity failure, mismatched digests",
+                                );
+
+                                abort = true;
+                                break;
+                            }
+                        }
+
+                        downloaded_blobs.push(blob);
+                    }
                 }
                 Ok(Err(error)) => {
                     download_errors.push(error.to_string());
@@ -274,7 +304,11 @@ where
     }
 
     /// Retrieve the blobs for the given list of blob digests.
-    async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>>;
+    async fn retrieve_blobs(
+        &self,
+        blob_digests: Vec<Digest>,
+        stream: bool,
+    ) -> miette::Result<Vec<Blob>>;
 }
 
 fn get_digests_from_sources(blob_sources: &[BlobSource]) -> Vec<Digest> {
@@ -301,7 +335,7 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
         batch.total,
     );
 
-    match backend.store_blobs(batch.items).await {
+    match backend.store_blobs(batch.items, batch.stream).await {
         Ok(count) => {
             trace!(
                 storage = backend.get_id().as_str(),
@@ -347,7 +381,7 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
         batch.total,
     );
 
-    match backend.retrieve_blobs(batch.items).await {
+    match backend.retrieve_blobs(batch.items, batch.stream).await {
         Ok(blobs) => {
             trace!(
                 storage = backend.get_id().as_str(),

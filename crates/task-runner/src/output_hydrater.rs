@@ -4,11 +4,12 @@ use crate::task_runner_error::TaskRunnerError;
 use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
+use moon_cache::ExternalDigestExt;
 use moon_common::{
     color,
     path::{PathExt, clean_components},
 };
-use moon_remote::{RemoteDigestExt, RemoteService};
+use moon_remote::RemoteService;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarUnpacker;
@@ -112,7 +113,7 @@ impl OutputHydrater<'_> {
             if let Some(digest) = action_result
                 .stderr_digest
                 .as_ref()
-                .and_then(|digest| digest.to_local_digest().ok())
+                .and_then(|digest| digest.to_internal_digest().ok())
                 && action_result.stderr_raw.is_empty()
                 && digest.size > 0
             {
@@ -123,7 +124,7 @@ impl OutputHydrater<'_> {
             if let Some(digest) = action_result
                 .stdout_digest
                 .as_ref()
-                .and_then(|digest| digest.to_local_digest().ok())
+                .and_then(|digest| digest.to_internal_digest().ok())
                 && action_result.stdout_raw.is_empty()
                 && digest.size > 0
             {
@@ -302,7 +303,7 @@ impl OutputHydrater<'_> {
             let Some(digest) = file
                 .digest
                 .as_ref()
-                .and_then(|digest| digest.to_local_digest().ok())
+                .and_then(|digest| digest.to_internal_digest().ok())
             else {
                 continue;
             };

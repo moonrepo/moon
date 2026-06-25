@@ -17,6 +17,7 @@ moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
 moon_hash = { path = "../hash" }
 async-trait = { workspace = true }
+bazel-remote-apis = { workspace = true }
 miette = { workspace = true }
 reqwest = { workspace = true, features = ["gzip", "json", "zstd"] }
 rustc-hash = { workspace = true }
@@ -24,8 +25,22 @@ serde_json = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true, features = ["io"] }
 tracing = { workspace = true }
+uuid = { workspace = true }
 zstd = "0.13.3"
+
+# gRPC
+async-stream = { workspace = true }
+http = "1.4.2"
+tonic = { workspace = true, features = [
+	"channel",
+	"codegen",
+	"gzip",
+	"tls-aws-lc",
+	"tls-native-roots",
+] }
+tower = { workspace = true, features = ["retry", "timeout"] }
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }

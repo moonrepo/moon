@@ -123,7 +123,11 @@ impl StorageBackend for LocalStorage {
         .into_diagnostic()
     }
 
-    async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>> {
+    async fn retrieve_blobs(
+        &self,
+        blob_digests: Vec<Digest>,
+        _stream: bool,
+    ) -> miette::Result<Vec<Blob>> {
         let blobs = Arc::clone(&self.blobs);
 
         spawn_blocking(move || {
@@ -139,7 +143,11 @@ impl StorageBackend for LocalStorage {
         .into_diagnostic()?
     }
 
-    async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16> {
+    async fn store_blobs(
+        &self,
+        blob_sources: Vec<BlobSource>,
+        _stream: bool,
+    ) -> miette::Result<u16> {
         let blobs = Arc::clone(&self.blobs);
         let workspace_root = self.context.workspace_root.clone();
 

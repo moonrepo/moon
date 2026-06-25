@@ -52,12 +52,6 @@ impl Debug for Blob {
     }
 }
 
-impl Into<Bytes> for Blob {
-    fn into(self) -> Bytes {
-        self.bytes
-    }
-}
-
 impl TryFrom<Bytes> for Blob {
     type Error = miette::Report;
 

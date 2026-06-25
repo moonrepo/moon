@@ -11,6 +11,7 @@ use std::time::SystemTime;
 use tokio::task::JoinHandle;
 use tracing::{debug, warn};
 
+#[derive(Default)]
 pub struct Storage {
     local_backends: Vec<BoxedStorageBackend>,
     remote_backends: Vec<BoxedStorageBackend>,

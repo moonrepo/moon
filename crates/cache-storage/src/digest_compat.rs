@@ -54,3 +54,38 @@ impl ExternalDigestExt for ExternalDigest {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn round_trips_internal_external_internal() {
+        let digest = Digest::from_bytes(b"round trip").unwrap();
+
+        let restored = digest.to_external_digest().to_internal_digest().unwrap();
+
+        assert_eq!(digest, restored);
+    }
+
+    #[test]
+    fn preserves_hash_and_size() {
+        let digest = Digest::from_bytes(b"payload").unwrap();
+
+        let external = digest.to_external_digest();
+
+        assert_eq!(external.hash, digest.hash.to_string());
+        assert_eq!(external.size_bytes, digest.size);
+    }
+
+    #[test]
+    fn rejects_invalid_hex_hash() {
+        let external = ExternalDigest {
+            hash: "not-a-valid-hash".into(),
+            size_bytes: 0,
+        };
+
+        assert!(external.to_internal_digest().is_err());
+        assert!(Digest::from_external(external).is_err());
+    }
+}

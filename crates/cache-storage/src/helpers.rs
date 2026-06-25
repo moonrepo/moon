@@ -127,3 +127,129 @@ pub fn create_batches<T>(
         chunk_into_batches(items, get_size)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn item_counts(batches: &[Batch<usize>]) -> Vec<usize> {
+        batches.iter().map(|batch| batch.items.len()).collect()
+    }
+
+    mod partition_into_batches {
+        use super::*;
+
+        #[test]
+        fn empty_input_yields_no_batches() {
+            let batches = partition_into_batches(Vec::<usize>::new(), 1000, |n| *n);
+
+            assert!(batches.is_empty());
+        }
+
+        #[test]
+        fn packs_then_spills_by_size() {
+            // Each item costs size + BUFFER (300). With max 1000, two 100-byte
+            // items (800) fit; the third spills into a second batch.
+            let batches = partition_into_batches(vec![100, 100, 100], 1000, |n| *n);
+
+            assert_eq!(item_counts(&batches), vec![2, 1]);
+        }
+
+        #[test]
+        fn oversized_item_becomes_its_own_stream_batch() {
+            let batches = partition_into_batches(vec![5000], 1000, |n| *n);
+
+            assert_eq!(batches.len(), 1);
+            assert_eq!(batches[0].items, vec![5000]);
+            assert!(batches[0].stream);
+        }
+
+        #[test]
+        fn assigns_one_based_index_and_total() {
+            let batches = partition_into_batches(vec![100, 100, 100], 1000, |n| *n);
+            let total = batches.len();
+
+            for (i, batch) in batches.iter().enumerate() {
+                assert_eq!(batch.index, i + 1);
+                assert_eq!(batch.total, total);
+            }
+        }
+    }
+
+    mod chunk_into_batches {
+        use super::*;
+
+        #[test]
+        fn empty_input_yields_no_batches() {
+            let batches = chunk_into_batches(Vec::<usize>::new(), |n| *n);
+
+            assert!(batches.is_empty());
+        }
+
+        #[test]
+        fn small_input_is_one_item_per_chunk() {
+            // Fewer than BLOCKING_THREAD_COUNT items → chunk size clamps to 1,
+            // maximizing parallelism for small sets.
+            let batches = chunk_into_batches(vec![1, 2, 3, 4], |n| *n);
+
+            assert_eq!(batches.len(), 4);
+            assert!(batches.iter().all(|batch| batch.items.len() == 1));
+        }
+
+        #[test]
+        fn large_input_is_grouped_and_preserves_every_item() {
+            let items: Vec<usize> = (0..5000).collect();
+            let batches = chunk_into_batches(items, |n| *n);
+
+            let total: usize = batches.iter().map(|batch| batch.items.len()).sum();
+            assert_eq!(total, 5000);
+            // Grouped rather than one-per-item once the set is large.
+            assert!(batches.len() > 1);
+            assert!(batches.len() < 5000);
+        }
+
+        #[test]
+        fn never_marks_a_batch_as_stream() {
+            let batches = chunk_into_batches(vec![1, 2, 3], |n| *n);
+
+            assert!(batches.iter().all(|batch| !batch.stream));
+        }
+    }
+
+    mod create_batches {
+        use super::*;
+
+        #[test]
+        fn positive_max_size_partitions_by_size() {
+            // Would be one-per-chunk under chunking, but packs into 2 size
+            // batches — proving size partitioning was selected.
+            let batches = create_batches(vec![100, 100, 100], 1000, |n| *n);
+
+            assert_eq!(item_counts(&batches), vec![2, 1]);
+        }
+
+        #[test]
+        fn zero_max_size_chunks_across_threads() {
+            let batches = create_batches(vec![100, 100, 100], 0, |n| *n);
+
+            assert_eq!(batches.len(), 3);
+            assert!(batches.iter().all(|batch| batch.items.len() == 1));
+        }
+    }
+
+    mod timestamps {
+        use super::*;
+
+        #[test]
+        fn round_trips_through_protobuf() {
+            let now = SystemTime::now();
+
+            let restored = create_from_timestamp(create_timestamp(now).unwrap());
+
+            let original = now.duration_since(UNIX_EPOCH).unwrap();
+            let after = restored.duration_since(UNIX_EPOCH).unwrap();
+            assert_eq!(original.as_secs(), after.as_secs());
+            assert_eq!(original.subsec_nanos(), after.subsec_nanos());
+        }
+    }
+}

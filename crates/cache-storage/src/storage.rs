@@ -9,7 +9,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::SystemTime;
 use tokio::task::JoinHandle;
-use tracing::{debug, warn};
+use tracing::{debug, trace, warn};
 
 #[derive(Default)]
 pub struct Storage {
@@ -38,14 +38,26 @@ impl Storage {
     }
 
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
+        trace!(hash = digest.hash.as_str(), "Checking for a cache manifest");
+
         for backend in self.get_backends() {
             if let Some(manifest) = backend.retrieve_manifest(digest.to_owned()).await? {
+                trace!(
+                    hash = digest.hash.as_str(),
+                    files = manifest.files.len(),
+                    links = manifest.symlinks.len(),
+                    exit_code = manifest.exit_code,
+                    "Cache hit on manifest"
+                );
+
                 return Ok(Some(ManifestSource {
                     backend: Arc::clone(backend),
                     manifest,
                 }));
             }
         }
+
+        trace!(hash = digest.hash.as_str(), "Cache miss on manifest");
 
         Ok(None)
     }
@@ -57,6 +69,14 @@ impl Storage {
     ) -> miette::Result<()> {
         let mut background_tasks = self.background_tasks.lock().unwrap();
 
+        trace!(
+            hash = digest.hash.as_str(),
+            files = manifest.files.len(),
+            links = manifest.symlinks.len(),
+            exit_code = manifest.exit_code,
+            "Archiving cache manifest"
+        );
+
         // Store the manifest in all backends in parallel, but if any fail,
         // continue storing the rest for failover/redundancy in the future
         for backend in self.get_backends() {
@@ -66,6 +86,14 @@ impl Storage {
                 manifest.clone(),
             ))));
         }
+
+        trace!(
+            hash = digest.hash.as_str(),
+            files = manifest.files.len(),
+            links = manifest.symlinks.len(),
+            exit_code = manifest.exit_code,
+            "Archived cache manifest (in queue)"
+        );
 
         Ok(())
     }
@@ -135,18 +163,36 @@ async fn archive_manifest_in_backend(
     digest: Digest,
     mut manifest: Manifest,
 ) -> miette::Result<()> {
+    let blob_sources = manifest.collect_blob_sources();
+    let initial_count = blob_sources.len();
+
+    trace!(
+        storage = backend.get_id().as_str(),
+        hash = digest.hash.as_str(),
+        "Storing {initial_count} blobs"
+    );
+
     manifest.upload_started_at = Some(SystemTime::now());
 
     // Before we store the manifest, we should ensure all associated blobs are stored.
     // This ensures we don't end up with dangling manifests that reference missing blobs.
     let uploaded = Arc::clone(&backend)
-        .store_blobs_batched(digest.clone(), manifest.collect_blob_sources())
+        .store_blobs_batched(digest.clone(), blob_sources)
         .await?;
 
     manifest.upload_completed_at = Some(SystemTime::now());
 
-    if uploaded.is_none() {
-        return Ok(());
+    match uploaded {
+        Some(count) => {
+            trace!(
+                storage = backend.get_id().as_str(),
+                hash = digest.hash.as_str(),
+                "Stored {count} of {initial_count} blobs"
+            );
+        }
+        None => {
+            return Ok(());
+        }
     }
 
     if backend.get_capabilities().store_manifests {
@@ -174,13 +220,29 @@ async fn hydrate_manifest_from_backend(
     digest: &Digest,
     manifest: &mut Manifest,
 ) -> miette::Result<FxHashMap<Digest, Bytes>> {
+    let blob_digests = manifest.collect_unhydrated_blob_digests();
+    let initial_count = blob_digests.len();
+
+    trace!(
+        storage = backend.get_id().as_str(),
+        hash = digest.hash.as_str(),
+        "Retrieving {initial_count} blobs"
+    );
+
     // Retrieve all blobs for digests that have yet to be hydrated
     let blobs_map = Arc::clone(backend)
-        .retrieve_blobs_batched(digest.clone(), manifest.collect_unhydrated_blob_digests())
+        .retrieve_blobs_batched(digest.clone(), blob_digests)
         .await?
         .into_iter()
         .map(|blob| (blob.digest, blob.bytes))
         .collect::<FxHashMap<_, _>>();
+
+    trace!(
+        storage = backend.get_id().as_str(),
+        hash = digest.hash.as_str(),
+        "Retrieved {} of {initial_count} blobs",
+        blobs_map.len()
+    );
 
     // And then copy their data into the manifest
     manifest.hydrate(&blobs_map);

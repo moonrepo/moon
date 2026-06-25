@@ -17,10 +17,14 @@ moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }
 async-trait = { workspace = true }
 miette = { workspace = true }
+reqwest = { workspace = true, features = ["gzip", "json", "zstd"] }
 rustc-hash = { workspace = true }
 serde_json = { workspace = true }
+starbase_utils = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+zstd = "0.13.3"
 
 [dev-dependencies]
 starbase_sandbox = { workspace = true }

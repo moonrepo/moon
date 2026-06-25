@@ -48,8 +48,8 @@ impl StorageBackend for LocalStorage {
         &self.id
     }
 
-    async fn load_capabilities(&self) -> miette::Result<CacheCapabilities> {
-        Ok(CacheCapabilities::default())
+    async fn connect(&mut self) -> miette::Result<Option<CacheCapabilities>> {
+        Ok(Some(CacheCapabilities::default()))
     }
 
     async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {

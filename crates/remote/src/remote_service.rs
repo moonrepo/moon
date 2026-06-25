@@ -185,33 +185,12 @@ impl RemoteService {
         &self,
         action_digest: &Digest,
     ) -> miette::Result<Option<ActionResult>> {
-        if !self.can_download() {
-            return Ok(None);
-        }
-
-        self.client.get_action_result(action_digest).await
+        unreachable!()
     }
 
     #[instrument(skip(self, _action, blob))]
     pub async fn save_action(&self, _action: Action, blob: Blob) -> miette::Result<bool> {
-        if !self.can_upload() {
-            return Ok(false);
-        }
-
-        let digest = blob.digest.clone();
-
-        if self
-            .client
-            .find_missing_blobs(vec![digest.clone()])
-            .await?
-            .contains(&digest)
-        {
-            self.client
-                .batch_update_blobs(&digest, vec![CompressableBlob::from_blob(blob)])
-                .await?;
-        }
-
-        Ok(true)
+        unreachable!()
     }
 
     #[instrument(skip(self, result, blobs))]
@@ -221,66 +200,7 @@ impl RemoteService {
         mut result: ActionResult,
         blobs: Vec<Blob>,
     ) -> miette::Result<bool> {
-        if !self.can_upload() {
-            return Ok(false);
-        }
-
-        let client = Arc::clone(&self.client);
-        let digest = action_digest.to_owned();
-        let max_size = self.get_max_batch_size();
-
-        self.upload_requests
-            .write()
-            .await
-            .push(tokio::spawn(Box::pin(async move {
-                if let Some(metadata) = &mut result.execution_metadata {
-                    metadata.output_upload_start_timestamp = create_timestamp(SystemTime::now());
-                }
-
-                // Don't save the action result if some of the blobs failed to upload
-                match batch_upload_blobs(
-                    client.clone(),
-                    digest.clone(),
-                    blobs
-                        .into_iter()
-                        .map(CompressableBlob::from_blob)
-                        .collect::<Vec<_>>(),
-                    max_size as usize,
-                )
-                .await
-                {
-                    Ok(uploaded) => {
-                        if !uploaded {
-                            return;
-                        }
-                    }
-                    Err(error) => {
-                        warn!(
-                            hash = digest.hash.as_str(),
-                            "Failed to upload blobs and cache action result: {}",
-                            color::muted_light(error.to_string()),
-                        );
-
-                        return;
-                    }
-                };
-
-                if let Some(metadata) = &mut result.execution_metadata {
-                    metadata.output_upload_completed_timestamp =
-                        create_timestamp(SystemTime::now());
-                }
-
-                if let Err(error) = client.update_action_result(&digest, result).await {
-                    warn!(
-                        hash = digest.hash.as_str(),
-                        "Failed to cache action result: {}",
-                        color::muted_light(error.to_string()),
-                    );
-                }
-            })));
-
-        // We don't actually know at this point if they all uploaded
-        Ok(true)
+        unreachable!()
     }
 
     #[instrument(skip(self, result))]
@@ -289,98 +209,12 @@ impl RemoteService {
         action_digest: &Digest,
         result: &mut ActionResult,
     ) -> miette::Result<bool> {
-        if !self.can_download() {
-            return Ok(false);
-        }
-
-        match batch_download_blobs(
-            self.client.clone(),
-            action_digest,
-            result,
-            self.get_max_batch_size() as usize,
-            self.config.cache.verify_integrity,
-        )
-        .await
-        {
-            Ok(downloaded) => {
-                if !downloaded {
-                    return Ok(false);
-                }
-            }
-            Err(error) => {
-                warn!(
-                    hash = action_digest.hash.as_str(),
-                    "Failed to download blobs and restore action result: {}",
-                    color::muted_light(error.to_string()),
-                );
-
-                return Ok(false);
-            }
-        };
-
-        // The stderr/stdout blobs may not have been inlined,
-        // so we need to fetch them manually
-        let mut stdio_digests = vec![];
-
-        if let Some(stderr_digest) = &result.stderr_digest
-            && result.stderr_raw.is_empty()
-            && stderr_digest.size_bytes > 0
-        {
-            stdio_digests.push(stderr_digest.to_local_digest()?);
-        }
-
-        if let Some(stdout_digest) = &result.stdout_digest
-            && result.stdout_raw.is_empty()
-            && stdout_digest.size_bytes > 0
-        {
-            stdio_digests.push(stdout_digest.to_local_digest()?);
-        }
-
-        if !stdio_digests.is_empty() {
-            for blob in self
-                .client
-                .batch_read_blobs(action_digest, stdio_digests)
-                .await?
-            {
-                let Some(blob) = blob else {
-                    continue;
-                };
-
-                if result.stderr_digest.as_ref().is_some_and(|dig| {
-                    dig.hash.as_str() == blob.digest.hash.as_str()
-                        && dig.size_bytes == blob.digest.size
-                }) {
-                    result.stderr_raw = blob.inner.bytes.to_vec();
-                    continue;
-                }
-
-                if result.stdout_digest.as_ref().is_some_and(|dig| {
-                    dig.hash.as_str() == blob.digest.hash.as_str()
-                        && dig.size_bytes == blob.digest.size
-                }) {
-                    result.stdout_raw = blob.inner.bytes.to_vec();
-                }
-            }
-        }
-
-        Ok(true)
+        unreachable!()
     }
 
     #[instrument(skip(self))]
     pub async fn wait_for_requests(&self) {
-        let requests = {
-            self.upload_requests
-                .write()
-                .await
-                .drain(0..)
-                .collect::<Vec<_>>()
-        };
-
-        for future in requests {
-            // We can ignore the errors because we handle them in
-            // the tasks above by logging to the console
-            let _ = future.await;
-        }
+        unreachable!()
     }
 }
 
@@ -390,63 +224,7 @@ async fn batch_find_blobs(
     blob_digests: Vec<Digest>,
     max_size: usize,
 ) -> miette::Result<Vec<Digest>> {
-    let digest_groups = partition_into_groups(blob_digests, max_size, |digest| {
-        digest.size.to_string().len() + digest.hash.len()
-    });
-
-    if digest_groups.is_empty() {
-        return Ok(vec![]);
-    }
-
-    let group_total = digest_groups.len();
-    let mut set = JoinSet::default();
-
-    for (group_index, group) in digest_groups.into_iter() {
-        let client = Arc::clone(&client);
-        let group_key = format!("{}:{group_total}", group_index + 1);
-
-        trace!(
-            hash = action_digest.hash.as_str(),
-            blobs = group.items.len(),
-            "Batching find blobs (group {group_key})",
-        );
-
-        set.spawn(Box::pin(async move {
-            client
-                .find_missing_blobs(group.items)
-                .await
-                .map(|res| (group_key, res))
-        }));
-    }
-
-    let mut missing_digests = vec![];
-    let mut signal_receiver = ProcessRegistry::instance().receive_signal();
-    let mut abort = false;
-
-    while let Some(res) = set.join_next().await {
-        if signal_receiver.try_recv().is_ok() {
-            abort = true;
-            break;
-        }
-
-        let (group_key, digests) = res.into_diagnostic()??;
-
-        trace!(
-            hash = action_digest.hash.as_str(),
-            digests = digests.len(),
-            "Batched find blobs (group {group_key})",
-        );
-
-        missing_digests.extend(digests);
-    }
-
-    if abort {
-        set.shutdown().await;
-
-        return Ok(vec![]);
-    }
-
-    Ok(missing_digests)
+    unreachable!()
 }
 
 async fn batch_upload_blobs(
@@ -455,92 +233,7 @@ async fn batch_upload_blobs(
     mut blobs: Vec<CompressableBlob>,
     max_size: usize,
 ) -> miette::Result<bool> {
-    let missing_digests = batch_find_blobs(
-        Arc::clone(&client),
-        &action_digest,
-        blobs.iter().map(|blob| blob.digest.clone()).collect(),
-        max_size,
-    )
-    .await?;
-
-    // All blobs already exist in CAS
-    if missing_digests.is_empty() {
-        return Ok(true);
-    }
-
-    // Otherwise, reduce down the blobs list
-    blobs.retain(|blob| missing_digests.contains(&blob.digest));
-
-    let blob_groups = partition_into_groups(blobs, max_size, |blob| blob.bytes.len());
-
-    if blob_groups.is_empty() {
-        return Ok(true);
-    }
-
-    let group_total = blob_groups.len();
-    let mut set = JoinSet::default();
-
-    for (group_index, mut group) in blob_groups.into_iter() {
-        let client = Arc::clone(&client);
-        let action_digest = action_digest.to_owned();
-        let group_key = format!("{}:{group_total}", group_index + 1);
-
-        trace!(
-            hash = action_digest.hash.as_str(),
-            blobs = group.items.len(),
-            size = group.size,
-            "Batching blobs upload (group {group_key})",
-        );
-
-        if group.stream {
-            set.spawn(Box::pin(async move {
-                client
-                    .stream_update_blob(&action_digest, group.items.remove(0))
-                    .await
-                    .map(|res| (group_key, vec![Some(res)]))
-            }));
-        } else {
-            set.spawn(Box::pin(async move {
-                client
-                    .batch_update_blobs(&action_digest, group.items)
-                    .await
-                    .map(|res| (group_key, res))
-            }));
-        }
-    }
-
-    let mut signal_receiver = ProcessRegistry::instance().receive_signal();
-    let mut abort = false;
-
-    'outer: while let Some(res) = set.join_next().await {
-        if signal_receiver.try_recv().is_ok() {
-            abort = true;
-            break 'outer;
-        }
-
-        let (group_key, digests) = res.into_diagnostic()??;
-
-        trace!(
-            hash = action_digest.hash.as_str(),
-            digests = digests.len(),
-            "Batched blobs upload (group {group_key})",
-        );
-
-        for maybe_digest in digests {
-            if maybe_digest.is_none() {
-                abort = true;
-                break 'outer;
-            }
-        }
-    }
-
-    if abort {
-        set.shutdown().await;
-
-        return Ok(false);
-    }
-
-    Ok(true)
+    unreachable!()
 }
 
 async fn batch_download_blobs(

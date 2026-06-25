@@ -5113,11 +5113,15 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
+ "reqwest",
  "rustc-hash",
  "serde_json",
  "starbase_sandbox",
+ "starbase_utils",
+ "thiserror 2.0.18",
  "tokio",
  "tracing",
+ "zstd",
 ]
 
 [[package]]

@@ -170,53 +170,7 @@ impl RemoteClient for HttpRemoteClient {
         &self,
         action_digest: &Digest,
     ) -> miette::Result<Option<ActionResult>> {
-        trace!(
-            hash = action_digest.hash.as_str(),
-            "Checking for a cached action result"
-        );
-
-        match self
-            .get_client()
-            .get(self.get_endpoint("ac", &action_digest.hash))
-            .header("Accept", "application/json")
-            .send()
-            .await
-        {
-            Ok(response) => {
-                let status = response.status();
-
-                if status.is_success() {
-                    let result: ActionResult =
-                        response
-                            .json()
-                            .await
-                            .map_err(|error| RemoteError::HttpCallFailed {
-                                error: Box::new(error),
-                            })?;
-
-                    trace!(
-                        hash = action_digest.hash.as_str(),
-                        files = result.output_files.len(),
-                        links = result.output_symlinks.len(),
-                        dirs = result.output_directories.len(),
-                        exit_code = result.exit_code,
-                        "Cache hit on action result"
-                    );
-
-                    Ok(Some(result))
-                } else if status.as_u16() == 404 {
-                    trace!(
-                        hash = action_digest.hash.as_str(),
-                        "Cache miss on action result"
-                    );
-
-                    Ok(None)
-                } else {
-                    Err(map_response_error("get_action_result", response, self.debug).into())
-                }
-            }
-            Err(error) => Err(map_error("get_action_result", error, self.debug).into()),
-        }
+        unreachable!();
     }
 
     async fn update_action_result(
@@ -224,42 +178,11 @@ impl RemoteClient for HttpRemoteClient {
         action_digest: &Digest,
         result: ActionResult,
     ) -> miette::Result<Option<ActionResult>> {
-        trace!(
-            hash = action_digest.hash.as_str(),
-            files = result.output_files.len(),
-            links = result.output_symlinks.len(),
-            dirs = result.output_directories.len(),
-            exit_code = result.exit_code,
-            "Caching action result"
-        );
-
-        match self
-            .get_client()
-            .put(self.get_endpoint("ac", &action_digest.hash))
-            .header("Content-Type", "application/json")
-            .json(&result)
-            .send()
-            .await
-        {
-            Ok(response) => {
-                // Doesn't return a response body
-                // https://github.com/buchgr/bazel-remote/blob/master/server/http.go#L429
-                if response.status().is_success() {
-                    trace!(hash = action_digest.hash.as_str(), "Cached action result");
-
-                    Ok(Some(result))
-                } else {
-                    Err(map_response_error("update_action_result", response, self.debug).into())
-                }
-            }
-            Err(error) => Err(map_error("update_action_result", error, self.debug).into()),
-        }
+        unreachable!();
     }
 
     async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
-        // No way to query this information,
-        // so just assume all are missing?
-        Ok(blob_digests)
+        unreachable!();
     }
 
     async fn batch_read_blobs(
@@ -267,60 +190,7 @@ impl RemoteClient for HttpRemoteClient {
         action_digest: &Digest,
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Option<CompressableBlob>>> {
-        trace!(
-            hash = action_digest.hash.as_str(),
-            compression = self.config.cache.compression.to_string(),
-            "Downloading {} output blobs",
-            blob_digests.len()
-        );
-
-        let mut requests: Vec<JoinHandle<miette::Result<Option<CompressableBlob>>>> = vec![];
-        let debug_enabled = self.debug;
-
-        for blob_digest in blob_digests {
-            let client = self.get_client();
-            let url = self.get_endpoint("cas", &blob_digest.hash);
-            let semaphore = self.semaphore.clone();
-
-            requests.push(tokio::spawn(async move {
-                let Ok(_permit) = semaphore.acquire().await else {
-                    return Ok(None);
-                };
-
-                match client.get(url).send().await {
-                    Ok(response) => {
-                        let status = response.status();
-
-                        if status.is_success() {
-                            return if let Ok(bytes) = response.bytes().await {
-                                Ok(Some(CompressableBlob::new(blob_digest, bytes.to_vec())))
-                            } else {
-                                Ok(None)
-                            };
-                        }
-
-                        Err(map_response_error("batch_read_blobs", response, debug_enabled).into())
-                    }
-                    Err(error) => Err(map_error("batch_read_blobs", error, debug_enabled).into()),
-                }
-            }));
-        }
-
-        let mut blobs = vec![];
-        let total_count = requests.len();
-
-        for future in requests {
-            blobs.push(future.await.into_diagnostic()??);
-        }
-
-        trace!(
-            hash = action_digest.hash.as_str(),
-            "Downloaded {} of {} output blobs",
-            blobs.len(),
-            total_count
-        );
-
-        Ok(blobs)
+        unreachable!();
     }
 
     async fn batch_update_blobs(
@@ -328,67 +198,7 @@ impl RemoteClient for HttpRemoteClient {
         action_digest: &Digest,
         blobs: Vec<CompressableBlob>,
     ) -> miette::Result<Vec<Option<Digest>>> {
-        let compression = self.config.cache.compression;
-        let mut requests: Vec<JoinHandle<miette::Result<Option<Digest>>>> = vec![];
-
-        trace!(
-            hash = action_digest.hash.as_str(),
-            compression = compression.to_string(),
-            "Uploading {} output blobs",
-            blobs.len()
-        );
-
-        let debug_enabled = self.debug;
-
-        for blob in blobs {
-            let client = self.get_client();
-            let url = self.get_endpoint("cas", &blob.digest.hash);
-            let semaphore = self.semaphore.clone();
-
-            requests.push(tokio::spawn(async move {
-                let Ok(_permit) = semaphore.acquire().await else {
-                    return Ok(None);
-                };
-
-                match client.put(url).body(blob.inner.bytes).send().await {
-                    Ok(response) => {
-                        let status = response.status();
-
-                        if status.is_success() {
-                            return Ok(Some(blob.inner.digest));
-                        }
-
-                        Err(
-                            map_response_error("batch_update_blobs", response, debug_enabled)
-                                .into(),
-                        )
-                    }
-                    Err(error) => Err(map_error("batch_update_blobs", error, debug_enabled).into()),
-                }
-            }));
-        }
-
-        let mut digests = vec![];
-        let mut uploaded_count = 0;
-
-        for future in requests {
-            let upload = future.await.into_diagnostic()??;
-
-            if upload.is_some() {
-                uploaded_count += 1;
-            }
-
-            digests.push(upload);
-        }
-
-        trace!(
-            hash = action_digest.hash.as_str(),
-            "Uploaded {} of {} output blobs",
-            uploaded_count,
-            digests.len()
-        );
-
-        Ok(digests)
+        unreachable!();
     }
 }
 

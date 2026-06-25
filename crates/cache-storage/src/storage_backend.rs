@@ -22,7 +22,7 @@ where
     fn get_id(&self) -> &Id;
     fn get_capabilities(&self) -> &CacheCapabilities;
 
-    async fn load_capabilities(&self) -> miette::Result<CacheCapabilities>;
+    async fn connect(&mut self) -> miette::Result<Option<CacheCapabilities>>;
 
     /// Retrieve the manifest for the given digest if it exists, otherwise return `None`.
     /// This *does not* retrieve all the associated blobs for the manifest, only the manifest

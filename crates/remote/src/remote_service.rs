@@ -2,7 +2,6 @@ use crate::blob::*;
 use crate::digest_compat::RemoteDigestExt;
 use crate::grpc_remote_client::GrpcRemoteClient;
 use crate::helpers::*;
-use crate::http_remote_client::HttpRemoteClient;
 use crate::remote_client::RemoteClient;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Action, ActionResult, ServerCapabilities, digest_function,
@@ -55,7 +54,7 @@ impl RemoteService {
 
         let mut client: Box<dyn RemoteClient> = match config.api {
             RemoteApi::Grpc => Box::new(GrpcRemoteClient::default()),
-            RemoteApi::Http => Box::new(HttpRemoteClient::default()),
+            RemoteApi::Http => todo!(),
         };
 
         let cache_enabled = match client.connect_to_host(config, workspace_root).await {

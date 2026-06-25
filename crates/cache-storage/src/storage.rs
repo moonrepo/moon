@@ -45,12 +45,24 @@ impl Storage {
         for backend in self.get_backends() {
             let backend = Arc::clone(backend);
 
-            set.spawn(async move { backend.connect().await });
+            set.spawn(async move {
+                if let Err(error) = backend.connect().await {
+                    warn!(
+                        storage = backend.get_id().as_str(),
+                        error = error.to_string(),
+                        "Failed to connect to storage backend, disabling it"
+                    );
+                }
+            });
         }
 
-        // TODO handle errors
         while let Some(result) = set.join_next().await {
-            result.into_diagnostic()??;
+            if let Err(error) = result {
+                warn!(
+                    error = error.to_string(),
+                    "Failed to connect storage backends"
+                );
+            }
         }
 
         Ok(())

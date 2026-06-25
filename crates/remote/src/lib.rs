@@ -4,8 +4,6 @@ mod grpc_remote_client;
 mod grpc_services;
 mod grpc_tls;
 mod helpers;
-mod http_remote_client;
-mod http_tls;
 mod remote_client;
 mod remote_error;
 mod remote_service;

@@ -6,7 +6,7 @@ use miette::IntoDiagnostic;
 use moon_blob::{Blob, BlobContent, BlobSource, Bytes};
 use moon_cache_storage::CacheContext;
 use moon_cache_storage::{CacheCapabilities, Manifest, StorageBackend};
-use moon_common::{Id, color};
+use moon_common::{Id, color, is_remote};
 use moon_config::RemoteCompression;
 use moon_hash::Digest;
 use reqwest::Client;
@@ -17,7 +17,7 @@ use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
-use tracing::{debug, error};
+use tracing::{debug, error, warn};
 
 #[derive(Debug)]
 pub struct HttpRemoteStorage {
@@ -101,7 +101,18 @@ impl StorageBackend for HttpRemoteStorage {
     async fn connect(&self) -> miette::Result<()> {
         let config = &self.context.remote_config;
 
+        if is_remote() && config.is_localhost() {
+            warn!(
+                storage = self.get_id().as_str(),
+                host = &config.host,
+                "Remote service is configured with a localhost endpoint, but we are in a CI environment; disabling service",
+            );
+
+            return Ok(());
+        }
+
         debug!(
+            storage = self.get_id().as_str(),
             instance = &config.cache.instance_name,
             "Connecting to HTTP host {} {}",
             color::url(config.get_host()),
@@ -211,9 +222,7 @@ impl StorageBackend for HttpRemoteStorage {
                     )
                 }
             }
-            Err(error) => {
-                Err(map_error("store_manifest", error, self.context.remote_debug).into())
-            }
+            Err(error) => Err(map_error("store_manifest", error, self.context.remote_debug).into()),
         }
     }
 

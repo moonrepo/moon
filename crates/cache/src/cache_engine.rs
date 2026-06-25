@@ -63,7 +63,7 @@ impl CacheEngine {
             "Creating cache engine",
         );
 
-        fs::create_dir_all(&dir)?;
+        fs::create_dir_all(dir)?;
 
         // Create a cache directory tag
         if !cache_tag.exists() {
@@ -75,7 +75,7 @@ impl CacheEngine {
             )?;
         }
 
-        let hash = HashEngine::new(&dir)?;
+        let hash = HashEngine::new(dir)?;
 
         // Action cache always uses defaults
         let ac_config = CacheCasConfig::default();
@@ -84,7 +84,7 @@ impl CacheEngine {
             ac: CasStore::new(dir.join("ac"), &ac_config)?,
             cas: CasStore::new(dir.join("cas"), &context.cache_config.cas)?,
             hash,
-            state: StateEngine::new(&dir)?,
+            state: StateEngine::new(dir)?,
             storage: Storage::default(),
             temp_dir: dir.join("temp"),
             cache_dir: dir.to_owned(),

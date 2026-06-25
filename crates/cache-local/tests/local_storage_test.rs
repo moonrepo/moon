@@ -1,20 +1,23 @@
 use moon_blob::{BlobContent, BlobSource, Bytes};
 use moon_cache_local::LocalStorage;
-use moon_cache_storage::{Manifest, ManifestFile, StorageBackend};
-use moon_config::CacheConfig;
+use moon_cache_storage::{CacheContext, Manifest, ManifestFile, StorageBackend};
+use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::sync::Arc;
 
 fn create_backend(sandbox: &Sandbox) -> Arc<LocalStorage> {
-    Arc::new(
-        LocalStorage::new(
-            sandbox.path(),
-            sandbox.path().join(".moon/cache"),
-            &CacheConfig::default(),
-        )
-        .unwrap(),
-    )
+    let cache_dir = sandbox.path().join(".moon/cache");
+    let context = CacheContext {
+        cache_dir: cache_dir.clone(),
+        cache_config: Arc::new(CacheConfig::default()),
+        config_dir: sandbox.path().join(".moon"),
+        remote_config: Arc::new(RemoteConfig::default()),
+        remote_debug: false,
+        workspace_root: sandbox.path().to_path_buf(),
+    };
+
+    Arc::new(LocalStorage::new(context, cache_dir, false).unwrap())
 }
 
 fn inline_source(content: &'static [u8]) -> BlobSource {
@@ -47,7 +50,7 @@ mod local_storage {
             .store_blobs_batched(action_digest(), sources)
             .await
             .unwrap();
-        assert_eq!(stored, Some(3));
+        assert_eq!(stored.len(), 3);
 
         // Everything is present now.
         let missing = Arc::clone(&backend)
@@ -109,7 +112,7 @@ mod local_storage {
             .store_blobs_batched(action_digest(), vec![inline_source(b"dup")])
             .await
             .unwrap();
-        assert_eq!(again, Some(1));
+        assert_eq!(again.len(), 1);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -135,7 +138,7 @@ mod local_storage {
             .store_blobs_batched(action_digest(), sources)
             .await
             .unwrap();
-        assert_eq!(stored, Some(count as u16));
+        assert_eq!(stored.len(), count);
 
         let blobs = Arc::clone(&backend)
             .retrieve_blobs_batched(action_digest(), digests)
@@ -161,7 +164,7 @@ mod local_storage {
             .store_blobs_batched(action_digest(), vec![source])
             .await
             .unwrap();
-        assert_eq!(stored, Some(1));
+        assert_eq!(stored.len(), 1);
 
         let blobs = Arc::clone(&backend)
             .retrieve_blobs_batched(action_digest(), vec![digest])

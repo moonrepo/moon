@@ -2,6 +2,7 @@ use moon_action_graph::ActionGraphBuilder;
 use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
 use moon_cache::{CacheContext, CacheEngine};
+use moon_cache_local::LocalStorage;
 use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
 use moon_config::*;
 use moon_config_loader::{ConfigLoader, ExtensionsConfigExt, ToolchainsConfigExt};
@@ -365,7 +366,13 @@ impl WorkspaceMocker {
             workspace_root: self.workspace_root.clone(),
         };
 
-        CacheEngine::new(context).unwrap()
+        let mut engine = CacheEngine::new(context.clone()).unwrap();
+
+        engine.storage.add_local_backend(
+            LocalStorage::new(context.clone(), &context.cache_dir, false).unwrap(),
+        );
+
+        engine
     }
 
     pub fn mock_console(&self) -> Console {

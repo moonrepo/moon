@@ -86,8 +86,7 @@ impl HttpRemoteStorage {
 #[async_trait]
 impl StorageBackend for HttpRemoteStorage {
     fn get_capabilities(&self) -> &CacheCapabilities {
-        self.capabilities
-            .get_or_init(|| CacheCapabilities::default())
+        self.capabilities.get_or_init(CacheCapabilities::default)
     }
 
     fn get_id(&self) -> &Id {

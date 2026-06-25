@@ -222,8 +222,7 @@ impl GrpcRemoteStorage {
 #[async_trait]
 impl StorageBackend for GrpcRemoteStorage {
     fn get_capabilities(&self) -> &CacheCapabilities {
-        self.capabilities
-            .get_or_init(|| CacheCapabilities::default())
+        self.capabilities.get_or_init(CacheCapabilities::default)
     }
 
     fn get_id(&self) -> &Id {

@@ -8,6 +8,7 @@ use std::sync::{Arc, Mutex};
 
 /// In-memory backend with externally inspectable maps, so tests can both seed
 /// state and assert on what was written back.
+#[derive(Debug)]
 struct MemoryBackend {
     id: Id,
     capabilities: CacheCapabilities,
@@ -36,8 +37,8 @@ impl StorageBackend for MemoryBackend {
         &self.capabilities
     }
 
-    async fn load_capabilities(&self) -> miette::Result<CacheCapabilities> {
-        Ok(CacheCapabilities::default())
+    fn is_enabled(&self) -> bool {
+        true
     }
 
     async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
@@ -71,21 +72,29 @@ impl StorageBackend for MemoryBackend {
             .collect())
     }
 
-    async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16> {
+    async fn store_blobs(
+        &self,
+        blob_sources: Vec<BlobSource>,
+        _stream: bool,
+    ) -> miette::Result<Vec<Digest>> {
         let mut blobs = self.blobs.lock().unwrap();
-        let mut count = 0;
+        let mut stored = vec![];
 
         for source in blob_sources {
             if let BlobContent::Inline(bytes) = source.content {
-                blobs.insert(source.digest, bytes);
-                count += 1;
+                blobs.insert(source.digest.clone(), bytes);
+                stored.push(source.digest);
             }
         }
 
-        Ok(count)
+        Ok(stored)
     }
 
-    async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>> {
+    async fn retrieve_blobs(
+        &self,
+        blob_digests: Vec<Digest>,
+        _stream: bool,
+    ) -> miette::Result<Vec<Blob>> {
         let blobs = self.blobs.lock().unwrap();
 
         Ok(blob_digests

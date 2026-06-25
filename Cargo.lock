@@ -6008,6 +6008,7 @@ dependencies = [
  "moon_action_pipeline",
  "moon_app_context",
  "moon_cache",
+ "moon_cache_local",
  "moon_common",
  "moon_config",
  "moon_config_loader",

@@ -68,8 +68,7 @@ impl StorageBackend for LocalStorage {
     }
 
     fn get_capabilities(&self) -> &CacheCapabilities {
-        self.capabilities
-            .get_or_init(|| CacheCapabilities::default())
+        self.capabilities.get_or_init(CacheCapabilities::default)
     }
 
     fn is_enabled(&self) -> bool {
@@ -155,13 +154,13 @@ impl StorageBackend for LocalStorage {
             let mut digests = vec![];
 
             for source in blob_sources {
-                let stored = match &source.content {
+                let stored = match source.content {
                     BlobContent::File(rel_path) => {
                         let abs_path = rel_path.to_logical_path(&workspace_root);
 
                         blobs.write_file(&source.digest, &abs_path)?
                     }
-                    BlobContent::Inline(bytes) => blobs.write(&source.digest, bytes)?,
+                    BlobContent::Inline(bytes) => blobs.write(&source.digest, &bytes)?,
                 };
 
                 if stored {

@@ -33,6 +33,10 @@ impl Storage {
             .chain(self.remote_backends.iter())
     }
 
+    pub fn is_remote_enabled(&self) -> bool {
+        !self.remote_backends.is_empty()
+    }
+
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
         for backend in self.get_backends() {
             if let Some(manifest) = backend.retrieve_manifest(digest.to_owned()).await? {

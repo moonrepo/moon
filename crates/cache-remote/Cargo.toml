@@ -1,0 +1,29 @@
+[package]
+name = "moon_cache_remote"
+version = "0.0.1"
+edition = "2024"
+license = "MIT"
+description = "Remote cache storage."
+homepage = "https://moonrepo.dev/moon"
+repository = "https://github.com/moonrepo/moon"
+publish = false
+
+[dependencies]
+moon_blob = { path = "../blob" }
+moon_cache_storage = { path = "../cache-storage" }
+moon_cas = { path = "../cas" }
+moon_common = { path = "../common" }
+moon_config = { path = "../config" }
+moon_hash = { path = "../hash" }
+async-trait = { workspace = true }
+miette = { workspace = true }
+rustc-hash = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+
+[lints]
+workspace = true

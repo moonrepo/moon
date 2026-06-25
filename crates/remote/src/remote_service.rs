@@ -8,9 +8,10 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Action, ActionResult, ServerCapabilities, digest_function,
 };
 use miette::IntoDiagnostic;
+use moon_blob::Blob;
 use moon_common::{color, is_ci, is_remote};
 use moon_config::{RemoteApi, RemoteCompression, RemoteConfig};
-use moon_hash::{Blob, Digest};
+use moon_hash::Digest;
 use moon_process::ProcessRegistry;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::path::{Path, PathBuf};
@@ -349,7 +350,7 @@ impl RemoteService {
                     dig.hash.as_str() == blob.digest.hash.as_str()
                         && dig.size_bytes == blob.digest.size
                 }) {
-                    result.stderr_raw = blob.inner.bytes;
+                    result.stderr_raw = blob.inner.bytes.to_vec();
                     continue;
                 }
 
@@ -357,7 +358,7 @@ impl RemoteService {
                     dig.hash.as_str() == blob.digest.hash.as_str()
                         && dig.size_bytes == blob.digest.size
                 }) {
-                    result.stdout_raw = blob.inner.bytes;
+                    result.stdout_raw = blob.inner.bytes.to_vec();
                 }
             }
         }
@@ -669,7 +670,7 @@ async fn batch_download_blobs(
         // Clone (don't remove): a blob may be referenced by multiple
         // output files when they share identical content.
         if let Some(bytes) = blob_map.get(&digest.hash) {
-            file.contents = bytes.to_owned();
+            file.contents = bytes.clone().to_vec();
         } else {
             warn!(
                 hash = action_digest.hash.as_str(),

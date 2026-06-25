@@ -5,7 +5,7 @@ use moon_hash::Digest;
 use starbase_utils::fs::FsError;
 use starbase_utils::glob::{self, GlobWalkOptions};
 use std::collections::BTreeMap;
-use std::fs::{self, File};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
@@ -58,14 +58,11 @@ impl OutputTree {
     }
 
     fn insert_file(&mut self, abs_path: PathBuf, cas: &CasStore) -> miette::Result<()> {
-        let file = File::open(&abs_path).map_err(|error| FsError::Read {
-            path: abs_path.clone(),
-            error: Box::new(error),
-        })?;
-
-        // Stream the file directly into CAS: hashes + writes in 64 KiB chunks.
+        // Stream the file directly into CAS. The file is hashed up front, so an
+        // object already in the store short-circuits without creating a temp
+        // file; only a cache miss copies bytes in.
         self.files
-            .insert(self.convert_path(&abs_path)?, cas.write_stream(file)?);
+            .insert(self.convert_path(&abs_path)?, cas.store_file(&abs_path)?);
 
         Ok(())
     }

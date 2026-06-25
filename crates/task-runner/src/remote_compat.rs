@@ -3,7 +3,8 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     Action, ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
 };
 use moon_action::Operation;
-use moon_hash::{Blob, Digest};
+use moon_blob::Blob;
+use moon_hash::Digest;
 use moon_remote::{LocalDigestExt, create_timestamp, create_timestamp_from_naive};
 use starbase_utils::fs::{self, FsError};
 use std::fs::{self as fs_std, File, Metadata};
@@ -26,7 +27,7 @@ pub fn create_action(command_digest: &Digest) -> Action {
 ///   stderr/stdout). Always small.
 /// - `output_digests`: digests of output files. The bytes live in the local
 ///   CAS (the streaming collection step wrote them there); load on demand
-///   via `cas.read_bytes(&digest.hash)` if you need to upload them.
+///   via `cas.read(&digest.hash)` if you need to upload them.
 pub fn create_action_result(
     operation: &Operation,
     outputs: OutputTree,
@@ -108,10 +109,7 @@ pub fn create_action_result(
 //
 // Hopefully this doesn't cause issues!
 pub fn create_action_blob(digest: &Digest, bytes: &[u8]) -> Blob {
-    Blob {
-        digest: digest.clone(),
-        bytes: bytes.to_owned(),
-    }
+    Blob::new(digest.clone(), bytes.to_owned())
 }
 
 #[cfg(unix)]
@@ -179,6 +177,22 @@ pub fn write_output_file(
 
     if let Some(props) = &file.node_properties {
         apply_node_properties(&mut fd, props).map_err(map_error)?;
+    }
+
+    Ok(())
+}
+
+/// Re-apply an output file's recorded node properties (mtime, permissions) to
+/// a file already on disk. Used after hydrating via reflink, where the bytes
+/// are cloned from the CAS but the original metadata must still be restored.
+pub fn apply_output_file_properties(output_path: &Path, file: &OutputFile) -> miette::Result<()> {
+    if let Some(props) = &file.node_properties {
+        let mut fd = fs::open_file_for_writing(output_path)?;
+
+        apply_node_properties(&mut fd, props).map_err(|error| FsError::Write {
+            path: output_path.to_path_buf(),
+            error: Box::new(error),
+        })?;
     }
 
     Ok(())

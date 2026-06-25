@@ -21,7 +21,7 @@ use moon_cache_storage::{
     StorageBackend,
 };
 use moon_common::{Id, color, is_ci, is_remote};
-use moon_config::RemoteCompression;
+use moon_config::{RemoteCompression, RemoteConfig};
 use moon_hash::Digest;
 use reqwest::header::HeaderMap;
 use rustc_hash::FxHashSet;
@@ -133,8 +133,8 @@ impl GrpcRemoteStorage {
         self.cas_client.get().unwrap().clone()
     }
 
-    fn get_instance_name(&self) -> String {
-        self.context.remote_config.cache.instance_name.clone()
+    fn get_instance_name(&self) -> &str {
+        &self.context.remote_config.cache.instance_name
     }
 
     fn get_uuid(&self) -> &uuid::Uuid {
@@ -142,49 +142,11 @@ impl GrpcRemoteStorage {
     }
 
     fn validate_capabilities(&self, server_cap: &mut ServerCapabilities) {
-        let storage = self.get_id().as_str();
-        let host = &self.context.remote_config.host;
-        let mut enabled = true;
-
-        if let Some(cap) = &mut server_cap.cache_capabilities {
-            let sha256_fn = DigestFunction::Sha256 as i32;
-
-            if !cap.digest_functions.contains(&sha256_fn) {
-                enabled = false;
-
-                warn!(
-                    storage,
-                    host,
-                    "Remote storage does not support SHA256 digests, which is required by moon, disabling backend"
-                );
-            }
-
-            let compression = self.context.remote_config.cache.compression;
-            let compressor = get_compressor(compression);
-
-            if compression != RemoteCompression::None
-                && (!cap.supported_compressors.contains(&compressor)
-                    || !cap.supported_batch_update_compressors.contains(&compressor))
-            {
-                cap.supported_compressors = vec![Compressor::Identity as i32];
-                cap.supported_batch_update_compressors = vec![Compressor::Identity as i32];
-
-                warn!(
-                    storage,
-                    host,
-                    "Remote storage does not support {} compression, but it has been configured and enabled through the {} setting, falling back to no compression",
-                    compression,
-                    color::property("remote.cache.compression"),
-                );
-            }
-        } else {
-            enabled = false;
-
-            warn!(
-                storage,
-                host, "Remote storage does not support caching, disabling backend"
-            );
-        }
+        let enabled = evaluate_capabilities(
+            &self.context.remote_config,
+            server_cap,
+            self.get_id().as_str(),
+        );
 
         self.cache_enabled.set(enabled).ok();
     }
@@ -214,8 +176,11 @@ impl GrpcRemoteStorage {
     }
 
     fn can_upload(&self) -> bool {
-        self.cache_enabled.get().cloned().unwrap_or_default()
-            && (is_ci() || !self.context.remote_config.cache.local_read_only)
+        is_upload_allowed(
+            self.cache_enabled.get().cloned().unwrap_or_default(),
+            is_ci(),
+            self.context.remote_config.cache.local_read_only,
+        )
     }
 }
 
@@ -271,11 +236,7 @@ impl StorageBackend for GrpcRemoteStorage {
 
         // Although we use a grpc(s) protocol for the host,
         // tonic only supports http(s), so change it
-        let url = if let Some(suffix) = config.get_host().strip_prefix("grpc") {
-            format!("http{suffix}")
-        } else {
-            config.get_host().to_owned()
-        };
+        let url = normalize_grpc_host(config.get_host());
 
         let mut endpoint = Endpoint::from_shared(url)
             .map_err(|error| self.map_transport_error("host", error))?
@@ -353,7 +314,7 @@ impl StorageBackend for GrpcRemoteStorage {
         match self
             .get_ac_client()
             .get_action_result(GetActionResultRequest {
-                instance_name: self.get_instance_name(),
+                instance_name: self.get_instance_name().into(),
                 action_digest: Some(digest.to_external_digest()),
                 inline_stderr: true,
                 inline_stdout: true,
@@ -396,7 +357,7 @@ impl StorageBackend for GrpcRemoteStorage {
         match self
             .get_ac_client()
             .update_action_result(UpdateActionResultRequest {
-                instance_name: self.get_instance_name(),
+                instance_name: self.get_instance_name().into(),
                 action_digest: Some(digest.to_external_digest()),
                 action_result: Some(manifest.into_bazel_action_result()),
                 digest_function: DigestFunction::Sha256 as i32,
@@ -425,7 +386,7 @@ impl StorageBackend for GrpcRemoteStorage {
         match self
             .get_cas_client()
             .find_missing_blobs(FindMissingBlobsRequest {
-                instance_name: self.get_instance_name(),
+                instance_name: self.get_instance_name().into(),
                 blob_digests: blob_digests
                     .into_iter()
                     .map(|digest| digest.to_external_digest())
@@ -465,7 +426,7 @@ impl StorageBackend for GrpcRemoteStorage {
                 acceptable_compressors: get_acceptable_compressors(
                     self.context.remote_config.cache.compression,
                 ),
-                instance_name: self.get_instance_name(),
+                instance_name: self.get_instance_name().into(),
                 digests: blob_digests
                     .into_iter()
                     .map(|digest| digest.to_external_digest())
@@ -558,7 +519,7 @@ impl StorageBackend for GrpcRemoteStorage {
         let response = match self
             .get_cas_client()
             .batch_update_blobs(BatchUpdateBlobsRequest {
-                instance_name: self.get_instance_name(),
+                instance_name: self.get_instance_name().into(),
                 requests: blobs
                     .into_iter()
                     .map(|blob| batch_update_blobs_request::Request {
@@ -625,12 +586,7 @@ impl GrpcRemoteStorage {
         &self,
         blob_digest: Digest,
     ) -> miette::Result<Option<CompressableBlob>> {
-        let resource_name = format!(
-            "{}/blobs/{}/{}",
-            self.get_instance_name(),
-            blob_digest.hash,
-            blob_digest.size,
-        );
+        let resource_name = build_read_resource_name(&self.get_instance_name(), &blob_digest);
 
         let response = match self
             .get_bs_client()
@@ -684,13 +640,8 @@ impl GrpcRemoteStorage {
     }
 
     async fn store_blob_streamed(&self, blob: CompressableBlob) -> miette::Result<Digest> {
-        let resource_name = format!(
-            "{}/uploads/{}/blobs/{}/{}",
-            self.get_instance_name(),
-            self.get_uuid(),
-            blob.digest.hash,
-            blob.digest.size,
-        );
+        let resource_name =
+            build_write_resource_name(self.get_instance_name(), self.get_uuid(), &blob.digest);
         let total_bytes = blob.digest.size;
         let stream_error = Arc::new(Mutex::new(None));
         let stream_error_clone = stream_error.clone();
@@ -747,5 +698,276 @@ impl GrpcRemoteStorage {
         };
 
         Ok(blob.inner.digest)
+    }
+}
+
+// Pure helpers, extracted from the methods above so they can be unit tested
+// without standing up a gRPC connection.
+
+fn evaluate_capabilities(
+    config: &RemoteConfig,
+    server_cap: &mut ServerCapabilities,
+    storage: &str,
+) -> bool {
+    let host = &config.host;
+    let mut enabled = true;
+
+    if let Some(cap) = &mut server_cap.cache_capabilities {
+        let sha256_fn = DigestFunction::Sha256 as i32;
+
+        if !cap.digest_functions.contains(&sha256_fn) {
+            enabled = false;
+
+            warn!(
+                storage,
+                host,
+                "Remote storage does not support SHA256 digests, which is required by moon, disabling backend"
+            );
+        }
+
+        let compression = config.cache.compression;
+        let compressor = get_compressor(compression);
+
+        if compression != RemoteCompression::None
+            && (!cap.supported_compressors.contains(&compressor)
+                || !cap.supported_batch_update_compressors.contains(&compressor))
+        {
+            cap.supported_compressors = vec![Compressor::Identity as i32];
+            cap.supported_batch_update_compressors = vec![Compressor::Identity as i32];
+
+            warn!(
+                storage,
+                host,
+                "Remote storage does not support {} compression, but it has been configured and enabled through the {} setting, falling back to no compression",
+                compression,
+                color::property("remote.cache.compression"),
+            );
+        }
+    } else {
+        enabled = false;
+
+        warn!(
+            storage,
+            host, "Remote storage does not support caching, disabling backend"
+        );
+    }
+
+    enabled
+}
+
+fn is_upload_allowed(enabled: bool, is_ci: bool, local_read_only: bool) -> bool {
+    enabled && (is_ci || !local_read_only)
+}
+
+fn normalize_grpc_host(host: &str) -> String {
+    if let Some(suffix) = host.strip_prefix("grpc") {
+        format!("http{suffix}")
+    } else {
+        host.to_owned()
+    }
+}
+
+fn build_read_resource_name(instance_name: &str, digest: &Digest) -> String {
+    format!("{instance_name}/blobs/{}/{}", digest.hash, digest.size)
+}
+
+fn build_write_resource_name(instance_name: &str, uuid: &uuid::Uuid, digest: &Digest) -> String {
+    format!(
+        "{instance_name}/uploads/{uuid}/blobs/{}/{}",
+        digest.hash, digest.size
+    )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bazel_remote_apis::build::bazel::remote::execution::v2::CacheCapabilities as BazelCacheCapabilities;
+    use moon_hash::ContentHash;
+
+    fn digest(seed: char, size: i64) -> Digest {
+        Digest {
+            hash: ContentHash::from_hex(std::iter::repeat_n(seed, 64).collect::<String>()).unwrap(),
+            size,
+        }
+    }
+
+    mod evaluate_capabilities {
+        use super::*;
+
+        fn server_caps(digest_fns: Vec<i32>, compressors: Vec<i32>) -> ServerCapabilities {
+            ServerCapabilities {
+                cache_capabilities: Some(BazelCacheCapabilities {
+                    digest_functions: digest_fns,
+                    supported_compressors: compressors.clone(),
+                    supported_batch_update_compressors: compressors,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }
+        }
+
+        fn config_with_compression(compression: RemoteCompression) -> RemoteConfig {
+            let mut config = RemoteConfig::default();
+            config.cache.compression = compression;
+            config
+        }
+
+        #[test]
+        fn enabled_when_sha256_supported() {
+            let mut caps = server_caps(
+                vec![DigestFunction::Sha256 as i32],
+                vec![Compressor::Identity as i32],
+            );
+
+            assert!(evaluate_capabilities(
+                &RemoteConfig::default(),
+                &mut caps,
+                "grpc"
+            ));
+        }
+
+        #[test]
+        fn disabled_when_sha256_missing() {
+            let mut caps = server_caps(vec![], vec![Compressor::Identity as i32]);
+
+            assert!(!evaluate_capabilities(
+                &RemoteConfig::default(),
+                &mut caps,
+                "grpc"
+            ));
+        }
+
+        #[test]
+        fn disabled_when_no_cache_capabilities() {
+            let mut caps = ServerCapabilities::default();
+
+            assert!(!evaluate_capabilities(
+                &RemoteConfig::default(),
+                &mut caps,
+                "grpc"
+            ));
+        }
+
+        #[test]
+        fn falls_back_to_identity_when_compression_unsupported() {
+            let config = config_with_compression(RemoteCompression::Zstd);
+            let mut caps = server_caps(
+                vec![DigestFunction::Sha256 as i32],
+                vec![Compressor::Identity as i32],
+            );
+
+            // Still enabled, but compression is downgraded in place.
+            assert!(evaluate_capabilities(&config, &mut caps, "grpc"));
+
+            let cache = caps.cache_capabilities.unwrap();
+            assert_eq!(
+                cache.supported_compressors,
+                vec![Compressor::Identity as i32]
+            );
+            assert_eq!(
+                cache.supported_batch_update_compressors,
+                vec![Compressor::Identity as i32]
+            );
+        }
+
+        #[test]
+        fn keeps_compression_when_supported() {
+            let config = config_with_compression(RemoteCompression::Zstd);
+            let mut caps = server_caps(
+                vec![DigestFunction::Sha256 as i32],
+                vec![Compressor::Identity as i32, Compressor::Zstd as i32],
+            );
+
+            assert!(evaluate_capabilities(&config, &mut caps, "grpc"));
+
+            let cache = caps.cache_capabilities.unwrap();
+            assert!(
+                cache
+                    .supported_compressors
+                    .contains(&(Compressor::Zstd as i32))
+            );
+        }
+    }
+
+    mod is_upload_allowed {
+        use super::*;
+
+        #[test]
+        fn never_when_disabled() {
+            assert!(!is_upload_allowed(false, true, false));
+            assert!(!is_upload_allowed(false, false, false));
+        }
+
+        #[test]
+        fn ci_overrides_local_read_only() {
+            assert!(is_upload_allowed(true, true, true));
+        }
+
+        #[test]
+        fn local_read_only_blocks_outside_ci() {
+            assert!(!is_upload_allowed(true, false, true));
+        }
+
+        #[test]
+        fn writable_outside_ci() {
+            assert!(is_upload_allowed(true, false, false));
+        }
+    }
+
+    mod normalize_grpc_host {
+        use super::*;
+
+        #[test]
+        fn rewrites_grpc_to_http() {
+            assert_eq!(
+                normalize_grpc_host("grpc://example.com:9092"),
+                "http://example.com:9092"
+            );
+        }
+
+        #[test]
+        fn rewrites_grpcs_to_https() {
+            assert_eq!(
+                normalize_grpc_host("grpcs://example.com"),
+                "https://example.com"
+            );
+        }
+
+        #[test]
+        fn leaves_http_schemes_untouched() {
+            assert_eq!(
+                normalize_grpc_host("http://example.com"),
+                "http://example.com"
+            );
+            assert_eq!(
+                normalize_grpc_host("https://example.com"),
+                "https://example.com"
+            );
+        }
+    }
+
+    mod resource_names {
+        use super::*;
+
+        #[test]
+        fn read_resource_name_format() {
+            let digest = digest('a', 12);
+
+            assert_eq!(
+                build_read_resource_name("main", &digest),
+                format!("main/blobs/{}/12", digest.hash)
+            );
+        }
+
+        #[test]
+        fn write_resource_name_format() {
+            let digest = digest('a', 12);
+            let uuid = uuid::Uuid::nil();
+
+            assert_eq!(
+                build_write_resource_name("main", &uuid, &digest),
+                format!("main/uploads/{uuid}/blobs/{}/12", digest.hash)
+            );
+        }
     }
 }

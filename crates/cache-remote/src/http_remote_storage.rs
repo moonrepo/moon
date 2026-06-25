@@ -75,10 +75,11 @@ impl HttpRemoteStorage {
     }
 
     fn get_endpoint(&self, path: &str, hash: &str) -> String {
-        format!(
-            "{}/{}/{path}/{hash}",
+        build_endpoint(
             self.context.remote_config.get_host(),
-            self.context.remote_config.cache.instance_name
+            &self.context.remote_config.cache.instance_name,
+            path,
+            hash,
         )
     }
 }
@@ -351,5 +352,30 @@ fn map_response_error(method: &str, res: reqwest::Response, debug: bool) -> Remo
 
     RemoteError::HttpRequestFailed {
         status: Box::new(res.status()),
+    }
+}
+
+fn build_endpoint(host: &str, instance_name: &str, path: &str, hash: &str) -> String {
+    format!("{host}/{instance_name}/{path}/{hash}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn builds_endpoint_url() {
+        assert_eq!(
+            build_endpoint("https://host", "main", "cas", "abc123"),
+            "https://host/main/cas/abc123"
+        );
+    }
+
+    #[test]
+    fn builds_endpoint_with_empty_instance() {
+        assert_eq!(
+            build_endpoint("https://host", "", "ac", "abc123"),
+            "https://host//ac/abc123"
+        );
     }
 }

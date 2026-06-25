@@ -103,24 +103,10 @@ impl OutputHydrater<'_> {
         let mut action_result = result.clone();
 
         let action_result = spawn_blocking(move || {
-            // Hydrate files
-            for file in &mut action_result.output_files {
-                if let Some(digest) = file
-                    .digest
-                    .as_ref()
-                    .and_then(|digest| digest.to_local_digest().ok())
-                {
-                    // Empty files have well-known content; don't hit the CAS
-                    // for them (mirrors the stderr/stdout handling below, and
-                    // avoids a hard failure when the empty blob isn't locally
-                    // present — for example after a remote-only fetch).
-                    if digest.size == 0 {
-                        file.contents = vec![];
-                    } else {
-                        file.contents = app_context.cache_engine.cas.read_bytes(&digest.hash)?;
-                    }
-                }
-            }
+            // Output files are materialized by reflinking them straight out of
+            // the CAS (see `hydrate_outputs_from_cas` below), so their bytes are
+            // never buffered here. Only the small inline logs are read into
+            // memory, since the operation needs them to reconstruct stdio.
 
             // Hydrate stderr
             if let Some(digest) = action_result
@@ -130,7 +116,7 @@ impl OutputHydrater<'_> {
                 && action_result.stderr_raw.is_empty()
                 && digest.size > 0
             {
-                action_result.stderr_raw = app_context.cache_engine.cas.read_bytes(&digest.hash)?;
+                action_result.stderr_raw = app_context.cache_engine.cas.read(&digest.hash)?;
             }
 
             // Hydrate stdout
@@ -141,7 +127,7 @@ impl OutputHydrater<'_> {
                 && action_result.stdout_raw.is_empty()
                 && digest.size > 0
             {
-                action_result.stdout_raw = app_context.cache_engine.cas.read_bytes(&digest.hash)?;
+                action_result.stdout_raw = app_context.cache_engine.cas.read(&digest.hash)?;
             }
 
             Ok::<_, miette::Report>(action_result)
@@ -149,8 +135,10 @@ impl OutputHydrater<'_> {
         .await
         .into_diagnostic()??;
 
-        // Write outputs to the project
-        self.write_outputs(&action_result)?;
+        // Materialize output files by reflinking them out of the local CAS — a
+        // copy-on-write clone that avoids round-tripping each file's bytes
+        // through memory the way `read` + write would.
+        self.hydrate_outputs_from_cas(&action_result)?;
 
         *result = action_result;
 
@@ -290,6 +278,8 @@ impl OutputHydrater<'_> {
         Ok(())
     }
 
+    /// Write outputs whose bytes are already in memory (the remote-cache path,
+    /// where the download populates `file.contents`).
     fn write_outputs(&self, result: &ActionResult) -> miette::Result<()> {
         for file in &result.output_files {
             if file.digest.is_some() {
@@ -299,6 +289,45 @@ impl OutputHydrater<'_> {
             }
         }
 
+        self.write_output_symlinks(result)
+    }
+
+    /// Restore outputs that live in the local CAS by reflinking each object
+    /// directly to its declared path — a copy-on-write clone that never loads
+    /// the file into memory. The local-cache hydration path.
+    fn hydrate_outputs_from_cas(&self, result: &ActionResult) -> miette::Result<()> {
+        let cas = &self.app_context.cache_engine.cas;
+
+        for file in &result.output_files {
+            let Some(digest) = file
+                .digest
+                .as_ref()
+                .and_then(|digest| digest.to_local_digest().ok())
+            else {
+                continue;
+            };
+
+            // Resolve (and validate) the destination before touching disk, so
+            // an untrusted action result can't escape the workspace.
+            let output_path = self.resolve_declared_output_path(&file.path)?;
+
+            if digest.size == 0 {
+                // Empty files have well-known content, and the empty blob may
+                // not be present locally (e.g. after a remote-only fetch), so
+                // write it directly rather than reflinking from the CAS.
+                write_output_file(output_path, b"", file)?;
+            } else {
+                cas.read_file(&digest.hash, &output_path)?;
+
+                // The reflink clones content but not the original mtime/mode.
+                apply_output_file_properties(&output_path, file)?;
+            }
+        }
+
+        self.write_output_symlinks(result)
+    }
+
+    fn write_output_symlinks(&self, result: &ActionResult) -> miette::Result<()> {
         // Create symlinks after output files have been written,
         // as the link target may reference one of these outputs
         for link in &result.output_symlinks {

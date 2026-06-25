@@ -162,7 +162,7 @@ mod output_hydrater {
                 .app_context
                 .cache_engine
                 .ac
-                .read_bytes(&state.digest.hash)
+                .read(&state.digest.hash)
                 .unwrap();
 
             serde_json::from_slice(&bytes).unwrap()
@@ -363,7 +363,7 @@ mod output_hydrater {
                 .app_context
                 .cache_engine
                 .cas
-                .write_bytes(b"REMOTE_CACHE_OUTSIDE_WORKSPACE_WRITE")
+                .store_bytes(b"REMOTE_CACHE_OUTSIDE_WORKSPACE_WRITE")
                 .unwrap();
 
             let mut result = ActionResult::default();
@@ -416,7 +416,7 @@ mod output_hydrater {
                 .app_context
                 .cache_engine
                 .cas
-                .write_bytes(b"REMOTE_CACHE_ABSOLUTE_PATH_WORKSPACE_WRITE")
+                .store_bytes(b"REMOTE_CACHE_ABSOLUTE_PATH_WORKSPACE_WRITE")
                 .unwrap();
 
             let mut result = ActionResult::default();
@@ -455,7 +455,7 @@ mod output_hydrater {
                 .app_context
                 .cache_engine
                 .cas
-                .write_bytes(b"REMOTE_CACHE_UNDECLARED_WORKSPACE_OUTPUT")
+                .store_bytes(b"REMOTE_CACHE_UNDECLARED_WORKSPACE_OUTPUT")
                 .unwrap();
 
             let mut result = ActionResult::default();

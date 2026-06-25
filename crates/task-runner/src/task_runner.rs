@@ -322,7 +322,7 @@ impl<'task> TaskRunner<'task> {
                 .app_context
                 .cache_engine
                 .ac
-                .read_bytes(&self.state.digest.hash)?;
+                .read(&self.state.digest.hash)?;
 
             let result: ActionResult = serde_json::from_slice(&result_bytes).into_diagnostic()?;
 

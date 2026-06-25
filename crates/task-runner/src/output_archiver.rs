@@ -4,8 +4,9 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
+use moon_blob::Blob;
 use moon_common::{BLOCKING_THREAD_COUNT, color};
-use moon_hash::{Blob, Digest};
+use moon_hash::Digest;
 use moon_remote::RemoteService;
 use moon_task::Task;
 use rustc_hash::FxHashSet;
@@ -227,7 +228,7 @@ impl OutputArchiver<'_> {
         let action_blob = create_action_blob(&state.digest, &state.bytes);
 
         if state.local_cache_writable & state.local_cas_enabled {
-            cache_engine.cas.write_blob(&action_blob)?;
+            cache_engine.cas.store_blob(&action_blob)?;
         }
 
         if state.remote_cache_writable
@@ -268,7 +269,7 @@ impl OutputArchiver<'_> {
             // Inline blobs (stderr/stdout) still need to be written to the CAS;
             // output file blobs were already streamed there during collection.
             for blob in &inline_blobs {
-                cache_engine.cas.write_blob(blob)?;
+                cache_engine.cas.store_blob(blob)?;
             }
         }
 
@@ -291,7 +292,7 @@ impl OutputArchiver<'_> {
     /// Collect outputs into an `OutputTree`, streaming each file's bytes
     /// directly into the local CAS as we hash it. After this returns, each
     /// digest in the tree refers to a blob already on disk in the CAS —
-    /// callers can read bytes back via `cas.read_bytes(&digest.hash)` without
+    /// callers can read bytes back via `cas.read(&digest.hash)` without
     /// re-touching the source file.
     async fn batch_read_blobs_for_local(
         &self,
@@ -361,8 +362,8 @@ impl OutputArchiver<'_> {
                 let mut blobs = Vec::with_capacity(chunk.len());
 
                 for digest in chunk {
-                    let bytes = cache_engine.cas.read_bytes(&digest.hash)?;
-                    blobs.push(Blob { bytes, digest });
+                    let bytes = cache_engine.cas.read(&digest.hash)?;
+                    blobs.push(Blob::new(digest, bytes));
                 }
 
                 Ok::<_, miette::Report>(blobs)

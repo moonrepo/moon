@@ -1,9 +1,9 @@
 [package]
-name = "moon_cas"
+name = "moon_cache_storage"
 version = "0.0.1"
 edition = "2024"
 license = "MIT"
-description = "Content-addressable file system storage."
+description = "Cache storage/backend utilities."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
@@ -11,17 +11,19 @@ publish = false
 [dependencies]
 moon_blob = { path = "../blob" }
 moon_common = { path = "../common" }
-moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }
-fastrand = "2.4.1"
+moon_process = { path = "../process" }
+async-trait = { workspace = true }
+bazel-remote-apis = { workspace = true }
 miette = { workspace = true }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true, features = ["hash"] }
-thiserror = { workspace = true }
+starbase_utils = { workspace = true, features = ["json"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

@@ -1,8 +1,9 @@
 mod utils;
 
+use moon_blob::Blob;
 use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
-use moon_hash::{Blob, Digest};
+use moon_hash::Digest;
 use starbase_archive::Archiver;
 use std::fs;
 use utils::*;

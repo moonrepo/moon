@@ -1,7 +1,7 @@
 {
   "editor.fontSize": 15,
   "editor.fontFamily": "Source Code Pro",
-  "editor.defaultFormatter": "oxc.oxc-vscode",
+  // "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {

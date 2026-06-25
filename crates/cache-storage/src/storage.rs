@@ -232,17 +232,15 @@ async fn archive_manifest_in_backend(
 
     manifest.upload_completed_at = Some(SystemTime::now());
 
-    match uploaded {
-        Some(count) => {
-            trace!(
-                storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
-                "Stored {count} of {initial_count} blobs"
-            );
-        }
-        None => {
-            return Ok(());
-        }
+    trace!(
+        storage = backend.get_id().as_str(),
+        hash = digest.hash.as_str(),
+        "Stored {} of {initial_count} blobs",
+        uploaded.len()
+    );
+
+    if uploaded.is_empty() {
+        return Ok(());
     }
 
     if backend.get_capabilities().store_manifests {

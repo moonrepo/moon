@@ -15,6 +15,7 @@ use bazel_remote_apis::google::bytestream::{
     ReadRequest, WriteRequest, byte_stream_client::ByteStreamClient,
 };
 use moon_blob::{Blob, BlobContent, BlobSource};
+use moon_cache_storage::ExternalDigestExt;
 use moon_cache_storage::{
     CacheCapabilities, CacheContext, Compressor, DigestFunction, InternalDigestExt, Manifest,
     StorageBackend,
@@ -530,7 +531,7 @@ impl StorageBackend for GrpcRemoteStorage {
         &self,
         blob_sources: Vec<BlobSource>,
         stream: bool,
-    ) -> miette::Result<u16> {
+    ) -> miette::Result<Vec<Digest>> {
         let compression = self.context.remote_config.cache.compression;
         let mut blobs = vec![];
 
@@ -549,7 +550,10 @@ impl StorageBackend for GrpcRemoteStorage {
         }
 
         if stream && blobs.len() == 1 {
-            return self.store_blob_streamed(blobs.remove(0)).await.map(|_| 1);
+            return self
+                .store_blob_streamed(blobs.remove(0))
+                .await
+                .map(|digest| vec![digest]);
         }
 
         let response = match self
@@ -581,7 +585,7 @@ impl StorageBackend for GrpcRemoteStorage {
             }
         };
 
-        let mut uploaded_count = 0;
+        let mut digests = vec![];
 
         for upload in response.into_inner().responses {
             let mut success = true;
@@ -606,12 +610,12 @@ impl StorageBackend for GrpcRemoteStorage {
                 }
             }
 
-            if success && upload.digest.is_some() {
-                uploaded_count += 1;
+            if success && let Some(digest) = upload.digest {
+                digests.push(digest.into_internal_digest()?);
             }
         }
 
-        Ok(uploaded_count)
+        Ok(digests)
     }
 }
 

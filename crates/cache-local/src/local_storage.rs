@@ -147,12 +147,12 @@ impl StorageBackend for LocalStorage {
         &self,
         blob_sources: Vec<BlobSource>,
         _stream: bool,
-    ) -> miette::Result<u16> {
+    ) -> miette::Result<Vec<Digest>> {
         let blobs = Arc::clone(&self.blobs);
         let workspace_root = self.context.workspace_root.clone();
 
         spawn_blocking(move || {
-            let mut count = 0;
+            let mut digests = vec![];
 
             for source in blob_sources {
                 let stored = match &source.content {
@@ -165,11 +165,11 @@ impl StorageBackend for LocalStorage {
                 };
 
                 if stored {
-                    count += 1;
+                    digests.push(source.digest);
                 }
             }
 
-            Ok(count)
+            Ok(digests)
         })
         .await
         .into_diagnostic()?

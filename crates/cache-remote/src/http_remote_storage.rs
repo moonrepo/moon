@@ -286,7 +286,7 @@ impl StorageBackend for HttpRemoteStorage {
         &self,
         blob_sources: Vec<BlobSource>,
         _stream: bool,
-    ) -> miette::Result<u16> {
+    ) -> miette::Result<Vec<Digest>> {
         let mut set = JoinSet::<miette::Result<Option<Digest>>>::new();
         let debug_enabled = self.context.remote_debug;
 
@@ -323,15 +323,15 @@ impl StorageBackend for HttpRemoteStorage {
             });
         }
 
-        let mut count = 0;
+        let mut digests = vec![];
 
         while let Some(result) = set.join_next().await {
-            if result.into_diagnostic()??.is_some() {
-                count += 1;
+            if let Some(digest) = result.into_diagnostic()?? {
+                digests.push(digest);
             }
         }
 
-        Ok(count)
+        Ok(digests)
     }
 }
 

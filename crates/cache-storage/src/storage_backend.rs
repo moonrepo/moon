@@ -122,7 +122,7 @@ where
         self: Arc<Self>,
         digest: Digest,
         mut blob_sources: Vec<BlobSource>,
-    ) -> miette::Result<Option<u16>> {
+    ) -> miette::Result<Vec<Digest>> {
         let total_count = blob_sources.len() as u16;
 
         // Before we store blobs, we should ensure that they don't already exists in the backend
@@ -131,7 +131,7 @@ where
             .await?;
 
         if missing_digests.is_empty() {
-            return Ok(Some(total_count));
+            return Ok(get_digests_from_sources(&blob_sources));
         }
 
         // Reduce the provided sources to only the missing digests
@@ -153,7 +153,7 @@ where
 
         let mut signal_receiver = ProcessRegistry::instance().receive_signal();
         let mut upload_errors = vec![];
-        let mut uploaded_count = 0;
+        let mut uploaded_digests = vec![];
         let mut abort = false;
 
         while let Some(result) = set.join_next().await {
@@ -163,8 +163,8 @@ where
             }
 
             match result {
-                Ok(Ok(count)) => {
-                    uploaded_count += count;
+                Ok(Ok(digests)) => {
+                    uploaded_digests.extend(digests);
                 }
                 Ok(Err(error)) => {
                     upload_errors.push(error.to_string());
@@ -179,7 +179,7 @@ where
         if abort {
             set.shutdown().await;
 
-            return Ok(None);
+            return Ok(vec![]);
         }
 
         if !upload_errors.is_empty() {
@@ -187,20 +187,23 @@ where
                 storage = self.get_id().as_str(),
                 hash = digest.hash.as_str(),
                 total_count,
-                stored_count = uploaded_count,
+                stored_count = uploaded_digests.len(),
                 errors = ?upload_errors,
                 "Failed to store blobs",
             );
 
-            return Ok(None);
+            return Ok(vec![]);
         }
 
-        Ok(Some(uploaded_count))
+        Ok(uploaded_digests)
     }
 
     /// Store the blobs from the given list of blob sources.
-    async fn store_blobs(&self, blob_sources: Vec<BlobSource>, stream: bool)
-    -> miette::Result<u16>;
+    async fn store_blobs(
+        &self,
+        blob_sources: Vec<BlobSource>,
+        stream: bool,
+    ) -> miette::Result<Vec<Digest>>;
 
     //---------- RECEIVING BLOBS ----------//
 
@@ -322,7 +325,7 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
     backend: Arc<T>,
     digest: Digest,
     batch: Batch<BlobSource>,
-) -> miette::Result<u16> {
+) -> miette::Result<Vec<Digest>> {
     let blob_count = batch.items.len();
 
     trace!(
@@ -336,18 +339,18 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
     );
 
     match backend.store_blobs(batch.items, batch.stream).await {
-        Ok(count) => {
+        Ok(digests) => {
             trace!(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
-                blobs = count,
-                missing = blob_count - (count as usize),
+                blobs = digests.len(),
+                missing = blob_count - digests.len(),
                 "Stored blobs (batch {}:{})",
                 batch.index,
                 batch.total,
             );
 
-            Ok(count)
+            Ok(digests)
         }
         Err(error) => {
             trace!(

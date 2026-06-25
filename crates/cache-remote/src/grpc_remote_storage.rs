@@ -586,7 +586,7 @@ impl GrpcRemoteStorage {
         &self,
         blob_digest: Digest,
     ) -> miette::Result<Option<CompressableBlob>> {
-        let resource_name = build_read_resource_name(&self.get_instance_name(), &blob_digest);
+        let resource_name = build_read_resource_name(self.get_instance_name(), &blob_digest);
 
         let response = match self
             .get_bs_client()

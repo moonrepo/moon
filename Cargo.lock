@@ -5112,6 +5112,7 @@ dependencies = [
  "async-trait",
  "bazel-remote-apis",
  "http",
+ "httpmock",
  "miette 7.6.0",
  "moon_blob",
  "moon_cache_storage",

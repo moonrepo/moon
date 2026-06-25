@@ -8,6 +8,7 @@ pub use bazel_remote_apis::build::bazel::remote::execution::v2::{
 };
 
 // Only define fields that we care about!
+#[derive(Debug)]
 pub struct CacheCapabilities {
     pub digest_functions: Vec<DigestFunction>,
     pub max_batch_total_size_bytes: usize,

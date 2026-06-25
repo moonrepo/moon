@@ -1,55 +1,79 @@
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_blob::{Blob, BlobContent, BlobSource};
-use moon_cache_storage::{CacheCapabilities, Manifest, StorageBackend};
+use moon_cache_storage::{CacheCapabilities, CacheContext, Manifest, StorageBackend};
 use moon_cas::CasStore;
 use moon_common::Id;
-use moon_config::CacheConfig;
 use moon_hash::Digest;
 use rustc_hash::FxHashSet;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::fs;
+use std::path::Path;
+use std::sync::{Arc, OnceLock};
 use tokio::task::spawn_blocking;
 
+#[derive(Debug)]
 pub struct LocalStorage {
-    capabilities: CacheCapabilities,
     id: Id,
+    context: CacheContext,
+
+    // States
+    capabilities: OnceLock<CacheCapabilities>,
+
+    // Stores
     blobs: Arc<CasStore>,
     manifests: Arc<CasStore>,
-    workspace_root: PathBuf,
 }
 
 impl LocalStorage {
     pub fn new(
-        workspace_root: impl AsRef<Path>,
+        context: CacheContext,
         cache_dir: impl AsRef<Path>,
-        config: &CacheConfig,
+        shared: bool,
     ) -> miette::Result<Self> {
-        let workspace_root = workspace_root.as_ref();
         let cache_dir = cache_dir.as_ref();
 
+        // Support for legacy cache directory structure
+        let ac_dir = cache_dir.join("ac");
+        let manifests_dir = cache_dir.join("manifests");
+
+        let cas_dir = cache_dir.join("cas");
+        let blobs_dir = cache_dir.join("blobs");
+
+        if ac_dir.exists() {
+            let _ = fs::rename(ac_dir, &manifests_dir);
+        }
+
+        if cas_dir.exists() {
+            let _ = fs::rename(cas_dir, &blobs_dir);
+        }
+
         Ok(Self {
-            capabilities: CacheCapabilities::default(),
-            id: Id::raw("local-cache"),
-            blobs: Arc::new(CasStore::new(cache_dir.join("blobs"), &config.cas)?),
-            manifests: Arc::new(CasStore::new(cache_dir.join("manifests"), &config.cas)?),
-            workspace_root: workspace_root.to_path_buf(),
+            capabilities: OnceLock::new(),
+            id: Id::raw(if shared {
+                "shared-local-cache"
+            } else {
+                "local-cache"
+            }),
+            blobs: Arc::new(CasStore::new(blobs_dir, &context.cache_config.cas)?),
+            manifests: Arc::new(CasStore::new(manifests_dir, &context.cache_config.cas)?),
+            context,
         })
     }
 }
 
 #[async_trait]
 impl StorageBackend for LocalStorage {
-    fn get_capabilities(&self) -> &CacheCapabilities {
-        &self.capabilities
-    }
-
     fn get_id(&self) -> &Id {
         &self.id
     }
 
-    async fn connect(&mut self) -> miette::Result<Option<CacheCapabilities>> {
-        Ok(Some(CacheCapabilities::default()))
+    fn get_capabilities(&self) -> &CacheCapabilities {
+        self.capabilities
+            .get_or_init(|| CacheCapabilities::default())
+    }
+
+    fn is_enabled(&self) -> bool {
+        true
     }
 
     async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
@@ -117,7 +141,7 @@ impl StorageBackend for LocalStorage {
 
     async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16> {
         let blobs = Arc::clone(&self.blobs);
-        let workspace_root = self.workspace_root.clone();
+        let workspace_root = self.context.workspace_root.clone();
 
         spawn_blocking(move || {
             let mut count = 0;

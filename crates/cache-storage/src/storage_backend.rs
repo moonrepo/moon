@@ -8,6 +8,7 @@ use moon_common::Id;
 use moon_hash::Digest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashSet;
+use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{trace, warn};
@@ -15,14 +16,21 @@ use tracing::{trace, warn};
 pub type BoxedStorageBackend = Arc<dyn StorageBackend>;
 
 #[async_trait]
-pub trait StorageBackend: Send + Sync
+pub trait StorageBackend: Debug + Send + Sync
 where
     Self: 'static,
 {
     fn get_id(&self) -> &Id;
     fn get_capabilities(&self) -> &CacheCapabilities;
+    fn is_enabled(&self) -> bool;
 
-    async fn connect(&mut self) -> miette::Result<Option<CacheCapabilities>>;
+    /// Connect to the storage backend, if necessary. This is called before any other methods are
+    /// called, and can be used to establish a connection to a remote storage backend, or perform
+    /// any other necessary setup. If the backend does not require a connection, this method can
+    /// be a no-op.
+    async fn connect(&self) -> miette::Result<()> {
+        Ok(())
+    }
 
     /// Retrieve the manifest for the given digest if it exists, otherwise return `None`.
     /// This *does not* retrieve all the associated blobs for the manifest, only the manifest

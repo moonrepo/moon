@@ -5,7 +5,8 @@ use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
 use moon_api::Launchpad;
 use moon_app_context::AppContext;
-use moon_cache::CacheEngine;
+use moon_cache::{CacheContext, CacheEngine};
+use moon_cache_local::LocalStorage;
 use moon_codegen::CodeGenerator;
 use moon_common::{is_docker, is_formatted_output, is_remote, is_test_env};
 use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
@@ -13,6 +14,7 @@ use moon_config_loader::ConfigLoader;
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_daemon::{DaemonClient, DaemonConnector};
 use moon_env::MoonEnvironment;
+use moon_env_var::GlobalEnvBag;
 use moon_extension_plugin::*;
 use moon_plugin::MoonHostData;
 use moon_process::ProcessRegistry;
@@ -196,10 +198,24 @@ impl MoonSession {
 
     pub fn get_cache_engine(&self) -> miette::Result<Arc<CacheEngine>> {
         if self.cache_engine.get().is_none() {
-            let _ = self.cache_engine.set(Arc::new(CacheEngine::new(
-                &self.config_dir,
-                &self.workspace_config.cache,
-            )?));
+            let context = CacheContext {
+                cache_dir: self.config_dir.join("cache"),
+                cache_config: Arc::new(self.workspace_config.cache.clone()),
+                config_dir: self.config_dir.clone(),
+                remote_config: Arc::new(self.workspace_config.remote.clone()),
+                remote_debug: GlobalEnvBag::instance().should_debug_remote(),
+                workspace_root: self.workspace_root.clone(),
+            };
+
+            let mut engine = CacheEngine::new(context.clone())?;
+
+            engine.storage.add_local_backend(LocalStorage::new(
+                context.clone(),
+                &context.cache_dir,
+                false,
+            )?);
+
+            let _ = self.cache_engine.set(Arc::new(engine));
         }
 
         Ok(self.cache_engine.get().map(Arc::clone).unwrap())

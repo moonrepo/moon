@@ -3,9 +3,10 @@ use crate::state_engine::StateEngine;
 use crate::{merge_clean_results, resolve_path};
 use miette::IntoDiagnostic;
 use moon_cache_item::*;
+use moon_cache_storage::{CacheContext, Storage};
 use moon_cas::CasStore;
 use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
-use moon_config::{CacheCasConfig, CacheConfig};
+use moon_config::CacheCasConfig;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::ContentHash;
 use moon_time::parse_duration;
@@ -40,18 +41,21 @@ pub struct CacheEngine {
     /// Manages states of projects, tasks, tools, and more.
     pub state: StateEngine,
 
+    /// A content-addressable storage with multiple backends.
+    pub storage: Storage,
+
     /// A temporary directory for random artifacts.
     pub temp_dir: PathBuf,
 
     #[allow(dead_code)]
-    config: CacheConfig,
+    context: CacheContext,
     mode: CacheMode,
     forced_mode: RwLock<Option<CacheMode>>,
 }
 
 impl CacheEngine {
-    pub fn new(config_dir: impl AsRef<Path>, config: &CacheConfig) -> miette::Result<CacheEngine> {
-        let dir = config_dir.as_ref().join("cache");
+    pub fn new(context: CacheContext) -> miette::Result<CacheEngine> {
+        let dir = &context.cache_dir;
         let cache_tag = dir.join("CACHEDIR.TAG");
 
         debug!(
@@ -78,14 +82,15 @@ impl CacheEngine {
 
         Ok(CacheEngine {
             ac: CasStore::new(dir.join("ac"), &ac_config)?,
-            cas: CasStore::new(dir.join("cas"), &config.cas)?,
+            cas: CasStore::new(dir.join("cas"), &context.cache_config.cas)?,
             hash,
             state: StateEngine::new(&dir)?,
+            storage: Storage::default(),
             temp_dir: dir.join("temp"),
-            cache_dir: dir,
+            cache_dir: dir.to_owned(),
             mode: get_cache_mode(),
             forced_mode: RwLock::new(None),
-            config: config.to_owned(),
+            context,
         })
     }
 

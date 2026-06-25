@@ -1,4 +1,5 @@
 mod compressable_blob;
+mod headers;
 mod http_remote_storage;
 mod http_tls;
 mod remote_error;

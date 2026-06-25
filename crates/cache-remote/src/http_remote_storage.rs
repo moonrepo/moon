@@ -1,33 +1,32 @@
-use crate::compressable_blob::*;
+use crate::headers::extract_headers;
 use crate::http_tls::*;
 use crate::remote_error::RemoteError;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobContent, BlobSource};
+use moon_blob::{Blob, BlobContent, BlobSource, Bytes};
+use moon_cache_storage::CacheContext;
 use moon_cache_storage::{CacheCapabilities, Manifest, StorageBackend};
-use moon_common::Id;
+use moon_common::{Id, color};
 use moon_config::RemoteCompression;
-use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
 use rustc_hash::FxHashSet;
 use starbase_utils::fs;
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
-use tracing::error;
+use tracing::{debug, error};
 
+#[derive(Debug)]
 pub struct HttpRemoteStorage {
-    capabilities: CacheCapabilities,
-
-    client: OnceLock<Arc<Client>>,
-    config: RemoteConfig,
-    debug: bool,
+    context: CacheContext,
     id: Id,
-    workspace_root: PathBuf,
+
+    // States
+    capabilities: OnceLock<CacheCapabilities>,
+    client: OnceLock<Arc<Client>>,
 
     // Since HTTP doesn't support batching, we will most likely
     // end up up/downloading too many files in parallel, triggering a
@@ -37,19 +36,18 @@ pub struct HttpRemoteStorage {
 }
 
 impl HttpRemoteStorage {
-    pub fn new(workspace_root: impl AsRef<Path>, config: &RemoteConfig) -> miette::Result<Self> {
+    pub fn new(context: CacheContext) -> miette::Result<Self> {
         Ok(Self {
-            capabilities: CacheCapabilities::default(),
+            capabilities: OnceLock::new(),
             id: Id::raw("http-remote-cache"),
             client: OnceLock::new(),
-            config: config.to_owned(),
-            debug: false,
-            workspace_root: workspace_root.as_ref().to_path_buf(),
+            context,
             semaphore: Arc::new(Semaphore::new(100)),
         })
     }
 
     fn create_client(&self, headers: HeaderMap) -> miette::Result<Client> {
+        let config = &self.context.remote_config;
         let mut client = Client::builder()
             .user_agent("moon")
             .gzip(true)
@@ -57,17 +55,17 @@ impl HttpRemoteStorage {
             .tcp_keepalive(Duration::from_secs(60))
             .default_headers(headers);
 
-        if let Some(mtls) = &self.config.mtls {
-            client = create_mtls_config(client, mtls, &self.workspace_root)?
-        } else if let Some(tls) = &self.config.tls {
-            client = create_tls_config(client, tls, &self.workspace_root)?
-        } else if self.config.is_secure_protocol() {
+        if let Some(mtls) = &config.mtls {
+            client = create_mtls_config(client, mtls, &self.context.workspace_root)?
+        } else if let Some(tls) = &config.tls {
+            client = create_tls_config(client, tls, &self.context.workspace_root)?
+        } else if config.is_secure_protocol() {
             client = create_native_tls_config(client)?;
         }
 
         let client = client
             .build()
-            .map_err(|error| map_error("create_client", error, self.debug))?;
+            .map_err(|error| map_error("create_client", error, self.context.remote_debug))?;
 
         Ok(client)
     }
@@ -79,8 +77,8 @@ impl HttpRemoteStorage {
     fn get_endpoint(&self, path: &str, hash: &str) -> String {
         format!(
             "{}/{}/{path}/{hash}",
-            self.config.get_host(),
-            self.config.cache.instance_name
+            self.context.remote_config.get_host(),
+            self.context.remote_config.cache.instance_name
         )
     }
 }
@@ -88,72 +86,72 @@ impl HttpRemoteStorage {
 #[async_trait]
 impl StorageBackend for HttpRemoteStorage {
     fn get_capabilities(&self) -> &CacheCapabilities {
-        &self.capabilities
+        self.capabilities
+            .get_or_init(|| CacheCapabilities::default())
     }
 
     fn get_id(&self) -> &Id {
         &self.id
     }
 
-    async fn connect(&mut self) -> miette::Result<Option<CacheCapabilities>> {
-        let config = &self.config;
+    fn is_enabled(&self) -> bool {
+        self.context.remote_config.is_enabled() && self.client.get().is_some()
+    }
 
-        // debug!(
-        //     instance = &config.cache.instance_name,
-        //     "Connecting to HTTP host {} {}",
-        //     color::url(config.get_host()),
-        //     if config.mtls.is_some() {
-        //         "(with mTLS)"
-        //     } else if config.tls.is_some() {
-        //         "(with TLS)"
-        //     } else if config.is_bearer_auth() {
-        //         "(with auth)"
-        //     } else {
-        //         "(insecure)"
-        //     }
-        // );
+    async fn connect(&self) -> miette::Result<()> {
+        let config = &self.context.remote_config;
 
-        // self.debug = GlobalEnvBag::instance().should_debug_remote();
-        // self.config = config.to_owned();
+        debug!(
+            instance = &config.cache.instance_name,
+            "Connecting to HTTP host {} {}",
+            color::url(config.get_host()),
+            if config.mtls.is_some() {
+                "(with mTLS)"
+            } else if config.tls.is_some() {
+                "(with TLS)"
+            } else if config.is_bearer_auth() {
+                "(with auth)"
+            } else {
+                "(insecure)"
+            }
+        );
 
-        // // Extract headers and abort early if not enabled
-        // let Some(headers) = self.extract_headers(config)? else {
-        //     return Ok(None);
-        // };
+        // Extract headers and abort early if not enabled
+        let Some(headers) = extract_headers(config)? else {
+            return Ok(());
+        };
 
-        // if self.config.cache.compression != RemoteCompression::None {
-        //     self.config.cache.compression = RemoteCompression::None;
+        if config.cache.compression != RemoteCompression::None {
+            debug!("HTTP API does not support compression, disabling");
+        }
 
-        //     debug!("HTTP API does not support compression, disabling");
-        // }
+        // Create the client
+        let client = self.create_client(headers)?;
 
-        // // Create the client
-        // let client = self.create_client(headers)?;
+        // Ignore errors since this endpoint is non-standard
+        if let Ok(response) = client
+            .get(format!("{}/status", config.get_host()))
+            .send()
+            .await
+        {
+            let status = response.status();
+            let code = status.as_u16();
 
-        // // Ignore errors since this endpoint is non-standard
-        // if let Ok(response) = client
-        //     .get(format!("{}/status", self.config.get_host()))
-        //     .send()
-        //     .await
-        // {
-        //     let status = response.status();
-        //     let code = status.as_u16();
+            if !status.is_success() && code != 404 {
+                return Err(RemoteError::HttpConnectFailed {
+                    code,
+                    reason: status
+                        .canonical_reason()
+                        .map(|reason| reason.to_owned())
+                        .unwrap_or_else(|| String::from("Unknown")),
+                }
+                .into());
+            }
+        }
 
-        //     if !status.is_success() && code != 404 {
-        //         return Err(RemoteError::HttpConnectFailed {
-        //             code,
-        //             reason: status
-        //                 .canonical_reason()
-        //                 .map(|reason| reason.to_owned())
-        //                 .unwrap_or_else(|| String::from("Unknown")),
-        //         }
-        //         .into());
-        //     }
-        // }
+        let _ = self.client.set(Arc::new(client));
 
-        // let _ = self.client.set(Arc::new(client));
-
-        Ok(Some(CacheCapabilities::default()))
+        Ok(())
     }
 
     async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
@@ -180,10 +178,17 @@ impl StorageBackend for HttpRemoteStorage {
                 } else if status.as_u16() == 404 {
                     Ok(None)
                 } else {
-                    Err(map_response_error("retrieve_manifest", response, self.debug).into())
+                    Err(map_response_error(
+                        "retrieve_manifest",
+                        response,
+                        self.context.remote_debug,
+                    )
+                    .into())
                 }
             }
-            Err(error) => Err(map_error("retrieve_manifest", error, self.debug).into()),
+            Err(error) => {
+                Err(map_error("retrieve_manifest", error, self.context.remote_debug).into())
+            }
         }
     }
 
@@ -200,10 +205,15 @@ impl StorageBackend for HttpRemoteStorage {
                 if response.status().is_success() {
                     Ok(())
                 } else {
-                    Err(map_response_error("store_manifest", response, self.debug).into())
+                    Err(
+                        map_response_error("store_manifest", response, self.context.remote_debug)
+                            .into(),
+                    )
                 }
             }
-            Err(error) => Err(map_error("store_manifest", error, self.debug).into()),
+            Err(error) => {
+                Err(map_error("store_manifest", error, self.context.remote_debug).into())
+            }
         }
     }
 
@@ -216,8 +226,8 @@ impl StorageBackend for HttpRemoteStorage {
     }
 
     async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>> {
-        let mut set = JoinSet::<miette::Result<Option<CompressableBlob>>>::new();
-        let debug_enabled = self.debug;
+        let mut set = JoinSet::<miette::Result<Option<Bytes>>>::new();
+        let debug_enabled = self.context.remote_debug;
 
         for digest in blob_digests {
             let client = self.get_client();
@@ -235,7 +245,7 @@ impl StorageBackend for HttpRemoteStorage {
 
                         if status.is_success() {
                             return if let Ok(bytes) = response.bytes().await {
-                                Ok(Some(CompressableBlob::new(digest, bytes.to_vec())))
+                                Ok(Some(bytes))
                             } else {
                                 Ok(None)
                             };
@@ -251,9 +261,8 @@ impl StorageBackend for HttpRemoteStorage {
         let mut blobs = vec![];
 
         while let Some(result) = set.join_next().await {
-            if let Some(mut blob) = result.into_diagnostic()?? {
-                blob.decompress()?;
-                blobs.push(blob.inner);
+            if let Some(bytes) = result.into_diagnostic()?? {
+                blobs.push(Blob::try_from(bytes)?);
             }
         }
 
@@ -262,13 +271,13 @@ impl StorageBackend for HttpRemoteStorage {
 
     async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16> {
         let mut set = JoinSet::<miette::Result<Option<Digest>>>::new();
-        let debug_enabled = self.debug;
+        let debug_enabled = self.context.remote_debug;
 
         for source in blob_sources {
             let client = self.get_client();
             let url = self.get_endpoint("cas", &source.digest.hash);
             let semaphore = self.semaphore.clone();
-            let workspace_root = self.workspace_root.clone();
+            let workspace_root = self.context.workspace_root.clone();
 
             set.spawn(async move {
                 let Ok(_permit) = semaphore.acquire().await else {

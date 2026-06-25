@@ -11,6 +11,7 @@ publish = false
 [dependencies]
 moon_blob = { path = "../blob" }
 moon_common = { path = "../common" }
+moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }
 moon_process = { path = "../process" }
 async-trait = { workspace = true }

@@ -51,3 +51,20 @@ impl Debug for Blob {
             .finish()
     }
 }
+
+impl Into<Bytes> for Blob {
+    fn into(self) -> Bytes {
+        self.bytes
+    }
+}
+
+impl TryFrom<Bytes> for Blob {
+    type Error = miette::Report;
+
+    fn try_from(bytes: Bytes) -> Result<Self, Self::Error> {
+        Ok(Blob {
+            digest: Digest::from_bytes(&bytes)?,
+            bytes,
+        })
+    }
+}

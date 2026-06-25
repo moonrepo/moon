@@ -87,83 +87,13 @@ impl RemoteClient for HttpRemoteClient {
         config: &RemoteConfig,
         workspace_root: &Path,
     ) -> miette::Result<bool> {
-        debug!(
-            instance = &config.cache.instance_name,
-            "Connecting to HTTP host {} {}",
-            color::url(config.get_host()),
-            if config.mtls.is_some() {
-                "(with mTLS)"
-            } else if config.tls.is_some() {
-                "(with TLS)"
-            } else if config.is_bearer_auth() {
-                "(with auth)"
-            } else {
-                "(insecure)"
-            }
-        );
-
-        self.debug = GlobalEnvBag::instance().should_debug_remote();
-        self.config = config.to_owned();
-
-        // Extract headers and abort early if not enabled
-        let Some(headers) = self.extract_headers(config)? else {
-            return Ok(false);
-        };
-
-        if self.config.cache.compression != RemoteCompression::None {
-            self.config.cache.compression = RemoteCompression::None;
-
-            debug!("HTTP API does not support compression, disabling");
-        }
-
-        // Create the client
-        let client = self.create_client(workspace_root, headers)?;
-
-        // Ignore errors since this endpoint is non-standard
-        if let Ok(response) = client
-            .get(format!("{}/status", self.config.get_host()))
-            .send()
-            .await
-        {
-            let status = response.status();
-            let code = status.as_u16();
-
-            if !status.is_success() && code != 404 {
-                return Err(RemoteError::HttpConnectFailed {
-                    code,
-                    reason: status
-                        .canonical_reason()
-                        .map(|reason| reason.to_owned())
-                        .unwrap_or_else(|| String::from("Unknown")),
-                }
-                .into());
-            }
-        }
-
-        let _ = self.client.set(Arc::new(client));
-
-        Ok(true)
+        unreachable!();
     }
 
     // HTTP API doesn't support capabilities, so we need to fake this
     // based on what `bazel-remote` supports
     async fn load_capabilities(&self) -> miette::Result<ServerCapabilities> {
-        let digest_functions = vec![digest_function::Value::Sha256 as i32];
-        let compressors = get_acceptable_compressors(RemoteCompression::None);
-
-        Ok(ServerCapabilities {
-            cache_capabilities: Some(CacheCapabilities {
-                digest_functions: digest_functions.clone(),
-                action_cache_update_capabilities: Some(ActionCacheUpdateCapabilities {
-                    update_enabled: true,
-                }),
-                supported_compressors: compressors.clone(),
-                supported_batch_update_compressors: compressors,
-                ..Default::default()
-            }),
-            execution_capabilities: None,
-            ..Default::default()
-        })
+        unreachable!();
     }
 
     async fn get_action_result(

@@ -2,16 +2,28 @@ use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
 use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
 use std::collections::VecDeque;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::SystemTime;
-use tokio::task::JoinHandle;
+use tokio::task::{JoinHandle, JoinSet};
 use tracing::{debug, trace, warn};
 
-#[derive(Default)]
+#[derive(Clone, Debug)]
+pub struct CacheContext {
+    pub cache_dir: PathBuf,
+    pub cache_config: Arc<CacheConfig>,
+    pub config_dir: PathBuf,
+    pub remote_config: Arc<RemoteConfig>,
+    pub remote_debug: bool,
+    pub workspace_root: PathBuf,
+}
+
+#[derive(Debug, Default)]
 pub struct Storage {
     local_backends: Vec<BoxedStorageBackend>,
     remote_backends: Vec<BoxedStorageBackend>,
@@ -25,6 +37,23 @@ impl Storage {
 
     pub fn add_remote_backend(&mut self, backend: impl StorageBackend + 'static) {
         self.remote_backends.push(Arc::new(backend));
+    }
+
+    pub async fn connect_backends(&self) -> miette::Result<()> {
+        let mut set = JoinSet::new();
+
+        for backend in self.get_backends() {
+            let backend = Arc::clone(backend);
+
+            set.spawn(async move { backend.connect().await });
+        }
+
+        // TODO handle errors
+        while let Some(result) = set.join_next().await {
+            result.into_diagnostic()??;
+        }
+
+        Ok(())
     }
 
     pub fn get_backends(&self) -> impl Iterator<Item = &BoxedStorageBackend> {
@@ -41,6 +70,10 @@ impl Storage {
         trace!(hash = digest.hash.as_str(), "Checking for a cache manifest");
 
         for backend in self.get_backends() {
+            if !backend.is_enabled() {
+                continue;
+            }
+
             if let Some(manifest) = backend.retrieve_manifest(digest.to_owned()).await? {
                 trace!(
                     hash = digest.hash.as_str(),
@@ -80,6 +113,10 @@ impl Storage {
         // Store the manifest in all backends in parallel, but if any fail,
         // continue storing the rest for failover/redundancy in the future
         for backend in self.get_backends() {
+            if !backend.is_enabled() {
+                continue;
+            }
+
             background_tasks.push(tokio::spawn(Box::pin(archive_manifest_in_backend(
                 Arc::clone(backend),
                 digest.to_owned(),
@@ -118,6 +155,7 @@ impl Storage {
         // and also copy the missing blobs to the original backend
         while !manifest.is_hydrated()
             && let Some(backend) = backends.pop_front()
+            && backend.is_enabled()
         {
             if backend.get_id() == original_backend.get_id() {
                 continue;

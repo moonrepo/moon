@@ -1,6 +1,6 @@
 use bazel_remote_apis::google::protobuf::Timestamp;
+use chrono::NaiveDateTime;
 use moon_common::BLOCKING_THREAD_COUNT;
-// use chrono::NaiveDateTime;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
@@ -12,14 +12,14 @@ pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
         })
 }
 
-// pub fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
-//     let utc = time.and_utc();
+pub fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
+    let utc = time.and_utc();
 
-//     Some(Timestamp {
-//         seconds: utc.timestamp(),
-//         nanos: utc.timestamp_subsec_nanos() as i32,
-//     })
-// }
+    Some(Timestamp {
+        seconds: utc.timestamp(),
+        nanos: utc.timestamp_subsec_nanos() as i32,
+    })
+}
 
 pub fn create_from_timestamp(timestamp: Timestamp) -> SystemTime {
     UNIX_EPOCH + Duration::new(timestamp.seconds as u64, timestamp.nanos as u32)

@@ -1,12 +1,13 @@
 mod utils;
 
-use moon_cache::CacheEngine;
+use moon_cache::{CacheContext, CacheEngine};
 use moon_common::is_ci;
-use moon_config::{CacheConfig, HasherWalkStrategy, PartialHasherConfig};
+use moon_config::{CacheConfig, HasherWalkStrategy, PartialHasherConfig, RemoteConfig};
 use moon_task_runner::TaskRunCacheState;
 use moon_test_utils::predicates::prelude::*;
 use starbase_utils::{fs, json};
 use std::path::{MAIN_SEPARATOR_STR, Path};
+use std::sync::Arc;
 use utils::{
     change_files, create_cases_sandbox, create_cases_sandbox_with_config, create_pipeline_sandbox,
     create_sync_heavy_pipeline_sandbox,
@@ -19,7 +20,16 @@ fn target(task: &str) -> String {
 }
 
 fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
-    let engine = CacheEngine::new(fixture.join(".moon"), &CacheConfig::default()).unwrap();
+    let config_dir = fixture.join(".moon");
+    let engine = CacheEngine::new(CacheContext {
+        cache_dir: config_dir.join("cache"),
+        cache_config: Arc::new(CacheConfig::default()),
+        config_dir,
+        remote_config: Arc::new(RemoteConfig::default()),
+        remote_debug: false,
+        workspace_root: fixture.to_path_buf(),
+    })
+    .unwrap();
     let cache: TaskRunCacheState = json::read_file(
         engine
             .state

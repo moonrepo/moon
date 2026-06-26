@@ -40,7 +40,7 @@ warpgate_api = { workspace = true, features = ["schematic"] }
 
 [dev-dependencies]
 moon_config_loader = { path = "../config-loader" }
-httpmock = "0.8.3"
+httpmock = { workspace = true }
 proto_core = { workspace = true }
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }

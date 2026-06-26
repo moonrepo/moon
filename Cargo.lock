@@ -4936,6 +4936,8 @@ dependencies = [
  "moon_app_context",
  "moon_app_macros",
  "moon_cache",
+ "moon_cache_local",
+ "moon_cache_remote",
  "moon_codegen",
  "moon_common",
  "moon_config",
@@ -5055,6 +5057,7 @@ dependencies = [
  "miette 7.6.0",
  "moon_bench_utils",
  "moon_cache_item",
+ "moon_cache_storage",
  "moon_cas",
  "moon_common",
  "moon_config",
@@ -5103,14 +5106,48 @@ dependencies = [
 ]
 
 [[package]]
+name = "moon_cache_remote"
+version = "0.0.1"
+dependencies = [
+ "async-stream",
+ "async-trait",
+ "bazel-remote-apis",
+ "http",
+ "httpmock",
+ "miette 7.6.0",
+ "moon_blob",
+ "moon_cache_storage",
+ "moon_cas",
+ "moon_common",
+ "moon_config",
+ "moon_env_var",
+ "moon_hash",
+ "reqwest",
+ "rustc-hash",
+ "serde_json",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "tonic",
+ "tower",
+ "tracing",
+ "uuid",
+ "zstd",
+]
+
+[[package]]
 name = "moon_cache_storage"
 version = "0.0.1"
 dependencies = [
  "async-trait",
  "bazel-remote-apis",
+ "chrono",
  "miette 7.6.0",
  "moon_blob",
  "moon_common",
+ "moon_config",
  "moon_hash",
  "moon_process",
  "rustc-hash",
@@ -5973,6 +6010,7 @@ dependencies = [
  "moon_action_pipeline",
  "moon_app_context",
  "moon_cache",
+ "moon_cache_local",
  "moon_common",
  "moon_config",
  "moon_config_loader",

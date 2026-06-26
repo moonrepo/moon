@@ -13,6 +13,7 @@ moon_app_context = { path = "../app-context" }
 moon_action_graph = { path = "../action-graph" }
 moon_action_pipeline = { path = "../action-pipeline" }
 moon_cache = { path = "../cache" }
+moon_cache_local = { path = "../cache-local" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_config_loader = { path = "../config-loader" }

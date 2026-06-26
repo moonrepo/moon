@@ -139,7 +139,7 @@ mod output_hydrater {
     mod local_cas {
         use super::*;
         use bazel_remote_apis::build::bazel::remote::execution::v2::OutputFile;
-        use moon_remote::LocalDigestExt;
+        use moon_cache::InternalDigestExt;
         use starbase_utils::json::serde_json;
 
         fn setup_cas_state(state: &mut TaskRunState) {
@@ -369,7 +369,7 @@ mod output_hydrater {
             let mut result = ActionResult::default();
             result.output_files.push(OutputFile {
                 path: format!("../{outside_name}"),
-                digest: Some(digest.to_remote_digest()),
+                digest: Some(digest.to_external_digest()),
                 ..Default::default()
             });
 
@@ -422,7 +422,7 @@ mod output_hydrater {
             let mut result = ActionResult::default();
             result.output_files.push(OutputFile {
                 path: outside_path.to_string_lossy().to_string(),
-                digest: Some(digest.to_remote_digest()),
+                digest: Some(digest.to_external_digest()),
                 ..Default::default()
             });
 
@@ -461,7 +461,7 @@ mod output_hydrater {
             let mut result = ActionResult::default();
             result.output_files.push(OutputFile {
                 path: "project/runner.js".to_owned(),
-                digest: Some(digest.to_remote_digest()),
+                digest: Some(digest.to_external_digest()),
                 ..Default::default()
             });
 
@@ -498,7 +498,7 @@ mod output_hydrater {
             for name in ["a.txt", "b.txt", "c.txt"] {
                 result.output_files.push(OutputFile {
                     path: format!("project/{name}"),
-                    digest: Some(empty_digest.to_remote_digest()),
+                    digest: Some(empty_digest.to_external_digest()),
                     ..Default::default()
                 });
             }

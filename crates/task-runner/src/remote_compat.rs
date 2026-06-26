@@ -4,8 +4,8 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 };
 use moon_action::Operation;
 use moon_blob::Blob;
+use moon_cache::{InternalDigestExt, create_timestamp, create_timestamp_from_naive};
 use moon_hash::Digest;
-use moon_remote::{LocalDigestExt, create_timestamp, create_timestamp_from_naive};
 use starbase_utils::fs::{self, FsError};
 use std::fs::{self as fs_std, File, Metadata};
 use std::io::Write;
@@ -14,7 +14,7 @@ use std::time::{Duration, UNIX_EPOCH};
 
 pub fn create_action(command_digest: &Digest) -> Action {
     Action {
-        command_digest: Some(command_digest.to_remote_digest()),
+        command_digest: Some(command_digest.to_external_digest()),
         ..Default::default()
     }
 }
@@ -52,14 +52,14 @@ pub fn create_action_result(
         if let Some(stderr) = &exec.stderr {
             let blob = Blob::from_bytes(stderr.as_bytes().to_owned())?;
 
-            result.stderr_digest = Some(blob.digest.to_remote_digest());
+            result.stderr_digest = Some(blob.digest.to_external_digest());
             inline_blobs.push(blob);
         }
 
         if let Some(stdout) = &exec.stdout {
             let blob = Blob::from_bytes(stdout.as_bytes().to_owned())?;
 
-            result.stdout_digest = Some(blob.digest.to_remote_digest());
+            result.stdout_digest = Some(blob.digest.to_external_digest());
             inline_blobs.push(blob);
         }
     }
@@ -87,7 +87,7 @@ pub fn create_action_result(
 
         result.output_files.push(OutputFile {
             path: path.to_string(),
-            digest: Some(digest.to_remote_digest()),
+            digest: Some(digest.to_external_digest()),
             is_executable: is_file_executable(&abs_path, &metadata),
             contents: vec![],
             node_properties: Some(extract_node_properties(&metadata)),

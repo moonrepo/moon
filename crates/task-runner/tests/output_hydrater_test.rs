@@ -144,8 +144,7 @@ mod output_hydrater {
 
         fn setup_cas_state(state: &mut TaskRunState) {
             state.local_cas_enabled = true;
-            state.bytes = b"hash123".to_vec();
-            state.digest = Digest::from_bytes(&state.bytes).unwrap();
+            state.digest = Digest::from_bytes(b"hash123".to_vec()).unwrap();
         }
 
         async fn populate_cas(container: &TaskRunnerContainer, state: &TaskRunState) {

@@ -429,8 +429,7 @@ mod output_archiver {
 
         fn setup_cas_state(state: &mut moon_task_runner::TaskRunState) {
             state.local_cas_enabled = true;
-            state.bytes = b"hash123".to_vec();
-            state.digest = Digest::from_bytes(&state.bytes).unwrap();
+            state.digest = Digest::from_bytes(b"hash123".to_vec()).unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]

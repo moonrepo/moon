@@ -17,9 +17,6 @@ cache_item!(
 
 #[derive(Default)]
 pub struct TaskRunState {
-    /// The bytes of our internal fingerprint.
-    pub bytes: Vec<u8>,
-
     /// The digest of our internal fingerprint. This is separate from the action
     /// digest as this implementation is not Bazel compatible.
     pub digest: Digest,

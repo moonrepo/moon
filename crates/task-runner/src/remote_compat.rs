@@ -1,6 +1,6 @@
 use crate::output_tree::OutputTree;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    Action, ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
+    ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
 };
 use moon_action::Operation;
 use moon_blob::Blob;
@@ -11,13 +11,6 @@ use std::fs::{self as fs_std, File, Metadata};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, UNIX_EPOCH};
-
-pub fn create_action(command_digest: &Digest) -> Action {
-    Action {
-        command_digest: Some(command_digest.to_external_digest()),
-        ..Default::default()
-    }
-}
 
 /// Build an `ActionResult` from the operation + collected outputs.
 ///
@@ -97,19 +90,6 @@ pub fn create_action_result(
     }
 
     Ok((result, inline_blobs, output_digests))
-}
-
-// This is where moon differs from the Bazel RE API. In Bazel,
-// we would serialize + hash the `Action` and `Command` types,
-// to create the action blob, and upload that specifically.
-//
-// But those types do not match how our hashing works, so instead,
-// we're uploading the bytes of our internal hash manifests. Which
-// is better for debugging as hashes match across the board!
-//
-// Hopefully this doesn't cause issues!
-pub fn create_action_blob(digest: &Digest, bytes: &[u8]) -> Blob {
-    Blob::new(digest.clone(), bytes.to_owned())
 }
 
 #[cfg(unix)]

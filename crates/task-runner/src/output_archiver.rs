@@ -1,5 +1,5 @@
 use crate::output_tree::OutputTree;
-use crate::remote_compat::{create_action, create_action_blob, create_action_result};
+use crate::remote_compat::create_action_result;
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
@@ -221,35 +221,6 @@ impl OutputArchiver<'_> {
         }
 
         let cache_engine = &self.app_context.cache_engine;
-        let mut continue_remote = true;
-
-        // Create and store the action first
-        let action = create_action(&state.digest);
-        let action_blob = create_action_blob(&state.digest, &state.bytes);
-
-        if state.local_cache_writable & state.local_cas_enabled {
-            cache_engine.cas.store_blob(&action_blob)?;
-        }
-
-        if state.remote_cache_writable
-            && let Some(remote) = RemoteService::session()
-        {
-            match remote.save_action(action, action_blob).await {
-                Ok(saved) => {
-                    continue_remote = saved;
-                }
-                Err(error) => {
-                    warn!(
-                        task_target = self.task.target.as_str(),
-                        hash,
-                        "Failed to upload action to remote service: {}",
-                        color::muted_light(error.to_string())
-                    );
-
-                    continue_remote = false;
-                }
-            };
-        }
 
         // Then create the action result. Output file blobs are already in the
         // CAS thanks to streaming collection — `output_digests` references them.
@@ -274,7 +245,6 @@ impl OutputArchiver<'_> {
         }
 
         if state.remote_cache_writable
-            && continue_remote
             && let Some(remote) = RemoteService::session()
         {
             let blobs = self

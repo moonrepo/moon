@@ -5,6 +5,7 @@
 #### 🐞 Fixes
 
 - Fixed an issue where Git hooks would not work correctly in submodules.
+- Fixed an issue where `moon docker` commands may generate non-deterministic output, resulting in invalid Docker layer caching.
 
 #### 🧰 Toolchains
 

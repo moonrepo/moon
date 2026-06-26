@@ -63,6 +63,7 @@ clap_complete = { workspace = true }
 clap_complete_nushell = "4.6.0"
 convert_case = { workspace = true }
 diff = "0.1.13"
+indexmap = { workspace = true }
 iocraft = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }

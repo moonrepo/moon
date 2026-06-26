@@ -2,6 +2,7 @@ use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
 use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
@@ -23,14 +24,41 @@ pub struct CacheContext {
     pub workspace_root: PathBuf,
 }
 
+#[derive(Debug)]
+pub struct StorageOptions {
+    pub only_backends: Vec<Id>,
+    pub include_local: bool,
+    pub include_remote: bool,
+}
+
+impl Default for StorageOptions {
+    fn default() -> Self {
+        Self {
+            only_backends: vec![],
+            include_local: true,
+            include_remote: true,
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct Storage {
+    background_tasks: Arc<Mutex<Vec<JoinHandle<miette::Result<()>>>>>,
     local_backends: Vec<BoxedStorageBackend>,
     remote_backends: Vec<BoxedStorageBackend>,
-    background_tasks: Mutex<Vec<JoinHandle<miette::Result<()>>>>,
+    options: StorageOptions,
 }
 
 impl Storage {
+    pub fn with_options(&self, options: StorageOptions) -> Self {
+        Self {
+            background_tasks: Arc::clone(&self.background_tasks),
+            local_backends: self.local_backends.clone(),
+            remote_backends: self.remote_backends.clone(),
+            options,
+        }
+    }
+
     pub fn add_local_backend(&mut self, backend: impl StorageBackend + 'static) {
         self.local_backends.push(Arc::new(backend));
     }
@@ -68,10 +96,28 @@ impl Storage {
         Ok(())
     }
 
-    pub fn get_backends(&self) -> impl Iterator<Item = &BoxedStorageBackend> {
-        self.local_backends
-            .iter()
-            .chain(self.remote_backends.iter())
+    pub fn get_backends(&self) -> Vec<&BoxedStorageBackend> {
+        let mut backends = vec![];
+
+        if self.options.only_backends.is_empty() {
+            if self.options.include_local {
+                backends.extend(self.local_backends.iter());
+            }
+
+            if self.options.include_remote {
+                backends.extend(self.remote_backends.iter());
+            }
+        } else {
+            backends.extend(self.local_backends.iter());
+            backends.extend(self.remote_backends.iter());
+            backends.retain(|backend| self.options.only_backends.contains(backend.get_id()));
+        }
+
+        backends
+    }
+
+    pub fn is_local_enabled(&self) -> bool {
+        !self.local_backends.is_empty()
     }
 
     pub fn is_remote_enabled(&self) -> bool {

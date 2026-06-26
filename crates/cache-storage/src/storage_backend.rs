@@ -126,9 +126,22 @@ where
         let total_count = blob_sources.len() as u16;
 
         // Before we store blobs, we should ensure that they don't already exists in the backend
-        let missing_digests = Arc::clone(&self)
+        let missing_digests = match Arc::clone(&self)
             .find_missing_blobs_batched(digest.clone(), get_digests_from_sources(&blob_sources))
-            .await?;
+            .await
+        {
+            Ok(digests) => digests,
+            Err(error) => {
+                warn!(
+                    storage = self.get_id().as_str(),
+                    hash = digest.hash.as_str(),
+                    error = error.to_string(),
+                    "Failed to find missing blobs, aborting store operation",
+                );
+
+                return Ok(vec![]);
+            }
+        };
 
         if missing_digests.is_empty() {
             return Ok(get_digests_from_sources(&blob_sources));

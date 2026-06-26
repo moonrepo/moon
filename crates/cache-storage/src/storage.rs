@@ -217,7 +217,7 @@ impl Storage {
         };
 
         for handle in background_tasks {
-            handle.await.into_diagnostic()??;
+            let _ = handle.await.into_diagnostic()?;
         }
 
         Ok(())
@@ -232,31 +232,33 @@ async fn archive_manifest_in_backend(
     let blob_sources = manifest.collect_blob_sources();
     let initial_count = blob_sources.len();
 
-    trace!(
-        storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
-        "Storing {initial_count} blobs"
-    );
+    if !blob_sources.is_empty() {
+        trace!(
+            storage = backend.get_id().as_str(),
+            hash = digest.hash.as_str(),
+            "Storing {initial_count} blobs"
+        );
 
-    manifest.upload_started_at = Some(SystemTime::now());
+        manifest.upload_started_at = Some(SystemTime::now());
 
-    // Before we store the manifest, we should ensure all associated blobs are stored.
-    // This ensures we don't end up with dangling manifests that reference missing blobs.
-    let uploaded = Arc::clone(&backend)
-        .store_blobs_batched(digest.clone(), blob_sources)
-        .await?;
+        // Before we store the manifest, we should ensure all associated blobs are stored.
+        // This ensures we don't end up with dangling manifests that reference missing blobs.
+        let uploaded = Arc::clone(&backend)
+            .store_blobs_batched(digest.clone(), blob_sources)
+            .await?;
 
-    manifest.upload_completed_at = Some(SystemTime::now());
+        manifest.upload_completed_at = Some(SystemTime::now());
 
-    trace!(
-        storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
-        "Stored {} of {initial_count} blobs",
-        uploaded.len()
-    );
+        trace!(
+            storage = backend.get_id().as_str(),
+            hash = digest.hash.as_str(),
+            "Stored {} of {initial_count} blobs",
+            uploaded.len()
+        );
 
-    if uploaded.is_empty() {
-        return Ok(());
+        if uploaded.is_empty() {
+            return Ok(());
+        }
     }
 
     if backend.get_capabilities().store_manifests {

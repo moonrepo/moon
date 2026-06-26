@@ -49,7 +49,8 @@ struct MockBackend {
     get_action_status: Option<Code>,
     update_status: Option<Code>,
     corrupt_reads: bool,
-    advertise_zstd: bool,
+    zstd_streaming: bool,
+    zstd_batch: bool,
 }
 
 impl MockBackend {
@@ -69,7 +70,14 @@ impl MockBackend {
     }
 
     fn with_zstd(mut self) -> Self {
-        self.advertise_zstd = true;
+        self.zstd_streaming = true;
+        self.zstd_batch = true;
+        self
+    }
+
+    /// Advertise zstd for the bytestream (streaming) path only, not batch.
+    fn with_streaming_zstd(mut self) -> Self {
+        self.zstd_streaming = true;
         self
     }
 }
@@ -80,17 +88,22 @@ impl Capabilities for MockBackend {
         &self,
         _request: Request<GetCapabilitiesRequest>,
     ) -> Result<Response<ServerCapabilities>, Status> {
-        let compressors = if self.advertise_zstd {
-            vec![Compressor::Identity as i32, Compressor::Zstd as i32]
-        } else {
-            vec![Compressor::Identity as i32]
-        };
+        let with_zstd = vec![Compressor::Identity as i32, Compressor::Zstd as i32];
+        let identity_only = vec![Compressor::Identity as i32];
 
         Ok(Response::new(ServerCapabilities {
             cache_capabilities: Some(BazelCacheCapabilities {
                 digest_functions: vec![DigestFunction::Sha256 as i32],
-                supported_compressors: compressors.clone(),
-                supported_batch_update_compressors: compressors,
+                supported_compressors: if self.zstd_streaming {
+                    with_zstd.clone()
+                } else {
+                    identity_only.clone()
+                },
+                supported_batch_update_compressors: if self.zstd_batch {
+                    with_zstd
+                } else {
+                    identity_only
+                },
                 max_batch_total_size_bytes: 4 * 1024 * 1024,
                 action_cache_update_capabilities: Some(ActionCacheUpdateCapabilities {
                     update_enabled: true,
@@ -178,6 +191,12 @@ impl ContentAddressableStorage for MockBackend {
         let mut responses = vec![];
 
         for blob in request.requests {
+            // Mimic a server that rejects a compressor it didn't advertise in
+            // `supported_batch_update_compressors`.
+            if blob.compressor == Compressor::Zstd as i32 && !self.zstd_batch {
+                return Err(Status::invalid_argument("unsupported compressor"));
+            }
+
             if let Some(digest) = blob.digest.clone() {
                 blobs.insert(digest.hash.clone(), (blob.data, blob.compressor));
                 responses.push(batch_update_blobs_response::Response {
@@ -623,6 +642,68 @@ mod grpc_remote_storage {
             let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
             assert_eq!(blobs.len(), 1);
             assert_eq!(blobs[0].bytes.as_ref(), content);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn falls_back_to_uncompressed_when_server_lacks_compression() {
+            // The client is configured for zstd but the server advertises only
+            // identity, so compression must be negotiated off — otherwise the
+            // server rejects the unsupported compressor.
+            let (_sandbox, storage) =
+                connect_with(MockBackend::default(), RemoteCompression::Zstd).await;
+            let content = b"would-be compressed content";
+            let digest = digest_of(content);
+
+            let stored = storage
+                .store_blobs(vec![inline(content)], false)
+                .await
+                .unwrap();
+            assert_eq!(stored, vec![digest.clone()]);
+
+            let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
+            assert_eq!(blobs.len(), 1);
+            assert_eq!(blobs[0].bytes.as_ref(), content);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn compression_is_negotiated_per_path() {
+            // Server supports zstd for the bytestream path but not batch-update,
+            // so the two paths negotiate compression independently.
+            let (_sandbox, storage) = connect_with(
+                MockBackend::default().with_streaming_zstd(),
+                RemoteCompression::Zstd,
+            )
+            .await;
+
+            // Batched upload must fall back to identity (the mock rejects zstd
+            // batches), while the streamed upload still uses zstd.
+            let batched = b"batched payload";
+            let batched_digest = digest_of(batched);
+            storage
+                .store_blobs(vec![inline(batched)], false)
+                .await
+                .unwrap();
+
+            let streamed = b"streamed payload";
+            let streamed_digest = digest_of(streamed);
+            let stored = storage
+                .store_blobs(vec![inline(streamed)], true)
+                .await
+                .unwrap();
+            assert_eq!(stored, vec![streamed_digest.clone()]);
+
+            // Both round-trip back to their original contents.
+            let batched_back = storage
+                .retrieve_blobs(vec![batched_digest], false)
+                .await
+                .unwrap();
+            assert_eq!(batched_back[0].bytes.as_ref(), batched);
+
+            let streamed_back = storage
+                .retrieve_blobs(vec![streamed_digest], true)
+                .await
+                .unwrap();
+            assert_eq!(streamed_back[0].bytes.as_ref(), streamed);
         }
     }
 }

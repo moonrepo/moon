@@ -88,9 +88,10 @@ impl Storage {
 
             if let Some(manifest) = backend.retrieve_manifest(digest.to_owned()).await? {
                 trace!(
+                    storage = backend.get_id().as_str(),
                     hash = digest.hash.as_str(),
                     files = manifest.files.len(),
-                    links = manifest.symlinks.len(),
+                    symlinks = manifest.symlinks.len(),
                     exit_code = manifest.exit_code,
                     "Cache hit on manifest"
                 );
@@ -117,7 +118,7 @@ impl Storage {
         trace!(
             hash = digest.hash.as_str(),
             files = manifest.files.len(),
-            links = manifest.symlinks.len(),
+            symlinks = manifest.symlinks.len(),
             exit_code = manifest.exit_code,
             "Archiving cache manifest"
         );
@@ -139,9 +140,9 @@ impl Storage {
         trace!(
             hash = digest.hash.as_str(),
             files = manifest.files.len(),
-            links = manifest.symlinks.len(),
+            symlinks = manifest.symlinks.len(),
             exit_code = manifest.exit_code,
-            "Archived cache manifest (in queue)"
+            "Archived cache manifest (in background queue)"
         );
 
         Ok(())
@@ -157,6 +158,9 @@ impl Storage {
             backend: original_backend,
         } = manifest_source;
         let mut backends = VecDeque::from_iter(self.get_backends());
+        let mut count = 1;
+
+        trace!(hash = digest.hash.as_str(), "Hydrating cache manifest");
 
         // Hydrate the manifest from the backend it was originally loaded from,
         // as that's the most likely to have all the blobs available
@@ -173,6 +177,8 @@ impl Storage {
                 continue;
             }
 
+            count += 1;
+
             hydrate_manifest_from_backend_and_copy_to_original(
                 &original_backend,
                 backend,
@@ -185,8 +191,18 @@ impl Storage {
         // If the manifest is fully hydrated, return it, otherwise return None to
         // indicate it couldn't be fully hydrated, and should re-run
         if manifest.is_hydrated() {
+            trace!(
+                hash = digest.hash.as_str(),
+                "Hydrating cache manifest from {count} storage backends"
+            );
+
             return Ok(Some(manifest));
         }
+
+        trace!(
+            hash = digest.hash.as_str(),
+            "Failed to hydrate cache manifest as some blobs were missing"
+        );
 
         Ok(None)
     }
@@ -323,6 +339,14 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
 
     // Then store them in the original backend in which they were missing
     if !blob_sources.is_empty() {
+        trace!(
+            to_storage = original_backend.get_id().as_str(),
+            from_storage = backend.get_id().as_str(),
+            hash = digest.hash.as_str(),
+            "Copying {} missing blobs to original storage backend",
+            blob_sources.len()
+        );
+
         Arc::clone(original_backend)
             .store_blobs_batched(digest.to_owned(), blob_sources)
             .await?;

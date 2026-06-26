@@ -11,6 +11,11 @@
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or
     being written out of order.
+- **Remote cache**
+  - Added compression support for streamed read/writes of blobs (large files).
+  - Added extensive testing to account for edge cases.
+  - When the server doesn't support the configured compression, it will now default to "identity"
+    (uncompressed) instead of disabling the cache entirely.
 - **VCS**
   - Hardened all executed Git commands: revisions are validated against argument injection,
     credential prompts now fail immediately instead of hanging, and the fsmonitor daemon is now

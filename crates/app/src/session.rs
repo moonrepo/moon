@@ -7,9 +7,12 @@ use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::{CacheContext, CacheEngine};
 use moon_cache_local::LocalStorage;
+use moon_cache_remote::{GrpcRemoteStorage, HttpRemoteStorage};
 use moon_codegen::CodeGenerator;
 use moon_common::{is_docker, is_formatted_output, is_remote, is_test_env};
-use moon_config::{ExtensionsConfig, InheritedTasksManager, ToolchainsConfig, WorkspaceConfig};
+use moon_config::{
+    ExtensionsConfig, InheritedTasksManager, RemoteApi, ToolchainsConfig, WorkspaceConfig,
+};
 use moon_config_loader::ConfigLoader;
 use moon_console::{Console, MoonReporter, create_console_theme};
 use moon_daemon::{DaemonClient, DaemonConnector};
@@ -214,6 +217,21 @@ impl MoonSession {
                 &context.cache_dir,
                 false,
             )?);
+
+            if context.remote_config.is_enabled() {
+                match context.remote_config.api {
+                    RemoteApi::Grpc => {
+                        engine
+                            .storage
+                            .add_remote_backend(GrpcRemoteStorage::new(context.clone())?);
+                    }
+                    RemoteApi::Http => {
+                        engine
+                            .storage
+                            .add_remote_backend(HttpRemoteStorage::new(context.clone())?);
+                    }
+                };
+            }
 
             let _ = self.cache_engine.set(Arc::new(engine));
         }
@@ -478,6 +496,12 @@ impl AppSession for MoonSession {
         {
             let _ = daemon.stop().await;
         }
+
+        // Ensure all in-flight storage tasks have finished
+        self.get_cache_engine()?
+            .storage
+            .wait_for_background_tasks()
+            .await?;
 
         // Ensure all child processes have finished running
         ProcessRegistry::instance()

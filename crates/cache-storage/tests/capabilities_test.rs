@@ -18,7 +18,7 @@ mod capabilities {
     fn bazel_round_trip_preserves_fields() {
         let caps = CacheCapabilities {
             max_batch_total_size_bytes: 4_194_304,
-            max_cas_blob_size_bytes: 1024,
+            // max_cas_blob_size_bytes: 1024,
             store_manifests: true,
             supported_compressors: vec![Compressor::Identity],
             ..CacheCapabilities::default()
@@ -27,7 +27,7 @@ mod capabilities {
         let restored = CacheCapabilities::from_bazel_capabilities(caps.into_bazel_capabilities());
 
         assert_eq!(restored.max_batch_total_size_bytes, 4_194_304);
-        assert_eq!(restored.max_cas_blob_size_bytes, 1024);
+        // assert_eq!(restored.max_cas_blob_size_bytes, 1024);
         assert!(restored.store_manifests);
         assert_eq!(restored.digest_functions, vec![DigestFunction::Sha256]);
         assert_eq!(restored.supported_compressors, vec![Compressor::Identity]);

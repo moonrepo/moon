@@ -182,6 +182,24 @@ impl GrpcRemoteStorage {
             self.context.remote_config.cache.local_read_only,
         )
     }
+
+    /// The configured compressor, reduced to what the server supports for the
+    /// `compressed-blobs` bytestream (streaming) path.
+    fn streaming_compression(&self) -> RemoteCompression {
+        negotiate_compression(
+            self.context.remote_config.cache.compression,
+            &self.get_capabilities().supported_compressors,
+        )
+    }
+
+    /// The configured compressor, reduced to what the server supports for the
+    /// batch path.
+    fn batch_compression(&self) -> RemoteCompression {
+        negotiate_compression(
+            self.context.remote_config.cache.compression,
+            &self.get_capabilities().supported_batch_update_compressors,
+        )
+    }
 }
 
 #[async_trait]
@@ -423,9 +441,7 @@ impl StorageBackend for GrpcRemoteStorage {
         let response = match self
             .get_cas_client()
             .batch_read_blobs(BatchReadBlobsRequest {
-                acceptable_compressors: get_acceptable_compressors(
-                    self.context.remote_config.cache.compression,
-                ),
+                acceptable_compressors: get_acceptable_compressors(self.batch_compression()),
                 instance_name: self.get_instance_name().into(),
                 digests: blob_digests
                     .into_iter()
@@ -492,7 +508,15 @@ impl StorageBackend for GrpcRemoteStorage {
         blob_sources: Vec<BlobSource>,
         stream: bool,
     ) -> miette::Result<Vec<Digest>> {
-        let compression = self.context.remote_config.cache.compression;
+        // A single oversized blob is streamed; everything else is batched. The
+        // two paths gate compression via different capabilities, so pick the
+        // compressor that matches the path we'll actually take.
+        let streaming = stream && blob_sources.len() == 1;
+        let compression = if streaming {
+            self.streaming_compression()
+        } else {
+            self.batch_compression()
+        };
         let mut blobs = vec![];
 
         for source in blob_sources {
@@ -509,7 +533,7 @@ impl StorageBackend for GrpcRemoteStorage {
             blobs.push(blob);
         }
 
-        if stream && blobs.len() == 1 {
+        if streaming {
             return self
                 .store_blob_streamed(blobs.remove(0))
                 .await
@@ -586,7 +610,7 @@ impl GrpcRemoteStorage {
         &self,
         blob_digest: Digest,
     ) -> miette::Result<Option<CompressableBlob>> {
-        let compression = self.context.remote_config.cache.compression;
+        let compression = self.streaming_compression();
         let resource_name =
             build_read_resource_name(self.get_instance_name(), &blob_digest, compression);
 
@@ -768,6 +792,22 @@ fn evaluate_capabilities(
     }
 
     enabled
+}
+
+fn negotiate_compression(
+    compression: RemoteCompression,
+    supported: &[Compressor],
+) -> RemoteCompression {
+    let compressor = match compression {
+        RemoteCompression::None => return RemoteCompression::None,
+        RemoteCompression::Zstd => Compressor::Zstd,
+    };
+
+    if supported.contains(&compressor) {
+        compression
+    } else {
+        RemoteCompression::None
+    }
 }
 
 fn is_upload_allowed(enabled: bool, is_ci: bool, local_read_only: bool) -> bool {
@@ -1040,6 +1080,37 @@ mod tests {
                     "main/uploads/{uuid}/compressed-blobs/zstd/{}/12",
                     digest.hash
                 )
+            );
+        }
+    }
+
+    mod negotiate_compression {
+        use super::*;
+
+        #[test]
+        fn none_stays_none() {
+            assert_eq!(
+                negotiate_compression(RemoteCompression::None, &[Compressor::Zstd]),
+                RemoteCompression::None
+            );
+        }
+
+        #[test]
+        fn kept_when_supported() {
+            assert_eq!(
+                negotiate_compression(
+                    RemoteCompression::Zstd,
+                    &[Compressor::Identity, Compressor::Zstd]
+                ),
+                RemoteCompression::Zstd
+            );
+        }
+
+        #[test]
+        fn dropped_when_unsupported() {
+            assert_eq!(
+                negotiate_compression(RemoteCompression::Zstd, &[Compressor::Identity]),
+                RemoteCompression::None
             );
         }
     }

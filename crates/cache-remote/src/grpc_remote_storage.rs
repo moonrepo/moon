@@ -586,7 +586,9 @@ impl GrpcRemoteStorage {
         &self,
         blob_digest: Digest,
     ) -> miette::Result<Option<CompressableBlob>> {
-        let resource_name = build_read_resource_name(self.get_instance_name(), &blob_digest);
+        let compression = self.context.remote_config.cache.compression;
+        let resource_name =
+            build_read_resource_name(self.get_instance_name(), &blob_digest, compression);
 
         let response = match self
             .get_bs_client()
@@ -626,12 +628,18 @@ impl GrpcRemoteStorage {
             }
         }
 
-        let blob = CompressableBlob::from_bytes(bytes)?;
+        // The streamed bytes are compressed when a compressor is configured, so
+        // decompress before verifying against the (uncompressed) digest.
+        let mut blob = CompressableBlob::new(blob_digest.clone(), bytes);
+        blob.compression = compression;
+        blob.decompress()?;
 
-        if blob.digest != blob_digest {
+        let actual_digest = Digest::from_bytes(&blob.bytes)?;
+
+        if actual_digest != blob_digest {
             return Err(RemoteError::GrpcDownloadDigestMismatch {
-                actual: blob.digest.clone(),
-                expected: blob_digest.clone(),
+                actual: actual_digest,
+                expected: blob_digest,
             }
             .into());
         }
@@ -640,9 +648,15 @@ impl GrpcRemoteStorage {
     }
 
     async fn store_blob_streamed(&self, blob: CompressableBlob) -> miette::Result<Digest> {
-        let resource_name =
-            build_write_resource_name(self.get_instance_name(), self.get_uuid(), &blob.digest);
-        let total_bytes = blob.digest.size;
+        let resource_name = build_write_resource_name(
+            self.get_instance_name(),
+            self.get_uuid(),
+            &blob.digest,
+            blob.compression,
+        );
+        // Stream the (possibly compressed) payload; the digest embedded in the
+        // resource name stays the uncompressed digest per the REAPI spec.
+        let total_bytes = blob.inner.bytes.len() as i64;
         let stream_error = Arc::new(Mutex::new(None));
         let stream_error_clone = stream_error.clone();
 
@@ -684,7 +698,8 @@ impl GrpcRemoteStorage {
             Ok(response) => {
                 let result = response.into_inner();
 
-                if result.committed_size != total_bytes {
+                // A compressed upload the server already had returns -1.
+                if result.committed_size != total_bytes && result.committed_size != -1 {
                     return Err(RemoteError::GrpcUploadBytesMismatch {
                         actual: result.committed_size,
                         expected: total_bytes,
@@ -767,15 +782,49 @@ fn normalize_grpc_host(host: &str) -> String {
     }
 }
 
-fn build_read_resource_name(instance_name: &str, digest: &Digest) -> String {
-    format!("{instance_name}/blobs/{}/{}", digest.hash, digest.size)
+fn compressor_name(compression: RemoteCompression) -> &'static str {
+    match compression {
+        RemoteCompression::None => "identity",
+        RemoteCompression::Zstd => "zstd",
+    }
 }
 
-fn build_write_resource_name(instance_name: &str, uuid: &uuid::Uuid, digest: &Digest) -> String {
-    format!(
-        "{instance_name}/uploads/{uuid}/blobs/{}/{}",
-        digest.hash, digest.size
-    )
+fn build_read_resource_name(
+    instance_name: &str,
+    digest: &Digest,
+    compression: RemoteCompression,
+) -> String {
+    if compression == RemoteCompression::None {
+        format!("{instance_name}/blobs/{}/{}", digest.hash, digest.size)
+    } else {
+        format!(
+            "{instance_name}/compressed-blobs/{}/{}/{}",
+            compressor_name(compression),
+            digest.hash,
+            digest.size
+        )
+    }
+}
+
+fn build_write_resource_name(
+    instance_name: &str,
+    uuid: &uuid::Uuid,
+    digest: &Digest,
+    compression: RemoteCompression,
+) -> String {
+    if compression == RemoteCompression::None {
+        format!(
+            "{instance_name}/uploads/{uuid}/blobs/{}/{}",
+            digest.hash, digest.size
+        )
+    } else {
+        format!(
+            "{instance_name}/uploads/{uuid}/compressed-blobs/{}/{}/{}",
+            compressor_name(compression),
+            digest.hash,
+            digest.size
+        )
+    }
 }
 
 #[cfg(test)]
@@ -954,8 +1003,18 @@ mod tests {
             let digest = digest('a', 12);
 
             assert_eq!(
-                build_read_resource_name("main", &digest),
+                build_read_resource_name("main", &digest, RemoteCompression::None),
                 format!("main/blobs/{}/12", digest.hash)
+            );
+        }
+
+        #[test]
+        fn compressed_read_resource_name_format() {
+            let digest = digest('a', 12);
+
+            assert_eq!(
+                build_read_resource_name("main", &digest, RemoteCompression::Zstd),
+                format!("main/compressed-blobs/zstd/{}/12", digest.hash)
             );
         }
 
@@ -965,8 +1024,22 @@ mod tests {
             let uuid = uuid::Uuid::nil();
 
             assert_eq!(
-                build_write_resource_name("main", &uuid, &digest),
+                build_write_resource_name("main", &uuid, &digest, RemoteCompression::None),
                 format!("main/uploads/{uuid}/blobs/{}/12", digest.hash)
+            );
+        }
+
+        #[test]
+        fn compressed_write_resource_name_format() {
+            let digest = digest('a', 12);
+            let uuid = uuid::Uuid::nil();
+
+            assert_eq!(
+                build_write_resource_name("main", &uuid, &digest, RemoteCompression::Zstd),
+                format!(
+                    "main/uploads/{uuid}/compressed-blobs/zstd/{}/12",
+                    digest.hash
+                )
             );
         }
     }

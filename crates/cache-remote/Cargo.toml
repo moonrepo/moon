@@ -45,6 +45,8 @@ tower = { workspace = true, features = ["retry", "timeout"] }
 [dev-dependencies]
 httpmock = { workspace = true }
 starbase_sandbox = { workspace = true }
+tokio = { workspace = true, features = ["net"] }
+tonic = { workspace = true, features = ["router", "server"] }
 
 [lints]
 workspace = true

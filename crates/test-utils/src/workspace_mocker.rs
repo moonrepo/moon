@@ -1,7 +1,8 @@
 use moon_action_graph::ActionGraphBuilder;
 use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
-use moon_cache::CacheEngine;
+use moon_cache::{CacheContext, CacheEngine};
+use moon_cache_local::LocalStorage;
 use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
 use moon_config::*;
 use moon_config_loader::{ConfigLoader, ExtensionsConfigExt, ToolchainsConfigExt};
@@ -356,7 +357,22 @@ impl WorkspaceMocker {
     }
 
     pub fn mock_cache_engine(&self) -> CacheEngine {
-        CacheEngine::new(&self.config_dir, &self.workspace_config.cache).unwrap()
+        let context = CacheContext {
+            cache_dir: self.config_dir.join("cache"),
+            cache_config: Arc::new(self.workspace_config.cache.clone()),
+            config_dir: self.config_dir.clone(),
+            remote_config: Arc::new(self.workspace_config.remote.clone()),
+            remote_debug: false,
+            workspace_root: self.workspace_root.clone(),
+        };
+
+        let mut engine = CacheEngine::new(context.clone()).unwrap();
+
+        engine.storage.add_local_backend(
+            LocalStorage::new(context.clone(), &context.cache_dir, false).unwrap(),
+        );
+
+        engine
     }
 
     pub fn mock_console(&self) -> Console {

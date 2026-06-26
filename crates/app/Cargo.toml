@@ -15,6 +15,8 @@ moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
 moon_app_macros = { path = "../app-macros" }
 moon_cache = { path = "../cache" }
+moon_cache_local = { path = "../cache-local" }
+moon_cache_remote = { path = "../cache-remote" }
 moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
@@ -70,14 +72,23 @@ proto_core = { workspace = true }
 regex = { workspace = true }
 reqwest = { workspace = true }
 rustc-hash = { workspace = true }
-schematic = { workspace = true, features = ["config", "schema", "renderer_template"] }
+schematic = { workspace = true, features = [
+  "config",
+  "schema",
+  "renderer_template",
+] }
 semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }
 starbase_archive = { workspace = true }
 starbase_shell = { workspace = true }
 starbase_styles = { workspace = true }
-starbase_utils = { workspace = true, features = ["editor-config", "json", "toml", "yaml"] }
+starbase_utils = { workspace = true, features = [
+  "editor-config",
+  "json",
+  "toml",
+  "yaml",
+] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }

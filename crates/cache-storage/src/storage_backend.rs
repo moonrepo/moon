@@ -8,6 +8,7 @@ use moon_common::Id;
 use moon_hash::Digest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashSet;
+use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{trace, warn};
@@ -15,14 +16,21 @@ use tracing::{trace, warn};
 pub type BoxedStorageBackend = Arc<dyn StorageBackend>;
 
 #[async_trait]
-pub trait StorageBackend: Send + Sync
+pub trait StorageBackend: Debug + Send + Sync
 where
     Self: 'static,
 {
     fn get_id(&self) -> &Id;
     fn get_capabilities(&self) -> &CacheCapabilities;
+    fn is_enabled(&self) -> bool;
 
-    async fn load_capabilities(&self) -> miette::Result<CacheCapabilities>;
+    /// Connect to the storage backend, if necessary. This is called before any other methods are
+    /// called, and can be used to establish a connection to a remote storage backend, or perform
+    /// any other necessary setup. If the backend does not require a connection, this method can
+    /// be a no-op.
+    async fn connect(&self) -> miette::Result<()> {
+        Ok(())
+    }
 
     /// Retrieve the manifest for the given digest if it exists, otherwise return `None`.
     /// This *does not* retrieve all the associated blobs for the manifest, only the manifest
@@ -114,16 +122,29 @@ where
         self: Arc<Self>,
         digest: Digest,
         mut blob_sources: Vec<BlobSource>,
-    ) -> miette::Result<Option<u16>> {
+    ) -> miette::Result<Vec<Digest>> {
         let total_count = blob_sources.len() as u16;
 
         // Before we store blobs, we should ensure that they don't already exists in the backend
-        let missing_digests = Arc::clone(&self)
+        let missing_digests = match Arc::clone(&self)
             .find_missing_blobs_batched(digest.clone(), get_digests_from_sources(&blob_sources))
-            .await?;
+            .await
+        {
+            Ok(digests) => digests,
+            Err(error) => {
+                warn!(
+                    storage = self.get_id().as_str(),
+                    hash = digest.hash.as_str(),
+                    error = error.to_string(),
+                    "Failed to find missing blobs, aborting store operation",
+                );
+
+                return Ok(vec![]);
+            }
+        };
 
         if missing_digests.is_empty() {
-            return Ok(Some(total_count));
+            return Ok(get_digests_from_sources(&blob_sources));
         }
 
         // Reduce the provided sources to only the missing digests
@@ -145,7 +166,7 @@ where
 
         let mut signal_receiver = ProcessRegistry::instance().receive_signal();
         let mut upload_errors = vec![];
-        let mut uploaded_count = 0;
+        let mut uploaded_digests = vec![];
         let mut abort = false;
 
         while let Some(result) = set.join_next().await {
@@ -155,8 +176,8 @@ where
             }
 
             match result {
-                Ok(Ok(count)) => {
-                    uploaded_count += count;
+                Ok(Ok(digests)) => {
+                    uploaded_digests.extend(digests);
                 }
                 Ok(Err(error)) => {
                     upload_errors.push(error.to_string());
@@ -171,7 +192,7 @@ where
         if abort {
             set.shutdown().await;
 
-            return Ok(None);
+            return Ok(vec![]);
         }
 
         if !upload_errors.is_empty() {
@@ -179,19 +200,23 @@ where
                 storage = self.get_id().as_str(),
                 hash = digest.hash.as_str(),
                 total_count,
-                stored_count = uploaded_count,
+                stored_count = uploaded_digests.len(),
                 errors = ?upload_errors,
                 "Failed to store blobs",
             );
 
-            return Ok(None);
+            return Ok(vec![]);
         }
 
-        Ok(Some(uploaded_count))
+        Ok(uploaded_digests)
     }
 
     /// Store the blobs from the given list of blob sources.
-    async fn store_blobs(&self, blob_sources: Vec<BlobSource>) -> miette::Result<u16>;
+    async fn store_blobs(
+        &self,
+        blob_sources: Vec<BlobSource>,
+        stream: bool,
+    ) -> miette::Result<Vec<Digest>>;
 
     //---------- RECEIVING BLOBS ----------//
 
@@ -233,7 +258,36 @@ where
 
             match result {
                 Ok(Ok(batched_blobs)) => {
-                    downloaded_blobs.extend(batched_blobs);
+                    for blob in batched_blobs {
+                        if blob.bytes.len() != blob.digest.size as usize {
+                            trace!(
+                                hash = digest.hash.as_str(),
+                                blob_hash = blob.digest.hash.as_str(),
+                                expected_size = blob.digest.size,
+                                actual_size = blob.bytes.len(),
+                                "Integrity failure, mismatched file sizes",
+                            );
+
+                            abort = true;
+                            break;
+                        } else {
+                            let actual_digest = Digest::from_bytes(&blob.bytes)?;
+
+                            if actual_digest != blob.digest {
+                                trace!(
+                                    hash = digest.hash.as_str(),
+                                    blob_hash = blob.digest.hash.as_str(),
+                                    actual_hash = actual_digest.hash.as_str(),
+                                    "Integrity failure, mismatched digests",
+                                );
+
+                                abort = true;
+                                break;
+                            }
+                        }
+
+                        downloaded_blobs.push(blob);
+                    }
                 }
                 Ok(Err(error)) => {
                     download_errors.push(error.to_string());
@@ -266,7 +320,11 @@ where
     }
 
     /// Retrieve the blobs for the given list of blob digests.
-    async fn retrieve_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Blob>>;
+    async fn retrieve_blobs(
+        &self,
+        blob_digests: Vec<Digest>,
+        stream: bool,
+    ) -> miette::Result<Vec<Blob>>;
 }
 
 fn get_digests_from_sources(blob_sources: &[BlobSource]) -> Vec<Digest> {
@@ -280,7 +338,7 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
     backend: Arc<T>,
     digest: Digest,
     batch: Batch<BlobSource>,
-) -> miette::Result<u16> {
+) -> miette::Result<Vec<Digest>> {
     let blob_count = batch.items.len();
 
     trace!(
@@ -293,19 +351,19 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
         batch.total,
     );
 
-    match backend.store_blobs(batch.items).await {
-        Ok(count) => {
+    match backend.store_blobs(batch.items, batch.stream).await {
+        Ok(digests) => {
             trace!(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
-                blobs = count,
-                missing = blob_count - (count as usize),
+                blobs = digests.len(),
+                missing = blob_count - digests.len(),
                 "Stored blobs (batch {}:{})",
                 batch.index,
                 batch.total,
             );
 
-            Ok(count)
+            Ok(digests)
         }
         Err(error) => {
             trace!(
@@ -339,7 +397,7 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
         batch.total,
     );
 
-    match backend.retrieve_blobs(batch.items).await {
+    match backend.retrieve_blobs(batch.items, batch.stream).await {
         Ok(blobs) => {
             trace!(
                 storage = backend.get_id().as_str(),

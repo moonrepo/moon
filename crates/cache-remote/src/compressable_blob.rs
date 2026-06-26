@@ -1,6 +1,6 @@
 use crate::remote_error::RemoteError;
-use bazel_remote_apis::build::bazel::remote::execution::v2::compressor;
 use moon_blob::{Blob, Bytes};
+use moon_cache_storage::Compressor;
 use moon_config::RemoteCompression;
 use moon_hash::Digest;
 use std::ops::Deref;
@@ -116,10 +116,10 @@ impl Deref for CompressableBlob {
 // https://github.com/klauspost/compress/tree/master/zstd#status
 
 pub fn get_acceptable_compressors(compression: RemoteCompression) -> Vec<i32> {
-    let mut list = vec![compressor::Value::Identity as i32];
+    let mut list = vec![Compressor::Identity as i32];
 
     if compression == RemoteCompression::Zstd {
-        list.push(compressor::Value::Zstd as i32);
+        list.push(Compressor::Zstd as i32);
     };
 
     list
@@ -127,14 +127,14 @@ pub fn get_acceptable_compressors(compression: RemoteCompression) -> Vec<i32> {
 
 pub fn get_compressor(compression: RemoteCompression) -> i32 {
     match compression {
-        RemoteCompression::None => compressor::Value::Identity as i32,
-        RemoteCompression::Zstd => compressor::Value::Zstd as i32,
+        RemoteCompression::None => Compressor::Identity as i32,
+        RemoteCompression::Zstd => Compressor::Zstd as i32,
     }
 }
 
 pub fn get_compression_from_code(compressor: i32) -> RemoteCompression {
     match compressor {
-        zstd if zstd == compressor::Value::Zstd as i32 => RemoteCompression::Zstd,
+        zstd if zstd == Compressor::Zstd as i32 => RemoteCompression::Zstd,
         _ => RemoteCompression::None,
     }
 }

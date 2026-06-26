@@ -27,6 +27,8 @@ pub async fn sync_workspace(
     // Connect to the remote service in this action,
     // as it always runs before tasks, and we don't need it
     // for non-pipeline related features!
+    app_context.cache_engine.storage.connect_backends().await?;
+
     if app_context.workspace_config.remote.is_enabled() {
         RemoteService::connect(
             &app_context.workspace_config.remote,

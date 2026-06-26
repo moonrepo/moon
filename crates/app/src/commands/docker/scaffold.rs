@@ -302,11 +302,7 @@ async fn scaffold_sources(
         "Scaffolding sources skeleton, copying files from focused projects"
     );
 
-    let mut manifest = DockerManifest {
-        focused_projects: FxHashSet::default(),
-        unfocused_projects: FxHashSet::default(),
-    };
-
+    let mut manifest = DockerManifest::default();
     let mut visited = FxHashSet::default();
 
     // Copy all focused projects

@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where Git hooks would not work correctly in submodules.
+- Fixed an issue where `moon docker` commands may generate non-deterministic output, resulting in invalid Docker layer caching.
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Fixed `go list -deps` relationship inference not detecting sibling workspace modules imported via subpackages (e.g. `example.com/org/a/pkg`).
+- **JavaScript**
+  - Added Deno v2.9 support.
+
 ## 2.3.4
 
 #### 🐞 Fixes

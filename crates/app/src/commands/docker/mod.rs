@@ -10,8 +10,8 @@ pub use scaffold::*;
 pub use setup::*;
 
 use clap::Subcommand;
+use indexmap::IndexSet;
 use moon_common::{Id, cacheable};
-use rustc_hash::FxHashSet;
 
 #[derive(Clone, Debug, Subcommand)]
 pub enum DockerCommands {
@@ -38,10 +38,10 @@ pub enum DockerCommands {
 }
 
 cacheable!(
-    #[derive(Debug)]
+    #[derive(Debug, Default)]
     pub struct DockerManifest {
-        pub focused_projects: FxHashSet<Id>,
-        pub unfocused_projects: FxHashSet<Id>,
+        pub focused_projects: IndexSet<Id>,
+        pub unfocused_projects: IndexSet<Id>,
     }
 );
 

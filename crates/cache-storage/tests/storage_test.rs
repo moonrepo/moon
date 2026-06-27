@@ -1,9 +1,9 @@
 use async_trait::async_trait;
-use moon_blob::{Blob, BlobContent, BlobInput, Bytes};
+use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
 use moon_cache_storage::{CacheCapabilities, Manifest, ManifestFile, Storage, StorageBackend};
 use moon_common::Id;
 use moon_hash::{ContentHash, Digest};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use std::sync::{Arc, Mutex};
 
 /// In-memory backend with externally inspectable maps, so tests can both seed
@@ -83,10 +83,7 @@ impl StorageBackend for MemoryBackend {
         Ok(())
     }
 
-    async fn find_missing_blobs(
-        &self,
-        blob_digests: Vec<Digest>,
-    ) -> miette::Result<FxHashSet<Digest>> {
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
         if self.fail_find_missing {
             return Err(miette::miette!("simulated find_missing failure"));
         }
@@ -125,7 +122,7 @@ impl StorageBackend for MemoryBackend {
         &self,
         blob_digests: Vec<Digest>,
         _stream: bool,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<BlobOutput>> {
         if self.fail_retrieve_blobs {
             return Err(miette::miette!("simulated retrieve_blobs failure"));
         }
@@ -135,9 +132,10 @@ impl StorageBackend for MemoryBackend {
         Ok(blob_digests
             .into_iter()
             .filter_map(|digest| {
-                blobs
-                    .get(&digest)
-                    .map(|bytes| Blob::new(digest, bytes.to_vec()))
+                blobs.get(&digest).map(|bytes| BlobOutput {
+                    content: BlobContent::Inline(bytes.clone()),
+                    digest,
+                })
             })
             .collect())
     }

@@ -206,9 +206,15 @@ mod hydration {
             ..Default::default()
         };
 
-        let mut blobs: FxHashMap<Digest, Bytes> = FxHashMap::default();
-        blobs.insert(digest('b', 3), Bytes::from_static(b"err"));
-        blobs.insert(digest('a', 4), Bytes::from_static(b"file"));
+        let mut blobs: FxHashMap<Digest, BlobContent> = FxHashMap::default();
+        blobs.insert(
+            digest('b', 3),
+            BlobContent::Inline(Bytes::from_static(b"err")),
+        );
+        blobs.insert(
+            digest('a', 4),
+            BlobContent::Inline(Bytes::from_static(b"file")),
+        );
 
         manifest.hydrate(&blobs);
 

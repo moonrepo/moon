@@ -528,7 +528,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -589,7 +589,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], true).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -621,7 +621,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], true).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -641,7 +641,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -662,7 +662,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -697,13 +697,13 @@ mod grpc_remote_storage {
                 .retrieve_blobs(vec![batched_digest], false)
                 .await
                 .unwrap();
-            assert_eq!(batched_back[0].bytes.as_ref(), batched);
+            assert_eq!(batched_back[0].content.get_bytes().unwrap(), batched);
 
             let streamed_back = storage
                 .retrieve_blobs(vec![streamed_digest], true)
                 .await
                 .unwrap();
-            assert_eq!(streamed_back[0].bytes.as_ref(), streamed);
+            assert_eq!(streamed_back[0].content.get_bytes().unwrap(), streamed);
         }
     }
 }

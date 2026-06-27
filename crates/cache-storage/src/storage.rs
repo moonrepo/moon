@@ -1,7 +1,7 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
-use moon_blob::{BlobContent, BlobInput, Bytes};
+use moon_blob::{BlobContent, BlobInput};
 use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
@@ -336,7 +336,7 @@ async fn hydrate_manifest_from_backend(
     backend: &BoxedStorageBackend,
     digest: &Digest,
     manifest: &mut Manifest,
-) -> miette::Result<FxHashMap<Digest, Bytes>> {
+) -> miette::Result<FxHashMap<Digest, BlobContent>> {
     let blob_digests = manifest.collect_unhydrated_blob_digests();
     let initial_count = blob_digests.len();
 
@@ -351,7 +351,7 @@ async fn hydrate_manifest_from_backend(
         .retrieve_blobs_batched(digest.clone(), blob_digests)
         .await?
         .into_iter()
-        .map(|blob| (blob.digest, blob.bytes))
+        .map(|blob| (blob.digest, blob.content))
         .collect::<FxHashMap<_, _>>();
 
     trace!(
@@ -382,9 +382,9 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
     let mut blob_inputs = vec![];
 
     for digest in unhydrated_digests {
-        if let Some(bytes) = blobs_map.get(&digest) {
+        if let Some(content) = blobs_map.get(&digest) {
             blob_inputs.push(BlobInput {
-                content: BlobContent::Inline(bytes.to_owned()),
+                content: content.to_owned(),
                 digest,
             });
         }

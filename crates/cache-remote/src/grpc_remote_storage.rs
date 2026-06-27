@@ -14,7 +14,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use bazel_remote_apis::google::bytestream::{
     ReadRequest, WriteRequest, byte_stream_client::ByteStreamClient,
 };
-use moon_blob::{Blob, BlobInput};
+use moon_blob::{BlobInput, BlobOutput};
 use moon_cache_storage::ExternalDigestExt;
 use moon_cache_storage::{
     CacheCapabilities, CacheContext, Compressor, DigestFunction, InternalDigestExt, Manifest,
@@ -24,7 +24,6 @@ use moon_common::{Id, color, is_ci, is_remote};
 use moon_config::{RemoteCompression, RemoteConfig};
 use moon_hash::Digest;
 use reqwest::header::HeaderMap;
-use rustc_hash::FxHashSet;
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
@@ -396,10 +395,7 @@ impl StorageBackend for GrpcRemoteStorage {
         }
     }
 
-    async fn find_missing_blobs(
-        &self,
-        blob_digests: Vec<Digest>,
-    ) -> miette::Result<FxHashSet<Digest>> {
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
         match self
             .get_cas_client()
             .find_missing_blobs(FindMissingBlobsRequest {
@@ -413,10 +409,10 @@ impl StorageBackend for GrpcRemoteStorage {
             .await
         {
             Ok(response) => {
-                let mut digests = FxHashSet::default();
+                let mut digests = vec![];
 
                 for digest in response.into_inner().missing_blob_digests {
-                    digests.insert(Digest::from_external(digest)?);
+                    digests.push(Digest::from_external(digest)?);
                 }
 
                 Ok(digests)
@@ -429,12 +425,15 @@ impl StorageBackend for GrpcRemoteStorage {
         &self,
         mut blob_digests: Vec<Digest>,
         stream: bool,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<BlobOutput>> {
         if stream && blob_digests.len() == 1 {
             return self
                 .retrieve_blob_streamed(blob_digests.remove(0))
                 .await
-                .map(|blob| blob.map(|blob| vec![blob.inner]).unwrap_or_default());
+                .map(|blob| {
+                    blob.map(|blob| vec![BlobOutput::from(blob.inner)])
+                        .unwrap_or_default()
+                });
         }
 
         let response = match self
@@ -495,7 +494,7 @@ impl StorageBackend for GrpcRemoteStorage {
                     .into());
                 }
 
-                blobs.push(blob.inner);
+                blobs.push(BlobOutput::from(blob.inner));
             }
         }
 

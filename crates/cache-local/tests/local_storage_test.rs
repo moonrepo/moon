@@ -66,7 +66,10 @@ mod local_storage {
         assert_eq!(blobs.len(), 3);
 
         // Retrieval order across parallel chunks isn't guaranteed.
-        let mut contents: Vec<Vec<u8>> = blobs.iter().map(|blob| blob.bytes.to_vec()).collect();
+        let mut contents: Vec<Vec<u8>> = blobs
+            .iter()
+            .map(|blob| blob.content.get_bytes().unwrap().to_vec())
+            .collect();
         contents.sort();
         assert_eq!(
             contents,
@@ -170,7 +173,7 @@ mod local_storage {
             .retrieve_blobs_batched(action_digest(), vec![digest])
             .await
             .unwrap();
-        assert_eq!(blobs[0].bytes.to_vec(), content);
+        assert_eq!(blobs[0].content.get_bytes().unwrap().to_vec(), content);
     }
 
     #[tokio::test(flavor = "multi_thread")]

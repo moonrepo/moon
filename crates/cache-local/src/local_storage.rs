@@ -1,11 +1,10 @@
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobContent, BlobInput};
+use moon_blob::{Blob, BlobContent, BlobInput, BlobOutput};
 use moon_cache_storage::{CacheCapabilities, CacheContext, Manifest, StorageBackend};
 use moon_cas::CasStore;
 use moon_common::Id;
 use moon_hash::Digest;
-use rustc_hash::FxHashSet;
 use std::fs;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
@@ -111,12 +110,12 @@ impl StorageBackend for LocalStorage {
     async fn find_missing_blobs(
         &self,
         mut blob_digests: Vec<Digest>,
-    ) -> miette::Result<FxHashSet<Digest>> {
+    ) -> miette::Result<Vec<Digest>> {
         let blobs = Arc::clone(&self.blobs);
 
         spawn_blocking(move || {
             blob_digests.retain(|digest| !blobs.contains_object(digest));
-            FxHashSet::from_iter(blob_digests)
+            blob_digests
         })
         .await
         .into_diagnostic()
@@ -126,14 +125,14 @@ impl StorageBackend for LocalStorage {
         &self,
         blob_digests: Vec<Digest>,
         _stream: bool,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<BlobOutput>> {
         let blobs = Arc::clone(&self.blobs);
 
         spawn_blocking(move || {
             let mut result = Vec::with_capacity(blob_digests.len());
 
             for digest in blob_digests {
-                result.push(blobs.retrieve_blob(&digest)?);
+                result.push(BlobOutput::from(blobs.retrieve_blob(&digest)?));
             }
 
             Ok(result)

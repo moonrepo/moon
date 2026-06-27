@@ -3,7 +3,7 @@ use crate::http_tls::*;
 use crate::remote_error::RemoteError;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobInput, Bytes};
+use moon_blob::{Blob, BlobInput, BlobOutput, Bytes};
 use moon_cache_storage::CacheContext;
 use moon_cache_storage::{CacheCapabilities, Manifest, StorageBackend};
 use moon_common::{Id, color, is_remote};
@@ -11,7 +11,6 @@ use moon_config::RemoteCompression;
 use moon_hash::Digest;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
-use rustc_hash::FxHashSet;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::sync::Semaphore;
@@ -225,19 +224,16 @@ impl StorageBackend for HttpRemoteStorage {
         }
     }
 
-    async fn find_missing_blobs(
-        &self,
-        blob_digests: Vec<Digest>,
-    ) -> miette::Result<FxHashSet<Digest>> {
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
         // No way to query this information, so just assume all are missing?
-        Ok(FxHashSet::from_iter(blob_digests))
+        Ok(blob_digests)
     }
 
     async fn retrieve_blobs(
         &self,
         blob_digests: Vec<Digest>,
         _stream: bool,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<BlobOutput>> {
         let mut set = JoinSet::<miette::Result<Option<Bytes>>>::new();
         let debug_enabled = self.context.remote_debug;
 
@@ -274,7 +270,7 @@ impl StorageBackend for HttpRemoteStorage {
 
         while let Some(result) = set.join_next().await {
             if let Some(bytes) = result.into_diagnostic()?? {
-                blobs.push(Blob::try_from(bytes)?);
+                blobs.push(BlobOutput::from(Blob::try_from(bytes)?));
             }
         }
 

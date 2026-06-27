@@ -253,7 +253,7 @@ mod http_remote_storage {
 
             mock.assert_calls_async(1).await;
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content.as_bytes());
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content.as_bytes());
         }
 
         #[tokio::test]

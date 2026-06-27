@@ -121,27 +121,30 @@ impl Manifest {
         }
     }
 
-    pub fn hydrate(&mut self, blobs: &FxHashMap<Digest, Bytes>) {
+    pub fn hydrate(&mut self, blobs: &FxHashMap<Digest, BlobContent>) {
         if self.stderr_bytes.is_none()
             && let Some(digest) = &self.stderr_digest
-            && let Some(bytes) = blobs.get(digest)
+            && let Some(content) = blobs.get(digest)
+            && let Some(bytes) = content.get_bytes()
         {
-            self.stderr_bytes = Some(bytes.clone());
+            self.stderr_bytes = Some(Bytes::from(bytes.to_vec()));
         }
 
         if self.stdout_bytes.is_none()
             && let Some(digest) = &self.stdout_digest
-            && let Some(bytes) = blobs.get(digest)
+            && let Some(content) = blobs.get(digest)
+            && let Some(bytes) = content.get_bytes()
         {
-            self.stdout_bytes = Some(bytes.clone());
+            self.stdout_bytes = Some(Bytes::from(bytes.to_vec()));
         }
 
         for file in &mut self.files {
             if file.bytes.is_none()
                 && let Some(digest) = &file.digest
-                && let Some(bytes) = blobs.get(digest)
+                && let Some(content) = blobs.get(digest)
+                && let Some(bytes) = content.get_bytes()
             {
-                file.bytes = Some(bytes.clone());
+                file.bytes = Some(Bytes::from(bytes.to_vec()));
             }
         }
     }

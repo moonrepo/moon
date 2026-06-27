@@ -6088,6 +6088,7 @@ dependencies = [
  "ignore",
  "miette 7.6.0",
  "moon_common",
+ "moon_env_var",
  "moon_process",
  "regex",
  "rustc-hash",

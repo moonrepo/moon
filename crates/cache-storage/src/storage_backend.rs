@@ -3,7 +3,7 @@ use crate::helpers::{Batch, create_batches};
 use crate::manifest::Manifest;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobInput};
+use moon_blob::{BlobInput, BlobOutput};
 use moon_common::Id;
 use moon_hash::Digest;
 use moon_process::ProcessRegistry;
@@ -53,7 +53,7 @@ where
         self: Arc<Self>,
         digest: Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<FxHashSet<Digest>> {
+    ) -> miette::Result<Vec<Digest>> {
         let cap = self.get_capabilities();
         let mut set = JoinSet::new();
 
@@ -79,7 +79,7 @@ where
             }));
         }
 
-        let mut missing_digests = FxHashSet::default();
+        let mut missing_digests = vec![];
 
         while let Some(result) = set.join_next().await {
             missing_digests.extend(result.into_diagnostic()??);
@@ -106,10 +106,7 @@ where
     /// Determine which blobs from the given list of blob sources are missing from the backend,
     /// and return the list of missing blob digests. This is used to determine which blobs need
     /// to be uploaded before storing a manifest.
-    async fn find_missing_blobs(
-        &self,
-        blob_digests: Vec<Digest>,
-    ) -> miette::Result<FxHashSet<Digest>>;
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>>;
 
     //---------- STORING BLOBS ----------//
 
@@ -148,6 +145,7 @@ where
         }
 
         // Reduce the provided sources to only the missing digests
+        let missing_digests = FxHashSet::from_iter(missing_digests);
         blob_inputs.retain(|source| missing_digests.contains(&source.digest));
 
         let cap = self.get_capabilities();
@@ -229,7 +227,7 @@ where
         self: Arc<Self>,
         digest: Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<BlobOutput>> {
         let total_count = blob_digests.len();
         let cap = self.get_capabilities();
         let mut set = JoinSet::new();
@@ -259,19 +257,21 @@ where
             match result {
                 Ok(Ok(batched_blobs)) => {
                     for blob in batched_blobs {
-                        if blob.bytes.len() != blob.digest.size as usize {
+                        if let Some(size) = blob.content.get_size()
+                            && size != blob.digest.size as usize
+                        {
                             trace!(
                                 hash = digest.hash.as_str(),
                                 blob_hash = blob.digest.hash.as_str(),
                                 expected_size = blob.digest.size,
-                                actual_size = blob.bytes.len(),
+                                actual_size = size,
                                 "Integrity failure, mismatched file sizes",
                             );
 
                             abort = true;
                             break;
-                        } else {
-                            let actual_digest = Digest::from_bytes(&blob.bytes)?;
+                        } else if let Some(bytes) = blob.content.get_bytes() {
+                            let actual_digest = Digest::from_bytes(bytes)?;
 
                             if actual_digest != blob.digest {
                                 trace!(
@@ -324,7 +324,7 @@ where
         &self,
         blob_digests: Vec<Digest>,
         stream: bool,
-    ) -> miette::Result<Vec<Blob>>;
+    ) -> miette::Result<Vec<BlobOutput>>;
 }
 
 fn get_digests_from_inputs(blob_inputs: &[BlobInput]) -> Vec<Digest> {
@@ -384,7 +384,7 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
     backend: Arc<T>,
     digest: Digest,
     batch: Batch<Digest>,
-) -> miette::Result<Vec<Blob>> {
+) -> miette::Result<Vec<BlobOutput>> {
     let blob_count = batch.items.len();
 
     trace!(

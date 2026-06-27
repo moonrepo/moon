@@ -7,9 +7,26 @@ use starbase_utils::{fs, json};
 use std::fmt::Debug;
 use std::path::Path;
 
+#[derive(Clone)]
 pub enum BlobContent {
     Inline(Bytes),
     File(WorkspaceRelativePathBuf),
+}
+
+impl BlobContent {
+    pub fn get_bytes(&self) -> Option<&[u8]> {
+        match self {
+            BlobContent::Inline(bytes) => Some(bytes),
+            BlobContent::File(_) => None,
+        }
+    }
+
+    pub fn get_size(&self) -> Option<usize> {
+        match self {
+            BlobContent::Inline(bytes) => Some(bytes.len()),
+            BlobContent::File(_) => None,
+        }
+    }
 }
 
 pub struct BlobInput {
@@ -28,6 +45,28 @@ impl BlobInput {
                 }
             },
         ))
+    }
+}
+
+pub struct BlobOutput {
+    pub content: BlobContent,
+    pub digest: Digest,
+}
+
+impl From<Blob> for BlobOutput {
+    fn from(blob: Blob) -> Self {
+        BlobOutput {
+            content: BlobContent::Inline(blob.bytes),
+            digest: blob.digest,
+        }
+    }
+}
+
+impl Debug for BlobOutput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BlobOutput")
+            .field("digest", &self.digest)
+            .finish()
     }
 }
 

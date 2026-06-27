@@ -38,24 +38,20 @@ impl OutputArchiver<'_> {
             .into());
         }
 
+        let task_target = self.task.target.as_str();
+
         if state.local_cache_writable && state.remote_cache_writable {
             debug!(
-                task_target = self.task.target.as_str(),
+                task_target,
                 hash, "Storing task outputs in local and remote caches"
             );
         } else if state.local_cache_writable {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Storing task outputs in local cache"
-            );
+            debug!(task_target, hash, "Storing task outputs in local cache");
         } else if state.remote_cache_writable {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Storing task outputs in remote cache"
-            );
+            debug!(task_target, hash, "Storing task outputs in remote cache");
         } else {
             debug!(
-                task_target = self.task.target.as_str(),
+                task_target,
                 hash, "Cache is not writable, skipping task output archiving"
             );
 

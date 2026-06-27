@@ -15,6 +15,7 @@ use std::time::SystemTime;
 pub struct ManifestSource {
     pub backend: BoxedStorageBackend,
     pub manifest: Manifest,
+    pub remote: bool,
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]

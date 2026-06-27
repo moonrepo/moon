@@ -145,6 +145,10 @@ impl Storage {
                 return Ok(Some(ManifestSource {
                     backend: Arc::clone(backend),
                     manifest,
+                    remote: self
+                        .remote_backends
+                        .iter()
+                        .any(|remote| remote.get_id() == backend.get_id()),
                 }));
             }
         }
@@ -202,6 +206,7 @@ impl Storage {
         let ManifestSource {
             mut manifest,
             backend: original_backend,
+            ..
         } = manifest_source;
         let mut backends = VecDeque::from_iter(self.get_backends());
         let mut count = 1;

@@ -14,7 +14,7 @@ use starbase_utils::{
     fs::{self, FsError},
     glob::GlobSet,
 };
-use std::fmt::Debug;
+use std::fmt::{self, Debug};
 use std::fs as fs_std;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -29,13 +29,20 @@ pub enum HydrateFrom {
 }
 
 impl Debug for HydrateFrom {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             HydrateFrom::PreviousOutput => write!(f, "PreviousOutput"),
             HydrateFrom::LocalArchive => write!(f, "LocalArchive"),
             HydrateFrom::Storage(source) => write!(f, "Storage({})", source.backend.get_id()),
         }
     }
+}
+
+pub enum HydrateOutcome {
+    Skipped,
+    Missed,
+    Hit,
+    HitFromStorage(Manifest, bool),
 }
 
 pub struct OutputHydrater<'task> {
@@ -62,27 +69,27 @@ impl OutputHydrater<'_> {
         from: HydrateFrom,
         hash: &str,
         state: &TaskRunState,
-    ) -> miette::Result<Option<Manifest>> {
+    ) -> miette::Result<HydrateOutcome> {
         match from {
-            HydrateFrom::PreviousOutput => Ok(None),
+            HydrateFrom::PreviousOutput => Ok(HydrateOutcome::Hit),
 
-            HydrateFrom::LocalArchive => self.unpack_local_archive(hash, state).await.map(|_| None),
+            HydrateFrom::LocalArchive => self.unpack_local_archive(hash, state).await,
 
             HydrateFrom::Storage(source) => {
                 if !source.remote && !state.local_cas_enabled {
-                    return self.unpack_local_archive(hash, state).await.map(|_| None);
+                    return self.unpack_local_archive(hash, state).await;
                 }
 
                 let task_target = self.task.target.as_str();
 
-                if state.local_cache_readable && state.remote_cache_writable {
+                if state.local_cache_readable && state.remote_cache_readable {
                     debug!(
                         task_target,
                         hash, "Hydrating task outputs from local and remote caches"
                     );
                 } else if state.local_cache_readable {
                     debug!(task_target, hash, "Hydrating task outputs from local cache");
-                } else if state.remote_cache_writable {
+                } else if state.remote_cache_readable {
                     debug!(
                         task_target,
                         hash, "Hydrating task outputs from remote cache"
@@ -93,11 +100,12 @@ impl OutputHydrater<'_> {
                         hash, "Cache is not readable, skipping task output hydration"
                     );
 
-                    return Ok(None);
+                    return Ok(HydrateOutcome::Skipped);
                 }
 
                 let use_local = state.local_cas_enabled && state.local_cache_readable;
                 let use_remote = state.remote_cache_readable;
+                let is_remote_backend = source.remote;
 
                 // Delete existing outputs first so that reflinking works
                 self.delete_existing_outputs()?;
@@ -119,7 +127,10 @@ impl OutputHydrater<'_> {
                     self.write_manifest_outputs(manifest)?;
                 }
 
-                Ok(manifest)
+                Ok(match manifest {
+                    Some(manifest) => HydrateOutcome::HitFromStorage(manifest, is_remote_backend),
+                    None => HydrateOutcome::Missed,
+                })
             }
         }
     }
@@ -155,23 +166,28 @@ impl OutputHydrater<'_> {
     }
 
     #[instrument(skip(self, state))]
-    async fn unpack_local_archive(&self, hash: &str, state: &TaskRunState) -> miette::Result<()> {
+    async fn unpack_local_archive(
+        &self,
+        hash: &str,
+        state: &TaskRunState,
+    ) -> miette::Result<HydrateOutcome> {
         let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
+        let task_target = self.task.target.as_str();
 
         if state.local_cache_readable && archive_file.exists() {
             debug!(
-                task_target = self.task.target.as_str(),
+                task_target,
                 hash,
                 archive_file = ?archive_file,
                 "Hydrating task outputs from local cache archive (legacy)"
             );
         } else if !state.local_cache_readable || !archive_file.exists() {
             debug!(
-                task_target = self.task.target.as_str(),
+                task_target,
                 hash, "Cache is not readable, skipping output hydration"
             );
 
-            return Ok(());
+            return Ok(HydrateOutcome::Skipped);
         }
 
         // Clone values to run in a blocking thread
@@ -211,9 +227,11 @@ impl OutputHydrater<'_> {
 
         if !hydrated {
             self.delete_existing_outputs()?;
+
+            return Ok(HydrateOutcome::Missed);
         }
 
-        Ok(())
+        Ok(HydrateOutcome::Hit)
     }
 
     fn delete_existing_outputs(&self) -> miette::Result<()> {
@@ -277,18 +295,20 @@ impl OutputHydrater<'_> {
 
         #[cfg(windows)]
         {
+            use std::os::windows::fs::{symlink_dir, symlink_file};
+
             if from_path.is_dir() {
-                std::os::windows::fs::symlink_dir(&from_path, &to_path).map_err(map_error)?;
+                symlink_dir(&from_path, &to_path).map_err(map_error)?;
             } else {
-                std::os::windows::fs::symlink_file(&from_path, &to_path).map_err(map_error)?;
+                symlink_file(&from_path, &to_path).map_err(map_error)?;
             }
         }
 
         #[cfg(unix)]
         {
-            use std::os::unix::fs::PermissionsExt;
+            use std::os::unix::fs::{PermissionsExt, symlink};
 
-            std::os::unix::fs::symlink(&from_path, &to_path).map_err(map_error)?;
+            symlink(&from_path, &to_path).map_err(map_error)?;
 
             if let Some(mode) = &link.unix_mode {
                 let fd = fs::open_file_for_writing(&to_path)?;

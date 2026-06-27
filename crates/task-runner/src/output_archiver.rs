@@ -12,6 +12,11 @@ use std::sync::Arc;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
 
+pub enum ArchiveOutcome {
+    Skipped,
+    Queued,
+}
+
 /// Cache outputs to the `.moon/cache` folder and to cloud storage,
 /// so that subsequent builds are faster, and any local outputs
 /// can be hydrated easily.
@@ -29,7 +34,11 @@ impl OutputArchiver<'_> {
     }
 
     #[instrument(skip(self, state))]
-    pub async fn archive(&self, hash: &str, state: &TaskRunState) -> miette::Result<bool> {
+    pub async fn archive(
+        &self,
+        hash: &str,
+        state: &TaskRunState,
+    ) -> miette::Result<ArchiveOutcome> {
         // Check that outputs actually exist
         if self.task.is_build_type() && !self.has_outputs_been_created(false)? {
             return Err(TaskRunnerError::MissingOutputs {
@@ -55,7 +64,7 @@ impl OutputArchiver<'_> {
                 hash, "Cache is not writable, skipping task output archiving"
             );
 
-            return Ok(false);
+            return Ok(ArchiveOutcome::Skipped);
         }
 
         let use_local = state.local_cas_enabled && state.local_cache_writable;
@@ -80,7 +89,7 @@ impl OutputArchiver<'_> {
             self.pack_local_archive(hash, state).await?;
         }
 
-        Ok(true)
+        Ok(ArchiveOutcome::Queued)
     }
 
     #[instrument(skip(self))]

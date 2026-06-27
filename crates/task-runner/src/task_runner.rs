@@ -1,7 +1,7 @@
 use crate::command_builder::CommandBuilder;
 use crate::command_executor::CommandExecutor;
-use crate::output_archiver::OutputArchiver;
-use crate::output_hydrater::{HydrateFrom, OutputHydrater};
+use crate::output_archiver::{ArchiveOutcome, OutputArchiver};
+use crate::output_hydrater::{HydrateFrom, HydrateOutcome, OutputHydrater};
 use crate::run_state::*;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
@@ -532,29 +532,26 @@ impl<'task> TaskRunner<'task> {
     #[instrument(skip(self))]
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::archive_creation();
+        let task_target = self.task.target.as_str();
 
-        debug!(
-            task_target = self.task.target.as_str(),
-            "Running cache archiving operation"
-        );
+        debug!(task_target, "Running cache archiving operation");
 
-        let archived = self.archiver.archive(hash, &self.state).await?;
+        let archived = match self.archiver.archive(hash, &self.state).await? {
+            ArchiveOutcome::Skipped => {
+                debug!(task_target, "Nothing to archive");
 
-        if archived {
-            debug!(
-                task_target = self.task.target.as_str(),
-                "Ran cache archiving operation"
-            );
+                operation.finish(ActionStatus::Skipped);
 
-            operation.finish(ActionStatus::Passed);
-        } else {
-            debug!(
-                task_target = self.task.target.as_str(),
-                "Nothing to archive"
-            );
+                false
+            }
+            ArchiveOutcome::Queued => {
+                debug!(task_target, "Enqueued cache archiving operation");
 
-            operation.finish(ActionStatus::Skipped);
-        }
+                operation.finish(ActionStatus::Passed);
+
+                true
+            }
+        };
 
         self.operations.push(operation);
 
@@ -564,13 +561,11 @@ impl<'task> TaskRunner<'task> {
     #[instrument(skip(self))]
     pub async fn hydrate(&mut self, hash: &str) -> miette::Result<bool> {
         let mut operation = Operation::output_hydration();
+        let task_target = self.task.target.as_str();
 
         // Not cached
         let Some(from) = self.is_cached(hash).await? else {
-            debug!(
-                task_target = self.task.target.as_str(),
-                "Nothing to hydrate"
-            );
+            debug!(task_target, "Nothing to hydrate");
 
             operation.finish(ActionStatus::Skipped);
 
@@ -581,70 +576,96 @@ impl<'task> TaskRunner<'task> {
 
         // Cached, attempt to hydrate
         debug!(
-            task_target = self.task.target.as_str(),
+            task_target,
             hydrate_from = ?from,
             "Running cache hydration operation"
         );
 
-        let status = match &from {
-            HydrateFrom::Storage(source) if source.remote => ActionStatus::CachedFromRemote,
-            _ => ActionStatus::Cached,
+        let hydrated = match self.hydrater.hydrate(from, hash, &self.state).await? {
+            HydrateOutcome::Skipped => {
+                debug!(task_target, "Skipping hydration");
+
+                operation.finish(ActionStatus::Skipped);
+
+                false
+            }
+            HydrateOutcome::Missed => {
+                debug!(task_target, "Did not hydrate");
+
+                operation.finish(ActionStatus::Invalid);
+
+                false
+            }
+            HydrateOutcome::Hit => {
+                debug!(task_target, "Ran cache hydration operation");
+
+                // If not using a cache manifest, we need to read the locally cached
+                // stdout/stderr log files since the command executor does not run!
+                if let Some(output) = operation.get_exec_output_mut() {
+                    output.command = Some(self.task.get_command_line());
+                    output.exit_code = Some(self.cache.data.exit_code);
+
+                    let state_dir = self
+                        .app_context
+                        .cache_engine
+                        .state
+                        .get_target_dir(&self.task.target);
+                    let err_path = state_dir.join("stderr.log");
+                    let out_path = state_dir.join("stdout.log");
+
+                    if err_path.exists() {
+                        output.set_stderr(fs::read_file(err_path)?);
+                    }
+
+                    if out_path.exists() {
+                        output.set_stdout(fs::read_file(out_path)?);
+                    }
+                }
+
+                operation.finish(ActionStatus::Cached);
+
+                true
+            }
+            HydrateOutcome::HitFromStorage(manifest, is_remote) => {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    "Ran cache hydration operation"
+                );
+
+                // If we received a cache manifest from storage, extract the logs
+                // from it since the command executor does not run!
+                if let Some(output) = operation.get_exec_output_mut() {
+                    output.command = Some(self.task.get_command_line());
+                    output.exit_code = Some(manifest.exit_code);
+
+                    if let Some(bytes) = &manifest.stderr_bytes {
+                        output.set_stderr(String::from_utf8_lossy(bytes).into());
+                    }
+
+                    if let Some(bytes) = &manifest.stdout_bytes {
+                        output.set_stdout(String::from_utf8_lossy(bytes).into());
+                    }
+                }
+
+                operation.finish(if is_remote {
+                    ActionStatus::CachedFromRemote
+                } else {
+                    ActionStatus::Cached
+                });
+
+                self.persist_state(&operation)?;
+
+                true
+            }
         };
 
-        let manifest = self.hydrater.hydrate(from, hash, &self.state).await?;
+        self.operations.push(operation);
 
-        debug!(
-            task_target = self.task.target.as_str(),
-            "Ran cache hydration operation"
-        );
-
-        // Fill in these values since the command executor does not run!
-        if let Some(output) = operation.get_exec_output_mut() {
-            output.command = Some(self.task.get_command_line());
-
-            // If we received a cache manifest from storage, extract the logs from it
-            if let Some(manifest) = &manifest {
-                output.exit_code = Some(manifest.exit_code);
-
-                if let Some(bytes) = &manifest.stderr_bytes {
-                    output.set_stderr(String::from_utf8_lossy(bytes).into());
-                }
-
-                if let Some(bytes) = &manifest.stdout_bytes {
-                    output.set_stdout(String::from_utf8_lossy(bytes).into());
-                }
-            }
-            // If not using a cache manifest, we need to read the locally
-            // cached stdout/stderr log files
-            else {
-                output.exit_code = Some(self.cache.data.exit_code);
-
-                let state_dir = self
-                    .app_context
-                    .cache_engine
-                    .state
-                    .get_target_dir(&self.task.target);
-                let err_path = state_dir.join("stderr.log");
-                let out_path = state_dir.join("stdout.log");
-
-                if err_path.exists() {
-                    output.set_stderr(fs::read_file(err_path)?);
-                }
-
-                if out_path.exists() {
-                    output.set_stdout(fs::read_file(out_path)?);
-                }
-            }
+        if hydrated {
+            self.state.target = Some(TargetState::Passed(hash.to_owned()));
         }
 
-        // Then finalize the operation and target state
-        operation.finish(status);
-        self.persist_state(&operation)?;
-
-        self.operations.push(operation);
-        self.state.target = Some(TargetState::Passed(hash.to_owned()));
-
-        Ok(true)
+        Ok(hydrated)
     }
 
     // If a task fails *before* the command is actually executed, say during the command

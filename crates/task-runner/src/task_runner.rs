@@ -277,18 +277,24 @@ impl<'task> TaskRunner<'task> {
         // We only check for the archive, as the manifest is purely for local debugging!
         let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
 
-        if archive_file.exists()
-            && let Some(duration) = cache_lifetime
-            && !fs::is_stale(&archive_file, false, duration)?
-        {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash,
-                archive_file = ?archive_file,
-                "Cache hit in local cache, will reuse existing archive"
-            );
+        if archive_file.exists() {
+            // A lifetime only constrains *when* the archive is still valid; with
+            // none configured an existing archive is always a hit.
+            let is_fresh = match cache_lifetime {
+                Some(duration) => !fs::is_stale(&archive_file, false, duration)?,
+                None => true,
+            };
 
-            return Ok(Some(HydrateFrom::LocalArchive));
+            if is_fresh {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    hash,
+                    archive_file = ?archive_file,
+                    "Cache hit in local cache, will reuse existing archive"
+                );
+
+                return Ok(Some(HydrateFrom::LocalArchive));
+            }
         }
 
         // Then check the storage backends, but don't bubble up errors,
@@ -306,7 +312,7 @@ impl<'task> TaskRunner<'task> {
                 .load_manifest(&self.state.digest)
                 .await
         {
-            return Ok(Some(HydrateFrom::Storage(source)));
+            return Ok(Some(HydrateFrom::Storage(Box::new(source))));
         }
 
         debug!(

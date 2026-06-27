@@ -25,7 +25,7 @@ use tracing::{debug, instrument, warn};
 pub enum HydrateFrom {
     PreviousOutput,
     LocalArchive,
-    Storage(ManifestSource),
+    Storage(Box<ManifestSource>),
 }
 
 impl Debug for HydrateFrom {
@@ -120,7 +120,7 @@ impl OutputHydrater<'_> {
                         include_remote: use_remote,
                         ..Default::default()
                     })
-                    .hydrate_manifest(&state.digest, source)
+                    .hydrate_manifest(&state.digest, *source)
                     .await?;
 
                 if let Some(manifest) = &manifest {
@@ -138,26 +138,30 @@ impl OutputHydrater<'_> {
     #[instrument(skip(self))]
     fn write_manifest_outputs(&self, manifest: &Manifest) -> miette::Result<()> {
         for file in &manifest.files {
-            if file.digest.is_some()
-                && let Some(bytes) = &file.bytes
-            {
-                self.write_output_file(
-                    self.resolve_declared_output_path(&file.path)?,
-                    bytes,
-                    file,
-                )?;
+            let Some(digest) = &file.digest else {
+                continue;
+            };
+
+            let output_path = self.resolve_declared_output_path(&file.path)?;
+
+            if let Some(bytes) = &file.bytes {
+                self.write_output_file(output_path, bytes, file)?;
+            } else if digest.size == 0 {
+                self.write_output_file(output_path, b"", file)?;
             }
         }
 
         for link in &manifest.symlinks {
+            let output_path = self.resolve_declared_output_path(&link.path)?;
+
             self.link_output_file(
                 self.resolve_workspace_path(&link.target).map_err(|_| {
                     TaskRunnerError::OutputSymlinkOutsideOfWorkspace {
-                        output: PathBuf::from(link.path.as_str()),
+                        output: output_path.clone(),
                         target: PathBuf::from(link.target.as_str()),
                     }
                 })?,
-                self.resolve_declared_output_path(&link.path)?,
+                output_path,
                 link,
             )?;
         }

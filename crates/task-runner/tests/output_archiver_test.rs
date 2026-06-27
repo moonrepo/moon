@@ -4,6 +4,7 @@ use moon_blob::Blob;
 use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
+use moon_task_runner::output_archiver::ArchiveOutcome;
 use starbase_archive::Archiver;
 use std::fs;
 use utils::*;
@@ -50,7 +51,10 @@ mod output_archiver {
             let archiver = container.create_archiver();
             let state = container.create_state();
 
-            assert!(archiver.archive("hash123", &state).await.unwrap());
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Queued
+            ));
             assert!(
                 container
                     .sandbox
@@ -71,7 +75,10 @@ mod output_archiver {
             let archiver = container.create_archiver();
             let state = container.create_state();
 
-            assert!(archiver.archive("hash123", &state).await.unwrap());
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Queued
+            ));
 
             let file = container
                 .app_context
@@ -95,7 +102,10 @@ mod output_archiver {
             let archiver = container.create_archiver();
             let state = container.create_state();
 
-            assert!(!archiver.archive("hash123", &state).await.unwrap());
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Skipped
+            ));
 
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
@@ -113,7 +123,10 @@ mod output_archiver {
             let archiver = container.create_archiver();
             let state = container.create_state();
 
-            assert!(!archiver.archive("hash123", &state).await.unwrap());
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Skipped
+            ));
 
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
@@ -429,11 +442,11 @@ mod output_archiver {
 
         fn setup_cas_state(state: &mut moon_task_runner::TaskRunState) {
             state.local_cas_enabled = true;
-            state.digest = Digest::from_bytes(b"hash123".to_vec()).unwrap();
+            state.digest = Digest::from_bytes(b"hash123").unwrap();
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn stores_action_blob_in_cas() {
+        async fn stores_manifest_in_storage() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");
 
@@ -442,38 +455,13 @@ mod output_archiver {
             setup_cas_state(&mut state);
 
             archiver.archive("hash123", &state).await.unwrap();
+            container.flush_storage().await;
 
-            assert!(
-                container
-                    .app_context
-                    .cache_engine
-                    .cas
-                    .contains_object(&state.digest.hash)
-            );
+            assert!(container.manifest_exists(&state.digest).await);
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn stores_action_result_in_ac() {
-            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
-            container.sandbox.create_file("project/file.txt", "");
-
-            let archiver = container.create_archiver();
-            let mut state = container.create_state();
-            setup_cas_state(&mut state);
-
-            archiver.archive("hash123", &state).await.unwrap();
-
-            assert!(
-                container
-                    .app_context
-                    .cache_engine
-                    .ac
-                    .contains_object(&state.digest.hash)
-            );
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn stores_output_file_blobs_in_cas() {
+        async fn stores_output_file_blobs_in_storage() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container
                 .sandbox
@@ -484,16 +472,11 @@ mod output_archiver {
             setup_cas_state(&mut state);
 
             archiver.archive("hash123", &state).await.unwrap();
+            container.flush_storage().await;
 
             let blob = Blob::from_bytes(b"contents".to_vec()).unwrap();
 
-            assert!(
-                container
-                    .app_context
-                    .cache_engine
-                    .cas
-                    .contains_object(&blob.digest.hash)
-            );
+            assert!(container.blob_exists(&blob.digest).await);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -530,15 +513,12 @@ mod output_archiver {
             let mut state = container.create_state();
             setup_cas_state(&mut state);
 
-            assert!(!archiver.archive("hash123", &state).await.unwrap());
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Skipped
+            ));
 
-            assert!(
-                !container
-                    .app_context
-                    .cache_engine
-                    .ac
-                    .contains_object(&state.digest.hash)
-            );
+            assert!(!container.manifest_exists(&state.digest).await);
 
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
@@ -557,15 +537,12 @@ mod output_archiver {
             let mut state = container.create_state();
             setup_cas_state(&mut state);
 
-            assert!(!archiver.archive("hash123", &state).await.unwrap());
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Skipped
+            ));
 
-            assert!(
-                !container
-                    .app_context
-                    .cache_engine
-                    .ac
-                    .contains_object(&state.digest.hash)
-            );
+            assert!(!container.manifest_exists(&state.digest).await);
 
             GlobalEnvBag::instance().remove("MOON_CACHE");
         }
@@ -585,18 +562,16 @@ mod output_archiver {
             let mut state = container.create_state();
             setup_cas_state(&mut state);
 
-            assert!(archiver.archive("hash123", &state).await.unwrap());
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Queued
+            ));
+            container.flush_storage().await;
 
             // The shared content lives at exactly one CAS hash.
             let shared = Blob::from_bytes(b"shared".to_vec()).unwrap();
 
-            assert!(
-                container
-                    .app_context
-                    .cache_engine
-                    .cas
-                    .contains_object(&shared.digest.hash)
-            );
+            assert!(container.blob_exists(&shared.digest).await);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -612,17 +587,15 @@ mod output_archiver {
             let mut state = container.create_state();
             setup_cas_state(&mut state);
 
-            assert!(archiver.archive("hash123", &state).await.unwrap());
+            assert!(matches!(
+                archiver.archive("hash123", &state).await.unwrap(),
+                ArchiveOutcome::Queued
+            ));
+            container.flush_storage().await;
 
             let empty = Blob::from_bytes(vec![]).unwrap();
 
-            assert!(
-                container
-                    .app_context
-                    .cache_engine
-                    .cas
-                    .contains_object(&empty.digest.hash)
-            );
+            assert!(container.blob_exists(&empty.digest).await);
         }
     }
 

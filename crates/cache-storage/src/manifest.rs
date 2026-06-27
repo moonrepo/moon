@@ -150,12 +150,19 @@ impl Manifest {
     }
 
     pub fn is_hydrated(&self) -> bool {
-        (self.stderr_bytes.is_some() || self.stderr_digest.is_none())
-            && (self.stdout_bytes.is_some() || self.stdout_digest.is_none())
+        // A blob is resolved when its bytes are present, when there's no digest,
+        // or when the digest is for empty content (size 0) — empty outputs carry
+        // no blob and are reconstructed directly during hydration.
+        let resolved = |bytes: &Option<Bytes>, digest: &Option<Digest>| {
+            bytes.is_some() || digest.as_ref().is_none_or(|digest| digest.size == 0)
+        };
+
+        resolved(&self.stderr_bytes, &self.stderr_digest)
+            && resolved(&self.stdout_bytes, &self.stdout_digest)
             && self
                 .files
                 .iter()
-                .all(|file| file.bytes.is_some() || file.digest.is_none())
+                .all(|file| resolved(&file.bytes, &file.digest))
     }
 
     pub fn collect_unhydrated_blob_digests(&self) -> Vec<Digest> {
@@ -163,12 +170,14 @@ impl Manifest {
 
         if self.stderr_bytes.is_none()
             && let Some(digest) = &self.stderr_digest
+            && digest.size > 0
         {
             digests.push(digest.to_owned());
         }
 
         if self.stdout_bytes.is_none()
             && let Some(digest) = &self.stdout_digest
+            && digest.size > 0
         {
             digests.push(digest.to_owned());
         }
@@ -176,6 +185,7 @@ impl Manifest {
         for file in &self.files {
             if file.bytes.is_none()
                 && let Some(digest) = &file.digest
+                && digest.size > 0
             {
                 digests.push(digest.to_owned());
             }

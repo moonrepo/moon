@@ -3,7 +3,9 @@
 use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
+use moon_cache::Manifest;
 use moon_env_var::GlobalEnvBag;
+use moon_hash::Digest;
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
@@ -93,6 +95,50 @@ impl TaskRunnerContainer {
 
     pub fn create_state(&self) -> TaskRunState {
         TaskRunState::new(&self.app_context, &self.task)
+    }
+
+    /// Archiving into storage is fire-and-forget; flush the background queue so
+    /// the CAS/AC writes are observable before asserting on them.
+    pub async fn flush_storage(&self) {
+        self.app_context
+            .cache_engine
+            .storage
+            .wait_for_background_tasks()
+            .await
+            .unwrap();
+    }
+
+    /// Whether a manifest for the given digest exists in any storage backend.
+    pub async fn manifest_exists(&self, digest: &Digest) -> bool {
+        self.app_context
+            .cache_engine
+            .storage
+            .load_manifest(digest)
+            .await
+            .unwrap()
+            .is_some()
+    }
+
+    /// Whether a blob for the given digest exists in the local storage backend.
+    pub async fn blob_exists(&self, digest: &Digest) -> bool {
+        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+
+        backend
+            .find_missing_blobs(vec![digest.clone()])
+            .await
+            .unwrap()
+            .is_empty()
+    }
+
+    /// Persist a manifest directly into the local storage backend, so it can be
+    /// loaded back as a hydration source.
+    pub async fn seed_manifest(&self, digest: &Digest, manifest: Manifest) {
+        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+
+        backend
+            .store_manifest(digest.clone(), manifest)
+            .await
+            .unwrap();
     }
 
     pub async fn create_command(&self, context: ActionContext) -> Command {

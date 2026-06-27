@@ -3,7 +3,7 @@ use crate::helpers::{Batch, create_batches};
 use crate::manifest::Manifest;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobSource};
+use moon_blob::{Blob, BlobInput};
 use moon_common::Id;
 use moon_hash::Digest;
 use moon_process::ProcessRegistry;
@@ -121,13 +121,13 @@ where
     async fn store_blobs_batched(
         self: Arc<Self>,
         digest: Digest,
-        mut blob_sources: Vec<BlobSource>,
+        mut blob_inputs: Vec<BlobInput>,
     ) -> miette::Result<Vec<Digest>> {
-        let total_count = blob_sources.len() as u16;
+        let total_count = blob_inputs.len() as u16;
 
         // Before we store blobs, we should ensure that they don't already exists in the backend
         let missing_digests = match Arc::clone(&self)
-            .find_missing_blobs_batched(digest.clone(), get_digests_from_sources(&blob_sources))
+            .find_missing_blobs_batched(digest.clone(), get_digests_from_inputs(&blob_inputs))
             .await
         {
             Ok(digests) => digests,
@@ -144,17 +144,17 @@ where
         };
 
         if missing_digests.is_empty() {
-            return Ok(get_digests_from_sources(&blob_sources));
+            return Ok(get_digests_from_inputs(&blob_inputs));
         }
 
         // Reduce the provided sources to only the missing digests
-        blob_sources.retain(|source| missing_digests.contains(&source.digest));
+        blob_inputs.retain(|source| missing_digests.contains(&source.digest));
 
         let cap = self.get_capabilities();
         let mut set = JoinSet::new();
 
         // Store the blobs in batches based on the max batch size
-        for batch in create_batches(blob_sources, cap.max_batch_total_size_bytes, |source| {
+        for batch in create_batches(blob_inputs, cap.max_batch_total_size_bytes, |source| {
             source.digest.size as usize
         }) {
             set.spawn(Box::pin(store_blobs_batch(
@@ -214,7 +214,7 @@ where
     /// Store the blobs from the given list of blob sources.
     async fn store_blobs(
         &self,
-        blob_sources: Vec<BlobSource>,
+        blob_inputs: Vec<BlobInput>,
         stream: bool,
     ) -> miette::Result<Vec<Digest>>;
 
@@ -327,17 +327,17 @@ where
     ) -> miette::Result<Vec<Blob>>;
 }
 
-fn get_digests_from_sources(blob_sources: &[BlobSource]) -> Vec<Digest> {
-    blob_sources
+fn get_digests_from_inputs(blob_inputs: &[BlobInput]) -> Vec<Digest> {
+    blob_inputs
         .iter()
-        .map(|source| source.digest.clone())
+        .map(|input| input.digest.clone())
         .collect()
 }
 
 async fn store_blobs_batch<T: StorageBackend + ?Sized>(
     backend: Arc<T>,
     digest: Digest,
-    batch: Batch<BlobSource>,
+    batch: Batch<BlobInput>,
 ) -> miette::Result<Vec<Digest>> {
     let blob_count = batch.items.len();
 

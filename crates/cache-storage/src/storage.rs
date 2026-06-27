@@ -1,7 +1,7 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
-use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
@@ -280,7 +280,7 @@ async fn archive_manifest_in_backend(
     digest: Digest,
     mut manifest: Manifest,
 ) -> miette::Result<()> {
-    let blob_sources = manifest.collect_blob_sources();
+    let blob_sources = manifest.collect_blob_inputs();
     let initial_count = blob_sources.len();
 
     if !blob_sources.is_empty() {
@@ -378,12 +378,12 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
     let unhydrated_digests = manifest.collect_unhydrated_blob_digests();
     let blobs_map = hydrate_manifest_from_backend(backend, digest, manifest).await?;
 
-    // Loop through and create the blob sources for the missing blobs
-    let mut blob_sources = vec![];
+    // Loop through and create the blob inputs for the missing blobs
+    let mut blob_inputs = vec![];
 
     for digest in unhydrated_digests {
         if let Some(bytes) = blobs_map.get(&digest) {
-            blob_sources.push(BlobSource {
+            blob_inputs.push(BlobInput {
                 content: BlobContent::Inline(bytes.to_owned()),
                 digest,
             });
@@ -391,17 +391,17 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
     }
 
     // Then store them in the original backend in which they were missing
-    if !blob_sources.is_empty() {
+    if !blob_inputs.is_empty() {
         trace!(
             to_storage = original_backend.get_id().as_str(),
             from_storage = backend.get_id().as_str(),
             hash = digest.hash.as_str(),
             "Copying {} missing blobs to original storage backend",
-            blob_sources.len()
+            blob_inputs.len()
         );
 
         Arc::clone(original_backend)
-            .store_blobs_batched(digest.to_owned(), blob_sources)
+            .store_blobs_batched(digest.to_owned(), blob_inputs)
             .await?;
     }
 

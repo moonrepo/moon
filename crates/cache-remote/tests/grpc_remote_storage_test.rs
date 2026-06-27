@@ -18,7 +18,7 @@ use bazel_remote_apis::google::bytestream::{
     WriteResponse,
     byte_stream_server::{ByteStream, ByteStreamServer},
 };
-use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::{GrpcRemoteStorage, RemoteError};
 use moon_cache_storage::{CacheContext, Manifest, StorageBackend};
 use moon_config::{CacheConfig, RemoteCompression, RemoteConfig};
@@ -507,8 +507,8 @@ mod grpc_remote_storage {
     mod blobs {
         use super::*;
 
-        fn inline(content: &'static [u8]) -> BlobSource {
-            BlobSource {
+        fn inline(content: &'static [u8]) -> BlobInput {
+            BlobInput {
                 content: BlobContent::Inline(Bytes::from_static(content)),
                 digest: digest_of(content),
             }

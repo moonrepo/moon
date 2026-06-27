@@ -5,7 +5,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
 };
 use bazel_remote_apis::google::protobuf::UInt32Value;
-use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
@@ -181,18 +181,18 @@ impl Manifest {
         digests
     }
 
-    pub fn collect_blob_sources(&self) -> Vec<BlobSource> {
+    pub fn collect_blob_inputs(&self) -> Vec<BlobInput> {
         let mut sources = vec![];
 
         if let (Some(digest), Some(bytes)) = (&self.stderr_digest, &self.stderr_bytes) {
-            sources.push(BlobSource {
+            sources.push(BlobInput {
                 content: BlobContent::Inline(bytes.clone()),
                 digest: digest.to_owned(),
             });
         }
 
         if let (Some(digest), Some(bytes)) = (&self.stdout_digest, &self.stdout_bytes) {
-            sources.push(BlobSource {
+            sources.push(BlobInput {
                 content: BlobContent::Inline(bytes.clone()),
                 digest: digest.to_owned(),
             });
@@ -201,12 +201,12 @@ impl Manifest {
         for file in &self.files {
             if let Some(digest) = &file.digest {
                 if let Some(bytes) = &file.bytes {
-                    sources.push(BlobSource {
+                    sources.push(BlobInput {
                         content: BlobContent::Inline(bytes.clone()),
                         digest: digest.to_owned(),
                     });
                 } else {
-                    sources.push(BlobSource {
+                    sources.push(BlobInput {
                         content: BlobContent::File(file.path.clone()),
                         digest: digest.to_owned(),
                     });

@@ -119,7 +119,7 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_sources();
+        let sources = manifest.collect_blob_inputs();
 
         assert_eq!(sources.len(), 1);
         match &sources[0].content {
@@ -135,7 +135,7 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_sources();
+        let sources = manifest.collect_blob_inputs();
 
         assert_eq!(sources.len(), 1);
         match &sources[0].content {
@@ -154,7 +154,7 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_sources();
+        let sources = manifest.collect_blob_inputs();
 
         assert_eq!(sources.len(), 2);
     }

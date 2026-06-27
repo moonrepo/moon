@@ -1,5 +1,5 @@
 use httpmock::prelude::*;
-use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::HttpRemoteStorage;
 use moon_cache_storage::{CacheContext, Manifest, StorageBackend};
 use moon_config::{CacheConfig, RemoteConfig};
@@ -181,7 +181,7 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            let source = BlobSource {
+            let source = BlobInput {
                 content: BlobContent::Inline(Bytes::from_static(content)),
                 digest: digest.clone(),
             };
@@ -205,7 +205,7 @@ mod http_remote_storage {
             sandbox.create_file("blob.txt", "file blob content");
             let storage = create_storage(&sandbox, server.base_url());
 
-            let source = BlobSource {
+            let source = BlobInput {
                 content: BlobContent::File("blob.txt".into()),
                 digest: digest.clone(),
             };
@@ -228,7 +228,7 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            let source = BlobSource {
+            let source = BlobInput {
                 content: BlobContent::Inline(Bytes::from_static(content)),
                 digest,
             };

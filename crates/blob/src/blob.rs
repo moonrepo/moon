@@ -7,14 +7,28 @@ use starbase_utils::{fs, json};
 use std::fmt::Debug;
 use std::path::Path;
 
-pub struct BlobSource {
+pub enum BlobContent {
+    Inline(Bytes),
+    File(WorkspaceRelativePathBuf),
+}
+
+pub struct BlobInput {
     pub content: BlobContent,
     pub digest: Digest,
 }
 
-pub enum BlobContent {
-    Inline(Bytes),
-    File(WorkspaceRelativePathBuf),
+impl BlobInput {
+    pub fn into_blob(self, workspace_root: &Path) -> miette::Result<Blob> {
+        Ok(Blob::new(
+            self.digest,
+            match self.content {
+                BlobContent::Inline(bytes) => Vec::from(bytes),
+                BlobContent::File(rel_path) => {
+                    fs::read_file_bytes(rel_path.to_logical_path(workspace_root))?
+                }
+            },
+        ))
+    }
 }
 
 #[derive(Clone)]

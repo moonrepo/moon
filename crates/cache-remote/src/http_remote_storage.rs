@@ -3,7 +3,7 @@ use crate::http_tls::*;
 use crate::remote_error::RemoteError;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobContent, BlobSource, Bytes};
+use moon_blob::{Blob, BlobInput, Bytes};
 use moon_cache_storage::CacheContext;
 use moon_cache_storage::{CacheCapabilities, Manifest, StorageBackend};
 use moon_common::{Id, color, is_remote};
@@ -12,7 +12,6 @@ use moon_hash::Digest;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
 use rustc_hash::FxHashSet;
-use starbase_utils::fs;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::sync::Semaphore;
@@ -284,15 +283,15 @@ impl StorageBackend for HttpRemoteStorage {
 
     async fn store_blobs(
         &self,
-        blob_sources: Vec<BlobSource>,
+        blob_inputs: Vec<BlobInput>,
         _stream: bool,
     ) -> miette::Result<Vec<Digest>> {
         let mut set = JoinSet::<miette::Result<Option<Digest>>>::new();
         let debug_enabled = self.context.remote_debug;
 
-        for source in blob_sources {
+        for input in blob_inputs {
             let client = self.get_client();
-            let url = self.get_endpoint("cas", &source.digest.hash);
+            let url = self.get_endpoint("cas", &input.digest.hash);
             let semaphore = self.semaphore.clone();
             let workspace_root = self.context.workspace_root.clone();
 
@@ -301,19 +300,14 @@ impl StorageBackend for HttpRemoteStorage {
                     return Ok(None);
                 };
 
-                let blob = match source.content {
-                    BlobContent::Inline(bytes) => Vec::from(bytes),
-                    BlobContent::File(rel_path) => {
-                        fs::read_file_bytes(rel_path.to_logical_path(workspace_root))?
-                    }
-                };
+                let blob = input.into_blob(&workspace_root)?;
 
-                match client.put(url).body(blob).send().await {
+                match client.put(url).body(blob.bytes).send().await {
                     Ok(response) => {
                         let status = response.status();
 
                         if status.is_success() {
-                            return Ok(Some(source.digest));
+                            return Ok(Some(blob.digest));
                         }
 
                         Err(map_response_error("store_blobs", response, debug_enabled).into())

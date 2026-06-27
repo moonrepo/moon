@@ -14,7 +14,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use bazel_remote_apis::google::bytestream::{
     ReadRequest, WriteRequest, byte_stream_client::ByteStreamClient,
 };
-use moon_blob::{Blob, BlobContent, BlobSource};
+use moon_blob::{Blob, BlobInput};
 use moon_cache_storage::ExternalDigestExt;
 use moon_cache_storage::{
     CacheCapabilities, CacheContext, Compressor, DigestFunction, InternalDigestExt, Manifest,
@@ -25,7 +25,6 @@ use moon_config::{RemoteCompression, RemoteConfig};
 use moon_hash::Digest;
 use reqwest::header::HeaderMap;
 use rustc_hash::FxHashSet;
-use starbase_utils::fs;
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
@@ -505,13 +504,13 @@ impl StorageBackend for GrpcRemoteStorage {
 
     async fn store_blobs(
         &self,
-        blob_sources: Vec<BlobSource>,
+        blob_inputs: Vec<BlobInput>,
         stream: bool,
     ) -> miette::Result<Vec<Digest>> {
         // A single oversized blob is streamed; everything else is batched. The
         // two paths gate compression via different capabilities, so pick the
         // compressor that matches the path we'll actually take.
-        let streaming = stream && blob_sources.len() == 1;
+        let streaming = stream && blob_inputs.len() == 1;
         let compression = if streaming {
             self.streaming_compression()
         } else {
@@ -519,15 +518,9 @@ impl StorageBackend for GrpcRemoteStorage {
         };
         let mut blobs = vec![];
 
-        for source in blob_sources {
-            let bytes = match source.content {
-                BlobContent::Inline(bytes) => Vec::from(bytes),
-                BlobContent::File(rel_path) => {
-                    fs::read_file_bytes(rel_path.to_logical_path(&self.context.workspace_root))?
-                }
-            };
-
-            let mut blob = CompressableBlob::new(source.digest, bytes);
+        for input in blob_inputs {
+            let mut blob =
+                CompressableBlob::from_blob(input.into_blob(&self.context.workspace_root)?);
             blob.compress(compression)?;
 
             blobs.push(blob);

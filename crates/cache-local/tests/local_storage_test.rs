@@ -1,4 +1,4 @@
-use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_local::LocalStorage;
 use moon_cache_storage::{CacheContext, Manifest, ManifestFile, StorageBackend};
 use moon_config::{CacheConfig, RemoteConfig};
@@ -20,8 +20,8 @@ fn create_backend(sandbox: &Sandbox) -> Arc<LocalStorage> {
     Arc::new(LocalStorage::new(context, cache_dir, false).unwrap())
 }
 
-fn inline_source(content: &'static [u8]) -> BlobSource {
-    BlobSource {
+fn inline_source(content: &'static [u8]) -> BlobInput {
+    BlobInput {
         content: BlobContent::Inline(Bytes::from_static(content)),
         digest: Digest::from_bytes(content).unwrap(),
     }
@@ -123,10 +123,10 @@ mod local_storage {
         // Enough blobs to exercise chunk_into_batches spreading work across the
         // blocking pool rather than a single thread.
         let count: usize = 600;
-        let sources: Vec<BlobSource> = (0..count)
+        let sources: Vec<BlobInput> = (0..count)
             .map(|i| {
                 let content = format!("blob-{i}").into_bytes();
-                BlobSource {
+                BlobInput {
                     digest: Digest::from_bytes(&content).unwrap(),
                     content: BlobContent::Inline(Bytes::from(content)),
                 }
@@ -155,7 +155,7 @@ mod local_storage {
 
         let content = b"file blob content";
         let digest = Digest::from_bytes(content).unwrap();
-        let source = BlobSource {
+        let source = BlobInput {
             content: BlobContent::File("project/out.txt".into()),
             digest: digest.clone(),
         };

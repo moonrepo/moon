@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobContent, BlobSource};
+use moon_blob::{Blob, BlobContent, BlobInput};
 use moon_cache_storage::{CacheCapabilities, CacheContext, Manifest, StorageBackend};
 use moon_cas::CasStore;
 use moon_common::Id;
@@ -144,7 +144,7 @@ impl StorageBackend for LocalStorage {
 
     async fn store_blobs(
         &self,
-        blob_sources: Vec<BlobSource>,
+        blob_inputs: Vec<BlobInput>,
         _stream: bool,
     ) -> miette::Result<Vec<Digest>> {
         let blobs = Arc::clone(&self.blobs);
@@ -153,18 +153,18 @@ impl StorageBackend for LocalStorage {
         spawn_blocking(move || {
             let mut digests = vec![];
 
-            for source in blob_sources {
-                let stored = match source.content {
+            for input in blob_inputs {
+                let stored = match input.content {
                     BlobContent::File(rel_path) => {
                         let abs_path = rel_path.to_logical_path(&workspace_root);
 
-                        blobs.write_file(&source.digest, &abs_path)?
+                        blobs.write_file(&input.digest, &abs_path)?
                     }
-                    BlobContent::Inline(bytes) => blobs.write(&source.digest, &bytes)?,
+                    BlobContent::Inline(bytes) => blobs.write(&input.digest, &bytes)?,
                 };
 
                 if stored {
-                    digests.push(source.digest);
+                    digests.push(input.digest);
                 }
             }
 

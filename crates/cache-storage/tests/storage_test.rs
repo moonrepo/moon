@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use moon_blob::{Blob, BlobContent, BlobSource, Bytes};
+use moon_blob::{Blob, BlobContent, BlobInput, Bytes};
 use moon_cache_storage::{CacheCapabilities, Manifest, ManifestFile, Storage, StorageBackend};
 use moon_common::Id;
 use moon_hash::{ContentHash, Digest};
@@ -101,7 +101,7 @@ impl StorageBackend for MemoryBackend {
 
     async fn store_blobs(
         &self,
-        blob_sources: Vec<BlobSource>,
+        blob_sources: Vec<BlobInput>,
         _stream: bool,
     ) -> miette::Result<Vec<Digest>> {
         if self.fail_store_blobs {

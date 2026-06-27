@@ -1,10 +1,25 @@
 use async_trait::async_trait;
 use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
-use moon_cache_storage::{CacheCapabilities, Manifest, ManifestFile, Storage, StorageBackend};
+use moon_cache_storage::{
+    CacheCapabilities, CacheContext, Manifest, ManifestFile, Storage, StorageBackend,
+};
 use moon_common::Id;
+use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::{ContentHash, Digest};
 use rustc_hash::FxHashMap;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+
+fn create_storage() -> Storage {
+    Storage::new(CacheContext {
+        cache_dir: PathBuf::from("/moon-test/.moon/cache"),
+        cache_config: Arc::new(CacheConfig::default()),
+        config_dir: PathBuf::from("/moon-test/.moon"),
+        remote_config: Arc::new(RemoteConfig::default()),
+        remote_debug: false,
+        workspace_root: PathBuf::from("/moon-test"),
+    })
+}
 
 /// In-memory backend with externally inspectable maps, so tests can both seed
 /// state and assert on what was written back.
@@ -165,7 +180,7 @@ mod storage {
 
     #[tokio::test]
     async fn archive_then_load_and_hydrate_round_trip() {
-        let mut storage = Storage::default();
+        let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("mem"));
 
         let action = digest('a', 0);
@@ -197,7 +212,7 @@ mod storage {
 
     #[tokio::test]
     async fn load_manifest_returns_none_when_absent() {
-        let mut storage = Storage::default();
+        let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("mem"));
 
         assert!(
@@ -233,7 +248,7 @@ mod storage {
             .unwrap()
             .insert(blob.clone(), Bytes::from_static(b"shared"));
 
-        let mut storage = Storage::default();
+        let mut storage = create_storage();
         storage.add_local_backend(primary);
         storage.add_local_backend(secondary);
 
@@ -255,7 +270,7 @@ mod storage {
     async fn archives_manifest_with_no_blobs() {
         // An exit-code-only manifest has no output files or stdio, so there are
         // no blobs to upload. It must still be archived, not skipped.
-        let mut storage = Storage::default();
+        let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("mem"));
 
         let action = digest('a', 0);
@@ -276,7 +291,7 @@ mod storage {
     async fn skips_manifest_when_blob_upload_fails() {
         // If a referenced blob fails to upload, the manifest must not be stored,
         // otherwise it would dangle pointing at a missing blob.
-        let mut storage = Storage::default();
+        let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("mem").failing_store_blobs());
 
         let action = digest('a', 0);
@@ -299,7 +314,7 @@ mod storage {
     async fn skips_manifest_when_find_missing_fails() {
         // A failure in the existence pre-check aborts the store rather than
         // propagating, so the manifest is skipped and the run still succeeds.
-        let mut storage = Storage::default();
+        let mut storage = create_storage();
         storage.add_local_backend(MemoryBackend::new("mem").failing_find_missing());
 
         let action = digest('a', 0);
@@ -330,7 +345,7 @@ mod storage {
             .unwrap()
             .insert(action.clone(), manifest);
 
-        let mut storage = Storage::default();
+        let mut storage = create_storage();
         storage.add_local_backend(backend);
 
         let source = storage.load_manifest(&action).await.unwrap().unwrap();
@@ -366,7 +381,7 @@ mod storage {
             .unwrap()
             .insert(blob.clone(), Bytes::from_static(b"output"));
 
-        let mut storage = Storage::default();
+        let mut storage = create_storage();
         storage.add_local_backend(backend);
 
         let source = storage.load_manifest(&action).await.unwrap().unwrap();

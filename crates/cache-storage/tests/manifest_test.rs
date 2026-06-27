@@ -6,6 +6,7 @@ use moon_cache_storage::{Manifest, ManifestFile};
 use moon_hash::{ContentHash, Digest};
 use rustc_hash::FxHashMap;
 use starbase_utils::json::serde_json;
+use std::path::Path;
 
 fn hex(seed: char) -> String {
     std::iter::repeat_n(seed, 64).collect()
@@ -119,12 +120,12 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_inputs();
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
 
         assert_eq!(sources.len(), 1);
         match &sources[0].content {
-            BlobContent::File(path) => assert_eq!(path.as_str(), "out/a.txt"),
-            BlobContent::Inline(_) => panic!("expected a file-backed source"),
+            BlobContent::File(path) => assert!(path.ends_with("out/a.txt")),
+            _ => panic!("expected a file-backed source"),
         }
     }
 
@@ -135,12 +136,12 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_inputs();
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
 
         assert_eq!(sources.len(), 1);
         match &sources[0].content {
             BlobContent::Inline(bytes) => assert_eq!(bytes, &Bytes::from_static(b"hi")),
-            BlobContent::File(_) => panic!("expected an inline source"),
+            _ => panic!("expected an inline source"),
         }
     }
 
@@ -154,7 +155,7 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_inputs();
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
 
         assert_eq!(sources.len(), 2);
     }

@@ -1,30 +1,29 @@
 use bytes::Bytes;
 use miette::IntoDiagnostic;
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::Digest;
 use serde::Serialize;
 use starbase_utils::{fs, json};
 use std::fmt::Debug;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Clone)]
 pub enum BlobContent {
+    File(PathBuf),
     Inline(Bytes),
-    File(WorkspaceRelativePathBuf),
 }
 
 impl BlobContent {
     pub fn get_bytes(&self) -> Option<&[u8]> {
         match self {
             BlobContent::Inline(bytes) => Some(bytes),
-            BlobContent::File(_) => None,
+            _ => None,
         }
     }
 
     pub fn get_size(&self) -> Option<usize> {
         match self {
             BlobContent::Inline(bytes) => Some(bytes.len()),
-            BlobContent::File(_) => None,
+            _ => None,
         }
     }
 }
@@ -35,14 +34,12 @@ pub struct BlobInput {
 }
 
 impl BlobInput {
-    pub fn into_blob(self, workspace_root: &Path) -> miette::Result<Blob> {
+    pub fn into_blob(self) -> miette::Result<Blob> {
         Ok(Blob::new(
             self.digest,
             match self.content {
+                BlobContent::File(abs_path) => fs::read_file_bytes(abs_path)?,
                 BlobContent::Inline(bytes) => Vec::from(bytes),
-                BlobContent::File(rel_path) => {
-                    fs::read_file_bytes(rel_path.to_logical_path(workspace_root))?
-                }
             },
         ))
     }

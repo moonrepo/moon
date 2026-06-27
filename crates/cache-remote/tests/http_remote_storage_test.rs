@@ -206,7 +206,7 @@ mod http_remote_storage {
             let storage = create_storage(&sandbox, server.base_url());
 
             let source = BlobInput {
-                content: BlobContent::File("blob.txt".into()),
+                content: BlobContent::File(sandbox.path().join("blob.txt")),
                 digest: digest.clone(),
             };
             let stored = storage.store_blobs(vec![source], false).await.unwrap();

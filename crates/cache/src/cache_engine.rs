@@ -85,7 +85,7 @@ impl CacheEngine {
             cas: CasStore::new(dir.join("cas"), &context.cache_config.cas)?,
             hash,
             state: StateEngine::new(dir)?,
-            storage: Storage::default(),
+            storage: Storage::new(context.clone()),
             temp_dir: dir.join("temp"),
             cache_dir: dir.to_owned(),
             mode: get_cache_mode(),

@@ -10,6 +10,7 @@ use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 pub struct ManifestSource {
@@ -139,12 +140,21 @@ impl Manifest {
         }
 
         for file in &mut self.files {
-            if file.bytes.is_none()
-                && let Some(digest) = &file.digest
+            if file.bytes.is_some() || file.source_path.is_some() {
+                continue;
+            }
+
+            if let Some(digest) = &file.digest
                 && let Some(content) = blobs.get(digest)
-                && let Some(bytes) = content.get_bytes()
             {
-                file.bytes = Some(Bytes::from(bytes.to_vec()));
+                match content {
+                    BlobContent::File(path) => {
+                        file.source_path = Some(path.clone());
+                    }
+                    BlobContent::Inline(bytes) => {
+                        file.bytes = Some(Bytes::from(bytes.to_vec()));
+                    }
+                };
             }
         }
     }
@@ -162,7 +172,7 @@ impl Manifest {
             && self
                 .files
                 .iter()
-                .all(|file| resolved(&file.bytes, &file.digest))
+                .all(|file| file.source_path.is_some() || resolved(&file.bytes, &file.digest))
     }
 
     pub fn collect_unhydrated_blob_digests(&self) -> Vec<Digest> {
@@ -194,7 +204,7 @@ impl Manifest {
         digests
     }
 
-    pub fn collect_blob_inputs(&self) -> Vec<BlobInput> {
+    pub fn collect_blob_inputs(&self, workspace_root: &Path) -> Vec<BlobInput> {
         let mut sources = vec![];
 
         if let (Some(digest), Some(bytes)) = (&self.stderr_digest, &self.stderr_bytes) {
@@ -220,7 +230,7 @@ impl Manifest {
                     });
                 } else {
                     sources.push(BlobInput {
-                        content: BlobContent::File(file.path.clone()),
+                        content: BlobContent::File(file.path.to_logical_path(workspace_root)),
                         digest: digest.to_owned(),
                     });
                 }
@@ -239,6 +249,8 @@ pub struct ManifestFile {
     pub is_executable: bool,
     pub modified_at: Option<SystemTime>,
     pub path: WorkspaceRelativePathBuf,
+    #[serde(skip)]
+    pub source_path: Option<PathBuf>,
     pub unix_mode: Option<u32>,
 }
 
@@ -263,6 +275,7 @@ impl ManifestFile {
             is_executable: file.is_executable,
             modified_at: props.mtime.map(create_from_timestamp),
             path: file.path.into(),
+            source_path: None,
             unix_mode: props.unix_mode.map(|mode| mode.value),
         })
     }

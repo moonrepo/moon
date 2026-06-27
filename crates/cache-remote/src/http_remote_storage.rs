@@ -289,14 +289,13 @@ impl StorageBackend for HttpRemoteStorage {
             let client = self.get_client();
             let url = self.get_endpoint("cas", &input.digest.hash);
             let semaphore = self.semaphore.clone();
-            let workspace_root = self.context.workspace_root.clone();
 
             set.spawn(async move {
                 let Ok(_permit) = semaphore.acquire().await else {
                     return Ok(None);
                 };
 
-                let blob = input.into_blob(&workspace_root)?;
+                let blob = input.into_blob()?;
 
                 match client.put(url).body(blob.bytes).send().await {
                     Ok(response) => {

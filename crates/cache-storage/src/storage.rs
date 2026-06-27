@@ -41,20 +41,33 @@ impl Default for StorageOptions {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Storage {
     background_tasks: Arc<Mutex<Vec<JoinHandle<miette::Result<()>>>>>,
     local_backends: Vec<BoxedStorageBackend>,
     remote_backends: Vec<BoxedStorageBackend>,
+
+    context: CacheContext,
     options: StorageOptions,
 }
 
 impl Storage {
+    pub fn new(context: CacheContext) -> Self {
+        Self {
+            background_tasks: Arc::new(Mutex::new(vec![])),
+            local_backends: vec![],
+            remote_backends: vec![],
+            context,
+            options: StorageOptions::default(),
+        }
+    }
+
     pub fn with_options(&self, options: StorageOptions) -> Self {
         Self {
             background_tasks: Arc::clone(&self.background_tasks),
             local_backends: self.local_backends.clone(),
             remote_backends: self.remote_backends.clone(),
+            context: self.context.clone(),
             options,
         }
     }
@@ -184,6 +197,7 @@ impl Storage {
                 Arc::clone(backend),
                 digest.to_owned(),
                 manifest.clone(),
+                self.context.workspace_root.clone(),
             ))));
         }
 
@@ -279,8 +293,9 @@ async fn archive_manifest_in_backend(
     backend: BoxedStorageBackend,
     digest: Digest,
     mut manifest: Manifest,
+    workspace_root: PathBuf,
 ) -> miette::Result<()> {
-    let blob_sources = manifest.collect_blob_inputs();
+    let blob_sources = manifest.collect_blob_inputs(&workspace_root);
     let initial_count = blob_sources.len();
 
     if !blob_sources.is_empty() {

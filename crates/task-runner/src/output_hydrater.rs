@@ -138,17 +138,13 @@ impl OutputHydrater<'_> {
     #[instrument(skip(self))]
     fn write_manifest_outputs(&self, manifest: &Manifest) -> miette::Result<()> {
         for file in &manifest.files {
-            let Some(digest) = &file.digest else {
+            if file.digest.is_none() {
                 continue;
-            };
+            }
 
             let output_path = self.resolve_declared_output_path(&file.path)?;
 
-            if let Some(bytes) = &file.bytes {
-                self.write_output_file(output_path, bytes, file)?;
-            } else if digest.size == 0 {
-                self.write_output_file(output_path, b"", file)?;
-            }
+            self.write_output_file(output_path, file)?;
         }
 
         for link in &manifest.symlinks {
@@ -252,20 +248,27 @@ impl OutputHydrater<'_> {
         Ok(())
     }
 
-    fn write_output_file(
-        &self,
-        output_path: PathBuf,
-        bytes: &[u8],
-        file: &ManifestFile,
-    ) -> miette::Result<()> {
+    fn write_output_file(&self, output_path: PathBuf, file: &ManifestFile) -> miette::Result<()> {
         let map_error = |error| FsError::Write {
             path: output_path.clone(),
             error: Box::new(error),
         };
 
-        let mut fd = fs::create_file(&output_path)?;
+        // Reflink-or-copy from source file if available
+        let fd = if let Some(source) = &file.source_path {
+            fs::reflink_file(source, &output_path)?;
 
-        fd.write_all(bytes).map_err(map_error)?;
+            fs::open_file_for_writing(&output_path)?
+        }
+        // Otherwise write the bytes from the manifest
+        else {
+            let mut fd = fs::create_file(&output_path)?;
+
+            fd.write_all(file.bytes.as_deref().unwrap_or_default())
+                .map_err(map_error)?;
+
+            fd
+        };
 
         if let Some(modified) = &file.modified_at {
             fd.set_modified(*modified).map_err(map_error)?;

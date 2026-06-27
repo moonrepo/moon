@@ -88,6 +88,7 @@ impl ManifestBuilder {
             is_executable: is_file_executable(&abs_path, &metadata),
             modified_at: metadata.modified().ok(),
             path: self.convert_path(&abs_path)?,
+            source_path: Some(abs_path),
             unix_mode: extract_unix_mode(&metadata),
         });
 

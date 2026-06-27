@@ -518,8 +518,7 @@ impl StorageBackend for GrpcRemoteStorage {
         let mut blobs = vec![];
 
         for input in blob_inputs {
-            let mut blob =
-                CompressableBlob::from_blob(input.into_blob(&self.context.workspace_root)?);
+            let mut blob = CompressableBlob::from_blob(input.into_blob()?);
             blob.compress(compression)?;
 
             blobs.push(blob);

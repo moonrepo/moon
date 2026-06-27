@@ -13,6 +13,7 @@ use tokio::task::spawn_blocking;
 #[derive(Debug)]
 pub struct LocalStorage {
     id: Id,
+    #[allow(dead_code)]
     context: CacheContext,
 
     // States
@@ -129,13 +130,13 @@ impl StorageBackend for LocalStorage {
         let blobs = Arc::clone(&self.blobs);
 
         spawn_blocking(move || {
-            let mut result = Vec::with_capacity(blob_digests.len());
-
-            for digest in blob_digests {
-                result.push(BlobOutput::from(blobs.retrieve_blob(&digest)?));
-            }
-
-            Ok(result)
+            Ok(blob_digests
+                .into_iter()
+                .map(|digest| BlobOutput {
+                    content: BlobContent::File(blobs.object_path(&digest)),
+                    digest,
+                })
+                .collect())
         })
         .await
         .into_diagnostic()?
@@ -147,18 +148,13 @@ impl StorageBackend for LocalStorage {
         _stream: bool,
     ) -> miette::Result<Vec<Digest>> {
         let blobs = Arc::clone(&self.blobs);
-        let workspace_root = self.context.workspace_root.clone();
 
         spawn_blocking(move || {
             let mut digests = vec![];
 
             for input in blob_inputs {
                 let stored = match input.content {
-                    BlobContent::File(rel_path) => {
-                        let abs_path = rel_path.to_logical_path(&workspace_root);
-
-                        blobs.write_file(&input.digest, &abs_path)?
-                    }
+                    BlobContent::File(abs_path) => blobs.write_file(&input.digest, &abs_path)?,
                     BlobContent::Inline(bytes) => blobs.write(&input.digest, &bytes)?,
                 };
 

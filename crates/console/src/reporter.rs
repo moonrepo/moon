@@ -76,18 +76,34 @@ fn bold(message: &str) -> String {
     }
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct MoonReporterConfig {
+    pub hide_cached: bool,
+}
+
 #[derive(Debug)]
 pub struct MoonReporter {
     err: ConsoleStream,
     out: ConsoleStream,
+    config: MoonReporterConfig,
     test_mode: bool,
 }
 
 impl MoonReporter {
+    pub fn new(settings: MoonReporterConfig) -> Self {
+        Self {
+            err: ConsoleStream::empty(ConsoleStreamType::Stderr),
+            out: ConsoleStream::empty(ConsoleStreamType::Stdout),
+            config: settings,
+            test_mode: false,
+        }
+    }
+
     pub fn new_testing() -> Self {
         Self {
             err: ConsoleStream::new_testing(ConsoleStreamType::Stderr),
             out: ConsoleStream::new_testing(ConsoleStreamType::Stdout),
+            config: MoonReporterConfig::default(),
             test_mode: true,
         }
     }
@@ -95,11 +111,7 @@ impl MoonReporter {
 
 impl Default for MoonReporter {
     fn default() -> Self {
-        Self {
-            err: ConsoleStream::empty(ConsoleStreamType::Stderr),
-            out: ConsoleStream::empty(ConsoleStreamType::Stdout),
-            test_mode: false,
-        }
+        Self::new(MoonReporterConfig::default())
     }
 }
 
@@ -653,7 +665,10 @@ impl MoonReporter {
         if let Some(operation) = operations.get_last_process() {
             // If cached, the finished event above is not fired,
             // so handle printing the captured logs here!
-            if operation.is_cached() && operation.has_output() {
+            if operation.is_cached()
+                && operation.has_output()
+                && (self.config.hide_cached || operation.has_failed())
+            {
                 self.print_operation_output(operation, item)?;
             }
 

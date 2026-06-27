@@ -20880,6 +20880,8 @@ This section requires a mapping of Rust
 [`OS` strings](https://doc.rust-lang.org/std/env/consts/constant.OS.html) to platform settings. The
 following settings are available:
 
+- `arch` - A mapping of custom values for the `{arch}` token, scoped to this platform.
+  [Learn more about platform overrides](#platform-overrides).
 - `archs` - A list of architectures supported for this platform. If not provided, supports all
   archs.
 - `archive-prefix` - If the tool is distributed as an archive (zip, tar, etc), this is the name of
@@ -20892,6 +20894,8 @@ following settings are available:
   not support checksum verification, this setting can be omitted.
 - `download-file` (required) - Name of the file to download.
   [Learn more about downloading](#downloading-and-installing).
+- `libc` - A mapping of custom values for the `{libc}` token, scoped to this platform.
+  [Learn more about platform overrides](#platform-overrides).
 
 <NonWasmTabs
   title="protostar"
@@ -20933,11 +20937,13 @@ are available:
   <VersionLabel version="0.41.4" />
 - `{arch}` - The architecture of the host machine, like `x86_64`. These values map to Rust's
   [`ARCH` constant](https://doc.rust-lang.org/std/env/consts/constant.ARCH.html), but can be
-  customized with [`install.arch`](#downloading-and-installing).
+  customized with [`install.arch`](#downloading-and-installing) or
+  [`platform.<os>.arch`](#platform-overrides).
 - `{os}` - The operating system of the host machine, like `windows`. These values map to Rust's
   [`OS` constant](https://doc.rust-lang.org/std/env/consts/constant.OS.html).
 - `{libc}` - For Linux machines, this is the current libc implementation, either `gnu` or `musl`.
-  <VersionLabel version="0.31.2" />
+  Can be customized with [`install.libc`](#downloading-and-installing) or
+  [`platform.<os>.libc`](#platform-overrides). <VersionLabel version="0.31.2" />
 
 ### Downloading and installing
 
@@ -20976,6 +20982,42 @@ the values from the `[platform]` section.
     },
   }}
 />
+
+#### Platform overrides
+
+The `arch` and `libc` mappings can also be defined per operating system with the
+`[platform.<os>.arch]` and `[platform.<os>.libc]` settings, which take precedence over the global
+`[install.arch]` and `[install.libc]` mappings. When replacing the `{arch}` and `{libc}` tokens,
+values are resolved in the following order: the platform-scoped mapping, the global mapping, and
+lastly the raw Rust constant.
+
+This is useful if the tool uses different terminology per operating system. For example, buf
+publishes assets named `buf-Linux-aarch64` but `buf-Darwin-arm64`, which can be handled by renaming
+the token globally, and mapping it back to the raw value for Linux.
+
+<NonWasmTabs
+  title="buf"
+  data={{
+    install: {
+      arch: {
+        aarch64: 'arm64',
+      },
+    },
+    platform: {
+      linux: {
+        arch: {
+          aarch64: 'aarch64',
+        },
+      },
+    },
+  }}
+/>
+
+> A platform-scoped mapping shadows the global mapping even when a value maps to itself, as shown
+> above with `aarch64 = "aarch64"` for Linux.
+
+Do not confuse these settings with `archs`, which restricts the architectures that a platform
+supports, while `arch` renames the value of the `{arch}` token.
 
 #### Executables
 

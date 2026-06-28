@@ -1,6 +1,5 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
-use miette::IntoDiagnostic;
 use moon_blob::{BlobContent, BlobInput};
 use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
@@ -10,9 +9,15 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::SystemTime;
-use tokio::task::{JoinHandle, JoinSet};
+use std::time::{Duration, SystemTime};
+use tokio::task::{AbortHandle, JoinHandle, JoinSet};
 use tracing::{debug, trace, warn};
+
+/// Upper bound on how long shutdown waits for queued background cache writes
+/// (remote uploads, etc.) to drain. A hung backend must never make exiting
+/// slower than just running the task would have been; stragglers past this are
+/// aborted and reported, and simply get re-uploaded on the next run.
+const BACKGROUND_FLUSH_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Debug)]
 pub struct CacheContext {
@@ -280,8 +285,41 @@ impl Storage {
                 .collect::<Vec<_>>()
         };
 
-        for handle in background_tasks {
-            let _ = handle.await.into_diagnostic()?;
+        if background_tasks.is_empty() {
+            return Ok(());
+        }
+
+        // Keep abort handles so stragglers can be cancelled if the drain times
+        // out (awaiting the handles themselves would consume them first).
+        let abort_handles = background_tasks
+            .iter()
+            .map(JoinHandle::abort_handle)
+            .collect::<Vec<AbortHandle>>();
+
+        let drained = tokio::time::timeout(BACKGROUND_FLUSH_TIMEOUT, async {
+            for handle in background_tasks {
+                // These are best-effort cache writes; a failed or panicked
+                // upload must not fail shutdown, so swallow the result.
+                let _ = handle.await;
+            }
+        })
+        .await;
+
+        if drained.is_err() {
+            let dropped = abort_handles
+                .iter()
+                .filter(|handle| !handle.is_finished())
+                .count();
+
+            for handle in &abort_handles {
+                handle.abort();
+            }
+
+            warn!(
+                timeout_secs = BACKGROUND_FLUSH_TIMEOUT.as_secs(),
+                dropped,
+                "Timed out flushing background cache writes; {dropped} were dropped and may need re-uploading on the next run",
+            );
         }
 
         Ok(())

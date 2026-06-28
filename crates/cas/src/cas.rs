@@ -41,7 +41,7 @@ impl Drop for TempGuard {
 
 impl CasStore {
     /// Create or open a CAS store rooted at `root`.
-    pub fn new(root: impl AsRef<Path>, config: &CacheCasConfig) -> miette::Result<Self> {
+    pub fn new(root: impl AsRef<Path>, config: CacheCasConfig) -> miette::Result<Self> {
         let root = root.as_ref();
         let temp_dir = root.join("temp");
 
@@ -52,7 +52,7 @@ impl CasStore {
         Ok(Self {
             objects_dir: root.to_path_buf(),
             temp_dir,
-            config: config.to_owned(),
+            config,
         })
     }
 

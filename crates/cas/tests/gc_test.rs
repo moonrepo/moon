@@ -4,7 +4,7 @@ use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::time::Duration;
 
 fn create_store(sandbox: &Sandbox) -> CasStore {
-    CasStore::new(sandbox.path().join("cas"), &CacheCasConfig::default()).unwrap()
+    CasStore::new(sandbox.path().join("cas"), CacheCasConfig::default()).unwrap()
 }
 
 fn backdate_mtime(path: &std::path::Path, age: Duration) {

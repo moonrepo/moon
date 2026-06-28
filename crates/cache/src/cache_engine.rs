@@ -77,12 +77,9 @@ impl CacheEngine {
 
         let hash = HashEngine::new(dir)?;
 
-        // Action cache always uses defaults
-        let ac_config = CacheCasConfig::default();
-
         Ok(CacheEngine {
-            ac: CasStore::new(dir.join("ac"), &ac_config)?,
-            cas: CasStore::new(dir.join("cas"), &context.cache_config.cas)?,
+            ac: CasStore::new(dir.join("ac"), CacheCasConfig::default())?,
+            cas: CasStore::new(dir.join("cas"), context.cache_config.cas.clone())?,
             hash,
             state: StateEngine::new(dir)?,
             storage: Storage::new(context.clone()),

@@ -169,18 +169,6 @@ impl GrpcRemoteStorage {
         }
     }
 
-    fn can_download(&self) -> bool {
-        self.cache_enabled.get().cloned().unwrap_or_default()
-    }
-
-    fn can_upload(&self) -> bool {
-        is_upload_allowed(
-            self.cache_enabled.get().cloned().unwrap_or_default(),
-            is_ci(),
-            self.context.remote_config.cache.local_read_only,
-        )
-    }
-
     /// The configured compressor, reduced to what the server supports for the
     /// `compressed-blobs` bytestream (streaming) path.
     fn streaming_compression(&self) -> RemoteCompression {
@@ -210,10 +198,20 @@ impl StorageBackend for GrpcRemoteStorage {
         &self.id
     }
 
-    fn is_enabled(&self) -> bool {
+    fn is_readable(&self) -> bool {
         self.context.remote_config.is_enabled()
             && self.channel.get().is_some()
             && self.cache_enabled.get().cloned().unwrap_or_default()
+    }
+
+    fn is_writable(&self) -> bool {
+        self.context.remote_config.is_enabled()
+            && self.channel.get().is_some()
+            && is_upload_allowed(
+                self.cache_enabled.get().cloned().unwrap_or_default(),
+                is_ci(),
+                self.context.remote_config.cache.local_read_only,
+            )
     }
 
     async fn connect(&self) -> miette::Result<()> {
@@ -323,10 +321,6 @@ impl StorageBackend for GrpcRemoteStorage {
     }
 
     async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
-        if !self.can_download() {
-            return Ok(None);
-        }
-
         match self
             .get_ac_client()
             .get_action_result(GetActionResultRequest {
@@ -366,10 +360,6 @@ impl StorageBackend for GrpcRemoteStorage {
     }
 
     async fn store_manifest(&self, digest: Digest, manifest: Manifest) -> miette::Result<()> {
-        if !self.can_upload() {
-            return Ok(());
-        }
-
         match self
             .get_ac_client()
             .update_action_result(UpdateActionResultRequest {

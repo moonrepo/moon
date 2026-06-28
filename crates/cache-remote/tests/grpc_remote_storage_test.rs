@@ -435,7 +435,7 @@ mod grpc_remote_storage {
         async fn negotiates_capabilities_and_enables() {
             let (_sandbox, storage) = connect(MockBackend::default()).await;
 
-            assert!(storage.is_enabled());
+            assert!(storage.is_readable());
         }
     }
 

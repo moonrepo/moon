@@ -22,7 +22,8 @@ where
 {
     fn get_id(&self) -> &Id;
     fn get_capabilities(&self) -> &CacheCapabilities;
-    fn is_enabled(&self) -> bool;
+    fn is_readable(&self) -> bool;
+    fn is_writable(&self) -> bool;
 
     /// Connect to the storage backend, if necessary. This is called before any other methods are
     /// called, and can be used to establish a connection to a remote storage backend, or perform

@@ -47,6 +47,8 @@ impl LocalStorage {
             let _ = fs::rename(cas_dir, &blobs_dir);
         }
 
+        let cas_config = context.cache_config.cas.clone();
+
         Ok(Self {
             capabilities: OnceLock::new(),
             id: Id::raw(if shared {
@@ -54,8 +56,14 @@ impl LocalStorage {
             } else {
                 "local-cache"
             }),
-            blobs: Arc::new(CasStore::new(blobs_dir, &context.cache_config.cas)?),
-            manifests: Arc::new(CasStore::new(manifests_dir, &context.cache_config.cas)?),
+            manifests: Arc::new(CasStore::new(manifests_dir, {
+                let mut config = cas_config.clone();
+                // Our manifest hashes do not align with their contents,
+                // so avoid verifying integrity for now!
+                config.verify_integrity = false;
+                config
+            })?),
+            blobs: Arc::new(CasStore::new(blobs_dir, cas_config)?),
             context,
         })
     }
@@ -71,7 +79,11 @@ impl StorageBackend for LocalStorage {
         self.capabilities.get_or_init(CacheCapabilities::default)
     }
 
-    fn is_enabled(&self) -> bool {
+    fn is_readable(&self) -> bool {
+        true
+    }
+
+    fn is_writable(&self) -> bool {
         true
     }
 
@@ -132,9 +144,15 @@ impl StorageBackend for LocalStorage {
         spawn_blocking(move || {
             Ok(blob_digests
                 .into_iter()
-                .map(|digest| BlobOutput {
-                    content: BlobContent::File(blobs.object_path(&digest)),
-                    digest,
+                .filter_map(|digest| {
+                    if blobs.contains_object(&digest) {
+                        Some(BlobOutput {
+                            content: BlobContent::File(blobs.object_path(&digest)),
+                            digest,
+                        })
+                    } else {
+                        None
+                    }
                 })
                 .collect())
         })

@@ -141,7 +141,7 @@ impl Storage {
         trace!(hash = digest.hash.as_str(), "Checking for a cache manifest");
 
         for backend in self.get_backends() {
-            if !backend.is_enabled() {
+            if !backend.is_readable() {
                 continue;
             }
 
@@ -189,7 +189,7 @@ impl Storage {
         // Store the manifest in all backends in parallel, but if any fail,
         // continue storing the rest for failover/redundancy in the future
         for backend in self.get_backends() {
-            if !backend.is_enabled() {
+            if !backend.is_writable() {
                 continue;
             }
 
@@ -236,9 +236,8 @@ impl Storage {
         // and also copy the missing blobs to the original backend
         while !manifest.is_hydrated()
             && let Some(backend) = backends.pop_front()
-            && backend.is_enabled()
         {
-            if backend.get_id() == original_backend.get_id() {
+            if !backend.is_readable() || backend.get_id() == original_backend.get_id() {
                 continue;
             }
 
@@ -406,7 +405,7 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
     }
 
     // Then store them in the original backend in which they were missing
-    if !blob_inputs.is_empty() {
+    if !blob_inputs.is_empty() && original_backend.is_writable() {
         trace!(
             to_storage = original_backend.get_id().as_str(),
             from_storage = backend.get_id().as_str(),

@@ -92,8 +92,12 @@ impl StorageBackend for HttpRemoteStorage {
         &self.id
     }
 
-    fn is_enabled(&self) -> bool {
+    fn is_readable(&self) -> bool {
         self.context.remote_config.is_enabled() && self.client.get().is_some()
+    }
+
+    fn is_writable(&self) -> bool {
+        self.is_readable()
     }
 
     async fn connect(&self) -> miette::Result<()> {

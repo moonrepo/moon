@@ -51,7 +51,7 @@ mod http_remote_storage {
             storage.connect().await.unwrap();
 
             status.assert_calls_async(1).await;
-            assert!(storage.is_enabled());
+            assert!(storage.is_readable());
         }
 
         #[tokio::test]
@@ -68,7 +68,7 @@ mod http_remote_storage {
 
             storage.connect().await.unwrap();
 
-            assert!(storage.is_enabled());
+            assert!(storage.is_readable());
         }
 
         #[tokio::test]
@@ -82,7 +82,7 @@ mod http_remote_storage {
             let storage = create_storage(&sandbox, server.base_url());
 
             assert!(storage.connect().await.is_err());
-            assert!(!storage.is_enabled());
+            assert!(!storage.is_readable());
         }
     }
 

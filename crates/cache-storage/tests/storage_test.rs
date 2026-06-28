@@ -75,7 +75,11 @@ impl StorageBackend for MemoryBackend {
         &self.capabilities
     }
 
-    fn is_enabled(&self) -> bool {
+    fn is_readable(&self) -> bool {
+        true
+    }
+
+    fn is_writable(&self) -> bool {
         true
     }
 

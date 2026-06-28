@@ -5109,6 +5109,7 @@ dependencies = [
 name = "moon_cache_remote"
 version = "0.0.1"
 dependencies = [
+ "async-compression",
  "async-stream",
  "async-trait",
  "bazel-remote-apis",

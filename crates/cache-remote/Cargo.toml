@@ -16,6 +16,7 @@ moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
 moon_hash = { path = "../hash" }
+async-compression = { version = "0.4", features = ["tokio", "zstd"] }
 async-trait = { workspace = true }
 bazel-remote-apis = { workspace = true }
 miette = { workspace = true }
@@ -24,7 +25,7 @@ rustc-hash = { workspace = true }
 serde_json = { workspace = true }
 starbase_utils = { workspace = true }
 thiserror = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["fs", "io-util"] }
 tokio-util = { workspace = true, features = ["io"] }
 tracing = { workspace = true }
 uuid = { workspace = true }

@@ -15,7 +15,6 @@ use starbase_utils::{
     glob::GlobSet,
 };
 use std::fmt::{self, Debug};
-use std::fs as fs_std;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -278,13 +277,15 @@ impl OutputHydrater<'_> {
         if let Some(mode) = &file.unix_mode {
             use std::os::unix::fs::PermissionsExt;
 
-            fd.set_permissions(fs_std::Permissions::from_mode(*mode))
+            fd.set_permissions(std::fs::Permissions::from_mode(*mode))
                 .map_err(map_error)?;
         }
 
         Ok(())
     }
 
+    // Windows lint!
+    #[allow(unused_variables)]
     fn link_output_file(
         &self,
         from_path: PathBuf,
@@ -320,7 +321,7 @@ impl OutputHydrater<'_> {
             if let Some(mode) = &link.unix_mode {
                 let fd = fs::open_file_for_writing(&to_path)?;
 
-                fd.set_permissions(fs_std::Permissions::from_mode(*mode))
+                fd.set_permissions(std::fs::Permissions::from_mode(*mode))
                     .map_err(|error| FsError::Write {
                         path: to_path.clone(),
                         error: Box::new(error),

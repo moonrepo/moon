@@ -15,15 +15,22 @@ pub enum BlobContent {
 impl BlobContent {
     pub fn get_bytes(&self) -> Option<&[u8]> {
         match self {
-            BlobContent::Inline(bytes) => Some(bytes),
+            Self::Inline(bytes) => Some(bytes),
             _ => None,
         }
     }
 
     pub fn get_size(&self) -> Option<usize> {
         match self {
-            BlobContent::Inline(bytes) => Some(bytes.len()),
+            Self::Inline(bytes) => Some(bytes.len()),
             _ => None,
+        }
+    }
+
+    pub fn read_bytes(&self) -> miette::Result<Vec<u8>> {
+        match self {
+            Self::Inline(bytes) => Ok(bytes.to_vec()),
+            Self::File(path) => Ok(fs::read_file_bytes(path)?),
         }
     }
 }
@@ -35,13 +42,7 @@ pub struct BlobInput {
 
 impl BlobInput {
     pub fn into_blob(self) -> miette::Result<Blob> {
-        Ok(Blob::new(
-            self.digest,
-            match self.content {
-                BlobContent::File(abs_path) => fs::read_file_bytes(abs_path)?,
-                BlobContent::Inline(bytes) => Vec::from(bytes),
-            },
-        ))
+        Ok(Blob::new(self.digest, self.content.read_bytes()?))
     }
 }
 

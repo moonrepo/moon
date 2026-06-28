@@ -3,6 +3,7 @@
 use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
+use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache::Manifest;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
@@ -139,6 +140,26 @@ impl TaskRunnerContainer {
             .store_manifest(digest.clone(), manifest)
             .await
             .unwrap();
+    }
+
+    /// Persist an inline blob into the local storage backend's CAS and return
+    /// its digest.
+    pub async fn seed_blob(&self, content: &'static [u8]) -> Digest {
+        let digest = Digest::from_bytes(content).unwrap();
+        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+
+        backend
+            .store_blobs(
+                vec![BlobInput {
+                    content: BlobContent::Inline(Bytes::from_static(content)),
+                    digest: digest.clone(),
+                }],
+                false,
+            )
+            .await
+            .unwrap();
+
+        digest
     }
 
     pub async fn create_command(&self, context: ActionContext) -> Command {

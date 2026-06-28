@@ -122,21 +122,22 @@ impl Manifest {
         }
     }
 
-    pub fn hydrate(&mut self, blobs: &FxHashMap<Digest, BlobContent>) {
+    pub fn hydrate(&mut self, blobs: &FxHashMap<Digest, BlobContent>) -> miette::Result<()> {
+        // stderr/stdout are inlined into the operation, so they always need
+        // their bytes — read them even when the backend hands back a file
+        // reference (e.g. the local CAS), since they can't be reflinked.
         if self.stderr_bytes.is_none()
             && let Some(digest) = &self.stderr_digest
             && let Some(content) = blobs.get(digest)
-            && let Some(bytes) = content.get_bytes()
         {
-            self.stderr_bytes = Some(Bytes::from(bytes.to_vec()));
+            self.stderr_bytes = Some(Bytes::from(content.read_bytes()?));
         }
 
         if self.stdout_bytes.is_none()
             && let Some(digest) = &self.stdout_digest
             && let Some(content) = blobs.get(digest)
-            && let Some(bytes) = content.get_bytes()
         {
-            self.stdout_bytes = Some(Bytes::from(bytes.to_vec()));
+            self.stdout_bytes = Some(Bytes::from(content.read_bytes()?));
         }
 
         for file in &mut self.files {
@@ -148,6 +149,8 @@ impl Manifest {
                 && let Some(content) = blobs.get(digest)
             {
                 match content {
+                    // Output files defer materialization to the hydrater, which
+                    // reflinks the file reference straight to the output path.
                     BlobContent::File(path) => {
                         file.source_path = Some(path.clone());
                     }
@@ -157,6 +160,8 @@ impl Manifest {
                 };
             }
         }
+
+        Ok(())
     }
 
     pub fn is_hydrated(&self) -> bool {

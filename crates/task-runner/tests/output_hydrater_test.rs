@@ -350,6 +350,51 @@ mod output_hydrater {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn hydrates_stdio_from_local_cas() {
+            // stdout/stderr are stored as CAS blobs but inlined into the
+            // operation, so they can't be reflinked — the local backend hands
+            // back file references and hydration must read them into memory.
+            // (Without that, a task with non-empty stdio would never hit the
+            // local cache.)
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            let stderr_digest = container.seed_blob(b"stderr output").await;
+            let stdout_digest = container.seed_blob(b"stdout output").await;
+
+            let manifest = Manifest {
+                stderr_digest: Some(stderr_digest),
+                stdout_digest: Some(stdout_digest),
+                ..Default::default()
+            };
+            container.seed_manifest(&state.digest, manifest).await;
+
+            let source = load_source(&container, &state).await;
+
+            let outcome = container
+                .create_hydrator()
+                .hydrate(HydrateFrom::Storage(Box::new(source)), "hash123", &state)
+                .await
+                .unwrap();
+
+            match outcome {
+                HydrateOutcome::HitFromStorage(manifest, _) => {
+                    assert_eq!(
+                        manifest.stderr_bytes.as_deref(),
+                        Some(b"stderr output".as_slice())
+                    );
+                    assert_eq!(
+                        manifest.stdout_bytes.as_deref(),
+                        Some(b"stdout output".as_slice())
+                    );
+                }
+                _ => panic!("expected a storage cache hit"),
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn rejects_untrusted_manifest_path_outside_workspace() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
 

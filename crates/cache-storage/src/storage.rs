@@ -377,7 +377,7 @@ async fn hydrate_manifest_from_backend(
     );
 
     // And then copy their data into the manifest
-    manifest.hydrate(&blobs_map);
+    manifest.hydrate(&blobs_map)?;
 
     Ok(blobs_map)
 }

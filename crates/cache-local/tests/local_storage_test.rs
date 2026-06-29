@@ -399,4 +399,96 @@ mod local_storage {
                 .is_some()
         );
     }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn gc_evicts_coldest_manifests_over_size_budget() {
+        let sandbox = create_empty_sandbox();
+        // The blobs below total 49 bytes; a 40-byte budget fits only two.
+        let backend = create_backend_with_max_size(&sandbox, "40b");
+
+        let cold = inline_source(b"cold-blob-conten");
+        let warm = inline_source(b"warm-blob-conten");
+        let hot = inline_source(b"hot-blob-content!");
+        let cold_digest = cold.digest.clone();
+        let warm_digest = warm.digest.clone();
+        let hot_digest = hot.digest.clone();
+        let cold_action = Digest::from_bytes(b"cold").unwrap();
+        let warm_action = Digest::from_bytes(b"warm").unwrap();
+        let hot_action = Digest::from_bytes(b"hot").unwrap();
+
+        // Each manifest references its own distinct blob.
+        for (action, blob, digest) in [
+            (&cold_action, cold, &cold_digest),
+            (&warm_action, warm, &warm_digest),
+            (&hot_action, hot, &hot_digest),
+        ] {
+            Arc::clone(&backend)
+                .store_blobs_batched(action.clone(), vec![blob])
+                .await
+                .unwrap();
+            backend
+                .store_manifest(action.clone(), manifest_referencing(digest))
+                .await
+                .unwrap();
+        }
+
+        // Order recency oldest -> newest so the budget evicts the coldest, and
+        // age the cold blob past grace so it's swept once orphaned.
+        backdate(
+            &manifest_path(&sandbox, &cold_action),
+            Duration::from_secs(7200),
+        );
+        backdate(
+            &manifest_path(&sandbox, &warm_action),
+            Duration::from_secs(3600),
+        );
+        backdate(
+            &blob_path(&sandbox, &cold_digest),
+            Duration::from_secs(7200),
+        );
+
+        // A long lifetime so eviction is driven only by the size budget.
+        let stats = backend.gc(Duration::from_secs(31_536_000)).await.unwrap();
+
+        // Coldest manifest evicted (1) + its now-orphaned blob swept (1).
+        assert_eq!(stats.blobs_removed, 2);
+        assert!(
+            backend
+                .retrieve_manifest(cold_action)
+                .await
+                .unwrap()
+                .is_none(),
+            "coldest manifest should be evicted over budget",
+        );
+        assert!(
+            backend
+                .retrieve_manifest(warm_action)
+                .await
+                .unwrap()
+                .is_some()
+        );
+        assert!(
+            backend
+                .retrieve_manifest(hot_action)
+                .await
+                .unwrap()
+                .is_some()
+        );
+        assert_eq!(
+            backend
+                .find_missing_blobs(vec![cold_digest.clone()])
+                .await
+                .unwrap(),
+            vec![cold_digest],
+            "the evicted manifest's blob should be swept",
+        );
+        assert!(
+            backend
+                .find_missing_blobs(vec![warm_digest, hot_digest])
+                .await
+                .unwrap()
+                .is_empty(),
+            "blobs of surviving manifests should be kept",
+        );
+    }
 }

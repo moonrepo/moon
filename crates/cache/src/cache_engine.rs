@@ -123,10 +123,12 @@ impl CacheEngine {
             result = merge_clean_results(result, fs::remove_dir_stale_contents(dir, duration)?);
         }
 
-        let storage_result = self.storage.clean(duration).await?;
+        if all {
+            let storage_result = self.storage.clean(duration).await?;
 
-        result.files_deleted += storage_result.blobs_removed;
-        result.bytes_saved += storage_result.bytes_saved;
+            result.files_deleted += storage_result.blobs_removed;
+            result.bytes_saved += storage_result.bytes_saved;
+        }
 
         debug!(
             "Deleted {} artifacts and saved {} bytes",

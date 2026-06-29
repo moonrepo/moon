@@ -17,10 +17,9 @@ use bazel_remote_apis::google::bytestream::{
     ReadRequest, WriteRequest, byte_stream_client::ByteStreamClient,
 };
 use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
-use moon_cache_storage::ExternalDigestExt;
 use moon_cache_storage::{
-    CacheCapabilities, CacheContext, Compressor, DigestFunction, InternalDigestExt, Manifest,
-    StorageBackend,
+    CacheCapabilities, CacheContext, Compressor, DigestFunction, ExternalDigestExt,
+    InternalDigestExt, Manifest, StorageBackend, check_blob_integrity,
 };
 use moon_common::{Id, color, is_ci, is_remote};
 use moon_config::{RemoteCompression, RemoteConfig};
@@ -481,18 +480,9 @@ impl StorageBackend for GrpcRemoteStorage {
                 blob.compression = get_compression_from_code(download.compressor);
                 blob.decompress()?;
 
-                // Verify digest matches decompressed content
-                let actual_digest = Digest::from_bytes(&blob.bytes)?;
-
-                if actual_digest != blob.digest {
-                    return Err(RemoteError::GrpcDownloadDigestMismatch {
-                        actual: actual_digest,
-                        expected: blob.digest.clone(),
-                    }
-                    .into());
+                if check_blob_integrity(&blob.digest, &blob.bytes)? {
+                    blobs.push(BlobOutput::from(blob.inner));
                 }
-
-                blobs.push(BlobOutput::from(blob.inner));
             }
         }
 
@@ -642,14 +632,8 @@ impl GrpcRemoteStorage {
         blob.compression = compression;
         blob.decompress()?;
 
-        let actual_digest = Digest::from_bytes(&blob.bytes)?;
-
-        if actual_digest != blob_digest {
-            return Err(RemoteError::GrpcDownloadDigestMismatch {
-                actual: actual_digest,
-                expected: blob_digest,
-            }
-            .into());
+        if !check_blob_integrity(&blob.digest, &blob.bytes)? {
+            return Ok(None);
         }
 
         Ok(Some(blob))

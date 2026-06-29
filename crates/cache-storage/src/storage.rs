@@ -332,34 +332,20 @@ async fn archive_manifest_in_backend(
     mut manifest: Manifest,
     workspace_root: PathBuf,
 ) -> miette::Result<()> {
-    let blob_sources = manifest.collect_blob_inputs(&workspace_root);
-    let initial_count = blob_sources.len();
+    let blob_inputs = manifest.collect_blob_inputs(&workspace_root);
 
-    if !blob_sources.is_empty() {
-        trace!(
-            storage = backend.get_id().as_str(),
-            hash = digest.hash.as_str(),
-            "Storing {initial_count} blobs"
-        );
-
+    // Before we store the manifest, we should ensure all associated blobs are stored.
+    // This ensures we don't end up with dangling manifests that reference missing blobs.
+    if !blob_inputs.is_empty() {
         manifest.upload_started_at = Some(SystemTime::now());
 
-        // Before we store the manifest, we should ensure all associated blobs are stored.
-        // This ensures we don't end up with dangling manifests that reference missing blobs.
-        let uploaded = Arc::clone(&backend)
-            .store_blobs_batched(digest.clone(), blob_sources)
+        let stored = Arc::clone(&backend)
+            .store_blobs_batched(digest.clone(), blob_inputs)
             .await?;
 
         manifest.upload_completed_at = Some(SystemTime::now());
 
-        trace!(
-            storage = backend.get_id().as_str(),
-            hash = digest.hash.as_str(),
-            "Stored {} of {initial_count} blobs",
-            uploaded.len()
-        );
-
-        if uploaded.is_empty() {
+        if !stored.success {
             return Ok(());
         }
     }
@@ -390,28 +376,17 @@ async fn hydrate_manifest_from_backend(
     manifest: &mut Manifest,
 ) -> miette::Result<FxHashMap<Digest, BlobContent>> {
     let blob_digests = manifest.collect_unhydrated_blob_digests();
-    let initial_count = blob_digests.len();
-
-    trace!(
-        storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
-        "Retrieving {initial_count} blobs"
-    );
 
     // Retrieve all blobs for digests that have yet to be hydrated
-    let blobs_map = Arc::clone(backend)
+    let received = Arc::clone(backend)
         .retrieve_blobs_batched(digest.clone(), blob_digests)
-        .await?
+        .await?;
+
+    let blobs_map = received
+        .blobs
         .into_iter()
         .map(|blob| (blob.digest, blob.content))
         .collect::<FxHashMap<_, _>>();
-
-    trace!(
-        storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
-        "Retrieved {} of {initial_count} blobs",
-        blobs_map.len()
-    );
 
     // And then copy their data into the manifest
     manifest.hydrate(&blobs_map)?;

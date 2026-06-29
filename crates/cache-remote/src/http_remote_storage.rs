@@ -3,9 +3,10 @@ use crate::http_tls::*;
 use crate::remote_error::RemoteError;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobInput, BlobOutput, Bytes};
-use moon_cache_storage::CacheContext;
-use moon_cache_storage::{CacheCapabilities, Manifest, StorageBackend};
+use moon_blob::{BlobContent, BlobInput, BlobOutput};
+use moon_cache_storage::{
+    CacheCapabilities, CacheContext, Manifest, StorageBackend, check_blob_integrity,
+};
 use moon_common::{Id, color, is_remote};
 use moon_config::RemoteCompression;
 use moon_hash::Digest;
@@ -238,7 +239,7 @@ impl StorageBackend for HttpRemoteStorage {
         blob_digests: Vec<Digest>,
         _stream: bool,
     ) -> miette::Result<Vec<BlobOutput>> {
-        let mut set = JoinSet::<miette::Result<Option<Bytes>>>::new();
+        let mut set = JoinSet::<miette::Result<Option<BlobOutput>>>::new();
         let debug_enabled = self.context.remote_debug;
 
         for digest in blob_digests {
@@ -256,11 +257,18 @@ impl StorageBackend for HttpRemoteStorage {
                         let status = response.status();
 
                         if status.is_success() {
-                            return if let Ok(bytes) = response.bytes().await {
-                                Ok(Some(bytes))
-                            } else {
-                                Ok(None)
+                            let Ok(bytes) = response.bytes().await else {
+                                return Ok(None);
                             };
+
+                            if !check_blob_integrity(&digest, &bytes)? {
+                                return Ok(None);
+                            }
+
+                            return Ok(Some(BlobOutput {
+                                content: BlobContent::Inline(bytes),
+                                digest,
+                            }));
                         }
 
                         Err(map_response_error("retrieve_blobs", response, debug_enabled).into())
@@ -273,8 +281,8 @@ impl StorageBackend for HttpRemoteStorage {
         let mut blobs = vec![];
 
         while let Some(result) = set.join_next().await {
-            if let Some(bytes) = result.into_diagnostic()?? {
-                blobs.push(BlobOutput::from(Blob::try_from(bytes)?));
+            if let Some(blob) = result.into_diagnostic()?? {
+                blobs.push(blob);
             }
         }
 

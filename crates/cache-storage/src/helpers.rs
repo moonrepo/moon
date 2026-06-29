@@ -1,7 +1,9 @@
 use bazel_remote_apis::google::protobuf::Timestamp;
 use chrono::NaiveDateTime;
 use moon_common::BLOCKING_THREAD_COUNT;
+use moon_hash::Digest;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tracing::warn;
 
 pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
     time.duration_since(UNIX_EPOCH)
@@ -25,6 +27,33 @@ pub fn create_from_timestamp(timestamp: Timestamp) -> SystemTime {
     UNIX_EPOCH + Duration::new(timestamp.seconds as u64, timestamp.nanos as u32)
 }
 
+pub fn check_blob_integrity(expected_digest: &Digest, bytes: &[u8]) -> miette::Result<bool> {
+    if bytes.len() != expected_digest.size as usize {
+        warn!(
+            hash = expected_digest.hash.as_str(),
+            expected_size = expected_digest.size,
+            actual_size = bytes.len(),
+            "Integrity failure, mismatched file sizes, discarding blob",
+        );
+
+        return Ok(false);
+    }
+
+    let actual_digest = Digest::from_bytes(bytes)?;
+
+    if &actual_digest != expected_digest {
+        warn!(
+            hash = expected_digest.hash.as_str(),
+            actual_hash = actual_digest.hash.as_str(),
+            "Integrity failure, mismatched digests, discarding blob",
+        );
+
+        return Ok(false);
+    }
+
+    Ok(true)
+}
+
 const BUFFER: usize = 300; // 256 (hash/digest) + 44 (metadata overhead)
 
 pub struct Batch<T> {
@@ -36,10 +65,15 @@ pub struct Batch<T> {
 }
 
 pub fn partition_into_batches<T>(
-    items: Vec<T>,
+    mut items: Vec<T>,
     max_size: usize,
     get_size: impl Fn(&T) -> usize,
 ) -> Vec<Batch<T>> {
+    // First-fit-decreasing: placing the largest items first packs batches denser
+    // (fewer batches, fewer round trips) than first-fit on the incoming order.
+    // The linear first-fit scan below is fine at our scale (blobs per task).
+    items.sort_unstable_by_key(|item| std::cmp::Reverse(get_size(item)));
+
     let mut batches: Vec<Batch<T>> = vec![];
 
     for item in items {

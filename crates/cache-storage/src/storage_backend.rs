@@ -13,6 +13,21 @@ use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{trace, warn};
 
+pub struct StoreResult {
+    pub digests: Vec<Digest>,
+    pub store_count: usize,
+    pub stored_count: usize,
+    pub missing_count: usize,
+    pub success: bool,
+}
+
+pub struct RetrieveResult {
+    pub blobs: Vec<BlobOutput>,
+    pub retrieve_count: usize,
+    pub retrieved_count: usize,
+    pub success: bool,
+}
+
 pub type BoxedStorageBackend = Arc<dyn StorageBackend>;
 
 #[async_trait]
@@ -120,8 +135,21 @@ where
         self: Arc<Self>,
         digest: Digest,
         mut blob_inputs: Vec<BlobInput>,
-    ) -> miette::Result<Vec<Digest>> {
-        let total_count = blob_inputs.len() as u16;
+    ) -> miette::Result<StoreResult> {
+        // Outputs can share identical content, so the inputs may carry the same
+        // digest more than once. Store each unique blob a single time: this keeps
+        // the stored/missing counts consistent (the `success` check compares
+        // them) and avoids redundant uploads when many files share a blob.
+        let mut seen = FxHashSet::default();
+        blob_inputs.retain(|input| seen.insert(input.digest.clone()));
+
+        let mut result = StoreResult {
+            digests: vec![],
+            store_count: blob_inputs.len(),
+            stored_count: 0,
+            missing_count: 0,
+            success: false,
+        };
 
         // Before we store blobs, we should ensure that they don't already exists in the backend
         let missing_digests = match Arc::clone(&self)
@@ -137,12 +165,18 @@ where
                     "Failed to find missing blobs, aborting store operation",
                 );
 
-                return Ok(vec![]);
+                return Ok(result);
             }
         };
 
+        result.missing_count = missing_digests.len();
+
         if missing_digests.is_empty() {
-            return Ok(get_digests_from_inputs(&blob_inputs));
+            result.digests = get_digests_from_inputs(&blob_inputs);
+            result.stored_count = result.store_count;
+            result.success = true;
+
+            return Ok(result);
         }
 
         // Reduce the provided sources to only the missing digests
@@ -187,27 +221,30 @@ where
             };
         }
 
+        result.stored_count = uploaded_digests.len();
+        result.digests = uploaded_digests;
+
         // If we received a shutdown signal, we should abort storing the blobs
         if abort {
             set.shutdown().await;
 
-            return Ok(vec![]);
+            return Ok(result);
         }
 
-        if !upload_errors.is_empty() {
+        if upload_errors.is_empty() {
+            result.success = result.stored_count == result.missing_count;
+        } else {
             warn!(
                 storage = self.get_id().as_str(),
                 hash = digest.hash.as_str(),
-                total_count,
-                stored_count = uploaded_digests.len(),
+                expected_count = result.missing_count,
+                actual_count = result.stored_count,
                 errors = ?upload_errors,
-                "Failed to store blobs",
+                "Failed to store blobs, will skip caching the manifest",
             );
-
-            return Ok(vec![]);
         }
 
-        Ok(uploaded_digests)
+        Ok(result)
     }
 
     /// Store the blobs from the given list of blob sources.
@@ -228,8 +265,13 @@ where
         self: Arc<Self>,
         digest: Digest,
         blob_digests: Vec<Digest>,
-    ) -> miette::Result<Vec<BlobOutput>> {
-        let total_count = blob_digests.len();
+    ) -> miette::Result<RetrieveResult> {
+        let mut result = RetrieveResult {
+            blobs: vec![],
+            retrieve_count: blob_digests.len(),
+            retrieved_count: 0,
+            success: false,
+        };
         let cap = self.get_capabilities();
         let mut set = JoinSet::new();
 
@@ -257,38 +299,10 @@ where
 
             match result {
                 Ok(Ok(batched_blobs)) => {
-                    for blob in batched_blobs {
-                        if let Some(size) = blob.content.get_size()
-                            && size != blob.digest.size as usize
-                        {
-                            trace!(
-                                hash = digest.hash.as_str(),
-                                blob_hash = blob.digest.hash.as_str(),
-                                expected_size = blob.digest.size,
-                                actual_size = size,
-                                "Integrity failure, mismatched file sizes",
-                            );
-
-                            abort = true;
-                            break;
-                        } else if let Some(bytes) = blob.content.get_bytes() {
-                            let actual_digest = Digest::from_bytes(bytes)?;
-
-                            if actual_digest != blob.digest {
-                                trace!(
-                                    hash = digest.hash.as_str(),
-                                    blob_hash = blob.digest.hash.as_str(),
-                                    actual_hash = actual_digest.hash.as_str(),
-                                    "Integrity failure, mismatched digests",
-                                );
-
-                                abort = true;
-                                break;
-                            }
-                        }
-
-                        downloaded_blobs.push(blob);
-                    }
+                    // Each backend verifies what it returns (gRPC and HTTP hash
+                    // the bytes against the requested digest; local hands back
+                    // CAS paths), so there's no second hash pass here.
+                    downloaded_blobs.extend(batched_blobs);
                 }
                 Ok(Err(error)) => {
                     download_errors.push(error.to_string());
@@ -299,25 +313,30 @@ where
             };
         }
 
+        result.retrieved_count = downloaded_blobs.len();
+        result.blobs = downloaded_blobs;
+
         // If we received a shutdown signal, we should abort receiving the blobs
         if abort {
             set.shutdown().await;
 
-            return Ok(downloaded_blobs);
+            return Ok(result);
         }
 
-        if !download_errors.is_empty() {
+        if download_errors.is_empty() {
+            result.success = result.retrieved_count == result.retrieve_count;
+        } else {
             warn!(
                 storage = self.get_id().as_str(),
                 hash = digest.hash.as_str(),
-                total_count,
-                retrieved_count = downloaded_blobs.len(),
+                expected_count = result.retrieve_count,
+                actual_count = result.retrieved_count,
                 errors = ?download_errors,
                 "Failed to retrieve blobs, will attempt to retrieve remaining from other storage backends",
             );
         }
 
-        Ok(downloaded_blobs)
+        Ok(result)
     }
 
     /// Retrieve the blobs for the given list of blob digests.

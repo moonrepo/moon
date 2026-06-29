@@ -1,5 +1,5 @@
 use httpmock::prelude::*;
-use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::HttpRemoteStorage;
 use moon_cache_storage::{CacheContext, Manifest, StorageBackend};
 use moon_config::{CacheConfig, RemoteConfig};
@@ -51,7 +51,7 @@ mod http_remote_storage {
             storage.connect().await.unwrap();
 
             status.assert_calls_async(1).await;
-            assert!(storage.is_enabled());
+            assert!(storage.is_readable());
         }
 
         #[tokio::test]
@@ -68,7 +68,7 @@ mod http_remote_storage {
 
             storage.connect().await.unwrap();
 
-            assert!(storage.is_enabled());
+            assert!(storage.is_readable());
         }
 
         #[tokio::test]
@@ -82,7 +82,7 @@ mod http_remote_storage {
             let storage = create_storage(&sandbox, server.base_url());
 
             assert!(storage.connect().await.is_err());
-            assert!(!storage.is_enabled());
+            assert!(!storage.is_readable());
         }
     }
 
@@ -181,7 +181,7 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            let source = BlobSource {
+            let source = BlobInput {
                 content: BlobContent::Inline(Bytes::from_static(content)),
                 digest: digest.clone(),
             };
@@ -205,8 +205,8 @@ mod http_remote_storage {
             sandbox.create_file("blob.txt", "file blob content");
             let storage = create_storage(&sandbox, server.base_url());
 
-            let source = BlobSource {
-                content: BlobContent::File("blob.txt".into()),
+            let source = BlobInput {
+                content: BlobContent::File(sandbox.path().join("blob.txt")),
                 digest: digest.clone(),
             };
             let stored = storage.store_blobs(vec![source], false).await.unwrap();
@@ -228,7 +228,7 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            let source = BlobSource {
+            let source = BlobInput {
                 content: BlobContent::Inline(Bytes::from_static(content)),
                 digest,
             };
@@ -253,7 +253,7 @@ mod http_remote_storage {
 
             mock.assert_calls_async(1).await;
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content.as_bytes());
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content.as_bytes());
         }
 
         #[tokio::test]

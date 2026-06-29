@@ -12,7 +12,11 @@ publish = false
 moon_common = { path = "../common" }
 moon_process = { path = "../process" }
 async-trait = { workspace = true }
-gix = { version = "0.84.0", default-features = false, features = ["attributes", "sha1", "sha256"] }
+gix = { version = "0.84.0", default-features = false, features = [
+	"attributes",
+	"sha1",
+	"sha256",
+] }
 git-url-parse = "0.6.0"
 ignore = "0.4.26"
 miette = { workspace = true }
@@ -26,6 +30,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_env_var = { path = "../env-var" }
 soft-canonicalize = { version = "0.5.6", features = ["dunce"] }
 starbase_sandbox = { workspace = true }
 tokio = { workspace = true }

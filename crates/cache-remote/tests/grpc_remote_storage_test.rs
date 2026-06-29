@@ -18,7 +18,8 @@ use bazel_remote_apis::google::bytestream::{
     WriteResponse,
     byte_stream_server::{ByteStream, ByteStreamServer},
 };
-use moon_blob::{BlobContent, BlobSource, Bytes};
+use bazel_remote_apis::google::rpc::Status as RpcStatus;
+use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::{GrpcRemoteStorage, RemoteError};
 use moon_cache_storage::{CacheContext, Manifest, StorageBackend};
 use moon_config::{CacheConfig, RemoteCompression, RemoteConfig};
@@ -49,6 +50,7 @@ struct MockBackend {
     get_action_status: Option<Code>,
     update_status: Option<Code>,
     corrupt_reads: bool,
+    reject_one_upload: bool,
     zstd_streaming: bool,
     zstd_batch: bool,
 }
@@ -66,6 +68,12 @@ impl MockBackend {
 
     fn corrupting_reads(mut self) -> Self {
         self.corrupt_reads = true;
+        self
+    }
+
+    /// Accept the batch RPC but reject the first blob within it.
+    fn rejecting_one_upload(mut self) -> Self {
+        self.reject_one_upload = true;
         self
     }
 
@@ -190,7 +198,7 @@ impl ContentAddressableStorage for MockBackend {
         let mut blobs = self.blobs.lock().unwrap();
         let mut responses = vec![];
 
-        for blob in request.requests {
+        for (index, blob) in request.requests.into_iter().enumerate() {
             // Mimic a server that rejects a compressor it didn't advertise in
             // `supported_batch_update_compressors`.
             if blob.compressor == Compressor::Zstd as i32 && !self.zstd_batch {
@@ -198,6 +206,21 @@ impl ContentAddressableStorage for MockBackend {
             }
 
             if let Some(digest) = blob.digest.clone() {
+                // Mimic a server that accepts the batch RPC but rejects an
+                // individual blob within it.
+                if self.reject_one_upload && index == 0 {
+                    responses.push(batch_update_blobs_response::Response {
+                        digest: Some(digest),
+                        status: Some(RpcStatus {
+                            code: Code::ResourceExhausted as i32,
+                            message: "injected per-blob failure".into(),
+                            details: vec![],
+                        }),
+                    });
+
+                    continue;
+                }
+
                 blobs.insert(digest.hash.clone(), (blob.data, blob.compressor));
                 responses.push(batch_update_blobs_response::Response {
                     digest: Some(digest),
@@ -435,7 +458,7 @@ mod grpc_remote_storage {
         async fn negotiates_capabilities_and_enables() {
             let (_sandbox, storage) = connect(MockBackend::default()).await;
 
-            assert!(storage.is_enabled());
+            assert!(storage.is_readable());
         }
     }
 
@@ -507,8 +530,8 @@ mod grpc_remote_storage {
     mod blobs {
         use super::*;
 
-        fn inline(content: &'static [u8]) -> BlobSource {
-            BlobSource {
+        fn inline(content: &'static [u8]) -> BlobInput {
+            BlobInput {
                 content: BlobContent::Inline(Bytes::from_static(content)),
                 digest: digest_of(content),
             }
@@ -528,7 +551,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -552,7 +575,25 @@ mod grpc_remote_storage {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn retrieve_detects_digest_mismatch() {
+        async fn store_returns_only_accepted_blobs_when_one_is_rejected() {
+            // A batch where the server accepts the RPC but rejects one blob logs
+            // the failure and returns only the blobs that were stored, rather
+            // than erroring the whole pipeline.
+            let (_sandbox, storage) = connect(MockBackend::default().rejecting_one_upload()).await;
+
+            let second = digest_of(b"second");
+
+            let stored = storage
+                .store_blobs(vec![inline(b"first"), inline(b"second")], false)
+                .await
+                .unwrap();
+
+            // The first blob (index 0) is rejected; only the second is returned.
+            assert_eq!(stored, vec![second]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn retrieve_discards_blob_with_mismatched_digest() {
             let (_sandbox, storage) = connect(MockBackend::default().corrupting_reads()).await;
             let content = b"original";
             let digest = digest_of(content);
@@ -562,15 +603,11 @@ mod grpc_remote_storage {
                 .await
                 .unwrap();
 
-            let error = storage
-                .retrieve_blobs(vec![digest], false)
-                .await
-                .unwrap_err();
+            // A corrupt blob is logged and dropped, surfacing as a miss rather
+            // than a hard error, so the caller falls back or re-runs.
+            let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
 
-            assert!(matches!(
-                remote_error(error),
-                RemoteError::GrpcDownloadDigestMismatch { .. }
-            ));
+            assert!(blobs.is_empty());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -589,7 +626,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], true).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -621,7 +658,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], true).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -641,7 +678,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -662,7 +699,7 @@ mod grpc_remote_storage {
 
             let blobs = storage.retrieve_blobs(vec![digest], false).await.unwrap();
             assert_eq!(blobs.len(), 1);
-            assert_eq!(blobs[0].bytes.as_ref(), content);
+            assert_eq!(blobs[0].content.get_bytes().unwrap(), content);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -697,13 +734,13 @@ mod grpc_remote_storage {
                 .retrieve_blobs(vec![batched_digest], false)
                 .await
                 .unwrap();
-            assert_eq!(batched_back[0].bytes.as_ref(), batched);
+            assert_eq!(batched_back[0].content.get_bytes().unwrap(), batched);
 
             let streamed_back = storage
                 .retrieve_blobs(vec![streamed_digest], true)
                 .await
                 .unwrap();
-            assert_eq!(streamed_back[0].bytes.as_ref(), streamed);
+            assert_eq!(streamed_back[0].content.get_bytes().unwrap(), streamed);
         }
     }
 }

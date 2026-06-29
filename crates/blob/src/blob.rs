@@ -1,20 +1,71 @@
 use bytes::Bytes;
 use miette::IntoDiagnostic;
-use moon_common::path::WorkspaceRelativePathBuf;
 use moon_hash::Digest;
 use serde::Serialize;
 use starbase_utils::{fs, json};
 use std::fmt::Debug;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-pub struct BlobSource {
+#[derive(Clone)]
+pub enum BlobContent {
+    File(PathBuf),
+    Inline(Bytes),
+}
+
+impl BlobContent {
+    pub fn get_bytes(&self) -> Option<&[u8]> {
+        match self {
+            Self::Inline(bytes) => Some(bytes),
+            _ => None,
+        }
+    }
+
+    pub fn get_size(&self) -> Option<usize> {
+        match self {
+            Self::Inline(bytes) => Some(bytes.len()),
+            _ => None,
+        }
+    }
+
+    pub fn read_bytes(&self) -> miette::Result<Vec<u8>> {
+        match self {
+            Self::Inline(bytes) => Ok(bytes.to_vec()),
+            Self::File(path) => Ok(fs::read_file_bytes(path)?),
+        }
+    }
+}
+
+pub struct BlobInput {
     pub content: BlobContent,
     pub digest: Digest,
 }
 
-pub enum BlobContent {
-    Inline(Bytes),
-    File(WorkspaceRelativePathBuf),
+impl BlobInput {
+    pub fn into_blob(self) -> miette::Result<Blob> {
+        Ok(Blob::new(self.digest, self.content.read_bytes()?))
+    }
+}
+
+pub struct BlobOutput {
+    pub content: BlobContent,
+    pub digest: Digest,
+}
+
+impl From<Blob> for BlobOutput {
+    fn from(blob: Blob) -> Self {
+        BlobOutput {
+            content: BlobContent::Inline(blob.bytes),
+            digest: blob.digest,
+        }
+    }
+}
+
+impl Debug for BlobOutput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BlobOutput")
+            .field("digest", &self.digest)
+            .finish()
+    }
 }
 
 #[derive(Clone)]
@@ -61,4 +112,10 @@ impl TryFrom<Bytes> for Blob {
             bytes,
         })
     }
+}
+
+#[derive(Debug, Default)]
+pub struct BlobCleanStats {
+    pub blobs_removed: usize,
+    pub bytes_saved: u64,
 }

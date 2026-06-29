@@ -3,6 +3,8 @@ use crate::grpc_services::*;
 use crate::grpc_tls::*;
 use crate::headers::extract_headers;
 use crate::remote_error::RemoteError;
+use async_compression::Level;
+use async_compression::tokio::bufread::ZstdEncoder;
 use async_trait::async_trait;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     BatchReadBlobsRequest, BatchUpdateBlobsRequest, FindMissingBlobsRequest,
@@ -14,22 +16,21 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use bazel_remote_apis::google::bytestream::{
     ReadRequest, WriteRequest, byte_stream_client::ByteStreamClient,
 };
-use moon_blob::{Blob, BlobContent, BlobSource};
-use moon_cache_storage::ExternalDigestExt;
+use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
 use moon_cache_storage::{
-    CacheCapabilities, CacheContext, Compressor, DigestFunction, InternalDigestExt, Manifest,
-    StorageBackend,
+    CacheCapabilities, CacheContext, Compressor, DigestFunction, ExternalDigestExt,
+    InternalDigestExt, Manifest, StorageBackend, check_blob_integrity,
 };
 use moon_common::{Id, color, is_ci, is_remote};
 use moon_config::{RemoteCompression, RemoteConfig};
 use moon_hash::Digest;
 use reqwest::header::HeaderMap;
-use rustc_hash::FxHashSet;
-use starbase_utils::fs;
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
+use tokio::io::BufReader;
 use tokio::sync::Mutex;
+use tokio_util::either::Either;
 use tokio_util::io::ReaderStream;
 use tonic::{
     Code, Request,
@@ -40,6 +41,10 @@ use tower::{ServiceBuilder, limit::ConcurrencyLimit, timeout::Timeout};
 use tracing::{debug, error, trace, warn};
 
 type LayeredService = Timeout<ConcurrencyLimit<RequestHeaders<Channel>>>;
+
+/// Chunk size for streamed ByteStream uploads. Kept well under the server's
+/// max gRPC message size so a single chunk never overflows a frame.
+const UPLOAD_CHUNK_SIZE: usize = 1024 * 1024;
 
 pub struct GrpcRemoteStorage {
     context: CacheContext,
@@ -171,18 +176,6 @@ impl GrpcRemoteStorage {
         }
     }
 
-    fn can_download(&self) -> bool {
-        self.cache_enabled.get().cloned().unwrap_or_default()
-    }
-
-    fn can_upload(&self) -> bool {
-        is_upload_allowed(
-            self.cache_enabled.get().cloned().unwrap_or_default(),
-            is_ci(),
-            self.context.remote_config.cache.local_read_only,
-        )
-    }
-
     /// The configured compressor, reduced to what the server supports for the
     /// `compressed-blobs` bytestream (streaming) path.
     fn streaming_compression(&self) -> RemoteCompression {
@@ -212,10 +205,20 @@ impl StorageBackend for GrpcRemoteStorage {
         &self.id
     }
 
-    fn is_enabled(&self) -> bool {
+    fn is_readable(&self) -> bool {
         self.context.remote_config.is_enabled()
             && self.channel.get().is_some()
             && self.cache_enabled.get().cloned().unwrap_or_default()
+    }
+
+    fn is_writable(&self) -> bool {
+        self.context.remote_config.is_enabled()
+            && self.channel.get().is_some()
+            && is_upload_allowed(
+                self.cache_enabled.get().cloned().unwrap_or_default(),
+                is_ci(),
+                self.context.remote_config.cache.local_read_only,
+            )
     }
 
     async fn connect(&self) -> miette::Result<()> {
@@ -325,10 +328,6 @@ impl StorageBackend for GrpcRemoteStorage {
     }
 
     async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
-        if !self.can_download() {
-            return Ok(None);
-        }
-
         match self
             .get_ac_client()
             .get_action_result(GetActionResultRequest {
@@ -368,10 +367,6 @@ impl StorageBackend for GrpcRemoteStorage {
     }
 
     async fn store_manifest(&self, digest: Digest, manifest: Manifest) -> miette::Result<()> {
-        if !self.can_upload() {
-            return Ok(());
-        }
-
         match self
             .get_ac_client()
             .update_action_result(UpdateActionResultRequest {
@@ -397,10 +392,7 @@ impl StorageBackend for GrpcRemoteStorage {
         }
     }
 
-    async fn find_missing_blobs(
-        &self,
-        blob_digests: Vec<Digest>,
-    ) -> miette::Result<FxHashSet<Digest>> {
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
         match self
             .get_cas_client()
             .find_missing_blobs(FindMissingBlobsRequest {
@@ -414,10 +406,10 @@ impl StorageBackend for GrpcRemoteStorage {
             .await
         {
             Ok(response) => {
-                let mut digests = FxHashSet::default();
+                let mut digests = vec![];
 
                 for digest in response.into_inner().missing_blob_digests {
-                    digests.insert(Digest::from_external(digest)?);
+                    digests.push(Digest::from_external(digest)?);
                 }
 
                 Ok(digests)
@@ -430,12 +422,15 @@ impl StorageBackend for GrpcRemoteStorage {
         &self,
         mut blob_digests: Vec<Digest>,
         stream: bool,
-    ) -> miette::Result<Vec<Blob>> {
+    ) -> miette::Result<Vec<BlobOutput>> {
         if stream && blob_digests.len() == 1 {
             return self
                 .retrieve_blob_streamed(blob_digests.remove(0))
                 .await
-                .map(|blob| blob.map(|blob| vec![blob.inner]).unwrap_or_default());
+                .map(|blob| {
+                    blob.map(|blob| vec![BlobOutput::from(blob.inner)])
+                        .unwrap_or_default()
+                });
         }
 
         let response = match self
@@ -485,18 +480,9 @@ impl StorageBackend for GrpcRemoteStorage {
                 blob.compression = get_compression_from_code(download.compressor);
                 blob.decompress()?;
 
-                // Verify digest matches decompressed content
-                let actual_digest = Digest::from_bytes(&blob.bytes)?;
-
-                if actual_digest != blob.digest {
-                    return Err(RemoteError::GrpcDownloadDigestMismatch {
-                        actual: actual_digest,
-                        expected: blob.digest.clone(),
-                    }
-                    .into());
+                if check_blob_integrity(&blob.digest, &blob.bytes)? {
+                    blobs.push(BlobOutput::from(blob.inner));
                 }
-
-                blobs.push(blob.inner);
             }
         }
 
@@ -505,39 +491,27 @@ impl StorageBackend for GrpcRemoteStorage {
 
     async fn store_blobs(
         &self,
-        blob_sources: Vec<BlobSource>,
+        mut blob_inputs: Vec<BlobInput>,
         stream: bool,
     ) -> miette::Result<Vec<Digest>> {
         // A single oversized blob is streamed; everything else is batched. The
         // two paths gate compression via different capabilities, so pick the
         // compressor that matches the path we'll actually take.
-        let streaming = stream && blob_sources.len() == 1;
-        let compression = if streaming {
-            self.streaming_compression()
-        } else {
-            self.batch_compression()
-        };
+        if stream && blob_inputs.len() == 1 {
+            return self
+                .store_blob_streamed(blob_inputs.remove(0))
+                .await
+                .map(|digest| vec![digest]);
+        }
+
+        let compression = self.batch_compression();
         let mut blobs = vec![];
 
-        for source in blob_sources {
-            let bytes = match source.content {
-                BlobContent::Inline(bytes) => Vec::from(bytes),
-                BlobContent::File(rel_path) => {
-                    fs::read_file_bytes(rel_path.to_logical_path(&self.context.workspace_root))?
-                }
-            };
-
-            let mut blob = CompressableBlob::new(source.digest, bytes);
+        for input in blob_inputs {
+            let mut blob = CompressableBlob::from_blob(input.into_blob()?);
             blob.compress(compression)?;
 
             blobs.push(blob);
-        }
-
-        if streaming {
-            return self
-                .store_blob_streamed(blobs.remove(0))
-                .await
-                .map(|digest| vec![digest]);
         }
 
         let response = match self
@@ -658,85 +632,133 @@ impl GrpcRemoteStorage {
         blob.compression = compression;
         blob.decompress()?;
 
-        let actual_digest = Digest::from_bytes(&blob.bytes)?;
-
-        if actual_digest != blob_digest {
-            return Err(RemoteError::GrpcDownloadDigestMismatch {
-                actual: actual_digest,
-                expected: blob_digest,
-            }
-            .into());
+        if !check_blob_integrity(&blob.digest, &blob.bytes)? {
+            return Ok(None);
         }
 
         Ok(Some(blob))
     }
 
-    async fn store_blob_streamed(&self, blob: CompressableBlob) -> miette::Result<Digest> {
+    async fn store_blob_streamed(&self, blob_input: BlobInput) -> miette::Result<Digest> {
+        let BlobInput { content, digest } = blob_input;
+
+        // The negotiated compressor is applied to the byte stream below, so the
+        // resource name advertises the matching `compressed-blobs/{c}/...` form.
+        // The digest embedded in the name stays the *uncompressed* digest per the
+        // REAPI spec, which is what the server verifies against on commit.
+        let compression = self.streaming_compression();
         let resource_name = build_write_resource_name(
             self.get_instance_name(),
             self.get_uuid(),
-            &blob.digest,
-            blob.compression,
+            &digest,
+            compression,
         );
-        // Stream the (possibly compressed) payload; the digest embedded in the
-        // resource name stays the uncompressed digest per the REAPI spec.
-        let total_bytes = blob.inner.bytes.len() as i64;
-        let stream_error = Arc::new(Mutex::new(None));
-        let stream_error_clone = stream_error.clone();
 
-        let stream = async_stream::stream! {
-            let reader = ReaderStream::new(blob.inner.bytes.as_ref());
-            let mut written_bytes: i64 = 0;
-
-            for await read_result in reader {
-                match read_result {
-                    Ok(chunk) => {
-                        let write_offset = written_bytes;
-                        written_bytes += chunk.len() as i64;
-
-                        yield WriteRequest {
-                            resource_name: resource_name.clone(),
-                            write_offset,
-                            finish_write: written_bytes >= total_bytes,
-                            data: chunk.to_vec(),
-                        }
-                    },
-                    Err(error) => {
-                        *stream_error_clone.lock().await = Some(error);
-                        break;
-                    },
-                }
+        // Open the source up front so a missing or unreadable file surfaces as a
+        // normal error, instead of panicking inside the request stream where
+        // tonic has no way to receive it. Concrete reader types throughout
+        // (rather than `Box<dyn AsyncRead>`): the trait object trips
+        // `async_stream`'s lifetime elaboration inside `async_trait`'s boxed
+        // future. `Either` is `AsyncRead` when both halves are. Streaming is
+        // normally a file; an inline blob only lands here when stdout/stderr is
+        // large enough to clear the batch threshold.
+        let source = match content {
+            BlobContent::File(path) => {
+                Either::Left(tokio::fs::File::open(&path).await.map_err(|error| {
+                    RemoteError::GrpcStreamUploadFailed {
+                        error: Box::new(error),
+                    }
+                })?)
             }
+            BlobContent::Inline(bytes) => Either::Right(std::io::Cursor::new(bytes)),
         };
 
-        let result = self.get_bs_client().write(Request::new(stream)).await;
+        // Compress the stream chunk-by-chunk when negotiated, so the payload
+        // matches the resource name without ever holding the whole blob in
+        // memory. Level 1 matches the batched path and bazel-remote.
+        let reader = match compression {
+            RemoteCompression::Zstd => Either::Left(ZstdEncoder::with_quality(
+                BufReader::new(source),
+                Level::Precise(1),
+            )),
+            RemoteCompression::None => Either::Right(source),
+        };
 
-        if let Some(error) = Arc::into_inner(stream_error).and_then(|error| error.into_inner()) {
+        // A read error mid-stream can't be returned through tonic's
+        // `Stream<Item = WriteRequest>`, so stash the first one and surface it
+        // once the call returns.
+        let read_error = Arc::new(Mutex::new(None));
+        let read_error_writer = Arc::clone(&read_error);
+
+        let stream = async_stream::stream! {
+            let mut chunks = ReaderStream::with_capacity(reader, UPLOAD_CHUNK_SIZE);
+            let mut offset: i64 = 0;
+            let mut name = resource_name; // sent on the first request only
+            let mut pending: Option<Bytes> = None; // one-chunk lookahead
+
+            while let Some(result) = chunks.next().await {
+                let chunk = match result {
+                    Ok(chunk) => chunk,
+                    Err(error) => {
+                        *read_error_writer.lock().await = Some(error);
+                        return;
+                    }
+                };
+
+                // Emit the previous chunk now that we know it isn't the last.
+                if let Some(data) = pending.replace(chunk) {
+                    let len = data.len() as i64;
+
+                    yield WriteRequest {
+                        resource_name: std::mem::take(&mut name),
+                        write_offset: offset,
+                        finish_write: false,
+                        data: data.to_vec(),
+                    };
+
+                    offset += len;
+                }
+            }
+
+            // The final (or only) chunk carries finish_write; it's empty for a
+            // zero-byte blob, which still commits correctly.
+            yield WriteRequest {
+                resource_name: name,
+                write_offset: offset,
+                finish_write: true,
+                data: pending.unwrap_or_default().to_vec(),
+            };
+        };
+
+        let response = self.get_bs_client().write(Request::new(stream)).await;
+
+        // Prefer the real read error over tonic's transport-level wrapper.
+        if let Some(error) = Arc::into_inner(read_error).and_then(|cell| cell.into_inner()) {
             return Err(RemoteError::GrpcStreamUploadFailed {
                 error: Box::new(error),
             }
             .into());
         }
 
-        match result {
-            Ok(response) => {
-                let result = response.into_inner();
+        let committed = response
+            .map_err(|status| self.map_status_error("store_blob_streamed", status))?
+            .into_inner()
+            .committed_size;
 
-                // A compressed upload the server already had returns -1.
-                if result.committed_size != total_bytes && result.committed_size != -1 {
-                    return Err(RemoteError::GrpcUploadBytesMismatch {
-                        actual: result.committed_size,
-                        expected: total_bytes,
-                    }
-                    .into());
-                }
+        // An uncompressed write commits exactly the blob size (or -1 for a blob
+        // the server already had). A compressed write commits a server-defined
+        // count of compressed bytes we can't predict here, so we lean on the
+        // server verifying the uncompressed digest from the resource name, plus
+        // the hash check when the blob is read back.
+        if compression == RemoteCompression::None && committed != digest.size && committed != -1 {
+            return Err(RemoteError::GrpcUploadBytesMismatch {
+                actual: committed,
+                expected: digest.size,
             }
-            Err(status) => {
-                return Err(self.map_status_error("store_blob_streamed", status).into());
-            }
-        };
+            .into());
+        }
 
-        Ok(blob.inner.digest)
+        Ok(digest)
     }
 }
 

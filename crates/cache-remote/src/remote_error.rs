@@ -1,6 +1,5 @@
 use miette::Diagnostic;
 use moon_config::RemoteCompression;
-use moon_hash::Digest;
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -25,16 +24,6 @@ pub enum RemoteError {
         #[source]
         error: Box<tonic::Status>,
     },
-
-    #[diagnostic(code(remote::grpc::download_digest_mismatch))]
-    #[error(
-        "Failed to download blob, mismatched blob digests. Received {}:{}, but we expected {}:{}.",
-        .actual.hash,
-        .actual.size,
-        .expected.hash,
-        .expected.size,
-    )]
-    GrpcDownloadDigestMismatch { actual: Digest, expected: Digest },
 
     #[diagnostic(code(remote::grpc::upload_bytes_mismatch))]
     #[error("Failed to upload blob. Received bytes was {actual}, but we expected {expected}.")]

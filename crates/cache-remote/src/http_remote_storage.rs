@@ -3,16 +3,15 @@ use crate::http_tls::*;
 use crate::remote_error::RemoteError;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{Blob, BlobContent, BlobSource, Bytes};
-use moon_cache_storage::CacheContext;
-use moon_cache_storage::{CacheCapabilities, Manifest, StorageBackend};
+use moon_blob::{BlobContent, BlobInput, BlobOutput};
+use moon_cache_storage::{
+    CacheCapabilities, CacheContext, Manifest, StorageBackend, check_blob_integrity,
+};
 use moon_common::{Id, color, is_remote};
 use moon_config::RemoteCompression;
 use moon_hash::Digest;
 use reqwest::Client;
 use reqwest::header::HeaderMap;
-use rustc_hash::FxHashSet;
-use starbase_utils::fs;
 use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tokio::sync::Semaphore;
@@ -94,8 +93,12 @@ impl StorageBackend for HttpRemoteStorage {
         &self.id
     }
 
-    fn is_enabled(&self) -> bool {
+    fn is_readable(&self) -> bool {
         self.context.remote_config.is_enabled() && self.client.get().is_some()
+    }
+
+    fn is_writable(&self) -> bool {
+        self.is_readable()
     }
 
     async fn connect(&self) -> miette::Result<()> {
@@ -226,20 +229,17 @@ impl StorageBackend for HttpRemoteStorage {
         }
     }
 
-    async fn find_missing_blobs(
-        &self,
-        blob_digests: Vec<Digest>,
-    ) -> miette::Result<FxHashSet<Digest>> {
+    async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
         // No way to query this information, so just assume all are missing?
-        Ok(FxHashSet::from_iter(blob_digests))
+        Ok(blob_digests)
     }
 
     async fn retrieve_blobs(
         &self,
         blob_digests: Vec<Digest>,
         _stream: bool,
-    ) -> miette::Result<Vec<Blob>> {
-        let mut set = JoinSet::<miette::Result<Option<Bytes>>>::new();
+    ) -> miette::Result<Vec<BlobOutput>> {
+        let mut set = JoinSet::<miette::Result<Option<BlobOutput>>>::new();
         let debug_enabled = self.context.remote_debug;
 
         for digest in blob_digests {
@@ -257,11 +257,18 @@ impl StorageBackend for HttpRemoteStorage {
                         let status = response.status();
 
                         if status.is_success() {
-                            return if let Ok(bytes) = response.bytes().await {
-                                Ok(Some(bytes))
-                            } else {
-                                Ok(None)
+                            let Ok(bytes) = response.bytes().await else {
+                                return Ok(None);
                             };
+
+                            if !check_blob_integrity(&digest, &bytes)? {
+                                return Ok(None);
+                            }
+
+                            return Ok(Some(BlobOutput {
+                                content: BlobContent::Inline(bytes),
+                                digest,
+                            }));
                         }
 
                         Err(map_response_error("retrieve_blobs", response, debug_enabled).into())
@@ -274,8 +281,8 @@ impl StorageBackend for HttpRemoteStorage {
         let mut blobs = vec![];
 
         while let Some(result) = set.join_next().await {
-            if let Some(bytes) = result.into_diagnostic()?? {
-                blobs.push(Blob::try_from(bytes)?);
+            if let Some(blob) = result.into_diagnostic()?? {
+                blobs.push(blob);
             }
         }
 
@@ -284,36 +291,30 @@ impl StorageBackend for HttpRemoteStorage {
 
     async fn store_blobs(
         &self,
-        blob_sources: Vec<BlobSource>,
+        blob_inputs: Vec<BlobInput>,
         _stream: bool,
     ) -> miette::Result<Vec<Digest>> {
         let mut set = JoinSet::<miette::Result<Option<Digest>>>::new();
         let debug_enabled = self.context.remote_debug;
 
-        for source in blob_sources {
+        for input in blob_inputs {
             let client = self.get_client();
-            let url = self.get_endpoint("cas", &source.digest.hash);
+            let url = self.get_endpoint("cas", &input.digest.hash);
             let semaphore = self.semaphore.clone();
-            let workspace_root = self.context.workspace_root.clone();
 
             set.spawn(async move {
                 let Ok(_permit) = semaphore.acquire().await else {
                     return Ok(None);
                 };
 
-                let blob = match source.content {
-                    BlobContent::Inline(bytes) => Vec::from(bytes),
-                    BlobContent::File(rel_path) => {
-                        fs::read_file_bytes(rel_path.to_logical_path(workspace_root))?
-                    }
-                };
+                let blob = input.into_blob()?;
 
-                match client.put(url).body(blob).send().await {
+                match client.put(url).body(blob.bytes).send().await {
                     Ok(response) => {
                         let status = response.status();
 
                         if status.is_success() {
-                            return Ok(Some(source.digest));
+                            return Ok(Some(blob.digest));
                         }
 
                         Err(map_response_error("store_blobs", response, debug_enabled).into())

@@ -2,17 +2,18 @@ use moon_blob::Blob;
 use moon_cas::{CasError, CasStore};
 use moon_config::CacheCasConfig;
 use moon_hash::ContentHash;
-use starbase_sandbox::create_empty_sandbox;
+use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::io::Cursor;
 
-fn create_store(sandbox: &starbase_sandbox::Sandbox) -> CasStore {
-    CasStore::new(sandbox.path().join("cas"), &CacheCasConfig::default()).unwrap()
+fn create_store(sandbox: &Sandbox) -> CasStore {
+    CasStore::new(sandbox.path().join("cas"), CacheCasConfig::default()).unwrap()
 }
 
-fn create_verified_store(sandbox: &starbase_sandbox::Sandbox) -> CasStore {
+fn create_verified_store(sandbox: &Sandbox) -> CasStore {
     CasStore::new(
         sandbox.path().join("cas"),
-        &CacheCasConfig {
+        CacheCasConfig {
+            max_size: None,
             verify_integrity: true,
         },
     )
@@ -348,18 +349,20 @@ mod cas {
         }
 
         #[test]
-        fn returns_false_when_already_present() {
+        fn writes_unconditionally_when_present() {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
             let data = b"already there";
             let hash = ContentHash::hash_bytes(data).unwrap();
 
-            // First write commits to disk.
+            // `write` is an unconditional primitive — the existence check lives
+            // in the `store_*` callers — so it commits and reports true every
+            // time, leaving no temp behind.
             assert!(store.write(&hash, data).unwrap());
-
-            // Second write short-circuits — the existence check makes it a no-op.
-            assert!(!store.write(&hash, data).unwrap());
+            assert!(store.write(&hash, data).unwrap());
+            assert!(store.contains_object(&hash));
+            assert_eq!(count_temp_files(&store), 0);
         }
     }
 
@@ -383,7 +386,7 @@ mod cas {
         }
 
         #[test]
-        fn returns_false_when_already_present() {
+        fn writes_unconditionally_when_present() {
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
@@ -392,17 +395,18 @@ mod cas {
             std::fs::write(&source, data).unwrap();
             let hash = ContentHash::hash_bytes(data).unwrap();
 
+            // Unconditional primitive: `store_file` does the existence check, so
+            // write_file itself reflinks and commits on every call.
             assert!(store.write_file(&hash, &source).unwrap());
-
-            // Second call short-circuits on the existence check; the source
-            // is never touched again.
-            assert!(!store.write_file(&hash, &source).unwrap());
+            assert!(store.write_file(&hash, &source).unwrap());
+            assert_eq!(store.read(&hash).unwrap(), data);
         }
 
         #[test]
-        fn warm_cache_creates_no_temp_file() {
-            // Like `store_file`, an object already in the store must short
-            // circuit before any temp file is staged.
+        fn leaves_no_temp_file_behind() {
+            // The warm-cache short-circuit now lives in `store_file`; the
+            // write_file primitive always stages a temp but renames it into the
+            // store, never leaving one behind.
             let sandbox = create_empty_sandbox();
             let store = create_store(&sandbox);
 
@@ -411,15 +415,11 @@ mod cas {
             std::fs::write(&source, data).unwrap();
             let hash = ContentHash::hash_bytes(data).unwrap();
 
-            assert!(store.write_file(&hash, &source).unwrap());
+            store.write_file(&hash, &source).unwrap();
+            store.write_file(&hash, &source).unwrap();
 
-            std::fs::remove_dir_all(&store.temp_dir).unwrap();
-
-            assert!(!store.write_file(&hash, &source).unwrap());
-            assert!(
-                !store.temp_dir.exists(),
-                "warm-cache write_file must not create a temp file"
-            );
+            assert!(store.contains_object(&hash));
+            assert_eq!(count_temp_files(&store), 0);
         }
     }
 
@@ -687,7 +687,7 @@ mod cas {
         fn multiple_threads_same_content() {
             let sandbox = create_empty_sandbox();
             let store =
-                CasStore::new(sandbox.path().join("cas"), &CacheCasConfig::default()).unwrap();
+                CasStore::new(sandbox.path().join("cas"), CacheCasConfig::default()).unwrap();
 
             let data = b"concurrent content";
 

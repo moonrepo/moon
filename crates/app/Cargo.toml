@@ -38,7 +38,6 @@ moon_process_augment = { path = "../process-augment" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../query" }
-moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_task_graph = { path = "../task-graph" }
 moon_task_runner = { path = "../task-runner" }

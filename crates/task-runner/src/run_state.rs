@@ -3,7 +3,6 @@ use moon_action_context::TargetState;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_hash::Digest;
-use moon_remote::RemoteService;
 use moon_task::Task;
 
 cache_item!(
@@ -17,9 +16,6 @@ cache_item!(
 
 #[derive(Default)]
 pub struct TaskRunState {
-    /// The bytes of our internal fingerprint.
-    pub bytes: Vec<u8>,
-
     /// The digest of our internal fingerprint. This is separate from the action
     /// digest as this implementation is not Bazel compatible.
     pub digest: Digest,
@@ -40,7 +36,7 @@ pub struct TaskRunState {
 
 impl TaskRunState {
     pub fn new(app_context: &AppContext, task: &Task) -> Self {
-        let remote_enabled = RemoteService::is_enabled();
+        let remote_enabled = app_context.cache_engine.storage.is_remote_enabled();
 
         Self {
             local_cas_enabled: app_context.workspace_config.experiments.cas_outputs_cache,

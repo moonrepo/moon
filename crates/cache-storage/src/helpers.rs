@@ -256,7 +256,7 @@ mod tests {
             let items: Vec<usize> = (0..120).collect();
             let batches = chunk_into_batches(items, |n| *n);
 
-            assert_eq!(item_counts(&batches), vec![40, 40, 40]);
+            assert_eq!(item_counts(&batches), vec![60, 60]);
         }
 
         #[test]

@@ -359,6 +359,10 @@ impl CasStore {
     fn commit_temp_file(&self, hash: &ContentHash, guard: &mut TempGuard) -> miette::Result<()> {
         let dest = self.object_path(hash);
 
+        if let Some(shard) = dest.parent() {
+            std::fs::create_dir_all(shard).into_diagnostic()?;
+        }
+
         std::fs::rename(&guard.path, &dest).into_diagnostic()?;
 
         guard.committed = true;

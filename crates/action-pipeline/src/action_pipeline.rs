@@ -5,7 +5,6 @@ use crate::job_dispatcher::JobDispatcher;
 use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::notifications_subscriber::NotificationsSubscriber;
-use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 // use crate::subscribers::telemetry_subscriber::TelemetrySubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
@@ -402,10 +401,6 @@ impl ActionPipeline {
                 ))
                 .await;
         }
-
-        debug!("Subscribing remote services");
-
-        self.emitter.subscribe(RemoteSubscriber).await;
 
         debug!("Subscribing run reports and estimates");
 

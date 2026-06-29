@@ -12,6 +12,7 @@ use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_notifier::notify_webhook;
 use moon_process::ProcessRegistry;
 use moon_target::Target;
+use moon_task_runner::output_archiver::ArchiveOutcome;
 use moon_task_runner::{TaskRunState, output_archiver::OutputArchiver};
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
@@ -88,7 +89,9 @@ impl MoonDaemon for DaemonService {
             .await
             .map_err(|error| Status::unknown(error.to_string()))?;
 
-        Ok(Response::new(ArchiveTaskOutputsResponse { archived }))
+        Ok(Response::new(ArchiveTaskOutputsResponse {
+            archived: matches!(archived, ArchiveOutcome::Queued),
+        }))
     }
 
     async fn clean_cache(

@@ -1,7 +1,7 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
-use miette::IntoDiagnostic;
-use moon_blob::{BlobContent, BlobSource, Bytes};
+use moon_blob::{BlobCleanStats, BlobContent, BlobInput};
+use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
@@ -9,9 +9,15 @@ use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::time::SystemTime;
-use tokio::task::{JoinHandle, JoinSet};
+use std::time::{Duration, SystemTime};
+use tokio::task::{AbortHandle, JoinHandle, JoinSet};
 use tracing::{debug, trace, warn};
+
+/// Upper bound on how long shutdown waits for queued background cache writes
+/// (remote uploads, etc.) to drain. A hung backend must never make exiting
+/// slower than just running the task would have been; stragglers past this are
+/// aborted and reported, and simply get re-uploaded on the next run.
+const BACKGROUND_FLUSH_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[derive(Clone, Debug)]
 pub struct CacheContext {
@@ -23,14 +29,54 @@ pub struct CacheContext {
     pub workspace_root: PathBuf,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
+pub struct StorageOptions {
+    pub only_backends: Vec<Id>,
+    pub include_local: bool,
+    pub include_remote: bool,
+}
+
+impl Default for StorageOptions {
+    fn default() -> Self {
+        Self {
+            only_backends: vec![],
+            include_local: true,
+            include_remote: true,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Storage {
+    background_tasks: Arc<Mutex<Vec<JoinHandle<miette::Result<()>>>>>,
     local_backends: Vec<BoxedStorageBackend>,
     remote_backends: Vec<BoxedStorageBackend>,
-    background_tasks: Mutex<Vec<JoinHandle<miette::Result<()>>>>,
+
+    context: CacheContext,
+    options: StorageOptions,
 }
 
 impl Storage {
+    pub fn new(context: CacheContext) -> Self {
+        Self {
+            background_tasks: Arc::new(Mutex::new(vec![])),
+            local_backends: vec![],
+            remote_backends: vec![],
+            context,
+            options: StorageOptions::default(),
+        }
+    }
+
+    pub fn with_options(&self, options: StorageOptions) -> Self {
+        Self {
+            background_tasks: Arc::clone(&self.background_tasks),
+            local_backends: self.local_backends.clone(),
+            remote_backends: self.remote_backends.clone(),
+            context: self.context.clone(),
+            options,
+        }
+    }
+
     pub fn add_local_backend(&mut self, backend: impl StorageBackend + 'static) {
         self.local_backends.push(Arc::new(backend));
     }
@@ -68,21 +114,68 @@ impl Storage {
         Ok(())
     }
 
-    pub fn get_backends(&self) -> impl Iterator<Item = &BoxedStorageBackend> {
-        self.local_backends
-            .iter()
-            .chain(self.remote_backends.iter())
+    pub fn get_backends(&self) -> Vec<&BoxedStorageBackend> {
+        let mut backends = vec![];
+
+        if self.options.only_backends.is_empty() {
+            if self.options.include_local {
+                backends.extend(self.local_backends.iter());
+            }
+
+            if self.options.include_remote {
+                backends.extend(self.remote_backends.iter());
+            }
+        } else {
+            backends.extend(self.local_backends.iter());
+            backends.extend(self.remote_backends.iter());
+            backends.retain(|backend| self.options.only_backends.contains(backend.get_id()));
+        }
+
+        backends
+    }
+
+    pub fn is_local_enabled(&self) -> bool {
+        !self.local_backends.is_empty()
     }
 
     pub fn is_remote_enabled(&self) -> bool {
         !self.remote_backends.is_empty()
     }
 
+    /// Garbage-collect the writable local backends. Remotes are skipped — they
+    /// manage their own eviction server-side. A failure in one backend is logged
+    /// and skipped rather than aborting the whole clean.
+    pub async fn clean(&self, lifetime: Duration) -> miette::Result<BlobCleanStats> {
+        let mut stats = BlobCleanStats::default();
+
+        for backend in &self.local_backends {
+            if !backend.is_writable() {
+                continue;
+            }
+
+            match backend.gc(lifetime).await {
+                Ok(backend_stats) => {
+                    stats.blobs_removed += backend_stats.blobs_removed;
+                    stats.bytes_saved += backend_stats.bytes_saved;
+                }
+                Err(error) => {
+                    warn!(
+                        storage = backend.get_id().as_str(),
+                        error = error.to_string(),
+                        "Failed to garbage collect storage backend"
+                    );
+                }
+            }
+        }
+
+        Ok(stats)
+    }
+
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
         trace!(hash = digest.hash.as_str(), "Checking for a cache manifest");
 
         for backend in self.get_backends() {
-            if !backend.is_enabled() {
+            if !backend.is_readable() {
                 continue;
             }
 
@@ -99,6 +192,10 @@ impl Storage {
                 return Ok(Some(ManifestSource {
                     backend: Arc::clone(backend),
                     manifest,
+                    remote: self
+                        .remote_backends
+                        .iter()
+                        .any(|remote| remote.get_id() == backend.get_id()),
                 }));
             }
         }
@@ -126,7 +223,7 @@ impl Storage {
         // Store the manifest in all backends in parallel, but if any fail,
         // continue storing the rest for failover/redundancy in the future
         for backend in self.get_backends() {
-            if !backend.is_enabled() {
+            if !backend.is_writable() {
                 continue;
             }
 
@@ -134,6 +231,7 @@ impl Storage {
                 Arc::clone(backend),
                 digest.to_owned(),
                 manifest.clone(),
+                self.context.workspace_root.clone(),
             ))));
         }
 
@@ -156,6 +254,7 @@ impl Storage {
         let ManifestSource {
             mut manifest,
             backend: original_backend,
+            ..
         } = manifest_source;
         let mut backends = VecDeque::from_iter(self.get_backends());
         let mut count = 1;
@@ -171,9 +270,8 @@ impl Storage {
         // and also copy the missing blobs to the original backend
         while !manifest.is_hydrated()
             && let Some(backend) = backends.pop_front()
-            && backend.is_enabled()
         {
-            if backend.get_id() == original_backend.get_id() {
+            if !backend.is_readable() || backend.get_id() == original_backend.get_id() {
                 continue;
             }
 
@@ -193,7 +291,7 @@ impl Storage {
         if manifest.is_hydrated() {
             trace!(
                 hash = digest.hash.as_str(),
-                "Hydrating cache manifest from {count} storage backends"
+                "Hydrated cache manifest from {count} storage backends"
             );
 
             return Ok(Some(manifest));
@@ -216,8 +314,46 @@ impl Storage {
                 .collect::<Vec<_>>()
         };
 
-        for handle in background_tasks {
-            let _ = handle.await.into_diagnostic()?;
+        if background_tasks.is_empty() {
+            return Ok(());
+        }
+
+        debug!(
+            timeout_secs = BACKGROUND_FLUSH_TIMEOUT.as_secs(),
+            tasks = background_tasks.len(),
+            "Waiting for background storage tasks to complete"
+        );
+
+        // Keep abort handles so stragglers can be cancelled if the drain times
+        // out (awaiting the handles themselves would consume them first).
+        let abort_handles = background_tasks
+            .iter()
+            .map(JoinHandle::abort_handle)
+            .collect::<Vec<AbortHandle>>();
+
+        let drained = tokio::time::timeout(BACKGROUND_FLUSH_TIMEOUT, async {
+            for handle in background_tasks {
+                // These are best-effort cache writes; a failed or panicked
+                // upload must not fail shutdown, so swallow the result.
+                let _ = handle.await;
+            }
+        })
+        .await;
+
+        if drained.is_err() {
+            let dropped = abort_handles
+                .iter()
+                .filter(|handle| !handle.is_finished())
+                .count();
+
+            for handle in abort_handles {
+                handle.abort();
+            }
+
+            warn!(
+                timeout_secs = BACKGROUND_FLUSH_TIMEOUT.as_secs(),
+                dropped, "Timed out flushing background storage tasks; {dropped} were dropped",
+            );
         }
 
         Ok(())
@@ -228,35 +364,22 @@ async fn archive_manifest_in_backend(
     backend: BoxedStorageBackend,
     digest: Digest,
     mut manifest: Manifest,
+    workspace_root: PathBuf,
 ) -> miette::Result<()> {
-    let blob_sources = manifest.collect_blob_sources();
-    let initial_count = blob_sources.len();
+    let blob_inputs = manifest.collect_blob_inputs(&workspace_root);
 
-    if !blob_sources.is_empty() {
-        trace!(
-            storage = backend.get_id().as_str(),
-            hash = digest.hash.as_str(),
-            "Storing {initial_count} blobs"
-        );
-
+    // Before we store the manifest, we should ensure all associated blobs are stored.
+    // This ensures we don't end up with dangling manifests that reference missing blobs.
+    if !blob_inputs.is_empty() {
         manifest.upload_started_at = Some(SystemTime::now());
 
-        // Before we store the manifest, we should ensure all associated blobs are stored.
-        // This ensures we don't end up with dangling manifests that reference missing blobs.
-        let uploaded = Arc::clone(&backend)
-            .store_blobs_batched(digest.clone(), blob_sources)
+        let stored = Arc::clone(&backend)
+            .store_blobs_batched(digest.clone(), blob_inputs)
             .await?;
 
         manifest.upload_completed_at = Some(SystemTime::now());
 
-        trace!(
-            storage = backend.get_id().as_str(),
-            hash = digest.hash.as_str(),
-            "Stored {} of {initial_count} blobs",
-            uploaded.len()
-        );
-
-        if uploaded.is_empty() {
+        if !stored.success {
             return Ok(());
         }
     }
@@ -285,33 +408,22 @@ async fn hydrate_manifest_from_backend(
     backend: &BoxedStorageBackend,
     digest: &Digest,
     manifest: &mut Manifest,
-) -> miette::Result<FxHashMap<Digest, Bytes>> {
+) -> miette::Result<FxHashMap<Digest, BlobContent>> {
     let blob_digests = manifest.collect_unhydrated_blob_digests();
-    let initial_count = blob_digests.len();
-
-    trace!(
-        storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
-        "Retrieving {initial_count} blobs"
-    );
 
     // Retrieve all blobs for digests that have yet to be hydrated
-    let blobs_map = Arc::clone(backend)
+    let received = Arc::clone(backend)
         .retrieve_blobs_batched(digest.clone(), blob_digests)
-        .await?
+        .await?;
+
+    let blobs_map = received
+        .blobs
         .into_iter()
-        .map(|blob| (blob.digest, blob.bytes))
+        .map(|blob| (blob.digest, blob.content))
         .collect::<FxHashMap<_, _>>();
 
-    trace!(
-        storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
-        "Retrieved {} of {initial_count} blobs",
-        blobs_map.len()
-    );
-
     // And then copy their data into the manifest
-    manifest.hydrate(&blobs_map);
+    manifest.hydrate(&blobs_map)?;
 
     Ok(blobs_map)
 }
@@ -327,30 +439,30 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
     let unhydrated_digests = manifest.collect_unhydrated_blob_digests();
     let blobs_map = hydrate_manifest_from_backend(backend, digest, manifest).await?;
 
-    // Loop through and create the blob sources for the missing blobs
-    let mut blob_sources = vec![];
+    // Loop through and create the blob inputs for the missing blobs
+    let mut blob_inputs = vec![];
 
     for digest in unhydrated_digests {
-        if let Some(bytes) = blobs_map.get(&digest) {
-            blob_sources.push(BlobSource {
-                content: BlobContent::Inline(bytes.to_owned()),
+        if let Some(content) = blobs_map.get(&digest) {
+            blob_inputs.push(BlobInput {
+                content: content.to_owned(),
                 digest,
             });
         }
     }
 
     // Then store them in the original backend in which they were missing
-    if !blob_sources.is_empty() {
+    if !blob_inputs.is_empty() && original_backend.is_writable() {
         trace!(
             to_storage = original_backend.get_id().as_str(),
             from_storage = backend.get_id().as_str(),
             hash = digest.hash.as_str(),
             "Copying {} missing blobs to original storage backend",
-            blob_sources.len()
+            blob_inputs.len()
         );
 
         Arc::clone(original_backend)
-            .store_blobs_batched(digest.to_owned(), blob_sources)
+            .store_blobs_batched(digest.to_owned(), blob_inputs)
             .await?;
     }
 

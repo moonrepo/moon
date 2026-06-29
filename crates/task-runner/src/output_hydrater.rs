@@ -1,42 +1,47 @@
-use crate::remote_compat::*;
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
-use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::ExternalDigestExt;
+use moon_cache::{Manifest, ManifestFile, ManifestSource, ManifestSymlink, StorageOptions};
 use moon_common::{
     color,
-    path::{PathExt, clean_components},
+    path::{WorkspaceRelativePath, clean_components},
 };
-use moon_remote::RemoteService;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_archive::tar::TarUnpacker;
-use starbase_utils::{fs, glob::GlobSet};
-use std::fmt::Debug;
+use starbase_utils::{
+    fs::{self, FsError},
+    glob::GlobSet,
+};
+use std::fmt::{self, Debug};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
 
-#[derive(Clone, PartialEq)]
 pub enum HydrateFrom {
     PreviousOutput,
     LocalArchive,
-    LocalCache(ActionResult),
-    RemoteCache(ActionResult),
+    Storage(Box<ManifestSource>),
 }
 
 impl Debug for HydrateFrom {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             HydrateFrom::PreviousOutput => write!(f, "PreviousOutput"),
             HydrateFrom::LocalArchive => write!(f, "LocalArchive"),
-            HydrateFrom::LocalCache(_) => write!(f, "LocalCache"),
-            HydrateFrom::RemoteCache(_) => write!(f, "RemoteCache"),
+            HydrateFrom::Storage(source) => write!(f, "Storage({})", source.backend.get_id()),
         }
     }
+}
+
+pub enum HydrateOutcome {
+    Skipped,
+    Missed,
+    Hit,
+    HitFromStorage(Manifest, bool),
 }
 
 pub struct OutputHydrater<'task> {
@@ -60,167 +65,128 @@ impl OutputHydrater<'_> {
     #[instrument(skip(self, state))]
     pub async fn hydrate(
         &self,
-        from: &mut HydrateFrom,
+        from: HydrateFrom,
         hash: &str,
         state: &TaskRunState,
-    ) -> miette::Result<bool> {
+    ) -> miette::Result<HydrateOutcome> {
         match from {
-            HydrateFrom::PreviousOutput => Ok(true),
+            HydrateFrom::PreviousOutput => Ok(HydrateOutcome::Hit),
 
             HydrateFrom::LocalArchive => self.unpack_local_archive(hash, state).await,
 
-            HydrateFrom::LocalCache(result) => self.hydrate_local(hash, state, result).await,
-
-            HydrateFrom::RemoteCache(result) => self.hydrate_remote(hash, state, result).await,
-        }
-    }
-
-    async fn hydrate_local(
-        &self,
-        hash: &str,
-        state: &TaskRunState,
-        result: &mut ActionResult,
-    ) -> miette::Result<bool> {
-        if !state.local_cache_readable {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Local cache is not readable, skipping output hydration"
-            );
-
-            return Ok(false);
-        }
-
-        if !state.local_cas_enabled {
-            return self.unpack_local_archive(hash, state).await;
-        }
-
-        debug!(
-            task_target = self.task.target.as_str(),
-            hash, "Hydrating task outputs from local cache"
-        );
-
-        // Fetch all outputs from the local CAS
-        let app_context = Arc::clone(self.app_context);
-        let mut action_result = result.clone();
-
-        let action_result = spawn_blocking(move || {
-            // Output files are materialized by reflinking them straight out of
-            // the CAS (see `hydrate_outputs_from_cas` below), so their bytes are
-            // never buffered here. Only the small inline logs are read into
-            // memory, since the operation needs them to reconstruct stdio.
-
-            // Hydrate stderr
-            if let Some(digest) = action_result
-                .stderr_digest
-                .as_ref()
-                .and_then(|digest| digest.to_internal_digest().ok())
-                && action_result.stderr_raw.is_empty()
-                && digest.size > 0
-            {
-                action_result.stderr_raw = app_context.cache_engine.cas.read(&digest.hash)?;
-            }
-
-            // Hydrate stdout
-            if let Some(digest) = action_result
-                .stdout_digest
-                .as_ref()
-                .and_then(|digest| digest.to_internal_digest().ok())
-                && action_result.stdout_raw.is_empty()
-                && digest.size > 0
-            {
-                action_result.stdout_raw = app_context.cache_engine.cas.read(&digest.hash)?;
-            }
-
-            Ok::<_, miette::Report>(action_result)
-        })
-        .await
-        .into_diagnostic()??;
-
-        // Materialize output files by reflinking them out of the local CAS — a
-        // copy-on-write clone that avoids round-tripping each file's bytes
-        // through memory the way `read` + write would.
-        self.hydrate_outputs_from_cas(&action_result)?;
-
-        *result = action_result;
-
-        Ok(true)
-    }
-
-    async fn hydrate_remote(
-        &self,
-        hash: &str,
-        state: &TaskRunState,
-        result: &mut ActionResult,
-    ) -> miette::Result<bool> {
-        if !state.remote_cache_readable {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Remote cache is not readable, attempting from local cache"
-            );
-
-            return self.hydrate_local(hash, state, result).await;
-        };
-
-        if state.digest.is_valid()
-            && let Some(remote) = RemoteService::session()
-        {
-            debug!(
-                task_target = self.task.target.as_str(),
-                hash, "Hydrating task outputs from remote cache"
-            );
-
-            self.delete_existing_outputs()?;
-
-            match remote.restore_action_result(&state.digest, result).await {
-                Ok(restored) => {
-                    if restored {
-                        self.write_outputs(result)?;
-
-                        return Ok(true);
-                    } else {
-                        self.delete_existing_outputs()?;
-                    }
+            HydrateFrom::Storage(source) => {
+                if !source.remote && !state.local_cas_enabled {
+                    return self.unpack_local_archive(hash, state).await;
                 }
-                Err(error) => {
-                    // If the download fails, we don't want to mark
-                    // the task as cached and to re-run instead, so
-                    // don't bubble up the error
-                    warn!(
-                        task_target = self.task.target.as_str(),
-                        hash,
-                        "Failed to download action result from remote service: {}",
-                        color::muted_light(error.to_string())
+
+                let task_target = self.task.target.as_str();
+
+                if state.local_cache_readable && state.remote_cache_readable {
+                    debug!(
+                        task_target,
+                        hash, "Hydrating task outputs from local and remote caches"
                     );
+                } else if state.local_cache_readable {
+                    debug!(task_target, hash, "Hydrating task outputs from local cache");
+                } else if state.remote_cache_readable {
+                    debug!(
+                        task_target,
+                        hash, "Hydrating task outputs from remote cache"
+                    );
+                } else {
+                    debug!(
+                        task_target,
+                        hash, "Cache is not readable, skipping task output hydration"
+                    );
+
+                    return Ok(HydrateOutcome::Skipped);
                 }
+
+                let use_local = state.local_cas_enabled && state.local_cache_readable;
+                let use_remote = state.remote_cache_readable;
+                let is_remote_backend = source.remote;
+
+                // Delete existing outputs first so that reflinking works
+                self.delete_existing_outputs()?;
+
+                // Retrieve the manifest from the local/remote caches
+                let manifest = self
+                    .app_context
+                    .cache_engine
+                    .storage
+                    .with_options(StorageOptions {
+                        include_local: use_local,
+                        include_remote: use_remote,
+                        ..Default::default()
+                    })
+                    .hydrate_manifest(&state.digest, *source)
+                    .await?;
+
+                if let Some(manifest) = &manifest {
+                    self.write_manifest_outputs(manifest)?;
+                }
+
+                Ok(match manifest {
+                    Some(manifest) => HydrateOutcome::HitFromStorage(manifest, is_remote_backend),
+                    None => HydrateOutcome::Missed,
+                })
             }
         }
+    }
 
-        debug!(
-            task_target = self.task.target.as_str(),
-            hash, "Failed to hydrate outputs from remote cache, attempting from local cache"
-        );
+    #[instrument(skip(self))]
+    fn write_manifest_outputs(&self, manifest: &Manifest) -> miette::Result<()> {
+        for file in &manifest.files {
+            if file.digest.is_none() {
+                continue;
+            }
 
-        self.hydrate_local(hash, state, result).await
+            let output_path = self.resolve_declared_output_path(&file.path)?;
+
+            self.write_output_file(output_path, file)?;
+        }
+
+        for link in &manifest.symlinks {
+            let output_path = self.resolve_declared_output_path(&link.path)?;
+
+            self.link_output_file(
+                self.resolve_workspace_path(&link.target).map_err(|_| {
+                    TaskRunnerError::OutputSymlinkOutsideOfWorkspace {
+                        output: output_path.clone(),
+                        target: PathBuf::from(link.target.as_str()),
+                    }
+                })?,
+                output_path,
+                link,
+            )?;
+        }
+
+        Ok(())
     }
 
     #[instrument(skip(self, state))]
-    async fn unpack_local_archive(&self, hash: &str, state: &TaskRunState) -> miette::Result<bool> {
+    async fn unpack_local_archive(
+        &self,
+        hash: &str,
+        state: &TaskRunState,
+    ) -> miette::Result<HydrateOutcome> {
         let archive_file = self.app_context.cache_engine.hash.get_archive_path(hash);
+        let task_target = self.task.target.as_str();
 
         if state.local_cache_readable && archive_file.exists() {
             debug!(
-                task_target = self.task.target.as_str(),
+                task_target,
                 hash,
                 archive_file = ?archive_file,
                 "Hydrating task outputs from local cache archive (legacy)"
             );
         } else if !state.local_cache_readable || !archive_file.exists() {
             debug!(
-                task_target = self.task.target.as_str(),
+                task_target,
                 hash, "Cache is not readable, skipping output hydration"
             );
 
-            return Ok(false);
+            return Ok(HydrateOutcome::Skipped);
         }
 
         // Clone values to run in a blocking thread
@@ -260,9 +226,11 @@ impl OutputHydrater<'_> {
 
         if !hydrated {
             self.delete_existing_outputs()?;
+
+            return Ok(HydrateOutcome::Missed);
         }
 
-        Ok(true)
+        Ok(HydrateOutcome::Hit)
     }
 
     fn delete_existing_outputs(&self) -> miette::Result<()> {
@@ -279,84 +247,103 @@ impl OutputHydrater<'_> {
         Ok(())
     }
 
-    /// Write outputs whose bytes are already in memory (the remote-cache path,
-    /// where the download populates `file.contents`).
-    fn write_outputs(&self, result: &ActionResult) -> miette::Result<()> {
-        for file in &result.output_files {
-            if file.digest.is_some() {
-                let output_path = self.resolve_declared_output_path(&file.path)?;
+    fn write_output_file(&self, output_path: PathBuf, file: &ManifestFile) -> miette::Result<()> {
+        let map_error = |error| FsError::Write {
+            path: output_path.clone(),
+            error: Box::new(error),
+        };
 
-                write_output_file(output_path, &file.contents, file)?;
-            }
+        // Reflink-or-copy from source file if available
+        let fd = if let Some(source) = &file.source_path {
+            fs::reflink_file(source, &output_path)?;
+
+            fs::open_file_for_writing(&output_path)?
+        }
+        // Otherwise write the bytes from the manifest
+        else {
+            let mut fd = fs::create_file(&output_path)?;
+
+            fd.write_all(file.bytes.as_deref().unwrap_or_default())
+                .map_err(map_error)?;
+
+            fd
+        };
+
+        if let Some(modified) = &file.modified_at {
+            fd.set_modified(*modified).map_err(map_error)?;
         }
 
-        self.write_output_symlinks(result)
-    }
+        #[cfg(unix)]
+        if let Some(mode) = &file.unix_mode {
+            use std::os::unix::fs::PermissionsExt;
 
-    /// Restore outputs that live in the local CAS by reflinking each object
-    /// directly to its declared path — a copy-on-write clone that never loads
-    /// the file into memory. The local-cache hydration path.
-    fn hydrate_outputs_from_cas(&self, result: &ActionResult) -> miette::Result<()> {
-        let cas = &self.app_context.cache_engine.cas;
-
-        for file in &result.output_files {
-            let Some(digest) = file
-                .digest
-                .as_ref()
-                .and_then(|digest| digest.to_internal_digest().ok())
-            else {
-                continue;
-            };
-
-            // Resolve (and validate) the destination before touching disk, so
-            // an untrusted action result can't escape the workspace.
-            let output_path = self.resolve_declared_output_path(&file.path)?;
-
-            if digest.size == 0 {
-                // Empty files have well-known content, and the empty blob may
-                // not be present locally (e.g. after a remote-only fetch), so
-                // write it directly rather than reflinking from the CAS.
-                write_output_file(output_path, b"", file)?;
-            } else {
-                cas.read_file(&digest.hash, &output_path)?;
-
-                // The reflink clones content but not the original mtime/mode.
-                apply_output_file_properties(&output_path, file)?;
-            }
-        }
-
-        self.write_output_symlinks(result)
-    }
-
-    fn write_output_symlinks(&self, result: &ActionResult) -> miette::Result<()> {
-        // Create symlinks after output files have been written,
-        // as the link target may reference one of these outputs
-        for link in &result.output_symlinks {
-            let target_path = self.resolve_workspace_path(&link.target).map_err(|_| {
-                TaskRunnerError::OutputSymlinkOutsideOfWorkspace {
-                    output: PathBuf::from(&link.path),
-                    target: PathBuf::from(&link.target),
-                }
-            })?;
-            let link_path = self.resolve_declared_output_path(&link.path)?;
-
-            link_output_file(target_path, link_path, link)?;
+            fd.set_permissions(std::fs::Permissions::from_mode(*mode))
+                .map_err(map_error)?;
         }
 
         Ok(())
     }
 
-    fn resolve_workspace_path(&self, raw_path: &str) -> miette::Result<PathBuf> {
-        let raw_path = Path::new(raw_path);
+    // Windows lint!
+    #[allow(unused_variables)]
+    fn link_output_file(
+        &self,
+        from_path: PathBuf,
+        to_path: PathBuf,
+        link: &ManifestSymlink,
+    ) -> miette::Result<()> {
+        if let Some(parent) = to_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
 
-        if raw_path.is_absolute() {
+        let map_error = |error| FsError::Create {
+            path: to_path.clone(),
+            error: Box::new(error),
+        };
+
+        #[cfg(windows)]
+        {
+            use std::os::windows::fs::{symlink_dir, symlink_file};
+
+            if from_path.is_dir() {
+                symlink_dir(&from_path, &to_path).map_err(map_error)?;
+            } else {
+                symlink_file(&from_path, &to_path).map_err(map_error)?;
+            }
+        }
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::{PermissionsExt, symlink};
+
+            symlink(&from_path, &to_path).map_err(map_error)?;
+
+            if let Some(mode) = &link.unix_mode {
+                let fd = fs::open_file_for_writing(&to_path)?;
+
+                fd.set_permissions(std::fs::Permissions::from_mode(*mode))
+                    .map_err(|error| FsError::Write {
+                        path: to_path.clone(),
+                        error: Box::new(error),
+                    })?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn resolve_workspace_path(&self, rel_path: &WorkspaceRelativePath) -> miette::Result<PathBuf> {
+        let abs_path = Path::new(rel_path.as_str());
+
+        if abs_path.is_absolute() {
             return Err(TaskRunnerError::OutputFileOutsideOfWorkspace {
-                output: raw_path.to_path_buf(),
+                output: abs_path.to_path_buf(),
             }
             .into());
         }
 
-        let output_path = clean_components(self.app_context.workspace_root.join(raw_path));
+        let output_path =
+            clean_components(rel_path.to_logical_path(&self.app_context.workspace_root));
 
         if !output_path.starts_with(&self.app_context.workspace_root) {
             return Err(TaskRunnerError::OutputFileOutsideOfWorkspace {
@@ -368,13 +355,13 @@ impl OutputHydrater<'_> {
         Ok(output_path)
     }
 
-    fn resolve_declared_output_path(&self, raw_path: &str) -> miette::Result<PathBuf> {
-        let output_path = self.resolve_workspace_path(raw_path)?;
-        let rel_path = output_path
-            .relative_to(&self.app_context.workspace_root)
-            .into_diagnostic()?;
+    fn resolve_declared_output_path(
+        &self,
+        rel_path: &WorkspaceRelativePath,
+    ) -> miette::Result<PathBuf> {
+        let output_path = self.resolve_workspace_path(rel_path)?;
 
-        if self.task.output_files.contains_key(&rel_path) {
+        if self.task.output_files.contains_key(rel_path) {
             return Ok(output_path);
         }
 

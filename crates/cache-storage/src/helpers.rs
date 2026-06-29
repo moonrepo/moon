@@ -1,7 +1,9 @@
 use bazel_remote_apis::google::protobuf::Timestamp;
 use chrono::NaiveDateTime;
 use moon_common::BLOCKING_THREAD_COUNT;
+use moon_hash::Digest;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use tracing::warn;
 
 pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
     time.duration_since(UNIX_EPOCH)
@@ -25,6 +27,33 @@ pub fn create_from_timestamp(timestamp: Timestamp) -> SystemTime {
     UNIX_EPOCH + Duration::new(timestamp.seconds as u64, timestamp.nanos as u32)
 }
 
+pub fn check_blob_integrity(expected_digest: &Digest, bytes: &[u8]) -> miette::Result<bool> {
+    if bytes.len() != expected_digest.size as usize {
+        warn!(
+            hash = expected_digest.hash.as_str(),
+            expected_size = expected_digest.size,
+            actual_size = bytes.len(),
+            "Integrity failure, mismatched file sizes, discarding blob",
+        );
+
+        return Ok(false);
+    }
+
+    let actual_digest = Digest::from_bytes(bytes)?;
+
+    if &actual_digest != expected_digest {
+        warn!(
+            hash = expected_digest.hash.as_str(),
+            actual_hash = actual_digest.hash.as_str(),
+            "Integrity failure, mismatched digests, discarding blob",
+        );
+
+        return Ok(false);
+    }
+
+    Ok(true)
+}
+
 const BUFFER: usize = 300; // 256 (hash/digest) + 44 (metadata overhead)
 
 pub struct Batch<T> {
@@ -36,10 +65,15 @@ pub struct Batch<T> {
 }
 
 pub fn partition_into_batches<T>(
-    items: Vec<T>,
+    mut items: Vec<T>,
     max_size: usize,
     get_size: impl Fn(&T) -> usize,
 ) -> Vec<Batch<T>> {
+    // First-fit-decreasing: placing the largest items first packs batches denser
+    // (fewer batches, fewer round trips) than first-fit on the incoming order.
+    // The linear first-fit scan below is fine at our scale (blobs per task).
+    items.sort_unstable_by_key(|item| std::cmp::Reverse(get_size(item)));
+
     let mut batches: Vec<Batch<T>> = vec![];
 
     for item in items {
@@ -88,14 +122,34 @@ pub fn partition_into_batches<T>(
     batches
 }
 
+/// Target items per chunk when batching for thread-level parallelism (the local
+/// backend, which has no request-size limit). A local CAS operation — a `stat`,
+/// a reflink, building a path — is individually tiny, so we group roughly this
+/// many per `spawn_blocking` to amortize the dispatch cost instead of paying it
+/// per blob. Parallelism is still bounded by the blocking pool for large sets.
+const CHUNK_TARGET_SIZE: usize = 100;
+
 pub fn chunk_into_batches<T>(mut items: Vec<T>, get_size: impl Fn(&T) -> usize) -> Vec<Batch<T>> {
-    let chunk_size = items.len() / BLOCKING_THREAD_COUNT;
-    let mut batches = Vec::new();
+    let len = items.len();
+
+    if len == 0 {
+        return vec![];
+    }
+
+    // Derive the chunk size from a target item count rather than dividing by the
+    // pool size. `len / BLOCKING_THREAD_COUNT` floors to 0 for any realistic set
+    // (fewer than 512 blobs), collapsing to one blob per batch and one
+    // `spawn_blocking` per blob. Instead, aim for ~CHUNK_TARGET_SIZE items each,
+    // capping the batch count at the pool so huge sets still parallelize without
+    // over-spawning.
+    let batch_count = len.div_ceil(CHUNK_TARGET_SIZE).min(BLOCKING_THREAD_COUNT);
+    let chunk_size = len.div_ceil(batch_count);
+
+    let mut batches = Vec::with_capacity(batch_count);
 
     while !items.is_empty() {
-        let chunk = items
-            .drain(0..chunk_size.max(1).min(items.len()))
-            .collect::<Vec<_>>();
+        let take = chunk_size.min(items.len());
+        let chunk = items.drain(0..take).collect::<Vec<_>>();
 
         batches.push(Batch {
             size: chunk.iter().map(&get_size).sum::<usize>(),
@@ -187,25 +241,35 @@ mod tests {
         }
 
         #[test]
-        fn small_input_is_one_item_per_chunk() {
-            // Fewer than BLOCKING_THREAD_COUNT items → chunk size clamps to 1,
-            // maximizing parallelism for small sets.
+        fn small_input_is_a_single_batch() {
+            // A handful of items fits in one chunk rather than one-per-batch, so
+            // we don't pay a spawn_blocking dispatch per blob.
             let batches = chunk_into_batches(vec![1, 2, 3, 4], |n| *n);
 
-            assert_eq!(batches.len(), 4);
-            assert!(batches.iter().all(|batch| batch.items.len() == 1));
+            assert_eq!(batches.len(), 1);
+            assert_eq!(batches[0].items, vec![1, 2, 3, 4]);
         }
 
         #[test]
-        fn large_input_is_grouped_and_preserves_every_item() {
+        fn groups_medium_input_into_evenly_sized_batches() {
+            // 120 items, ~50 per chunk → 3 batches of 40, none one-per-item.
+            let items: Vec<usize> = (0..120).collect();
+            let batches = chunk_into_batches(items, |n| *n);
+
+            assert_eq!(item_counts(&batches), vec![60, 60]);
+        }
+
+        #[test]
+        fn large_input_caps_parallelism_and_preserves_every_item() {
             let items: Vec<usize> = (0..5000).collect();
             let batches = chunk_into_batches(items, |n| *n);
 
             let total: usize = batches.iter().map(|batch| batch.items.len()).sum();
             assert_eq!(total, 5000);
-            // Grouped rather than one-per-item once the set is large.
+            // Grouped into multi-item chunks, never one-per-item, and bounded.
             assert!(batches.len() > 1);
-            assert!(batches.len() < 5000);
+            assert!(batches.len() <= BLOCKING_THREAD_COUNT);
+            assert!(batches.iter().all(|batch| batch.items.len() > 1));
         }
 
         #[test]
@@ -230,10 +294,12 @@ mod tests {
 
         #[test]
         fn zero_max_size_chunks_across_threads() {
+            // No size limit → thread chunking, which groups a small set into a
+            // single batch rather than one-per-item.
             let batches = create_batches(vec![100, 100, 100], 0, |n| *n);
 
-            assert_eq!(batches.len(), 3);
-            assert!(batches.iter().all(|batch| batch.items.len() == 1));
+            assert_eq!(batches.len(), 1);
+            assert!(batches.iter().all(|batch| batch.items.len() == 3));
         }
     }
 

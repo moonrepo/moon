@@ -5,8 +5,14 @@
 #### 🚀 Updates
 
 - **CAS**
-  - Further improvements to the content-addressable storage (CAS) cache, including better error handling and performance improvements, and a new API for local/remote storage interoperability.
-  - When copying files to/from the CAS, we now use OS reflink's when available, which can improve performance and reduce disk space usage.
+  - Further improvements to the content-addressable storage (CAS) cache, including better error
+    handling and performance improvements.
+  - Added a new storage API for local/remote cache interoperability. This will unlock many
+    improvements in the future, including better cache hit rates and more efficient storage.
+  - When copying files to/from the CAS, we now use OS reflink's when available, which can improve
+    performance and reduce disk space usage.
+  - When the local/remote cache is missing a blob, we'll attempt to retrieve it from the other
+    cache, which can improve cache hit rates in some scenarios.
 - **Processes**
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or
@@ -56,12 +62,14 @@
 #### 🐞 Fixes
 
 - Fixed an issue where Git hooks would not work correctly in submodules.
-- Fixed an issue where `moon docker` commands may generate non-deterministic output, resulting in invalid Docker layer caching.
+- Fixed an issue where `moon docker` commands may generate non-deterministic output, resulting in
+  invalid Docker layer caching.
 
 #### 🧰 Toolchains
 
 - **Go**
-  - Fixed `go list -deps` relationship inference not detecting sibling workspace modules imported via subpackages (e.g. `example.com/org/a/pkg`).
+  - Fixed `go list -deps` relationship inference not detecting sibling workspace modules imported
+    via subpackages (e.g. `example.com/org/a/pkg`).
 - **JavaScript**
   - Added Deno v2.9 support.
 

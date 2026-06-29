@@ -4802,7 +4802,6 @@ dependencies = [
  "moon_notifier",
  "moon_process",
  "moon_project",
- "moon_remote",
  "moon_task",
  "moon_test_utils",
  "moon_time",
@@ -4844,7 +4843,6 @@ dependencies = [
  "moon_process",
  "moon_process_augment",
  "moon_project",
- "moon_remote",
  "moon_task_runner",
  "moon_test_utils",
  "moon_time",
@@ -4959,7 +4957,6 @@ dependencies = [
  "moon_project",
  "moon_project_graph",
  "moon_query",
- "moon_remote",
  "moon_task",
  "moon_task_graph",
  "moon_task_runner",
@@ -5109,6 +5106,7 @@ dependencies = [
 name = "moon_cache_remote"
 version = "0.0.1"
 dependencies = [
+ "async-compression",
  "async-stream",
  "async-trait",
  "bazel-remote-apis",
@@ -5169,6 +5167,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
+ "rustc-hash",
  "serde",
  "starbase_sandbox",
  "starbase_utils",
@@ -5801,40 +5800,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "moon_remote"
-version = "0.0.1"
-dependencies = [
- "async-stream",
- "async-trait",
- "bazel-remote-apis",
- "chrono",
- "http",
- "miette 7.6.0",
- "moon_action",
- "moon_blob",
- "moon_common",
- "moon_config",
- "moon_env_var",
- "moon_feature_flags",
- "moon_hash",
- "moon_process",
- "moon_task",
- "reqwest",
- "rustc-hash",
- "scc",
- "serde",
- "starbase_utils",
- "thiserror 2.0.18",
- "tokio",
- "tokio-util",
- "tonic",
- "tower",
- "tracing",
- "uuid",
- "zstd",
-]
-
-[[package]]
 name = "moon_target"
 version = "3.0.0"
 dependencies = [
@@ -5967,7 +5932,6 @@ dependencies = [
 name = "moon_task_runner"
 version = "0.0.1"
 dependencies = [
- "bazel-remote-apis",
  "miette 7.6.0",
  "moon_action",
  "moon_action_context",
@@ -5985,7 +5949,6 @@ dependencies = [
  "moon_process",
  "moon_process_augment",
  "moon_project",
- "moon_remote",
  "moon_task",
  "moon_task_hasher",
  "moon_test_utils",
@@ -6089,6 +6052,7 @@ dependencies = [
  "ignore",
  "miette 7.6.0",
  "moon_common",
+ "moon_env_var",
  "moon_process",
  "regex",
  "rustc-hash",

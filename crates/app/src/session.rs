@@ -212,11 +212,13 @@ impl MoonSession {
 
             let mut engine = CacheEngine::new(context.clone())?;
 
-            engine.storage.add_local_backend(LocalStorage::new(
-                context.clone(),
-                &context.cache_dir,
-                false,
-            )?);
+            if self.workspace_config.experiments.cas_outputs_cache {
+                engine.storage.add_local_backend(LocalStorage::new(
+                    context.clone(),
+                    &context.cache_dir,
+                    false,
+                )?);
+            }
 
             if context.remote_config.is_enabled() {
                 match context.remote_config.api {

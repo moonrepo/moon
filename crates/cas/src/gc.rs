@@ -1,20 +1,17 @@
 use crate::cas::CasStore;
 use miette::IntoDiagnostic;
+use moon_blob::BlobCleanStats;
+use moon_hash::ContentHash;
+use rustc_hash::FxHashSet;
 use starbase_utils::fs;
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
-/// Result of a garbage collection or purge operation.
-#[derive(Debug, Default)]
-pub struct GcResult {
-    pub blobs_removed: usize,
-    pub bytes_freed: u64,
-}
-
 /// Remove blobs whose mtime is older than `max_age`, and clean orphaned temp files.
 #[instrument(skip(store))]
-pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult> {
+pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<BlobCleanStats> {
     let now = SystemTime::now();
     let purge = max_age.is_zero();
     let mut set = JoinSet::new();
@@ -33,7 +30,7 @@ pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult>
         }
 
         set.spawn_blocking(move || {
-            let mut stats = GcResult::default();
+            let mut stats = BlobCleanStats::default();
 
             for blob_entry in fs::read_dir(&shard_path)? {
                 let blob_path = blob_entry.path();
@@ -53,7 +50,7 @@ pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult>
                     fs::remove_file(&blob_path)?;
 
                     stats.blobs_removed += 1;
-                    stats.bytes_freed += size;
+                    stats.bytes_saved += size;
                 }
             }
 
@@ -65,13 +62,13 @@ pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult>
         });
     }
 
-    let mut stats = GcResult::default();
+    let mut stats = BlobCleanStats::default();
 
     while let Some(result) = set.join_next().await {
         let blob_stats = result.into_diagnostic()??;
 
         stats.blobs_removed += blob_stats.blobs_removed;
-        stats.bytes_freed += blob_stats.bytes_freed;
+        stats.bytes_saved += blob_stats.bytes_saved;
     }
 
     if purge {
@@ -80,7 +77,7 @@ pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult>
 
         debug!(
             blobs_removed = stats.blobs_removed,
-            bytes_freed = stats.bytes_freed,
+            bytes_saved = stats.bytes_saved,
             "CAS purge complete"
         );
     } else {
@@ -89,7 +86,7 @@ pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult>
 
         debug!(
             blobs_removed = stats.blobs_removed,
-            bytes_freed = stats.bytes_freed,
+            bytes_saved = stats.bytes_saved,
             "CAS garbage collection complete"
         );
     }
@@ -98,8 +95,99 @@ pub async fn gc(store: &CasStore, max_age: Duration) -> miette::Result<GcResult>
 }
 
 /// Remove all blobs from the store.
-pub async fn purge(store: &CasStore) -> miette::Result<GcResult> {
+pub async fn purge(store: &CasStore) -> miette::Result<BlobCleanStats> {
     gc(store, Duration::ZERO).await
+}
+
+/// Reachability sweep: remove objects not present in `keep`, sparing any
+/// modified within `grace`. A blob is kept when a surviving manifest still
+/// references it; the grace window protects a freshly-written blob whose
+/// manifest hasn't landed yet (blobs are stored before the manifest).
+#[instrument(skip(store, keep))]
+pub async fn retain(
+    store: &CasStore,
+    keep: Arc<FxHashSet<ContentHash>>,
+    grace: Duration,
+) -> miette::Result<BlobCleanStats> {
+    let now = SystemTime::now();
+    let mut set = JoinSet::new();
+
+    debug!(roots = keep.len(), ?grace, "Running CAS reachability sweep");
+
+    for shard_entry in fs::read_dir(&store.objects_dir)? {
+        let shard_path = shard_entry.path();
+
+        if !shard_path.is_dir() || shard_path == store.temp_dir {
+            continue;
+        }
+
+        let keep = Arc::clone(&keep);
+
+        set.spawn_blocking(move || {
+            let mut stats = BlobCleanStats::default();
+
+            // The shard directory name is the hash prefix; the file name is the
+            // suffix. Concatenated, they reconstruct the object's full hash.
+            let Some(prefix) = shard_path.file_name().and_then(|name| name.to_str()) else {
+                return Ok(stats);
+            };
+
+            for blob_entry in fs::read_dir(&shard_path)? {
+                let blob_path = blob_entry.path();
+
+                let reachable = blob_path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .and_then(|suffix| ContentHash::from_hex(format!("{prefix}{suffix}")).ok())
+                    .is_some_and(|hash| keep.contains(&hash));
+
+                if reachable {
+                    continue;
+                }
+
+                let metadata = fs::metadata(&blob_path)?;
+
+                // Unreferenced, but spare it if it was written within the grace
+                // window (it may be mid-ingest, manifest not yet stored).
+                let within_grace = metadata
+                    .modified()
+                    .map(|modified| now.duration_since(modified).unwrap_or_default() <= grace)
+                    .unwrap_or(false);
+
+                if within_grace {
+                    continue;
+                }
+
+                let size = metadata.len();
+
+                fs::remove_file(&blob_path)?;
+
+                stats.blobs_removed += 1;
+                stats.bytes_saved += size;
+            }
+
+            Ok::<_, miette::Report>(stats)
+        });
+    }
+
+    let mut stats = BlobCleanStats::default();
+
+    while let Some(result) = set.join_next().await {
+        let blob_stats = result.into_diagnostic()??;
+
+        stats.blobs_removed += blob_stats.blobs_removed;
+        stats.bytes_saved += blob_stats.bytes_saved;
+    }
+
+    clean_temp_dir(store, Duration::from_secs(3600))?;
+
+    debug!(
+        blobs_removed = stats.blobs_removed,
+        bytes_saved = stats.bytes_saved,
+        "CAS reachability sweep complete"
+    );
+
+    Ok(stats)
 }
 
 fn clean_temp_dir(store: &CasStore, max_age: Duration) -> miette::Result<()> {

@@ -1,8 +1,9 @@
 use crate::cas_error::CasError;
-use crate::gc::GcResult;
-use moon_blob::Blob;
+use miette::IntoDiagnostic;
+use moon_blob::{Blob, BlobCleanStats};
 use moon_config::CacheCasConfig;
 use moon_hash::{ContentHash, Digest};
+use rustc_hash::FxHashSet;
 use starbase_utils::fs;
 use starbase_utils::hash::{
     self, hex,
@@ -10,8 +11,12 @@ use starbase_utils::hash::{
 };
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tracing::{debug, instrument, trace};
+
+// NOTE: We avoid using `starbase_utils::fs` for some operations as they
+// spam the logs with far too much useless information!
 
 /// A content-addressable file system store.
 ///
@@ -41,7 +46,7 @@ impl Drop for TempGuard {
 
 impl CasStore {
     /// Create or open a CAS store rooted at `root`.
-    pub fn new(root: impl AsRef<Path>, config: &CacheCasConfig) -> miette::Result<Self> {
+    pub fn new(root: impl AsRef<Path>, config: CacheCasConfig) -> miette::Result<Self> {
         let root = root.as_ref();
         let temp_dir = root.join("temp");
 
@@ -52,7 +57,7 @@ impl CasStore {
         Ok(Self {
             objects_dir: root.to_path_buf(),
             temp_dir,
-            config: config.to_owned(),
+            config,
         })
     }
 
@@ -60,10 +65,6 @@ impl CasStore {
 
     #[instrument(skip(self, bytes), fields(size = bytes.len()))]
     pub fn write(&self, hash: &ContentHash, bytes: &[u8]) -> miette::Result<bool> {
-        if self.contains_object(hash) {
-            return Ok(false);
-        }
-
         let mut guard = self.create_temp_file()?;
 
         {
@@ -86,10 +87,6 @@ impl CasStore {
 
     #[instrument(skip(self))]
     pub fn write_file(&self, hash: &ContentHash, source: &Path) -> miette::Result<bool> {
-        if self.contains_object(hash) {
-            return Ok(false);
-        }
-
         // Cold cache: reflink (copy-on-write clone) the file into a temp file,
         // then atomically commit. On a reflink-capable filesystem this shares
         // blocks instead of copying bytes, so ingesting a fresh output is
@@ -109,7 +106,7 @@ impl CasStore {
 
     /// Store raw bytes from the provided blob.
     pub fn store_blob(&self, blob: &Blob) -> miette::Result<()> {
-        if self.write(&blob.digest, &blob.bytes)? {
+        if !self.contains_object(&blob.digest) && self.write(&blob.digest, &blob.bytes)? {
             trace!(hash = blob.digest.hash.as_str(), "Stored object from blob");
         }
 
@@ -120,7 +117,7 @@ impl CasStore {
     pub fn store_bytes(&self, bytes: &[u8]) -> miette::Result<Digest> {
         let digest = Digest::from_bytes(bytes)?;
 
-        if self.write(&digest, bytes)? {
+        if !self.contains_object(&digest) && self.write(&digest, bytes)? {
             trace!(hash = digest.hash.as_str(), "Stored object from bytes");
         }
 
@@ -133,7 +130,7 @@ impl CasStore {
     pub fn store_file(&self, path: &Path) -> miette::Result<Digest> {
         let digest = Digest::from_file(path)?;
 
-        if self.write_file(&digest, path)? {
+        if !self.contains_object(&digest) && self.write_file(&digest, path)? {
             trace!(hash = digest.hash.as_str(), path = ?path, "Stored object from file");
         }
 
@@ -274,13 +271,24 @@ impl CasStore {
     // ---- Lifecycle ----
 
     /// Remove blobs whose mtime is older than `max_age`.
-    pub async fn gc(&self, max_age: Duration) -> miette::Result<GcResult> {
+    pub async fn gc(&self, max_age: Duration) -> miette::Result<BlobCleanStats> {
         crate::gc::gc(self, max_age).await
     }
 
     /// Remove all blobs from the store.
-    pub async fn purge(&self) -> miette::Result<GcResult> {
+    pub async fn purge(&self) -> miette::Result<BlobCleanStats> {
         crate::gc::purge(self).await
+    }
+
+    /// Reachability sweep: remove every object whose hash is not in `keep`,
+    /// except objects modified within `grace` (which protects a blob written
+    /// just before the manifest that references it, mid-ingest).
+    pub async fn retain(
+        &self,
+        keep: Arc<FxHashSet<ContentHash>>,
+        grace: Duration,
+    ) -> miette::Result<BlobCleanStats> {
+        crate::gc::retain(self, keep, grace).await
     }
 
     /// Update a blob's mtime to now, keeping it alive through GC.
@@ -301,6 +309,25 @@ impl CasStore {
 
     pub fn object_path(&self, hash: &ContentHash) -> PathBuf {
         self.objects_dir.join(hash.prefix()).join(hash.suffix())
+    }
+
+    /// Paths of every stored object, excluding the temp/staging directory.
+    pub fn object_paths(&self) -> miette::Result<Vec<PathBuf>> {
+        let mut paths = vec![];
+
+        for shard in fs::read_dir(&self.objects_dir)? {
+            let shard_path = shard.path();
+
+            if !shard_path.is_dir() || shard_path == self.temp_dir {
+                continue;
+            }
+
+            for entry in fs::read_dir(&shard_path)? {
+                paths.push(entry.path());
+            }
+        }
+
+        Ok(paths)
     }
 
     pub fn object_path_with_exists_check(&self, hash: &ContentHash) -> miette::Result<PathBuf> {
@@ -332,7 +359,11 @@ impl CasStore {
     fn commit_temp_file(&self, hash: &ContentHash, guard: &mut TempGuard) -> miette::Result<()> {
         let dest = self.object_path(hash);
 
-        fs::rename(&guard.path, &dest)?;
+        if let Some(shard) = dest.parent() {
+            std::fs::create_dir_all(shard).into_diagnostic()?;
+        }
+
+        std::fs::rename(&guard.path, &dest).into_diagnostic()?;
 
         guard.committed = true;
 

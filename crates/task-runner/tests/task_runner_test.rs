@@ -2,7 +2,7 @@ mod utils;
 
 use moon_action::ActionStatus;
 use moon_action_context::*;
-use moon_cache::CacheMode;
+use moon_cache::{CacheMode, Manifest};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
 use moon_task::Target;
@@ -341,7 +341,7 @@ mod task_runner {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut runner = container.create_runner();
 
-            assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+            assert!(runner.is_cached("hash123").await.unwrap().is_none());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -365,10 +365,10 @@ mod task_runner {
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
 
-                assert_eq!(
+                assert!(matches!(
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::PreviousOutput)
-                );
+                ));
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -379,7 +379,7 @@ mod task_runner {
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "otherhash456".into();
 
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -390,7 +390,7 @@ mod task_runner {
                 runner.cache.data.exit_code = 2;
                 runner.cache.data.hash = "hash123".into();
 
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -401,7 +401,7 @@ mod task_runner {
                 runner.cache.data.exit_code = 0;
                 runner.cache.data.hash = "hash123".into();
 
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -413,10 +413,10 @@ mod task_runner {
                 runner.cache.data.hash = "hash123".into();
                 container.sandbox.create_file("project/file.txt", "");
 
-                assert_eq!(
+                assert!(matches!(
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::PreviousOutput)
-                );
+                ));
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -426,7 +426,7 @@ mod task_runner {
 
                 runner.cache.data.exit_code = 1;
 
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }
         }
 
@@ -444,10 +444,10 @@ mod task_runner {
                     .sandbox
                     .create_file(".moon/cache/outputs/hash123.tar.gz", "");
 
-                assert_eq!(
+                assert!(matches!(
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::LocalArchive)
-                );
+                ));
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -455,7 +455,7 @@ mod task_runner {
                 let container = TaskRunnerContainer::new("runner", "base").await;
                 let mut runner = container.create_runner();
 
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -472,7 +472,7 @@ mod task_runner {
                     .cache_engine
                     .force_mode(CacheMode::Off);
 
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
 
                 GlobalEnvBag::instance().remove("MOON_CACHE");
             }
@@ -491,7 +491,7 @@ mod task_runner {
                     .cache_engine
                     .force_mode(CacheMode::Write);
 
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
 
                 GlobalEnvBag::instance().remove("MOON_CACHE");
             }
@@ -509,15 +509,12 @@ mod task_runner {
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
-                    .app_context
-                    .cache_engine
-                    .ac
-                    .write(&runner.state.digest.hash, b"{}")
-                    .unwrap();
+                    .seed_manifest(&runner.state.digest, Manifest::default())
+                    .await;
 
                 assert!(matches!(
                     runner.is_cached("hash123").await.unwrap(),
-                    Some(HydrateFrom::LocalCache(_))
+                    Some(HydrateFrom::Storage(_))
                 ));
             }
 
@@ -531,13 +528,10 @@ mod task_runner {
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
-                    .app_context
-                    .cache_engine
-                    .ac
-                    .write(&runner.state.digest.hash, b"{}")
-                    .unwrap();
+                    .seed_manifest(&runner.state.digest, Manifest::default())
+                    .await;
 
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }
         }
 
@@ -554,10 +548,10 @@ mod task_runner {
                 runner.cache.data.hash = "hash123".into();
                 runner.cache.data.last_run_time = 0;
 
-                assert_eq!(
+                assert!(matches!(
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::PreviousOutput)
-                );
+                ));
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -569,10 +563,10 @@ mod task_runner {
                 runner.cache.data.hash = "hash123".into();
                 runner.cache.data.last_run_time = now_millis();
 
-                assert_eq!(
+                assert!(matches!(
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::PreviousOutput)
-                );
+                ));
             }
 
             #[tokio::test(flavor = "multi_thread")]
@@ -584,22 +578,22 @@ mod task_runner {
                 runner.cache.data.hash = "hash123".into();
                 runner.cache.data.last_run_time = now_millis();
 
-                assert_eq!(
+                assert!(matches!(
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::PreviousOutput)
-                );
+                ));
 
                 tokio::time::sleep(Duration::from_secs(1)).await;
 
-                assert_eq!(
+                assert!(matches!(
                     runner.is_cached("hash123").await.unwrap(),
                     Some(HydrateFrom::PreviousOutput)
-                );
+                ));
 
                 tokio::time::sleep(Duration::from_secs(1)).await;
 
                 // lifetime is 2 seconds
-                assert_eq!(runner.is_cached("hash123").await.unwrap(), None);
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }
         }
     }

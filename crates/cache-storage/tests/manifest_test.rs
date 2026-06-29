@@ -5,7 +5,9 @@ use moon_blob::{BlobContent, Bytes};
 use moon_cache_storage::{Manifest, ManifestFile};
 use moon_hash::{ContentHash, Digest};
 use rustc_hash::FxHashMap;
+use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::json::serde_json;
+use std::path::Path;
 
 fn hex(seed: char) -> String {
     std::iter::repeat_n(seed, 64).collect()
@@ -119,12 +121,12 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_sources();
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
 
         assert_eq!(sources.len(), 1);
         match &sources[0].content {
-            BlobContent::File(path) => assert_eq!(path.as_str(), "out/a.txt"),
-            BlobContent::Inline(_) => panic!("expected a file-backed source"),
+            BlobContent::File(path) => assert!(path.ends_with("out/a.txt")),
+            _ => panic!("expected a file-backed source"),
         }
     }
 
@@ -135,12 +137,12 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_sources();
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
 
         assert_eq!(sources.len(), 1);
         match &sources[0].content {
             BlobContent::Inline(bytes) => assert_eq!(bytes, &Bytes::from_static(b"hi")),
-            BlobContent::File(_) => panic!("expected an inline source"),
+            _ => panic!("expected an inline source"),
         }
     }
 
@@ -154,7 +156,7 @@ mod collect_blob_sources {
             ..Default::default()
         };
 
-        let sources = manifest.collect_blob_sources();
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
 
         assert_eq!(sources.len(), 2);
     }
@@ -206,14 +208,59 @@ mod hydration {
             ..Default::default()
         };
 
-        let mut blobs: FxHashMap<Digest, Bytes> = FxHashMap::default();
-        blobs.insert(digest('b', 3), Bytes::from_static(b"err"));
-        blobs.insert(digest('a', 4), Bytes::from_static(b"file"));
+        let mut blobs: FxHashMap<Digest, BlobContent> = FxHashMap::default();
+        blobs.insert(
+            digest('b', 3),
+            BlobContent::Inline(Bytes::from_static(b"err")),
+        );
+        blobs.insert(
+            digest('a', 4),
+            BlobContent::Inline(Bytes::from_static(b"file")),
+        );
 
-        manifest.hydrate(&blobs);
+        manifest.hydrate(&blobs).unwrap();
 
         assert_eq!(manifest.stderr_bytes, Some(Bytes::from_static(b"err")));
         assert_eq!(manifest.files[0].bytes, Some(Bytes::from_static(b"file")));
+        assert!(manifest.is_hydrated());
+    }
+
+    #[test]
+    fn hydrate_reads_stdio_from_file_refs_but_defers_output_files() {
+        // The local backend hands back file references, not inline bytes. stdio
+        // must be read into memory (it can't be reflinked), while output files
+        // keep the reference as a reflink source for the hydrater.
+        let sandbox = create_empty_sandbox();
+        sandbox.create_file("err", "boom");
+        sandbox.create_file("out.txt", "file contents");
+
+        let mut manifest = Manifest {
+            stderr_bytes: None,
+            stderr_digest: Some(digest('b', 4)),
+            files: vec![file(None, Some(digest('a', 13)))],
+            ..Default::default()
+        };
+
+        let mut blobs: FxHashMap<Digest, BlobContent> = FxHashMap::default();
+        blobs.insert(
+            digest('b', 4),
+            BlobContent::File(sandbox.path().join("err")),
+        );
+        blobs.insert(
+            digest('a', 13),
+            BlobContent::File(sandbox.path().join("out.txt")),
+        );
+
+        manifest.hydrate(&blobs).unwrap();
+
+        // stderr was read from disk into memory.
+        assert_eq!(manifest.stderr_bytes, Some(Bytes::from_static(b"boom")));
+        // The output file is left as a reflink source, not loaded into memory.
+        assert!(manifest.files[0].bytes.is_none());
+        assert_eq!(
+            manifest.files[0].source_path,
+            Some(sandbox.path().join("out.txt"))
+        );
         assert!(manifest.is_hydrated());
     }
 }

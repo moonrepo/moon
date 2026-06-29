@@ -23,7 +23,6 @@ moon_plugin = { path = "../plugin" }
 moon_process = { path = "../process" }
 moon_process_augment = { path = "../process-augment" }
 moon_project = { path = "../project" }
-moon_remote = { path = "../remote" }
 moon_task_runner = { path = "../task-runner" }
 moon_time = { path = "../time" }
 moon_toolchain = { path = "../toolchain" }

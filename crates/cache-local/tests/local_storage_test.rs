@@ -9,10 +9,20 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 fn create_backend(sandbox: &Sandbox) -> Arc<LocalStorage> {
+    create_backend_with(sandbox, CacheConfig::default())
+}
+
+fn create_backend_with_max_size(sandbox: &Sandbox, max_size: &str) -> Arc<LocalStorage> {
+    let mut config = CacheConfig::default();
+    config.cas.max_size = Some(max_size.to_owned());
+    create_backend_with(sandbox, config)
+}
+
+fn create_backend_with(sandbox: &Sandbox, cache_config: CacheConfig) -> Arc<LocalStorage> {
     let cache_dir = sandbox.path().join(".moon/cache");
     let context = CacheContext {
         cache_dir: cache_dir.clone(),
-        cache_config: Arc::new(CacheConfig::default()),
+        cache_config: Arc::new(cache_config),
         config_dir: sandbox.path().join(".moon"),
         remote_config: Arc::new(RemoteConfig::default()),
         remote_debug: false,

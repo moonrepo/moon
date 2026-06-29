@@ -20,7 +20,6 @@ moon_daemon_client = { path = "../daemon-client" }
 moon_notifier = { path = "../notifier" }
 moon_process = { path = "../process" }
 moon_project = { path = "../project" }
-moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_time = { path = "../time" }
 moon_toolchain = { path = "../toolchain" }

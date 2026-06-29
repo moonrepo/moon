@@ -3,7 +3,6 @@ use moon_action_context::TargetState;
 use moon_app_context::AppContext;
 use moon_cache_item::cache_item;
 use moon_hash::Digest;
-use moon_remote::RemoteService;
 use moon_task::Task;
 
 cache_item!(
@@ -37,8 +36,7 @@ pub struct TaskRunState {
 
 impl TaskRunState {
     pub fn new(app_context: &AppContext, task: &Task) -> Self {
-        let remote_enabled =
-            RemoteService::is_enabled() || app_context.cache_engine.storage.is_remote_enabled();
+        let remote_enabled = app_context.cache_engine.storage.is_remote_enabled();
 
         Self {
             local_cas_enabled: app_context.workspace_config.experiments.cas_outputs_cache,

@@ -117,10 +117,10 @@ jobs:
       # Windows runs out of disk space
       COVERAGE: ${{ needs.test-plan.outputs.coverage == 'true' && !contains(matrix.os, 'windows') }}
       # Temporary until we upgrade starbase
-      GIT_AUTHOR_NAME: 'Sandbox'
-      GIT_AUTHOR_EMAIL: 'fakeemail@somedomain.dev'
-      GIT_COMMITTER_NAME: 'Sandbox'
-      GIT_COMMITTER_EMAIL: 'fakeemail@somedomain.dev'
+      GIT_AUTHOR_NAME: "Sandbox"
+      GIT_AUTHOR_EMAIL: "fakeemail@somedomain.dev"
+      GIT_COMMITTER_NAME: "Sandbox"
+      GIT_COMMITTER_EMAIL: "fakeemail@somedomain.dev"
     steps:
       - uses: actions/checkout@v6
       - uses: arduino/setup-protoc@v3
@@ -136,7 +136,7 @@ jobs:
         with:
           auto-install: true
           cache: true
-          proto-version: '0.58.0' # Keep in sync
+          proto-version: "0.58.1" # Keep in sync
         env:
           PROTO_LOG: trace
       - uses: mozilla-actions/sccache-action@v0.0.9

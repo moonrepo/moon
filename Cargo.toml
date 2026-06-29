@@ -98,13 +98,13 @@ tonic-prost = "0.14.6"
 tower = "0.5.3"
 tracing = "0.1.44"
 url = "2.5.8"
-uuid = { version = "1.23.2", features = ["v4"] }
+uuid = { version = "1.23.4", features = ["v4"] }
 windows-sys = { version = "0.61.2", default-features = false }
 
 # proto/plugin related
 extism = "=1.30.0"
 extism-pdk = "1.4.1"
-proto_core = "0.58.0"
+proto_core = "0.58.1"
 proto_pdk_api = "0.31.13"
 proto_pdk_test_utils = "0.46.0"
 proto_shim = "0.8.2"

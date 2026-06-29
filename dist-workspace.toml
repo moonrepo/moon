@@ -4,7 +4,7 @@
 members = ["cargo:."]
 
 [dist]
-cargo-dist-version = "0.30.3"
+cargo-dist-version = "0.32.0"
 ci = "github"
 targets = [
 	"aarch64-apple-darwin",
@@ -20,7 +20,7 @@ install-path = ["$MOON_INSTALL_DIR/", "$MOON_HOME/bin", "~/.moon/bin"]
 install-success-msg = "\nSuccessfully installed! Take your repo to the moon!\nNeed help? Join our Discord: https://discord.gg/qCh9MEynv2\n"
 pr-run-mode = "upload"
 publish-jobs = ["./release-npm"]
-allow-dirty = ["ci"]
+# allow-dirty = ["ci"]
 
 # We use older macos/ubuntu runners for libc compat!
 [dist.github-custom-runners]

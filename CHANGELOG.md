@@ -13,6 +13,8 @@
     performance and reduce disk space usage.
   - When the local/remote cache is missing a blob, we'll attempt to retrieve it from the other
     cache, which can improve cache hit rates in some scenarios.
+  - When a remote cache hit, we'll now warm the local cache with the hydrated manifest and its
+    blobs, so the next run resolves locally instead of round-tripping to the remote.
 - **Processes**
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or

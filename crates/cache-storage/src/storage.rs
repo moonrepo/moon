@@ -1,6 +1,6 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
-use moon_blob::{BlobContent, BlobInput, BlobCleanStats};
+use moon_blob::{BlobCleanStats, BlobContent, BlobInput};
 use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;

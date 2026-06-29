@@ -127,7 +127,7 @@ pub fn partition_into_batches<T>(
 /// a reflink, building a path — is individually tiny, so we group roughly this
 /// many per `spawn_blocking` to amortize the dispatch cost instead of paying it
 /// per blob. Parallelism is still bounded by the blocking pool for large sets.
-const CHUNK_TARGET_SIZE: usize = 50;
+const CHUNK_TARGET_SIZE: usize = 100;
 
 pub fn chunk_into_batches<T>(mut items: Vec<T>, get_size: impl Fn(&T) -> usize) -> Vec<Batch<T>> {
     let len = items.len();

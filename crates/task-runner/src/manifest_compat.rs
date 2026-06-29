@@ -10,6 +10,9 @@ use std::fs as fs_std;
 use std::fs::Metadata;
 use std::path::{Path, PathBuf};
 
+// NOTE: We avoid using `starbase_utils::fs` for some operations as they
+// spam the logs with far too much useless information!
+
 #[derive(Debug)]
 pub struct ManifestBuilder {
     manifest: Manifest,

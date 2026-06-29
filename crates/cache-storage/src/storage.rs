@@ -291,7 +291,7 @@ impl Storage {
         if manifest.is_hydrated() {
             trace!(
                 hash = digest.hash.as_str(),
-                "Hydrating cache manifest from {count} storage backends"
+                "Hydrated cache manifest from {count} storage backends"
             );
 
             return Ok(Some(manifest));
@@ -318,6 +318,12 @@ impl Storage {
             return Ok(());
         }
 
+        debug!(
+            timeout_secs = BACKGROUND_FLUSH_TIMEOUT.as_secs(),
+            tasks = background_tasks.len(),
+            "Waiting for background storage tasks to complete"
+        );
+
         // Keep abort handles so stragglers can be cancelled if the drain times
         // out (awaiting the handles themselves would consume them first).
         let abort_handles = background_tasks
@@ -340,14 +346,13 @@ impl Storage {
                 .filter(|handle| !handle.is_finished())
                 .count();
 
-            for handle in &abort_handles {
+            for handle in abort_handles {
                 handle.abort();
             }
 
             warn!(
                 timeout_secs = BACKGROUND_FLUSH_TIMEOUT.as_secs(),
-                dropped,
-                "Timed out flushing background cache writes; {dropped} were dropped and may need re-uploading on the next run",
+                dropped, "Timed out flushing background storage tasks; {dropped} were dropped",
             );
         }
 

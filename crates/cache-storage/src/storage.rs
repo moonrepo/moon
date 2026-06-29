@@ -1,6 +1,6 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
-use moon_blob::{BlobContent, BlobInput};
+use moon_blob::{BlobContent, BlobInput, BlobCleanStats};
 use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
@@ -140,6 +140,35 @@ impl Storage {
 
     pub fn is_remote_enabled(&self) -> bool {
         !self.remote_backends.is_empty()
+    }
+
+    /// Garbage-collect the writable local backends. Remotes are skipped — they
+    /// manage their own eviction server-side. A failure in one backend is logged
+    /// and skipped rather than aborting the whole clean.
+    pub async fn clean(&self, lifetime: Duration) -> miette::Result<BlobCleanStats> {
+        let mut stats = BlobCleanStats::default();
+
+        for backend in &self.local_backends {
+            if !backend.is_writable() {
+                continue;
+            }
+
+            match backend.gc(lifetime).await {
+                Ok(backend_stats) => {
+                    stats.blobs_removed += backend_stats.blobs_removed;
+                    stats.bytes_saved += backend_stats.bytes_saved;
+                }
+                Err(error) => {
+                    warn!(
+                        storage = backend.get_id().as_str(),
+                        error = error.to_string(),
+                        "Failed to garbage collect storage backend"
+                    );
+                }
+            }
+        }
+
+        Ok(stats)
     }
 
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {

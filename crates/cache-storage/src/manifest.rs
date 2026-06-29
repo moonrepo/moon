@@ -209,6 +209,32 @@ impl Manifest {
         digests
     }
 
+    pub fn collect_blob_digests(&self) -> Vec<Digest> {
+        let mut digests = vec![];
+
+        if let Some(digest) = &self.stderr_digest
+            && digest.size > 0
+        {
+            digests.push(digest.to_owned());
+        }
+
+        if let Some(digest) = &self.stdout_digest
+            && digest.size > 0
+        {
+            digests.push(digest.to_owned());
+        }
+
+        for file in &self.files {
+            if let Some(digest) = &file.digest
+                && digest.size > 0
+            {
+                digests.push(digest.to_owned());
+            }
+        }
+
+        digests
+    }
+
     pub fn collect_blob_inputs(&self, workspace_root: &Path) -> Vec<BlobInput> {
         let mut sources = vec![];
 

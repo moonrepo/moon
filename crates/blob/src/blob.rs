@@ -113,3 +113,9 @@ impl TryFrom<Bytes> for Blob {
         })
     }
 }
+
+#[derive(Debug, Default)]
+pub struct BlobCleanStats {
+    pub blobs_removed: usize,
+    pub bytes_saved: u64,
+}

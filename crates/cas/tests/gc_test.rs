@@ -92,3 +92,74 @@ mod gc {
         assert!(!orphan.exists());
     }
 }
+
+mod retain {
+    use super::*;
+    use moon_hash::ContentHash;
+    use rustc_hash::FxHashSet;
+    use std::sync::Arc;
+
+    fn keep_set(hashes: &[&ContentHash]) -> Arc<FxHashSet<ContentHash>> {
+        Arc::new(hashes.iter().map(|hash| (*hash).clone()).collect())
+    }
+
+    #[tokio::test]
+    async fn keeps_referenced_and_sweeps_unreferenced() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        let referenced = store.store_bytes(b"referenced").unwrap();
+        let orphan = store.store_bytes(b"orphan").unwrap();
+
+        // Age both past the grace window so the sweep is driven by reachability.
+        backdate_mtime(
+            &store.object_path(&referenced.hash),
+            Duration::from_secs(7200),
+        );
+        backdate_mtime(&store.object_path(&orphan.hash), Duration::from_secs(7200));
+
+        let result = store
+            .retain(keep_set(&[&referenced.hash]), Duration::from_secs(3600))
+            .await
+            .unwrap();
+
+        assert_eq!(result.blobs_removed, 1);
+        assert!(store.contains_object(&referenced.hash));
+        assert!(!store.contains_object(&orphan.hash));
+    }
+
+    #[tokio::test]
+    async fn grace_spares_recently_written_unreferenced_blobs() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        // Freshly written and unreferenced — a blob mid-ingest whose manifest
+        // hasn't landed yet must survive the grace window.
+        let pending = store.store_bytes(b"pending").unwrap();
+
+        let result = store
+            .retain(keep_set(&[]), Duration::from_secs(3600))
+            .await
+            .unwrap();
+
+        assert_eq!(result.blobs_removed, 0);
+        assert!(store.contains_object(&pending.hash));
+    }
+
+    #[tokio::test]
+    async fn sweeps_unreferenced_blobs_past_grace() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        let orphan = store.store_bytes(b"orphan").unwrap();
+        backdate_mtime(&store.object_path(&orphan.hash), Duration::from_secs(7200));
+
+        let result = store
+            .retain(keep_set(&[]), Duration::from_secs(3600))
+            .await
+            .unwrap();
+
+        assert_eq!(result.blobs_removed, 1);
+        assert!(!store.contains_object(&orphan.hash));
+    }
+}

@@ -3,13 +3,14 @@ use crate::helpers::{Batch, create_batches};
 use crate::manifest::Manifest;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
-use moon_blob::{BlobInput, BlobOutput};
+use moon_blob::{BlobCleanStats, BlobInput, BlobOutput};
 use moon_common::Id;
 use moon_hash::Digest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::task::JoinSet;
 use tracing::{trace, warn};
 
@@ -39,6 +40,13 @@ where
     fn get_capabilities(&self) -> &CacheCapabilities;
     fn is_readable(&self) -> bool;
     fn is_writable(&self) -> bool;
+
+    /// Garbage-collect this backend's storage, evicting entries past `lifetime`
+    /// (and any blobs they were the last to reference). Remote backends manage
+    /// their own eviction server-side, so this defaults to a no-op.
+    async fn gc(&self, _lifetime: Duration) -> miette::Result<BlobCleanStats> {
+        Ok(BlobCleanStats::default())
+    }
 
     /// Connect to the storage backend, if necessary. This is called before any other methods are
     /// called, and can be used to establish a connection to a remote storage backend, or perform

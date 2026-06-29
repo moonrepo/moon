@@ -5170,6 +5170,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
+ "rustc-hash",
  "serde",
  "starbase_sandbox",
  "starbase_utils",

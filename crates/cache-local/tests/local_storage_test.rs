@@ -4,7 +4,9 @@ use moon_cache_storage::{CacheContext, Manifest, ManifestFile, StorageBackend};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 fn create_backend(sandbox: &Sandbox) -> Arc<LocalStorage> {
     let cache_dir = sandbox.path().join(".moon/cache");
@@ -31,6 +33,39 @@ fn action_digest() -> Digest {
     Digest::from_bytes(b"action").unwrap()
 }
 
+fn backdate(path: &Path, age: Duration) {
+    let past = SystemTime::now() - age;
+    let file = std::fs::OpenOptions::new().write(true).open(path).unwrap();
+    file.set_modified(past).unwrap();
+}
+
+fn blob_path(sandbox: &Sandbox, digest: &Digest) -> PathBuf {
+    sandbox
+        .path()
+        .join(".moon/cache/blobs")
+        .join(digest.hash.prefix())
+        .join(digest.hash.suffix())
+}
+
+fn manifest_path(sandbox: &Sandbox, action: &Digest) -> PathBuf {
+    sandbox
+        .path()
+        .join(".moon/cache/manifests")
+        .join(action.hash.prefix())
+        .join(action.hash.suffix())
+}
+
+fn manifest_referencing(digest: &Digest) -> Manifest {
+    Manifest {
+        files: vec![ManifestFile {
+            digest: Some(digest.clone()),
+            path: "out.txt".into(),
+            ..Default::default()
+        }],
+        ..Default::default()
+    }
+}
+
 mod local_storage {
     use super::*;
 
@@ -50,7 +85,7 @@ mod local_storage {
             .store_blobs_batched(action_digest(), sources)
             .await
             .unwrap();
-        assert_eq!(stored.len(), 3);
+        assert_eq!(stored.digests.len(), 3);
 
         // Everything is present now.
         let missing = Arc::clone(&backend)
@@ -63,7 +98,7 @@ mod local_storage {
             .retrieve_blobs_batched(action_digest(), digests)
             .await
             .unwrap();
-        assert_eq!(blobs.len(), 3);
+        assert_eq!(blobs.blobs.len(), 3);
 
         // // Retrieval order across parallel chunks isn't guaranteed.
         // let mut contents: Vec<Vec<u8>> = blobs
@@ -115,7 +150,7 @@ mod local_storage {
             .store_blobs_batched(action_digest(), vec![inline_source(b"dup")])
             .await
             .unwrap();
-        assert_eq!(again.len(), 1);
+        assert_eq!(again.digests.len(), 1);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -141,13 +176,13 @@ mod local_storage {
             .store_blobs_batched(action_digest(), sources)
             .await
             .unwrap();
-        assert_eq!(stored.len(), count);
+        assert_eq!(stored.digests.len(), count);
 
         let blobs = Arc::clone(&backend)
             .retrieve_blobs_batched(action_digest(), digests)
             .await
             .unwrap();
-        assert_eq!(blobs.len(), count);
+        assert_eq!(blobs.blobs.len(), count);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -167,13 +202,13 @@ mod local_storage {
             .store_blobs_batched(action_digest(), vec![source])
             .await
             .unwrap();
-        assert_eq!(stored.len(), 1);
+        assert_eq!(stored.digests.len(), 1);
 
         let blobs = Arc::clone(&backend)
             .retrieve_blobs_batched(action_digest(), vec![digest])
             .await
             .unwrap();
-        assert_eq!(blobs.len(), 1);
+        assert_eq!(blobs.blobs.len(), 1);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -216,5 +251,142 @@ mod local_storage {
         assert_eq!(loaded.files[0].path.as_str(), "out/a.txt");
         assert!(loaded.files[0].is_executable);
         assert_eq!(loaded.files[0].unix_mode, Some(0o755));
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn gc_keeps_referenced_blobs_and_sweeps_orphans() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend(&sandbox);
+
+        let referenced = inline_source(b"referenced output");
+        let orphan = inline_source(b"orphaned output");
+        let ref_digest = referenced.digest.clone();
+        let orphan_digest = orphan.digest.clone();
+
+        Arc::clone(&backend)
+            .store_blobs_batched(action_digest(), vec![referenced, orphan])
+            .await
+            .unwrap();
+        backend
+            .store_manifest(action_digest(), manifest_referencing(&ref_digest))
+            .await
+            .unwrap();
+
+        // Age both blobs past the grace window so the sweep is driven by
+        // reachability, not recency.
+        backdate(&blob_path(&sandbox, &ref_digest), Duration::from_secs(7200));
+        backdate(
+            &blob_path(&sandbox, &orphan_digest),
+            Duration::from_secs(7200),
+        );
+
+        let stats = backend.gc(Duration::from_secs(86400)).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 1);
+        assert!(
+            backend
+                .find_missing_blobs(vec![ref_digest])
+                .await
+                .unwrap()
+                .is_empty(),
+            "referenced blob should survive",
+        );
+        assert_eq!(
+            backend
+                .find_missing_blobs(vec![orphan_digest.clone()])
+                .await
+                .unwrap(),
+            vec![orphan_digest],
+            "orphan blob should be swept",
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn gc_evicts_stale_manifests_and_their_blobs() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend(&sandbox);
+
+        let blob = inline_source(b"stale output");
+        let blob_digest = blob.digest.clone();
+
+        Arc::clone(&backend)
+            .store_blobs_batched(action_digest(), vec![blob])
+            .await
+            .unwrap();
+        backend
+            .store_manifest(action_digest(), manifest_referencing(&blob_digest))
+            .await
+            .unwrap();
+
+        backdate(
+            &manifest_path(&sandbox, &action_digest()),
+            Duration::from_secs(7200),
+        );
+        backdate(
+            &blob_path(&sandbox, &blob_digest),
+            Duration::from_secs(7200),
+        );
+
+        let stats = backend.gc(Duration::from_secs(3600)).await.unwrap();
+
+        // The stale manifest is evicted, and its now-unreferenced blob is swept.
+        assert_eq!(stats.blobs_removed, 2);
+        assert!(
+            backend
+                .retrieve_manifest(action_digest())
+                .await
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            backend
+                .find_missing_blobs(vec![blob_digest.clone()])
+                .await
+                .unwrap(),
+            vec![blob_digest],
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    async fn gc_keeps_recently_hit_manifests() {
+        let sandbox = create_empty_sandbox();
+        let backend = create_backend(&sandbox);
+
+        let blob = inline_source(b"hot output");
+        let blob_digest = blob.digest.clone();
+
+        Arc::clone(&backend)
+            .store_blobs_batched(action_digest(), vec![blob])
+            .await
+            .unwrap();
+        backend
+            .store_manifest(action_digest(), manifest_referencing(&blob_digest))
+            .await
+            .unwrap();
+
+        // Age the manifest past the lifetime, then hit it: retrieval refreshes
+        // the mtime, so the next GC must treat it as recently used and keep it.
+        backdate(
+            &manifest_path(&sandbox, &action_digest()),
+            Duration::from_secs(7200),
+        );
+        assert!(
+            backend
+                .retrieve_manifest(action_digest())
+                .await
+                .unwrap()
+                .is_some()
+        );
+
+        let stats = backend.gc(Duration::from_secs(3600)).await.unwrap();
+
+        assert_eq!(stats.blobs_removed, 0);
+        assert!(
+            backend
+                .retrieve_manifest(action_digest())
+                .await
+                .unwrap()
+                .is_some()
+        );
     }
 }

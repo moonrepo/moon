@@ -4,9 +4,7 @@ use crate::{merge_clean_results, resolve_path};
 use miette::IntoDiagnostic;
 use moon_cache_item::*;
 use moon_cache_storage::{CacheContext, Storage};
-use moon_cas::CasStore;
 use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
-use moon_config::CacheCasConfig;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::ContentHash;
 use moon_time::parse_duration;
@@ -24,16 +22,9 @@ use tracing::{debug, instrument};
 
 #[derive(Debug)]
 pub struct CacheEngine {
-    /// A content-addressable storage of action results.
-    pub ac: CasStore,
-
     /// The `.moon/cache` directory relative to workspace root.
     /// Contains cached items pertaining to runs and processes.
     pub cache_dir: PathBuf,
-
-    /// A content-addressable storage of objects, primarily for
-    /// storing task outputs.
-    pub cas: CasStore,
 
     /// Manages reading and writing of content hashable items.
     pub hash: HashEngine,
@@ -78,8 +69,6 @@ impl CacheEngine {
         let hash = HashEngine::new(dir)?;
 
         Ok(CacheEngine {
-            ac: CasStore::new(dir.join("ac"), CacheCasConfig::default())?,
-            cas: CasStore::new(dir.join("cas"), context.cache_config.cas.clone())?,
             hash,
             state: StateEngine::new(dir)?,
             storage: Storage::new(context.clone()),
@@ -134,15 +123,10 @@ impl CacheEngine {
             result = merge_clean_results(result, fs::remove_dir_stale_contents(dir, duration)?);
         }
 
-        let ac_result = self.ac.gc(duration).await?;
+        let storage_result = self.storage.clean(duration).await?;
 
-        result.files_deleted += ac_result.blobs_removed;
-        result.bytes_saved += ac_result.bytes_freed;
-
-        let cas_result = self.cas.gc(duration).await?;
-
-        result.files_deleted += cas_result.blobs_removed;
-        result.bytes_saved += cas_result.bytes_freed;
+        result.files_deleted += storage_result.blobs_removed;
+        result.bytes_saved += storage_result.bytes_saved;
 
         debug!(
             "Deleted {} artifacts and saved {} bytes",

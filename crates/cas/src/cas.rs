@@ -1,8 +1,8 @@
 use crate::cas_error::CasError;
-use crate::gc::GcResult;
-use moon_blob::Blob;
+use moon_blob::{Blob, BlobCleanStats};
 use moon_config::CacheCasConfig;
 use moon_hash::{ContentHash, Digest};
+use rustc_hash::FxHashSet;
 use starbase_utils::fs;
 use starbase_utils::hash::{
     self, hex,
@@ -10,6 +10,7 @@ use starbase_utils::hash::{
 };
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tracing::{debug, instrument, trace};
 
@@ -274,13 +275,24 @@ impl CasStore {
     // ---- Lifecycle ----
 
     /// Remove blobs whose mtime is older than `max_age`.
-    pub async fn gc(&self, max_age: Duration) -> miette::Result<GcResult> {
+    pub async fn gc(&self, max_age: Duration) -> miette::Result<BlobCleanStats> {
         crate::gc::gc(self, max_age).await
     }
 
     /// Remove all blobs from the store.
-    pub async fn purge(&self) -> miette::Result<GcResult> {
+    pub async fn purge(&self) -> miette::Result<BlobCleanStats> {
         crate::gc::purge(self).await
+    }
+
+    /// Reachability sweep: remove every object whose hash is not in `keep`,
+    /// except objects modified within `grace` (which protects a blob written
+    /// just before the manifest that references it, mid-ingest).
+    pub async fn retain(
+        &self,
+        keep: Arc<FxHashSet<ContentHash>>,
+        grace: Duration,
+    ) -> miette::Result<BlobCleanStats> {
+        crate::gc::retain(self, keep, grace).await
     }
 
     /// Update a blob's mtime to now, keeping it alive through GC.
@@ -301,6 +313,25 @@ impl CasStore {
 
     pub fn object_path(&self, hash: &ContentHash) -> PathBuf {
         self.objects_dir.join(hash.prefix()).join(hash.suffix())
+    }
+
+    /// Paths of every stored object, excluding the temp/staging directory.
+    pub fn object_paths(&self) -> miette::Result<Vec<PathBuf>> {
+        let mut paths = vec![];
+
+        for shard in fs::read_dir(&self.objects_dir)? {
+            let shard_path = shard.path();
+
+            if !shard_path.is_dir() || shard_path == self.temp_dir {
+                continue;
+            }
+
+            for entry in fs::read_dir(&shard_path)? {
+                paths.push(entry.path());
+            }
+        }
+
+        Ok(paths)
     }
 
     pub fn object_path_with_exists_check(&self, hash: &ContentHash) -> miette::Result<PathBuf> {

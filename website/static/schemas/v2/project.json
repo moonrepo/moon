@@ -136,6 +136,18 @@
         "$ref": "#/definitions/Id"
       }
     },
+    "taskOptions": {
+      "title": "taskOptions",
+      "description": "Shared task options for all tasks. Can be overriden per task. @since 2.4.0",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TaskOptionsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "tasks": {
       "title": "tasks",
       "description": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline.",

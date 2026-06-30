@@ -263,6 +263,11 @@ export interface ProjectConfig {
 	 */
 	tags?: Id[];
 	/**
+	 * Shared task options for all tasks. Can be overriden per task.
+	 * @since 2.4.0
+	 */
+	taskOptions: TaskOptionsConfig | null;
+	/**
 	 * A map of identifiers to task objects. Tasks represent the work-unit
 	 * of a project, and can be ran in the action pipeline.
 	 */
@@ -478,6 +483,11 @@ export interface PartialProjectConfig {
 	 * boundary enforcement, and task inheritance.
 	 */
 	tags?: Id[] | null;
+	/**
+	 * Shared task options for all tasks. Can be overriden per task.
+	 * @since 2.4.0
+	 */
+	taskOptions?: PartialTaskOptionsConfig | null;
 	/**
 	 * A map of identifiers to task objects. Tasks represent the work-unit
 	 * of a project, and can be ran in the action pipeline.

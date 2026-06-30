@@ -123,6 +123,10 @@ mod git {
             let sandbox = create_git_test_sandbox(false);
 
             sandbox.run_git(|cmd| {
+                cmd.args(["config", "core.repositoryFormatVersion", "1"]);
+            });
+
+            sandbox.run_git(|cmd| {
                 cmd.args(["config", "extensions.objectFormat", "sha256"]);
             });
 

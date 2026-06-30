@@ -4,8 +4,10 @@ use indexmap::IndexMap;
 use moon_common::Id;
 use moon_config::{
     FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, ProjectInput,
-    TaskArgs, TaskConfig, TaskDependency, TaskDependencyCacheStrategy, TaskDependencyConfig,
-    TaskMergeStrategy, TaskOptionCache, TaskOutputStyle, TaskType,
+    TaskArgs, TaskCheckConditionConfig, TaskCheckEntry, TaskCheckFingerprint,
+    TaskCheckFingerprintConfig, TaskCheckRequirementConfig, TaskConfig, TaskDependency,
+    TaskDependencyCacheStrategy, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
+    TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use schematic::{ConfigLoader as BaseLoader, RegexSetting};
@@ -23,7 +25,7 @@ mod task_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `dependsOn`, `deps`, `env`, `inputs`, `outputs`, `options`, `preset`, `script`, `tags`, `toolchain`, `toolchains`, `type`"
+        expected = "unknown field `unknown`, expected one of `extends`, `description`, `command`, `args`, `checks`, `dependsOn`, `deps`, `env`, `inputs`, `outputs`, `options`, `preset`, `script`, `tags`, `toolchain`, `toolchains`, `type`"
     )]
     fn error_unknown_field() {
         test_parse_config("unknown: 123", load_config_from_code);
@@ -726,6 +728,302 @@ tags:
         #[should_panic(expected = "expected a sequence")]
         fn errors_on_non_list() {
             test_parse_config("tags: lint", load_config_from_code);
+        }
+    }
+
+    mod checks {
+        use super::*;
+
+        #[test]
+        fn defaults_to_none() {
+            let config = test_parse_config("{}", load_config_from_code);
+
+            assert_eq!(config.checks, None);
+        }
+
+        #[test]
+        fn parses_empty_list() {
+            let config = test_parse_config("checks: []", load_config_from_code);
+
+            assert_eq!(config.checks, Some(vec![]));
+        }
+
+        #[test]
+        fn string_becomes_requirement() {
+            let config = test_parse_config(
+                r"
+checks:
+  - 'which cargo'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![TaskCheckEntry::Requirement(
+                    TaskCheckRequirementConfig {
+                        script: "which cargo".into()
+                    }
+                )])
+            );
+        }
+
+        #[test]
+        fn multiple_strings() {
+            let config = test_parse_config(
+                r"
+checks:
+  - 'which cargo'
+  - 'which node'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![
+                    TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                        script: "which cargo".into()
+                    }),
+                    TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                        script: "which node".into()
+                    }),
+                ])
+            );
+        }
+
+        #[test]
+        fn requirement_object() {
+            let config = test_parse_config(
+                r"
+checks:
+  - check: requirement
+    script: 'which cargo'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![TaskCheckEntry::Requirement(
+                    TaskCheckRequirementConfig {
+                        script: "which cargo".into()
+                    }
+                )])
+            );
+        }
+
+        #[test]
+        fn condition_object() {
+            let config = test_parse_config(
+                r"
+checks:
+  - check: condition
+    script: 'test -f dist/index.js'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![TaskCheckEntry::Condition(TaskCheckConditionConfig {
+                    script: "test -f dist/index.js".into()
+                })])
+            );
+        }
+
+        #[test]
+        fn fingerprint_object() {
+            let config = test_parse_config(
+                r"
+checks:
+  - check: fingerprint
+    script: 'rustc --version'
+    hash: stdout
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![TaskCheckEntry::Fingerprint(
+                    TaskCheckFingerprintConfig {
+                        script: "rustc --version".into(),
+                        hash: TaskCheckFingerprint::Stdout,
+                    }
+                )])
+            );
+        }
+
+        #[test]
+        fn fingerprint_hash_stderr() {
+            let config = test_parse_config(
+                r"
+checks:
+  - check: fingerprint
+    script: 'rustc --version'
+    hash: stderr
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![TaskCheckEntry::Fingerprint(
+                    TaskCheckFingerprintConfig {
+                        script: "rustc --version".into(),
+                        hash: TaskCheckFingerprint::Stderr,
+                    }
+                )])
+            );
+        }
+
+        #[test]
+        fn fingerprint_hash_exit_code() {
+            let config = test_parse_config(
+                r"
+checks:
+  - check: fingerprint
+    script: 'rustc --version'
+    hash: exit-code
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![TaskCheckEntry::Fingerprint(
+                    TaskCheckFingerprintConfig {
+                        script: "rustc --version".into(),
+                        hash: TaskCheckFingerprint::ExitCode,
+                    }
+                )])
+            );
+        }
+
+        #[test]
+        fn fingerprint_hash_boolean() {
+            let config = test_parse_config(
+                r"
+checks:
+  - check: fingerprint
+    script: 'rustc --version'
+    hash: true
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![TaskCheckEntry::Fingerprint(
+                    TaskCheckFingerprintConfig {
+                        script: "rustc --version".into(),
+                        hash: TaskCheckFingerprint::Enabled(true),
+                    }
+                )])
+            );
+        }
+
+        #[test]
+        fn fingerprint_hash_defaults_to_enabled() {
+            let config = test_parse_config(
+                r"
+checks:
+  - check: fingerprint
+    script: 'rustc --version'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![TaskCheckEntry::Fingerprint(
+                    TaskCheckFingerprintConfig {
+                        script: "rustc --version".into(),
+                        hash: TaskCheckFingerprint::Enabled(true),
+                    }
+                )])
+            );
+        }
+
+        #[test]
+        fn mixed_entries() {
+            let config = test_parse_config(
+                r"
+checks:
+  - 'which cargo'
+  - check: condition
+    script: 'test -f dist/index.js'
+  - check: fingerprint
+    script: 'rustc --version'
+    hash: stdout
+  - check: requirement
+    script: 'node --version'
+",
+                load_config_from_code,
+            );
+
+            assert_eq!(
+                config.checks,
+                Some(vec![
+                    TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                        script: "which cargo".into()
+                    }),
+                    TaskCheckEntry::Condition(TaskCheckConditionConfig {
+                        script: "test -f dist/index.js".into()
+                    }),
+                    TaskCheckEntry::Fingerprint(TaskCheckFingerprintConfig {
+                        script: "rustc --version".into(),
+                        hash: TaskCheckFingerprint::Stdout,
+                    }),
+                    TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                        script: "node --version".into()
+                    }),
+                ])
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "a shell script is required for a task check")]
+        fn errors_on_empty_string() {
+            test_parse_config(
+                r"
+checks:
+  - ''
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "a shell script is required for a task check")]
+        fn errors_on_whitespace_string() {
+            test_parse_config(
+                r"
+checks:
+  - '   '
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "Failed to deserialize the untagged enum TaskCheckEntryShape")]
+        fn errors_on_invalid_check_type() {
+            test_parse_config(
+                r"
+checks:
+  - check: unknown
+    script: 'test'
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(expected = "expected a sequence")]
+        fn errors_on_non_list() {
+            test_parse_config("checks: 'which cargo'", load_config_from_code);
         }
     }
 

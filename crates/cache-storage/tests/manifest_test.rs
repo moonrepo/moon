@@ -160,6 +160,34 @@ mod collect_blob_sources {
 
         assert_eq!(sources.len(), 2);
     }
+
+    #[test]
+    fn empty_file_uses_inline_empty_blob_not_a_path() {
+        // A size-0 output must become a shared inline empty blob, never a
+        // File(path): the path isn't materialized when warming runs, and empty
+        // files dedupe to the one empty digest in CAS.
+        let manifest = Manifest {
+            files: vec![
+                file(None, Some(digest('a', 0))),
+                file(Some(Bytes::from_static(b"hi")), Some(digest('c', 2))),
+            ],
+            ..Default::default()
+        };
+
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
+
+        assert_eq!(sources.len(), 2);
+
+        let empty = sources
+            .iter()
+            .find(|source| source.digest == digest('a', 0))
+            .expect("empty file should still produce a blob input");
+
+        match &empty.content {
+            BlobContent::Inline(bytes) => assert!(bytes.is_empty()),
+            _ => panic!("size-0 output must be an inline empty blob, not a file path"),
+        }
+    }
 }
 
 mod hydration {

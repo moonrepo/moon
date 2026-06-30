@@ -24,7 +24,7 @@ mod project_config {
 
     #[test]
     #[should_panic(
-        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `deps`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `toolchains`, `workspace`"
+        expected = "unknown field `unknown`, expected one of `$schema`, `dependsOn`, `deps`, `docker`, `env`, `fileGroups`, `id`, `language`, `layer`, `owners`, `project`, `stack`, `tags`, `tasks`, `taskOptions`, `toolchains`, `workspace`"
     )]
     fn error_unknown_field() {
         test_load_config("moon.yml", "unknown: 123", |path| {

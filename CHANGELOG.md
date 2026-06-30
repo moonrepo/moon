@@ -24,6 +24,9 @@
   - Added extensive testing to account for edge cases.
   - When the server doesn't support the configured compression, it will now default to "identity"
     (uncompressed) instead of disabling the cache entirely.
+- **Tasks**
+  - Added a `taskOptions` setting to `moon.*` that allows you to configure default task options for
+    all tasks within the current project, which can be overridden per task.
 - **VCS**
   - Hardened all executed Git commands: revisions are validated against argument injection,
     credential prompts now fail immediately instead of hanging, and the fsmonitor daemon is now

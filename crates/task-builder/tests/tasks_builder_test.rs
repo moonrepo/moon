@@ -1190,6 +1190,58 @@ tasks:
         }
     }
 
+    mod shared_task_options {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn inherits_project_shared_options() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("task-options").await;
+
+            let task = tasks.get("inherits").unwrap();
+
+            assert_eq!(task.options.retry_count, 7);
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn project_shared_options_override_global() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("task-options").await;
+
+            // Global `taskOptions` set `retryCount: 10`, the project lowers it to 7.
+            let task = tasks.get("inherits").unwrap();
+
+            assert_eq!(task.options.retry_count, 7);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn task_can_override_project_shared_options() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path()).with_all_toolchains();
+
+            let tasks = container.build_tasks("task-options").await;
+
+            let task = tasks.get("overrides").unwrap();
+
+            // Overridden by the task itself.
+            assert_eq!(task.options.retry_count, 2);
+            // Still inherited from the project.
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(false));
+
+            let task = tasks.get("overrides-cache").unwrap();
+
+            // Inherited from the project.
+            assert_eq!(task.options.retry_count, 7);
+            // Overridden by the task itself.
+            assert_eq!(task.options.cache, TaskOptionCache::Enabled(true));
+        }
+    }
+
     mod presets {
         use super::*;
 

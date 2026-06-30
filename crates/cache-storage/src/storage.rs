@@ -29,7 +29,7 @@ pub struct CacheContext {
     pub workspace_root: PathBuf,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct StorageOptions {
     pub only_backends: Vec<Id>,
     pub include_local: bool,
@@ -115,23 +115,41 @@ impl Storage {
     }
 
     pub fn get_backends(&self) -> Vec<&BoxedStorageBackend> {
+        self.get_backends_with_options(&self.options)
+    }
+
+    pub fn get_backends_with_options(&self, options: &StorageOptions) -> Vec<&BoxedStorageBackend> {
         let mut backends = vec![];
 
-        if self.options.only_backends.is_empty() {
-            if self.options.include_local {
-                backends.extend(self.local_backends.iter());
-            }
-
-            if self.options.include_remote {
-                backends.extend(self.remote_backends.iter());
-            }
-        } else {
+        if options.include_local {
             backends.extend(self.local_backends.iter());
+        }
+
+        if options.include_remote {
             backends.extend(self.remote_backends.iter());
-            backends.retain(|backend| self.options.only_backends.contains(backend.get_id()));
+        }
+
+        if !options.only_backends.is_empty() {
+            backends.retain(|backend| options.only_backends.contains(backend.get_id()));
         }
 
         backends
+    }
+
+    pub fn get_local_backends(&self) -> Vec<&BoxedStorageBackend> {
+        self.get_backends_with_options(&StorageOptions {
+            // Respect previously configured options
+            include_remote: false,
+            ..self.options.clone()
+        })
+    }
+
+    pub fn get_remote_backends(&self) -> Vec<&BoxedStorageBackend> {
+        self.get_backends_with_options(&StorageOptions {
+            // Respect previously configured options
+            include_local: false,
+            ..self.options.clone()
+        })
     }
 
     pub fn is_local_enabled(&self) -> bool {
@@ -227,7 +245,7 @@ impl Storage {
                 continue;
             }
 
-            background_tasks.push(tokio::spawn(Box::pin(archive_manifest_in_backend(
+            background_tasks.push(tokio::spawn(Box::pin(persist_manifest_in_backend(
                 Arc::clone(backend),
                 digest.to_owned(),
                 manifest.clone(),
@@ -254,7 +272,7 @@ impl Storage {
         let ManifestSource {
             mut manifest,
             backend: original_backend,
-            ..
+            remote,
         } = manifest_source;
         let mut backends = VecDeque::from_iter(self.get_backends());
         let mut count = 1;
@@ -294,6 +312,13 @@ impl Storage {
                 "Hydrated cache manifest from {count} storage backends"
             );
 
+            // A remote hit leaves the local tier cold. Warm it from the
+            // now-in-memory blobs so the next run resolves locally instead of
+            // round-tripping to the remote again
+            if remote {
+                self.warm_local_backends(digest, &manifest).await;
+            }
+
             return Ok(Some(manifest));
         }
 
@@ -303,6 +328,33 @@ impl Storage {
         );
 
         Ok(None)
+    }
+
+    /// Warm the local tier after a remote cache hit by persisting the fully
+    /// hydrated manifest and its blobs into every active, writable local
+    /// backend, so the next run resolves locally instead of round-tripping to
+    /// the remote.
+    async fn warm_local_backends(&self, digest: &Digest, manifest: &Manifest) {
+        let mut background_tasks = self.background_tasks.lock().unwrap();
+
+        for backend in self.get_local_backends() {
+            if !backend.is_writable() {
+                continue;
+            }
+
+            trace!(
+                storage = backend.get_id().as_str(),
+                hash = digest.hash.as_str(),
+                "Warming local storage backend from remote cache hit"
+            );
+
+            background_tasks.push(tokio::spawn(Box::pin(persist_manifest_in_backend(
+                Arc::clone(backend),
+                digest.to_owned(),
+                manifest.clone(),
+                self.context.workspace_root.clone(),
+            ))));
+        }
     }
 
     pub async fn wait_for_background_tasks(&self) -> miette::Result<()> {
@@ -360,7 +412,7 @@ impl Storage {
     }
 }
 
-async fn archive_manifest_in_backend(
+async fn persist_manifest_in_backend(
     backend: BoxedStorageBackend,
     digest: Digest,
     mut manifest: Manifest,

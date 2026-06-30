@@ -11,7 +11,6 @@ pub async fn debug_config(session: MoonSession) -> SessionResult {
 
     dbg!(&session.extensions_config);
 
-    // TODO: fix the system toolchain data being too large to print
     dbg!(&session.toolchains_config);
 
     dbg!(&session.tasks_config);

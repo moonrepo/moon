@@ -42,6 +42,19 @@
     old path is now reported as "deleted", instead of being omitted entirely. Additionally, type
     changes and unmerged files are now reported, instead of being omitted.
 
+#### 🧰 Toolchains
+
+- **Python**
+  - Added Poetry package manager support.
+    - Can be enabled with `unstable_python.packageManager: 'poetry'` in `.moon/toolchains.*`.
+    - Can be configured with `unstable_poetry.*` settings in `.moon/toolchains.*`.
+    - Supports tiers 1-3.
+- **Ruby**
+  - Added unstable Ruby toolchain support!
+    - Can be configured with `unstable_ruby.*` settings in `.moon/toolchains.*`.
+    - Supports tiers 1-3. Tier 3 requires building from source (which may not be desirable).
+    - Will use Bundler as the package manager.
+
 #### 🐞 Fixes
 
 - Fixed an issue where an explicit head revision was ignored when diffing between revisions, and the

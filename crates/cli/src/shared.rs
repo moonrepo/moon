@@ -229,7 +229,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                     commands::toolchain::info::info(session, args).await
                 }
             },
-            Commands::Upgrade => commands::upgrade::upgrade(session).await,
+            Commands::Upgrade(args) => commands::upgrade::upgrade(session, args).await,
         }
     })
     .await

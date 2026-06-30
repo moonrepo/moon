@@ -28,6 +28,7 @@ use crate::commands::tasks::TasksArgs;
 use crate::commands::template::TemplateArgs;
 use crate::commands::templates::TemplatesArgs;
 use crate::commands::toolchain::ToolchainCommands;
+use crate::commands::upgrade::UpgradeArgs;
 use crate::systems::bootstrap;
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
@@ -245,7 +246,7 @@ pub enum Commands {
         name = "upgrade",
         about = "Upgrade to the latest version of moon."
     )]
-    Upgrade,
+    Upgrade(UpgradeArgs),
 }
 
 fn fg(ty: ColorType) -> Style {

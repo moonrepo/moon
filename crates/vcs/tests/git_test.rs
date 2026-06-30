@@ -126,6 +126,10 @@ mod git {
                 cmd.args(["config", "extensions.objectFormat", "sha256"]);
             });
 
+            sandbox.run_git(|cmd| {
+                cmd.args(["config", "core.repositoryFormatVersion", "1"]);
+            });
+
             Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
         }
 

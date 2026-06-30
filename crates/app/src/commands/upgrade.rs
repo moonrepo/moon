@@ -1,13 +1,17 @@
 use crate::app_error::AppError;
 use crate::helpers::create_progress_loader;
 use crate::session::{MoonSession, SessionResult};
+use clap::Args;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_api::Launchpad;
 use moon_common::path;
+use moon_config::PartialWorkspaceConfig;
+use moon_config_loader::{read_config_based_on_extension, write_config_based_on_extension};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
 use moon_process::Command;
+use semver::{Version, VersionReq};
 use starbase_archive::Archiver;
 use starbase_utils::fs::FsError;
 use starbase_utils::{fs, net};
@@ -42,8 +46,17 @@ pub fn is_installed_with(session: &MoonSession) -> miette::Result<InstalledWith>
     Ok(InstalledWith::Unknown(current_exe_path))
 }
 
+#[derive(Args, Clone, Debug)]
+pub struct UpgradeArgs {
+    #[arg(
+        long,
+        help = "Update the version constraint in the workspace configuration"
+    )]
+    update_constraint: bool,
+}
+
 #[instrument(skip(session))]
-pub async fn upgrade(session: MoonSession) -> SessionResult {
+pub async fn upgrade(session: MoonSession, args: UpgradeArgs) -> SessionResult {
     if proto_core::is_offline() {
         return Err(AppError::UpgradeRequiresInternet.into());
     }
@@ -100,9 +113,13 @@ pub async fn upgrade(session: MoonSession) -> SessionResult {
         // Special case to install with proto
         InstalledWith::Proto => {
             Command::new("proto")
-                .args(["install", "moon", "latest", "--pin", "global"])
+                .args(["install", "moon", "latest", "--pin", "local"])
                 .exec_stream_output()
                 .await?;
+
+            if args.update_constraint {
+                update_constraint(&session, &remote_version)?;
+            }
 
             return Ok(None);
         }
@@ -173,6 +190,10 @@ pub async fn upgrade(session: MoonSession) -> SessionResult {
             fs::copy_file(&input_path, &output_path)?;
             fs::update_perms(&output_path, None)?;
         }
+    }
+
+    if args.update_constraint {
+        update_constraint(&session, &remote_version)?;
     }
 
     // Cleanup
@@ -248,6 +269,26 @@ fn self_replace(
     // And lastly, we move the temporary to the original location. This avoids
     // writing/copying data to the original, and instead does a rename/move.
     fs::rename(temp_exe, current_exe)?;
+
+    Ok(())
+}
+
+fn update_constraint(session: &MoonSession, version: &Version) -> miette::Result<()> {
+    for file in session.config_loader.get_workspace_files() {
+        if !file.exists() {
+            continue;
+        }
+
+        let mut config: PartialWorkspaceConfig = read_config_based_on_extension(&file)?;
+
+        if let Ok(req) = VersionReq::parse(&format!("^{version}")) {
+            config.version_constraint = Some(req);
+
+            write_config_based_on_extension(&file, config)?;
+        }
+
+        break;
+    }
 
     Ok(())
 }

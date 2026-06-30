@@ -186,11 +186,23 @@
       "description": "Configures aspects of the content-addressable storage (CAS) cache.",
       "type": "object",
       "properties": {
+        "maxSize": {
+          "title": "maxSize",
+          "description": "Maximum total size of the local cache, for example \"10gb\" or \"512mib\". When exceeded, the least recently used cached task outputs are evicted. Unlimited when unset. @since 2.4.0",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
-          "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption.",
+          "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption. @since 2.3.0",
           "type": "boolean",
-          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption."
+          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption. @since 2.3.0"
         }
       },
       "additionalProperties": false,
@@ -202,13 +214,13 @@
       "properties": {
         "cas": {
           "title": "cas",
-          "description": "Configures aspects of the content-addressable storage (CAS) cache.",
+          "description": "Configures aspects of the content-addressable storage (CAS) cache. @since 2.3.0",
           "allOf": [
             {
               "$ref": "#/definitions/CacheCasConfig"
             }
           ],
-          "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache."
+          "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache. @since 2.3.0"
         }
       },
       "additionalProperties": false
@@ -465,23 +477,23 @@
       "properties": {
         "asyncAffectedTracking": {
           "title": "asyncAffectedTracking",
-          "description": "Track and determine affected projects and tasks asynchronously.",
+          "description": "Track and determine affected projects and tasks asynchronously. @since 2.2.0",
           "type": "boolean"
         },
         "asyncGraphBuilding": {
           "title": "asyncGraphBuilding",
-          "description": "Build the project and task graphs asynchronously.",
+          "description": "Build the project and task graphs asynchronously. @since 2.2.0",
           "type": "boolean"
         },
         "casOutputsCache": {
           "title": "casOutputsCache",
-          "description": "Store task outputs in a local CAS (content-addressable storage) cache.",
+          "description": "Store task outputs in a local CAS (content-addressable storage) cache. @since 2.3.0",
           "type": "boolean",
-          "markdownDescription": "Store task outputs in a local CAS (content-addressable storage) cache."
+          "markdownDescription": "Store task outputs in a local CAS (content-addressable storage) cache. @since 2.3.0"
         },
         "nativeFileHashing": {
           "title": "nativeFileHashing",
-          "description": "Use native file hashing instead of using the VCS.",
+          "description": "Use native file hashing instead of using the VCS. @since 2.3.0",
           "type": "boolean"
         }
       },

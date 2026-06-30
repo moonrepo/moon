@@ -7,15 +7,26 @@ import type { ExtendsFrom, Id } from './common';
 /** Configures aspects of the content-addressable storage (CAS) cache. */
 export interface CacheCasConfig {
 	/**
+	 * Maximum total size of the local cache, for example "10gb" or
+	 * "512mib". When exceeded, the least recently used cached task outputs
+	 * are evicted. Unlimited when unset.
+	 * @since 2.4.0
+	 */
+	maxSize: string | null;
+	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.
+	 * @since 2.3.0
 	 */
 	verifyIntegrity: boolean;
 }
 
 /** Configures aspects of the caching engine and layer. */
 export interface CacheConfig {
-	/** Configures aspects of the content-addressable storage (CAS) cache. */
+	/**
+	 * Configures aspects of the content-addressable storage (CAS) cache.
+	 * @since 2.3.0
+	 */
 	cas: CacheCasConfig;
 }
 
@@ -164,24 +175,28 @@ export interface DockerConfig {
 export interface ExperimentsConfig {
 	/**
 	 * Track and determine affected projects and tasks asynchronously.
+	 * @since 2.2.0
 	 *
 	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
 	 */
 	asyncAffectedTracking: boolean;
 	/**
 	 * Build the project and task graphs asynchronously.
+	 * @since 2.2.0
 	 *
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding: boolean;
 	/**
 	 * Store task outputs in a local CAS (content-addressable storage) cache.
+	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
 	 */
 	casOutputsCache: boolean;
 	/**
 	 * Use native file hashing instead of using the VCS.
+	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
@@ -679,15 +694,26 @@ export interface WorkspaceConfig {
 /** Configures aspects of the content-addressable storage (CAS) cache. */
 export interface PartialCacheCasConfig {
 	/**
+	 * Maximum total size of the local cache, for example "10gb" or
+	 * "512mib". When exceeded, the least recently used cached task outputs
+	 * are evicted. Unlimited when unset.
+	 * @since 2.4.0
+	 */
+	maxSize?: string | null;
+	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.
+	 * @since 2.3.0
 	 */
 	verifyIntegrity?: boolean | null;
 }
 
 /** Configures aspects of the caching engine and layer. */
 export interface PartialCacheConfig {
-	/** Configures aspects of the content-addressable storage (CAS) cache. */
+	/**
+	 * Configures aspects of the content-addressable storage (CAS) cache.
+	 * @since 2.3.0
+	 */
 	cas?: PartialCacheCasConfig | null;
 }
 
@@ -832,24 +858,28 @@ export interface PartialDockerConfig {
 export interface PartialExperimentsConfig {
 	/**
 	 * Track and determine affected projects and tasks asynchronously.
+	 * @since 2.2.0
 	 *
 	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
 	 */
 	asyncAffectedTracking?: boolean | null;
 	/**
 	 * Build the project and task graphs asynchronously.
+	 * @since 2.2.0
 	 *
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding?: boolean | null;
 	/**
 	 * Store task outputs in a local CAS (content-addressable storage) cache.
+	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
 	 */
 	casOutputsCache?: boolean | null;
 	/**
 	 * Use native file hashing instead of using the VCS.
+	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */

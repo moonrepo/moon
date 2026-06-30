@@ -1,6 +1,7 @@
 use crate::project::*;
 use crate::shapes::Input;
 use crate::task_config::{EnvMap, TaskConfig};
+use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
@@ -162,6 +163,12 @@ config_struct!(
         #[setting(nested)]
         #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
         pub tasks: BTreeMap<Id, TaskConfig>,
+
+        /// Shared task options for all tasks. Can be overriden per task.
+        /// @since 2.4.0
+        #[setting(nested)]
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub task_options: Option<TaskOptionsConfig>,
 
         /// Overrides top-level toolchain settings, scoped to this project.
         #[setting(nested)]

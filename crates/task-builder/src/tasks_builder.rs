@@ -111,8 +111,8 @@ pub struct TasksBuilder<'proj> {
     // Tasks to merge and build
     task_ids: FxHashSet<&'proj Id>,
     global_tasks: FxHashMap<&'proj Id, Vec<&'proj TaskConfig>>,
-    global_task_options: Vec<&'proj TaskOptionsConfig>,
     local_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
+    shared_task_options: Vec<&'proj TaskOptionsConfig>,
     filters: Option<&'proj ProjectWorkspaceInheritedTasksConfig>,
 }
 
@@ -135,7 +135,7 @@ impl<'proj> TasksBuilder<'proj> {
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
-            global_task_options: vec![],
+            shared_task_options: vec![],
             local_tasks: FxHashMap::default(),
             filters: None,
         }
@@ -234,7 +234,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(options) = &global_config.task_options {
-                self.global_task_options.push(options);
+                self.shared_task_options.push(options);
             }
 
             self.implicit_deps.extend(&global_config.implicit_deps);
@@ -261,6 +261,10 @@ impl<'proj> TasksBuilder<'proj> {
 
         for id in local_config.tasks.keys() {
             self.task_ids.insert(id);
+        }
+
+        if let Some(options) = &local_config.task_options {
+            self.shared_task_options.push(options);
         }
 
         self
@@ -617,7 +621,7 @@ impl<'proj> TasksBuilder<'proj> {
         options.unix_shell = default_unix_shell();
         options.windows_shell = default_windows_shell();
 
-        let mut chain = self.global_task_options.clone();
+        let mut chain = self.shared_task_options.clone();
 
         chain.extend(
             self.get_config_inherit_chain(id)?

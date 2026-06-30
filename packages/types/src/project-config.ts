@@ -156,6 +156,36 @@ export type ProjectMetadataConfig = ProjectMetadataConfigBase & ProjectMetadataC
 /** The technology stack of the project, for categorizing. */
 export type StackType = 'backend' | 'data' | 'frontend' | 'infrastructure' | 'systems' | 'unknown';
 
+/** Task check configuration for conditions. */
+export interface TaskCheckConditionConfig {
+	check: 'condition';
+	/** The shell script to execute. */
+	script: string;
+}
+
+/** Task check configuration for requirements. */
+export interface TaskCheckRequirementConfig {
+	check: 'requirement';
+	/** The shell script to execute. */
+	script: string;
+}
+
+/** Task check configuration for fingerprinting. */
+export interface TaskCheckFingerprintConfig {
+	check: 'fingerprint';
+	/** The content hashing strategy. */
+	hash?: boolean | 'exit-code' | 'stderr' | 'stdout';
+	/** The shell script to execute. */
+	script: string;
+}
+
+export type TaggedTaskCheckEntry =
+	| TaskCheckConditionConfig
+	| TaskCheckRequirementConfig
+	| TaskCheckFingerprintConfig;
+
+export type TaskCheckEntry = string | TaggedTaskCheckEntry;
+
 export type ProjectToolchainEntry = null | boolean | ToolchainPluginConfig;
 
 export type ProjectToolchainsConfigPlugins = Record<Id, ProjectToolchainEntry>;

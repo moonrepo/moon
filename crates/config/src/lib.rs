@@ -8,6 +8,7 @@ pub mod patterns;
 mod project;
 mod project_config;
 mod shapes;
+mod task;
 mod task_config;
 mod task_options_config;
 mod template;

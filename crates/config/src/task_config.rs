@@ -1,4 +1,5 @@
 use crate::shapes::{Input, OneOrMany, Output};
+use crate::task::TaskCheckEntry;
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::{config_enum, config_struct, config_unit_enum};
 use indexmap::IndexMap;
@@ -239,6 +240,14 @@ config_struct!(
         /// defined as a string, or a list of individual arguments.
         #[setting(nested)]
         pub args: TaskArgs,
+
+        /// Checks are shell scripts that run before the task is executed,
+        /// and are categorized into three types: conditions, requirements,
+        /// and fingerprints. Depending on the result of the script and the
+        /// type of check, the task may be skipped, will fail, or continue.
+        /// @since 2.4.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub checks: Option<Vec<TaskCheckEntry>>,
 
         /// Other tasks that this task depends on, and must run to completion
         /// before this task is ran. Can depend on sibling tasks, or tasks in

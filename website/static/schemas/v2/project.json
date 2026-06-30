@@ -986,6 +986,19 @@
       "type": "string",
       "enum": ["backend", "data", "frontend", "infrastructure", "systems", "unknown"]
     },
+    "TaggedTaskCheckEntry": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TaskCheckConditionConfig"
+        },
+        {
+          "$ref": "#/definitions/TaskCheckRequirementConfig"
+        },
+        {
+          "$ref": "#/definitions/TaskCheckFingerprintConfig"
+        }
+      ]
+    },
     "TaskArgs": {
       "description": "Configures a command and its arguments to execute.",
       "anyOf": [
@@ -1003,6 +1016,77 @@
         }
       ]
     },
+    "TaskCheckConditionConfig": {
+      "description": "Task check configuration for conditions.",
+      "type": "object",
+      "properties": {
+        "check": {
+          "title": "check",
+          "const": "condition"
+        },
+        "script": {
+          "title": "script",
+          "description": "The shell script to execute.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskCheckEntry": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/TaggedTaskCheckEntry"
+        }
+      ]
+    },
+    "TaskCheckFingerprintConfig": {
+      "description": "Task check configuration for fingerprinting.",
+      "type": "object",
+      "properties": {
+        "check": {
+          "title": "check",
+          "const": "fingerprint"
+        },
+        "hash": {
+          "title": "hash",
+          "description": "The content hashing strategy.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "enum": ["exit-code", "stderr", "stdout"]
+            }
+          ]
+        },
+        "script": {
+          "title": "script",
+          "description": "The shell script to execute.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskCheckRequirementConfig": {
+      "description": "Task check configuration for requirements.",
+      "type": "object",
+      "properties": {
+        "check": {
+          "title": "check",
+          "const": "requirement"
+        },
+        "script": {
+          "title": "script",
+          "description": "The shell script to execute.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "TaskConfig": {
       "description": "Configures a task to be ran within the action pipeline.",
       "type": "object",
@@ -1013,6 +1097,21 @@
           "allOf": [
             {
               "$ref": "#/definitions/TaskArgs"
+            }
+          ]
+        },
+        "checks": {
+          "title": "checks",
+          "description": "Checks are shell scripts that run before the task is executed, and are categorized into three types: conditions, requirements, and fingerprints. Depending on the result of the script and the type of check, the task may be skipped, will fail, or continue. @since 2.4.0",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TaskCheckEntry"
+              }
+            },
+            {
+              "type": "null"
             }
           ]
         },

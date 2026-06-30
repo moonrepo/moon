@@ -4,6 +4,9 @@
 
 #### 🚀 Updates
 
+- **CLI**
+  - Added a `--update-constraint` option to `moon upgrade` that will update the workspace config
+    version constraint to the latest version.
 - **CAS**
   - Further improvements to the content-addressable storage (CAS) cache, including better error
     handling and performance improvements.

@@ -82,6 +82,8 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                         "Input".into(),
                         "PartialTaskConfig".into(),
                         "TaskConfig".into(),
+                        "PartialTaskOptionsConfig".into(),
+                        "TaskOptionsConfig".into(),
                     ],
                 ),
                 (

@@ -3,7 +3,13 @@
 /* eslint-disable */
 
 import type { Id } from './common';
-import type { Input, PartialTaskConfig, TaskConfig } from './tasks-config';
+import type {
+	Input,
+	PartialTaskConfig,
+	PartialTaskOptionsConfig,
+	TaskConfig,
+	TaskOptionsConfig,
+} from './tasks-config';
 import type { PartialToolchainPluginConfig, ToolchainPluginConfig } from './toolchains-config';
 import type {
 	DockerFileConfig,

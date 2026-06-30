@@ -254,17 +254,18 @@ impl Manifest {
 
         for file in &self.files {
             if let Some(digest) = &file.digest {
-                if let Some(bytes) = &file.bytes {
-                    sources.push(BlobInput {
-                        content: BlobContent::Inline(bytes.clone()),
-                        digest: digest.to_owned(),
-                    });
+                let content = if digest.size == 0 {
+                    BlobContent::Inline(Bytes::new())
+                } else if let Some(bytes) = &file.bytes {
+                    BlobContent::Inline(bytes.clone())
                 } else {
-                    sources.push(BlobInput {
-                        content: BlobContent::File(file.path.to_logical_path(workspace_root)),
-                        digest: digest.to_owned(),
-                    });
-                }
+                    BlobContent::File(file.path.to_logical_path(workspace_root))
+                };
+
+                sources.push(BlobInput {
+                    content,
+                    digest: digest.to_owned(),
+                });
             }
         }
 

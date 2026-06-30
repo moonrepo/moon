@@ -121,17 +121,15 @@ impl Storage {
     pub fn get_backends_with_options(&self, options: &StorageOptions) -> Vec<&BoxedStorageBackend> {
         let mut backends = vec![];
 
-        if options.only_backends.is_empty() {
-            if options.include_local {
-                backends.extend(self.local_backends.iter());
-            }
-
-            if options.include_remote {
-                backends.extend(self.remote_backends.iter());
-            }
-        } else {
+        if options.include_local {
             backends.extend(self.local_backends.iter());
+        }
+
+        if options.include_remote {
             backends.extend(self.remote_backends.iter());
+        }
+
+        if !options.only_backends.is_empty() {
             backends.retain(|backend| options.only_backends.contains(backend.get_id()));
         }
 

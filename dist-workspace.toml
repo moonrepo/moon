@@ -4,7 +4,7 @@
 members = ["cargo:."]
 
 [dist]
-cargo-dist-version = "0.30.3"
+cargo-dist-version = "0.32.0"
 ci = "github"
 targets = [
 	"aarch64-apple-darwin",

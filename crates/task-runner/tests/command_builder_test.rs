@@ -6,9 +6,9 @@ use moon_action::ActionNode;
 use moon_action_context::ActionContext;
 use moon_affected::Affected;
 use moon_common::is_ci;
-use moon_config::TaskOptionAffectedFilesPattern;
+use moon_config::*;
 use moon_env_var::GlobalEnvBag;
-use moon_process::{Command, Env};
+use moon_process::{Command, CommandExecutable, Env};
 use moon_task::{Target, TargetLocator, TaskOptionAffectedFiles};
 use std::env;
 use std::ffi::OsString;
@@ -1034,6 +1034,118 @@ mod command_builder {
                     "\"./routes/[id].ts\"",
                 ]
             );
+        }
+    }
+
+    mod checks {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_cwd_to_project_root() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert_eq!(
+                command.cwd.as_deref(),
+                Some(container.sandbox.path().join("project").as_os_str())
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_script_as_executable() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(matches!(command.exe, CommandExecutable::Script(_)));
+            assert_eq!(command.exe.as_os_str(), "which cargo");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn condition_sets_script() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Condition(TaskCheckConditionConfig {
+                script: "test -f dist/index.js".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(matches!(command.exe, CommandExecutable::Script(_)));
+            assert_eq!(command.exe.as_os_str(), "test -f dist/index.js");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_sets_script() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Fingerprint(TaskCheckFingerprintConfig {
+                script: "rustc --version".into(),
+                hash: TaskCheckFingerprint::Stdout,
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(matches!(command.exe, CommandExecutable::Script(_)));
+            assert_eq!(command.exe.as_os_str(), "rustc --version");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn does_not_error_on_nonzero() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(!command.error_on_nonzero);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn forces_shell() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(command.shell.is_some());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn does_not_inherit_task_args() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(command.args.is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn does_not_inherit_task_env() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(get_env(&command, "KEY").is_none());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn does_not_set_moon_env_vars() {
+            let container = TaskRunnerContainer::new("builder", "base").await;
+            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                script: "which cargo".into(),
+            });
+            let command = container.create_check_command(&check).await;
+
+            assert!(get_env(&command, "MOON_PROJECT_ID").is_none());
+            assert!(get_env(&command, "MOON_TASK_ID").is_none());
+            assert!(get_env(&command, "MOON_TASK_HASH").is_none());
         }
     }
 

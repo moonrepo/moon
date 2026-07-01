@@ -1,4 +1,4 @@
-use crate::{config_enum, config_struct, generate_switch};
+use crate::{config_enum, config_struct, config_unit_enum, generate_switch};
 use deserialize_untagged_verbose_error::DeserializeUntaggedVerboseError;
 use schematic::schema::{StringType, UnionType};
 use schematic::{Config, ParseError, Schema, SchemaBuilder, Schematic, ValidateError};
@@ -79,12 +79,40 @@ config_struct!(
     }
 );
 
+config_unit_enum!(
+    /// The type of task check.
+    pub enum TaskCheckType {
+        Condition,
+        #[default]
+        Requirement,
+        Fingerprint,
+    }
+);
+
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(try_from = "TaskCheckEntryShape")]
 pub enum TaskCheckEntry {
     Condition(TaskCheckConditionConfig),
     Requirement(TaskCheckRequirementConfig),
     Fingerprint(TaskCheckFingerprintConfig),
+}
+
+impl TaskCheckEntry {
+    pub fn get_script(&self) -> &str {
+        match self {
+            Self::Condition(config) => &config.script,
+            Self::Requirement(config) => &config.script,
+            Self::Fingerprint(config) => &config.script,
+        }
+    }
+
+    pub fn get_type(&self) -> TaskCheckType {
+        match self {
+            Self::Condition(_) => TaskCheckType::Condition,
+            Self::Requirement(_) => TaskCheckType::Requirement,
+            Self::Fingerprint(_) => TaskCheckType::Fingerprint,
+        }
+    }
 }
 
 impl Serialize for TaskCheckEntry {

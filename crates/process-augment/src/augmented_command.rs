@@ -7,7 +7,7 @@ use moon_pdk_api::{
 };
 use moon_process::{Command, CommandArg, Env};
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Task, TaskCheckEntry};
 use moon_toolchain::{
     get_version_env_key, get_version_env_value, is_using_global_toolchain,
     is_using_global_toolchains,
@@ -94,8 +94,30 @@ impl<'app> AugmentedCommand<'app> {
         builder
     }
 
+    pub fn from_task_check(
+        context: &'app AppContext,
+        bag: &'app GlobalEnvBag,
+        check: &TaskCheckEntry,
+    ) -> Self {
+        let mut builder = Self::new(context, bag, "noop");
+        builder.set_script(check.get_script());
+        builder
+    }
+
     pub fn augment(self) -> Command {
         self.command
+    }
+
+    pub fn get_toolchain_ids<'a>(
+        &self,
+        project: Option<&'a Project>,
+        task: Option<&'a Task>,
+    ) -> Vec<&'a Id> {
+        match (project, task) {
+            (Some(p), Some(t)) => p.get_enabled_toolchains_for_task(t),
+            (Some(p), None) => p.get_enabled_toolchains(),
+            _ => vec![],
+        }
     }
 
     pub fn apply_command_outputs(&mut self, outputs: Vec<ExtendCommandOutput>) {
@@ -172,17 +194,10 @@ impl<'app> AugmentedCommand<'app> {
         project: Option<&Project>,
         task: Option<&Task>,
     ) -> miette::Result<()> {
-        let toolchain_ids = match (project, task) {
-            (Some(p), Some(t)) => p.get_enabled_toolchains_for_task(t),
-            (Some(p), None) => p.get_enabled_toolchains(),
-            _ => vec![],
-        };
-
-        let current_dir = if let Some(p) = project {
-            &p.root
-        } else {
-            &self.context.working_dir
-        };
+        let toolchain_ids = self.get_toolchain_ids(project, task);
+        let current_dir = project
+            .map(|p| &p.root)
+            .unwrap_or(&self.context.working_dir);
 
         // Inherit for shared
         self.apply_command_outputs(
@@ -292,16 +307,17 @@ impl<'app> AugmentedCommand<'app> {
             }
         }
 
-        self.inherit_from_toolchains(toolchain_ids, project).await?;
+        self.inherit_from_toolchains(project, task).await?;
 
         Ok(())
     }
 
-    async fn inherit_from_toolchains(
+    pub async fn inherit_from_toolchains(
         &mut self,
-        toolchain_ids: Vec<&Id>,
         project: Option<&Project>,
+        task: Option<&Task>,
     ) -> miette::Result<()> {
+        let toolchain_ids = self.get_toolchain_ids(project, task);
         let mut map = FxHashMap::default();
 
         // First pass, gather workspace-level

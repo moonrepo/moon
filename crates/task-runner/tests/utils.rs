@@ -234,6 +234,15 @@ impl TaskRunnerContainer {
         file
     }
 
+    pub async fn create_check_command(&self, check: &moon_task::TaskCheckEntry) -> Command {
+        let task = self.task.as_ref();
+        let node = create_node(task);
+
+        let mut builder = CommandBuilder::new(&self.app_context, &self.project, task, &node);
+        builder.set_env_bag(&self.env_bag);
+        builder.build_check(check).await.unwrap()
+    }
+
     async fn internal_create_command(
         &self,
         context: &ActionContext,

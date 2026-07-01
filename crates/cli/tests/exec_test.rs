@@ -3031,4 +3031,211 @@ mod exec {
             assert.success();
         }
     }
+
+    // Tasks are using unix commands!
+    #[cfg(unix)]
+    mod checks {
+        use super::*;
+
+        mod requirements {
+            use super::*;
+
+            #[test]
+            fn runs_task_when_requirement_passes() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:requirementPass");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("requirement-passed"));
+            }
+
+            #[test]
+            fn fails_task_when_requirement_fails() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:requirementFail");
+                });
+
+                assert
+                    .failure()
+                    .stderr(predicate::str::contains("requirement check"));
+            }
+
+            #[test]
+            fn does_not_run_command_when_requirement_fails() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:requirementFail");
+                });
+
+                assert
+                    .failure()
+                    .stdout(predicate::str::contains("should-not-run").not());
+            }
+        }
+
+        mod conditions {
+            use super::*;
+
+            #[test]
+            fn skips_task_when_condition_passes() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionSkip");
+                });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("should-be-skipped").not().eval(&output));
+                assert!(predicate::str::contains("Tasks: 1 skipped").eval(&output));
+            }
+
+            #[test]
+            fn runs_task_when_condition_fails() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionRun");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("condition-ran"));
+            }
+
+            #[test]
+            fn runs_task_when_not_all_conditions_pass() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionAllMustPass");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("should-run"));
+            }
+
+            #[test]
+            fn downstream_task_runs_when_dep_is_conditionally_skipped() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:downstreamOfConditional");
+                });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("downstream-ran").eval(&output));
+                assert!(predicate::str::contains("1 completed").eval(&output));
+                assert!(predicate::str::contains("1 skipped").eval(&output));
+            }
+
+            #[test]
+            fn skipped_conditional_exits_successfully() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionSkip");
+                });
+
+                assert.success();
+            }
+        }
+
+        mod fingerprints {
+            use super::*;
+
+            #[test]
+            fn runs_task_with_fingerprint_check() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:fingerprint");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("fingerprinted"));
+            }
+
+            #[test]
+            fn fingerprint_affects_hash() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:fingerprint");
+                });
+
+                let hash1 = extract_hash_from_run(sandbox.path(), "checks:fingerprint");
+                assert!(!hash1.is_empty());
+            }
+
+            #[test]
+            fn same_fingerprint_produces_same_hash() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:fingerprintStdout");
+                });
+
+                let hash1 = extract_hash_from_run(sandbox.path(), "checks:fingerprintStdout");
+
+                // Clear cache to force re-run
+                starbase_utils::fs::remove_dir_all(sandbox.path().join(".moon/cache")).unwrap();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:fingerprintStdout");
+                });
+
+                let hash2 = extract_hash_from_run(sandbox.path(), "checks:fingerprintStdout");
+
+                assert_eq!(hash1, hash2);
+            }
+        }
+
+        mod mixed {
+            use super::*;
+
+            #[test]
+            fn runs_with_passing_requirement_and_failing_condition() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:mixed");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("mixed-passed"));
+            }
+
+            #[test]
+            fn conditional_skip_with_deps_runs_dep_first() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionSkipWithDownstream");
+                });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("dep-task").eval(&output));
+                assert!(
+                    predicate::str::contains("should-be-skipped-with-dep")
+                        .not()
+                        .eval(&output)
+                );
+                assert!(predicate::str::contains("1 completed").eval(&output));
+                assert!(predicate::str::contains("1 skipped").eval(&output));
+            }
+        }
+    }
 }

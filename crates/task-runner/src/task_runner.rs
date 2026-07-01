@@ -734,6 +734,15 @@ impl<'task> TaskRunner<'task> {
 
     #[instrument(skip(self))]
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
+        if self
+            .state
+            .target
+            .as_ref()
+            .is_some_and(|state| state.is_skipped())
+        {
+            return Ok(false);
+        }
+
         let mut operation = Operation::archive_creation();
         let task_target = self.task.target.as_str();
 

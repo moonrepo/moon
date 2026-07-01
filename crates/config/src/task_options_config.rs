@@ -324,6 +324,11 @@ config_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub merge_args: Option<TaskMergeStrategy>,
 
+        /// The strategy to use when merging `checks` with an inherited task.
+        /// @since 2.4.0
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub merge_checks: Option<TaskMergeStrategy>,
+
         /// The strategy to use when merging `deps` with an inherited task.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub merge_deps: Option<TaskMergeStrategy>,

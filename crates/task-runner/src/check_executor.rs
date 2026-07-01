@@ -1,7 +1,6 @@
 use moon_action::{ActionStatus, Operation};
 use moon_app_context::AppContext;
-use moon_process::{Command, Output, format_command_line};
-use moon_project::Project;
+use moon_process::{Command, Output};
 use moon_task::{Task, TaskCheck};
 use std::sync::Arc;
 use std::time::Duration;
@@ -19,27 +18,15 @@ pub struct CheckExecuteResult {
 }
 
 pub struct CheckExecutor {
-    app: Arc<AppContext>,
     task: Arc<Task>,
-    project: Arc<Project>,
     command: Command,
 }
 
 impl CheckExecutor {
-    pub fn new(
-        app: Arc<AppContext>,
-        project: Arc<Project>,
-        task: Arc<Task>,
-        mut command: Command,
-    ) -> Self {
+    pub fn new(app: Arc<AppContext>, task: Arc<Task>, mut command: Command) -> Self {
         command.set_console(app.console.clone());
 
-        Self {
-            app,
-            project,
-            task,
-            command,
-        }
+        Self { task, command }
     }
 
     #[instrument(skip(self))]
@@ -52,8 +39,6 @@ impl CheckExecutor {
             command = self.command.get_bin_name(),
             "Running task check"
         );
-
-        self.print_command_line(&command_line)?;
 
         let timeout_token = CancellationToken::new();
         let timeout_handle = self.monitor_timeout(self.task.options.timeout, timeout_token.clone());
@@ -114,7 +99,7 @@ impl CheckExecutor {
                 } else {
                     debug!(
                         task_target = self.task.target.as_str(),
-                        "Task check was unsuccessful, failing as we hit our max attempts",
+                        "Task check was unsuccessful",
                     );
                 }
 
@@ -164,28 +149,5 @@ impl CheckExecutor {
                 }
             })
         })
-    }
-
-    // We don't use `Command::print_command` because we need to explicitly
-    // control the workspace root and working directory!
-    fn print_command_line(&self, command_line: &str) -> miette::Result<()> {
-        if !self.app.workspace_config.pipeline.log_running_command {
-            return Ok(());
-        }
-
-        let workspace_root = &self.app.workspace_root;
-        let working_dir = if self.task.options.run_from_workspace_root {
-            &self.app.workspace_root
-        } else {
-            &self.project.root
-        };
-
-        self.app.console.out.write_line(format_command_line(
-            command_line,
-            workspace_root,
-            working_dir,
-        ))?;
-
-        Ok(())
     }
 }

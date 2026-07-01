@@ -31,6 +31,13 @@ impl TargetState {
             TargetState::Passed(_) | TargetState::Passthrough | TargetState::SkippedConditional(_)
         )
     }
+
+    pub fn is_skipped(&self) -> bool {
+        matches!(
+            self,
+            TargetState::Skipped | TargetState::SkippedConditional(_)
+        )
+    }
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]

@@ -58,12 +58,7 @@ impl<'task> ChecksRunner<'task> {
                 .build_check(check)
                 .await?;
 
-            let executor = CheckExecutor::new(
-                self.app_context.clone(),
-                self.project.clone(),
-                self.task.clone(),
-                command,
-            );
+            let executor = CheckExecutor::new(self.app_context.clone(), self.task.clone(), command);
 
             let check = check.to_owned();
 

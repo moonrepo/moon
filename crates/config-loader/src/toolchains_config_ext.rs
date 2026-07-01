@@ -24,6 +24,7 @@ impl ToolchainsConfigExt {
             "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.2")),
             "unstable_poetry" => Some(locate("python_poetry_toolchain", "0.1.0")),
             "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.3")),
+            "unstable_ruby" => Some(locate("ruby_toolchain", "0.1.0")),
             "yarn" => Some(locate("node_depman_toolchain", "1.0.3")),
             "system" => Some(PluginLocator::Data(Box::new(DataLocator {
                 data: "data://system_toolchain".into(),
@@ -128,7 +129,7 @@ impl ToolchainsConfigExt {
             match id.as_str() {
                 "bun" | "deno" | "go" | "javascript" | "node" | "npm" | "pnpm" | "rust"
                 | "system" | "typescript" | "unstable_python" | "unstable_pip"
-                | "unstable_poetry" | "unstable_uv" | "yarn" => {
+                | "unstable_poetry" | "unstable_uv" | "unstable_ruby" | "yarn" => {
                     config.plugin = Self::get_plugin_locator(id);
                 }
                 #[cfg(debug_assertions)]

@@ -26,6 +26,7 @@ futures = { workspace = true }
 indexmap = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
+proto_pdk_api = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob", "json"] }

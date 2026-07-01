@@ -9,10 +9,13 @@ use proto_core::flow::install::InstallOptions;
 use proto_core::flow::locate::Locator;
 use proto_core::flow::manage::Manager;
 use proto_core::flow::resolve::Resolver;
+use proto_core::reporter::ProtoConsole;
+use proto_core::utils::log::LogWriter;
 use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
+use proto_pdk_api::InstallStrategy;
 use scc::hash_map::Entry;
 use starbase_utils::glob::{self, GlobSet};
 use std::fmt;
@@ -150,7 +153,8 @@ impl ToolchainPlugin {
         self.has_func("setup_toolchain").await
             || self.tool.is_some()
                 && (self.has_func("download_prebuilt").await
-                    || self.has_func("native_install").await)
+                    || self.has_func("native_install").await
+                    || self.has_func("build_instructions").await)
     }
 
     #[instrument(skip(self))]
@@ -511,6 +515,7 @@ impl ToolchainPlugin {
     pub async fn setup_toolchain(
         &self,
         mut input: SetupToolchainInput,
+        console: Option<ProtoConsole>,
         on_setup: impl FnOnce() -> miette::Result<()>,
     ) -> miette::Result<SetupToolchainOutput> {
         let mut output = SetupToolchainOutput::default();
@@ -529,6 +534,16 @@ impl ToolchainPlugin {
                 if !tool.is_installed(&spec) {
                     on_setup()?;
 
+                    // Honor the tool's declared install strategy (e.g. Ruby
+                    // builds from source); otherwise proto defaults to a
+                    // prebuilt download and errors for source-only tools.
+                    let strategy = tool.metadata.default_install_strategy;
+
+                    // Only the build-from-source path routes through proto's
+                    // Builder, which requires a console + log writer. Prebuilt
+                    // installs don't, so leave them `None` to avoid the
+                    // allocation and any change to prebuilt logging behavior.
+                    let building = matches!(strategy, InstallStrategy::BuildFromSource);
                     let mut manager = Manager::new(&mut tool);
 
                     output.installed = manager
@@ -537,6 +552,9 @@ impl ToolchainPlugin {
                             InstallOptions {
                                 skip_prompts: true,
                                 skip_ui: true,
+                                strategy,
+                                console: building.then_some(console).flatten(),
+                                log_writer: building.then(LogWriter::default),
                                 ..Default::default()
                             },
                         )

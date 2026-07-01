@@ -771,7 +771,7 @@
       "type": "string",
       "enum": ["backend", "data", "frontend", "infrastructure", "systems", "unknown"]
     },
-    "TaggedTaskCheckEntry": {
+    "TaggedTaskCheck": {
       "anyOf": [
         {
           "$ref": "#/definitions/TaskCheckConditionConfig"
@@ -801,6 +801,16 @@
         }
       ]
     },
+    "TaskCheck": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/TaggedTaskCheck"
+        }
+      ]
+    },
     "TaskCheckConditionConfig": {
       "description": "Task check configuration for conditions.",
       "type": "object",
@@ -816,16 +826,6 @@
         }
       },
       "additionalProperties": false
-    },
-    "TaskCheckEntry": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "$ref": "#/definitions/TaggedTaskCheckEntry"
-        }
-      ]
     },
     "TaskCheckFingerprintConfig": {
       "description": "Task check configuration for fingerprinting.",
@@ -892,7 +892,7 @@
             {
               "type": "array",
               "items": {
-                "$ref": "#/definitions/TaskCheckEntry"
+                "$ref": "#/definitions/TaskCheck"
               }
             },
             {

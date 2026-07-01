@@ -90,7 +90,7 @@ config_unit_enum!(
 );
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
-#[serde(try_from = "TaskCheckEntryShape")]
+#[serde(try_from = "TaskCheckShape")]
 pub enum TaskCheck {
     Condition(TaskCheckConditionConfig),
     Requirement(TaskCheckRequirementConfig),
@@ -122,13 +122,13 @@ impl Serialize for TaskCheck {
     {
         match self {
             Self::Condition(config) => {
-                TaggedTaskCheckEntry::Condition(config.clone()).serialize(serializer)
+                TaggedTaskCheck::Condition(config.clone()).serialize(serializer)
             }
             Self::Requirement(config) => {
-                TaggedTaskCheckEntry::Requirement(config.clone()).serialize(serializer)
+                TaggedTaskCheck::Requirement(config.clone()).serialize(serializer)
             }
             Self::Fingerprint(config) => {
-                TaggedTaskCheckEntry::Fingerprint(config.clone()).serialize(serializer)
+                TaggedTaskCheck::Fingerprint(config.clone()).serialize(serializer)
             }
         }
     }
@@ -136,43 +136,43 @@ impl Serialize for TaskCheck {
 
 impl Schematic for TaskCheck {
     fn schema_name() -> Option<String> {
-        Some("TaskCheckEntry".into())
+        Some("TaskCheck".into())
     }
 
     fn build_schema(mut schema: SchemaBuilder) -> Schema {
         schema.union(UnionType::new_any([
             schema.infer::<String>(),
-            schema.infer::<TaggedTaskCheckEntry>(),
+            schema.infer::<TaggedTaskCheck>(),
         ]))
     }
 }
 
 #[derive(Config, Serialize, Deserialize)]
 #[serde(tag = "check", rename_all = "kebab-case")]
-enum TaggedTaskCheckEntry {
+enum TaggedTaskCheck {
     Condition(TaskCheckConditionConfig),
     Requirement(TaskCheckRequirementConfig),
     Fingerprint(TaskCheckFingerprintConfig),
 }
 
 #[derive(DeserializeUntaggedVerboseError)]
-enum TaskCheckEntryShape {
+enum TaskCheckShape {
     String(String),
-    Tagged(TaggedTaskCheckEntry),
+    Tagged(TaggedTaskCheck),
 }
 
-impl TryFrom<TaskCheckEntryShape> for TaskCheck {
+impl TryFrom<TaskCheckShape> for TaskCheck {
     type Error = ParseError;
 
-    fn try_from(shape: TaskCheckEntryShape) -> Result<Self, Self::Error> {
+    fn try_from(shape: TaskCheckShape) -> Result<Self, Self::Error> {
         match shape {
-            TaskCheckEntryShape::String(script) => check_script(&script)
+            TaskCheckShape::String(script) => check_script(&script)
                 .map(|_| Self::Requirement(TaskCheckRequirementConfig { script }))
                 .map_err(ParseError::new),
-            TaskCheckEntryShape::Tagged(tagged) => match tagged {
-                TaggedTaskCheckEntry::Requirement(config) => Ok(Self::Requirement(config)),
-                TaggedTaskCheckEntry::Condition(config) => Ok(Self::Condition(config)),
-                TaggedTaskCheckEntry::Fingerprint(config) => Ok(Self::Fingerprint(config)),
+            TaskCheckShape::Tagged(tagged) => match tagged {
+                TaggedTaskCheck::Requirement(config) => Ok(Self::Requirement(config)),
+                TaggedTaskCheck::Condition(config) => Ok(Self::Condition(config)),
+                TaggedTaskCheck::Fingerprint(config) => Ok(Self::Fingerprint(config)),
             },
         }
     }

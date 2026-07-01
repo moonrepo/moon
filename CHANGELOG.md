@@ -47,6 +47,14 @@
   - When the server doesn't support the configured compression, it will now default to "identity"
     (uncompressed) instead of disabling the cache entirely.
 - **Tasks**
+  - Added a new `checks` setting to tasks that allows you to define shell scripts that execute
+    before the task runs, and depending on their type, different outcomes can be achieved. The
+    following types are supported:
+    - `fingerprint` - if the check fails, the task will fail and not run, otherwise the process
+      output will be included in the task hash.
+    - `requirement` — if the check fails, the task will fail and not run.
+    - `condition` - if all conditions pass, the task will be skipped, otherwise it will run as
+      normal.
   - Added a `taskOptions` setting to `moon.*` that allows you to configure default task options for
     all tasks within the current project, which can be overridden per task.
 - **VCS**

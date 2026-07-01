@@ -469,12 +469,12 @@ export interface TaskCheckFingerprintConfig {
 	script: string;
 }
 
-export type TaggedTaskCheckEntry =
+export type TaggedTaskCheck =
 	| TaskCheckConditionConfig
 	| TaskCheckRequirementConfig
 	| TaskCheckFingerprintConfig;
 
-export type TaskCheckEntry = string | TaggedTaskCheckEntry;
+export type TaskCheck = string | TaggedTaskCheck;
 
 /** A file path output. */
 export interface FileOutput {
@@ -520,7 +520,7 @@ export interface TaskConfig {
 	 * type of check, the task may be skipped, will fail, or continue.
 	 * @since 2.4.0
 	 */
-	checks?: TaskCheckEntry[] | null;
+	checks?: TaskCheck[] | null;
 	/**
 	 * The command line to execute when the task is ran.
 	 * Supports the command (executable) with or without arguments.
@@ -977,7 +977,7 @@ export interface PartialTaskConfig {
 	 * type of check, the task may be skipped, will fail, or continue.
 	 * @since 2.4.0
 	 */
-	checks?: TaskCheckEntry[] | null;
+	checks?: TaskCheck[] | null;
 	/**
 	 * The command line to execute when the task is ran.
 	 * Supports the command (executable) with or without arguments.

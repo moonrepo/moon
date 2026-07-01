@@ -18,7 +18,7 @@ use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
     app: &'task AppContext,
-    node: &'task ActionNode,
+    node: Option<&'task ActionNode>,
     project: &'task Project,
     task: &'task Task,
     working_dir: &'task Path,
@@ -29,12 +29,7 @@ pub struct CommandBuilder<'task> {
 }
 
 impl<'task> CommandBuilder<'task> {
-    pub fn new(
-        app: &'task AppContext,
-        project: &'task Project,
-        task: &'task Task,
-        node: &'task ActionNode,
-    ) -> Self {
+    pub fn new(app: &'task AppContext, project: &'task Project, task: &'task Task) -> Self {
         let working_dir = if task.options.run_from_workspace_root {
             &app.workspace_root
         } else {
@@ -43,7 +38,7 @@ impl<'task> CommandBuilder<'task> {
 
         Self {
             app,
-            node,
+            node: None,
             project,
             task,
             working_dir,
@@ -57,7 +52,14 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(name = "build_command", skip_all)]
-    pub async fn build(mut self, context: &ActionContext, hash: &str) -> miette::Result<Command> {
+    pub async fn build(
+        mut self,
+        context: &ActionContext,
+        node: &'task ActionNode,
+        hash: &str,
+    ) -> miette::Result<Command> {
+        self.node = Some(node);
+
         debug!(
             task_target = self.task.target.as_str(),
             working_dir = ?self.working_dir,
@@ -116,7 +118,7 @@ impl<'task> CommandBuilder<'task> {
     #[instrument(skip_all)]
     fn inject_args(&mut self, context: &ActionContext) {
         // Must be first!
-        if let ActionNode::RunTask(inner) = &self.node
+        if let Some(ActionNode::RunTask(inner)) = &self.node
             && !inner.args.is_empty()
         {
             trace!(
@@ -148,7 +150,7 @@ impl<'task> CommandBuilder<'task> {
         let mut moon_env = FxHashMap::<String, Option<String>>::default();
 
         // Inherit task dependent variables
-        if let ActionNode::RunTask(inner) = &self.node
+        if let Some(ActionNode::RunTask(inner)) = &self.node
             && !inner.env.is_empty()
         {
             trace!(

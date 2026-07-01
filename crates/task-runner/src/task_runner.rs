@@ -1,8 +1,8 @@
 use crate::command_builder::CommandBuilder;
-use crate::command_executor::CommandExecutor;
 use crate::output_archiver::{ArchiveOutcome, OutputArchiver};
 use crate::output_hydrater::{HydrateFrom, HydrateOutcome, OutputHydrater};
 use crate::run_state::*;
+use crate::task_executor::TaskExecutor;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
@@ -432,13 +432,16 @@ impl<'task> TaskRunner<'task> {
         );
 
         // Build the command from the current task
-        let command = CommandBuilder::new(self.app_context, self.project, self.task, node)
-            .build(context, self.report.hash.as_deref().unwrap_or_default())
+        let command = CommandBuilder::new(self.app_context, self.project, self.task)
+            .build(
+                context,
+                node,
+                self.report.hash.as_deref().unwrap_or_default(),
+            )
             .await?;
 
         // Execute the command and gather all attempts made
-        let executor =
-            CommandExecutor::new(self.app_context, self.project, self.task, node, command);
+        let executor = TaskExecutor::new(self.app_context, self.project, self.task, node, command);
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mut operation = Operation::mutex_acquisition();

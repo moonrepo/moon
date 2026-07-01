@@ -14,7 +14,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument};
 
 #[derive(Debug)]
-pub struct CommandExecuteResult {
+pub struct TaskExecuteResult {
     pub attempts: OperationList,
     pub error: Option<miette::Report>,
     pub run_state: TargetState,
@@ -22,7 +22,7 @@ pub struct CommandExecuteResult {
 
 /// Run the command as a child process and capture its output. If the process fails
 /// and `retry_count` is greater than 0, attempt the process again in case it passes.
-pub struct CommandExecutor<'task> {
+pub struct TaskExecutor<'task> {
     app: &'task AppContext,
     task: &'task Task,
     project: &'task Project,
@@ -40,7 +40,7 @@ pub struct CommandExecutor<'task> {
     stream: bool,
 }
 
-impl<'task> CommandExecutor<'task> {
+impl<'task> TaskExecutor<'task> {
     pub fn new(
         app: &'task AppContext,
         project: &'task Project,
@@ -70,7 +70,7 @@ impl<'task> CommandExecutor<'task> {
         mut self,
         context: &ActionContext,
         report_item: &mut TaskReportItem,
-    ) -> miette::Result<CommandExecuteResult> {
+    ) -> miette::Result<TaskExecuteResult> {
         // Prepare state for the executor, and each attempt
         let mut run_state = TargetState::Failed;
 
@@ -237,7 +237,7 @@ impl<'task> CommandExecutor<'task> {
 
         self.stop_monitoring();
 
-        Ok(CommandExecuteResult {
+        Ok(TaskExecuteResult {
             attempts: self.attempts.take(),
             error: execution_error,
             run_state,
@@ -342,7 +342,7 @@ impl<'task> CommandExecutor<'task> {
     }
 }
 
-impl Drop for CommandExecutor<'_> {
+impl Drop for TaskExecutor<'_> {
     fn drop(&mut self) {
         self.stop_monitoring();
     }

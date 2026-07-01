@@ -9,6 +9,7 @@ use moon_env_var::GlobalEnvBag;
 use moon_hash::fingerprint;
 use moon_pdk_api::SetupToolchainInput;
 use moon_toolchain::is_using_global_toolchain;
+use proto_core::reporter::{ProtoReporter, ReporterFormat};
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
@@ -90,6 +91,9 @@ pub async fn setup_toolchain(
     );
 
     let setup_op = Operation::setup_operation(action.get_prefix())?;
+    let proto_console = app_context
+        .console
+        .with_reporter(ProtoReporter::new(ReporterFormat::Text));
     let output = toolchain
         .setup_toolchain(
             SetupToolchainInput {
@@ -98,6 +102,7 @@ pub async fn setup_toolchain(
                 toolchain_config: app_context.toolchain_registry.create_config(&toolchain.id),
                 version: None,
             },
+            Some(proto_console),
             || {
                 app_context.console.print_checkpoint(
                     Checkpoint::Setup,

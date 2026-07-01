@@ -6074,6 +6074,7 @@ dependencies = [
  "moon_test_utils",
  "moon_toolchain",
  "proto_core",
+ "proto_pdk_api",
  "rustc-hash",
  "scc",
  "starbase_sandbox",
@@ -8692,9 +8693,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_console"
-version = "0.6.29"
+version = "0.6.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b11aad63c3ab7b6dfcbbce2357cbb583bd3bf5d0a3e4329f84166f47cb7b6017"
+checksum = "7e43e0375e24c13e6af8024e76a759aba61a695d0ad3445b4dc0446ded41888e"
 dependencies = [
  "crossterm",
  "iocraft",
@@ -8738,9 +8739,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_shell"
-version = "0.12.5"
+version = "0.12.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dd0cac48b0878b82ed08b93578640cc010be0bb73bb400520feb4434fde8539"
+checksum = "906e4773d01742ce1b70ccfdc03bdccdfa5202f7cb0d18e49efe71d517faca16"
 dependencies = [
  "base64 0.22.1",
  "miette 7.6.0",

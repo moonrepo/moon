@@ -112,9 +112,10 @@ mod task_runner {
                 let container = TaskRunnerContainer::new_os("runner", "success").await;
                 container.sandbox.enable_git();
                 let mut task = container.task.as_ref().to_owned();
-                task.checks.push(TaskCheck::Condition(TaskCheckConditionConfig {
-                    script: "exit 0".into(),
-                }));
+                task.checks
+                    .push(TaskCheck::Condition(TaskCheckConditionConfig {
+                        script: "exit 0".into(),
+                    }));
                 let task = std::sync::Arc::new(task);
                 let mut runner =
                     TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
@@ -141,9 +142,10 @@ mod task_runner {
                 let container = TaskRunnerContainer::new_os("runner", "success").await;
                 container.sandbox.enable_git();
                 let mut task = container.task.as_ref().to_owned();
-                task.checks.push(TaskCheck::Condition(TaskCheckConditionConfig {
-                    script: "exit 1".into(),
-                }));
+                task.checks
+                    .push(TaskCheck::Condition(TaskCheckConditionConfig {
+                        script: "exit 1".into(),
+                    }));
                 let task = std::sync::Arc::new(task);
                 let mut runner =
                     TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
@@ -197,10 +199,13 @@ mod task_runner {
                 let node = container.create_action_node();
 
                 let context = ActionContext::default();
-                context.target_states.insert_sync(
-                    Target::new("project", "dep").unwrap(),
-                    TargetState::SkippedConditional("abc123".into()),
-                ).unwrap();
+                context
+                    .target_states
+                    .insert_sync(
+                        Target::new("project", "dep").unwrap(),
+                        TargetState::SkippedConditional("abc123".into()),
+                    )
+                    .unwrap();
 
                 runner.run_with_panic(&context, &node).await.unwrap();
 
@@ -777,10 +782,13 @@ mod task_runner {
             let runner = container.create_runner();
             let context = ActionContext::default();
 
-            context.target_states.insert_sync(
-                Target::new("project", "dep").unwrap(),
-                TargetState::SkippedConditional("hash123".into()),
-            ).unwrap();
+            context
+                .target_states
+                .insert_sync(
+                    Target::new("project", "dep").unwrap(),
+                    TargetState::SkippedConditional("hash123".into()),
+                )
+                .unwrap();
 
             assert!(runner.is_dependencies_complete(&context).unwrap());
         }
@@ -1647,10 +1655,8 @@ mod task_runner {
                 let container = &container;
                 let mut task = container.task.as_ref().to_owned();
                 for s in scripts {
-                    task.checks.push(make_fingerprint_check(
-                        s,
-                        TaskCheckFingerprint::default(),
-                    ));
+                    task.checks
+                        .push(make_fingerprint_check(s, TaskCheckFingerprint::default()));
                 }
                 let task = std::sync::Arc::new(task);
                 async move {
@@ -1723,10 +1729,11 @@ mod task_runner {
         async fn fingerprint_checks_are_ignored() {
             let container = TaskRunnerContainer::new("runner", "base").await;
             let mut task = container.task.as_ref().to_owned();
-            task.checks.push(TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
-                script: "echo fingerprint".into(),
-                hash: TaskCheckFingerprint::default(),
-            }));
+            task.checks
+                .push(TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                    script: "echo fingerprint".into(),
+                    hash: TaskCheckFingerprint::default(),
+                }));
             let task = std::sync::Arc::new(task);
             let mut runner =
                 TaskRunner::new(&container.app_context, &container.project, &task).unwrap();

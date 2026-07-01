@@ -3093,7 +3093,11 @@ mod exec {
 
                 let output = assert.output();
 
-                assert!(predicate::str::contains("should-be-skipped").not().eval(&output));
+                assert!(
+                    predicate::str::contains("should-be-skipped")
+                        .not()
+                        .eval(&output)
+                );
                 assert!(predicate::str::contains("Tasks: 1 skipped").eval(&output));
             }
 

@@ -8,12 +8,13 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-#[serde(tag = "state", content = "hash", rename_all = "lowercase")]
+#[serde(tag = "state", content = "hash", rename_all = "kebab-case")]
 pub enum TargetState {
     Passed(String), // hash
     Passthrough,    // no hash (cache off)
     Failed,
-    Skipped,
+    Skipped,                    // skipped due to dependency failure
+    SkippedConditional(String), // skipped because conditions passed
 }
 
 impl TargetState {
@@ -25,7 +26,10 @@ impl TargetState {
     }
 
     pub fn is_complete(&self) -> bool {
-        matches!(self, TargetState::Passed(_) | TargetState::Passthrough)
+        matches!(
+            self,
+            TargetState::Passed(_) | TargetState::Passthrough | TargetState::SkippedConditional(_)
+        )
     }
 }
 

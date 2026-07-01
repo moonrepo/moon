@@ -504,7 +504,7 @@ impl<'task> TaskRunner<'task> {
 
         // Execute the task checks first, if any, and exit early if they fail
         if self.execute_checks().await? {
-            self.skip()?;
+            self.skip_conditional()?;
 
             return Ok(());
         }
@@ -670,11 +670,6 @@ impl<'task> TaskRunner<'task> {
         // Only skip if all conditions pass, otherwise we should run the task as normal
         if has_conditions {
             if all_conditions_met {
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    "Skipping task as all conditional checks have passed"
-                );
-
                 return Ok(true);
             }
 
@@ -697,6 +692,25 @@ impl<'task> TaskRunner<'task> {
         ));
 
         self.state.target = Some(TargetState::Skipped);
+
+        Ok(())
+    }
+
+    #[instrument(skip(self))]
+    pub fn skip_conditional(&mut self) -> miette::Result<()> {
+        debug!(
+            task_target = self.task.target.as_str(),
+            "Skipping task as all conditional checks have passed"
+        );
+
+        self.operations.push(Operation::new_finished(
+            OperationMeta::TaskExecution(Default::default()),
+            ActionStatus::Skipped,
+        ));
+
+        self.state.target = Some(TargetState::SkippedConditional(
+            self.report.hash.as_deref().unwrap_or("passthrough").into(),
+        ));
 
         Ok(())
     }

@@ -1017,6 +1017,61 @@ mod task_runner {
         }
     }
 
+    mod skip_conditional {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn creates_an_operation() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.skip_conditional().unwrap();
+
+            let operation = runner.operations.last().unwrap();
+
+            assert!(operation.meta.is_task_execution());
+            assert_eq!(operation.status, ActionStatus::Skipped);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_skipped_conditional_state_with_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.report.hash = Some("hash123".into());
+            runner.skip_conditional().unwrap();
+
+            assert_eq!(
+                runner.state.target.as_ref().unwrap(),
+                &TargetState::SkippedConditional("hash123".into())
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn falls_back_to_passthrough_when_no_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.skip_conditional().unwrap();
+
+            assert_eq!(
+                runner.state.target.as_ref().unwrap(),
+                &TargetState::SkippedConditional("passthrough".into())
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn is_considered_complete() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.report.hash = Some("abc".into());
+            runner.skip_conditional().unwrap();
+
+            assert!(runner.state.target.as_ref().unwrap().is_complete());
+        }
+    }
+
     mod archive {
         use super::*;
 

@@ -443,7 +443,7 @@ impl<'task> TaskRunner<'task> {
                     return Err(TaskRunnerError::FingerprintCheckFailed {
                         target: self.task.target.clone(),
                         script: check_result.check.get_script().into(),
-                        error: Box::new(output.to_error("<check>", true)),
+                        error: Box::new(output.to_error("<fingerprint>", true)),
                     }
                     .into());
                 }
@@ -472,6 +472,8 @@ impl<'task> TaskRunner<'task> {
                             info.stderr = None;
                         }
                     };
+                } else {
+                    unreachable!();
                 }
 
                 fingerprint
@@ -501,7 +503,11 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Execute the task checks first, if any, and exit early if they fail
-        // self.execute_checks().await?;
+        if self.execute_checks().await? {
+            self.skip()?;
+
+            return Ok(());
+        }
 
         debug!(
             task_target = self.task.target.as_str(),
@@ -582,6 +588,103 @@ impl<'task> TaskRunner<'task> {
         }
 
         Ok(())
+    }
+
+    #[instrument(skip(self))]
+    pub async fn execute_checks(&mut self) -> miette::Result<bool> {
+        let checks = ChecksRunner::new(self.app_context, self.project, self.task)?
+            .execute(vec![TaskCheckType::Condition, TaskCheckType::Requirement])
+            .await?;
+
+        if checks.is_empty() {
+            return Ok(false);
+        }
+
+        let mut has_conditions = false;
+        let mut all_conditions_met = true;
+
+        for check_result in checks {
+            // If a hard failure, we should abort the runner
+            if let Some(error) = check_result.error {
+                return Err(error);
+            }
+
+            self.operations.push(check_result.attempt);
+
+            match check_result.check {
+                // Success: Track the skipped state. If all conditions pass, skip running the task.
+                // Failure: Do not return an error, as the task itself will run instead.
+                TaskCheck::Condition(condition) => {
+                    let passed = check_result
+                        .output
+                        .as_ref()
+                        .is_some_and(|output| output.success());
+
+                    trace!(
+                        task_target = self.task.target.as_str(),
+                        check = condition.script,
+                        passed,
+                        exit_code = check_result
+                            .output
+                            .as_ref()
+                            .and_then(|output| output.code()),
+                        "Checking condition"
+                    );
+
+                    has_conditions = true;
+
+                    if !passed {
+                        all_conditions_met = false;
+                    }
+                }
+                // Success: Continue on to the next check.
+                // Failure: Return an error, as the task itself should not run.
+                TaskCheck::Requirement(requirement) => {
+                    trace!(
+                        task_target = self.task.target.as_str(),
+                        check = requirement.script,
+                        exit_code = check_result
+                            .output
+                            .as_ref()
+                            .and_then(|output| output.code()),
+                        "Checking requirement"
+                    );
+
+                    if let Some(output) = check_result.output
+                        && !output.success()
+                    {
+                        return Err(TaskRunnerError::RequirementCheckFailed {
+                            target: self.task.target.clone(),
+                            script: requirement.script,
+                            error: Box::new(output.to_error("<requirement>", true)),
+                        }
+                        .into());
+                    }
+                }
+                TaskCheck::Fingerprint(_) => {
+                    unreachable!();
+                }
+            };
+        }
+
+        // Only skip if all conditions pass, otherwise we should run the task as normal
+        if has_conditions {
+            if all_conditions_met {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    "Skipping task as all conditional checks have passed"
+                );
+
+                return Ok(true);
+            }
+
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Will continue to run the task as not all conditional checks have passed"
+            );
+        }
+
+        Ok(false)
     }
 
     #[instrument(skip(self))]

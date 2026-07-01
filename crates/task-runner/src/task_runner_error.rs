@@ -31,6 +31,19 @@ pub enum TaskRunnerError {
         error: Box<ProcessError>,
     },
 
+    #[diagnostic(code(task_runner::requirement_check_failed))]
+    #[error(
+        "Task {} is unable to run as the requirement check {} failed.",
+        .target.style(Style::Label),
+        .script.style(Style::Shell),
+    )]
+    RequirementCheckFailed {
+        target: Target,
+        script: String,
+        #[source]
+        error: Box<ProcessError>,
+    },
+
     #[diagnostic(code(task_runner::missing_dependency_hash))]
     #[error(
         "Encountered a missing hash for task {}, which is a dependency of {}.\nThis either means the dependency hasn't ran, has failed, or there's a misconfiguration.\n\nTry disabling the task's cache, or marking it as local.",

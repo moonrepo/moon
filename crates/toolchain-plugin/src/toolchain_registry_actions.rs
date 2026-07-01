@@ -377,7 +377,7 @@ impl ToolchainRegistry {
             "setup_toolchain",
             self.get_plugin_ids(),
             input_factory,
-            |toolchain, input| async move { toolchain.setup_toolchain(input, || Ok(())).await },
+            |toolchain, input| async move { toolchain.setup_toolchain(input, None, || Ok(())).await },
             true,
         )
         .await

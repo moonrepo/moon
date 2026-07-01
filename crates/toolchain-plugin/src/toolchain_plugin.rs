@@ -515,6 +515,7 @@ impl ToolchainPlugin {
     pub async fn setup_toolchain(
         &self,
         mut input: SetupToolchainInput,
+        console: Option<ProtoConsole>,
         on_setup: impl FnOnce() -> miette::Result<()>,
     ) -> miette::Result<SetupToolchainOutput> {
         let mut output = SetupToolchainOutput::default();
@@ -552,7 +553,7 @@ impl ToolchainPlugin {
                                 skip_prompts: true,
                                 skip_ui: true,
                                 strategy,
-                                console: building.then(|| ProtoConsole::new(false)),
+                                console: building.then_some(console).flatten(),
                                 log_writer: building.then(LogWriter::default),
                                 ..Default::default()
                             },

@@ -1043,7 +1043,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn sets_cwd_to_project_root() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
                 script: "which cargo".into(),
             });
             let command = container.create_check_command(&check).await;
@@ -1057,7 +1057,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn sets_script_as_executable() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
                 script: "which cargo".into(),
             });
             let command = container.create_check_command(&check).await;
@@ -1069,7 +1069,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn condition_sets_script() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Condition(TaskCheckConditionConfig {
+            let check = TaskCheck::Condition(TaskCheckConditionConfig {
                 script: "test -f dist/index.js".into(),
             });
             let command = container.create_check_command(&check).await;
@@ -1081,7 +1081,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn fingerprint_sets_script() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Fingerprint(TaskCheckFingerprintConfig {
+            let check = TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
                 script: "rustc --version".into(),
                 hash: TaskCheckFingerprint::Stdout,
             });
@@ -1094,7 +1094,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn does_not_error_on_nonzero() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
                 script: "which cargo".into(),
             });
             let command = container.create_check_command(&check).await;
@@ -1105,7 +1105,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn forces_shell() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
                 script: "which cargo".into(),
             });
             let command = container.create_check_command(&check).await;
@@ -1116,7 +1116,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn does_not_inherit_task_args() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
                 script: "which cargo".into(),
             });
             let command = container.create_check_command(&check).await;
@@ -1127,7 +1127,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn does_not_inherit_task_env() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
                 script: "which cargo".into(),
             });
             let command = container.create_check_command(&check).await;
@@ -1138,7 +1138,7 @@ mod command_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn does_not_set_moon_env_vars() {
             let container = TaskRunnerContainer::new("builder", "base").await;
-            let check = TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+            let check = TaskCheck::Requirement(TaskCheckRequirementConfig {
                 script: "which cargo".into(),
             });
             let command = container.create_check_command(&check).await;

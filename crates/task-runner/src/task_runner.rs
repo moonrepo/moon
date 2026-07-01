@@ -1,3 +1,4 @@
+use crate::checks_runner::ChecksRunner;
 use crate::command_builder::CommandBuilder;
 use crate::output_archiver::{ArchiveOutcome, OutputArchiver};
 use crate::output_hydrater::{HydrateFrom, HydrateOutcome, OutputHydrater};
@@ -9,10 +10,10 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::{CacheItem, StorageOptions};
 use moon_console::TaskReportItem;
-use moon_hash::ContentHash;
+use moon_hash::{ContentHash, ContentHasher};
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Task, TaskCheck, TaskCheckFingerprint, TaskCheckType};
 use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
@@ -90,7 +91,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Always generate a hash
-        let hash = self.generate_hash(context, node).await?;
+        let hash = self.hash(context, node).await?;
 
         if self.is_cache_enabled() {
             debug!(
@@ -365,7 +366,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     #[instrument(skip_all)]
-    pub async fn generate_hash(
+    pub async fn hash(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
@@ -394,6 +395,9 @@ impl<'task> TaskRunner<'task> {
         hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
             .await?;
 
+        // Hash task checks
+        self.hash_checks(&mut hasher).await?;
+
         // Generate the digest and store values
         let digest = hash_engine.save_manifest(&mut hasher)?;
 
@@ -413,6 +417,76 @@ impl<'task> TaskRunner<'task> {
         Ok(digest.hash)
     }
 
+    #[instrument(skip(self, hasher))]
+    pub async fn hash_checks(&mut self, hasher: &mut ContentHasher) -> miette::Result<()> {
+        let checks = ChecksRunner::new(self.app_context, self.project, self.task)?
+            .execute(vec![TaskCheckType::Fingerprint])
+            .await?;
+
+        if checks.is_empty() {
+            return Ok(());
+        }
+
+        let mut fingerprint = TaskChecksFingerprint::default();
+
+        for check_result in checks {
+            // If a hard failure, we should abort the runner
+            if let Some(error) = check_result.error {
+                return Err(error);
+            }
+
+            self.operations.push(check_result.attempt);
+
+            if let Some(output) = check_result.output {
+                // If the check failed, we should fail with a descriptive error
+                if !output.success() {
+                    return Err(TaskRunnerError::FingerprintCheckFailed {
+                        target: self.task.target.clone(),
+                        script: check_result.check.get_script().into(),
+                        error: Box::new(output.to_error("<check>", true)),
+                    }
+                    .into());
+                }
+
+                // Otherwise extract and filter the output
+                let mut info = output.to_info();
+
+                if let TaskCheck::Fingerprint(check) = &check_result.check {
+                    match check.hash {
+                        TaskCheckFingerprint::Enabled(state) => {
+                            // Don't hash anything if disabled!
+                            if !state {
+                                continue;
+                            }
+                        }
+                        TaskCheckFingerprint::ExitCode => {
+                            info.stderr = None;
+                            info.stdout = None;
+                        }
+                        TaskCheckFingerprint::Stderr => {
+                            info.exit_code = None;
+                            info.stdout = None;
+                        }
+                        TaskCheckFingerprint::Stdout => {
+                            info.exit_code = None;
+                            info.stderr = None;
+                        }
+                    };
+                }
+
+                fingerprint
+                    .checks
+                    .insert(check_result.check.get_script().into(), info);
+            }
+        }
+
+        if !fingerprint.checks.is_empty() {
+            hasher.hash_content(fingerprint)?;
+        }
+
+        Ok(())
+    }
+
     #[instrument(skip(self, context, node))]
     pub async fn execute(
         &mut self,
@@ -425,6 +499,9 @@ impl<'task> TaskRunner<'task> {
 
             return Ok(());
         }
+
+        // Execute the task checks first, if any, and exit early if they fail
+        // self.execute_checks().await?;
 
         debug!(
             task_target = self.task.target.as_str(),

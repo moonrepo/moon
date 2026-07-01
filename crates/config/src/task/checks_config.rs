@@ -91,13 +91,13 @@ config_unit_enum!(
 
 #[derive(Clone, Debug, Eq, PartialEq, Deserialize)]
 #[serde(try_from = "TaskCheckEntryShape")]
-pub enum TaskCheckEntry {
+pub enum TaskCheck {
     Condition(TaskCheckConditionConfig),
     Requirement(TaskCheckRequirementConfig),
     Fingerprint(TaskCheckFingerprintConfig),
 }
 
-impl TaskCheckEntry {
+impl TaskCheck {
     pub fn get_script(&self) -> &str {
         match self {
             Self::Condition(config) => &config.script,
@@ -115,7 +115,7 @@ impl TaskCheckEntry {
     }
 }
 
-impl Serialize for TaskCheckEntry {
+impl Serialize for TaskCheck {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -134,7 +134,7 @@ impl Serialize for TaskCheckEntry {
     }
 }
 
-impl Schematic for TaskCheckEntry {
+impl Schematic for TaskCheck {
     fn schema_name() -> Option<String> {
         Some("TaskCheckEntry".into())
     }
@@ -161,7 +161,7 @@ enum TaskCheckEntryShape {
     Tagged(TaggedTaskCheckEntry),
 }
 
-impl TryFrom<TaskCheckEntryShape> for TaskCheckEntry {
+impl TryFrom<TaskCheckEntryShape> for TaskCheck {
     type Error = ParseError;
 
     fn try_from(shape: TaskCheckEntryShape) -> Result<Self, Self::Error> {

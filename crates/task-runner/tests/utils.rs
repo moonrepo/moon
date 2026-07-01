@@ -234,7 +234,7 @@ impl TaskRunnerContainer {
         file
     }
 
-    pub async fn create_check_command(&self, check: &moon_task::TaskCheckEntry) -> Command {
+    pub async fn create_check_command(&self, check: &moon_task::TaskCheck) -> Command {
         let task = self.task.as_ref();
 
         let mut builder = CommandBuilder::new(&self.app_context, &self.project, task);

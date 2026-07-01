@@ -1,5 +1,5 @@
 use crate::shapes::{Input, OneOrMany, Output};
-use crate::task::TaskCheckEntry;
+use crate::task::TaskCheck;
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::{config_enum, config_struct, config_unit_enum};
 use indexmap::IndexMap;
@@ -247,7 +247,7 @@ config_struct!(
         /// type of check, the task may be skipped, will fail, or continue.
         /// @since 2.4.0
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub checks: Option<Vec<TaskCheckEntry>>,
+        pub checks: Option<Vec<TaskCheck>>,
 
         /// Other tasks that this task depends on, and must run to completion
         /// before this task is ran. Can depend on sibling tasks, or tasks in

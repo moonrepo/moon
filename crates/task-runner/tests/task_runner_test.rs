@@ -3,8 +3,9 @@ mod utils;
 use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_cache::{CacheMode, Manifest};
+use moon_config::{TaskCheck, TaskCheckFingerprint, TaskCheckFingerprintConfig};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::Digest;
+use moon_hash::{ContentHasher, Digest};
 use moon_task::Target;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::output_hydrater::HydrateFrom;
@@ -707,7 +708,7 @@ mod task_runner {
             let context = ActionContext::default();
             let node = container.create_action_node();
 
-            let hash = runner.generate_hash(&context, &node).await.unwrap();
+            let hash = runner.hash(&context, &node).await.unwrap();
 
             // 64 bytes
             assert_eq!(hash.len(), 64);
@@ -722,14 +723,14 @@ mod task_runner {
             let mut context = ActionContext::default();
             let node = container.create_action_node();
 
-            let before_hash = runner.generate_hash(&context, &node).await.unwrap();
+            let before_hash = runner.hash(&context, &node).await.unwrap();
 
             context
                 .primary_targets
                 .insert(Target::new("project", "base").unwrap());
             context.passthrough_args.push("--extra".into());
 
-            let after_hash = runner.generate_hash(&context, &node).await.unwrap();
+            let after_hash = runner.hash(&context, &node).await.unwrap();
 
             assert_ne!(before_hash, after_hash);
         }
@@ -743,7 +744,7 @@ mod task_runner {
             let context = ActionContext::default();
             let node = container.create_action_node();
 
-            runner.generate_hash(&context, &node).await.unwrap();
+            runner.hash(&context, &node).await.unwrap();
 
             let operation = runner.operations.last().unwrap();
 
@@ -760,7 +761,7 @@ mod task_runner {
             let context = ActionContext::default();
             let node = container.create_action_node();
 
-            let hash = runner.generate_hash(&context, &node).await.unwrap();
+            let hash = runner.hash(&context, &node).await.unwrap();
 
             assert!(
                 container
@@ -1190,6 +1191,233 @@ mod task_runner {
                 assert_eq!(output.stderr.as_deref().unwrap(), "stderr");
                 assert_eq!(output.stdout.as_deref().unwrap(), "stdout");
             }
+        }
+    }
+
+    mod hash_checks {
+        use super::*;
+
+        fn make_fingerprint_check(script: &str, hash: TaskCheckFingerprint) -> TaskCheck {
+            TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                script: script.into(),
+                hash,
+            })
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn no_checks_does_not_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let task = container.task.clone();
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert_eq!(serialized, "[]");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn non_fingerprint_checks_are_ignored() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(TaskCheck::Requirement(
+                moon_config::TaskCheckRequirementConfig {
+                    script: "echo req".into(),
+                },
+            ));
+            task.checks.push(TaskCheck::Condition(
+                moon_config::TaskCheckConditionConfig {
+                    script: "echo cond".into(),
+                },
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert_eq!(serialized, "[]");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hashes_all_output_by_default() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo hello",
+                TaskCheckFingerprint::default(),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert_ne!(serialized, "[]");
+            assert!(serialized.contains("\"stdout\":\"hello\""));
+            assert!(serialized.contains("\"exit_code\":0"));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_stdout_only() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo out && echo err >&2",
+                TaskCheckFingerprint::Stdout,
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert!(serialized.contains("\"stdout\":\"out\""));
+            assert!(!serialized.contains("\"stderr\""));
+            assert!(!serialized.contains("\"exit_code\""));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_stderr_only() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo err >&2",
+                TaskCheckFingerprint::Stderr,
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert!(serialized.contains("\"stderr\":\"err\""));
+            assert!(!serialized.contains("\"stdout\""));
+            assert!(!serialized.contains("\"exit_code\""));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_exit_code_only() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo hello",
+                TaskCheckFingerprint::ExitCode,
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert!(serialized.contains("\"exit_code\":0"));
+            assert!(!serialized.contains("\"stdout\""));
+            assert!(!serialized.contains("\"stderr\""));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_disabled_skips_hashing() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo hello",
+                TaskCheckFingerprint::Enabled(false),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert_eq!(serialized, "[]");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_check_failure_returns_error() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "exit 1",
+                TaskCheckFingerprint::default(),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            let result = runner.hash_checks(&mut hasher).await;
+
+            assert!(result.is_err());
+            let err = result.unwrap_err().to_string();
+            assert!(err.contains("failed to run fingerprint check"), "{err}");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_operations_are_recorded() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo hello",
+                TaskCheckFingerprint::default(),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            assert!(!runner.operations.is_empty());
+            assert!(runner.operations[0].meta.is_process_execution());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn different_script_output_produces_different_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+
+            // First: echo "aaa"
+            let mut task_a = container.task.as_ref().to_owned();
+            task_a.checks.push(make_fingerprint_check(
+                "echo aaa",
+                TaskCheckFingerprint::default(),
+            ));
+            let task_a = std::sync::Arc::new(task_a);
+            let mut runner_a =
+                TaskRunner::new(&container.app_context, &container.project, &task_a).unwrap();
+
+            let mut hasher_a = ContentHasher::new("test");
+            runner_a.hash_checks(&mut hasher_a).await.unwrap();
+            let hash_a = hasher_a.generate_hash().unwrap();
+
+            // Second: echo "bbb"
+            let mut task_b = container.task.as_ref().to_owned();
+            task_b.checks.push(make_fingerprint_check(
+                "echo bbb",
+                TaskCheckFingerprint::default(),
+            ));
+            let task_b = std::sync::Arc::new(task_b);
+            let mut runner_b =
+                TaskRunner::new(&container.app_context, &container.project, &task_b).unwrap();
+
+            let mut hasher_b = ContentHasher::new("test");
+            runner_b.hash_checks(&mut hasher_b).await.unwrap();
+            let hash_b = hasher_b.generate_hash().unwrap();
+
+            assert_ne!(hash_a, hash_b);
         }
     }
 }

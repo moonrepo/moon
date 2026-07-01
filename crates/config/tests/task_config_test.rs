@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use moon_common::Id;
 use moon_config::{
     FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, ProjectInput,
-    TaskArgs, TaskCheckConditionConfig, TaskCheckEntry, TaskCheckFingerprint,
+    TaskArgs, TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint,
     TaskCheckFingerprintConfig, TaskCheckRequirementConfig, TaskConfig, TaskDependency,
     TaskDependencyCacheStrategy, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
     TaskOutputStyle, TaskType,
@@ -760,11 +760,9 @@ checks:
 
             assert_eq!(
                 config.checks,
-                Some(vec![TaskCheckEntry::Requirement(
-                    TaskCheckRequirementConfig {
-                        script: "which cargo".into()
-                    }
-                )])
+                Some(vec![TaskCheck::Requirement(TaskCheckRequirementConfig {
+                    script: "which cargo".into()
+                })])
             );
         }
 
@@ -782,10 +780,10 @@ checks:
             assert_eq!(
                 config.checks,
                 Some(vec![
-                    TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                    TaskCheck::Requirement(TaskCheckRequirementConfig {
                         script: "which cargo".into()
                     }),
-                    TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                    TaskCheck::Requirement(TaskCheckRequirementConfig {
                         script: "which node".into()
                     }),
                 ])
@@ -805,11 +803,9 @@ checks:
 
             assert_eq!(
                 config.checks,
-                Some(vec![TaskCheckEntry::Requirement(
-                    TaskCheckRequirementConfig {
-                        script: "which cargo".into()
-                    }
-                )])
+                Some(vec![TaskCheck::Requirement(TaskCheckRequirementConfig {
+                    script: "which cargo".into()
+                })])
             );
         }
 
@@ -826,7 +822,7 @@ checks:
 
             assert_eq!(
                 config.checks,
-                Some(vec![TaskCheckEntry::Condition(TaskCheckConditionConfig {
+                Some(vec![TaskCheck::Condition(TaskCheckConditionConfig {
                     script: "test -f dist/index.js".into()
                 })])
             );
@@ -846,12 +842,10 @@ checks:
 
             assert_eq!(
                 config.checks,
-                Some(vec![TaskCheckEntry::Fingerprint(
-                    TaskCheckFingerprintConfig {
-                        script: "rustc --version".into(),
-                        hash: TaskCheckFingerprint::Stdout,
-                    }
-                )])
+                Some(vec![TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                    script: "rustc --version".into(),
+                    hash: TaskCheckFingerprint::Stdout,
+                })])
             );
         }
 
@@ -869,12 +863,10 @@ checks:
 
             assert_eq!(
                 config.checks,
-                Some(vec![TaskCheckEntry::Fingerprint(
-                    TaskCheckFingerprintConfig {
-                        script: "rustc --version".into(),
-                        hash: TaskCheckFingerprint::Stderr,
-                    }
-                )])
+                Some(vec![TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                    script: "rustc --version".into(),
+                    hash: TaskCheckFingerprint::Stderr,
+                })])
             );
         }
 
@@ -892,12 +884,10 @@ checks:
 
             assert_eq!(
                 config.checks,
-                Some(vec![TaskCheckEntry::Fingerprint(
-                    TaskCheckFingerprintConfig {
-                        script: "rustc --version".into(),
-                        hash: TaskCheckFingerprint::ExitCode,
-                    }
-                )])
+                Some(vec![TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                    script: "rustc --version".into(),
+                    hash: TaskCheckFingerprint::ExitCode,
+                })])
             );
         }
 
@@ -915,12 +905,10 @@ checks:
 
             assert_eq!(
                 config.checks,
-                Some(vec![TaskCheckEntry::Fingerprint(
-                    TaskCheckFingerprintConfig {
-                        script: "rustc --version".into(),
-                        hash: TaskCheckFingerprint::Enabled(true),
-                    }
-                )])
+                Some(vec![TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                    script: "rustc --version".into(),
+                    hash: TaskCheckFingerprint::Enabled(true),
+                })])
             );
         }
 
@@ -937,12 +925,10 @@ checks:
 
             assert_eq!(
                 config.checks,
-                Some(vec![TaskCheckEntry::Fingerprint(
-                    TaskCheckFingerprintConfig {
-                        script: "rustc --version".into(),
-                        hash: TaskCheckFingerprint::Enabled(true),
-                    }
-                )])
+                Some(vec![TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                    script: "rustc --version".into(),
+                    hash: TaskCheckFingerprint::Enabled(true),
+                })])
             );
         }
 
@@ -966,17 +952,17 @@ checks:
             assert_eq!(
                 config.checks,
                 Some(vec![
-                    TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                    TaskCheck::Requirement(TaskCheckRequirementConfig {
                         script: "which cargo".into()
                     }),
-                    TaskCheckEntry::Condition(TaskCheckConditionConfig {
+                    TaskCheck::Condition(TaskCheckConditionConfig {
                         script: "test -f dist/index.js".into()
                     }),
-                    TaskCheckEntry::Fingerprint(TaskCheckFingerprintConfig {
+                    TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
                         script: "rustc --version".into(),
                         hash: TaskCheckFingerprint::Stdout,
                     }),
-                    TaskCheckEntry::Requirement(TaskCheckRequirementConfig {
+                    TaskCheck::Requirement(TaskCheckRequirementConfig {
                         script: "node --version".into()
                     }),
                 ])

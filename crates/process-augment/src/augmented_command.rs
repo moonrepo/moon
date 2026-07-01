@@ -7,7 +7,7 @@ use moon_pdk_api::{
 };
 use moon_process::{Command, CommandArg, Env};
 use moon_project::Project;
-use moon_task::{Task, TaskCheckEntry};
+use moon_task::{Task, TaskCheck};
 use moon_toolchain::{
     get_version_env_key, get_version_env_value, is_using_global_toolchain,
     is_using_global_toolchains,
@@ -97,7 +97,7 @@ impl<'app> AugmentedCommand<'app> {
     pub fn from_task_check(
         context: &'app AppContext,
         bag: &'app GlobalEnvBag,
-        check: &TaskCheckEntry,
+        check: &TaskCheck,
     ) -> Self {
         let mut builder = Self::new(context, bag, "noop");
         builder.set_script(check.get_script());

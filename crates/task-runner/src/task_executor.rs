@@ -157,7 +157,7 @@ impl<'task> TaskExecutor<'task> {
                             task_target = self.task.target.as_str(),
                             command = self.command.get_bin_name(),
                             exit_code = output.code(),
-                            "Ran task, checking conditions",
+                            "Ran task",
                         );
 
                         attempt.finish_from_output(output.status(), output.stdout, output.stderr);

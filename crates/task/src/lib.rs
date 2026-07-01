@@ -3,7 +3,7 @@ mod task_arg;
 mod task_options;
 
 pub use moon_config::{
-    TaskCheckConditionConfig, TaskCheckEntry, TaskCheckFingerprint, TaskCheckFingerprintConfig,
+    TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint, TaskCheckFingerprintConfig,
     TaskCheckRequirementConfig, TaskCheckType, TaskConfig, TaskMergeStrategy, TaskOperatingSystem,
     TaskOptionAffectedFilesConfig, TaskOptionAffectedFilesEntry, TaskOptionAffectedFilesPattern,
     TaskOptionCache, TaskOptionEnvFile, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle,

@@ -1,4 +1,5 @@
 // Public for tests
+mod check_executor;
 mod checks_runner;
 pub mod command_builder;
 pub mod manifest_compat;

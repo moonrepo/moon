@@ -9,7 +9,7 @@ use moon_env_var::{DotEnv, GlobalEnvBag};
 use moon_process::{Command, ShellType};
 use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
-use moon_task::{Task, TaskCheckEntry};
+use moon_task::{Task, TaskCheck};
 use rustc_hash::FxHashMap;
 use starbase_utils::glob::GlobSet;
 use std::env;
@@ -89,7 +89,7 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(name = "build_check_command", skip_all)]
-    pub async fn build_check(mut self, check: &TaskCheckEntry) -> miette::Result<Command> {
+    pub async fn build_check(mut self, check: &TaskCheck) -> miette::Result<Command> {
         debug!(
             task_target = self.task.target.as_str(),
             working_dir = ?self.working_dir,

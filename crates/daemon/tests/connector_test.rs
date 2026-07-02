@@ -197,4 +197,54 @@ mod connect {
 
         let _ = shutdown_tx.send(());
     }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_acquire_connects_to_running_daemon_without_spawning() {
+        use moon_daemon::{DaemonService, DaemonState, serve_unix};
+        use moon_daemon_utils::endpoint::get_endpoint;
+        use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
+        use std::sync::Arc;
+        use std::time::Duration;
+        use tokio::sync::{RwLock, broadcast};
+
+        let sandbox = create_empty_sandbox();
+        let connector = make_connector(&sandbox);
+
+        fs::create_dir_all(&connector.daemon_dir).unwrap();
+
+        let endpoint = get_endpoint(&connector.daemon_dir);
+        let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
+
+        let mocker = WorkspaceMocker::new(sandbox.path());
+        let service = DaemonService::new(
+            Arc::new(RwLock::new(DaemonState {
+                app_context: Arc::new(mocker.mock_app_context()),
+                workspace_graph: Arc::new(WorkspaceGraph::default()),
+            })),
+            endpoint.clone(),
+            std::process::id(),
+            shutdown_tx.clone(),
+        );
+
+        tokio::spawn(async move {
+            serve_unix(&endpoint, service, async move {
+                let _ = shutdown_rx.recv().await;
+            })
+            .await
+            .unwrap();
+        });
+
+        // Give the server a moment to bind.
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        // A daemon is already listening, so acquire connects on the fast path.
+        // (If it fell through to spawning, it would try to launch the test
+        // binary as `daemon server` and fail.)
+        let client = connector.acquire().await.unwrap();
+
+        assert!(client.is_some());
+
+        let _ = shutdown_tx.send(());
+    }
 }

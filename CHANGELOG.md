@@ -30,6 +30,9 @@
     automatically, so a stale socket or state file can no longer block or misdirect the next start.
   - Whether the daemon is running is now determined by connecting to it rather than probing a PID,
     and its metadata is recorded in a `daemon.json` state file (replacing `moond.pid`).
+  - Connecting to the daemon and starting it are now a single operation, so a command that needs the
+    daemon will start one itself if the background pre-warm hasn't yet, instead of silently running
+    without it. Concurrent starts still coordinate so only one daemon is spawned.
 - **Processes**
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or

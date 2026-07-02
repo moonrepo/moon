@@ -109,6 +109,58 @@ impl DaemonConnector {
         Ok(Some(DaemonClient::try_connect(&self.daemon_dir).await?))
     }
 
+    /// Acquire a connected client, starting the daemon if one isn't already
+    /// running. This is the single entry point for callers that want to _use_
+    /// the daemon: it connects if it can, otherwise spawns — coordinating with
+    /// any concurrent start through the spawn lock — and connects once ready.
+    /// Every caller sharing this path means there's no ordering dependency
+    /// between a background pre-warm and the pipeline that needs the daemon;
+    /// whoever gets here first starts it, the rest connect to it.
+    ///
+    /// Returns `Ok(None)`, never an error, when the daemon can't be brought up
+    /// within the startup budget, so callers transparently degrade to running
+    /// without it.
+    #[instrument(skip(self))]
+    pub async fn acquire(&self) -> miette::Result<Option<DaemonClient>> {
+        // Fast path: a daemon is already accepting connections.
+        if let Ok(client) = DaemonClient::try_connect(&self.daemon_dir).await {
+            return Ok(Some(client));
+        }
+
+        // Otherwise start one (single-flight across threads and processes)
+        // and wait until it's ready.
+        match self.start_daemon(false).await {
+            Ok(Some(_)) => {}
+            Ok(None) => {
+                warn!("Timed out bringing up the daemon, continuing without it");
+
+                return Ok(None);
+            }
+            Err(error) => {
+                warn!(
+                    error = error.to_string(),
+                    "Failed to start the daemon, continuing without it"
+                );
+
+                return Ok(None);
+            }
+        }
+
+        // Ready now — connect, with the bounded retry covering the small
+        // window between readiness and this connection.
+        match self.connect().await {
+            Ok(client) => Ok(client),
+            Err(error) => {
+                warn!(
+                    error = error.to_string(),
+                    "Daemon started but could not be reached, continuing without it"
+                );
+
+                Ok(None)
+            }
+        }
+    }
+
     pub fn get_log_file(&self) -> PathBuf {
         self.daemon_dir.join("server.log")
     }

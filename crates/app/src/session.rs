@@ -36,7 +36,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::OnceCell;
 use tokio::try_join;
-use tracing::{debug, warn};
+use tracing::debug;
 
 pub type SessionResult = AppResult<miette::Report>;
 
@@ -141,24 +141,14 @@ impl MoonSession {
 
         // let client = self
         //     .daemon_client
-        //     .get_or_try_init(async move || self.get_daemon_connector()?.connect().await)
+        //     .get_or_try_init(async move || self.get_daemon_connector()?.acquire().await)
         //     .await?;
 
         // Ok(client.clone())
 
-        let daemon = match self.get_daemon_connector()?.connect().await {
-            Ok(inner) => inner,
-            Err(error) => {
-                warn!(
-                    ?error,
-                    "Failed to connect to daemon, will continue without it"
-                );
-
-                None
-            }
-        };
-
-        Ok(daemon)
+        // `acquire` connects to a running daemon or starts one, degrading to
+        // `None` on failure, so there's nothing to handle here.
+        self.get_daemon_connector()?.acquire().await
     }
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {
@@ -480,9 +470,12 @@ impl AppSession for MoonSession {
                 .await?;
         }
 
-        // Start the daemon
+        // Start the daemon early, in the background, so it's ready by the time
+        // the pipeline needs it. This shares `acquire` with the pipeline's own
+        // `connect_to_daemon`, so the two coordinate and at most one spawns —
+        // and a spawn failure degrades to `None` instead of failing the run.
         if self.is_daemon_allowed() {
-            self.get_daemon_connector()?.start_daemon(false).await?;
+            self.get_daemon_connector()?.acquire().await?;
         }
 
         Ok(None)

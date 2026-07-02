@@ -7,7 +7,7 @@ use std::time::Duration;
 pub async fn status(session: MoonSession) -> SessionResult {
     let connector = session.get_daemon_connector()?;
 
-    if connector.is_running().is_none() {
+    if !connector.is_running().await {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Caution) {
@@ -71,10 +71,10 @@ pub async fn status(session: MoonSession) -> SessionResult {
 
             Section(title: "Paths") {
                 Entry(
-                    name: "PID file",
+                    name: "State file",
                     value: element! {
                         StyledText(
-                            content: connector.get_pid_file().to_string_lossy(),
+                            content: connector.get_state_file().to_string_lossy(),
                             style: Style::Path
                         )
                     }.into_any()

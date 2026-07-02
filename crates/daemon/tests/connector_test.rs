@@ -1,5 +1,5 @@
 use moon_daemon::{DaemonClient, DaemonConnector};
-use moon_daemon_utils::endpoint::write_pid;
+use moon_daemon_utils::endpoint::{DaemonInfo, write_state};
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use starbase_utils::fs;
 
@@ -11,62 +11,59 @@ mod connector {
     use super::*;
 
     #[test]
-    fn test_get_pid_file() {
+    fn test_get_state_file() {
         let sandbox = create_empty_sandbox();
         let connector = make_connector(&sandbox);
 
         assert_eq!(
-            connector.get_pid_file(),
-            sandbox.path().join("daemon/moond.pid")
+            connector.get_state_file(),
+            sandbox.path().join("daemon/daemon.json")
         );
     }
 
     #[test]
-    fn test_is_running_no_pid_file() {
+    fn test_read_state_none_when_missing() {
         let sandbox = create_empty_sandbox();
         let connector = make_connector(&sandbox);
 
         fs::create_dir_all(&connector.daemon_dir).unwrap();
 
-        assert!(connector.is_running().is_none());
+        assert!(connector.read_state().is_none());
     }
 
     #[test]
-    fn test_is_running_stale_pid() {
+    fn test_read_state_returns_written_info() {
+        let sandbox = create_empty_sandbox();
+        let connector = make_connector(&sandbox);
+
+        fs::create_dir_all(&connector.daemon_dir).unwrap();
+        write_state(
+            &connector.daemon_dir,
+            DaemonInfo::new(4242, "1.2.3".into(), "sock".into()),
+        )
+        .unwrap();
+
+        let state = connector.read_state().unwrap();
+        assert_eq!(state.pid, 4242);
+        assert_eq!(state.version, "1.2.3");
+    }
+
+    #[tokio::test]
+    async fn test_is_running_false_when_no_daemon() {
         let sandbox = create_empty_sandbox();
         let connector = make_connector(&sandbox);
 
         fs::create_dir_all(&connector.daemon_dir).unwrap();
 
-        // Write a PID for a process that (almost certainly) doesn't exist.
-        let pid_path = connector.get_pid_file();
-        write_pid(&pid_path, 4_000_000).unwrap();
+        // Liveness is a connection, not the state file: a stale record must
+        // not read as running when nothing is listening.
+        write_state(
+            &connector.daemon_dir,
+            DaemonInfo::new(4_000_000, "1.0.0".into(), "sock".into()),
+        )
+        .unwrap();
 
-        assert!(connector.is_running().is_none());
-    }
-
-    #[test]
-    fn test_is_running_current_process() {
-        let sandbox = create_empty_sandbox();
-        let connector = make_connector(&sandbox);
-
-        fs::create_dir_all(&connector.daemon_dir).unwrap();
-
-        // Write our own PID — the process is definitely alive.
-        let pid_path = connector.get_pid_file();
-        let pid = std::process::id();
-        write_pid(&pid_path, pid).unwrap();
-
-        assert_eq!(connector.is_running(), Some(pid));
-    }
-
-    #[test]
-    fn test_is_running_no_daemon_dir() {
-        let sandbox = create_empty_sandbox();
-        let connector = make_connector(&sandbox);
-
-        // daemon_dir doesn't exist at all.
-        assert!(connector.is_running().is_none());
+        assert!(!connector.is_running().await);
     }
 
     #[tokio::test]
@@ -76,9 +73,31 @@ mod connector {
 
         fs::create_dir_all(&connector.daemon_dir).unwrap();
 
-        // Stopping when nothing is running should return Ok(false).
+        // Nothing listening and no state file: nothing to stop.
         let result = connector.stop_daemon().await.unwrap();
         assert!(!result);
+    }
+
+    #[tokio::test]
+    async fn test_stop_daemon_cleans_stale_state_when_lock_free() {
+        let sandbox = create_empty_sandbox();
+        let connector = make_connector(&sandbox);
+
+        fs::create_dir_all(&connector.daemon_dir).unwrap();
+
+        // A crashed daemon left a state file but released its ownership lock
+        // (nothing is listening, the lock is free). Stop confirms death by
+        // acquiring the lock, then removes the stale files.
+        write_state(
+            &connector.daemon_dir,
+            DaemonInfo::new(4_000_000, "1.0.0".into(), "sock".into()),
+        )
+        .unwrap();
+
+        let result = connector.stop_daemon().await.unwrap();
+
+        assert!(result);
+        assert!(!connector.get_state_file().exists());
     }
 }
 

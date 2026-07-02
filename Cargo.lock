@@ -5458,6 +5458,8 @@ dependencies = [
  "futures-core",
  "libc",
  "md5",
+ "serde",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
  "tokio",

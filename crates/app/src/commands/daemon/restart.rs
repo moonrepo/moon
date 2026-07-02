@@ -16,7 +16,7 @@ pub async fn restart(session: MoonSession) -> SessionResult {
     }
 
     let connector = session.get_daemon_connector()?;
-    let old_pid = connector.is_running();
+    let old_pid = connector.read_state().map(|state| state.pid);
 
     connector.stop_daemon().await?;
 

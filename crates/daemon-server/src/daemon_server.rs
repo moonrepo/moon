@@ -7,7 +7,8 @@ use moon_daemon_proto::{
     moon_daemon_server::{MoonDaemon, MoonDaemonServer},
     *,
 };
-use moon_daemon_utils::{endpoint::*, sys::is_process_alive};
+use moon_daemon_utils::endpoint::*;
+use moon_daemon_utils::lock::DaemonLock;
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_notifier::notify_webhook;
 use moon_process::ProcessRegistry;
@@ -254,25 +255,54 @@ impl MoonDaemon for DaemonService {
 /// - A `Stop` RPC call from a client
 /// - `SIGINT` or `SIGTERM` (Unix) / `Ctrl+C` (Windows)
 ///
-/// On shutdown the PID file and socket are removed.
+/// On shutdown the state file and socket are removed and the ownership lock
+/// is released.
 pub async fn start_daemon_server(
     state: DaemonState,
     watchers: Vec<BoxedFileWatcher<AtomicDaemonState>>,
 ) -> miette::Result<()> {
     let daemon_dir = state.app_context.daemon_dir.clone();
     let workspace_root = state.app_context.workspace_root.clone();
+    let version = state.app_context.cli_version.to_string();
     let endpoint = get_endpoint(&daemon_dir);
 
     fs::create_dir_all(&daemon_dir)?;
 
-    // Remove stale endpoint files left by a previous crash, but only
-    // if no daemon process is actually alive
-    remove_stale_endpoint(&daemon_dir, &endpoint)?;
+    // Take exclusive ownership of this workspace's daemon. The lock is held
+    // for our entire lifetime and released automatically when we exit — even
+    // on a crash — so the running daemon is whoever holds it, not a PID we'd
+    // have to probe. If another daemon already owns it, defer to it.
+    let _ownership =
+        match DaemonLock::try_acquire(&get_lock_path(&daemon_dir)).map_err(|error| {
+            DaemonServerError::EndpointBindFailed {
+                endpoint: endpoint.clone(),
+                error: Box::new(error),
+            }
+        })? {
+            Some(lock) => lock,
+            None => {
+                info!("Another daemon already owns this workspace, exiting");
+
+                return Ok(());
+            }
+        };
+
+    // We own the workspace now, so any leftover socket is stale (no live
+    // owner could still hold the lock) and safe to remove before binding.
+    #[cfg(unix)]
+    {
+        let sock = Path::new(&endpoint);
+
+        if sock.exists() {
+            fs::remove_file(sock)?;
+        }
+    }
 
     let pid = std::process::id();
-    let pid_path = get_pid_path(&daemon_dir);
 
-    write_pid(&pid_path, pid)?;
+    // Record informational state for `moon daemon status`/`stop`. Ownership
+    // is the lock above; this file is never consulted to decide liveness.
+    write_state(&daemon_dir, DaemonInfo::new(pid, version, endpoint.clone()))?;
 
     // Create a new atomic state
     let atomic_state = Arc::new(RwLock::new(state));
@@ -338,45 +368,10 @@ pub async fn start_daemon_server(
 
     info!("Daemon server stopped");
 
+    // Remove our endpoint files, then release the lock as `_ownership` drops.
     let _ = cleanup_daemon_files(&daemon_dir);
 
     serve_result
-}
-
-/// Remove a stale Unix socket (or check a stale PID file on Windows)
-/// left behind by a crashed daemon that didn't clean up after itself.
-///
-/// Only removes files when no daemon process is actually running.
-#[allow(unused_variables)]
-fn remove_stale_endpoint(daemon_dir: &Path, endpoint: &str) -> miette::Result<()> {
-    let pid_path = get_pid_path(daemon_dir);
-
-    // If there's a PID file for a process that's still alive, the
-    // endpoint is not stale — bail out
-    if let Some(pid) = read_pid(&pid_path) {
-        if is_process_alive(pid) {
-            return Ok(());
-        }
-
-        debug!(pid, "Found stale PID file for dead process, cleaning up");
-    }
-
-    // On Unix the socket file itself blocks `bind()`
-    #[cfg(unix)]
-    {
-        let sock = Path::new(endpoint);
-
-        if sock.exists() {
-            fs::remove_file(sock)?;
-        }
-    }
-
-    // Remove the stale PID file too.
-    if pid_path.exists() {
-        fs::remove_file(&pid_path)?;
-    }
-
-    Ok(())
 }
 
 pub async fn serve(

@@ -21,9 +21,15 @@
 - **Daemon**
   - Log files are now named with the current date, e.g., `server.YYYY-MM-DD.log`, instead of a
     static name.
-  - Work procedures (webhook delivery, cache cleaning, output archiving) are now queued in the
-    background and acknowledged immediately, so a client exiting or hitting a deadline can no longer
-    cancel the work mid-flight. Queued work is drained before the daemon shuts down.
+  - Webhook delivery and task output archiving are now acknowledged immediately and run in the
+    background on the daemon, so a client exiting or hitting a deadline no longer cancels the work
+    mid-flight.
+  - The daemon now takes exclusive ownership of its workspace through an advisory file lock held for
+    its entire lifetime, replacing PID-liveness checks that could be fooled by zombie processes,
+    reused PIDs, or processes owned by another user. A crashed daemon releases the lock
+    automatically, so a stale socket or state file can no longer block or misdirect the next start.
+  - Whether the daemon is running is now determined by connecting to it rather than probing a PID,
+    and its metadata is recorded in a `daemon.json` state file (replacing `moond.pid`).
 - **Processes**
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or

@@ -9,6 +9,7 @@ moon_daemon_client = { path = "../daemon-client" }
 moon_daemon_proto = { path = "../daemon-proto" }
 moon_daemon_server = { path = "../daemon-server" }
 moon_daemon_utils = { path = "../daemon-utils" }
+chrono = { workspace = true }
 miette = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

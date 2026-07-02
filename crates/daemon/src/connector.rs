@@ -44,7 +44,9 @@ impl DaemonConnector {
     }
 
     pub fn get_log_file(&self) -> PathBuf {
-        self.daemon_dir.join("server.log")
+        let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
+
+        self.daemon_dir.join(format!("server.{date}.log"))
     }
 
     pub fn get_pid_file(&self) -> PathBuf {

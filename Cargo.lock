@@ -5381,6 +5381,7 @@ dependencies = [
 name = "moon_daemon"
 version = "0.0.1"
 dependencies = [
+ "chrono",
  "miette 7.6.0",
  "moon_daemon_client",
  "moon_daemon_proto",

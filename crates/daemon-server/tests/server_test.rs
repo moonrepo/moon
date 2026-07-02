@@ -152,6 +152,29 @@ mod unix_rpc {
     }
 
     #[tokio::test]
+    async fn test_send_webhook_rpc_acks_without_waiting_for_delivery() {
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("daemon");
+        let workspace_root = sandbox.path().to_path_buf();
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let shutdown_tx = start_test_server(&daemon_dir, &workspace_root).await;
+        let mut client = DaemonClient::connect(&daemon_dir).await.unwrap();
+
+        // The URL is unreachable, so an inline delivery would fail the RPC.
+        // Since delivery is spawned in the background, the call still acks.
+        let response = client
+            .send_webhook("http://127.0.0.1:1/webhook".into(), "{}".into())
+            .await
+            .unwrap();
+
+        assert!(response.success);
+
+        let _ = shutdown_tx.send(());
+    }
+
+    #[tokio::test]
     async fn test_connect_to_nonexistent_socket_fails() {
         let sandbox = create_empty_sandbox();
         let daemon_dir = sandbox.path().join("daemon");
@@ -305,6 +328,49 @@ mod windows_rpc {
             let status = client.status().await.unwrap();
             assert!(status.running);
         }
+
+        let _ = shutdown_tx.send(());
+    }
+
+    #[tokio::test]
+    async fn test_send_webhook_rpc_acks_without_waiting_for_delivery() {
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("daemon");
+        let workspace_root = sandbox.path().to_path_buf();
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let shutdown_tx = start_test_server(&daemon_dir, &workspace_root).await;
+        let mut client = DaemonClient::connect(&daemon_dir).await.unwrap();
+
+        // The URL is unreachable, so an inline delivery would fail the RPC.
+        // Since delivery is spawned in the background, the call still acks.
+        let response = client
+            .send_webhook("http://127.0.0.1:1/webhook".into(), "{}".into())
+            .await
+            .unwrap();
+
+        assert!(response.success);
+
+        let _ = shutdown_tx.send(());
+    }
+
+    #[tokio::test]
+    async fn test_clean_cache_rpc_acks_without_waiting_for_clean() {
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("daemon");
+        let workspace_root = sandbox.path().to_path_buf();
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let shutdown_tx = start_test_server(&daemon_dir, &workspace_root).await;
+        let mut client = DaemonClient::connect(&daemon_dir).await.unwrap();
+
+        // The clean runs in the background, so the ack carries no stats.
+        let response = client.clean_cache("7 days".into(), false).await.unwrap();
+
+        assert_eq!(response.files_deleted, 0);
+        assert_eq!(response.bytes_saved, 0);
 
         let _ = shutdown_tx.send(());
     }

@@ -21,7 +21,6 @@ rustc-hash = { workspace = true }
 starbase_utils = { workspace = true, features = ["fs-lock"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
-tokio-util = { workspace = true, features = ["rt"] }
 tonic = { workspace = true, features = ["transport"] }
 tracing = { workspace = true }
 

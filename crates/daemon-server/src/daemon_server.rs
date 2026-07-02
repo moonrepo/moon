@@ -21,7 +21,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::{RwLock, broadcast};
 use tonic::{Request, Response, Status, transport::Server};
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 
 pub struct DaemonState {
     pub app_context: Arc<AppContext>,
@@ -69,29 +69,50 @@ impl MoonDaemon for DaemonService {
     ) -> Result<Response<ArchiveTaskOutputsResponse>, Status> {
         debug!("Received {} request", color::property("ArchiveTaskOutputs"));
 
-        let state = self.state.read().await;
         let req = request.into_inner();
 
         let target = Target::parse(&req.task_target)
             .map_err(|error| Status::invalid_argument(error.to_string()))?;
 
-        let task = state
-            .workspace_graph
-            .get_task(&target)
-            .map_err(|error| Status::not_found(error.to_string()))?;
+        let (app_context, task) = {
+            let state = self.state.read().await;
+            let task = state
+                .workspace_graph
+                .get_task(&target)
+                .map_err(|error| Status::not_found(error.to_string()))?;
 
-        // TODO populate the action digest/bytes!
-        let task_state = TaskRunState::new(&state.app_context, &task);
+            (Arc::clone(&state.app_context), task)
+        };
 
-        let archived = OutputArchiver::new(&state.app_context, &task)
-            .map_err(|error| Status::unknown(error.to_string()))?
-            .archive(&req.hash, &task_state)
-            .await
-            .map_err(|error| Status::unknown(error.to_string()))?;
+        tokio::spawn(async move {
+            // TODO populate the action digest/bytes!
+            let task_state = TaskRunState::new(&app_context, &task);
 
-        Ok(Response::new(ArchiveTaskOutputsResponse {
-            archived: matches!(archived, ArchiveOutcome::Queued),
-        }))
+            let result = match OutputArchiver::new(&app_context, &task) {
+                Ok(archiver) => archiver.archive(&req.hash, &task_state).await,
+                Err(error) => Err(error),
+            };
+
+            match result {
+                Ok(outcome) => {
+                    debug!(
+                        target = target.as_str(),
+                        hash = &req.hash,
+                        queued = matches!(outcome, ArchiveOutcome::Queued),
+                        "Archived task outputs"
+                    );
+                }
+                Err(error) => {
+                    warn!(
+                        target = target.as_str(),
+                        hash = &req.hash,
+                        "Failed to archive task outputs: {error}"
+                    );
+                }
+            }
+        });
+
+        Ok(Response::new(ArchiveTaskOutputsResponse { archived: true }))
     }
 
     async fn clean_cache(
@@ -100,11 +121,10 @@ impl MoonDaemon for DaemonService {
     ) -> Result<Response<CleanCacheResponse>, Status> {
         debug!("Received {} request", color::property("CleanCache"));
 
+        let app_context = Arc::clone(&self.state.read().await.app_context);
         let request = request.into_inner();
-        let state = self.state.read().await;
 
-        let (files_deleted, bytes_saved) = state
-            .app_context
+        let (files_deleted, bytes_saved) = app_context
             .cache_engine
             .clean_stale_cache(&request.lifetime, request.all)
             .await
@@ -151,15 +171,28 @@ impl MoonDaemon for DaemonService {
     ) -> Result<Response<SendWebhookResponse>, Status> {
         debug!("Received {} request", color::property("SendWebhook"));
 
-        let request = request.into_inner();
+        let SendWebhookRequest { url, body } = request.into_inner();
 
-        let response = notify_webhook(&request.url, request.body, false)
-            .await
-            .map_err(|error| Status::unknown(error.to_string()))?;
+        // Deliver in the background. The work can outlive the client, which
+        // acknowledges immediately and may disconnect — the entire reason it
+        // offloads delivery to the daemon instead of sending it inline.
+        tokio::spawn(async move {
+            match notify_webhook(&url, body, false).await {
+                Ok(response) if !response.status().is_success() => {
+                    warn!(
+                        url = &url,
+                        status = response.status().as_u16(),
+                        "Webhook endpoint responded with a failure"
+                    );
+                }
+                Err(error) => {
+                    warn!(url = &url, "Failed to send webhook: {error}");
+                }
+                _ => {}
+            }
+        });
 
-        Ok(Response::new(SendWebhookResponse {
-            success: response.status().is_success(),
-        }))
+        Ok(Response::new(SendWebhookResponse { success: true }))
     }
 
     async fn start(

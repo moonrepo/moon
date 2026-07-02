@@ -55,6 +55,33 @@ fn map_notify_error(error: notify_debouncer_full::notify::Error) -> DaemonServer
     }
 }
 
+/// Walk `root` and return it plus every descendant directory that isn't
+/// ignored, so each can be watched individually. Ignored subtrees
+/// (`node_modules`, `.git`, `.moon/cache`, ...) are never descended into, so
+/// we never register a watch for the directories inside them.
+fn collect_watch_dirs(root: &Path) -> Vec<PathBuf> {
+    let mut dirs = Vec::new();
+    let mut stack = vec![root.to_path_buf()];
+
+    while let Some(dir) = stack.pop() {
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+
+                // Only descend into real directories — not symlinks, to avoid
+                // cycles — that aren't ignored.
+                if entry.file_type().is_ok_and(|kind| kind.is_dir()) && !is_ignored(&path) {
+                    stack.push(path);
+                }
+            }
+        }
+
+        dirs.push(dir);
+    }
+
+    dirs
+}
+
 fn create_file_event(workspace_root: &Path, path: &Path, kind: EventKind) -> Option<FileEvent> {
     if is_ignored(path) {
         return None;
@@ -102,11 +129,30 @@ pub async fn start_file_watcher(
     })
     .map_err(map_notify_error)?;
 
+    // Watch each non-ignored directory individually rather than recursively
+    // from the root, so we don't register an OS watch for every directory
+    // inside `node_modules`/`.git` — which exhausts the inotify watch limit on
+    // large repos and is slow to set up. New directories are watched as they
+    // appear (see the event loop below).
+    let watch_dirs = collect_watch_dirs(&workspace_root);
+
+    // The root must be watchable; descendants are best-effort (one may vanish
+    // between listing and watching).
     debouncer
-        .watch(&workspace_root, RecursiveMode::Recursive)
+        .watch(&workspace_root, RecursiveMode::NonRecursive)
         .map_err(map_notify_error)?;
 
-    debug!(path = ?workspace_root, "File watcher started");
+    for dir in watch_dirs.iter().skip(1) {
+        if let Err(error) = debouncer.watch(dir, RecursiveMode::NonRecursive) {
+            trace!(dir = ?dir, "Failed to watch directory: {error}");
+        }
+    }
+
+    debug!(
+        path = ?workspace_root,
+        dirs = watch_dirs.len(),
+        "File watcher started"
+    );
 
     loop {
         tokio::select! {
@@ -114,6 +160,21 @@ pub async fn start_file_watcher(
                 match result {
                     Ok(events) => {
                         for event in events {
+                            // A newly created directory (a new project, a
+                            // restored subtree) must be watched too, since we
+                            // watch non-recursively. Register it and any
+                            // non-ignored descendants created alongside it.
+                            if event.kind.is_create() {
+                                for path in &event.paths {
+                                    if !is_ignored(path) && path.is_dir() {
+                                        for dir in collect_watch_dirs(path) {
+                                            let _ = debouncer
+                                                .watch(&dir, RecursiveMode::NonRecursive);
+                                        }
+                                    }
+                                }
+                            }
+
                             for path in &event.paths {
                                 if let Some(file_event) =
                                     create_file_event(&workspace_root, path, event.kind)
@@ -237,6 +298,40 @@ mod tests {
     #[test]
     fn test_not_ignored_source_file() {
         assert!(!is_ignored(&PathBuf::from("/workspace/src/main.rs")));
+    }
+
+    #[test]
+    fn collect_watch_dirs_skips_ignored_subtrees() {
+        use starbase_sandbox::create_empty_sandbox;
+
+        let sandbox = create_empty_sandbox();
+        let root = sandbox.path();
+
+        for dir in [
+            "src/nested",
+            ".moon/tasks",
+            ".moon/cache/hashes",
+            "node_modules/foo",
+            ".git/objects",
+        ] {
+            std::fs::create_dir_all(root.join(dir)).unwrap();
+        }
+
+        let dirs = collect_watch_dirs(root);
+
+        // Watched: the root, source dirs, and `.moon` config dirs.
+        assert!(dirs.contains(&root.to_path_buf()));
+        assert!(dirs.contains(&root.join("src")));
+        assert!(dirs.contains(&root.join("src/nested")));
+        assert!(dirs.contains(&root.join(".moon")));
+        assert!(dirs.contains(&root.join(".moon/tasks")));
+
+        // Never descended into: `node_modules`, `.git`, and `.moon/cache`.
+        assert!(!dirs.contains(&root.join("node_modules")));
+        assert!(!dirs.contains(&root.join("node_modules/foo")));
+        assert!(!dirs.contains(&root.join(".git")));
+        assert!(!dirs.contains(&root.join(".moon/cache")));
+        assert!(!dirs.contains(&root.join(".moon/cache/hashes")));
     }
 
     #[test]

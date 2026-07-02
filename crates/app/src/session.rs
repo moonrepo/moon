@@ -9,7 +9,7 @@ use moon_cache::{CacheContext, CacheEngine};
 use moon_cache_local::LocalStorage;
 use moon_cache_remote::{GrpcRemoteStorage, HttpRemoteStorage};
 use moon_codegen::CodeGenerator;
-use moon_common::{is_docker, is_formatted_output, is_remote, is_test_env};
+use moon_common::{is_ci_env, is_docker, is_formatted_output, is_test_env};
 use moon_config::{
     ExtensionsConfig, InheritedTasksManager, RemoteApi, ToolchainsConfig, WorkspaceConfig,
 };
@@ -478,22 +478,21 @@ impl AppSession for MoonSession {
         // the pipeline needs it. This shares `acquire` with the pipeline's own
         // `connect_to_daemon`, so the two coordinate and at most one spawns —
         // and a spawn failure degrades to `None` instead of failing the run.
-        if self.is_daemon_allowed() {
-            if let Some(client) = self.get_daemon_connector()?.acquire().await? {
-                let _ = self.daemon_client.set(client);
-            }
+        if self.is_daemon_allowed()
+            && let Some(client) = self.get_daemon_connector()?.acquire().await?
+        {
+            let _ = self.daemon_client.set(client);
         }
 
         Ok(None)
     }
 
     async fn shutdown(&mut self) -> AppResult<Self::Error> {
-        let is_local_debug_or_remote = cfg!(debug_assertions) || is_remote();
+        let should_stop_daemon = cfg!(debug_assertions) || is_ci_env();
 
-        // Stop the daemon if it's running. Use a single connect attempt,
-        // as retrying against an already-stopped daemon would only delay
-        // process exit.
-        if is_local_debug_or_remote
+        // Stop the daemon if it's running. Use a single connect attempt, as
+        // retrying against an already-stopped daemon would only delay exit.
+        if should_stop_daemon
             && self.is_daemon_allowed()
             && let Ok(connector) = self.get_daemon_connector()
             && let Ok(Some(mut daemon)) = connector.connect_once().await
@@ -507,7 +506,7 @@ impl AppSession for MoonSession {
             .wait_for_background_tasks()
             .await?;
 
-        // Ensure all child processes have finished running
+        // Ensure all child processes have finished
         ProcessRegistry::instance()
             .wait_for_running_to_shutdown()
             .await;

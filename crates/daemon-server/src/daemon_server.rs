@@ -17,12 +17,27 @@ use moon_task_runner::output_archiver::ArchiveOutcome;
 use moon_task_runner::{TaskRunState, output_archiver::OutputArchiver};
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
-use std::path::Path;
+use std::env;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::Instant;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, broadcast};
 use tonic::{Request, Response, Status, transport::Server};
 use tracing::{debug, error, info, warn};
+
+/// How often the lifecycle monitor checks whether the daemon should retire.
+const MONITOR_INTERVAL: Duration = Duration::from_secs(60);
+
+/// How long the daemon may sit without any RPC before it exits on its own, so
+/// an abandoned workspace doesn't leave a daemon running indefinitely.
+const IDLE_TTL: Duration = Duration::from_secs(4 * 60 * 60);
+
+/// Capacity of the file-event broadcast. Sized to absorb a large burst — a
+/// branch switch touching many files — without the listener lagging and
+/// dropping events, which could miss a config change. The watcher already
+/// excludes `node_modules`/`.git`, so the burst is bounded by tracked files.
+const EVENT_CHANNEL_CAPACITY: usize = 16_384;
 
 pub struct DaemonState {
     pub app_context: Arc<AppContext>,
@@ -36,6 +51,7 @@ struct DaemonServiceInner {
     pid: u32,
     shutdown_tx: broadcast::Sender<()>,
     started_at: Instant,
+    last_activity: Arc<AtomicU64>,
 }
 
 pub struct DaemonService {
@@ -56,9 +72,23 @@ impl DaemonService {
                 pid,
                 shutdown_tx,
                 started_at: Instant::now(),
+                last_activity: Arc::new(AtomicU64::new(0)),
             }),
             state,
         }
+    }
+
+    fn last_activity(&self) -> Arc<AtomicU64> {
+        Arc::clone(&self.inner.last_activity)
+    }
+
+    fn track_activity(&self, procedure: &str) {
+        debug!("Received {} request", color::property(procedure));
+
+        self.inner.last_activity.store(
+            self.inner.started_at.elapsed().as_millis() as u64,
+            Ordering::Relaxed,
+        );
     }
 }
 
@@ -68,7 +98,7 @@ impl MoonDaemon for DaemonService {
         &self,
         request: Request<ArchiveTaskOutputsRequest>,
     ) -> Result<Response<ArchiveTaskOutputsResponse>, Status> {
-        debug!("Received {} request", color::property("ArchiveTaskOutputs"));
+        self.track_activity("ArchiveTaskOutputs");
 
         let req = request.into_inner();
 
@@ -120,7 +150,7 @@ impl MoonDaemon for DaemonService {
         &self,
         request: Request<CleanCacheRequest>,
     ) -> Result<Response<CleanCacheResponse>, Status> {
-        debug!("Received {} request", color::property("CleanCache"));
+        self.track_activity("CleanCache");
 
         let app_context = Arc::clone(&self.state.read().await.app_context);
         let request = request.into_inner();
@@ -141,9 +171,9 @@ impl MoonDaemon for DaemonService {
         &self,
         request: Request<HashFilesRequest>,
     ) -> Result<Response<HashFilesResponse>, Status> {
-        debug!("Received {} request", color::property("HashFiles"));
+        self.track_activity("HashFiles");
 
-        let state = self.state.read().await;
+        let app_context = Arc::clone(&self.state.read().await.app_context);
 
         let files = request
             .into_inner()
@@ -152,8 +182,7 @@ impl MoonDaemon for DaemonService {
             .map(WorkspaceRelativePathBuf::from)
             .collect::<Vec<_>>();
 
-        let hashed_files = state
-            .app_context
+        let hashed_files = app_context
             .hash_files(&files)
             .await
             .map_err(|error| Status::unknown(error.to_string()))?;
@@ -170,7 +199,7 @@ impl MoonDaemon for DaemonService {
         &self,
         request: Request<SendWebhookRequest>,
     ) -> Result<Response<SendWebhookResponse>, Status> {
-        debug!("Received {} request", color::property("SendWebhook"));
+        self.track_activity("SendWebhook");
 
         let SendWebhookRequest { url, body } = request.into_inner();
 
@@ -200,10 +229,7 @@ impl MoonDaemon for DaemonService {
         &self,
         _request: Request<StartRequest>,
     ) -> Result<Response<StartResponse>, Status> {
-        debug!(
-            "Received {} request (daemon already running)",
-            color::property("Start")
-        );
+        self.track_activity("Start");
 
         Ok(Response::new(StartResponse {
             already_running: true,
@@ -213,10 +239,7 @@ impl MoonDaemon for DaemonService {
     }
 
     async fn stop(&self, _request: Request<StopRequest>) -> Result<Response<StopResponse>, Status> {
-        debug!(
-            "Received {} request, initiating graceful shutdown",
-            color::property("Stop")
-        );
+        self.track_activity("Stop");
 
         self.inner
             .shutdown_tx
@@ -230,7 +253,7 @@ impl MoonDaemon for DaemonService {
         &self,
         _request: Request<StatusRequest>,
     ) -> Result<Response<StatusResponse>, Status> {
-        debug!("Received {} request", color::property("Status"));
+        self.track_activity("Status");
 
         let state = self.state.read().await;
         let uptime_secs = self.inner.started_at.elapsed().as_secs();
@@ -299,6 +322,13 @@ pub async fn start_daemon_server(
         }
     }
 
+    // Move out of the workspace so we don't pin it — on Windows an open working
+    // directory blocks the folder from being deleted or renamed. Everything
+    // uses the explicit workspace root, not the process cwd.
+    if let Err(error) = env::set_current_dir(env::temp_dir()) {
+        warn!("Failed to move out of the workspace directory: {error}");
+    }
+
     let pid = std::process::id();
 
     // Record informational state for `moon daemon status`/`stop`. Ownership
@@ -313,9 +343,9 @@ pub async fn start_daemon_server(
     let mut signal_rx = ProcessRegistry::instance().receive_signal();
 
     // Spawn the file watcher and listener in the background
-    let (event_tx, event_rx) = broadcast::channel::<FileEvent>(1024);
+    let (event_tx, event_rx) = broadcast::channel::<FileEvent>(EVENT_CHANNEL_CAPACITY);
     let watcher_handle = tokio::spawn(start_file_watcher(
-        workspace_root,
+        workspace_root.clone(),
         event_tx,
         shutdown_tx.subscribe(),
     ));
@@ -328,6 +358,15 @@ pub async fn start_daemon_server(
 
     // Create the RPC service
     let service = DaemonService::new(atomic_state, endpoint.clone(), pid, shutdown_tx.clone());
+
+    // Retire the daemon on its own when the workspace disappears or it goes
+    // unused, so an abandoned workspace doesn't leak a daemon forever.
+    let monitor_handle = tokio::spawn(monitor_lifecycle(
+        workspace_root,
+        service.last_activity(),
+        shutdown_tx.clone(),
+        shutdown_tx.subscribe(),
+    ));
 
     // Merge the RPC-driven shutdown with OS signals so the daemon
     // cleans up regardless of how it is stopped
@@ -354,6 +393,7 @@ pub async fn start_daemon_server(
 
         watcher_handle.abort();
         listener_handle.abort();
+        monitor_handle.abort();
     }
 
     // Wait for the file watcher and listener to finish
@@ -363,8 +403,16 @@ pub async fn start_daemon_server(
         _ => {}
     };
 
-    if let Err(error) = listener_handle.await {
+    if let Err(error) = listener_handle.await
+        && !error.is_cancelled()
+    {
         error!("File listener task panicked: {error}");
+    };
+
+    if let Err(error) = monitor_handle.await
+        && !error.is_cancelled()
+    {
+        error!("Lifecycle monitor task panicked: {error}");
     };
 
     info!("Daemon server stopped");
@@ -373,6 +421,44 @@ pub async fn start_daemon_server(
     let _ = cleanup_daemon_files(&daemon_dir);
 
     serve_result
+}
+
+/// Retire the daemon on its own when its workspace is deleted or it goes unused
+/// for [`IDLE_TTL`], by triggering the shared shutdown. Runs until shutdown.
+async fn monitor_lifecycle(
+    workspace_root: PathBuf,
+    last_activity: Arc<AtomicU64>,
+    shutdown_tx: broadcast::Sender<()>,
+    mut shutdown_rx: broadcast::Receiver<()>,
+) {
+    // The daemon started ~now, and `last_activity` is measured from the same
+    // point, so `reference.elapsed() - last_activity` is the idle duration.
+    let reference = Instant::now();
+    let mut interval = tokio::time::interval(MONITOR_INTERVAL);
+
+    loop {
+        tokio::select! {
+            _ = interval.tick() => {
+                let idle = reference
+                    .elapsed()
+                    .saturating_sub(Duration::from_millis(last_activity.load(Ordering::Relaxed)));
+
+                if !workspace_root.exists() {
+                    info!("Daemon shutting down because its workspace was removed");
+                } else if idle >= IDLE_TTL {
+                    info!("Daemon shutting down because it has been idle too long");
+                } else {
+                    continue;
+                }
+
+                let _ = shutdown_tx.send(());
+                break;
+            }
+            _ = shutdown_rx.recv() => {
+                break;
+            }
+        }
+    }
 }
 
 pub async fn serve(

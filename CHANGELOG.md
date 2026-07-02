@@ -36,6 +36,11 @@
   - When connecting, the client now checks the running daemon's moon and protocol version against
     its own and, on a mismatch, restarts it — so a daemon left over from before a `moon upgrade` is
     replaced instead of serving the old binary indefinitely.
+  - The daemon now retires itself after a long idle period (no requests), and exits immediately if
+    its workspace is deleted, so an abandoned workspace no longer leaves a daemon running forever.
+  - The file watcher no longer registers OS watches inside `node_modules`, `.git`, and other ignored
+    directories, which could exhaust the system watch limit and slow startup on large repositories.
+    Newly created directories are picked up as they appear.
 - **Processes**
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or

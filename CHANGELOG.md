@@ -33,6 +33,9 @@
   - Connecting to the daemon and starting it are now a single operation, so a command that needs the
     daemon will start one itself if the background pre-warm hasn't yet, instead of silently running
     without it. Concurrent starts still coordinate so only one daemon is spawned.
+  - When connecting, the client now checks the running daemon's moon and protocol version against its
+    own and, on a mismatch, restarts it — so a daemon left over from before a `moon upgrade` is
+    replaced instead of serving the old binary indefinitely.
 - **Processes**
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or

@@ -4,7 +4,13 @@ use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use starbase_utils::fs;
 
 fn make_connector(sandbox: &Sandbox) -> DaemonConnector {
-    DaemonConnector::new(sandbox.path().join("daemon"), sandbox.path().to_path_buf())
+    // "0.0.1" matches the version the mocked daemon reports, so the handshake
+    // in `acquire` treats an in-test server as a compatible daemon.
+    DaemonConnector::new(
+        sandbox.path().join("daemon"),
+        sandbox.path().to_path_buf(),
+        "0.0.1".into(),
+    )
 }
 
 mod connector {
@@ -246,5 +252,65 @@ mod connect {
         assert!(client.is_some());
 
         let _ = shutdown_tx.send(());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_acquire_restarts_version_mismatched_daemon() {
+        use moon_daemon::{DaemonConnector, DaemonService, DaemonState, serve_unix};
+        use moon_daemon_utils::endpoint::get_endpoint;
+        use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
+        use std::sync::Arc;
+        use std::time::Duration;
+        use tokio::sync::{RwLock, broadcast};
+
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("daemon");
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let endpoint = get_endpoint(&daemon_dir);
+        let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
+
+        let mocker = WorkspaceMocker::new(sandbox.path());
+        let service = DaemonService::new(
+            Arc::new(RwLock::new(DaemonState {
+                app_context: Arc::new(mocker.mock_app_context()),
+                workspace_graph: Arc::new(WorkspaceGraph::default()),
+            })),
+            endpoint.clone(),
+            std::process::id(),
+            shutdown_tx.clone(),
+        );
+
+        // The stop RPC drives this shutdown, so the task completing proves the
+        // mismatched daemon was told to stop.
+        let server = tokio::spawn(async move {
+            serve_unix(&endpoint, service, async move {
+                let _ = shutdown_rx.recv().await;
+            })
+            .await
+            .unwrap();
+        });
+
+        // Give the server a moment to bind.
+        tokio::time::sleep(Duration::from_millis(100)).await;
+
+        // The running daemon reports version "0.0.1"; this connector is a
+        // different version, so the handshake must reject it.
+        let connector =
+            DaemonConnector::new(daemon_dir, sandbox.path().to_path_buf(), "999.0.0".into());
+
+        // acquire connects, detects the mismatch, stops the daemon, then tries
+        // to respawn — which fails in the test binary — and degrades to None.
+        let result = connector.acquire().await.unwrap();
+
+        assert!(result.is_none());
+
+        // The mismatched daemon was stopped (its serve task returned).
+        tokio::time::timeout(Duration::from_secs(5), server)
+            .await
+            .expect("daemon should have been stopped")
+            .unwrap();
     }
 }

@@ -239,6 +239,7 @@ impl MoonSession {
         Ok(DaemonConnector::new(
             self.config_dir.join("cache").join("daemon"),
             self.workspace_root.clone(),
+            self.cli_version.to_string(),
         ))
     }
 

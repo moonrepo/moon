@@ -1,5 +1,5 @@
 use crate::daemon_error::DaemonError;
-use moon_daemon_client::DaemonClient;
+use moon_daemon_client::{DaemonClient, HandshakeOutcome};
 use moon_daemon_utils::endpoint::*;
 use moon_daemon_utils::lock::DaemonLock;
 use moon_daemon_utils::sys::*;
@@ -46,13 +46,15 @@ static DAEMON_START_LOCK: Mutex<()> = Mutex::const_new(());
 pub struct DaemonConnector {
     pub daemon_dir: PathBuf,
     pub workspace_root: PathBuf,
+    pub cli_version: String,
 }
 
 impl DaemonConnector {
-    pub fn new(daemon_dir: PathBuf, workspace_root: PathBuf) -> Self {
+    pub fn new(daemon_dir: PathBuf, workspace_root: PathBuf, cli_version: String) -> Self {
         Self {
             daemon_dir,
             workspace_root,
+            cli_version,
         }
     }
 
@@ -117,14 +119,61 @@ impl DaemonConnector {
     /// between a background pre-warm and the pipeline that needs the daemon;
     /// whoever gets here first starts it, the rest connect to it.
     ///
+    /// A daemon left running across a `moon upgrade` reports a different
+    /// version during the handshake; it's stopped and replaced once before
+    /// giving up, so callers don't keep talking to a stale binary.
+    ///
     /// Returns `Ok(None)`, never an error, when the daemon can't be brought up
     /// within the startup budget, so callers transparently degrade to running
     /// without it.
     #[instrument(skip(self))]
     pub async fn acquire(&self) -> miette::Result<Option<DaemonClient>> {
+        let mut restarted = false;
+
+        loop {
+            let Some(mut client) = self.acquire_client().await else {
+                return Ok(None);
+            };
+
+            match client.handshake(&self.cli_version).await {
+                HandshakeOutcome::Use => {
+                    return Ok(Some(client));
+                }
+                HandshakeOutcome::Restart => {
+                    if restarted {
+                        warn!(
+                            "Daemon version still mismatched after a restart, continuing without it"
+                        );
+
+                        return Ok(None);
+                    }
+
+                    debug!("Daemon is a different version, restarting it");
+
+                    // Release our connection before tearing the daemon down.
+                    drop(client);
+
+                    if let Err(error) = self.stop_daemon().await {
+                        warn!(
+                            error = error.to_string(),
+                            "Failed to stop the mismatched daemon, continuing without it"
+                        );
+
+                        return Ok(None);
+                    }
+
+                    restarted = true;
+                }
+            }
+        }
+    }
+
+    /// Connect to a running daemon, or spawn one and connect once it's ready.
+    /// Degrades to `None` on any failure.
+    async fn acquire_client(&self) -> Option<DaemonClient> {
         // Fast path: a daemon is already accepting connections.
         if let Ok(client) = DaemonClient::try_connect(&self.daemon_dir).await {
-            return Ok(Some(client));
+            return Some(client);
         }
 
         // Otherwise start one (single-flight across threads and processes)
@@ -134,7 +183,7 @@ impl DaemonConnector {
             Ok(None) => {
                 warn!("Timed out bringing up the daemon, continuing without it");
 
-                return Ok(None);
+                return None;
             }
             Err(error) => {
                 warn!(
@@ -142,21 +191,21 @@ impl DaemonConnector {
                     "Failed to start the daemon, continuing without it"
                 );
 
-                return Ok(None);
+                return None;
             }
         }
 
         // Ready now — connect, with the bounded retry covering the small
         // window between readiness and this connection.
         match self.connect().await {
-            Ok(client) => Ok(client),
+            Ok(client) => client,
             Err(error) => {
                 warn!(
                     error = error.to_string(),
                     "Daemon started but could not be reached, continuing without it"
                 );
 
-                Ok(None)
+                None
             }
         }
     }

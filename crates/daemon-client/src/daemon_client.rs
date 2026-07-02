@@ -34,6 +34,16 @@ const WORK_DEADLINE: Duration = Duration::from_secs(60);
 /// more descriptive error.
 const DEADLINE_GRACE: Duration = Duration::from_secs(1);
 
+/// The outcome of comparing a running daemon's version against the client's.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum HandshakeOutcome {
+    /// The daemon matches this client; use it.
+    Use,
+    /// The daemon is a different moon version or protocol version and should
+    /// be stopped and replaced.
+    Restart,
+}
+
 fn map_rpc_error(error: Status) -> DaemonClientError {
     DaemonClientError::RpcFailed {
         error: Box::new(error),
@@ -131,6 +141,43 @@ impl DaemonClient {
         )
         .await
         .is_ok()
+    }
+
+    /// Compare a connected daemon's reported version against this client's.
+    /// A failure to read status keeps the daemon rather than churning on a
+    /// transient error — a real RPC will surface any genuine problem.
+    pub async fn handshake(&mut self, client_version: &str) -> HandshakeOutcome {
+        match self.status().await {
+            Ok(status) => {
+                let outcome = if status.protocol_version == PROTOCOL_VERSION
+                    && status.moon_version == client_version
+                {
+                    HandshakeOutcome::Use
+                } else {
+                    HandshakeOutcome::Restart
+                };
+
+                if outcome == HandshakeOutcome::Restart {
+                    debug!(
+                        daemon_version = status.moon_version,
+                        client_version,
+                        daemon_protocol = status.protocol_version,
+                        client_protocol = PROTOCOL_VERSION,
+                        "Daemon version handshake mismatch"
+                    );
+                }
+
+                outcome
+            }
+            Err(error) => {
+                debug!(
+                    error = error.to_string(),
+                    "Could not read daemon status for handshake, using it as-is"
+                );
+
+                HandshakeOutcome::Use
+            }
+        }
     }
 
     #[instrument(skip(self))]

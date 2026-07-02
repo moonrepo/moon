@@ -110,20 +110,6 @@ pub async fn upgrade(session: MoonSession, args: UpgradeArgs) -> SessionResult {
     };
 
     match is_installed_with(&session)? {
-        // Special case to install with proto
-        InstalledWith::Proto => {
-            Command::new("proto")
-                .args(["install", "moon", "latest", "--pin", "local"])
-                .exec_stream_output()
-                .await?;
-
-            if args.update_constraint {
-                update_constraint(&session, &remote_version)?;
-            }
-
-            return Ok(None);
-        }
-
         // We can only upgrade moon if it's installed under .moon
         InstalledWith::Unknown(current_exe_path) => {
             session.console.render_err(element! {
@@ -137,70 +123,90 @@ pub async fn upgrade(session: MoonSession, args: UpgradeArgs) -> SessionResult {
 
             return Ok(Some(1));
         }
-        _ => {}
-    };
 
-    let progress = create_progress_loader(
-        session.get_console()?,
-        format!("Upgrading moon to version {remote_version}..."),
-    )
-    .await;
-
-    // Download the archive
-    let download_url = session
-        .toolchains_config
-        .moon
-        .download_url
-        .replace("{file}", &filename)
-        .replace("{version}", &remote_version.to_string());
-    let archive_file = session.moon_env.temp_dir.join(&filename);
-
-    debug!(
-        source_url = &download_url,
-        dest_file = ?archive_file,
-        target = target,
-        "Downloading archive"
-    );
-
-    net::download_from_url(&download_url, &archive_file).await?;
-
-    // Unpack the archive
-    let unpacked_dir = session.moon_env.temp_dir.join(&target);
-
-    debug!(
-        archive_file = ?archive_file,
-        unpacked_dir = ?unpacked_dir,
-        target = target,
-        "Unpacking archive"
-    );
-
-    let mut archiver = Archiver::new(&unpacked_dir, &archive_file);
-    archiver.set_prefix(&target);
-    archiver.unpack_from_ext()?;
-
-    // Move executables
-    for exe_name in [path::exe_name("moon"), path::exe_name("moonx")] {
-        let input_path = unpacked_dir.join(&exe_name);
-        let output_path = bin_dir.join(&exe_name);
-        let relocate_path = bin_dir.join(format!("{exe_name}.backup"));
-
-        if output_path.exists() {
-            self_replace(&output_path, &input_path, &relocate_path)?;
-        } else {
-            fs::copy_file(&input_path, &output_path)?;
-            fs::update_perms(&output_path, None)?;
+        // Special case to install with proto
+        InstalledWith::Proto => {
+            Command::new("proto")
+                .args(["install", "moon", "latest", "--pin", "local"])
+                .exec_stream_output()
+                .await?;
         }
-    }
+
+        // Otherwise, we can upgrade moon normally
+        InstalledWith::Moon => {
+            let progress = create_progress_loader(
+                session.get_console()?,
+                format!("Upgrading moon to version {remote_version}..."),
+            )
+            .await;
+
+            // Download the archive
+            let download_url = session
+                .toolchains_config
+                .moon
+                .download_url
+                .replace("{file}", &filename)
+                .replace("{version}", &remote_version.to_string());
+            let archive_file = session.moon_env.temp_dir.join(&filename);
+
+            debug!(
+                source_url = &download_url,
+                dest_file = ?archive_file,
+                target = target,
+                "Downloading archive"
+            );
+
+            net::download_from_url(&download_url, &archive_file).await?;
+
+            // Unpack the archive
+            let unpacked_dir = session.moon_env.temp_dir.join(&target);
+
+            debug!(
+                archive_file = ?archive_file,
+                unpacked_dir = ?unpacked_dir,
+                target = target,
+                "Unpacking archive"
+            );
+
+            let mut archiver = Archiver::new(&unpacked_dir, &archive_file);
+            archiver.set_prefix(&target);
+            archiver.unpack_from_ext()?;
+
+            // Move executables
+            for exe_name in [path::exe_name("moon"), path::exe_name("moonx")] {
+                let input_path = unpacked_dir.join(&exe_name);
+                let output_path = bin_dir.join(&exe_name);
+                let relocate_path = bin_dir.join(format!("{exe_name}.backup"));
+
+                if output_path.exists() {
+                    self_replace(&output_path, &input_path, &relocate_path)?;
+                } else {
+                    fs::copy_file(&input_path, &output_path)?;
+                    fs::update_perms(&output_path, None)?;
+                }
+            }
+
+            if args.update_constraint {
+                update_constraint(&session, &remote_version)?;
+            }
+
+            // Cleanup
+            fs::remove(&unpacked_dir)?;
+            fs::remove(&archive_file)?;
+
+            progress.stop().await?;
+        }
+    };
 
     if args.update_constraint {
         update_constraint(&session, &remote_version)?;
     }
 
-    // Cleanup
-    fs::remove(&unpacked_dir)?;
-    fs::remove(&archive_file)?;
-
-    progress.stop().await?;
+    // If we have an active daemon connection, we should stop it so
+    // the new version can be used next time moon runs
+    if let Some(mut client) = session.get_daemon_connector()?.connect_once().await? {
+        client.stop().await?;
+    }
 
     session.console.render(element! {
         Container {

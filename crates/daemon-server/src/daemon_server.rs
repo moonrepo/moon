@@ -239,6 +239,7 @@ impl MoonDaemon for DaemonService {
             endpoint: self.inner.endpoint.clone(),
             moon_version: state.app_context.cli_version.to_string(),
             pid: self.inner.pid,
+            protocol_version: PROTOCOL_VERSION,
             running: true,
             uptime_secs,
             workspace_root: state.app_context.workspace_root.to_string_lossy().into(),

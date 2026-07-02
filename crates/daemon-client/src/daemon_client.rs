@@ -103,14 +103,26 @@ impl DaemonClient {
         debug!(endpoint = endpoint, "Connecting to daemon");
 
         let channel = match timeout(CONNECT_TIMEOUT, connect_channel(&endpoint)).await {
-            Ok(Ok(channel)) => channel,
+            Ok(Ok(channel)) => {
+                debug!(endpoint = endpoint, "Connected to daemon");
+
+                channel
+            }
             Ok(Err(error)) => {
+                debug!(
+                    endpoint = endpoint,
+                    error = error.to_string(),
+                    "Failed to connect to daemon"
+                );
+
                 return Err(DaemonClientError::ConnectFailed {
                     endpoint,
                     error: Box::new(error),
                 });
             }
             Err(_) => {
+                debug!(endpoint = endpoint, "Timed out connecting to daemon");
+
                 return Err(DaemonClientError::ConnectTimedOut {
                     endpoint,
                     timeout_secs: CONNECT_TIMEOUT.as_secs(),
@@ -147,6 +159,8 @@ impl DaemonClient {
     /// A failure to read status keeps the daemon rather than churning on a
     /// transient error — a real RPC will surface any genuine problem.
     pub async fn handshake(&mut self, client_version: &str) -> HandshakeOutcome {
+        debug!("Initiating handshake with daemon");
+
         match self.status().await {
             Ok(status) => {
                 let outcome = if status.protocol_version == PROTOCOL_VERSION
@@ -159,9 +173,9 @@ impl DaemonClient {
 
                 if outcome == HandshakeOutcome::Restart {
                     debug!(
-                        daemon_version = status.moon_version,
+                        server_version = status.moon_version,
                         client_version,
-                        daemon_protocol = status.protocol_version,
+                        server_protocol = status.protocol_version,
                         client_protocol = PROTOCOL_VERSION,
                         "Daemon version handshake mismatch"
                     );

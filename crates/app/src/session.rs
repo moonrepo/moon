@@ -53,7 +53,7 @@ pub struct MoonSession {
 
     // Lazy components
     pub(crate) cache_engine: OnceLock<Arc<CacheEngine>>,
-    // pub(crate) daemon_client: OnceCell<Option<DaemonClient>>,
+    pub(crate) daemon_client: OnceLock<DaemonClient>,
     pub(crate) extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     pub(crate) project_graph: OnceLock<Arc<ProjectGraph>>,
     pub(crate) task_graph: OnceLock<Arc<TaskGraph>>,
@@ -83,7 +83,7 @@ impl MoonSession {
             config_dir: PathBuf::new(),
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
-            // daemon_client: OnceCell::new(),
+            daemon_client: OnceLock::new(),
             extensions_config: Arc::new(ExtensionsConfig::default()),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
@@ -139,16 +139,19 @@ impl MoonSession {
             return Ok(None);
         }
 
-        // let client = self
-        //     .daemon_client
-        //     .get_or_try_init(async move || self.get_daemon_connector()?.acquire().await)
-        //     .await?;
+        if let Some(client) = self.daemon_client.get() {
+            return Ok(Some(client.to_owned()));
+        }
 
-        // Ok(client.clone())
+        let client = self.get_daemon_connector()?.acquire().await?;
 
-        // `acquire` connects to a running daemon or starts one, degrading to
-        // `None` on failure, so there's nothing to handle here.
-        self.get_daemon_connector()?.acquire().await
+        // Only cache the client if we successfully connected to a daemon.
+        // If we failed to connect, we don't want to cache so that we try again.
+        if let Some(client) = &client {
+            let _ = self.daemon_client.set(client.to_owned());
+        }
+
+        Ok(client)
     }
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {
@@ -476,7 +479,9 @@ impl AppSession for MoonSession {
         // `connect_to_daemon`, so the two coordinate and at most one spawns —
         // and a spawn failure degrades to `None` instead of failing the run.
         if self.is_daemon_allowed() {
-            self.get_daemon_connector()?.acquire().await?;
+            if let Some(client) = self.get_daemon_connector()?.acquire().await? {
+                let _ = self.daemon_client.set(client);
+            }
         }
 
         Ok(None)

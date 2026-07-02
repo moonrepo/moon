@@ -24,6 +24,49 @@ use tracing::debug;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+/// The conventional exit code for a process killed by SIGPIPE (128 + 13).
+/// Rust ignores SIGPIPE by default, so a closed consumer surfaces as
+/// `BrokenPipe` I/O errors instead of killing the process; translate them
+/// back to the exit code shells expect from a broken pipeline. We must NOT
+/// reset SIGPIPE to its default disposition instead: that makes every pipe
+/// write in the process lethal, including streaming stdin to a child that
+/// exits early (e.g. `git hash-object --stdin-paths`), which silently
+/// killed moon with 141.
+const BROKEN_PIPE_EXIT_CODE: u8 = 141;
+
+fn is_broken_pipe(report: &miette::Report) -> bool {
+    report.chain().any(|error| {
+        error
+            .downcast_ref::<std::io::Error>()
+            .is_some_and(|io_error| io_error.kind() == std::io::ErrorKind::BrokenPipe)
+    })
+}
+
+/// `print!`/`println!` and friends panic when stdout goes away instead of
+/// returning an error. Catch specifically that panic and exit quietly with
+/// the conventional broken-pipe code.
+fn install_broken_pipe_panic_hook() {
+    let previous_hook = std::panic::take_hook();
+
+    std::panic::set_hook(Box::new(move |panic_info| {
+        let message = if let Some(message) = panic_info.payload().downcast_ref::<&str>() {
+            *message
+        } else if let Some(message) = panic_info.payload().downcast_ref::<String>() {
+            message.as_str()
+        } else {
+            ""
+        };
+
+        // The message embeds the formatted `io::Error`; "os error 32" is
+        // EPIPE, covering non-English locales where the text may differ.
+        if message.contains("Broken pipe") || message.contains("os error 32") {
+            std::process::exit(BROKEN_PIPE_EXIT_CODE as i32);
+        }
+
+        previous_hook(panic_info);
+    }));
+}
+
 fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
 
@@ -82,7 +125,6 @@ fn exec_local_bin(mut command: Command) -> std::io::Result<u8> {
 
 pub async fn run_cli(args: Vec<OsString>) -> MainResult {
     crate::stdio::normalize_stdio_blocking();
-    sigpipe::reset();
 
     // Detect info about the current process
     let version = get_version();
@@ -94,6 +136,8 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
     // Setup diagnostics and tracing
     let app = App::default();
     app.setup_diagnostics();
+
+    install_broken_pipe_panic_hook();
 
     let _guard = app.setup_tracing(TracingOptions {
         dump_trace: cli.dump,
@@ -136,102 +180,120 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
     }
 
     // Otherwise just run the CLI
-    app.run(MoonSession::new(cli, version), |session| async {
-        match session.cli.command.clone() {
-            Commands::ActionGraph(args) => {
-                commands::action_graph::action_graph(session, args).await
+    let outcome = app
+        .run(MoonSession::new(cli, version), |session| async {
+            match session.cli.command.clone() {
+                Commands::ActionGraph(args) => {
+                    commands::action_graph::action_graph(session, args).await
+                }
+                Commands::Bin(args) => commands::bin::bin(session, args).await,
+                Commands::Ci(args) => commands::ci::ci(session, args).await,
+                Commands::Check(args) => commands::check::check(session, args).await,
+                Commands::Clean(args) => commands::clean::clean(session, args).await,
+                Commands::Completions(args) => {
+                    commands::completions::completions(session, args).await
+                }
+                Commands::Daemon { command } => match command {
+                    DaemonCommands::Logs => commands::daemon::logs::logs(session).await,
+                    DaemonCommands::Restart => commands::daemon::restart::restart(session).await,
+                    DaemonCommands::Start => commands::daemon::start::start(session).await,
+                    DaemonCommands::Status => commands::daemon::status::status(session).await,
+                    DaemonCommands::Stop => commands::daemon::stop::stop(session).await,
+                    DaemonCommands::Server => commands::daemon::server::server(session).await,
+                },
+                Commands::Debug { command } => match command {
+                    DebugCommands::Config => commands::debug::config::debug_config(session).await,
+                    DebugCommands::Vcs => commands::debug::vcs::debug_vcs(session).await,
+                },
+                Commands::Docker { command } => match command {
+                    DockerCommands::File(args) => commands::docker::file(session, args).await,
+                    DockerCommands::Prune => commands::docker::prune(session).await,
+                    DockerCommands::Scaffold(args) => {
+                        commands::docker::scaffold(session, args).await
+                    }
+                    DockerCommands::Setup => commands::docker::setup(session).await,
+                },
+                Commands::Exec(args) => commands::exec::exec(session, args).await,
+                Commands::Ext(args) => commands::ext::ext(session, args).await,
+                Commands::Extension { command } => match command {
+                    ExtensionCommands::Add(args) => {
+                        commands::extension::add::add(session, args).await
+                    }
+                    ExtensionCommands::Download(args) => {
+                        commands::extension::download::download(session, args).await
+                    }
+                    ExtensionCommands::Info(args) => {
+                        commands::extension::info::info(session, args).await
+                    }
+                },
+                Commands::Generate(args) => commands::generate::generate(session, args).await,
+                Commands::Hash(args) => commands::hash::hash(session, args).await,
+                Commands::Init(args) => commands::init::init(session, args).await,
+                Commands::Mcp(args) => commands::mcp::mcp(session, args).await,
+                Commands::Migrate { command, .. } => match command {
+                    MigrateCommands::V2(args) => commands::migrate::v2(session, args).await,
+                },
+                Commands::Project(args) => commands::project::project(session, args).await,
+                Commands::ProjectGraph(args) => {
+                    commands::project_graph::project_graph(session, args).await
+                }
+                Commands::Projects(args) => commands::projects::projects(session, args).await,
+                Commands::Query { command } => match command {
+                    QueryCommands::Affected(args) => {
+                        commands::query::affected::affected(session, args).await
+                    }
+                    QueryCommands::ChangedFiles(args) => {
+                        commands::query::changed_files::changed_files(session, args).await
+                    }
+                    QueryCommands::Projects(args) => {
+                        commands::query::projects::projects(session, args).await
+                    }
+                    QueryCommands::Tasks(args) => {
+                        commands::query::tasks::tasks(session, args).await
+                    }
+                },
+                Commands::Run(args) => commands::run::run(session, args).await,
+                Commands::Setup => commands::setup::setup(session).await,
+                Commands::Sync { command } => match command {
+                    Some(SyncCommands::Codeowners(args)) => {
+                        commands::syncs::codeowners::sync(session, args).await
+                    }
+                    Some(SyncCommands::ConfigSchemas(args)) => {
+                        commands::syncs::config_schemas::sync(session, args).await
+                    }
+                    Some(SyncCommands::VcsHooks(args)) => {
+                        commands::syncs::vcs_hooks::sync(session, args).await
+                    }
+                    Some(SyncCommands::Projects) => commands::syncs::projects::sync(session).await,
+                    None => commands::sync::sync(session).await,
+                },
+                Commands::Task(args) => commands::task::task(session, args).await,
+                Commands::TaskGraph(args) => commands::task_graph::task_graph(session, args).await,
+                Commands::Tasks(args) => commands::tasks::tasks(session, args).await,
+                Commands::Teardown => commands::teardown::teardown(session).await,
+                Commands::Template(args) => commands::template::template(session, args).await,
+                Commands::Templates(args) => commands::templates::templates(session, args).await,
+                Commands::Toolchain { command } => match command {
+                    ToolchainCommands::Add(args) => {
+                        commands::toolchain::add::add(session, args).await
+                    }
+                    ToolchainCommands::Download(args) => {
+                        commands::toolchain::download::download(session, args).await
+                    }
+                    ToolchainCommands::Info(args) => {
+                        commands::toolchain::info::info(session, args).await
+                    }
+                },
+                Commands::Upgrade(args) => commands::upgrade::upgrade(session, args).await,
             }
-            Commands::Bin(args) => commands::bin::bin(session, args).await,
-            Commands::Ci(args) => commands::ci::ci(session, args).await,
-            Commands::Check(args) => commands::check::check(session, args).await,
-            Commands::Clean(args) => commands::clean::clean(session, args).await,
-            Commands::Completions(args) => commands::completions::completions(session, args).await,
-            Commands::Daemon { command } => match command {
-                DaemonCommands::Logs => commands::daemon::logs::logs(session).await,
-                DaemonCommands::Restart => commands::daemon::restart::restart(session).await,
-                DaemonCommands::Start => commands::daemon::start::start(session).await,
-                DaemonCommands::Status => commands::daemon::status::status(session).await,
-                DaemonCommands::Stop => commands::daemon::stop::stop(session).await,
-                DaemonCommands::Server => commands::daemon::server::server(session).await,
-            },
-            Commands::Debug { command } => match command {
-                DebugCommands::Config => commands::debug::config::debug_config(session).await,
-                DebugCommands::Vcs => commands::debug::vcs::debug_vcs(session).await,
-            },
-            Commands::Docker { command } => match command {
-                DockerCommands::File(args) => commands::docker::file(session, args).await,
-                DockerCommands::Prune => commands::docker::prune(session).await,
-                DockerCommands::Scaffold(args) => commands::docker::scaffold(session, args).await,
-                DockerCommands::Setup => commands::docker::setup(session).await,
-            },
-            Commands::Exec(args) => commands::exec::exec(session, args).await,
-            Commands::Ext(args) => commands::ext::ext(session, args).await,
-            Commands::Extension { command } => match command {
-                ExtensionCommands::Add(args) => commands::extension::add::add(session, args).await,
-                ExtensionCommands::Download(args) => {
-                    commands::extension::download::download(session, args).await
-                }
-                ExtensionCommands::Info(args) => {
-                    commands::extension::info::info(session, args).await
-                }
-            },
-            Commands::Generate(args) => commands::generate::generate(session, args).await,
-            Commands::Hash(args) => commands::hash::hash(session, args).await,
-            Commands::Init(args) => commands::init::init(session, args).await,
-            Commands::Mcp(args) => commands::mcp::mcp(session, args).await,
-            Commands::Migrate { command, .. } => match command {
-                MigrateCommands::V2(args) => commands::migrate::v2(session, args).await,
-            },
-            Commands::Project(args) => commands::project::project(session, args).await,
-            Commands::ProjectGraph(args) => {
-                commands::project_graph::project_graph(session, args).await
-            }
-            Commands::Projects(args) => commands::projects::projects(session, args).await,
-            Commands::Query { command } => match command {
-                QueryCommands::Affected(args) => {
-                    commands::query::affected::affected(session, args).await
-                }
-                QueryCommands::ChangedFiles(args) => {
-                    commands::query::changed_files::changed_files(session, args).await
-                }
-                QueryCommands::Projects(args) => {
-                    commands::query::projects::projects(session, args).await
-                }
-                QueryCommands::Tasks(args) => commands::query::tasks::tasks(session, args).await,
-            },
-            Commands::Run(args) => commands::run::run(session, args).await,
-            Commands::Setup => commands::setup::setup(session).await,
-            Commands::Sync { command } => match command {
-                Some(SyncCommands::Codeowners(args)) => {
-                    commands::syncs::codeowners::sync(session, args).await
-                }
-                Some(SyncCommands::ConfigSchemas(args)) => {
-                    commands::syncs::config_schemas::sync(session, args).await
-                }
-                Some(SyncCommands::VcsHooks(args)) => {
-                    commands::syncs::vcs_hooks::sync(session, args).await
-                }
-                Some(SyncCommands::Projects) => commands::syncs::projects::sync(session).await,
-                None => commands::sync::sync(session).await,
-            },
-            Commands::Task(args) => commands::task::task(session, args).await,
-            Commands::TaskGraph(args) => commands::task_graph::task_graph(session, args).await,
-            Commands::Tasks(args) => commands::tasks::tasks(session, args).await,
-            Commands::Teardown => commands::teardown::teardown(session).await,
-            Commands::Template(args) => commands::template::template(session, args).await,
-            Commands::Templates(args) => commands::templates::templates(session, args).await,
-            Commands::Toolchain { command } => match command {
-                ToolchainCommands::Add(args) => commands::toolchain::add::add(session, args).await,
-                ToolchainCommands::Download(args) => {
-                    commands::toolchain::download::download(session, args).await
-                }
-                ToolchainCommands::Info(args) => {
-                    commands::toolchain::info::info(session, args).await
-                }
-            },
-            Commands::Upgrade(args) => commands::upgrade::upgrade(session, args).await,
-        }
-    })
-    .await
-    .into_exit_result()
+        })
+        .await;
+
+    // Exit quietly instead of rendering an error when our consumer
+    // disappeared mid-output; there's no one left to read the error
+    if outcome.error.as_ref().is_some_and(is_broken_pipe) {
+        return Ok(ExitCode::from(BROKEN_PIPE_EXIT_CODE));
+    }
+
+    outcome.into_exit_result()
 }

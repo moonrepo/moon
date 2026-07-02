@@ -7,8 +7,6 @@ use std::process::Command;
 
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
-    sigpipe::reset();
-
     // Collect existing `PATH`
     let path_env = env::var_os("PATH").unwrap_or_default();
     let mut paths = env::split_paths(&path_env).collect::<VecDeque<_>>();

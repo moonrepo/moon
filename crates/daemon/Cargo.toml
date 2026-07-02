@@ -16,6 +16,7 @@ tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_test_utils = { path = "../test-utils" }
 starbase_sandbox = { workspace = true }
 starbase_utils = { workspace = true }
 

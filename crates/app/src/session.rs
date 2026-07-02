@@ -491,10 +491,13 @@ impl AppSession for MoonSession {
     async fn shutdown(&mut self) -> AppResult<Self::Error> {
         let is_local_debug_or_remote = cfg!(debug_assertions) || is_remote();
 
-        // Stop the daemon if it's running
+        // Stop the daemon if it's running. Use a single connect attempt,
+        // as retrying against an already-stopped daemon would only delay
+        // process exit.
         if is_local_debug_or_remote
             && self.is_daemon_allowed()
-            && let Ok(Some(mut daemon)) = self.connect_to_daemon().await
+            && let Ok(connector) = self.get_daemon_connector()
+            && let Ok(Some(mut daemon)) = connector.connect_once().await
         {
             let _ = daemon.stop().await;
         }

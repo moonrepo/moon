@@ -18,6 +18,21 @@ const POLL_INTERVAL: Duration = Duration::from_millis(150);
 /// Maximum time to wait for the daemon to shut down gracefully before killing.
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(5);
 
+/// Initial delay between connect retry attempts, doubled per attempt.
+const CONNECT_RETRY_DELAY: Duration = Duration::from_millis(50);
+
+/// Maximum delay between connect retry attempts.
+const CONNECT_RETRY_MAX_DELAY: Duration = Duration::from_millis(500);
+
+/// How long to keep retrying connects while the endpoint is unavailable.
+/// Covers a daemon that is spawning in another process or restarting.
+const CONNECT_RETRY_TIMEOUT: Duration = Duration::from_millis(2500);
+
+/// Hard ceiling on connect retries. The retry deadline keeps sliding while
+/// an in-process `start_daemon` is polling for readiness (which itself is
+/// capped at [`STARTUP_TIMEOUT`]), so cap the total wait as well.
+const CONNECT_RETRY_CEILING: Duration = Duration::from_secs(15);
+
 /// Process-wide single-flight for `start_daemon`. Without this, two
 /// concurrent callers (e.g. the background session and the action
 /// pipeline's `connect_to_daemon`) can both observe `is_running() == None`
@@ -38,15 +53,61 @@ impl DaemonConnector {
         }
     }
 
+    /// Connect to the daemon, retrying with backoff while the endpoint is
+    /// unavailable (missing, refusing, or timing out). This covers the gap
+    /// where the daemon was just spawned — possibly by another process —
+    /// but hasn't bound its endpoint yet. Retries are bounded by
+    /// [`CONNECT_RETRY_TIMEOUT`], extended while an in-process
+    /// [`DaemonConnector::start_daemon`] is polling for readiness, and
+    /// capped at [`CONNECT_RETRY_CEILING`] overall.
     #[instrument(skip(self))]
     pub async fn connect(&self) -> miette::Result<Option<DaemonClient>> {
-        Ok(Some(DaemonClient::connect(&self.daemon_dir).await?))
+        let started = Instant::now();
+        let ceiling = started + CONNECT_RETRY_CEILING;
+        let mut deadline = (started + CONNECT_RETRY_TIMEOUT).min(ceiling);
+        let mut delay = CONNECT_RETRY_DELAY;
+        let mut attempt = 1;
+
+        loop {
+            let error = match DaemonClient::try_connect(&self.daemon_dir).await {
+                Ok(client) => return Ok(Some(client)),
+                Err(error) => error,
+            };
+
+            // A start in this process holds the lock while it polls for
+            // readiness (up to STARTUP_TIMEOUT), so stay patient while
+            // that's still happening.
+            if DAEMON_START_LOCK.try_lock().is_err() {
+                deadline = (Instant::now() + CONNECT_RETRY_TIMEOUT).min(ceiling);
+            }
+
+            if !error.is_endpoint_unavailable() || Instant::now() + delay >= deadline {
+                return Err(error.into());
+            }
+
+            trace!(
+                attempt,
+                delay_ms = delay.as_millis() as u64,
+                "Daemon endpoint unavailable, retrying connection"
+            );
+
+            sleep(delay).await;
+
+            delay = (delay * 2).min(CONNECT_RETRY_MAX_DELAY);
+            attempt += 1;
+        }
+    }
+
+    /// Connect to the daemon with a single attempt and no retries. Use this
+    /// on paths that should fail fast when no daemon is accepting
+    /// connections, such as stopping an already-dead daemon.
+    #[instrument(skip(self))]
+    pub async fn connect_once(&self) -> miette::Result<Option<DaemonClient>> {
+        Ok(Some(DaemonClient::try_connect(&self.daemon_dir).await?))
     }
 
     pub fn get_log_file(&self) -> PathBuf {
-        let date = chrono::Utc::now().format("%Y-%m-%d").to_string();
-
-        self.daemon_dir.join(format!("server.{date}.log"))
+        self.daemon_dir.join("server.log")
     }
 
     pub fn get_pid_file(&self) -> PathBuf {

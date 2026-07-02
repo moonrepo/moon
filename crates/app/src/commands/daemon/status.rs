@@ -19,16 +19,21 @@ pub async fn status(session: MoonSession) -> SessionResult {
         return Ok(None);
     }
 
-    let Some(mut client) = connector.connect().await? else {
-        session.console.render(element! {
-            Container {
-                Notice(variant: Variant::Caution) {
-                    StyledText(content: "Unable to connect to the daemon")
+    // The PID may be stale (a crashed daemon, or the PID was reused by
+    // another process), so a connect failure here is a report, not an error.
+    let mut client = match connector.connect_once().await {
+        Ok(Some(client)) => client,
+        _ => {
+            session.console.render(element! {
+                Container {
+                    Notice(variant: Variant::Caution) {
+                        StyledText(content: "Unable to connect to the daemon")
+                    }
                 }
-            }
-        })?;
+            })?;
 
-        return Ok(None);
+            return Ok(None);
+        }
     };
 
     let status = client.status().await?;

@@ -105,13 +105,26 @@ impl Command {
         let stdin_handle: JoinHandle<miette::Result<()>> = task::spawn(async move {
             if let Some(mut stdin) = stdin {
                 for item in items {
-                    stdin
-                        .write_all(item.as_encoded_bytes())
-                        .await
-                        .map_err(|error| ProcessError::WriteInput {
+                    if let Err(error) = stdin.write_all(item.as_encoded_bytes()).await {
+                        // The child exited, or closed its stdin, before
+                        // consuming all input (e.g. `git hash-object`
+                        // erroring on a missing file). Not a failure in
+                        // itself: the child's exit status is the outcome.
+                        if error.kind() == io::ErrorKind::BrokenPipe {
+                            debug!(
+                                bin = &bin_name,
+                                "Child process closed stdin before all input was written"
+                            );
+
+                            break;
+                        }
+
+                        return Err(ProcessError::WriteInput {
                             bin: bin_name.clone(),
                             error: Box::new(error),
-                        })?;
+                        }
+                        .into());
+                    }
                 }
 
                 drop(stdin);
@@ -538,13 +551,26 @@ impl Command {
     async fn write_input_to_child(&self, child: &mut Child) -> miette::Result<()> {
         let mut stdin = child.stdin.take().expect("Unable to write stdin!");
 
-        stdin
+        if let Err(error) = stdin
             .write_all(self.input.join(OsStr::new(" ")).as_encoded_bytes())
             .await
-            .map_err(|error| ProcessError::WriteInput {
-                bin: self.get_bin_name(),
-                error: Box::new(error),
-            })?;
+        {
+            // The child exited, or closed its stdin, before consuming all
+            // input. Not a failure in itself: the child's exit status is
+            // the outcome.
+            if error.kind() != io::ErrorKind::BrokenPipe {
+                return Err(ProcessError::WriteInput {
+                    bin: self.get_bin_name(),
+                    error: Box::new(error),
+                }
+                .into());
+            }
+
+            debug!(
+                bin = self.get_bin_name(),
+                "Child process closed stdin before all input was written"
+            );
+        }
 
         drop(stdin);
 

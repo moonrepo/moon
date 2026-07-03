@@ -4,7 +4,7 @@ use moon_action_graph::{ActionGraph, ActionGraphType};
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
-use tracing::trace;
+use tracing::debug;
 
 pub struct JobDispatcher<'graph> {
     context: JobContext,
@@ -116,7 +116,7 @@ impl JobDispatcher<'_> {
                                 .iter()
                                 .find(|(_, running_id)| *running_id == &id)
                             {
-                                trace!(
+                                debug!(
                                     index = index.index(),
                                     running_index = running_index.0.index(),
                                     "Another job of a similar type is currently running, deferring dispatch",
@@ -129,7 +129,7 @@ impl JobDispatcher<'_> {
                         }
                     }
 
-                    trace!(index = index.index(), "Dispatching job");
+                    debug!(index = index.index(), "Dispatching job");
 
                     self.visited.insert(index);
 

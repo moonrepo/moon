@@ -9,7 +9,7 @@ use std::process::Child;
 use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio::time::{Instant, sleep};
-use tracing::{debug, instrument, trace, warn};
+use tracing::{debug, instrument, warn};
 
 /// Maximum time to wait for the daemon to become ready after spawning.
 const STARTUP_TIMEOUT: Duration = Duration::from_secs(10);
@@ -90,7 +90,7 @@ impl DaemonConnector {
                 return Err(error.into());
             }
 
-            trace!(
+            debug!(
                 attempt,
                 delay_ms = delay.as_millis() as u64,
                 "Daemon endpoint unavailable, retrying connection"
@@ -278,7 +278,7 @@ impl DaemonConnector {
         let mut command = create_detached_command(&exe_path);
 
         command
-            .args(["daemon", "server", "--log", "trace", "--log-file"])
+            .args(["daemon", "server", "--log", "debug", "--log-file"])
             .arg(self.get_log_file())
             .env("MOON_DAEMON_RUNNING", "true")
             .current_dir(&self.workspace_root);
@@ -408,7 +408,7 @@ impl DaemonConnector {
                 if DaemonClient::test_connection(&self.daemon_dir).await {
                     let pid = self.read_state().map(|state| state.pid);
 
-                    trace!(
+                    debug!(
                         pid = expected_pid,
                         new_pid = ?pid,
                         "Spawned daemon exited, but another daemon is ready"
@@ -428,7 +428,7 @@ impl DaemonConnector {
             // The spawned process may not be the final daemon process on
             // Windows if the CLI delegates from a global binary to a local one.
             if DaemonClient::test_connection(&self.daemon_dir).await {
-                trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
+                debug!(pid = expected_pid, "Daemon endpoint accepted a connection");
 
                 return Ok(Some(expected_pid));
             }
@@ -439,7 +439,7 @@ impl DaemonConnector {
         // Final check: the tokio runtime may have been busy, causing sleep
         // to overshoot the deadline even though the daemon started in time
         if DaemonClient::test_connection(&self.daemon_dir).await {
-            trace!(pid = expected_pid, "Daemon endpoint accepted a connection");
+            debug!(pid = expected_pid, "Daemon endpoint accepted a connection");
 
             return Ok(Some(expected_pid));
         }

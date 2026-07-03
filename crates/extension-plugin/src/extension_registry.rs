@@ -13,7 +13,7 @@ use std::fmt::Debug;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::{debug, trace};
+use tracing::{debug};
 
 #[derive(Debug)]
 pub struct ExtensionRegistry {
@@ -128,7 +128,7 @@ impl ExtensionRegistry {
                     .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
                         let value = serialize_config(config.config.iter())?;
 
-                        trace!(
+                        debug!(
                             extension_id = id.as_str(),
                             config = %value,
                             "Storing moon extension configuration",

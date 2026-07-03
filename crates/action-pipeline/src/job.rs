@@ -4,7 +4,7 @@ use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use std::sync::Arc;
-use tracing::{instrument, trace};
+use tracing::{debug, instrument};
 
 pub struct Job {
     pub node: ActionNode,
@@ -45,13 +45,13 @@ impl Job {
 
         // Abort if a sibling job has failed
         if self.context.abort_token.is_cancelled() {
-            trace!(index = self.node_index, "Job aborted");
+            debug!(index = self.node_index, "Job aborted");
 
             action.finish(ActionStatus::Aborted);
         }
         // Cancel if we receive a shutdown signal
         else if self.context.cancel_token.is_cancelled() {
-            trace!(index = self.node_index, "Job cancelled (because a signal)");
+            debug!(index = self.node_index, "Job cancelled (because a signal)");
 
             action.finish(ActionStatus::Skipped);
         }

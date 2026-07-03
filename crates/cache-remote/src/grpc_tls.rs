@@ -2,7 +2,7 @@ use moon_config::{RemoteMtlsConfig, RemoteTlsConfig};
 use starbase_utils::fs;
 use std::path::Path;
 use tonic::transport::{Certificate, ClientTlsConfig, Identity};
-use tracing::trace;
+use tracing::debug;
 
 // TLS server:
 //  - `*.pem` file
@@ -27,7 +27,7 @@ pub fn create_tls_config(
 ) -> miette::Result<ClientTlsConfig> {
     let cert = workspace_root.join(&config.cert);
 
-    trace!(
+    debug!(
         cert = ?cert,
         domain = &config.domain,
         http2 = config.assume_http2,
@@ -54,7 +54,7 @@ pub fn create_mtls_config(
     let client_key = workspace_root.join(&config.client_key);
     let ca_cert = workspace_root.join(&config.ca_cert);
 
-    trace!(
+    debug!(
         client_cert = ?client_cert,
         client_key = ?client_key,
         ca_cert = ?ca_cert,

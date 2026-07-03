@@ -19,7 +19,7 @@ use std::time::Instant;
 use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command as TokioCommand};
 use tokio::task::{self, JoinHandle};
-use tracing::{debug, enabled, trace};
+use tracing::{debug, enabled};
 
 impl Command {
     pub async fn exec_capture_output(&mut self) -> miette::Result<Output> {
@@ -545,7 +545,7 @@ impl Command {
     }
 
     fn post_log_command(&self, child: &SharedChild, instant: Instant) {
-        trace!(pid = child.id(), "Ran command in {:?}", instant.elapsed());
+        debug!(pid = child.id(), "Ran command in {:?}", instant.elapsed());
     }
 
     async fn write_input_to_child(&self, child: &mut Child) -> miette::Result<()> {
@@ -596,7 +596,7 @@ where
                 Ok(Some(line)) => logs.push(line),
                 Ok(None) => break,
                 Err(error) => {
-                    trace!("Failed to read {label} line: {error}");
+                    debug!("Failed to read {label} line: {error}");
                     break;
                 }
             }
@@ -660,7 +660,7 @@ where
                     continue;
                 }
                 Err(error) => {
-                    trace!("Failed to read {label} chunk: {error}");
+                    debug!("Failed to read {label} chunk: {error}");
                     break;
                 }
             }
@@ -739,7 +739,7 @@ where
                     // the read-end of the pipe while the child process is still writing,
                     // causing it to receive EPIPE and potentially exit with a non-zero code.
                     // Continue reading until we get a natural EOF (Ok(None)).
-                    trace!("Failed to read {label} line: {error}");
+                    debug!("Failed to read {label} line: {error}");
                 }
             }
         }

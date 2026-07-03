@@ -1456,6 +1456,7 @@ mod task_runner {
             assert!(serialized.contains("\"exit_code\":0"));
         }
 
+        #[cfg(unix)]
         #[tokio::test(flavor = "multi_thread")]
         async fn fingerprint_hash_stdout_only() {
             let container = TaskRunnerContainer::new("runner", "base").await;
@@ -1477,6 +1478,7 @@ mod task_runner {
             assert!(!serialized.contains("\"exit_code\""));
         }
 
+        #[cfg(unix)]
         #[tokio::test(flavor = "multi_thread")]
         async fn fingerprint_hash_stderr_only() {
             let container = TaskRunnerContainer::new("runner", "base").await;

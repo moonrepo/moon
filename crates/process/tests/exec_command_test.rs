@@ -65,6 +65,19 @@ mod exec_capture_output {
     }
 
     #[tokio::test]
+    async fn survives_child_exiting_before_consuming_stdin() {
+        // The child exits without reading stdin while we write input far
+        // larger than any pipe buffer, so the writer hits a broken pipe.
+        // That must be benign: the child's exit status is the outcome.
+        let mut command = create_command("exit 0");
+        command.input(vec!["x".repeat(1024); 2048]);
+
+        let output = command.exec_capture_output().await.unwrap();
+
+        assert!(output.success());
+    }
+
+    #[tokio::test]
     async fn reports_killed_children() {
         let mut command = create_command("kill -9 $$");
         command.set_error_on_nonzero(false);
@@ -89,6 +102,22 @@ mod exec_capture_continuous_output {
 
         assert!(output.success());
         assert_eq!(output.stdout, b"one\ntwo");
+    }
+
+    #[tokio::test]
+    async fn survives_child_exiting_before_consuming_stdin() {
+        // The child exits without reading stdin while we stream input far
+        // larger than any pipe buffer, so the writer hits a broken pipe.
+        // That must be benign: the child's exit status is the outcome
+        // (moon previously died silently with exit code 141 here, when
+        // SIGPIPE was reset to its default disposition).
+        let mut command = create_command("exit 0");
+        command.set_continuous_pipe(true);
+        command.input(vec!["x".repeat(1024); 2048]);
+
+        let output = command.exec_capture_output().await.unwrap();
+
+        assert!(output.success());
     }
 }
 

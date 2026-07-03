@@ -8,7 +8,7 @@ pub async fn logs(session: MoonSession) -> SessionResult {
     let connector = session.get_daemon_connector()?;
     let log_path = connector.get_log_file();
 
-    if connector.is_running().is_none() || !log_path.exists() {
+    if !connector.is_running().await || !log_path.exists() {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Caution) {

@@ -9,7 +9,7 @@ use moon_cache::{CacheContext, CacheEngine};
 use moon_cache_local::LocalStorage;
 use moon_cache_remote::{GrpcRemoteStorage, HttpRemoteStorage};
 use moon_codegen::CodeGenerator;
-use moon_common::{is_docker, is_formatted_output, is_remote, is_test_env};
+use moon_common::{is_ci_env, is_docker, is_formatted_output, is_test_env};
 use moon_config::{
     ExtensionsConfig, InheritedTasksManager, RemoteApi, ToolchainsConfig, WorkspaceConfig,
 };
@@ -36,7 +36,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::OnceCell;
 use tokio::try_join;
-use tracing::{debug, warn};
+use tracing::debug;
 
 pub type SessionResult = AppResult<miette::Report>;
 
@@ -53,7 +53,7 @@ pub struct MoonSession {
 
     // Lazy components
     pub(crate) cache_engine: OnceLock<Arc<CacheEngine>>,
-    // pub(crate) daemon_client: OnceCell<Option<DaemonClient>>,
+    pub(crate) daemon_client: OnceLock<DaemonClient>,
     pub(crate) extension_registry: OnceCell<Arc<ExtensionRegistry>>,
     pub(crate) project_graph: OnceLock<Arc<ProjectGraph>>,
     pub(crate) task_graph: OnceLock<Arc<TaskGraph>>,
@@ -83,7 +83,7 @@ impl MoonSession {
             config_dir: PathBuf::new(),
             config_loader: ConfigLoader::default(),
             console: Console::new(cli.quiet || is_formatted_output()),
-            // daemon_client: OnceCell::new(),
+            daemon_client: OnceLock::new(),
             extensions_config: Arc::new(ExtensionsConfig::default()),
             extension_registry: OnceCell::new(),
             moon_env: Arc::new(MoonEnvironment::default()),
@@ -139,26 +139,19 @@ impl MoonSession {
             return Ok(None);
         }
 
-        // let client = self
-        //     .daemon_client
-        //     .get_or_try_init(async move || self.get_daemon_connector()?.connect().await)
-        //     .await?;
+        if let Some(client) = self.daemon_client.get() {
+            return Ok(Some(client.to_owned()));
+        }
 
-        // Ok(client.clone())
+        let client = self.get_daemon_connector()?.acquire().await?;
 
-        let daemon = match self.get_daemon_connector()?.connect().await {
-            Ok(inner) => inner,
-            Err(error) => {
-                warn!(
-                    ?error,
-                    "Failed to connect to daemon, will continue without it"
-                );
+        // Only cache the client if we successfully connected to a daemon.
+        // If we failed to connect, we don't want to cache so that we try again.
+        if let Some(client) = &client {
+            let _ = self.daemon_client.set(client.to_owned());
+        }
 
-                None
-            }
-        };
-
-        Ok(daemon)
+        Ok(client)
     }
 
     pub async fn create_workspace_graph_context(&self) -> miette::Result<WorkspaceBuilderContext> {
@@ -249,6 +242,7 @@ impl MoonSession {
         Ok(DaemonConnector::new(
             self.config_dir.join("cache").join("daemon"),
             self.workspace_root.clone(),
+            self.cli_version.to_string(),
         ))
     }
 
@@ -480,21 +474,30 @@ impl AppSession for MoonSession {
                 .await?;
         }
 
-        // Start the daemon
-        if self.is_daemon_allowed() {
-            self.get_daemon_connector()?.start_daemon(false).await?;
+        // Start the daemon early, in the background, so it's ready by the time
+        // the pipeline needs it. This shares `acquire` with the pipeline's own
+        // `connect_to_daemon`, so the two coordinate and at most one spawns —
+        // and a spawn failure degrades to `None` instead of failing the run.
+        if self.is_daemon_allowed()
+            && let Some(client) = self.get_daemon_connector()?.acquire().await?
+        {
+            let _ = self.daemon_client.set(client);
         }
 
         Ok(None)
     }
 
     async fn shutdown(&mut self) -> AppResult<Self::Error> {
-        let is_local_debug_or_remote = cfg!(debug_assertions) || is_remote();
+        let should_stop_daemon = cfg!(debug_assertions) || is_ci_env();
 
-        // Stop the daemon if it's running
-        if is_local_debug_or_remote
+        // Stop the daemon if it's running. Connect fresh rather than reuse the
+        // cached client — the cache is set on the execute-phase session clone,
+        // not the one running shutdown — using a single attempt so we don't
+        // spawn a daemon just to stop it.
+        if should_stop_daemon
             && self.is_daemon_allowed()
-            && let Ok(Some(mut daemon)) = self.connect_to_daemon().await
+            && let Ok(connector) = self.get_daemon_connector()
+            && let Ok(Some(mut daemon)) = connector.connect_once().await
         {
             let _ = daemon.stop().await;
         }
@@ -505,7 +508,7 @@ impl AppSession for MoonSession {
             .wait_for_background_tasks()
             .await?;
 
-        // Ensure all child processes have finished running
+        // Ensure all child processes have finished
         ProcessRegistry::instance()
             .wait_for_running_to_shutdown()
             .await;

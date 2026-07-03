@@ -13,6 +13,7 @@ fn install_daemon_panic_hook() {
         } else {
             "non-string panic payload".to_owned()
         };
+
         let location = panic_info
             .location()
             .map(|location| {

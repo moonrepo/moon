@@ -125,7 +125,7 @@ impl WebhooksNotifier {
             let url = self.url.to_owned();
 
             if let Some(mut daemon) = self.daemon_client.clone() {
-                tokio::spawn(async move { daemon.send_webhook(url, body).await });
+                daemon.send_webhook(url, body).await?;
             } else {
                 self.requests.push(tokio::spawn(async move {
                     let _ = notify_webhook(&url, body, false).await;

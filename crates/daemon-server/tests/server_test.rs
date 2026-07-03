@@ -4,6 +4,7 @@
 use moon_daemon_client::DaemonClient;
 use moon_daemon_server::*;
 use moon_daemon_utils::endpoint::*;
+use moon_daemon_utils::lock::DaemonLock;
 use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::fs;
@@ -31,6 +32,41 @@ pub fn build_daemon_service(
     )
 }
 
+/// When another daemon already owns the workspace (holds the ownership lock),
+/// a second server must defer to it and exit cleanly without binding, rather
+/// than racing for the endpoint.
+#[tokio::test]
+async fn test_server_defers_when_ownership_lock_held() {
+    let sandbox = create_empty_sandbox();
+    let daemon_dir = sandbox.path().join("daemon");
+    let workspace_root = sandbox.path().to_path_buf();
+
+    fs::create_dir_all(&daemon_dir).unwrap();
+
+    // Simulate another daemon owning the workspace by holding its lock.
+    let _owner = DaemonLock::try_acquire(&get_lock_path(&daemon_dir))
+        .unwrap()
+        .expect("lock should be free");
+
+    let mocker = WorkspaceMocker::new(workspace_root);
+    let mut app_context = mocker.mock_app_context();
+    app_context.daemon_dir = daemon_dir.clone();
+
+    let result = start_daemon_server(
+        DaemonState {
+            app_context: Arc::new(app_context),
+            workspace_graph: Arc::new(WorkspaceGraph::default()),
+        },
+        vec![],
+    )
+    .await;
+
+    // Deferred cleanly, and never bound (no socket, no state file written).
+    assert!(result.is_ok());
+    assert!(!get_sock_path(&daemon_dir).exists());
+    assert!(read_state(&daemon_dir).is_none());
+}
+
 #[cfg(unix)]
 mod unix_rpc {
     use super::*;
@@ -41,9 +77,6 @@ mod unix_rpc {
     async fn start_test_server(daemon_dir: &Path, workspace_root: &Path) -> broadcast::Sender<()> {
         let endpoint = get_endpoint(daemon_dir);
         let pid = std::process::id();
-        let pid_path = get_pid_path(daemon_dir);
-
-        write_pid(&pid_path, pid).unwrap();
 
         let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
 
@@ -152,6 +185,29 @@ mod unix_rpc {
     }
 
     #[tokio::test]
+    async fn test_send_webhook_rpc_acks_without_waiting_for_delivery() {
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("daemon");
+        let workspace_root = sandbox.path().to_path_buf();
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let shutdown_tx = start_test_server(&daemon_dir, &workspace_root).await;
+        let mut client = DaemonClient::connect(&daemon_dir).await.unwrap();
+
+        // The URL is unreachable, so an inline delivery would fail the RPC.
+        // Since delivery is spawned in the background, the call still acks.
+        let response = client
+            .send_webhook("http://127.0.0.1:1/webhook".into(), "{}".into())
+            .await
+            .unwrap();
+
+        assert!(response.success);
+
+        let _ = shutdown_tx.send(());
+    }
+
+    #[tokio::test]
     async fn test_connect_to_nonexistent_socket_fails() {
         let sandbox = create_empty_sandbox();
         let daemon_dir = sandbox.path().join("daemon");
@@ -199,9 +255,6 @@ mod windows_rpc {
     async fn start_test_server(daemon_dir: &Path, workspace_root: &Path) -> broadcast::Sender<()> {
         let endpoint = get_endpoint(daemon_dir);
         let pid = std::process::id();
-        let pid_path = get_pid_path(daemon_dir);
-
-        write_pid(&pid_path, pid).unwrap();
 
         let (shutdown_tx, mut shutdown_rx) = broadcast::channel::<()>(1);
 
@@ -305,6 +358,49 @@ mod windows_rpc {
             let status = client.status().await.unwrap();
             assert!(status.running);
         }
+
+        let _ = shutdown_tx.send(());
+    }
+
+    #[tokio::test]
+    async fn test_send_webhook_rpc_acks_without_waiting_for_delivery() {
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("daemon");
+        let workspace_root = sandbox.path().to_path_buf();
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let shutdown_tx = start_test_server(&daemon_dir, &workspace_root).await;
+        let mut client = DaemonClient::connect(&daemon_dir).await.unwrap();
+
+        // The URL is unreachable, so an inline delivery would fail the RPC.
+        // Since delivery is spawned in the background, the call still acks.
+        let response = client
+            .send_webhook("http://127.0.0.1:1/webhook".into(), "{}".into())
+            .await
+            .unwrap();
+
+        assert!(response.success);
+
+        let _ = shutdown_tx.send(());
+    }
+
+    #[tokio::test]
+    async fn test_clean_cache_rpc_acks_without_waiting_for_clean() {
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("daemon");
+        let workspace_root = sandbox.path().to_path_buf();
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+
+        let shutdown_tx = start_test_server(&daemon_dir, &workspace_root).await;
+        let mut client = DaemonClient::connect(&daemon_dir).await.unwrap();
+
+        // The clean runs in the background, so the ack carries no stats.
+        let response = client.clean_cache("7 days".into(), false).await.unwrap();
+
+        assert_eq!(response.files_deleted, 0);
+        assert_eq!(response.bytes_saved, 0);
 
         let _ = shutdown_tx.send(());
     }

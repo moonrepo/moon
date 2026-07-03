@@ -62,6 +62,9 @@
     tasks.
   - Added a top-level `taskOptions` setting to `moon.*` that allows you to configure default task
     options for all tasks within the current project, which can be overridden per task.
+- **Toolchains**
+  - Added caching around executable location lookups to improve performance. Previously, these were
+    running over and over again for each task.
 - **VCS**
   - Hardened all executed Git commands: revisions are validated against argument injection,
     credential prompts now fail immediately instead of hanging, and the fsmonitor daemon is now

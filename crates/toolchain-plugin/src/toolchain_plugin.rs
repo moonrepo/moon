@@ -6,7 +6,7 @@ use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
-use proto_core::flow::locate::Locator;
+use proto_core::flow::locate::{Locator, LocatorResponse};
 use proto_core::flow::manage::Manager;
 use proto_core::flow::resolve::Resolver;
 use proto_core::reporter::ProtoConsole;
@@ -35,7 +35,8 @@ pub struct ToolchainPlugin {
     plugin: Arc<PluginContainer>,
     tool: Option<RwLock<Tool>>,
 
-    globals_cache: scc::HashMap<VersionSpec, Option<PathBuf>>,
+    globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
+    locations_cache: scc::HashMap<UnresolvedVersionSpec, LocatorResponse>,
 }
 
 #[async_trait]
@@ -70,6 +71,7 @@ impl Plugin for ToolchainPlugin {
             id: registration.id,
             locator: registration.locator,
             globals_cache: scc::HashMap::new(),
+            locations_cache: scc::HashMap::new(),
             metadata,
             plugin,
         })
@@ -87,19 +89,45 @@ impl Plugin for ToolchainPlugin {
 impl ToolchainPlugin {
     async fn cache_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
         if let Some(tool) = &self.tool {
-            let tool = tool.read().await;
-            let spec = ToolSpec::default();
-
             return match self
                 .globals_cache
-                .entry_async(spec.to_resolved_spec())
+                .entry_async(UnresolvedVersionSpec::default())
                 .await
             {
                 Entry::Occupied(entry) => Ok(entry.get().to_owned()),
                 Entry::Vacant(entry) => {
+                    let tool = tool.read().await;
+                    let spec = ToolSpec::default();
                     let locations = Locator::new(&tool, &spec).locate_globals_dir().await?;
+
                     entry.insert_entry(locations.clone());
+
                     Ok(locations)
+                }
+            };
+        }
+
+        Ok(None)
+    }
+
+    async fn cache_locations(
+        &self,
+        version: &UnresolvedVersionSpec,
+    ) -> miette::Result<Option<LocatorResponse>> {
+        if let Some(tool) = &self.tool {
+            return match self.locations_cache.entry_async(version.to_owned()).await {
+                Entry::Occupied(entry) => Ok(Some(entry.get().to_owned())),
+                Entry::Vacant(entry) => {
+                    let tool = tool.read().await;
+                    let mut spec = ToolSpec::new(version.to_owned());
+
+                    Resolver::resolve(&tool, &mut spec, false).await?;
+
+                    let locations = Locator::locate(&tool, &spec).await?;
+
+                    entry.insert_entry(locations.clone());
+
+                    Ok(Some(locations))
                 }
             };
         }
@@ -165,15 +193,8 @@ impl ToolchainPlugin {
         let mut paths = IndexSet::<PathBuf>::default();
 
         if let Some(version) = &version
-            && let Some(tool) = &self.tool
+            && let Some(locations) = self.cache_locations(version).await?
         {
-            let tool = tool.read().await;
-            let mut spec = ToolSpec::new(version.to_owned());
-
-            Resolver::resolve(&tool, &mut spec, false).await?;
-
-            let locations = Locator::locate(&tool, &spec).await?;
-
             if let Some(dir) = locations.exe_file.parent() {
                 paths.insert(dir.to_path_buf());
             }

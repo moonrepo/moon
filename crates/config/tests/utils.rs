@@ -294,7 +294,7 @@ pub fn load_tasks_config_in_format(format: &str) {
                 internal: Some(true),
                 merge: None,
                 merge_args: Some(TaskMergeStrategy::Append),
-                merge_checks: Some(TaskMergeStrategy::Append),
+                merge_checks: None,
                 merge_deps: Some(TaskMergeStrategy::Prepend),
                 merge_env: Some(TaskMergeStrategy::Replace),
                 merge_inputs: Some(TaskMergeStrategy::Preserve),

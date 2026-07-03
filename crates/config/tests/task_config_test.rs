@@ -994,7 +994,7 @@ checks:
         }
 
         #[test]
-        #[should_panic(expected = "Failed to deserialize the untagged enum TaskCheckEntryShape")]
+        #[should_panic(expected = "Failed to deserialize the untagged enum TaskCheckShape")]
         fn errors_on_invalid_check_type() {
             test_parse_config(
                 r"

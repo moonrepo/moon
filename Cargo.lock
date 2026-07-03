@@ -5225,6 +5225,7 @@ dependencies = [
  "httpmock",
  "libc",
  "liblzma",
+ "miette 7.6.0",
  "mimalloc",
  "moon_affected",
  "moon_app",
@@ -5241,7 +5242,6 @@ dependencies = [
  "proto_shim",
  "rustc-hash",
  "serial_test",
- "sigpipe",
  "starbase",
  "starbase_archive",
  "starbase_sandbox",
@@ -5381,11 +5381,13 @@ dependencies = [
 name = "moon_daemon"
 version = "0.0.1"
 dependencies = [
+ "chrono",
  "miette 7.6.0",
  "moon_daemon_client",
  "moon_daemon_proto",
  "moon_daemon_server",
  "moon_daemon_utils",
+ "moon_test_utils",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.18",
@@ -5407,6 +5409,7 @@ dependencies = [
  "tonic",
  "tower",
  "tracing",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -5443,6 +5446,7 @@ dependencies = [
  "starbase_utils",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-util",
  "tonic",
  "tracing",
 ]
@@ -5455,6 +5459,8 @@ dependencies = [
  "futures-core",
  "libc",
  "md5",
+ "serde",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
  "tokio",
@@ -8505,15 +8511,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sigpipe"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5584bfb3e0d348139d8210285e39f6d2f8a1902ac06de343e06357d1d763d8e6"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "simd-adler32"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8645,9 +8642,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starbase"
-version = "0.12.2"
+version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bcd5012790c6798415cd564bbe10ccfbe8949e9bc977a13b1ddaeb1ee2cdbc2"
+checksum = "6ee9296842e61de44f4b3b424741ccb318d9b579b87c34d46c310d8e57f6425a"
 dependencies = [
  "async-trait",
  "chrono",
@@ -9260,6 +9257,7 @@ dependencies = [
  "bytes",
  "futures-core",
  "futures-sink",
+ "futures-util",
  "pin-project-lite",
  "tokio",
 ]

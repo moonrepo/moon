@@ -7,7 +7,8 @@ use moon_daemon_proto::{
     moon_daemon_server::{MoonDaemon, MoonDaemonServer},
     *,
 };
-use moon_daemon_utils::{endpoint::*, sys::is_process_alive};
+use moon_daemon_utils::endpoint::*;
+use moon_daemon_utils::lock::DaemonLock;
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
 use moon_notifier::notify_webhook;
 use moon_process::ProcessRegistry;
@@ -16,12 +17,36 @@ use moon_task_runner::output_archiver::ArchiveOutcome;
 use moon_task_runner::{TaskRunState, output_archiver::OutputArchiver};
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
-use std::path::Path;
+use std::env;
+use std::future::Future;
+use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Instant;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, broadcast};
+use tokio::time::timeout;
+use tokio_util::task::TaskTracker;
 use tonic::{Request, Response, Status, transport::Server};
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
+
+/// How often the lifecycle monitor checks whether the daemon should retire.
+const MONITOR_INTERVAL: Duration = Duration::from_secs(60);
+
+/// How long the daemon may sit without any RPC before it exits on its own, so
+/// an abandoned workspace doesn't leave a daemon running indefinitely.
+const IDLE_TTL: Duration = Duration::from_secs(4 * 60 * 60);
+
+/// Capacity of the file-event broadcast. Sized to absorb a large burst — a
+/// branch switch touching many files — without the listener lagging and
+/// dropping events, which could miss a config change. The watcher already
+/// excludes `node_modules`/`.git`, so the burst is bounded by tracked files.
+const EVENT_CHANNEL_CAPACITY: usize = 16_384;
+
+/// Maximum time to wait during shutdown for queued background work to finish.
+const BACKGROUND_DRAIN_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Maximum time to wait for the watcher/listener/monitor tasks to unwind.
+const TASK_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
 
 pub struct DaemonState {
     pub app_context: Arc<AppContext>,
@@ -35,6 +60,8 @@ struct DaemonServiceInner {
     pid: u32,
     shutdown_tx: broadcast::Sender<()>,
     started_at: Instant,
+    last_activity: Arc<AtomicU64>,
+    background: TaskTracker,
 }
 
 pub struct DaemonService {
@@ -55,9 +82,37 @@ impl DaemonService {
                 pid,
                 shutdown_tx,
                 started_at: Instant::now(),
+                last_activity: Arc::new(AtomicU64::new(0)),
+                background: TaskTracker::new(),
             }),
             state,
         }
+    }
+
+    fn last_activity(&self) -> Arc<AtomicU64> {
+        Arc::clone(&self.inner.last_activity)
+    }
+
+    fn track_activity(&self, procedure: &str) {
+        debug!("Received {} procedure", color::property(procedure));
+
+        self.inner.last_activity.store(
+            self.inner.started_at.elapsed().as_millis() as u64,
+            Ordering::Relaxed,
+        );
+    }
+
+    fn run_in_background<F>(&self, future: F)
+    where
+        F: Future<Output = ()> + Send + 'static,
+    {
+        debug!("Spawning procedure in the background");
+
+        self.inner.background.spawn(future);
+    }
+
+    pub fn background_tasks(&self) -> TaskTracker {
+        self.inner.background.clone()
     }
 }
 
@@ -67,44 +122,64 @@ impl MoonDaemon for DaemonService {
         &self,
         request: Request<ArchiveTaskOutputsRequest>,
     ) -> Result<Response<ArchiveTaskOutputsResponse>, Status> {
-        debug!("Received {} request", color::property("ArchiveTaskOutputs"));
+        self.track_activity("ArchiveTaskOutputs");
 
-        let state = self.state.read().await;
         let req = request.into_inner();
 
         let target = Target::parse(&req.task_target)
             .map_err(|error| Status::invalid_argument(error.to_string()))?;
 
-        let task = state
-            .workspace_graph
-            .get_task(&target)
-            .map_err(|error| Status::not_found(error.to_string()))?;
+        let (app_context, task) = {
+            let state = self.state.read().await;
+            let task = state
+                .workspace_graph
+                .get_task(&target)
+                .map_err(|error| Status::not_found(error.to_string()))?;
 
-        // TODO populate the action digest/bytes!
-        let task_state = TaskRunState::new(&state.app_context, &task);
+            (Arc::clone(&state.app_context), task)
+        };
 
-        let archived = OutputArchiver::new(&state.app_context, &task)
-            .map_err(|error| Status::unknown(error.to_string()))?
-            .archive(&req.hash, &task_state)
-            .await
-            .map_err(|error| Status::unknown(error.to_string()))?;
+        self.run_in_background(async move {
+            // TODO populate the action digest/bytes!
+            let task_state = TaskRunState::new(&app_context, &task);
 
-        Ok(Response::new(ArchiveTaskOutputsResponse {
-            archived: matches!(archived, ArchiveOutcome::Queued),
-        }))
+            let result = match OutputArchiver::new(&app_context, &task) {
+                Ok(archiver) => archiver.archive(&req.hash, &task_state).await,
+                Err(error) => Err(error),
+            };
+
+            match result {
+                Ok(outcome) => {
+                    debug!(
+                        target = target.as_str(),
+                        hash = &req.hash,
+                        queued = matches!(outcome, ArchiveOutcome::Queued),
+                        "Archived task outputs"
+                    );
+                }
+                Err(error) => {
+                    warn!(
+                        target = target.as_str(),
+                        hash = &req.hash,
+                        "Failed to archive task outputs: {error}"
+                    );
+                }
+            }
+        });
+
+        Ok(Response::new(ArchiveTaskOutputsResponse { archived: true }))
     }
 
     async fn clean_cache(
         &self,
         request: Request<CleanCacheRequest>,
     ) -> Result<Response<CleanCacheResponse>, Status> {
-        debug!("Received {} request", color::property("CleanCache"));
+        self.track_activity("CleanCache");
 
+        let app_context = Arc::clone(&self.state.read().await.app_context);
         let request = request.into_inner();
-        let state = self.state.read().await;
 
-        let (files_deleted, bytes_saved) = state
-            .app_context
+        let (files_deleted, bytes_saved) = app_context
             .cache_engine
             .clean_stale_cache(&request.lifetime, request.all)
             .await
@@ -120,9 +195,9 @@ impl MoonDaemon for DaemonService {
         &self,
         request: Request<HashFilesRequest>,
     ) -> Result<Response<HashFilesResponse>, Status> {
-        debug!("Received {} request", color::property("HashFiles"));
+        self.track_activity("HashFiles");
 
-        let state = self.state.read().await;
+        let app_context = Arc::clone(&self.state.read().await.app_context);
 
         let files = request
             .into_inner()
@@ -131,8 +206,7 @@ impl MoonDaemon for DaemonService {
             .map(WorkspaceRelativePathBuf::from)
             .collect::<Vec<_>>();
 
-        let hashed_files = state
-            .app_context
+        let hashed_files = app_context
             .hash_files(&files)
             .await
             .map_err(|error| Status::unknown(error.to_string()))?;
@@ -149,27 +223,34 @@ impl MoonDaemon for DaemonService {
         &self,
         request: Request<SendWebhookRequest>,
     ) -> Result<Response<SendWebhookResponse>, Status> {
-        debug!("Received {} request", color::property("SendWebhook"));
+        self.track_activity("SendWebhook");
 
-        let request = request.into_inner();
+        let SendWebhookRequest { url, body } = request.into_inner();
 
-        let response = notify_webhook(&request.url, request.body, false)
-            .await
-            .map_err(|error| Status::unknown(error.to_string()))?;
+        self.run_in_background(async move {
+            match notify_webhook(&url, body, false).await {
+                Ok(response) if !response.status().is_success() => {
+                    warn!(
+                        url = &url,
+                        status = response.status().as_u16(),
+                        "Webhook endpoint responded with a failure"
+                    );
+                }
+                Err(error) => {
+                    warn!(url = &url, "Failed to send webhook: {error}");
+                }
+                _ => {}
+            }
+        });
 
-        Ok(Response::new(SendWebhookResponse {
-            success: response.status().is_success(),
-        }))
+        Ok(Response::new(SendWebhookResponse { success: true }))
     }
 
     async fn start(
         &self,
         _request: Request<StartRequest>,
     ) -> Result<Response<StartResponse>, Status> {
-        debug!(
-            "Received {} request (daemon already running)",
-            color::property("Start")
-        );
+        self.track_activity("Start");
 
         Ok(Response::new(StartResponse {
             already_running: true,
@@ -179,10 +260,7 @@ impl MoonDaemon for DaemonService {
     }
 
     async fn stop(&self, _request: Request<StopRequest>) -> Result<Response<StopResponse>, Status> {
-        debug!(
-            "Received {} request, initiating graceful shutdown",
-            color::property("Stop")
-        );
+        self.track_activity("Stop");
 
         self.inner
             .shutdown_tx
@@ -196,7 +274,7 @@ impl MoonDaemon for DaemonService {
         &self,
         _request: Request<StatusRequest>,
     ) -> Result<Response<StatusResponse>, Status> {
-        debug!("Received {} request", color::property("Status"));
+        self.track_activity("Status");
 
         let state = self.state.read().await;
         let uptime_secs = self.inner.started_at.elapsed().as_secs();
@@ -205,6 +283,7 @@ impl MoonDaemon for DaemonService {
             endpoint: self.inner.endpoint.clone(),
             moon_version: state.app_context.cli_version.to_string(),
             pid: self.inner.pid,
+            protocol_version: PROTOCOL_VERSION,
             running: true,
             uptime_secs,
             workspace_root: state.app_context.workspace_root.to_string_lossy().into(),
@@ -221,25 +300,58 @@ impl MoonDaemon for DaemonService {
 /// - A `Stop` RPC call from a client
 /// - `SIGINT` or `SIGTERM` (Unix) / `Ctrl+C` (Windows)
 ///
-/// On shutdown the PID file and socket are removed.
+/// On shutdown the state file and socket are removed and the ownership lock
+/// is released.
 pub async fn start_daemon_server(
     state: DaemonState,
     watchers: Vec<BoxedFileWatcher<AtomicDaemonState>>,
 ) -> miette::Result<()> {
     let daemon_dir = state.app_context.daemon_dir.clone();
     let workspace_root = state.app_context.workspace_root.clone();
+    let version = state.app_context.cli_version.to_string();
     let endpoint = get_endpoint(&daemon_dir);
 
     fs::create_dir_all(&daemon_dir)?;
 
-    // Remove stale endpoint files left by a previous crash, but only
-    // if no daemon process is actually alive
-    remove_stale_endpoint(&daemon_dir, &endpoint)?;
+    // Take exclusive ownership of this workspace's daemon. The lock is held
+    // for our entire lifetime and released automatically when we exit — even
+    // on a crash — so the running daemon is whoever holds it, not a PID we'd
+    // have to probe. If another daemon already owns it, defer to it.
+    let _lock = match DaemonLock::try_acquire(&get_lock_path(&daemon_dir)).map_err(|error| {
+        DaemonServerError::EndpointBindFailed {
+            endpoint: endpoint.clone(),
+            error: Box::new(error),
+        }
+    })? {
+        Some(lock) => lock,
+        None => {
+            info!("Another daemon already owns this workspace, exiting");
+
+            return Ok(());
+        }
+    };
+
+    // We own the workspace now, so any leftover socket is stale (no live
+    // owner could still hold the lock) and safe to remove before binding.
+    #[cfg(unix)]
+    {
+        let sock = std::path::Path::new(&endpoint);
+
+        if sock.exists() {
+            fs::remove_file(sock)?;
+        }
+    }
+
+    // Move out of the workspace so we don't pin it — on Windows an open working
+    // directory blocks the folder from being deleted or renamed. Everything
+    // uses the explicit workspace root, not the process cwd.
+    if let Err(error) = env::set_current_dir(env::temp_dir()) {
+        warn!("Failed to move out of the workspace directory: {error}");
+    }
 
     let pid = std::process::id();
-    let pid_path = get_pid_path(&daemon_dir);
 
-    write_pid(&pid_path, pid)?;
+    write_state(&daemon_dir, DaemonInfo::new(pid, version, endpoint.clone()))?;
 
     // Create a new atomic state
     let atomic_state = Arc::new(RwLock::new(state));
@@ -249,9 +361,9 @@ pub async fn start_daemon_server(
     let mut signal_rx = ProcessRegistry::instance().receive_signal();
 
     // Spawn the file watcher and listener in the background
-    let (event_tx, event_rx) = broadcast::channel::<FileEvent>(1024);
+    let (event_tx, event_rx) = broadcast::channel::<FileEvent>(EVENT_CHANNEL_CAPACITY);
     let watcher_handle = tokio::spawn(start_file_watcher(
-        workspace_root,
+        workspace_root.clone(),
         event_tx,
         shutdown_tx.subscribe(),
     ));
@@ -262,8 +374,18 @@ pub async fn start_daemon_server(
         shutdown_tx.subscribe(),
     ));
 
-    // Create the RPC service
+    // Create the gRPC service
     let service = DaemonService::new(atomic_state, endpoint.clone(), pid, shutdown_tx.clone());
+    let service_background = service.background_tasks();
+
+    // Retire the daemon on its own when the workspace disappears or it goes
+    // unused, so an abandoned workspace doesn't leak a daemon forever.
+    let monitor_handle = tokio::spawn(monitor_lifecycle(
+        workspace_root,
+        service.last_activity(),
+        shutdown_tx.clone(),
+        shutdown_tx.subscribe(),
+    ));
 
     // Merge the RPC-driven shutdown with OS signals so the daemon
     // cleans up regardless of how it is stopped
@@ -287,63 +409,85 @@ pub async fn start_daemon_server(
 
     if let Err(error) = &serve_result {
         error!("Daemon server failed: {error}");
-
-        watcher_handle.abort();
-        listener_handle.abort();
     }
 
-    // Wait for the file watcher and listener to finish
-    match watcher_handle.await {
-        Ok(Err(error)) => error!("File watcher exited with error: {error}"),
-        Err(error) => error!("File watcher task panicked: {error}"),
-        _ => {}
-    };
+    // Stop the background tasks. Abort them rather than only signalling and
+    // awaiting: these tasks hold no critical state, and aborting guarantees
+    // shutdown can't hang on one that's slow to observe the signal — which
+    // would strand the daemon holding its lock but no longer serving, wedging
+    // the workspace and blocking every later start.
+    watcher_handle.abort();
+    listener_handle.abort();
+    monitor_handle.abort();
 
-    if let Err(error) = listener_handle.await {
-        error!("File listener task panicked: {error}");
-    };
+    // Give the aborted tasks a moment to unwind, but don't block shutdown on a
+    // slow teardown (dropping a recursive OS watch over a large tree can't be
+    // preempted). Past this bound we exit anyway and let the OS clean up.
+    let _ = timeout(TASK_SHUTDOWN_TIMEOUT, async {
+        let _ = watcher_handle.await;
+        let _ = listener_handle.await;
+        let _ = monitor_handle.await;
+    })
+    .await;
+
+    // Drain queued background work before exiting, but don't let a stuck task
+    // (e.g. a webhook to an unreachable host) hang shutdown. `wait` only
+    // resolves once the tracker is closed, so close it first — otherwise the
+    // daemon hangs here forever, holding its lock but no longer serving, which
+    // wedges the workspace and blocks the next start.
+    service_background.close();
+
+    if timeout(BACKGROUND_DRAIN_TIMEOUT, service_background.wait())
+        .await
+        .is_err()
+    {
+        warn!("Timed out draining background work during shutdown");
+    }
 
     info!("Daemon server stopped");
 
+    // Remove our endpoint files, then release the lock as `_ownership` drops.
     let _ = cleanup_daemon_files(&daemon_dir);
 
     serve_result
 }
 
-/// Remove a stale Unix socket (or check a stale PID file on Windows)
-/// left behind by a crashed daemon that didn't clean up after itself.
-///
-/// Only removes files when no daemon process is actually running.
-#[allow(unused_variables)]
-fn remove_stale_endpoint(daemon_dir: &Path, endpoint: &str) -> miette::Result<()> {
-    let pid_path = get_pid_path(daemon_dir);
+/// Retire the daemon on its own when its workspace is deleted or it goes unused
+/// for [`IDLE_TTL`], by triggering the shared shutdown. Runs until shutdown.
+async fn monitor_lifecycle(
+    workspace_root: PathBuf,
+    last_activity: Arc<AtomicU64>,
+    shutdown_tx: broadcast::Sender<()>,
+    mut shutdown_rx: broadcast::Receiver<()>,
+) {
+    // The daemon started ~now, and `last_activity` is measured from the same
+    // point, so `reference.elapsed() - last_activity` is the idle duration.
+    let reference = Instant::now();
+    let mut interval = tokio::time::interval(MONITOR_INTERVAL);
 
-    // If there's a PID file for a process that's still alive, the
-    // endpoint is not stale — bail out
-    if let Some(pid) = read_pid(&pid_path) {
-        if is_process_alive(pid) {
-            return Ok(());
+    loop {
+        tokio::select! {
+            _ = interval.tick() => {
+                let idle = reference
+                    .elapsed()
+                    .saturating_sub(Duration::from_millis(last_activity.load(Ordering::Relaxed)));
+
+                if !workspace_root.exists() {
+                    info!("Daemon shutting down because its workspace was removed");
+                } else if idle >= IDLE_TTL {
+                    info!("Daemon shutting down because it has been idle too long");
+                } else {
+                    continue;
+                }
+
+                let _ = shutdown_tx.send(());
+                break;
+            }
+            _ = shutdown_rx.recv() => {
+                break;
+            }
         }
-
-        debug!(pid, "Found stale PID file for dead process, cleaning up");
     }
-
-    // On Unix the socket file itself blocks `bind()`
-    #[cfg(unix)]
-    {
-        let sock = Path::new(endpoint);
-
-        if sock.exists() {
-            fs::remove_file(sock)?;
-        }
-    }
-
-    // Remove the stale PID file too.
-    if pid_path.exists() {
-        fs::remove_file(&pid_path)?;
-    }
-
-    Ok(())
 }
 
 pub async fn serve(

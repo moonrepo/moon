@@ -18,6 +18,25 @@
     cache, which can improve cache hit rates in some scenarios.
   - When a remote cache hit, we'll now warm the local cache with the hydrated manifest and its
     blobs, so the next run resolves locally instead of round-tripping to the remote.
+- **Daemon**
+  - Server log files will now rotate up to 7 times. Older log files will be automatically deleted.
+  - Webhook delivery and task output archiving are now acknowledged immediately and run in the
+    background on the daemon, so a client exiting or hitting a deadline no longer cancels the work
+    mid-flight.
+  - The daemon now takes exclusive ownership of its workspace through an advisory file lock held for
+    its entire lifetime, replacing PID-liveness checks that could be fooled by zombie processes,
+    reused PIDs, or processes owned by another user. A crashed daemon releases the lock
+    automatically, so a stale socket or state file can no longer block or misdirect the next start.
+  - Whether the daemon is running is now determined by connecting to it rather than probing a PID,
+    and its metadata is recorded in a `daemon.json` state file (replacing `moond.pid`).
+  - Connecting to the daemon and starting it are now a single operation, so a command that needs the
+    daemon will start one itself if the background pre-warm hasn't yet, instead of silently running
+    without it. Concurrent starts still coordinate so only one daemon is spawned.
+  - When connecting, the client now checks the running daemon's moon and protocol version against
+    its own and, on a mismatch, restarts it — so a daemon left over from before a `moon upgrade` is
+    replaced instead of serving the old binary indefinitely.
+  - The daemon now retires itself after a long idle period (no requests), and exits immediately if
+    its workspace is deleted, so an abandoned workspace no longer leaves a daemon running forever.
 - **Processes**
   - Improved our "stream and capture output" child process handling to operate on bytes instead of
     lines, which should resolve some edge cases with output not being written to the console, or
@@ -57,22 +76,39 @@
 
 #### 🐞 Fixes
 
-- Fixed an issue where an explicit head revision was ignored when diffing between revisions, and the
-  current working tree was compared against instead.
-- Fixed an issue where diffing against the previous revision would fail in repositories with a
-  single commit.
-- Fixed an issue where file names with spaces or special characters were excluded from file tree
-  results.
-- Fixed an issue where Git submodules added between 2 revisions were not included when diffing.
-- Fixed an issue where Git hooks could not be set up from the primary working tree when other
-  worktrees exist.
-- Fixed an issue where moon would take over a hooks directory managed by another tool (husky,
-  lefthook, etc) when `core.hooksPath` was already configured, overwriting its hook files, and
-  deleting the entire directory when hooks were disabled.
-- Fixed an issue where Windows hook wrappers would not forward arguments containing spaces
-  correctly, and would arbitrarily cap forwarding at 5 arguments.
-- Fixed an issue where PowerShell hooks would mangle user variables that start with `$ARG`, like
-  `$ARGS`.
+- **CLI**
+  - Fixed an issue where moon would silently exit with code 141 (SIGPIPE) when a child process
+    exited before consuming its stdin. Broken pipes are now handled explicitly instead of resetting
+    the SIGPIPE disposition, while piping moon's output to a consumer that closes early still exits
+    quietly with the conventional code.
+- **Daemon**
+  - Fixed an issue where every daemon RPC was capped by a 1 second client-side timeout, causing slow
+    procedures (webhook delivery, cache cleaning) to be cancelled even though the daemon was
+    healthy. Connection establishment is now bounded separately, and each procedure has an
+    appropriate deadline that is also enforced by the server.
+  - Fixed an issue where connecting to the daemon while it was still starting up — or being started
+    by another process — would fail immediately with "connection refused", and the run would
+    continue without the daemon. Connection attempts are now retried with a bounded backoff.
+  - Fixed an issue on Windows where the daemon briefly had no listening pipe instance between client
+    connections, causing sporadic connection failures, and where busy pipe instances were not
+    retried.
+- **VCS**
+  - Fixed an issue where an explicit head revision was ignored when diffing between revisions, and
+    the current working tree was compared against instead.
+  - Fixed an issue where diffing against the previous revision would fail in repositories with a
+    single commit.
+  - Fixed an issue where file names with spaces or special characters were excluded from file tree
+    results.
+  - Fixed an issue where Git submodules added between 2 revisions were not included when diffing.
+  - Fixed an issue where Git hooks could not be set up from the primary working tree when other
+    worktrees exist.
+  - Fixed an issue where moon would take over a hooks directory managed by another tool (husky,
+    lefthook, etc) when `core.hooksPath` was already configured, overwriting its hook files, and
+    deleting the entire directory when hooks were disabled.
+  - Fixed an issue where Windows hook wrappers would not forward arguments containing spaces
+    correctly, and would arbitrarily cap forwarding at 5 arguments.
+  - Fixed an issue where PowerShell hooks would mangle user variables that start with `$ARG`, like
+    `$ARGS`.
 
 #### ⚙️ Internal
 

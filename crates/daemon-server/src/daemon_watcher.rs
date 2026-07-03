@@ -102,6 +102,12 @@ pub async fn start_file_watcher(
     })
     .map_err(map_notify_error)?;
 
+    // Watch the workspace recursively. `notify` sets this up as a single
+    // efficient watch (one FSEvents stream on macOS; per-directory inotify
+    // watches on Linux); events inside ignored directories are filtered out
+    // by `create_file_event`. Registering watches per-directory ourselves was
+    // untenable — walking a real repo's `target`/build output is tens of
+    // thousands of directories and never finishes setup.
     debouncer
         .watch(&workspace_root, RecursiveMode::Recursive)
         .map_err(map_notify_error)?;

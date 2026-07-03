@@ -9,12 +9,14 @@ moon_daemon_client = { path = "../daemon-client" }
 moon_daemon_proto = { path = "../daemon-proto" }
 moon_daemon_server = { path = "../daemon-server" }
 moon_daemon_utils = { path = "../daemon-utils" }
+chrono = { workspace = true }
 miette = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_test_utils = { path = "../test-utils" }
 starbase_sandbox = { workspace = true }
 starbase_utils = { workspace = true }
 

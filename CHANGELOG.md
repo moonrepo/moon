@@ -19,8 +19,7 @@
   - When a remote cache hit, we'll now warm the local cache with the hydrated manifest and its
     blobs, so the next run resolves locally instead of round-tripping to the remote.
 - **Daemon**
-  - Log files are now named with the current date, e.g., `server.YYYY-MM-DD.log`, instead of a
-    static name.
+  - Server log files will now rotate up to 7 times. Older log files will be automatically deleted.
   - Webhook delivery and task output archiving are now acknowledged immediately and run in the
     background on the daemon, so a client exiting or hitting a deadline no longer cancels the work
     mid-flight.

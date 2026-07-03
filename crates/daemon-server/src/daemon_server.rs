@@ -19,7 +19,7 @@ use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
 use std::env;
 use std::future::Future;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
@@ -335,7 +335,7 @@ pub async fn start_daemon_server(
     // owner could still hold the lock) and safe to remove before binding.
     #[cfg(unix)]
     {
-        let sock = Path::new(&endpoint);
+        let sock = std::path::Path::new(&endpoint);
 
         if sock.exists() {
             fs::remove_file(sock)?;

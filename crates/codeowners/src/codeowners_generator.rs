@@ -3,7 +3,7 @@ use starbase_utils::fs::{self, FsError};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use tracing::{debug};
+use tracing::debug;
 
 pub struct CodeownersGenerator {
     pub file_path: PathBuf,

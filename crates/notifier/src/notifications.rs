@@ -1,7 +1,7 @@
 use moon_common::is_remote;
 use notify_rust::{Notification, Timeout};
 use std::time::Duration;
-use tracing::{debug};
+use tracing::debug;
 
 #[cfg(target_os = "macos")]
 fn configure_application(_notification: &mut Notification) {

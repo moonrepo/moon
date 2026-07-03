@@ -490,13 +490,8 @@ impl AppSession for MoonSession {
     async fn shutdown(&mut self) -> AppResult<Self::Error> {
         let should_stop_daemon = cfg!(debug_assertions) || is_ci_env();
 
-        // Stop the daemon if it's running. Use a single connect attempt, as
-        // retrying against an already-stopped daemon would only delay exit.
-        if should_stop_daemon
-            && self.is_daemon_allowed()
-            && let Ok(connector) = self.get_daemon_connector()
-            && let Ok(Some(mut daemon)) = connector.connect_once().await
-        {
+        // Stop the daemon if it's running
+        if should_stop_daemon && let Some(mut daemon) = self.daemon_client.get().cloned() {
             let _ = daemon.stop().await;
         }
 

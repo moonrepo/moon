@@ -163,15 +163,19 @@ impl DaemonClient {
 
         match self.status().await {
             Ok(status) => {
-                let outcome = if status.protocol_version == PROTOCOL_VERSION
+                if status.protocol_version == PROTOCOL_VERSION
                     && status.moon_version == client_version
                 {
+                    debug!(
+                        server_version = status.moon_version,
+                        client_version,
+                        server_protocol = status.protocol_version,
+                        client_protocol = PROTOCOL_VERSION,
+                        "Daemon version handshake matched"
+                    );
+
                     HandshakeOutcome::Use
                 } else {
-                    HandshakeOutcome::Restart
-                };
-
-                if outcome == HandshakeOutcome::Restart {
                     debug!(
                         server_version = status.moon_version,
                         client_version,
@@ -179,9 +183,9 @@ impl DaemonClient {
                         client_protocol = PROTOCOL_VERSION,
                         "Daemon version handshake mismatch"
                     );
-                }
 
-                outcome
+                    HandshakeOutcome::Restart
+                }
             }
             Err(error) => {
                 debug!(

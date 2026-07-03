@@ -24,6 +24,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, broadcast};
+use tokio::time::timeout;
 use tokio_util::task::TaskTracker;
 use tonic::{Request, Response, Status, transport::Server};
 use tracing::{debug, error, info, warn};
@@ -40,6 +41,12 @@ const IDLE_TTL: Duration = Duration::from_secs(4 * 60 * 60);
 /// dropping events, which could miss a config change. The watcher already
 /// excludes `node_modules`/`.git`, so the burst is bounded by tracked files.
 const EVENT_CHANNEL_CAPACITY: usize = 16_384;
+
+/// Maximum time to wait during shutdown for queued background work to finish.
+const BACKGROUND_DRAIN_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Maximum time to wait for the watcher/listener/monitor tasks to unwind.
+const TASK_SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(2);
 
 pub struct DaemonState {
     pub app_context: Arc<AppContext>,
@@ -310,20 +317,19 @@ pub async fn start_daemon_server(
     // for our entire lifetime and released automatically when we exit — even
     // on a crash — so the running daemon is whoever holds it, not a PID we'd
     // have to probe. If another daemon already owns it, defer to it.
-    let _ownership =
-        match DaemonLock::try_acquire(&get_lock_path(&daemon_dir)).map_err(|error| {
-            DaemonServerError::EndpointBindFailed {
-                endpoint: endpoint.clone(),
-                error: Box::new(error),
-            }
-        })? {
-            Some(lock) => lock,
-            None => {
-                info!("Another daemon already owns this workspace, exiting");
+    let _lock = match DaemonLock::try_acquire(&get_lock_path(&daemon_dir)).map_err(|error| {
+        DaemonServerError::EndpointBindFailed {
+            endpoint: endpoint.clone(),
+            error: Box::new(error),
+        }
+    })? {
+        Some(lock) => lock,
+        None => {
+            info!("Another daemon already owns this workspace, exiting");
 
-                return Ok(());
-            }
-        };
+            return Ok(());
+        }
+    };
 
     // We own the workspace now, so any leftover socket is stale (no live
     // owner could still hold the lock) and safe to remove before binding.
@@ -345,8 +351,6 @@ pub async fn start_daemon_server(
 
     let pid = std::process::id();
 
-    // Record informational state for `moon daemon status`/`stop`. Ownership
-    // is the lock above; this file is never consulted to decide liveness.
     write_state(&daemon_dir, DaemonInfo::new(pid, version, endpoint.clone()))?;
 
     // Create a new atomic state
@@ -370,7 +374,7 @@ pub async fn start_daemon_server(
         shutdown_tx.subscribe(),
     ));
 
-    // Create the RPC service
+    // Create the gRPC service
     let service = DaemonService::new(atomic_state, endpoint.clone(), pid, shutdown_tx.clone());
     let service_background = service.background_tasks();
 
@@ -405,32 +409,40 @@ pub async fn start_daemon_server(
 
     if let Err(error) = &serve_result {
         error!("Daemon server failed: {error}");
-
-        watcher_handle.abort();
-        listener_handle.abort();
-        monitor_handle.abort();
     }
 
-    // Wait for the file watcher and listener to finish
-    match watcher_handle.await {
-        Ok(Err(error)) => error!("File watcher exited with error: {error}"),
-        Err(error) => error!("File watcher task panicked: {error}"),
-        _ => {}
-    };
+    // Stop the background tasks. Abort them rather than only signalling and
+    // awaiting: these tasks hold no critical state, and aborting guarantees
+    // shutdown can't hang on one that's slow to observe the signal — which
+    // would strand the daemon holding its lock but no longer serving, wedging
+    // the workspace and blocking every later start.
+    watcher_handle.abort();
+    listener_handle.abort();
+    monitor_handle.abort();
 
-    if let Err(error) = listener_handle.await
-        && !error.is_cancelled()
+    // Give the aborted tasks a moment to unwind, but don't block shutdown on a
+    // slow teardown (dropping a recursive OS watch over a large tree can't be
+    // preempted). Past this bound we exit anyway and let the OS clean up.
+    let _ = timeout(TASK_SHUTDOWN_TIMEOUT, async {
+        let _ = watcher_handle.await;
+        let _ = listener_handle.await;
+        let _ = monitor_handle.await;
+    })
+    .await;
+
+    // Drain queued background work before exiting, but don't let a stuck task
+    // (e.g. a webhook to an unreachable host) hang shutdown. `wait` only
+    // resolves once the tracker is closed, so close it first — otherwise the
+    // daemon hangs here forever, holding its lock but no longer serving, which
+    // wedges the workspace and blocks the next start.
+    service_background.close();
+
+    if timeout(BACKGROUND_DRAIN_TIMEOUT, service_background.wait())
+        .await
+        .is_err()
     {
-        error!("File listener task panicked: {error}");
-    };
-
-    if let Err(error) = monitor_handle.await
-        && !error.is_cancelled()
-    {
-        error!("Lifecycle monitor task panicked: {error}");
-    };
-
-    service_background.wait().await;
+        warn!("Timed out draining background work during shutdown");
+    }
 
     info!("Daemon server stopped");
 

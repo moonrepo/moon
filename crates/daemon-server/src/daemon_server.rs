@@ -18,11 +18,13 @@ use moon_task_runner::{TaskRunState, output_archiver::OutputArchiver};
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
 use std::env;
+use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, broadcast};
+use tokio_util::task::TaskTracker;
 use tonic::{Request, Response, Status, transport::Server};
 use tracing::{debug, error, info, warn};
 
@@ -52,6 +54,7 @@ struct DaemonServiceInner {
     shutdown_tx: broadcast::Sender<()>,
     started_at: Instant,
     last_activity: Arc<AtomicU64>,
+    background: TaskTracker,
 }
 
 pub struct DaemonService {
@@ -73,6 +76,7 @@ impl DaemonService {
                 shutdown_tx,
                 started_at: Instant::now(),
                 last_activity: Arc::new(AtomicU64::new(0)),
+                background: TaskTracker::new(),
             }),
             state,
         }
@@ -83,12 +87,25 @@ impl DaemonService {
     }
 
     fn track_activity(&self, procedure: &str) {
-        debug!("Received {} request", color::property(procedure));
+        debug!("Received {} procedure", color::property(procedure));
 
         self.inner.last_activity.store(
             self.inner.started_at.elapsed().as_millis() as u64,
             Ordering::Relaxed,
         );
+    }
+
+    fn run_in_background<F>(&self, future: F)
+    where
+        F: Future<Output = ()> + Send + 'static,
+    {
+        debug!("Spawning procedure in the background");
+
+        self.inner.background.spawn(future);
+    }
+
+    pub fn background_tasks(&self) -> TaskTracker {
+        self.inner.background.clone()
     }
 }
 
@@ -115,7 +132,7 @@ impl MoonDaemon for DaemonService {
             (Arc::clone(&state.app_context), task)
         };
 
-        tokio::spawn(async move {
+        self.run_in_background(async move {
             // TODO populate the action digest/bytes!
             let task_state = TaskRunState::new(&app_context, &task);
 
@@ -203,10 +220,7 @@ impl MoonDaemon for DaemonService {
 
         let SendWebhookRequest { url, body } = request.into_inner();
 
-        // Deliver in the background. The work can outlive the client, which
-        // acknowledges immediately and may disconnect — the entire reason it
-        // offloads delivery to the daemon instead of sending it inline.
-        tokio::spawn(async move {
+        self.run_in_background(async move {
             match notify_webhook(&url, body, false).await {
                 Ok(response) if !response.status().is_success() => {
                     warn!(
@@ -358,6 +372,7 @@ pub async fn start_daemon_server(
 
     // Create the RPC service
     let service = DaemonService::new(atomic_state, endpoint.clone(), pid, shutdown_tx.clone());
+    let service_background = service.background_tasks();
 
     // Retire the daemon on its own when the workspace disappears or it goes
     // unused, so an abandoned workspace doesn't leak a daemon forever.
@@ -414,6 +429,8 @@ pub async fn start_daemon_server(
     {
         error!("Lifecycle monitor task panicked: {error}");
     };
+
+    service_background.wait().await;
 
     info!("Daemon server stopped");
 

@@ -2729,6 +2729,161 @@ tasks:
         }
     }
 
+    mod checks {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn no_checks_by_default() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("checks").await;
+
+            let task = tasks.get("no-checks").unwrap();
+            assert!(task.checks.is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn string_defaults_to_requirement() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("checks").await;
+
+            let task = tasks.get("string-check").unwrap();
+            assert_eq!(task.checks.len(), 1);
+            assert_eq!(task.checks[0].get_type(), TaskCheckType::Requirement);
+            assert_eq!(task.checks[0].get_script(), "echo hello");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn tagged_requirement() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("checks").await;
+
+            let task = tasks.get("requirement-check").unwrap();
+            assert_eq!(task.checks.len(), 1);
+            assert_eq!(task.checks[0].get_type(), TaskCheckType::Requirement);
+            assert_eq!(task.checks[0].get_script(), "test -f file.txt");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn tagged_condition() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("checks").await;
+
+            let task = tasks.get("condition-check").unwrap();
+            assert_eq!(task.checks.len(), 1);
+            assert_eq!(task.checks[0].get_type(), TaskCheckType::Condition);
+            assert_eq!(task.checks[0].get_script(), "git diff --quiet");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn tagged_fingerprint() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("checks").await;
+
+            let task = tasks.get("fingerprint-check").unwrap();
+            assert_eq!(task.checks.len(), 1);
+            assert_eq!(task.checks[0].get_type(), TaskCheckType::Fingerprint);
+            assert_eq!(task.checks[0].get_script(), "node --version");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_modes() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("checks").await;
+
+            let task = tasks.get("fingerprint-check-stdout").unwrap();
+            if let TaskCheck::Fingerprint(config) = &task.checks[0] {
+                assert_eq!(config.hash, TaskCheckFingerprint::Stdout);
+            } else {
+                panic!("expected fingerprint check");
+            }
+
+            let task = tasks.get("fingerprint-check-stderr").unwrap();
+            if let TaskCheck::Fingerprint(config) = &task.checks[0] {
+                assert_eq!(config.hash, TaskCheckFingerprint::Stderr);
+            } else {
+                panic!("expected fingerprint check");
+            }
+
+            let task = tasks.get("fingerprint-check-exit-code").unwrap();
+            if let TaskCheck::Fingerprint(config) = &task.checks[0] {
+                assert_eq!(config.hash, TaskCheckFingerprint::ExitCode);
+            } else {
+                panic!("expected fingerprint check");
+            }
+
+            let task = tasks.get("fingerprint-check-disabled").unwrap();
+            if let TaskCheck::Fingerprint(config) = &task.checks[0] {
+                assert_eq!(config.hash, TaskCheckFingerprint::Enabled(false));
+            } else {
+                panic!("expected fingerprint check");
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn mixed_check_types() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("checks").await;
+
+            let task = tasks.get("mixed-checks").unwrap();
+            assert_eq!(task.checks.len(), 3);
+            assert_eq!(task.checks[0].get_type(), TaskCheckType::Requirement);
+            assert_eq!(task.checks[0].get_script(), "echo req");
+            assert_eq!(task.checks[1].get_type(), TaskCheckType::Condition);
+            assert_eq!(task.checks[1].get_script(), "test -d src");
+            assert_eq!(task.checks[2].get_type(), TaskCheckType::Fingerprint);
+            assert_eq!(task.checks[2].get_script(), "rustc --version");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn inherits_checks_from_global() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("merge-checks").await;
+
+            let task = tasks.get("checks-replace").unwrap();
+            // replace strategy: only local checks
+            assert_eq!(task.checks.len(), 1);
+            assert_eq!(task.checks[0].get_script(), "echo local-req");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn appends_local_checks_to_global() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("merge-checks").await;
+
+            let task = tasks.get("checks-append").unwrap();
+            assert_eq!(task.checks.len(), 3);
+            // global checks first
+            assert_eq!(task.checks[0].get_script(), "echo global-req");
+            assert_eq!(task.checks[1].get_script(), "echo global-cond");
+            // local check appended
+            assert_eq!(task.checks[2].get_script(), "echo local-req");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn prepends_local_checks_to_global() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("merge-checks").await;
+
+            let task = tasks.get("checks-prepend").unwrap();
+            assert_eq!(task.checks.len(), 3);
+            // local check first
+            assert_eq!(task.checks[0].get_script(), "echo local-req");
+            // global checks after
+            assert_eq!(task.checks[1].get_script(), "echo global-req");
+            assert_eq!(task.checks[2].get_script(), "echo global-cond");
+        }
+    }
+
     mod option_run_in_ci {
         use super::*;
 

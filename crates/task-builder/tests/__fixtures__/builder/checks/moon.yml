@@ -1,0 +1,63 @@
+tasks:
+  string-check:
+    command: noop
+    checks:
+      - 'echo hello'
+
+  requirement-check:
+    command: noop
+    checks:
+      - check: requirement
+        script: 'test -f file.txt'
+
+  condition-check:
+    command: noop
+    checks:
+      - check: condition
+        script: 'git diff --quiet'
+
+  fingerprint-check:
+    command: noop
+    checks:
+      - check: fingerprint
+        script: 'node --version'
+
+  fingerprint-check-stdout:
+    command: noop
+    checks:
+      - check: fingerprint
+        script: 'echo version'
+        hash: stdout
+
+  fingerprint-check-stderr:
+    command: noop
+    checks:
+      - check: fingerprint
+        script: 'echo err >&2'
+        hash: stderr
+
+  fingerprint-check-exit-code:
+    command: noop
+    checks:
+      - check: fingerprint
+        script: 'exit 0'
+        hash: exit-code
+
+  fingerprint-check-disabled:
+    command: noop
+    checks:
+      - check: fingerprint
+        script: 'echo skip'
+        hash: false
+
+  mixed-checks:
+    command: noop
+    checks:
+      - 'echo req'
+      - check: condition
+        script: 'test -d src'
+      - check: fingerprint
+        script: 'rustc --version'
+
+  no-checks:
+    command: noop

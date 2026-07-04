@@ -3,8 +3,12 @@ mod utils;
 use moon_action::ActionStatus;
 use moon_action_context::*;
 use moon_cache::{CacheMode, Manifest};
+use moon_config::{
+    TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint, TaskCheckFingerprintConfig,
+    TaskCheckRequirementConfig,
+};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::Digest;
+use moon_hash::{ContentHasher, Digest};
 use moon_task::Target;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::output_hydrater::HydrateFrom;
@@ -97,6 +101,123 @@ mod task_runner {
                         .get(),
                     &TargetState::Skipped
                 );
+            }
+        }
+
+        mod has_checks {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_with_conditional_state_when_condition_passes() {
+                let container = TaskRunnerContainer::new_os("runner", "success").await;
+                container.sandbox.enable_git();
+                let mut task = container.task.as_ref().to_owned();
+                task.checks
+                    .push(TaskCheck::Condition(TaskCheckConditionConfig {
+                        script: "exit 0".into(),
+                    }));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+                let node = container.create_action_node();
+                let context = ActionContext::default();
+
+                runner.run(&context, &node).await.unwrap();
+
+                let state = context
+                    .target_states
+                    .get_sync(&task.target)
+                    .unwrap()
+                    .get()
+                    .clone();
+
+                assert!(
+                    matches!(state, TargetState::SkippedConditional(_)),
+                    "expected SkippedConditional, got: {state:?}"
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_normally_when_condition_fails() {
+                let container = TaskRunnerContainer::new_os("runner", "success").await;
+                container.sandbox.enable_git();
+                let mut task = container.task.as_ref().to_owned();
+                task.checks
+                    .push(TaskCheck::Condition(TaskCheckConditionConfig {
+                        script: "exit 1".into(),
+                    }));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+                let node = container.create_action_node();
+                let context = ActionContext::default();
+
+                runner.run(&context, &node).await.unwrap();
+
+                let state = context
+                    .target_states
+                    .get_sync(&task.target)
+                    .unwrap()
+                    .get()
+                    .clone();
+
+                assert!(
+                    !matches!(state, TargetState::SkippedConditional(_)),
+                    "expected non-conditional state, got: {state:?}"
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn errors_on_failed_requirement() {
+                let container = TaskRunnerContainer::new_os("runner", "success").await;
+                container.sandbox.enable_git();
+                let mut task = container.task.as_ref().to_owned();
+                task.checks
+                    .push(TaskCheck::Requirement(TaskCheckRequirementConfig {
+                        script: "exit 1".into(),
+                    }));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+                let node = container.create_action_node();
+                let context = ActionContext::default();
+
+                let result = runner.run(&context, &node).await.unwrap();
+
+                assert!(result.error.is_some());
+                let err = result.error.unwrap().to_string();
+                assert!(
+                    err.contains("requirement check"),
+                    "expected requirement error, got: {err}"
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn dep_with_conditional_skip_allows_downstream() {
+                let container = TaskRunnerContainer::new("runner", "has-deps").await;
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+
+                let context = ActionContext::default();
+                context
+                    .target_states
+                    .insert_sync(
+                        Target::new("project", "dep").unwrap(),
+                        TargetState::SkippedConditional("abc123".into()),
+                    )
+                    .unwrap();
+
+                runner.run_with_panic(&context, &node).await.unwrap();
+
+                let state = context
+                    .target_states
+                    .get_sync(&runner.task.target)
+                    .unwrap()
+                    .get()
+                    .clone();
+
+                assert_ne!(state, TargetState::Skipped);
+                assert_ne!(state, TargetState::Failed);
             }
         }
 
@@ -656,6 +777,23 @@ mod task_runner {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn returns_true_if_dep_skipped_conditional() {
+            let container = TaskRunnerContainer::new("runner", "has-deps").await;
+            let runner = container.create_runner();
+            let context = ActionContext::default();
+
+            context
+                .target_states
+                .insert_sync(
+                    Target::new("project", "dep").unwrap(),
+                    TargetState::SkippedConditional("hash123".into()),
+                )
+                .unwrap();
+
+            assert!(runner.is_dependencies_complete(&context).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         #[should_panic(expected = "Encountered a missing hash for task project:dep")]
         async fn errors_if_dep_not_ran() {
             let container = TaskRunnerContainer::new("runner", "has-deps").await;
@@ -707,7 +845,7 @@ mod task_runner {
             let context = ActionContext::default();
             let node = container.create_action_node();
 
-            let hash = runner.generate_hash(&context, &node).await.unwrap();
+            let hash = runner.hash(&context, &node).await.unwrap();
 
             // 64 bytes
             assert_eq!(hash.len(), 64);
@@ -722,14 +860,14 @@ mod task_runner {
             let mut context = ActionContext::default();
             let node = container.create_action_node();
 
-            let before_hash = runner.generate_hash(&context, &node).await.unwrap();
+            let before_hash = runner.hash(&context, &node).await.unwrap();
 
             context
                 .primary_targets
                 .insert(Target::new("project", "base").unwrap());
             context.passthrough_args.push("--extra".into());
 
-            let after_hash = runner.generate_hash(&context, &node).await.unwrap();
+            let after_hash = runner.hash(&context, &node).await.unwrap();
 
             assert_ne!(before_hash, after_hash);
         }
@@ -743,7 +881,7 @@ mod task_runner {
             let context = ActionContext::default();
             let node = container.create_action_node();
 
-            runner.generate_hash(&context, &node).await.unwrap();
+            runner.hash(&context, &node).await.unwrap();
 
             let operation = runner.operations.last().unwrap();
 
@@ -760,7 +898,7 @@ mod task_runner {
             let context = ActionContext::default();
             let node = container.create_action_node();
 
-            let hash = runner.generate_hash(&context, &node).await.unwrap();
+            let hash = runner.hash(&context, &node).await.unwrap();
 
             assert!(
                 container
@@ -1013,6 +1151,61 @@ mod task_runner {
         }
     }
 
+    mod skip_conditional {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn creates_an_operation() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.skip_conditional().unwrap();
+
+            let operation = runner.operations.last().unwrap();
+
+            assert!(operation.meta.is_task_execution());
+            assert_eq!(operation.status, ActionStatus::Skipped);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn sets_skipped_conditional_state_with_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.report.hash = Some("hash123".into());
+            runner.skip_conditional().unwrap();
+
+            assert_eq!(
+                runner.state.target.as_ref().unwrap(),
+                &TargetState::SkippedConditional("hash123".into())
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn falls_back_to_passthrough_when_no_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.skip_conditional().unwrap();
+
+            assert_eq!(
+                runner.state.target.as_ref().unwrap(),
+                &TargetState::SkippedConditional("passthrough".into())
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn is_considered_complete() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut runner = container.create_runner();
+
+            runner.report.hash = Some("abc".into());
+            runner.skip_conditional().unwrap();
+
+            assert!(runner.state.target.as_ref().unwrap().is_complete());
+        }
+    }
+
     mod archive {
         use super::*;
 
@@ -1189,6 +1382,587 @@ mod task_runner {
                 assert_eq!(output.exit_code.unwrap(), 0);
                 assert_eq!(output.stderr.as_deref().unwrap(), "stderr");
                 assert_eq!(output.stdout.as_deref().unwrap(), "stdout");
+            }
+        }
+    }
+
+    mod hash_checks {
+        use super::*;
+
+        fn make_fingerprint_check(script: &str, hash: TaskCheckFingerprint) -> TaskCheck {
+            TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                script: script.into(),
+                hash,
+            })
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn no_checks_does_not_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let task = container.task.clone();
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert_eq!(serialized, "[]");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn non_fingerprint_checks_are_ignored() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(TaskCheck::Requirement(
+                moon_config::TaskCheckRequirementConfig {
+                    script: "echo req".into(),
+                },
+            ));
+            task.checks.push(TaskCheck::Condition(
+                moon_config::TaskCheckConditionConfig {
+                    script: "echo cond".into(),
+                },
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert_eq!(serialized, "[]");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hashes_all_output_by_default() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo hello",
+                TaskCheckFingerprint::default(),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert_ne!(serialized, "[]");
+            assert!(serialized.contains("\"stdout\":\"hello\""));
+            assert!(serialized.contains("\"exit_code\":0"));
+        }
+
+        #[cfg(unix)]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_stdout_only() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo out && echo err >&2",
+                TaskCheckFingerprint::Stdout,
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert!(serialized.contains("\"stdout\":\"out\""));
+            assert!(!serialized.contains("\"stderr\""));
+            assert!(!serialized.contains("\"exit_code\""));
+        }
+
+        #[cfg(unix)]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_stderr_only() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo err >&2",
+                TaskCheckFingerprint::Stderr,
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert!(serialized.contains("\"stderr\":\"err\""));
+            assert!(!serialized.contains("\"stdout\""));
+            assert!(!serialized.contains("\"exit_code\""));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_exit_code_only() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo hello",
+                TaskCheckFingerprint::ExitCode,
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert!(serialized.contains("\"exit_code\":0"));
+            assert!(!serialized.contains("\"stdout\""));
+            assert!(!serialized.contains("\"stderr\""));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_hash_disabled_skips_hashing() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo hello",
+                TaskCheckFingerprint::Enabled(false),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert_eq!(serialized, "[]");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_check_failure_returns_error() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "exit 1",
+                TaskCheckFingerprint::default(),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            let result = runner.hash_checks(&mut hasher).await;
+
+            assert!(result.is_err());
+            let err = result.unwrap_err().to_string();
+            assert!(err.contains("failed to run fingerprint check"), "{err}");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_operations_are_recorded() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo hello",
+                TaskCheckFingerprint::default(),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            assert!(!runner.operations.is_empty());
+            assert!(runner.operations[0].meta.is_process_execution());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn different_script_output_produces_different_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+
+            // First: echo "aaa"
+            let mut task_a = container.task.as_ref().to_owned();
+            task_a.checks.push(make_fingerprint_check(
+                "echo aaa",
+                TaskCheckFingerprint::default(),
+            ));
+            let task_a = std::sync::Arc::new(task_a);
+            let mut runner_a =
+                TaskRunner::new(&container.app_context, &container.project, &task_a).unwrap();
+
+            let mut hasher_a = ContentHasher::new("test");
+            runner_a.hash_checks(&mut hasher_a).await.unwrap();
+            let hash_a = hasher_a.generate_hash().unwrap();
+
+            // Second: echo "bbb"
+            let mut task_b = container.task.as_ref().to_owned();
+            task_b.checks.push(make_fingerprint_check(
+                "echo bbb",
+                TaskCheckFingerprint::default(),
+            ));
+            let task_b = std::sync::Arc::new(task_b);
+            let mut runner_b =
+                TaskRunner::new(&container.app_context, &container.project, &task_b).unwrap();
+
+            let mut hasher_b = ContentHasher::new("test");
+            runner_b.hash_checks(&mut hasher_b).await.unwrap();
+            let hash_b = hasher_b.generate_hash().unwrap();
+
+            assert_ne!(hash_a, hash_b);
+        }
+    }
+
+    mod hash_checks_multi {
+        use super::*;
+
+        fn make_fingerprint_check(script: &str, hash: TaskCheckFingerprint) -> TaskCheck {
+            TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                script: script.into(),
+                hash,
+            })
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn multiple_fingerprint_checks_all_contribute_to_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo aaa",
+                TaskCheckFingerprint::default(),
+            ));
+            task.checks.push(make_fingerprint_check(
+                "echo bbb",
+                TaskCheckFingerprint::default(),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            let serialized = hasher.serialize().unwrap();
+            assert!(serialized.contains("aaa"));
+            assert!(serialized.contains("bbb"));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn multiple_fingerprint_checks_produce_deterministic_hash() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+
+            let run = |scripts: &[&str]| {
+                let container = &container;
+                let mut task = container.task.as_ref().to_owned();
+                for s in scripts {
+                    task.checks
+                        .push(make_fingerprint_check(s, TaskCheckFingerprint::default()));
+                }
+                let task = std::sync::Arc::new(task);
+                async move {
+                    let mut runner =
+                        TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+                    let mut hasher = ContentHasher::new("test");
+                    runner.hash_checks(&mut hasher).await.unwrap();
+                    hasher.generate_hash().unwrap()
+                }
+            };
+
+            let hash1 = run(&["echo aaa", "echo bbb"]).await;
+            let hash2 = run(&["echo aaa", "echo bbb"]).await;
+
+            assert_eq!(hash1, hash2);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn records_operations_for_each_check() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks.push(make_fingerprint_check(
+                "echo aaa",
+                TaskCheckFingerprint::default(),
+            ));
+            task.checks.push(make_fingerprint_check(
+                "echo bbb",
+                TaskCheckFingerprint::default(),
+            ));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let mut hasher = ContentHasher::new("test");
+            runner.hash_checks(&mut hasher).await.unwrap();
+
+            assert_eq!(runner.operations.len(), 2);
+            assert!(runner.operations[0].meta.is_process_execution());
+            assert!(runner.operations[1].meta.is_process_execution());
+        }
+    }
+
+    mod execute_checks {
+        use super::*;
+
+        fn make_requirement(script: &str) -> TaskCheck {
+            TaskCheck::Requirement(TaskCheckRequirementConfig {
+                script: script.into(),
+            })
+        }
+
+        fn make_condition(script: &str) -> TaskCheck {
+            TaskCheck::Condition(TaskCheckConditionConfig {
+                script: script.into(),
+            })
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn no_checks_returns_false() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let task = container.task.clone();
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let result = runner.execute_checks().await.unwrap();
+            assert!(!result);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn fingerprint_checks_are_ignored() {
+            let container = TaskRunnerContainer::new("runner", "base").await;
+            let mut task = container.task.as_ref().to_owned();
+            task.checks
+                .push(TaskCheck::Fingerprint(TaskCheckFingerprintConfig {
+                    script: "echo fingerprint".into(),
+                    hash: TaskCheckFingerprint::default(),
+                }));
+            let task = std::sync::Arc::new(task);
+            let mut runner =
+                TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+            let result = runner.execute_checks().await.unwrap();
+            assert!(!result);
+        }
+
+        mod requirements {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn passes_on_zero_exit() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_requirement("exit 0"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(!result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn fails_on_nonzero_exit() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_requirement("exit 1"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await;
+                assert!(result.is_err());
+                let err = result.unwrap_err().to_string();
+                assert!(
+                    err.contains("requirement check"),
+                    "expected requirement error, got: {err}"
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn multiple_passing_requirements() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_requirement("exit 0"));
+                task.checks.push(make_requirement("echo ok"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(!result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn records_operations() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_requirement("exit 0"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                runner.execute_checks().await.unwrap();
+                assert!(!runner.operations.is_empty());
+                assert!(runner.operations[0].meta.is_process_execution());
+            }
+        }
+
+        mod conditions {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_task_when_condition_passes() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 0"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_task_when_condition_fails() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 1"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(!result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn all_conditions_must_pass_to_skip() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 0"));
+                task.checks.push(make_condition("exit 1"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(!result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn multiple_passing_conditions_skip() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 0"));
+                task.checks.push(make_condition("echo ok"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn condition_failure_does_not_error() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 1"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await;
+                assert!(result.is_ok());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn records_operations() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 0"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                runner.execute_checks().await.unwrap();
+                assert!(!runner.operations.is_empty());
+                assert!(runner.operations[0].meta.is_process_execution());
+            }
+        }
+
+        mod mixed {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn condition_pass_with_requirement_pass_skips() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 0"));
+                task.checks.push(make_requirement("exit 0"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn condition_fail_with_requirement_pass_runs() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 1"));
+                task.checks.push(make_requirement("exit 0"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(!result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn records_operations_for_all_checks() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 0"));
+                task.checks.push(make_requirement("exit 0"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                runner.execute_checks().await.unwrap();
+                assert_eq!(runner.operations.len(), 2);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn only_requirements_does_not_skip() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_requirement("exit 0"));
+                task.checks.push(make_requirement("echo ok"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await.unwrap();
+                assert!(!result);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn requirement_failure_errors_regardless_of_conditions() {
+                let container = TaskRunnerContainer::new("runner", "base").await;
+                let mut task = container.task.as_ref().to_owned();
+                task.checks.push(make_condition("exit 0"));
+                task.checks.push(make_requirement("exit 1"));
+                let task = std::sync::Arc::new(task);
+                let mut runner =
+                    TaskRunner::new(&container.app_context, &container.project, &task).unwrap();
+
+                let result = runner.execute_checks().await;
+                assert!(result.is_err());
             }
         }
     }

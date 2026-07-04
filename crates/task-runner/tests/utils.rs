@@ -13,9 +13,9 @@ use moon_task::Task;
 use moon_task_runner::TaskRunState;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::command_builder::CommandBuilder;
-use moon_task_runner::command_executor::CommandExecutor;
 use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
+use moon_task_runner::task_executor::TaskExecutor;
 use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use starbase_archive::Archiver;
 use starbase_sandbox::{Sandbox, create_sandbox};
@@ -179,10 +179,10 @@ impl TaskRunnerContainer {
         self.internal_create_command(&context, &task, &node).await
     }
 
-    pub async fn create_command_executor(&self, context: &ActionContext) -> CommandExecutor<'_> {
+    pub async fn create_command_executor(&self, context: &ActionContext) -> TaskExecutor<'_> {
         let node = create_node(&self.task);
 
-        CommandExecutor::new(
+        TaskExecutor::new(
             &self.app_context,
             &self.project,
             &self.task,
@@ -234,14 +234,22 @@ impl TaskRunnerContainer {
         file
     }
 
+    pub async fn create_check_command(&self, check: &moon_task::TaskCheck) -> Command {
+        let task = self.task.as_ref();
+
+        let mut builder = CommandBuilder::new(&self.app_context, &self.project, task);
+        builder.set_env_bag(&self.env_bag);
+        builder.build_check(check).await.unwrap()
+    }
+
     async fn internal_create_command(
         &self,
         context: &ActionContext,
         task: &Task,
         node: &ActionNode,
     ) -> Command {
-        let mut builder = CommandBuilder::new(&self.app_context, &self.project, task, node);
+        let mut builder = CommandBuilder::new(&self.app_context, &self.project, task);
         builder.set_env_bag(&self.env_bag);
-        builder.build(context, "abc123").await.unwrap()
+        builder.build(context, node, "abc123").await.unwrap()
     }
 }

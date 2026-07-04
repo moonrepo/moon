@@ -86,14 +86,14 @@ pub fn dep_hash_input(
         // is a defensive backstop — all deps should have a resolved cache
         // strategy by this point.
         Some(TaskDependencyCacheStrategy::Hash) | None => match state {
-            TargetState::Passed(hash) => Some(hash.clone()),
+            TargetState::Passed(hash) | TargetState::SkippedConditional(hash) => Some(hash.clone()),
             TargetState::Passthrough => Some("passthrough".into()),
             TargetState::Failed | TargetState::Skipped => None,
         },
         // Outputs: constant marker — invalidation comes from the dep's outputs,
         // which `inject_deps_outputs` adds to this task's inputs.
         Some(TaskDependencyCacheStrategy::Outputs) => match state {
-            TargetState::Passed(_) => Some("outputs".into()),
+            TargetState::Passed(_) | TargetState::SkippedConditional(_) => Some("outputs".into()),
             TargetState::Passthrough => Some("outputs-passthrough".into()),
             TargetState::Failed | TargetState::Skipped => None,
         },
@@ -492,6 +492,17 @@ mod tests {
         }
 
         #[test]
+        fn hash_strategy_uses_hash_when_skipped_conditional() {
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Hash),
+                    &TargetState::SkippedConditional("cond123".into())
+                ),
+                Some("cond123".into())
+            );
+        }
+
+        #[test]
         fn hash_strategy_skips_failed_and_skipped() {
             assert_eq!(
                 dep_hash_input(
@@ -522,6 +533,7 @@ mod tests {
                 TargetState::Passthrough,
                 TargetState::Failed,
                 TargetState::Skipped,
+                TargetState::SkippedConditional("cond".into()),
             ] {
                 assert_eq!(
                     dep_hash_input(None, &state),
@@ -537,6 +549,7 @@ mod tests {
                 TargetState::Passthrough,
                 TargetState::Failed,
                 TargetState::Skipped,
+                TargetState::SkippedConditional("cond".into()),
             ] {
                 assert_eq!(
                     dep_hash_input(Some(TaskDependencyCacheStrategy::Ignored), &state),
@@ -563,6 +576,17 @@ mod tests {
                     &TargetState::Passthrough
                 ),
                 Some("outputs-passthrough".into())
+            );
+        }
+
+        #[test]
+        fn outputs_strategy_uses_marker_when_skipped_conditional() {
+            assert_eq!(
+                dep_hash_input(
+                    Some(TaskDependencyCacheStrategy::Outputs),
+                    &TargetState::SkippedConditional("cond123".into())
+                ),
+                Some("outputs".into())
             );
         }
 

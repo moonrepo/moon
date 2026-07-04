@@ -34,7 +34,11 @@ impl ContentHasher {
 
         let hash = ContentHash::hash_bytes(self.serialize()?)?;
 
-        debug!(label = &self.label, %hash, "Generated content hash");
+        debug!(
+            label = &self.label,
+            hash = hash.as_str(),
+            "Generated content hash"
+        );
 
         self.hash_cache = Some(hash.clone());
 

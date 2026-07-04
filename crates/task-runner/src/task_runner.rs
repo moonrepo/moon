@@ -1,18 +1,19 @@
+use crate::checks_runner::ChecksRunner;
 use crate::command_builder::CommandBuilder;
-use crate::command_executor::CommandExecutor;
 use crate::output_archiver::{ArchiveOutcome, OutputArchiver};
 use crate::output_hydrater::{HydrateFrom, HydrateOutcome, OutputHydrater};
 use crate::run_state::*;
+use crate::task_executor::TaskExecutor;
 use crate::task_runner_error::TaskRunnerError;
 use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationMeta};
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::{CacheItem, StorageOptions};
 use moon_console::TaskReportItem;
-use moon_hash::ContentHash;
+use moon_hash::{ContentHash, ContentHasher};
 use moon_process::ProcessError;
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Task, TaskCheck, TaskCheckFingerprint, TaskCheckType};
 use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
@@ -90,7 +91,7 @@ impl<'task> TaskRunner<'task> {
         }
 
         // Always generate a hash
-        let hash = self.generate_hash(context, node).await?;
+        let hash = self.hash(context, node).await?;
 
         if self.is_cache_enabled() {
             debug!(
@@ -365,7 +366,7 @@ impl<'task> TaskRunner<'task> {
     }
 
     #[instrument(skip_all)]
-    pub async fn generate_hash(
+    pub async fn hash(
         &mut self,
         context: &ActionContext,
         node: &ActionNode,
@@ -394,6 +395,9 @@ impl<'task> TaskRunner<'task> {
         hash_toolchain_task_contents(self.app_context, self.project, self.task, &mut hasher)
             .await?;
 
+        // Hash task checks
+        self.hash_checks(&mut hasher).await?;
+
         // Generate the digest and store values
         let digest = hash_engine.save_manifest(&mut hasher)?;
 
@@ -413,6 +417,78 @@ impl<'task> TaskRunner<'task> {
         Ok(digest.hash)
     }
 
+    #[instrument(skip(self, hasher))]
+    pub async fn hash_checks(&mut self, hasher: &mut ContentHasher) -> miette::Result<()> {
+        let checks = ChecksRunner::new(self.app_context, self.project, self.task)?
+            .execute(vec![TaskCheckType::Fingerprint])
+            .await?;
+
+        if checks.is_empty() {
+            return Ok(());
+        }
+
+        let mut fingerprint = TaskChecksFingerprint::default();
+
+        for check_result in checks {
+            // If a hard failure, we should abort the runner
+            if let Some(error) = check_result.error {
+                return Err(error);
+            }
+
+            self.operations.push(check_result.attempt);
+
+            if let Some(output) = check_result.output {
+                // If the check failed, we should fail with a descriptive error
+                if !output.success() {
+                    return Err(TaskRunnerError::FingerprintCheckFailed {
+                        target: self.task.target.clone(),
+                        script: check_result.check.get_script().into(),
+                        error: Box::new(output.to_error("<fingerprint>", true)),
+                    }
+                    .into());
+                }
+
+                // Otherwise extract and filter the output
+                let mut info = output.to_info();
+
+                if let TaskCheck::Fingerprint(check) = &check_result.check {
+                    match check.hash {
+                        TaskCheckFingerprint::Enabled(state) => {
+                            // Don't hash anything if disabled!
+                            if !state {
+                                continue;
+                            }
+                        }
+                        TaskCheckFingerprint::ExitCode => {
+                            info.stderr = None;
+                            info.stdout = None;
+                        }
+                        TaskCheckFingerprint::Stderr => {
+                            info.exit_code = None;
+                            info.stdout = None;
+                        }
+                        TaskCheckFingerprint::Stdout => {
+                            info.exit_code = None;
+                            info.stderr = None;
+                        }
+                    };
+                } else {
+                    unreachable!();
+                }
+
+                fingerprint
+                    .checks
+                    .insert(check_result.check.get_script().into(), info);
+            }
+        }
+
+        if !fingerprint.checks.is_empty() {
+            hasher.hash_content(fingerprint)?;
+        }
+
+        Ok(())
+    }
+
     #[instrument(skip(self, context, node))]
     pub async fn execute(
         &mut self,
@@ -426,19 +502,29 @@ impl<'task> TaskRunner<'task> {
             return Ok(());
         }
 
+        // Execute the task checks first, if any, and exit early if they fail
+        if self.execute_checks().await? {
+            self.skip_conditional()?;
+
+            return Ok(());
+        }
+
         debug!(
             task_target = self.task.target.as_str(),
             "Building and executing the task command"
         );
 
         // Build the command from the current task
-        let command = CommandBuilder::new(self.app_context, self.project, self.task, node)
-            .build(context, self.report.hash.as_deref().unwrap_or_default())
+        let command = CommandBuilder::new(self.app_context, self.project, self.task)
+            .build(
+                context,
+                node,
+                self.report.hash.as_deref().unwrap_or_default(),
+            )
             .await?;
 
         // Execute the command and gather all attempts made
-        let executor =
-            CommandExecutor::new(self.app_context, self.project, self.task, node, command);
+        let executor = TaskExecutor::new(self.app_context, self.project, self.task, node, command);
 
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mut operation = Operation::mutex_acquisition();
@@ -505,6 +591,98 @@ impl<'task> TaskRunner<'task> {
     }
 
     #[instrument(skip(self))]
+    pub async fn execute_checks(&mut self) -> miette::Result<bool> {
+        let checks = ChecksRunner::new(self.app_context, self.project, self.task)?
+            .execute(vec![TaskCheckType::Condition, TaskCheckType::Requirement])
+            .await?;
+
+        if checks.is_empty() {
+            return Ok(false);
+        }
+
+        let mut has_conditions = false;
+        let mut all_conditions_met = true;
+
+        for check_result in checks {
+            // If a hard failure, we should abort the runner
+            if let Some(error) = check_result.error {
+                return Err(error);
+            }
+
+            self.operations.push(check_result.attempt);
+
+            match check_result.check {
+                // Success: Track the skipped state. If all conditions pass, skip running the task.
+                // Failure: Do not return an error, as the task itself will run instead.
+                TaskCheck::Condition(condition) => {
+                    let passed = check_result
+                        .output
+                        .as_ref()
+                        .is_some_and(|output| output.success());
+
+                    trace!(
+                        task_target = self.task.target.as_str(),
+                        check = condition.script,
+                        passed,
+                        exit_code = check_result
+                            .output
+                            .as_ref()
+                            .and_then(|output| output.code()),
+                        "Checking condition"
+                    );
+
+                    has_conditions = true;
+
+                    if !passed {
+                        all_conditions_met = false;
+                    }
+                }
+                // Success: Continue on to the next check.
+                // Failure: Return an error, as the task itself should not run.
+                TaskCheck::Requirement(requirement) => {
+                    trace!(
+                        task_target = self.task.target.as_str(),
+                        check = requirement.script,
+                        exit_code = check_result
+                            .output
+                            .as_ref()
+                            .and_then(|output| output.code()),
+                        "Checking requirement"
+                    );
+
+                    if let Some(output) = check_result.output
+                        && !output.success()
+                    {
+                        return Err(TaskRunnerError::RequirementCheckFailed {
+                            target: self.task.target.clone(),
+                            script: requirement.script,
+                            error: Box::new(output.to_error("<requirement>", true)),
+                        }
+                        .into());
+                    }
+                }
+                TaskCheck::Fingerprint(_) => {
+                    unreachable!();
+                }
+            };
+        }
+
+        // Only skip if all conditions pass, otherwise we should run the task as normal
+        if has_conditions {
+            if all_conditions_met {
+                return Ok(true);
+            }
+
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Will continue to run the task as not all conditional checks have passed"
+            );
+        }
+
+        Ok(false)
+    }
+
+    #[instrument(skip(self))]
     pub fn skip(&mut self) -> miette::Result<()> {
         debug!(task_target = self.task.target.as_str(), "Skipping task");
 
@@ -514,6 +692,25 @@ impl<'task> TaskRunner<'task> {
         ));
 
         self.state.target = Some(TargetState::Skipped);
+
+        Ok(())
+    }
+
+    #[instrument(skip(self))]
+    pub fn skip_conditional(&mut self) -> miette::Result<()> {
+        debug!(
+            task_target = self.task.target.as_str(),
+            "Skipping task as all conditional checks have passed"
+        );
+
+        self.operations.push(Operation::new_finished(
+            OperationMeta::TaskExecution(Default::default()),
+            ActionStatus::Skipped,
+        ));
+
+        self.state.target = Some(TargetState::SkippedConditional(
+            self.report.hash.as_deref().unwrap_or("passthrough").into(),
+        ));
 
         Ok(())
     }
@@ -537,6 +734,15 @@ impl<'task> TaskRunner<'task> {
 
     #[instrument(skip(self))]
     pub async fn archive(&mut self, hash: &str) -> miette::Result<bool> {
+        if self
+            .state
+            .target
+            .as_ref()
+            .is_some_and(|state| state.is_skipped())
+        {
+            return Ok(false);
+        }
+
         let mut operation = Operation::archive_creation();
         let task_target = self.task.target.as_str();
 

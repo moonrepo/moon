@@ -71,6 +71,7 @@ fn apply_cases_config(sandbox: &MoonSandbox) {
             // Outputs
             (Id::raw("outputs"), "outputs".to_owned()),
             (Id::raw("outputsFiltering"), "outputs-filtering".to_owned()),
+            (Id::raw("checks"), "checks".to_owned()),
             (Id::raw("outputStyles"), "output-styles".to_owned()),
         ])));
     });

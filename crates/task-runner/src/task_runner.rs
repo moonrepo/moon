@@ -620,7 +620,7 @@ impl<'task> TaskRunner<'task> {
                         .as_ref()
                         .is_some_and(|output| output.success());
 
-                    trace!(
+                    debug!(
                         task_target = self.task.target.as_str(),
                         check = condition.script,
                         passed,
@@ -640,7 +640,7 @@ impl<'task> TaskRunner<'task> {
                 // Success: Continue on to the next check.
                 // Failure: Return an error, as the task itself should not run.
                 TaskCheck::Requirement(requirement) => {
-                    trace!(
+                    debug!(
                         task_target = self.task.target.as_str(),
                         check = requirement.script,
                         exit_code = check_result

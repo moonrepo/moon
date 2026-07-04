@@ -7,6 +7,9 @@
 - **CLI**
   - Added a `--update-constraint` option to `moon upgrade` that will update the workspace config
     version constraint to the latest version.
+  - Updated `--log` level handling. `debug` should be used for the most part, as it includes most
+    debug information. `trace` now includes a ton of information, which may be too spammy for normal
+    debugging (is meant for agents and deep diagnostics).
 - **CAS**
   - Further improvements to the content-addressable storage (CAS) cache, including better error
     handling and performance improvements.
@@ -59,6 +62,9 @@
     tasks.
   - Added a top-level `taskOptions` setting to `moon.*` that allows you to configure default task
     options for all tasks within the current project, which can be overridden per task.
+- **Toolchains**
+  - Added caching around executable location lookups to improve performance. Previously, these were
+    running over and over again for each task.
 - **VCS**
   - Hardened all executed Git commands: revisions are validated against argument injection,
     credential prompts now fail immediately instead of hanging, and the fsmonitor daemon is now

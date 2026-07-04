@@ -4,14 +4,10 @@ use moon_blob::Blob;
 use moon_cache::{Manifest, ManifestFile, ManifestSymlink};
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_hash::Digest;
-use starbase_utils::fs::FsError;
+use starbase_utils::fs::{self, FsError};
 use starbase_utils::glob::{self, GlobWalkOptions};
-use std::fs as fs_std;
 use std::fs::Metadata;
 use std::path::{Path, PathBuf};
-
-// NOTE: We avoid using `starbase_utils::fs` for some operations as they
-// spam the logs with far too much useless information!
 
 #[derive(Debug)]
 pub struct ManifestBuilder {
@@ -80,10 +76,7 @@ impl ManifestBuilder {
     }
 
     fn insert_file(&mut self, abs_path: PathBuf) -> miette::Result<()> {
-        let metadata = fs_std::metadata(&abs_path).map_err(|error| FsError::Read {
-            path: abs_path.clone(),
-            error: Box::new(error),
-        })?;
+        let metadata = fs::metadata(&abs_path)?;
 
         self.manifest.files.push(ManifestFile {
             bytes: None,
@@ -99,7 +92,7 @@ impl ManifestBuilder {
     }
 
     fn insert_symlink(&mut self, abs_path: PathBuf) -> miette::Result<()> {
-        let link = fs_std::read_link(&abs_path).map_err(|error| FsError::Read {
+        let link = std::fs::read_link(&abs_path).map_err(|error| FsError::Read {
             path: abs_path.clone(),
             error: Box::new(error),
         })?;
@@ -112,10 +105,7 @@ impl ManifestBuilder {
             .into());
         }
 
-        let metadata = fs_std::metadata(&abs_path).map_err(|error| FsError::Read {
-            path: abs_path.clone(),
-            error: Box::new(error),
-        })?;
+        let metadata = fs::metadata(&abs_path)?;
 
         self.manifest.symlinks.push(ManifestSymlink {
             modified_at: metadata.modified().ok(),

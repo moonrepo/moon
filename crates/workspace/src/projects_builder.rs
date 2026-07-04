@@ -28,7 +28,7 @@ use std::collections::{BTreeMap, VecDeque};
 use std::mem;
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::{debug, instrument, trace};
+use tracing::{debug, instrument};
 
 pub type ProjectDag = Dag<NodeState<Project>, DependencyScope>;
 pub type ProjectBuildDataMap = FxHashMap<Id, ProjectBuildData>;
@@ -680,7 +680,7 @@ impl WorkspaceProjectsBuilder {
         let mut set = JoinSet::new();
 
         for (id, source) in sources {
-            trace!(
+            debug!(
                 project_id = id.as_str(),
                 "Attempting to load {} (optional)",
                 color::file(source.join(&config_label))
@@ -723,7 +723,7 @@ impl WorkspaceProjectsBuilder {
         }
 
         if !dupe_original_ids.is_empty() {
-            trace!(
+            debug!(
                 original_ids = ?dupe_original_ids.iter().collect::<Vec<_>>(),
                 "Found multiple renamed projects with the same original ID; will ignore these IDs within lookups"
             );

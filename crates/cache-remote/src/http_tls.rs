@@ -3,7 +3,7 @@ use moon_config::{RemoteMtlsConfig, RemoteTlsConfig};
 use reqwest::{Certificate, ClientBuilder, Identity};
 use starbase_utils::fs;
 use std::path::Path;
-use tracing::trace;
+use tracing::debug;
 
 pub fn create_native_tls_config(client: ClientBuilder) -> miette::Result<ClientBuilder> {
     Ok(client
@@ -19,7 +19,7 @@ pub fn create_tls_config(
 ) -> miette::Result<ClientBuilder> {
     let cert = workspace_root.join(&config.cert);
 
-    trace!(
+    debug!(
         cert = ?cert,
         "Configuring TLS",
     );
@@ -42,7 +42,7 @@ pub fn create_mtls_config(
     let client_key = workspace_root.join(&config.client_key);
     let ca_cert = workspace_root.join(&config.ca_cert);
 
-    trace!(
+    debug!(
         client_cert = ?client_cert,
         client_key = ?client_key,
         ca_cert = ?ca_cert,

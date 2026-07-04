@@ -21,7 +21,6 @@ impl ContentHash {
     pub fn hash_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
         // let mut hasher = blake3::Hasher::new();
 
-        // // Note: don't use starbase as it logs too much!
         // let metadata = std::fs::metadata(path).map_err(|error| CasError::HashFailed {
         //     path: path.to_owned(),
         //     error: Box::new(error),

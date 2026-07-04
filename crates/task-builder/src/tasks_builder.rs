@@ -28,7 +28,7 @@ use std::hash::Hash;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 use system_env::is_command_on_path;
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 #[derive(Debug, Default)]
 struct CommandLineParseResult {
@@ -285,7 +285,7 @@ impl<'proj> TasksBuilder<'proj> {
     async fn build_task(&self, id: &Id) -> miette::Result<Task> {
         let target = Target::new(self.project_id, id)?;
 
-        trace!(
+        debug!(
             task_target = target.as_str(),
             "Building task {}",
             color::id(id.as_str())

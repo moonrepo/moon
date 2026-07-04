@@ -4,7 +4,7 @@ use moon_common::color;
 use moon_config::{ToolchainPluginVersionFrom, ToolchainsConfig};
 use proto_core::{DataLocator, PluginLocator, ProtoConfig, ToolContext};
 use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
-use tracing::trace;
+use tracing::debug;
 
 pub struct ToolchainsConfigExt;
 
@@ -67,7 +67,7 @@ impl ToolchainsConfigExt {
             let proto_context = ToolContext::parse(proto_id).unwrap();
 
             if let Some(version) = proto_config.versions.get(&proto_context) {
-                trace!(
+                debug!(
                     "Inheriting {} version {} from .prototools",
                     color::id(id),
                     version

@@ -1,11 +1,11 @@
 use crate::session::MoonSession;
 use moon_daemon::AtomicDaemonState;
 use tokio::task::JoinHandle;
-use tracing::trace;
+use tracing::debug;
 
 impl MoonSession {
     pub fn download_extensions(&self) {
-        trace!("Downloading extensions");
+        debug!("Downloading extensions");
 
         let session = self.clone();
 
@@ -17,7 +17,7 @@ impl MoonSession {
     }
 
     pub fn download_toolchains(&self) {
-        trace!("Downloading toolchains");
+        debug!("Downloading toolchains");
 
         let session = self.clone();
 
@@ -29,7 +29,7 @@ impl MoonSession {
     }
 
     pub fn rebuild_graphs(&self, state: AtomicDaemonState) -> JoinHandle<()> {
-        trace!("Rebuilding project and task graphs");
+        debug!("Rebuilding project and task graphs");
 
         let session = self.clone();
 
@@ -41,7 +41,7 @@ impl MoonSession {
     }
 
     pub fn reset_components(&mut self) {
-        trace!("Resetting registries and graphs cache");
+        debug!("Resetting registries and graphs cache");
 
         self.extension_registry.take();
         self.toolchain_registry.take();
@@ -51,7 +51,7 @@ impl MoonSession {
     }
 
     pub fn reset_vcs(&mut self) {
-        trace!("Resetting VCS adapter");
+        debug!("Resetting VCS adapter");
 
         self.vcs_adapter.take();
     }

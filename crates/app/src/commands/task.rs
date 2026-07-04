@@ -395,8 +395,8 @@ async fn build_command(
     let node = ActionNode::run_task(RunTaskNode::new(task.target.clone()));
 
     // Use command builder so that we inherit all paths and env vars
-    let builder = CommandBuilder::new(&app_context, project, task, &node);
-    let command = builder.build(&action_context, "").await?;
+    let builder = CommandBuilder::new(&app_context, project, task);
+    let command = builder.build(&action_context, &node, "").await?;
 
     Ok(command)
 }

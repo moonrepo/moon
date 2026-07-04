@@ -9,7 +9,7 @@ use moon_env_var::{DotEnv, GlobalEnvBag};
 use moon_process::{Command, ShellType};
 use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
-use moon_task::Task;
+use moon_task::{Task, TaskCheck};
 use rustc_hash::FxHashMap;
 use starbase_utils::glob::GlobSet;
 use std::env;
@@ -18,7 +18,7 @@ use tracing::{debug, instrument, trace};
 
 pub struct CommandBuilder<'task> {
     app: &'task AppContext,
-    node: &'task ActionNode,
+    node: Option<&'task ActionNode>,
     project: &'task Project,
     task: &'task Task,
     working_dir: &'task Path,
@@ -29,12 +29,7 @@ pub struct CommandBuilder<'task> {
 }
 
 impl<'task> CommandBuilder<'task> {
-    pub fn new(
-        app: &'task AppContext,
-        project: &'task Project,
-        task: &'task Task,
-        node: &'task ActionNode,
-    ) -> Self {
+    pub fn new(app: &'task AppContext, project: &'task Project, task: &'task Task) -> Self {
         let working_dir = if task.options.run_from_workspace_root {
             &app.workspace_root
         } else {
@@ -43,7 +38,7 @@ impl<'task> CommandBuilder<'task> {
 
         Self {
             app,
-            node,
+            node: None,
             project,
             task,
             working_dir,
@@ -57,7 +52,14 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(name = "build_command", skip_all)]
-    pub async fn build(mut self, context: &ActionContext, hash: &str) -> miette::Result<Command> {
+    pub async fn build(
+        mut self,
+        context: &ActionContext,
+        node: &'task ActionNode,
+        hash: &str,
+    ) -> miette::Result<Command> {
+        self.node = Some(node);
+
         debug!(
             task_target = self.task.target.as_str(),
             working_dir = ?self.working_dir,
@@ -76,8 +78,35 @@ impl<'task> CommandBuilder<'task> {
         // Order is important!
         self.inject_args(context);
         self.inject_env(hash)?;
-        self.inject_shell();
+        self.inject_shell(false);
         self.inherit_affected(context)?;
+        self.inherit_config();
+
+        // Must be last!
+        self.command.inherit_proto();
+
+        Ok(self.command.augment())
+    }
+
+    #[instrument(name = "build_check_command", skip_all)]
+    pub async fn build_check(mut self, check: &TaskCheck) -> miette::Result<Command> {
+        debug!(
+            task_target = self.task.target.as_str(),
+            working_dir = ?self.working_dir,
+            "Creating task check child process to execute",
+        );
+
+        self.command = AugmentedCommand::from_task_check(self.app, self.env_bag, check);
+        self.command
+            .inherit_from_toolchains(Some(self.project), Some(self.task))
+            .await?;
+
+        // We need to handle non-zero exit code's manually
+        self.command.cwd(self.working_dir);
+        self.command.set_error_on_nonzero(false);
+
+        // Order is important!
+        self.inject_shell(true);
         self.inherit_config();
 
         // Must be last!
@@ -89,7 +118,7 @@ impl<'task> CommandBuilder<'task> {
     #[instrument(skip_all)]
     fn inject_args(&mut self, context: &ActionContext) {
         // Must be first!
-        if let ActionNode::RunTask(inner) = &self.node
+        if let Some(ActionNode::RunTask(inner)) = &self.node
             && !inner.args.is_empty()
         {
             trace!(
@@ -121,7 +150,7 @@ impl<'task> CommandBuilder<'task> {
         let mut moon_env = FxHashMap::<String, Option<String>>::default();
 
         // Inherit task dependent variables
-        if let ActionNode::RunTask(inner) = &self.node
+        if let Some(ActionNode::RunTask(inner)) = &self.node
             && !inner.env.is_empty()
         {
             trace!(
@@ -255,8 +284,8 @@ impl<'task> CommandBuilder<'task> {
     }
 
     #[instrument(skip_all)]
-    fn inject_shell(&mut self) {
-        if self.task.options.shell == Some(true) {
+    fn inject_shell(&mut self, force: bool) {
+        if force || self.task.options.shell == Some(true) {
             #[cfg(unix)]
             {
                 use moon_config::TaskUnixShell;

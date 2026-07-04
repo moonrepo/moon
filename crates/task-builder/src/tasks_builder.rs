@@ -367,6 +367,16 @@ impl<'proj> TasksBuilder<'proj> {
                 task.script = config.script.clone();
             }
 
+            if let Some(checks) = &config.checks {
+                task.checks = self.merge_vec(
+                    task.checks,
+                    checks.to_owned(),
+                    task.options.merge_checks,
+                    index,
+                    true,
+                );
+            }
+
             if let Some(deps) = &config.deps {
                 let deps = deps
                     .iter()
@@ -688,6 +698,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(merge) = &config.merge {
                 options.merge_args = *merge;
+                options.merge_checks = *merge;
                 options.merge_deps = *merge;
                 options.merge_env = *merge;
                 options.merge_inputs = *merge;
@@ -698,6 +709,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(merge_args) = &config.merge_args {
                 options.merge_args = *merge_args;
+            }
+
+            if let Some(merge_checks) = &config.merge_checks {
+                options.merge_checks = *merge_checks;
             }
 
             if let Some(merge_deps) = &config.merge_deps {

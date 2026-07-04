@@ -18,7 +18,7 @@ use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
 use std::sync::Arc;
-use tracing::{debug, instrument, trace};
+use tracing::{debug, instrument};
 
 #[derive(Debug)]
 pub struct TaskRunResult {
@@ -529,7 +529,7 @@ impl<'task> TaskRunner<'task> {
         let result = if let Some(mutex_name) = &self.task.options.mutex {
             let mut operation = Operation::mutex_acquisition();
 
-            trace!(
+            debug!(
                 task_target = self.task.target.as_str(),
                 mutex = mutex_name,
                 "Waiting to acquire task mutex lock"
@@ -538,7 +538,7 @@ impl<'task> TaskRunner<'task> {
             let mutex = context.get_or_create_mutex(mutex_name).await;
             let _guard = mutex.lock().await;
 
-            trace!(
+            debug!(
                 task_target = self.task.target.as_str(),
                 mutex = mutex_name,
                 "Acquired task mutex lock"
@@ -620,7 +620,7 @@ impl<'task> TaskRunner<'task> {
                         .as_ref()
                         .is_some_and(|output| output.success());
 
-                    trace!(
+                    debug!(
                         task_target = self.task.target.as_str(),
                         check = condition.script,
                         passed,
@@ -640,7 +640,7 @@ impl<'task> TaskRunner<'task> {
                 // Success: Continue on to the next check.
                 // Failure: Return an error, as the task itself should not run.
                 TaskCheck::Requirement(requirement) => {
-                    trace!(
+                    debug!(
                         task_target = self.task.target.as_str(),
                         check = requirement.script,
                         exit_code = check_result

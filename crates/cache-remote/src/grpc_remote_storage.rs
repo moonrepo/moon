@@ -38,7 +38,7 @@ use tonic::{
     transport::{Channel, Endpoint},
 };
 use tower::{ServiceBuilder, limit::ConcurrencyLimit, timeout::Timeout};
-use tracing::{debug, error, trace, warn};
+use tracing::{debug, error, warn};
 
 type LayeredService = Timeout<ConcurrencyLimit<RequestHeaders<Channel>>>;
 
@@ -353,7 +353,7 @@ impl StorageBackend for GrpcRemoteStorage {
                 // limit, and will fail the entire pipeline. Instead of letting that
                 // happen, let's just do a cache miss instead...
                 else if matches!(status.code(), Code::OutOfRange) {
-                    trace!(
+                    debug!(
                         hash = digest.hash.as_str(),
                         "Cache miss because the expected payload is too large"
                     );

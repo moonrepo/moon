@@ -1,7 +1,7 @@
 use moon_common::is_remote;
 use notify_rust::{Notification, Timeout};
 use std::time::Duration;
-use tracing::{debug, trace};
+use tracing::debug;
 
 #[cfg(target_os = "macos")]
 fn configure_application(_notification: &mut Notification) {
@@ -67,11 +67,11 @@ pub fn notify_terminal(title: impl AsRef<str>, description: impl AsRef<str>) -> 
 
     configure_application(&mut notification);
 
-    trace!("Sending terminal notification");
+    debug!("Sending terminal notification");
 
     match notification.show() {
         Ok(_) => {
-            trace!("Sent terminal notification");
+            debug!("Sent terminal notification");
         }
         Err(error) => {
             debug!("Failed to send terminal notification: {error}");

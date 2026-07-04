@@ -1,5 +1,4 @@
 use crate::cas_error::CasError;
-use miette::IntoDiagnostic;
 use moon_blob::{Blob, BlobCleanStats};
 use moon_config::CacheCasConfig;
 use moon_hash::{ContentHash, Digest};
@@ -14,9 +13,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tracing::{debug, instrument, trace};
-
-// NOTE: We avoid using `starbase_utils::fs` for some operations as they
-// spam the logs with far too much useless information!
 
 /// A content-addressable file system store.
 ///
@@ -359,11 +355,7 @@ impl CasStore {
     fn commit_temp_file(&self, hash: &ContentHash, guard: &mut TempGuard) -> miette::Result<()> {
         let dest = self.object_path(hash);
 
-        if let Some(shard) = dest.parent() {
-            std::fs::create_dir_all(shard).into_diagnostic()?;
-        }
-
-        std::fs::rename(&guard.path, &dest).into_diagnostic()?;
+        fs::rename(&guard.path, &dest)?;
 
         guard.committed = true;
 

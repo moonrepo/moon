@@ -3,7 +3,7 @@ use starbase_utils::fs::{self, FsError};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use tracing::{debug, trace};
+use tracing::debug;
 
 pub struct CodeownersGenerator {
     pub file_path: PathBuf,
@@ -47,7 +47,7 @@ impl CodeownersGenerator {
             return Ok(());
         }
 
-        trace!(project_id = id, source, "Adding project entries");
+        debug!(project_id = id, source, "Adding project entries");
 
         self.write("")?;
 
@@ -132,7 +132,7 @@ impl CodeownersGenerator {
             return Ok(());
         }
 
-        trace!("Adding workspace entries");
+        debug!("Adding workspace entries");
 
         self.write("")?;
         self.write("# (workspace)")?;

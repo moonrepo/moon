@@ -287,7 +287,7 @@ impl WorkspaceMocker {
             },
         );
 
-        // Note: this list isn't accurate for a real world scenario!
+        // Note: This list isn't accurate for a real world scenario!
         let stable_toolchains = project
             .toolchains
             .iter()

@@ -11,7 +11,7 @@ use starbase_utils::fs;
 use starbase_utils::glob::GlobSet;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
-use tracing::trace;
+use tracing::debug;
 
 pub struct WorkspaceWatcher {
     graph_handle: Option<JoinHandle<()>>,
@@ -142,7 +142,7 @@ impl WorkspaceWatcher {
     }
 
     async fn reset_proto(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating proto environment");
+        debug!("Updating proto environment");
 
         let mut env = ProtoEnvironment::new()?;
         env.working_dir = self.session.working_dir.clone();
@@ -156,7 +156,7 @@ impl WorkspaceWatcher {
     }
 
     async fn reset_extensions(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating extensions config");
+        debug!("Updating extensions config");
 
         let extensions_config = self
             .session
@@ -189,7 +189,7 @@ impl WorkspaceWatcher {
     }
 
     async fn reset_tasks(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating inherited tasks config");
+        debug!("Updating inherited tasks config");
 
         let tasks_config = self
             .session
@@ -212,7 +212,7 @@ impl WorkspaceWatcher {
     }
 
     async fn reset_toolchains(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating toolchains config");
+        debug!("Updating toolchains config");
 
         let toolchains_config = self.session.config_loader.load_toolchains_config(
             &self.session.workspace_root,
@@ -237,7 +237,7 @@ impl WorkspaceWatcher {
     }
 
     async fn reset_workspace(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating workspace config");
+        debug!("Updating workspace config");
 
         let workspace_config = self
             .session

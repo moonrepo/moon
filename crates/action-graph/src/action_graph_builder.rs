@@ -929,7 +929,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // These tasks shouldn't actually run, so filter them out
         if self.passthrough_targets.contains(&task.target) {
-            trace!(
+            debug!(
                 task_target = task.target.as_str(),
                 "Not running task {} because it has been marked as passthrough",
                 color::id(&task.target.id),

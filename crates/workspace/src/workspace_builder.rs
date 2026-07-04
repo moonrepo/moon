@@ -39,7 +39,7 @@ use starbase_utils::json;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tracing::{debug, instrument, trace};
+use tracing::{debug, instrument};
 
 pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
 pub const STATE_GRAPH_FILE_NAME: &str = "workspaceGraph.json";
@@ -825,7 +825,7 @@ impl WorkspaceBuilder {
         debug!("Loading projects");
 
         for (mut id, source) in sources {
-            trace!(
+            debug!(
                 project_id = id.as_str(),
                 "Attempting to load {} (optional)",
                 color::file(source.join(&config_label))
@@ -885,7 +885,7 @@ impl WorkspaceBuilder {
         }
 
         if !dupe_original_ids.is_empty() {
-            trace!(
+            debug!(
                 original_ids = ?dupe_original_ids.iter().collect::<Vec<_>>(),
                 "Found multiple renamed projects with the same original ID; will ignore these IDs within lookups"
             );

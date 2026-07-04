@@ -25,7 +25,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, instrument, trace, warn};
+use tracing::{debug, instrument, warn};
 
 pub struct ActionPipeline {
     pub bail: bool,
@@ -300,7 +300,7 @@ impl ActionPipeline {
 
                 // Run persistent actions later, so only grab the index for now
                 if node.is_persistent() {
-                    trace!(
+                    debug!(
                         index = node_index.index(),
                         "Marking action as persistent, will defer dispatch",
                     );

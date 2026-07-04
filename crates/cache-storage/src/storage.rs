@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::{Duration, SystemTime};
 use tokio::task::{AbortHandle, JoinHandle, JoinSet};
-use tracing::{debug, trace, warn};
+use tracing::{debug, warn};
 
 /// Upper bound on how long shutdown waits for queued background cache writes
 /// (remote uploads, etc.) to drain. A hung backend must never make exiting
@@ -190,7 +190,7 @@ impl Storage {
     }
 
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
-        trace!(hash = digest.hash.as_str(), "Checking for a cache manifest");
+        debug!(hash = digest.hash.as_str(), "Checking for a cache manifest");
 
         for backend in self.get_backends() {
             if !backend.is_readable() {
@@ -198,7 +198,7 @@ impl Storage {
             }
 
             if let Some(manifest) = backend.retrieve_manifest(digest.to_owned()).await? {
-                trace!(
+                debug!(
                     storage = backend.get_id().as_str(),
                     hash = digest.hash.as_str(),
                     files = manifest.files.len(),
@@ -218,7 +218,7 @@ impl Storage {
             }
         }
 
-        trace!(hash = digest.hash.as_str(), "Cache miss on manifest");
+        debug!(hash = digest.hash.as_str(), "Cache miss on manifest");
 
         Ok(None)
     }
@@ -230,7 +230,7 @@ impl Storage {
     ) -> miette::Result<()> {
         let mut background_tasks = self.background_tasks.lock().unwrap();
 
-        trace!(
+        debug!(
             hash = digest.hash.as_str(),
             files = manifest.files.len(),
             symlinks = manifest.symlinks.len(),
@@ -253,7 +253,7 @@ impl Storage {
             ))));
         }
 
-        trace!(
+        debug!(
             hash = digest.hash.as_str(),
             files = manifest.files.len(),
             symlinks = manifest.symlinks.len(),
@@ -277,7 +277,7 @@ impl Storage {
         let mut backends = VecDeque::from_iter(self.get_backends());
         let mut count = 1;
 
-        trace!(hash = digest.hash.as_str(), "Hydrating cache manifest");
+        debug!(hash = digest.hash.as_str(), "Hydrating cache manifest");
 
         // Hydrate the manifest from the backend it was originally loaded from,
         // as that's the most likely to have all the blobs available
@@ -307,7 +307,7 @@ impl Storage {
         // If the manifest is fully hydrated, return it, otherwise return None to
         // indicate it couldn't be fully hydrated, and should re-run
         if manifest.is_hydrated() {
-            trace!(
+            debug!(
                 hash = digest.hash.as_str(),
                 "Hydrated cache manifest from {count} storage backends"
             );
@@ -322,7 +322,7 @@ impl Storage {
             return Ok(Some(manifest));
         }
 
-        trace!(
+        debug!(
             hash = digest.hash.as_str(),
             "Failed to hydrate cache manifest as some blobs were missing"
         );
@@ -342,7 +342,7 @@ impl Storage {
                 continue;
             }
 
-            trace!(
+            debug!(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
                 "Warming local storage backend from remote cache hit"
@@ -505,7 +505,7 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
 
     // Then store them in the original backend in which they were missing
     if !blob_inputs.is_empty() && original_backend.is_writable() {
-        trace!(
+        debug!(
             to_storage = original_backend.get_id().as_str(),
             from_storage = backend.get_id().as_str(),
             hash = digest.hash.as_str(),

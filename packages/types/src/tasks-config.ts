@@ -336,6 +336,13 @@ export interface TaskOptionsConfig {
 	 */
 	mergeArgs?: TaskMergeStrategy | null;
 	/**
+	 * The strategy to use when merging `checks` with an inherited task.
+	 * @since 2.4.0
+	 *
+	 * @default 'append'
+	 */
+	mergeChecks?: TaskMergeStrategy | null;
+	/**
 	 * The strategy to use when merging `deps` with an inherited task.
 	 *
 	 * @default 'append'
@@ -852,6 +859,13 @@ export interface PartialTaskOptionsConfig {
 	 * @default 'append'
 	 */
 	mergeArgs?: TaskMergeStrategy | null;
+	/**
+	 * The strategy to use when merging `checks` with an inherited task.
+	 * @since 2.4.0
+	 *
+	 * @default 'append'
+	 */
+	mergeChecks?: TaskMergeStrategy | null;
 	/**
 	 * The strategy to use when merging `deps` with an inherited task.
 	 *

@@ -1684,6 +1684,20 @@
           ],
           "markdownDescription": "The strategy to use when merging `args` with an inherited task."
         },
+        "mergeChecks": {
+          "title": "mergeChecks",
+          "description": "The strategy to use when merging checks with an inherited task. @since 2.4.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `checks` with an inherited task. @since 2.4.0"
+        },
         "mergeDeps": {
           "title": "mergeDeps",
           "description": "The strategy to use when merging deps with an inherited task.",

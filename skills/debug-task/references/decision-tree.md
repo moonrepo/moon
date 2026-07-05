@@ -78,6 +78,12 @@ changed, the task is skipped entirely.
 moon run <project>:<task> --force
 ```
 
+<sup>v2.4+</sup> If `--affected` runs _nothing_ (or the wrong set) in CI, suspect a **shallow git
+clone**. moon reworked merge-base resolution in v2.4 and now needs full history to diff revisions
+accurately — with a depth-1 clone it can't resolve the merge base, and logs a warning when it fails.
+Use a full clone, or a blobless partial clone (`git clone --filter=blob:none`, or
+`filter: 'blob:none'` with `actions/checkout`) which keeps history while deferring file downloads.
+
 **Check 2: Is `runInCI` blocking execution?**
 
 ```bash
@@ -117,9 +123,24 @@ The task may be legitimately cached. Check if the hash matches a previous run:
 cat .moon/cache/states/<project>/<task>/lastRun.json
 ```
 
+**Check 6: Did a `condition` check skip the task?** <sup>v2.4+</sup>
+
+If the task has one or more `condition` checks and **all** of them pass, moon intentionally skips the
+task (the target ends in a `Skipped` / `SkippedConditional` state). This is the inverse of a
+requirement — passing conditions mean "already done, don't run."
+
+```bash
+moon task <project>:<task> --json          # inspect the `checks` array
+moon run <project>:<task> --log debug --force 2>&1 | grep -i "condition"
+# "Skipping task as all conditional checks have passed"  → skipped by condition
+```
+
+See `config-mistakes.md` § Task checks.
+
 **Fix:** Remove `--affected` if you want to force execution. Set `runInCI: 'always'` if the task
 must always run in CI. Remove or change the `os` option if platform filtering is unwanted. Use
-`--force` to bypass the cache.
+`--force` to bypass the cache. If a `condition` check is skipping the task, adjust or remove the
+condition so it no longer passes.
 
 ### NO — execution error
 
@@ -161,8 +182,23 @@ task reports success even on failure — check stderr at
 `.moon/cache/states/<project>/<task>/stderr.log`. See `config-mistakes.md` for details on both
 options.
 
+**Check 7: Did a `requirement` or `fingerprint` check fail?** <sup>v2.4+</sup>
+
+`checks` run **before** the task. A `requirement` check that exits non-zero raises
+`RequirementCheckFailed` ("Task X is unable to run as the requirement check `<script>` failed"), and
+a `fingerprint` script that crashes raises `FingerprintCheckFailed` — in both cases the task never
+executes.
+
+```bash
+moon task <project>:<task> --json          # inspect the `checks` array
+# Run the failing check script by hand to see why it exits non-zero
+```
+
+See `config-mistakes.md` § Task checks.
+
 **Fix:** Switch `command` to `script` for shell syntax. Fix the binary path or toolchain. Correct
-the working directory. See `config-mistakes.md` for the full `command` vs `script` guide.
+the working directory. If a check is failing, fix (or remove) the offending check script. See
+`config-mistakes.md` for the full `command` vs `script` guide.
 
 ---
 

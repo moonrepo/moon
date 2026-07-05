@@ -649,6 +649,85 @@ tasks:
       - '--maxWorkers 3'
 ```
 
+### `checks`<VersionLabel version="2.4.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskConfig#checks" />
+
+The `checks` field is a list of shell scripts that are executed _before_ the task runs. Depending on
+the type of check and the result of its script, the task may fail, be skipped, or continue as
+normal. This is useful for asserting preconditions, avoiding redundant work, or invalidating the
+cache based on external state.
+
+There are three types of checks, denoted by the `check` field. When a check is defined as a plain
+string, it is treated as a [`requirement`](#requirement) by default.
+
+```yaml title="moon.yml" {4-12}
+tasks:
+  deploy:
+    command: './deploy.sh'
+    checks:
+      # A string is shorthand for a requirement
+      - 'command -v aws'
+      # Or the expanded object form
+      - check: 'condition'
+        script: './scripts/already-deployed.sh'
+      - check: 'fingerprint'
+        script: 'aws --version'
+```
+
+Checks support [task inheritance](../concepts/task-inheritance), and the merge behavior can be
+customized with the [`mergeChecks`](#mergechecks) option.
+
+#### `requirement`
+
+A `requirement` check must _pass_ (exit code 0) for the task to run. If the script fails, the task
+fails and does _not_ execute. This is the default type when a check is defined as a string.
+
+```yaml title="moon.yml" {5-7}
+tasks:
+  build:
+    command: 'cargo build'
+    checks:
+      - check: 'requirement'
+        script: 'rustc --version'
+```
+
+#### `condition`
+
+A `condition` check is used to _skip_ a task. When _all_ condition checks pass (exit code 0), the
+task is skipped instead of running. If any condition fails, the task runs as normal. This is useful
+for idempotency checks, where re-running the task would be redundant.
+
+```yaml title="moon.yml" {5-7}
+tasks:
+  migrate:
+    command: './migrate.sh'
+    checks:
+      - check: 'condition'
+        script: './scripts/is-migrated.sh'
+```
+
+#### `fingerprint`
+
+A `fingerprint` check always runs alongside the task, and its output is mixed into the task's
+[hash](../concepts/cache). This invalidates the cache when the script's output changes, even if none
+of the task's declared [`inputs`](#inputs) changed — useful for tracking external state like tool
+versions.
+
+The `hash` field controls what portion of the script's execution is hashed. It accepts a boolean
+(hash all output), or one of `exit-code`, `stdout`, or `stderr`. Defaults to `true`.
+
+```yaml title="moon.yml" {5-8}
+tasks:
+  build:
+    command: 'vite build'
+    checks:
+      - check: 'fingerprint'
+        script: 'node --version'
+        # Only hash stdout, not the exit code or stderr
+        hash: 'stdout'
+```
+
 ### `deps`
 
 <HeadingApiLink to="/api/types/interface/TaskConfig#deps" />
@@ -1418,6 +1497,13 @@ task. This option can be overridden with the field specific merge options below.
 The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
 [`args`](#args) list with an inherited task. Defaults to "append".
 
+#### `mergeChecks`<VersionLabel version="2.4.0" />
+
+<HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeChecks" />
+
+The [strategy](../concepts/task-inheritance#merge-strategies) to use when merging the
+[`checks`](#checks) list with an inherited task. Defaults to "append".
+
 #### `mergeDeps`
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#mergeDeps" />
@@ -1731,6 +1817,31 @@ tasks:
     command: 'echo $SHELL'
     options:
       windowsShell: 'bash'
+```
+
+## `taskOptions`<VersionLabel version="2.4.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectConfig#taskOptions" />
+
+Defines default [task options](#options) that are applied to _all tasks_ within the current project,
+which can be overridden per task. This is similar to the workspace-level
+[`taskOptions`](./tasks#taskoptions) in [`.moon/tasks.*`](./tasks), but is scoped to a single
+project and sits later in the [inheritance chain](../concepts/task-inheritance), so it takes
+precedence over inherited defaults.
+
+```yaml title="moon.yml" {1-5}
+taskOptions:
+  # Never cache tasks in this project
+  cache: false
+  # Always re-run flaky tasks
+  retryCount: 2
+
+tasks:
+  build:
+    # ...
+    options:
+      # Override the project default
+      cache: true
 ```
 
 ## Overrides

@@ -23,7 +23,9 @@ describes the mistake, why it happens, how to detect it, and how to fix it.
 14. [Cache lifetime and cache key](#cache-lifetime-and-cache-key)
 15. [Task tags and `#tag` targets](#task-tags-and-tag-targets) — v2.3+
 16. [Task dep `cacheStrategy`](#task-dep-cachestrategy) — v2.3+
-17. [Task builder validation errors](#task-builder-validation-errors)
+17. [Task checks](#task-checks) — v2.4+
+18. [Project-level `taskOptions`](#project-level-taskoptions) — v2.4+
+19. [Task builder validation errors](#task-builder-validation-errors)
 
 ---
 
@@ -147,15 +149,20 @@ workspace:
 When a project overrides an inherited task, moon merges the configs using strategies. The defaults
 are:
 
-| Field                   | Default merge strategy  |
-| ----------------------- | ----------------------- |
-| `args`                  | `append`                |
-| `deps`                  | `append`                |
-| `env`                   | `append` (object merge) |
-| `inputs`                | `append`                |
-| `outputs`               | `append`                |
-| `tags` <sup>v2.3+</sup> | `append`                |
-| `toolchains`            | `append`                |
+| Field                     | Default merge strategy  |
+| ------------------------- | ----------------------- |
+| `args`                    | `append`                |
+| `checks` <sup>v2.4+</sup> | `append`                |
+| `deps`                    | `append`                |
+| `env`                     | `append` (object merge) |
+| `inputs`                  | `append`                |
+| `outputs`                 | `append`                |
+| `tags` <sup>v2.3+</sup>   | `append`                |
+| `toolchains`              | `append`                |
+
+The corresponding merge-strategy options are `mergeArgs`, `mergeChecks` <sup>v2.4+</sup>,
+`mergeDeps`, `mergeEnv`, `mergeInputs`, `mergeOutputs`, `mergeTags` <sup>v2.3+</sup>, and
+`mergeToolchains`.
 
 ```yaml
 # Global: args = ['--check']
@@ -469,7 +476,8 @@ downstream tasks that depend on a `'skip'` task won't break in CI.
 
 ```bash
 moon task <project>:<task> --json | grep -i runci
-# Also check state.setRunInCi — if true, it was explicitly configured
+# Also check state.setRunInCi — true means runInCI was set explicitly OR by a
+# preset; false means it defaulted from the task type (build/test → run in CI)
 ```
 
 ---
@@ -490,9 +498,10 @@ tasks:
 This is intentional for advisory tasks. But if it's inherited from a global task and the user
 doesn't realize it's set, real errors go unnoticed.
 
-**Gotcha with deps:** If task A has `allowFailure: true` and task B depends on A, B will execute
-even if A's command failed. moon's task builder validates that `allowFailure` deps are acceptable,
-but the runtime behavior can still surprise.
+**Gotcha with deps:** A task **cannot** depend on a task with `allowFailure: true` — the task
+builder rejects the configuration with a hard `AllowFailureDepRequirement` error, because a failing
+dependency would let the dependent task run with incorrect results. If a task suddenly errors at
+graph-build time after someone added `allowFailure` to an upstream task, this is why.
 
 ### How to detect
 
@@ -695,19 +704,17 @@ more. If `options.mergeTags: 'replace'` is set, the project's tags replace the g
 can silently drop tags you expected to inherit. Check `options.mergeTags` in
 `moon task <target> --json`.
 
-**Tag vs project tag confusion** <sup>MQL rename</sup>
+**Tag vs project tag confusion** <sup>MQL</sup>
 
-The MQL `tag` field was renamed to `projectTag` in v2.3. A new `taskTag` field queries by task tag.
-Stale queries using the old `tag=...` syntax now error.
+MQL has two tag fields: `projectTag` (with `tag` as a legacy alias) matches **project** tags, while
+`taskTag` <sup>v2.3+</sup> matches **task** tags. The trap: `tag=...` still works, but it filters by
+project tag — so `moon query tasks --query "tag=quality"` returns tasks whose _project_ has the
+`quality` tag, not tasks tagged `quality`. Use `taskTag` for task tags.
 
 ```bash
-# Pre-v2.3
-moon query tasks --query "tag=quality"
-
-# v2.3+
-moon query tasks --query "projectTag=quality"  # project tag
+moon query tasks --query "projectTag=quality"  # project tag (alias: tag)
 moon query tasks --query "taskTag=quality"     # task tag
-moon query tasks --tags quality                # convenience flag
+moon query tasks --tags quality                # convenience flag (task tags)
 ```
 
 ---
@@ -755,6 +762,144 @@ moon task <project>:<task> --json
 
 ---
 
+## Task checks
+
+Available in v2.4+.
+
+A task's `checks` field is a list of shell scripts that run **before** the task. Each check has a
+type that determines what happens based on the script's exit code. A check defined as a plain string
+is a `requirement` by default.
+
+```yaml
+tasks:
+  deploy:
+    command: './deploy.sh'
+    checks:
+      # requirement (string shorthand): must pass or the task fails
+      - 'command -v aws'
+      # condition: if all conditions pass, the task is SKIPPED
+      - check: 'condition'
+        script: './scripts/already-deployed.sh'
+      # fingerprint: script output is folded into the task hash
+      - check: 'fingerprint'
+        script: 'aws --version'
+        hash: 'stdout' # true (all output) | false (run, hash nothing) | 'exit-code' | 'stdout' | 'stderr'
+```
+
+### Behavior by type
+
+| Type          | Script passes (exit 0)             | Script fails (non-zero)                                  |
+| ------------- | ---------------------------------- | -------------------------------------------------------- |
+| `requirement` | Task continues                     | Task **fails** — `RequirementCheckFailed`, does not run  |
+| `condition`   | Counts toward skipping (see below) | Task runs as normal                                      |
+| `fingerprint` | Output mixed into hash             | Task **fails** — `FingerprintCheckFailed` during hashing |
+
+**Conditions skip, they don't gate.** The task is skipped **only when _all_ `condition` checks
+pass**. If any condition fails, the task runs as normal. This is the inverse of a requirement, and a
+common source of "my task never runs" confusion.
+
+**When checks actually run:**
+
+- `fingerprint` checks run during **hash generation**, which happens on _every_ run — even when the
+  result is a cache hit, and even when the task's cache is disabled.
+- `requirement` and `condition` checks run just before **task execution** — so they do **not** run
+  on a cache hit. A missing tool won't trip a `requirement` check while the task hydrates from
+  cache; it only surfaces on the next cache miss.
+- Checks of the same phase execute in **parallel**, not in declaration order — don't rely on one
+  check's side effects in another.
+- The task's `options.timeout` also applies to each check script individually.
+
+### Common surprises
+
+**"My task fails with a requirement/fingerprint check error"**
+
+```
+Task app:deploy is unable to run as the requirement check `command -v aws` failed.
+```
+
+The named script exited non-zero (or, for fingerprints, crashed). The diagnostic codes are
+`task_runner::requirement_check_failed` and `task_runner::hash_check_failed`. Run the script
+manually to see why it fails.
+
+**"My task is skipped even though inputs changed and it's not a cache hit"**
+
+All `condition` checks passed, so moon skipped the task on purpose. The target ends in a `Skipped` /
+`SkippedConditional` state. Confirm with debug logs:
+
+```bash
+moon run <project>:<task> --log debug --force 2>&1 | grep -i "condition\|check"
+# "Skipping task as all conditional checks have passed"  → condition skip
+# "Will continue to run the task as not all conditional checks have passed"  → ran normally
+```
+
+**"My task re-runs every time after adding a check"**
+
+A `fingerprint` check hashes its script output. If that output is volatile (a timestamp, PID, or
+changing version), the hash changes on every run. Narrow the hashed portion with the `hash` field
+(e.g. `hash: 'exit-code'`), or remove the fingerprint. See
+[cache-issues.md](./cache-issues.md#fingerprint-checks-in-the-hash).
+
+**Checks disappeared or duplicated after inheritance**
+
+Checks merge with `append` by default. Set `options.mergeChecks` (`replace`, `prepend`, `preserve`)
+to control how inherited checks combine with project-level ones.
+
+### How to inspect
+
+```bash
+moon task <project>:<task> --json
+# Inspect the `checks` array — each entry shows its type and script
+```
+
+---
+
+## Project-level `taskOptions`
+
+Available in v2.4+.
+
+A project's `moon.*` config can now define a top-level `taskOptions` block that applies default
+[task options](https://moonrepo.dev/docs/config/project#options) to **every task in that project**,
+which each task can still override.
+
+```yaml
+# moon.yml
+taskOptions:
+  cache: false
+  retryCount: 2
+
+tasks:
+  build:
+    command: 'vite build'
+    # Inherits cache: false and retryCount: 2
+  lint:
+    command: 'eslint .'
+    options:
+      cache: true # Overrides the project default
+```
+
+### Why it matters for debugging
+
+This is a **new inheritance layer**. When a task option isn't what you expect, and it isn't set on
+the task itself or in a global `.moon/tasks/*` file, check the project's `taskOptions`. The
+inheritance order is:
+
+1. Global `.moon/tasks/*` `taskOptions` (workspace-wide defaults, since v1.20).
+2. Project `moon.*` `taskOptions` <sup>v2.4+</sup> (project-wide defaults).
+3. Per-task `options` (most specific, wins).
+
+```bash
+# See the fully resolved options after all layers merge
+moon task <project>:<task> --json
+
+# See which config files/layers contributed
+cat .moon/cache/states/<project>/snapshot.json
+```
+
+If a task unexpectedly stopped caching, retries, or picked up a `mutex`/`timeout`, a project-level
+`taskOptions` is a likely culprit that's easy to overlook because it lives outside the `tasks:` map.
+
+---
+
 ## Task builder validation errors
 
 moon's task builder validates configuration at build time and produces specific errors. If you see
@@ -764,9 +909,9 @@ one of these, here's what it means:
 a configuration error because the persistent task never finishes. Fix: remove the dependency or
 restructure the task graph.
 
-**`AllowFailureDepRequirement`** — a task depends on a task with `allowFailure: true`. moon warns
-about this because a failing dependency will still let the dependent task run, which may produce
-incorrect results.
+**`AllowFailureDepRequirement`** — a task depends on a task with `allowFailure: true`. This is a
+hard error: moon rejects the configuration, because a failing dependency would still let the
+dependent task run, producing incorrect results.
 
 **`RunInCiDepRequirement`** — a task that runs in CI depends on a task that doesn't run in CI
 (`runInCI: false`). The dependency won't execute in CI, so the dependent task may fail or produce
@@ -780,3 +925,6 @@ project or global scope.
 
 **`UnknownDepTarget`** — a `deps` entry references a target that doesn't exist. Check for typos in
 the project or task name.
+
+**"a shell script is required for a task check"** <sup>v2.4+</sup> — a `checks` entry has an empty
+or whitespace-only `script`. Every check must define a non-empty shell script.

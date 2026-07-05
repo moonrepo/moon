@@ -388,12 +388,14 @@ If the differing field corresponds to a check, the fingerprint output is the cau
 
 ### Symptom: a fingerprint check aborts the task
 
-If the fingerprint **script itself** crashes (not just a non-zero exit — a spawn failure), moon
-raises `FingerprintCheckFailed` (`task_runner::hash_check_failed`) and the task does not run. Run
-the script manually to debug it.
+If the fingerprint script exits **non-zero** (or fails to spawn at all), moon raises
+`FingerprintCheckFailed` (`task_runner::hash_check_failed`) during hash generation and the task does
+not run. Unlike a `condition`, a failing fingerprint is always fatal. Run the script manually to
+debug it.
 
-> Fingerprint checks are hashed **before** the task runs. For the gating/skipping check types
-> (`requirement`, `condition`), see
+> Fingerprint checks run during hash generation, which happens on **every** run — even on cache
+> hits, and even when the task's cache is disabled. Setting `hash: false` still runs the script but
+> hashes nothing. For the gating/skipping check types (`requirement`, `condition`), see
 > [config-mistakes.md § Task checks](./config-mistakes.md#task-checks).
 
 ---
@@ -414,15 +416,18 @@ experiments:
 ### `casOutputsCache`
 
 When enabled, task outputs are stored in a local content-addressable store (CAS) instead of as
-`.tar.gz` archives. This changes the on-disk layout of `.moon/cache/outputs/` significantly — if you
-inspect cache files directly, the per-hash `.tar.gz` will not be there.
+per-hash `.tar.gz` archives under `.moon/cache/outputs/`. The CAS lives in **sibling directories**:
+`.moon/cache/manifests/` and `.moon/cache/blobs/`, each prefix-sharded by hash (e.g.
+`blobs/ab/cdef1234…`). In v2.4 these were renamed from the earlier `ac/` and `cas/` directories
+(migrated automatically).
 
 **What to check when this is on:**
 
-- `ls .moon/cache/outputs/` will look different (sharded by content hash, not flat).
-- `tar tzf` won't work on individual blobs.
-- Archiving and hydration currently run on the main thread (not the daemon), so they may be slower
-  than the legacy tarball path.
+- New `.tar.gz` files stop appearing in `.moon/cache/outputs/` — look under `manifests/` and
+  `blobs/` instead.
+- `tar tzf` won't work on individual blobs; they're raw content-addressed files.
+- <sup>v2.4+</sup> If `cache.cas.maxSize` is set (e.g. `'10gb'`), least-recently-used outputs are
+  **evicted** when the limit is exceeded — a missing archive may simply have been evicted.
 
 **Quick toggle for diagnosis:**
 

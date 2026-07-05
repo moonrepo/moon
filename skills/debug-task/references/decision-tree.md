@@ -51,9 +51,9 @@ Common inheritance failures:
 
 **Check 3: Is the task ID spelled correctly?**
 
-Task IDs must start with a letter and can contain `a-z`, `A-Z`, `0-9`, `-`, `_`, `/`, and `.` (see
-[id_regex.rs](https://github.com/moonrepo/starbase/blob/master/crates/id/src/id_regex.rs#L10) for
-the full pattern). Check for typos, especially with similar names (e.g., `build` vs `buildApp`).
+Task IDs support unicode alphanumeric characters plus `/`, `.`, `_`, and `-`, with an optional
+leading `@` (see `ID_PATTERN` in the `starbase_id` crate for the full regex). Check for typos,
+especially with similar names (e.g., `build` vs `buildApp`).
 
 **Fix:** Add the task to the project config, fix the `inheritedBy` conditions, or correct the task
 ID.
@@ -91,9 +91,9 @@ moon task <project>:<task> --json
 # Check options.runInCI and state.setRunInCi
 ```
 
-If `state.setRunInCi` is `false`, the value was not explicitly set and came from a preset or
-default. See `config-mistakes.md` § `runInCI` variants for the full table of values and their
-local/CI behavior.
+If `state.setRunInCi` is `true`, `runInCI` was set explicitly in config or applied by a preset. If
+`false`, the value defaulted from the task type (build/test tasks run in CI, others don't). See
+`config-mistakes.md` § `runInCI` variants for the full table of values and their local/CI behavior.
 
 **Check 3: Is the `os` option filtering this platform out?**
 
@@ -125,8 +125,8 @@ cat .moon/cache/states/<project>/<task>/lastRun.json
 
 **Check 6: Did a `condition` check skip the task?** <sup>v2.4+</sup>
 
-If the task has one or more `condition` checks and **all** of them pass, moon intentionally skips the
-task (the target ends in a `Skipped` / `SkippedConditional` state). This is the inverse of a
+If the task has one or more `condition` checks and **all** of them pass, moon intentionally skips
+the task (the target ends in a `Skipped` / `SkippedConditional` state). This is the inverse of a
 requirement — passing conditions mean "already done, don't run."
 
 ```bash

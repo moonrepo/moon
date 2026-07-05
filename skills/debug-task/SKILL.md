@@ -220,8 +220,9 @@ These are the issues that come up most often. For details and fixes, see
 - **Missing outputs flip dep `cacheStrategy`** <sup>v2.3+</sup> — a dep without `outputs` now
   defaults to `cacheStrategy: 'ignored'`. Downstream tasks stop invalidating on its changes; set
   `cacheStrategy: 'hash'` explicitly to restore the pre-v2.3 default.
-- **Stale MQL `tag=...` queries** <sup>v2.3+</sup> — `tag` was renamed to `projectTag`; a new
-  `taskTag` field was added. Old queries error.
+- **MQL `tag` means project tag, not task tag** <sup>v2.3+</sup> — `tag` is a legacy alias for
+  `projectTag`, so `tag=...` on task queries filters by the parent project's tags. Use `taskTag` for
+  task tags.
 - **A `checks` script silently changes task behavior** <sup>v2.4+</sup> — a `requirement` failing
   aborts the task, a passing `condition` skips it, and a `fingerprint` mixes script output into the
   hash. Inspect `checks` in `moon task <target> --json` when a task fails, skips, or re-runs for no

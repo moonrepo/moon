@@ -208,15 +208,13 @@ moon query tasks --project <project>
 moon query tasks --tags quality
 ```
 
-**MQL `tag` → `projectTag` rename** (v2.3+): the MQL field `tag` was renamed to `projectTag` so it
-can coexist with the new `taskTag` field. Stale queries error.
+**MQL `tag` vs `taskTag`** (v2.3+): MQL's `tag` field is a legacy alias for `projectTag` — it
+matches **project** tags, not task tags. Old `tag=...` queries still run, but on task queries they
+filter by the parent project's tags, which is usually not what you want. Use `taskTag` for task
+tags.
 
 ```bash
-# Pre-v2.3
-moon query tasks --query "tag=quality"
-
-# v2.3+
-moon query tasks --query "projectTag=quality"  # by project tag
+moon query tasks --query "projectTag=quality"  # by project tag (alias: tag)
 moon query tasks --query "taskTag=quality"     # by task tag
 ```
 
@@ -268,9 +266,10 @@ Quick reference for where moon stores internal state:
 
 All paths are relative to the workspace root. The `.moon/cache/` directory should be git-ignored.
 
-> When `experiments.casOutputsCache` is enabled (v2.3+), `outputs/` is replaced by a
-> content-addressable store sharded by hash prefix — the per-target `.tar.gz` files do not exist.
-> See `cache-issues.md` § Experimental caching layers.
+> When `experiments.casOutputsCache` is enabled (v2.3+), new task outputs are stored in a
+> content-addressable store at `.moon/cache/manifests/` and `.moon/cache/blobs/` (prefix-sharded by
+> hash; renamed in v2.4 from `ac/` and `cas/`) — per-hash `.tar.gz` files stop being created in
+> `outputs/`. See `cache-issues.md` § Experimental caching layers.
 
 ---
 

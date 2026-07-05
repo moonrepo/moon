@@ -67,6 +67,16 @@ The following diagram outlines our cache folder structure and why each piece exi
 
 ```shell
 .moon/cache/
+	# A content-addressable storage (CAS) layer for storing blobs of data, which are
+	# referenced by their hash. This is used for both local and remote caching.
+	blobs/
+		<prefix>/<hash>/
+
+	# Contains the daemon's socket, log, and state files.
+	daemon/
+		# The daemon's state file, which contains metadata about the daemon process.
+		daemon.json
+
 	# Stores hash manifests of every ran task. Exists purely for debugging purposes.
 	hashes/
 		# Contents includes all sources used to generate the hash.
@@ -75,6 +85,11 @@ The following diagram outlines our cache folder structure and why each piece exi
 	# File system locks for parallel processes.
 	locks/
 		<file>.lock
+
+	# A key-value layer for storing cache manifests, which denote the relationship between
+	# a task's hash and its outputs.
+	manifests/
+		<prefix>/<hash>/
 
 	# Stores `tar.gz` archives of a task's outputs based on its generated hash.
 	outputs/

@@ -9,15 +9,17 @@ description: >-
   applying to a project. Activate on any mention of "moon run" or "moon task" combined with a
   problem — errors, stale cache, missing outputs, wrong results, "nothing to do", or unexpected
   behavior. Also use for task options like persistent, runInCI, allowFailure, affectedFiles, mutex,
-  timeout, or cacheLifetime. This skill is for diagnosing existing tasks, not for creating new
-  tasks, setting up workspaces, configuring toolchains, or learning moon concepts.
+  timeout, or cacheLifetime, and for task checks (requirement, condition, fingerprint) that make a
+  task fail, skip, or re-run, and project-level taskOptions defaults. This skill is for diagnosing
+  existing tasks, not for creating new tasks, setting up workspaces, configuring toolchains, or
+  learning moon concepts.
 license: MIT
 allowed-tools: Bash(moon:*) Read
 compatibility: >-
   Requires moon >= 2.0.0 CLI installed and a configured moon workspace.
 metadata:
   moon-version-min: '2.0.0'
-  moon-version-tested: '2.3.0'
+  moon-version-tested: '2.4.0'
   category: 'debugging'
   ecosystem: 'moonrepo'
 ---
@@ -70,6 +72,10 @@ moon task <project>:<task> --json
   task's cache hash. If omitted, the default depends on whether the dep declares outputs.
 - `options` — check `persistent`, `runInCI`, `cache`, `affectedFiles`, `mutex`, `timeout`,
   `retryCount`, `allowFailure`, and `os`.
+- `checks` <sup>v2.4+</sup> — shell scripts that run **before** the task. Their type determines the
+  outcome: a `requirement` failing makes the task **fail**, all `condition` checks passing makes the
+  task **skip**, and a `fingerprint` folds script output into the task hash. A surprising fail,
+  skip, or cache invalidation often traces back to a check.
 - `tags` <sup>v2.3+</sup> — labels for grouping tasks. Affects targets like `:#quality` and MQL
   `taskTag` queries. If a task isn't matched by a `#tag` target you expected, check this list.
 - `type` — `build` (has outputs), `test` (default), or `run` (persistent)
@@ -88,6 +94,10 @@ moon task <project>:<task> --json
 - `runInCI: 'skip'` — task is skipped in CI but relationships remain valid.
 - `os` set to a platform the user isn't on — task silently skips.
 - `allowFailure: true` — task errors are swallowed, can mask real problems.
+- A `condition` check present <sup>v2.4+</sup> — the task will **skip** whenever all conditions
+  pass. A task that "never runs" may have a condition that always passes.
+- A `fingerprint` check present <sup>v2.4+</sup> — its script output is hashed, so volatile output
+  (timestamps, versions) causes cache misses on every run.
 
 ### Step 2: Run with maximum verbosity
 
@@ -141,24 +151,28 @@ moon hash 0b55b234 2388552f
 
 Use this table to jump to the right reference:
 
-| Symptom                                                       | Likely cause                                                                                                                                                             | Quick check                                       | Reference                       |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------- | ------------------------------- |
-| Task doesn't exist                                            | Inheritance not applied — check `inheritedBy` conditions in `.moon/tasks/**/*` against project's `toolchains`, `stack`, `layer`, `tags` via `moon project <name> --json` | `moon task <target> --json`                       | `references/config-mistakes.md` |
-| "Nothing to do"                                               | `--affected` + no changes, `runInCI: false`, or `inheritedBy` mismatch (global task not inherited)                                                                       | Check flags, `options.runInCI`, and `inheritedBy` | `references/decision-tree.md`   |
-| Task errors on execution                                      | Wrong `command`/`script`, bad toolchain                                                                                                                                  | `moon run <target> --log debug`                   | `references/config-mistakes.md` |
-| Stale cache (cached when it shouldn't be)                     | Inputs too narrow, missing `env` vars, or dep `cacheStrategy: 'ignored'` (the v2.3 default for output-less deps)                                                         | `moon hash <hash>`                                | `references/cache-issues.md`    |
-| Cache miss (re-runs every time)                               | Inputs too broad, volatile outputs, or dep `cacheStrategy: 'hash'` propagating upstream churn                                                                            | `moon hash <h1> <h2>`                             | `references/cache-issues.md`    |
-| Outputs not restored after cache hit                          | `outputs` misconfigured                                                                                                                                                  | Check `.moon/cache/outputs/`                      | `references/cache-issues.md`    |
-| Build re-runs on every upstream input change <sup>v2.3+</sup> | Dep using default `cacheStrategy: 'hash'` instead of `'outputs'`                                                                                                         | `moon task <target> --json` — inspect dep entries | `references/cache-issues.md`    |
-| Task not matched by `#tag` target <sup>v2.3+</sup>            | Missing `tags` on the task, or `mergeTags` dropped them during inheritance                                                                                               | `moon task <target> --json` — check `tags`        | `references/config-mistakes.md` |
-| Task hangs / pipeline stuck                                   | Persistent task in `deps` chain (hard error in v2)                                                                                                                       | `moon action-graph <target>`                      | `references/config-mistakes.md` |
-| Task is slow                                                  | Dep chain bottleneck, no parallelism                                                                                                                                     | `moon action-graph <target>`                      | `references/decision-tree.md`   |
-| Task does nothing (no-op)                                     | Command is `noop`/`nop`/`no-op`                                                                                                                                          | `moon task <target> --json`                       | `references/config-mistakes.md` |
-| Task fails silently                                           | `allowFailure: true` hiding errors                                                                                                                                       | Check `options.allowFailure`                      | `references/config-mistakes.md` |
-| Task skipped locally                                          | `runInCI: 'only'` set                                                                                                                                                    | Check `options.runInCI`                           | `references/config-mistakes.md` |
-| Task skipped in CI                                            | `runInCI: false` or `'skip'`                                                                                                                                             | Check `options.runInCI`                           | `references/config-mistakes.md` |
-| Mutex contention / deadlock                                   | Two tasks share same `mutex`                                                                                                                                             | Check `options.mutex`                             | `references/config-mistakes.md` |
-| Task times out                                                | `timeout` option set too low                                                                                                                                             | Check `options.timeout`                           | `references/config-mistakes.md` |
+| Symptom                                                       | Likely cause                                                                                                                                                             | Quick check                                                                 | Reference                       |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- | ------------------------------- |
+| Task doesn't exist                                            | Inheritance not applied — check `inheritedBy` conditions in `.moon/tasks/**/*` against project's `toolchains`, `stack`, `layer`, `tags` via `moon project <name> --json` | `moon task <target> --json`                                                 | `references/config-mistakes.md` |
+| "Nothing to do"                                               | `--affected` + no changes, `runInCI: false`, or `inheritedBy` mismatch (global task not inherited)                                                                       | Check flags, `options.runInCI`, and `inheritedBy`                           | `references/decision-tree.md`   |
+| `--affected` misses changed files <sup>v2.4+</sup>            | Shallow git clone in CI — merge base can't be resolved, so diffs are inaccurate (moon now logs a warning)                                                                | Check clone depth; use full history or `--filter=blob:none`                 | `references/decision-tree.md`   |
+| Task fails: "requirement check failed" <sup>v2.4+</sup>       | A `requirement` check script exited non-zero, so the task refuses to run                                                                                                 | `moon task <target> --json` — inspect `checks`                              | `references/config-mistakes.md` |
+| Task skipped, not affected/CI-related <sup>v2.4+</sup>        | All `condition` checks passed, so the task was intentionally skipped                                                                                                     | `moon run <target> --log debug` — look for "conditional checks have passed" | `references/config-mistakes.md` |
+| Task errors on execution                                      | Wrong `command`/`script`, bad toolchain                                                                                                                                  | `moon run <target> --log debug`                                             | `references/config-mistakes.md` |
+| Stale cache (cached when it shouldn't be)                     | Inputs too narrow, missing `env` vars, or dep `cacheStrategy: 'ignored'` (the v2.3 default for output-less deps)                                                         | `moon hash <hash>`                                                          | `references/cache-issues.md`    |
+| Cache miss (re-runs every time)                               | Inputs too broad, volatile outputs, or dep `cacheStrategy: 'hash'` propagating upstream churn                                                                            | `moon hash <h1> <h2>`                                                       | `references/cache-issues.md`    |
+| Cache miss from a `fingerprint` check <sup>v2.4+</sup>        | A `fingerprint` check's script output is volatile (timestamps, PIDs), changing the hash every run                                                                        | `moon hash <h1> <h2>` — look for the check hash                             | `references/cache-issues.md`    |
+| Outputs not restored after cache hit                          | `outputs` misconfigured                                                                                                                                                  | Check `.moon/cache/outputs/`                                                | `references/cache-issues.md`    |
+| Build re-runs on every upstream input change <sup>v2.3+</sup> | Dep using default `cacheStrategy: 'hash'` instead of `'outputs'`                                                                                                         | `moon task <target> --json` — inspect dep entries                           | `references/cache-issues.md`    |
+| Task not matched by `#tag` target <sup>v2.3+</sup>            | Missing `tags` on the task, or `mergeTags` dropped them during inheritance                                                                                               | `moon task <target> --json` — check `tags`                                  | `references/config-mistakes.md` |
+| Task hangs / pipeline stuck                                   | Persistent task in `deps` chain (hard error in v2)                                                                                                                       | `moon action-graph <target>`                                                | `references/config-mistakes.md` |
+| Task is slow                                                  | Dep chain bottleneck, no parallelism                                                                                                                                     | `moon action-graph <target>`                                                | `references/decision-tree.md`   |
+| Task does nothing (no-op)                                     | Command is `noop`/`nop`/`no-op`                                                                                                                                          | `moon task <target> --json`                                                 | `references/config-mistakes.md` |
+| Task fails silently                                           | `allowFailure: true` hiding errors                                                                                                                                       | Check `options.allowFailure`                                                | `references/config-mistakes.md` |
+| Task skipped locally                                          | `runInCI: 'only'` set                                                                                                                                                    | Check `options.runInCI`                                                     | `references/config-mistakes.md` |
+| Task skipped in CI                                            | `runInCI: false` or `'skip'`                                                                                                                                             | Check `options.runInCI`                                                     | `references/config-mistakes.md` |
+| Mutex contention / deadlock                                   | Two tasks share same `mutex`                                                                                                                                             | Check `options.mutex`                                                       | `references/config-mistakes.md` |
+| Task times out                                                | `timeout` option set too low                                                                                                                                             | Check `options.timeout`                                                     | `references/config-mistakes.md` |
 
 ### Step 5: Validate the fix
 
@@ -206,8 +220,16 @@ These are the issues that come up most often. For details and fixes, see
 - **Missing outputs flip dep `cacheStrategy`** <sup>v2.3+</sup> — a dep without `outputs` now
   defaults to `cacheStrategy: 'ignored'`. Downstream tasks stop invalidating on its changes; set
   `cacheStrategy: 'hash'` explicitly to restore the pre-v2.3 default.
-- **Stale MQL `tag=...` queries** <sup>v2.3+</sup> — `tag` was renamed to `projectTag`; a new
-  `taskTag` field was added. Old queries error.
+- **MQL `tag` means project tag, not task tag** <sup>v2.3+</sup> — `tag` is a legacy alias for
+  `projectTag`, so `tag=...` on task queries filters by the parent project's tags. Use `taskTag` for
+  task tags.
+- **A `checks` script silently changes task behavior** <sup>v2.4+</sup> — a `requirement` failing
+  aborts the task, a passing `condition` skips it, and a `fingerprint` mixes script output into the
+  hash. Inspect `checks` in `moon task <target> --json` when a task fails, skips, or re-runs for no
+  obvious reason.
+- **Shallow git clone breaks `--affected`** <sup>v2.4+</sup> — a shallow clone (depth 1) prevents
+  moon from resolving the merge base, so affected detection is inaccurate or empty. Use a full
+  clone, or a blobless partial clone (`git clone --filter=blob:none`).
 
 ---
 

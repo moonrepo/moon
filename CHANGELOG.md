@@ -128,7 +128,7 @@
 
 #### ⚙️ Internal
 
-- Updated proto to [v0.58.1](https://github.com/moonrepo/proto/releases/tag/v0.58.0) from 0.57.4.
+- Updated proto to [v0.58.2](https://github.com/moonrepo/proto/releases/tag/v0.58.0) from 0.57.4.
 - Updated dependencies.
 
 ## 2.3.5

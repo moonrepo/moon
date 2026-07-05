@@ -136,6 +136,18 @@
         "$ref": "#/definitions/Id"
       }
     },
+    "taskOptions": {
+      "title": "taskOptions",
+      "description": "Shared task options for all tasks. Can be overriden per task. @since 2.4.0",
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TaskOptionsConfig"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
     "tasks": {
       "title": "tasks",
       "description": "A map of identifiers to task objects. Tasks represent the work-unit of a project, and can be ran in the action pipeline.",
@@ -174,21 +186,12 @@
     "DependencyScope": {
       "description": "The relationship scope of a dependency.",
       "type": "string",
-      "enum": [
-        "build",
-        "development",
-        "peer",
-        "production",
-        "root"
-      ]
+      "enum": ["build", "development", "peer", "production", "root"]
     },
     "DependencySource": {
       "description": "The source where the dependency comes from. Either explicitly defined in configuration, or implicitly derived from source files.",
       "type": "string",
-      "enum": [
-        "explicit",
-        "implicit"
-      ]
+      "enum": ["explicit", "implicit"]
     },
     "DockerFileConfig": {
       "description": "Configures Dockerfile generation. When configured at the workspace-level, applies to all projects, but can be overridden at the project-level.",
@@ -337,14 +340,7 @@
     "FileGroupInputFormat": {
       "description": "Available formats to resolve the file group into.",
       "type": "string",
-      "enum": [
-        "static",
-        "dirs",
-        "envs",
-        "files",
-        "globs",
-        "root"
-      ]
+      "enum": ["static", "dirs", "envs", "files", "globs", "root"]
     },
     "FileInput": {
       "description": "A file path input.",
@@ -855,14 +851,7 @@
         }
       },
       "additionalProperties": {
-        "type": [
-          "boolean",
-          "object",
-          "array",
-          "number",
-          "string",
-          "integer"
-        ]
+        "type": ["boolean", "object", "array", "number", "string", "integer"]
       }
     },
     "ProjectToolchainEntry": {
@@ -995,13 +984,19 @@
     "StackType": {
       "description": "The technology stack of the project, for categorizing.",
       "type": "string",
-      "enum": [
-        "backend",
-        "data",
-        "frontend",
-        "infrastructure",
-        "systems",
-        "unknown"
+      "enum": ["backend", "data", "frontend", "infrastructure", "systems", "unknown"]
+    },
+    "TaggedTaskCheck": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TaskCheckConditionConfig"
+        },
+        {
+          "$ref": "#/definitions/TaskCheckRequirementConfig"
+        },
+        {
+          "$ref": "#/definitions/TaskCheckFingerprintConfig"
+        }
       ]
     },
     "TaskArgs": {
@@ -1021,6 +1016,77 @@
         }
       ]
     },
+    "TaskCheck": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/TaggedTaskCheck"
+        }
+      ]
+    },
+    "TaskCheckConditionConfig": {
+      "description": "Task check configuration for conditions.",
+      "type": "object",
+      "properties": {
+        "check": {
+          "title": "check",
+          "const": "condition"
+        },
+        "script": {
+          "title": "script",
+          "description": "The shell script to execute.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskCheckFingerprintConfig": {
+      "description": "Task check configuration for fingerprinting.",
+      "type": "object",
+      "properties": {
+        "check": {
+          "title": "check",
+          "const": "fingerprint"
+        },
+        "hash": {
+          "title": "hash",
+          "description": "The content hashing strategy.",
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string",
+              "enum": ["exit-code", "stderr", "stdout"]
+            }
+          ]
+        },
+        "script": {
+          "title": "script",
+          "description": "The shell script to execute.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TaskCheckRequirementConfig": {
+      "description": "Task check configuration for requirements.",
+      "type": "object",
+      "properties": {
+        "check": {
+          "title": "check",
+          "const": "requirement"
+        },
+        "script": {
+          "title": "script",
+          "description": "The shell script to execute.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
     "TaskConfig": {
       "description": "Configures a task to be ran within the action pipeline.",
       "type": "object",
@@ -1031,6 +1097,21 @@
           "allOf": [
             {
               "$ref": "#/definitions/TaskArgs"
+            }
+          ]
+        },
+        "checks": {
+          "title": "checks",
+          "description": "Checks are shell scripts that run before the task is executed, and are categorized into three types: conditions, requirements, and fingerprints. Depending on the result of the script and the type of check, the task may be skipped, will fail, or continue. @since 2.4.0",
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/TaskCheck"
+              }
+            },
+            {
+              "type": "null"
             }
           ]
         },
@@ -1275,11 +1356,7 @@
     "TaskDependencyCacheStrategy": {
       "description": "Controls how a task dependency invalidates the current task's cache entry. When omitted, the effective strategy is Hash if the dependency declares outputs, or Ignored otherwise. @since 2.3.0",
       "type": "string",
-      "enum": [
-        "hash",
-        "ignored",
-        "outputs"
-      ],
+      "enum": ["hash", "ignored", "outputs"],
       "markdownDescription": "Controls how a task dependency invalidates the current task's cache entry. When omitted, the effective strategy is `Hash` if the dependency declares outputs, or `Ignored` otherwise. @since 2.3.0"
     },
     "TaskDependencyConfig": {
@@ -1349,21 +1426,12 @@
     "TaskMergeStrategy": {
       "description": "The strategy in which to merge a specific task option.",
       "type": "string",
-      "enum": [
-        "append",
-        "prepend",
-        "preserve",
-        "replace"
-      ]
+      "enum": ["append", "prepend", "preserve", "replace"]
     },
     "TaskOperatingSystem": {
       "description": "The operating system in which to only run this task on.",
       "type": "string",
-      "enum": [
-        "linux",
-        "macos",
-        "windows"
-      ]
+      "enum": ["linux", "macos", "windows"]
     },
     "TaskOptionAffectedFilesConfig": {
       "description": "Expanded information about affected files handling.",
@@ -1399,10 +1467,7 @@
             },
             {
               "type": "string",
-              "enum": [
-                "args",
-                "env"
-              ]
+              "enum": ["args", "env"]
             }
           ]
         },
@@ -1443,10 +1508,7 @@
             },
             {
               "type": "string",
-              "enum": [
-                "args",
-                "env"
-              ]
+              "enum": ["args", "env"]
             }
           ]
         },
@@ -1510,10 +1572,7 @@
                 },
                 {
                   "type": "string",
-                  "enum": [
-                    "local",
-                    "remote"
-                  ]
+                  "enum": ["local", "remote"]
                 }
               ]
             },
@@ -1624,6 +1683,20 @@
             }
           ],
           "markdownDescription": "The strategy to use when merging `args` with an inherited task."
+        },
+        "mergeChecks": {
+          "title": "mergeChecks",
+          "description": "The strategy to use when merging checks with an inherited task. @since 2.4.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/TaskMergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `checks` with an inherited task. @since 2.4.0"
         },
         "mergeDeps": {
           "title": "mergeDeps",
@@ -1830,12 +1903,7 @@
                 },
                 {
                   "type": "string",
-                  "enum": [
-                    "always",
-                    "affected",
-                    "only",
-                    "skip"
-                  ]
+                  "enum": ["always", "affected", "only", "skip"]
                 }
               ]
             },
@@ -1916,70 +1984,32 @@
     "TaskOutputStyle": {
       "description": "The style in which task output will be printed to the console.",
       "type": "string",
-      "enum": [
-        "buffer",
-        "buffer-only-failure",
-        "hash",
-        "none",
-        "stream"
-      ]
+      "enum": ["buffer", "buffer-only-failure", "hash", "none", "stream"]
     },
     "TaskPreset": {
       "description": "Preset options to inherit.",
       "type": "string",
-      "enum": [
-        "utility",
-        "server"
-      ]
+      "enum": ["utility", "server"]
     },
     "TaskPriority": {
       "description": "The priority levels a task can be bucketed into when running in the action pipeline.",
       "type": "string",
-      "enum": [
-        "critical",
-        "high",
-        "normal",
-        "low"
-      ]
+      "enum": ["critical", "high", "normal", "low"]
     },
     "TaskType": {
       "description": "The type of task.",
       "type": "string",
-      "enum": [
-        "build",
-        "run",
-        "test"
-      ]
+      "enum": ["build", "run", "test"]
     },
     "TaskUnixShell": {
       "description": "A list of available shells on Unix.",
       "type": "string",
-      "enum": [
-        "bash",
-        "elvish",
-        "fish",
-        "ion",
-        "murex",
-        "nu",
-        "pwsh",
-        "sh",
-        "xonsh",
-        "zsh"
-      ]
+      "enum": ["bash", "elvish", "fish", "ion", "murex", "nu", "pwsh", "sh", "xonsh", "zsh"]
     },
     "TaskWindowsShell": {
       "description": "A list of available shells on Windows.",
       "type": "string",
-      "enum": [
-        "bash",
-        "elvish",
-        "fish",
-        "murex",
-        "nu",
-        "pwsh",
-        "powershell",
-        "xonsh"
-      ]
+      "enum": ["bash", "elvish", "fish", "murex", "nu", "pwsh", "powershell", "xonsh"]
     },
     "ToolchainPluginConfig": {
       "description": "Configures an individual toolchain.",
@@ -2034,14 +2064,7 @@
         }
       },
       "additionalProperties": {
-        "type": [
-          "boolean",
-          "object",
-          "array",
-          "number",
-          "string",
-          "integer"
-        ]
+        "type": ["boolean", "object", "array", "number", "string", "integer"]
       }
     },
     "ToolchainPluginVersionFrom": {

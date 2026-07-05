@@ -52,7 +52,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [templates](https://moonrepo.dev/docs/commands/templates): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [toolchain add](https://moonrepo.dev/docs/commands/toolchain/add): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [toolchain info](https://moonrepo.dev/docs/commands/toolchain/info): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [upgrade](https://moonrepo.dev/docs/commands/upgrade): The `moon upgrade` command can be used to upgrade your current moon binary (if installed globally)
+- [upgrade](https://moonrepo.dev/docs/commands/upgrade): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Feature comparison](https://moonrepo.dev/docs/comparison): import {
 - [Affected](https://moonrepo.dev/docs/concepts/affected): Affected is a term to describe when a project or task is _affected by a change_ in the environment
 - [Cache](https://moonrepo.dev/docs/concepts/cache): moon's able to achieve high performance and blazing speeds by implementing a cache that's powered by
@@ -286,3 +286,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [proto v0.57 - OCI plugin distribution, cargo and npm backends](https://moonrepo.dev/blog/2026-05-12_proto-v0.57): In this release, we're shifting how official plugins are distributed, and rolling out two new
 - [moon v2.3 - Task tags, dep cache strategies, native file hashing, CAS cache, and more](https://moonrepo.dev/blog/2026-06-01-moon-v2.3): This release focuses on giving you more control over how tasks are organized, referenced, and
 - [proto v0.58 - OpenTelemetry and agent-friendly output](https://moonrepo.dev/blog/2026-06-18_proto-v0.58): In this release, we're focusing on observability, and making proto easier to consume from automated
+- [moon v2.4 - Task checks, Ruby toolchain, storage APIs, and much more](https://moonrepo.dev/blog/2026-07-05-moon-v2.4): This release is all about control and trust. We're giving tasks a way to gate, skip, and

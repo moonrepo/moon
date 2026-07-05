@@ -186,11 +186,23 @@
       "description": "Configures aspects of the content-addressable storage (CAS) cache.",
       "type": "object",
       "properties": {
+        "maxSize": {
+          "title": "maxSize",
+          "description": "Maximum total size of the local cache, for example \"10gb\" or \"512mib\". When exceeded, the least recently used cached task outputs are evicted. Unlimited when unset. @since 2.4.0",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "verifyIntegrity": {
           "title": "verifyIntegrity",
-          "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption.",
+          "description": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption. @since 2.3.0",
           "type": "boolean",
-          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption."
+          "markdownDescription": "Verify hash on every read. When enabled, reads are slower but detect on-disk corruption. @since 2.3.0"
         }
       },
       "additionalProperties": false,
@@ -202,13 +214,13 @@
       "properties": {
         "cas": {
           "title": "cas",
-          "description": "Configures aspects of the content-addressable storage (CAS) cache.",
+          "description": "Configures aspects of the content-addressable storage (CAS) cache. @since 2.3.0",
           "allOf": [
             {
               "$ref": "#/definitions/CacheCasConfig"
             }
           ],
-          "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache."
+          "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache. @since 2.3.0"
         }
       },
       "additionalProperties": false
@@ -266,10 +278,7 @@
     "CodeownersOrderBy": {
       "description": "How to order ownership rules within the generated file.",
       "type": "string",
-      "enum": [
-        "file-source",
-        "project-id"
-      ]
+      "enum": ["file-source", "project-id"]
     },
     "ConstraintsConfig": {
       "description": "Configures boundaries and constraints between projects.",
@@ -468,23 +477,23 @@
       "properties": {
         "asyncAffectedTracking": {
           "title": "asyncAffectedTracking",
-          "description": "Track and determine affected projects and tasks asynchronously.",
+          "description": "Track and determine affected projects and tasks asynchronously. @since 2.2.0",
           "type": "boolean"
         },
         "asyncGraphBuilding": {
           "title": "asyncGraphBuilding",
-          "description": "Build the project and task graphs asynchronously.",
+          "description": "Build the project and task graphs asynchronously. @since 2.2.0",
           "type": "boolean"
         },
         "casOutputsCache": {
           "title": "casOutputsCache",
-          "description": "Store task outputs in a local CAS (content-addressable storage) cache.",
+          "description": "Store task outputs in a local CAS (content-addressable storage) cache. @since 2.3.0",
           "type": "boolean",
-          "markdownDescription": "Store task outputs in a local CAS (content-addressable storage) cache."
+          "markdownDescription": "Store task outputs in a local CAS (content-addressable storage) cache. @since 2.3.0"
         },
         "nativeFileHashing": {
           "title": "nativeFileHashing",
-          "description": "Use native file hashing instead of using the VCS.",
+          "description": "Use native file hashing instead of using the VCS. @since 2.3.0",
           "type": "boolean"
         }
       },
@@ -572,18 +581,12 @@
     "HasherOptimization": {
       "description": "The optimization to use when hashing.",
       "type": "string",
-      "enum": [
-        "accuracy",
-        "performance"
-      ]
+      "enum": ["accuracy", "performance"]
     },
     "HasherWalkStrategy": {
       "description": "The strategy to use when walking the file system.",
       "type": "string",
-      "enum": [
-        "glob",
-        "vcs"
-      ]
+      "enum": ["glob", "vcs"]
     },
     "Id": {
       "type": "string"
@@ -628,13 +631,7 @@
     "NotifierEventType": {
       "description": "The types of events in which to send notifications.",
       "type": "string",
-      "enum": [
-        "never",
-        "always",
-        "failure",
-        "success",
-        "task-failure"
-      ]
+      "enum": ["never", "always", "failure", "success", "task-failure"]
     },
     "PipelineActionSwitch": {
       "description": "Toggles the state of actions within the pipeline.",
@@ -726,10 +723,7 @@
     "RemoteApi": {
       "description": "The API format of the remote service. @since 1.32.0",
       "type": "string",
-      "enum": [
-        "grpc",
-        "http"
-      ]
+      "enum": ["grpc", "http"]
     },
     "RemoteAuthConfig": {
       "description": "Configures basic HTTP authentication. @since 1.32.0",
@@ -798,10 +792,7 @@
     "RemoteCompression": {
       "description": "Supported blob compression levels for gRPC APIs. @since 1.31.0",
       "type": "string",
-      "enum": [
-        "none",
-        "zstd"
-      ]
+      "enum": ["none", "zstd"]
     },
     "RemoteConfig": {
       "description": "Configures the remote service, powered by the Bazel Remote Execution API. @since 1.30.0",
@@ -951,9 +942,7 @@
     "VcsClient": {
       "description": "The VCS being utilized by the repository.",
       "type": "string",
-      "enum": [
-        "git"
-      ]
+      "enum": ["git"]
     },
     "VcsConfig": {
       "description": "Configures the version control system (VCS).",
@@ -1029,28 +1018,17 @@
     "VcsHookFormat": {
       "description": "The format to use for generated VCS hook files. @since 1.29.0",
       "type": "string",
-      "enum": [
-        "bash",
-        "native"
-      ]
+      "enum": ["bash", "native"]
     },
     "VcsProvider": {
       "description": "The upstream version control provider, where the repository source code is stored.",
       "type": "string",
-      "enum": [
-        "bitbucket",
-        "github",
-        "gitlab",
-        "other"
-      ]
+      "enum": ["bitbucket", "github", "gitlab", "other"]
     },
     "WorkspaceProjectGlobFormat": {
       "description": "The project identifier format for glob located projects.",
       "type": "string",
-      "enum": [
-        "dir-name",
-        "source-path"
-      ]
+      "enum": ["dir-name", "source-path"]
     },
     "WorkspaceProjects": {
       "description": "Configures projects in the workspace.",

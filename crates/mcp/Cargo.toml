@@ -14,10 +14,10 @@ moon_action_graph = { path = "../action-graph" }
 moon_action_pipeline = { path = "../action-pipeline" }
 moon_app_context = { path = "../app-context" }
 moon_codegen = { path = "../codegen" }
-moon_common = { version = "2.0.6", path = "../common" }
+moon_common = { version = "2.0.7", path = "../common" }
 moon_config = { path = "../config" }
 moon_process = { path = "../process" }
-moon_project = { version = "2.0.5", path = "../project" }
+moon_project = { version = "2.0.6", path = "../project" }
 moon_task = { version = "2.1.0", path = "../task" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }

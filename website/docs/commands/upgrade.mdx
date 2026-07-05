@@ -2,6 +2,8 @@
 title: upgrade
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `moon upgrade` command can be used to upgrade your current moon binary (if installed globally)
 to the latest version.
 
@@ -15,3 +17,9 @@ This command will only work if moon was installed in the `~/.moon` directory, us
 [installation script](../install). If installed another way, you'll need to upgrade manually.
 
 :::
+
+### Options<VersionLabel version="2.4.0" />
+
+- `--update-constraint` - After upgrading, update the
+  [`versionConstraint`](../config/workspace#versionconstraint) in the workspace configuration to
+  require the newly installed version.

@@ -97,7 +97,7 @@ $ MOON_CONCURRENCY=1 moon run app:build
 
 ## Debugging
 
-At minimum, most debugging can be done by passing [`--log trace`](#logging) on the command line and
+At minimum, most debugging can be done by passing [`--log debug`](#logging) on the command line and
 sifting through the logs. We also provide the following environment variables to toggle output.
 
 - `MOON_DEBUG_PROCESS_ENV` - By default moon hides the environment variables (except for `MOON_`)
@@ -124,8 +124,11 @@ levels are supported, in priority order.
 - `error` - Only show error logs.
 - `warn` - Only show warning logs and above.
 - `info` (default) - Only show info logs and above.
-- `debug` - Only show debug logs and above.
-- `trace` - Show all logs, including network requests and child processes.
+- `debug` - Only show debug logs and above. Recommended for most debugging, as it includes the
+  majority of useful diagnostic information.
+- `trace` - Show all logs, including network requests and child processes. As of v2.4 this is _very_
+  verbose and is primarily intended for agents and deep diagnostics, and may be too spammy for
+  normal debugging.
 - `verbose` - Like `trace` but also includes span information. <VersionLabel version="1.35.0" />
 
 ```shell

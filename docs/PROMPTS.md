@@ -9,3 +9,23 @@ Compare the `develop-X.X` branch with the `master` branch to identify the differ
 
 Make sure to keep the tone engaging and informative, and consider other blog posts for its casual writing style.
 ```
+
+## Doc updates
+
+Model: Opus
+
+```
+Update the documentation at `website/docs` to reflect the changes in the moon vX.X release. This includes updating any relevant guides, configuration references, and API documentation to ensure that users have accurate and up-to-date information.
+
+Compare the `develop-X.X` branch with the `master` branch to identify the differences and provide a clear overview of what users can expect from this release.
+```
+
+## Skill updates
+
+Model: Opus
+
+```
+Update the skills at `skills` to reflect the changes in the moon vX.X release. This includes updating any relevant skills, configuration references, and API documentation to ensure that users have accurate and up-to-date information.
+
+Compare the `develop-X.X` branch with the `master` branch to identify the differences and provide a clear overview of what users can expect from this release.
+```

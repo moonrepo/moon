@@ -5311,7 +5311,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "2.0.13"
+version = "2.1.0"
 dependencies = [
  "deserialize_untagged_verbose_error",
  "httpmock",
@@ -5862,7 +5862,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task"
-version = "2.0.7"
+version = "2.1.0"
 dependencies = [
  "miette 7.6.0",
  "moon_common",

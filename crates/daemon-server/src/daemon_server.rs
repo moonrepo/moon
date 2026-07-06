@@ -1,8 +1,8 @@
 use crate::daemon_server_error::DaemonServerError;
 use crate::daemon_watcher::{start_file_listener, start_file_watcher};
 use moon_app_context::AppContext;
-use moon_common::color;
 use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{
     moon_daemon_server::{MoonDaemon, MoonDaemonServer},
     *,
@@ -161,7 +161,8 @@ impl MoonDaemon for DaemonService {
                     warn!(
                         target = target.as_str(),
                         hash = &req.hash,
-                        "Failed to archive task outputs: {error}"
+                        error = format_error_chain(&error),
+                        "Failed to archive task outputs"
                     );
                 }
             }
@@ -237,7 +238,11 @@ impl MoonDaemon for DaemonService {
                     );
                 }
                 Err(error) => {
-                    warn!(url = &url, "Failed to send webhook: {error}");
+                    warn!(
+                        url = &url,
+                        error = error.to_string(),
+                        "Failed to send webhook"
+                    );
                 }
                 _ => {}
             }
@@ -408,7 +413,7 @@ pub async fn start_daemon_server(
     let serve_result = serve(&endpoint, service, shutdown_signal).await;
 
     if let Err(error) = &serve_result {
-        error!("Daemon server failed: {error}");
+        error!(error = format_error_chain(error), "Daemon server failed");
     }
 
     // Stop the background tasks. Abort them rather than only signalling and

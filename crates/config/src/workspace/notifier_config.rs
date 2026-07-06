@@ -1,5 +1,5 @@
 use crate::{config_struct, config_unit_enum, is_false};
-use schematic::{Config, ConfigEnum, validate};
+use schematic::{Config, ConfigEnum, env, validate};
 
 config_unit_enum!(
     /// The types of events in which to send notifications.
@@ -33,7 +33,7 @@ config_struct!(
         pub terminal_notifications: Option<NotifierEventType>,
 
         /// A secure URL in which to send webhooks to.
-        #[setting(validate = validate::url_secure)]
+        #[setting(env = "MOON_WEBHOOK_URL", validate = validate::url_secure)]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub webhook_url: Option<String>,
 
@@ -41,6 +41,7 @@ config_struct!(
         /// When enabled, will bypass the daemon and send webhooks in the
         /// main process.
         /// @since 1.38.0
+        #[setting(env = "MOON_WEBHOOK_ACKNOWLEDGE", parse_env = env::parse_bool)]
         #[serde(default, skip_serializing_if = "is_false")]
         pub webhook_acknowledge: bool,
     }

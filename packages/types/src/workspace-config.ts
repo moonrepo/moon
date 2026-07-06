@@ -273,9 +273,15 @@ export interface NotifierConfig {
 	 * When enabled, will bypass the daemon and send webhooks in the
 	 * main process.
 	 * @since 1.38.0
+	 *
+	 * @env MOON_WEBHOOK_ACKNOWLEDGE
 	 */
 	webhookAcknowledge?: boolean;
-	/** A secure URL in which to send webhooks to. */
+	/**
+	 * A secure URL in which to send webhooks to.
+	 *
+	 * @env MOON_WEBHOOK_URL
+	 */
 	webhookUrl?: string | null;
 }
 
@@ -945,9 +951,15 @@ export interface PartialNotifierConfig {
 	 * When enabled, will bypass the daemon and send webhooks in the
 	 * main process.
 	 * @since 1.38.0
+	 *
+	 * @env MOON_WEBHOOK_ACKNOWLEDGE
 	 */
 	webhookAcknowledge?: boolean | null;
-	/** A secure URL in which to send webhooks to. */
+	/**
+	 * A secure URL in which to send webhooks to.
+	 *
+	 * @env MOON_WEBHOOK_URL
+	 */
 	webhookUrl?: string | null;
 }
 

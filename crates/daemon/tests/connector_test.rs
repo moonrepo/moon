@@ -105,6 +105,24 @@ mod connector {
         assert!(result);
         assert!(!connector.get_state_file().exists());
     }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_start_daemon_creates_missing_daemon_dir() {
+        let sandbox = create_empty_sandbox();
+        let connector = make_connector(&sandbox);
+
+        // A fresh workspace: nothing on the client side has created the daemon
+        // directory yet.
+        assert!(!connector.daemon_dir.exists());
+
+        // The spawn ultimately fails in the test binary, but start_daemon must
+        // first create the directory so the spawn lock inside it can be opened.
+        // Before the fix this failed with `NotFound` before creating anything.
+        let _ = connector.start_daemon(false).await;
+
+        assert!(connector.daemon_dir.exists());
+    }
 }
 
 mod connect {

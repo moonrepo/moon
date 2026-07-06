@@ -4,7 +4,7 @@ use crate::manifest::Manifest;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_blob::{BlobCleanStats, BlobInput, BlobOutput};
-use moon_common::Id;
+use moon_common::{Id, format_error_chain};
 use moon_hash::Digest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashSet;
@@ -169,7 +169,7 @@ where
                 warn!(
                     storage = self.get_id().as_str(),
                     hash = digest.hash.as_str(),
-                    error = error.to_string(),
+                    error = format_error_chain(&error),
                     "Failed to find missing blobs, aborting store operation",
                 );
 
@@ -397,7 +397,7 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
             trace!(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
-                error = error.to_string(),
+                error = format_error_chain(&error),
                 "Failed to store blobs (batch {}:{})",
                 batch.index,
                 batch.total,
@@ -443,7 +443,7 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
             trace!(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
-                error = error.to_string(),
+                error = format_error_chain(&error),
                 "Failed to retrieve blobs (batch {}:{})",
                 batch.index,
                 batch.total,

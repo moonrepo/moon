@@ -1,7 +1,7 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use moon_blob::{BlobCleanStats, BlobContent, BlobInput};
-use moon_common::Id;
+use moon_common::{Id, format_error_chain};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
@@ -95,7 +95,7 @@ impl Storage {
                 if let Err(error) = backend.connect().await {
                     warn!(
                         storage = backend.get_id().as_str(),
-                        error = error.to_string(),
+                        error = format_error_chain(&error),
                         "Failed to connect to storage backend, disabling it"
                     );
                 }
@@ -179,7 +179,7 @@ impl Storage {
                 Err(error) => {
                     warn!(
                         storage = backend.get_id().as_str(),
-                        error = error.to_string(),
+                        error = format_error_chain(&error),
                         "Failed to garbage collect storage backend"
                     );
                 }
@@ -441,7 +441,7 @@ async fn persist_manifest_in_backend(
             warn!(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
-                error = error.to_string(),
+                error = format_error_chain(&error),
                 "Failed to store cache manifest",
             );
         }

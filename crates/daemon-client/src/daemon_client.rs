@@ -1,6 +1,6 @@
 use crate::daemon_client_error::DaemonClientError;
 use hyper_util::rt::TokioIo;
-use moon_common::color;
+use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{moon_daemon_client::MoonDaemonClient, *};
 use moon_daemon_utils::endpoint::*;
 use std::future::Future;
@@ -189,7 +189,7 @@ impl DaemonClient {
             }
             Err(error) => {
                 debug!(
-                    error = error.to_string(),
+                    error = format_error_chain(&error),
                     "Could not read daemon status for handshake, using it as-is"
                 );
 

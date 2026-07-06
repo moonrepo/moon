@@ -5383,6 +5383,7 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "miette 7.6.0",
+ "moon_common",
  "moon_daemon_client",
  "moon_daemon_proto",
  "moon_daemon_server",

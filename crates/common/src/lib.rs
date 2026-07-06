@@ -11,3 +11,11 @@ pub use starbase_styles::*;
 
 // https://docs.rs/tokio/latest/tokio/runtime/struct.Builder.html#method.max_blocking_threads
 pub const BLOCKING_THREAD_COUNT: usize = 512;
+
+pub fn format_error_chain(report: &miette::Report) -> String {
+    report
+        .chain()
+        .map(|cause| cause.to_string())
+        .collect::<Vec<_>>()
+        .join(" -> ")
+}

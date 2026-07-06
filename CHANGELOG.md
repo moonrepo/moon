@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where the daemon wouldn't start if the cache directory did not exist.
+- Fixed some error messages being swallowed in the logs.
+
 ## 2.4.0
 
 #### 🚀 Updates

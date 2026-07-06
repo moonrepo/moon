@@ -26,7 +26,10 @@ fn configure_application(_notification: &mut Notification) {
         if id != "com.apple.Finder"
             && let Err(error) = set_application(&id)
         {
-            debug!("Failed to set terminal source application: {error}");
+            debug!(
+                error = error.to_string(),
+                "Failed to set terminal source application"
+            );
         }
     });
 }
@@ -74,7 +77,10 @@ pub fn notify_terminal(title: impl AsRef<str>, description: impl AsRef<str>) -> 
             debug!("Sent terminal notification");
         }
         Err(error) => {
-            debug!("Failed to send terminal notification: {error}");
+            debug!(
+                error = error.to_string(),
+                "Failed to send terminal notification"
+            );
         }
     };
 

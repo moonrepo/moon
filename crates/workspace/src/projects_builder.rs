@@ -809,7 +809,8 @@ impl WorkspaceProjectsBuilder {
         // Skip aliases that are an invalid ID format
         if let Err(error) = Id::new(&alias) {
             debug!(
-                "Skipping alias {} for project {} as its an invalid format: {error}",
+                error = error.to_string(),
+                "Skipping alias {} for project {} as its an invalid format",
                 color::label(&alias),
                 color::id(id),
             );

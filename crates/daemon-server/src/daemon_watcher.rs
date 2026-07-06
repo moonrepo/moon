@@ -1,4 +1,5 @@
 use crate::daemon_server_error::DaemonServerError;
+use moon_common::format_error_chain;
 use moon_common::path::PathExt;
 use moon_file_watcher::*;
 use notify_debouncer_full::{new_debouncer, notify::RecursiveMode};
@@ -65,7 +66,8 @@ fn create_file_event(workspace_root: &Path, path: &Path, kind: EventKind) -> Opt
         Err(error) => {
             warn!(
                 path = ?path,
-                "Ignoring file watcher event that cannot be converted to a relative path: {error}"
+                error = error.to_string(),
+                "Ignoring file watcher event that cannot be converted to a relative path"
             );
 
             return None;
@@ -141,7 +143,7 @@ pub async fn start_file_watcher(
                     }
                     Err(errors) => {
                         for error in errors {
-                            warn!("File watcher error: {error}");
+                            warn!(error = error.to_string(), "File watcher error");
                         }
                     }
                 }
@@ -173,7 +175,7 @@ pub async fn start_file_listener<T: Clone + Send + 'static>(
 
     for watcher in watchers.iter_mut() {
         if let Err(error) = watcher.on_init(state.clone()).await {
-            error!("System watcher error: {error}");
+            error!(error = format_error_chain(&error), "System watcher error");
         }
     }
 
@@ -184,7 +186,7 @@ pub async fn start_file_listener<T: Clone + Send + 'static>(
                     Ok(event) => {
                         for watcher in watchers.iter_mut() {
                             if let Err(error) = watcher.on_file_event(state.clone(), &event).await {
-                                error!("System watcher error: {error}");
+                                error!(error = format_error_chain(&error), "System watcher error");
                             }
                         }
                     }

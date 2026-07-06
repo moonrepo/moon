@@ -1,8 +1,10 @@
 use crate::daemon_error::DaemonError;
+use moon_common::format_error_chain;
 use moon_daemon_client::{DaemonClient, HandshakeOutcome};
 use moon_daemon_utils::endpoint::*;
 use moon_daemon_utils::lock::DaemonLock;
 use moon_daemon_utils::sys::*;
+use starbase_utils::fs;
 use std::io::Error;
 use std::path::{Path, PathBuf};
 use std::process::Child;
@@ -155,7 +157,7 @@ impl DaemonConnector {
 
                     if let Err(error) = self.stop_daemon().await {
                         warn!(
-                            error = error.to_string(),
+                            error = format_error_chain(&error),
                             "Failed to stop the mismatched daemon, continuing without it"
                         );
 
@@ -187,7 +189,7 @@ impl DaemonConnector {
             }
             Err(error) => {
                 warn!(
-                    error = error.to_string(),
+                    error = format_error_chain(&error),
                     "Failed to start the daemon, continuing without it"
                 );
 
@@ -201,7 +203,7 @@ impl DaemonConnector {
             Ok(client) => client,
             Err(error) => {
                 warn!(
-                    error = error.to_string(),
+                    error = format_error_chain(&error),
                     "Daemon started but could not be reached, continuing without it"
                 );
 
@@ -246,6 +248,13 @@ impl DaemonConnector {
 
             return Ok(pid);
         }
+
+        // Ensure the daemon directory exists before we open any lock or socket
+        // inside it. Nothing creates it on the client side — the cache engine
+        // only makes its own sibling directories — so on a fresh workspace
+        // (every CI run) the very first spawn-lock open fails with `NotFound`
+        // and aborts startup before the server is ever spawned.
+        fs::create_dir_all(&self.daemon_dir)?;
 
         // Cross-process single-flight: another CLI may be spawning right now.
         // If we can't take the spawn lock, one is, so wait for its daemon

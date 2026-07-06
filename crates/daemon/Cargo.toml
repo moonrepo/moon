@@ -5,6 +5,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
+moon_common = { path = "../common" }
 moon_daemon_client = { path = "../daemon-client" }
 moon_daemon_proto = { path = "../daemon-proto" }
 moon_daemon_server = { path = "../daemon-server" }
@@ -14,6 +15,7 @@ miette = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+starbase_utils = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }

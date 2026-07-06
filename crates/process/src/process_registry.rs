@@ -152,13 +152,21 @@ async fn shutdown_processes_from_signal(
                 debug!(pid, "Waiting on child process");
 
                 if let Err(error) = child.wait().await {
-                    warn!(pid, "Failed to wait on child process: {error}");
+                    warn!(
+                        pid,
+                        error = error.to_string(),
+                        "Failed to wait on child process"
+                    );
                 }
             } else {
                 debug!(pid, "Shutting down child process");
 
                 if let Err(error) = child.kill_with_signal(signal).await {
-                    warn!(pid, "Failed to shutdown child process: {error}");
+                    warn!(
+                        pid,
+                        error = error.to_string(),
+                        "Failed to shutdown child process"
+                    );
                 }
             }
 
@@ -201,7 +209,11 @@ async fn kill_processes(processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>) {
             debug!(pid, "Killing child process");
 
             if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
-                warn!(pid, "Failed to kill child process: {error}");
+                warn!(
+                    pid,
+                    error = error.to_string(),
+                    "Failed to kill child process"
+                );
             }
         });
     }

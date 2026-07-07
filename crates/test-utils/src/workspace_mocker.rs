@@ -518,7 +518,14 @@ impl WorkspaceMocker {
             Some(engine) => WorkspaceBuilder::new_with_cache(context, engine)
                 .await
                 .unwrap(),
-            None => WorkspaceBuilder::new(context).await.unwrap(),
+            None => {
+                let mut builder = WorkspaceBuilder::new(context).await.unwrap();
+
+                // The cached flow above extends internally, so only
+                // extend for the uncached flow
+                builder.extend_projects_from_plugins().await.unwrap();
+                builder
+            }
         };
 
         if options.ids.is_empty() {

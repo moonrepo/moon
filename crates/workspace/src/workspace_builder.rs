@@ -966,7 +966,10 @@ impl WorkspaceBuilder {
         Ok(())
     }
 
-    async fn extend_projects_from_plugins(&mut self) -> miette::Result<()> {
+    /// Extend the graph's project build data with data derived from all
+    /// registered plugins, like aliases, dependencies, and tasks. This
+    /// must be called before projects are loaded into the graph.
+    pub async fn extend_projects_from_plugins(&mut self) -> miette::Result<()> {
         self.extend_projects_from_extensions().await?;
         self.extend_projects_from_toolchains().await?;
 

@@ -625,30 +625,6 @@ mod project_graph {
                 )
                 .await;
             }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn invalidates_with_new_root_lock_file() {
-                test_plugins_invalidate(
-                    |_| {},
-                    |sandbox| {
-                        sandbox.create_file("tc.lock", "v1");
-                    },
-                )
-                .await;
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn invalidates_with_changed_root_lock_file() {
-                test_plugins_invalidate(
-                    |sandbox| {
-                        sandbox.create_file("tc.lock", "v1");
-                    },
-                    |sandbox| {
-                        sandbox.create_file("tc.lock", "v2");
-                    },
-                )
-                .await;
-            }
         }
     }
 

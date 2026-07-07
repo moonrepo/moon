@@ -708,10 +708,10 @@ impl WorkspaceBuilder {
     /// the result, so that file existence contributes to the hash.
     async fn hash_input_paths(
         &self,
-        paths: &BTreeSet<WorkspaceRelativePathBuf>,
+        paths: BTreeSet<WorkspaceRelativePathBuf>,
     ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
         let context = self.context();
-        let paths = paths.iter().cloned().collect::<Vec<_>>();
+        let paths = paths.into_iter().collect::<Vec<_>>();
 
         if context.workspace_config.experiments.native_file_hashing {
             context
@@ -786,7 +786,7 @@ impl WorkspaceBuilder {
 
         let mut fingerprint = WorkspaceGraphFingerprint::default();
         fingerprint.add_projects(&self.project_data);
-        fingerprint.add_inputs(self.hash_input_paths(&all_paths).await?);
+        fingerprint.add_inputs(self.hash_input_paths(all_paths).await?);
         fingerprint.add_extension_versions(&extension_versions);
         fingerprint.add_toolchain_versions(&toolchain_versions);
         fingerprint.gather_env();

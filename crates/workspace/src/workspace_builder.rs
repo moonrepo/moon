@@ -154,14 +154,8 @@ impl WorkspaceBuilder {
         // Create a lock to avoid colliding cache writes
         let _lock = cache_engine.create_lock(LOCK_FILE_NAME)?;
 
-        // Derive possible input files from toolchain metadata, so that
-        // `extend_project_graph` calls can be skipped entirely on a cache hit
-        let (candidate_paths, plugin_versions) = graph.gather_toolchain_input_paths().await?;
-
         // Hash the project graph based on the preloaded state
-        let digest = graph
-            .generate_cache_digest(cache_engine, &candidate_paths, &plugin_versions)
-            .await?;
+        let digest = graph.generate_cache_digest(cache_engine).await?;
 
         debug!(
             hash = digest.hash.as_str(),
@@ -734,56 +728,67 @@ impl WorkspaceBuilder {
         }
     }
 
-    /// Gather all possible input files that toolchain plugins may read when
-    /// extending the project graph, derived from the manifest and lock file
-    /// names in their metadata. Also gather each plugin's version. Both are
-    /// used within the cache fingerprint, and avoid having to call
-    /// `extend_project_graph` just to determine cacheable inputs.
-    async fn gather_toolchain_input_paths(
-        &self,
-    ) -> miette::Result<(BTreeSet<WorkspaceRelativePathBuf>, BTreeMap<Id, String>)> {
-        let context = self.context();
-        let mut paths = BTreeSet::default();
-        let mut versions = BTreeMap::default();
-
-        for toolchain in context.toolchain_registry.load_all().await? {
-            for file_name in &toolchain.metadata.manifest_file_names {
-                // In the workspace root, which may not be a project
-                paths.insert(WorkspaceRelativePathBuf::from(file_name.as_str()));
-
-                // And in each project source directory
-                for build_data in self.project_data.values() {
-                    paths.insert(build_data.source.join(file_name).normalize());
-                }
-            }
-
-            versions.insert(
-                toolchain.id.clone(),
-                toolchain.metadata.plugin_version.clone(),
-            );
-        }
-
-        Ok((paths, versions))
-    }
-
     /// Generate a digest for the current workspace, derived from project
     /// sources, config file contents, plugin input files, plugin versions,
     /// and environment variables. This digest is used to invalidate the
     /// cached workspace graph.
-    async fn generate_cache_digest(
-        &self,
-        cache_engine: &CacheEngine,
-        candidate_paths: &BTreeSet<WorkspaceRelativePathBuf>,
-        plugin_versions: &BTreeMap<Id, String>,
-    ) -> miette::Result<Digest> {
+    async fn generate_cache_digest(&self, cache_engine: &CacheEngine) -> miette::Result<Digest> {
+        let context = self.context();
+        let extension_handle = tokio::spawn(async move {
+            let mut versions = BTreeMap::default();
+
+            for extension in context.extension_registry.load_all().await? {
+                if extension.has_func("extend_project_graph").await {
+                    versions.insert(
+                        extension.id.clone(),
+                        extension.metadata.plugin_version.clone(),
+                    );
+                }
+            }
+
+            Ok::<_, miette::Report>(versions)
+        });
+
+        let context = self.context();
+        let project_sources = self.map_project_sources();
+        let toolchain_handle = tokio::spawn(async move {
+            let mut paths = BTreeSet::default();
+            let mut versions = BTreeMap::default();
+
+            for toolchain in context.toolchain_registry.load_all().await? {
+                for file_name in &toolchain.metadata.manifest_file_names {
+                    // In the workspace root, which may not be a project
+                    paths.insert(WorkspaceRelativePathBuf::from(file_name.as_str()));
+
+                    // And in each project source directory
+                    for source in project_sources.values() {
+                        paths.insert(WorkspaceRelativePathBuf::from(source).join(file_name));
+                    }
+                }
+
+                if toolchain.has_func("extend_project_graph").await {
+                    versions.insert(
+                        toolchain.id.clone(),
+                        toolchain.metadata.plugin_version.clone(),
+                    );
+                }
+            }
+
+            Ok::<_, miette::Report>((paths, versions))
+        });
+
+        let extension_versions = extension_handle.await.into_diagnostic()??;
+        let (toolchain_paths, toolchain_versions) = toolchain_handle.await.into_diagnostic()??;
+
         let mut all_paths = BTreeSet::default();
         all_paths.extend(self.config_paths.iter().cloned());
-        all_paths.extend(candidate_paths.iter().cloned());
+        all_paths.extend(toolchain_paths);
 
         let mut fingerprint = WorkspaceGraphFingerprint::default();
         fingerprint.add_projects(&self.project_data);
         fingerprint.add_inputs(self.hash_input_paths(&all_paths).await?);
-        fingerprint.add_toolchain_versions(plugin_versions);
+        fingerprint.add_extension_versions(&extension_versions);
+        fingerprint.add_toolchain_versions(&toolchain_versions);
         fingerprint.gather_env();
 
         cache_engine

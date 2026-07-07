@@ -22,6 +22,9 @@ fingerprint!(
         // Environment variables required for cache invalidation.
         env: BTreeMap<String, String>,
 
+        // Versions of the extension plugins that may extend the graph.
+        extensions: BTreeMap<&'graph Id, &'graph String>,
+
         // The graph stores absolute file paths, which breaks moon when
         // running tasks inside and outside of a container at the same time.
         // This flag helps to continuously bust the cache.
@@ -49,6 +52,7 @@ impl Default for WorkspaceGraphFingerprint<'_> {
             inputs: BTreeMap::default(),
             env: BTreeMap::default(),
             in_docker: is_docker(),
+            extensions: BTreeMap::default(),
             toolchains: BTreeMap::default(),
             version: GlobalEnvBag::instance()
                 .get("MOON_VERSION")
@@ -68,6 +72,10 @@ impl<'graph> WorkspaceGraphFingerprint<'graph> {
 
     pub fn add_inputs(&mut self, inputs: BTreeMap<WorkspaceRelativePathBuf, String>) {
         self.inputs.extend(inputs);
+    }
+
+    pub fn add_extension_versions(&mut self, versions: &'graph BTreeMap<Id, String>) {
+        self.extensions.extend(versions.iter());
     }
 
     pub fn add_toolchain_versions(&mut self, versions: &'graph BTreeMap<Id, String>) {

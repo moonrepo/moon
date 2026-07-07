@@ -8,20 +8,16 @@ use rustc_hash::FxHashMap;
 use std::collections::BTreeMap;
 
 cache_item!(
-    pub struct WorkspaceProjectsCacheState {
+    pub struct WorkspaceGraphCacheState {
         pub last_hash: ContentHash,
-        pub projects: FxHashMap<Id, ProjectBuildData>,
     }
 );
 
 fingerprint!(
     #[derive(Debug)]
     pub struct WorkspaceGraphFingerprint<'graph> {
-        // Data derived from the workspace graph builder.
-        projects: BTreeMap<&'graph Id, &'graph ProjectBuildData>,
-
-        // Project and workspace configs required for cache invalidation.
-        configs: BTreeMap<WorkspaceRelativePathBuf, String>,
+        // Project sources derived from the workspace graph builder.
+        projects: BTreeMap<&'graph Id, &'graph WorkspaceRelativePathBuf>,
 
         // Environment variables required for cache invalidation.
         env: BTreeMap<String, String>,
@@ -30,6 +26,13 @@ fingerprint!(
         // running tasks inside and outside of a container at the same time.
         // This flag helps to continuously bust the cache.
         in_docker: bool,
+
+        // Project and workspace configs and toolchain inputs required
+        // for cache invalidation.
+        inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
+
+        // Versions of the toolchain plugins that may extend the graph.
+        toolchains: BTreeMap<&'graph Id, &'graph String>,
 
         // Version of the moon CLI. We need to include this so that the graph
         // cache is invalidated between each release, otherwise internal Rust
@@ -43,9 +46,10 @@ impl Default for WorkspaceGraphFingerprint<'_> {
     fn default() -> Self {
         WorkspaceGraphFingerprint {
             projects: BTreeMap::default(),
-            configs: BTreeMap::default(),
+            inputs: BTreeMap::default(),
             env: BTreeMap::default(),
             in_docker: is_docker(),
+            toolchains: BTreeMap::default(),
             version: GlobalEnvBag::instance()
                 .get("MOON_VERSION")
                 .unwrap_or_default(),
@@ -55,11 +59,19 @@ impl Default for WorkspaceGraphFingerprint<'_> {
 
 impl<'graph> WorkspaceGraphFingerprint<'graph> {
     pub fn add_projects(&mut self, projects: &'graph FxHashMap<Id, ProjectBuildData>) {
-        self.projects.extend(projects.iter());
+        self.projects.extend(
+            projects
+                .iter()
+                .map(|(id, build_data)| (id, &build_data.source)),
+        );
     }
 
-    pub fn add_configs(&mut self, configs: BTreeMap<WorkspaceRelativePathBuf, String>) {
-        self.configs.extend(configs);
+    pub fn add_inputs(&mut self, inputs: BTreeMap<WorkspaceRelativePathBuf, String>) {
+        self.inputs.extend(inputs);
+    }
+
+    pub fn add_toolchain_versions(&mut self, versions: &'graph BTreeMap<Id, String>) {
+        self.toolchains.extend(versions.iter());
     }
 
     pub fn gather_env(&mut self) {

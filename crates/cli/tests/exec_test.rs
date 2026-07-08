@@ -2833,7 +2833,7 @@ mod exec {
                 cmd.arg("exec").arg("base:standard");
             });
 
-            assert!(sandbox.path().join("CODEOWNERS").exists());
+            assert!(sandbox.path().join(".bitbucket/CODEOWNERS").exists());
         }
     }
 

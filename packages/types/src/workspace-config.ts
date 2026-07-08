@@ -559,7 +559,7 @@ export type VcsHookFormat = 'bash' | 'native';
  * The upstream version control provider, where the repository
  * source code is stored.
  */
-export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
+export type VcsProvider = 'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other';
 
 /** Configures the version control system (VCS). */
 export interface VcsConfig {
@@ -595,7 +595,7 @@ export interface VcsConfig {
 	 * @since 1.8.0
 	 *
 	 * @default 'github'
-	 * @type {'bitbucket' | 'github' | 'gitlab' | 'other'}
+	 * @type {'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other'}
 	 */
 	provider: VcsProvider;
 	/** List of remote's in which to compare branches against. */

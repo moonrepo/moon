@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Reworked the workspace graph caching to avoid plugin calls on cache hits, which can improve
+  performance in large workspaces.
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Fixed `go list -deps` running on non-Go projects.
+
 ## 2.4.1
 
 #### 🐞 Fixes

@@ -37,7 +37,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
 use starbase_utils::json;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -133,7 +133,6 @@ impl WorkspaceBuilder {
     #[instrument(skip_all)]
     pub async fn new_with_cache(
         context: WorkspaceBuilderContext,
-        cache_engine: &CacheEngine,
     ) -> miette::Result<WorkspaceBuilder> {
         let is_vcs_enabled = context
             .vcs
@@ -152,10 +151,11 @@ impl WorkspaceBuilder {
         }
 
         // Create a lock to avoid colliding cache writes
-        let _lock = cache_engine.create_lock(LOCK_FILE_NAME)?;
+        let context = graph.context();
+        let _lock = context.cache_engine.create_lock(LOCK_FILE_NAME)?;
 
         // Hash the project graph based on the preloaded state
-        let digest = graph.generate_cache_digest(cache_engine).await?;
+        let digest = graph.generate_cache_digest().await?;
 
         debug!(
             hash = digest.hash.as_str(),
@@ -163,10 +163,14 @@ impl WorkspaceBuilder {
         );
 
         // Check the current state and cache
-        let mut state = cache_engine
+        let mut state = context
+            .cache_engine
             .state
             .load_state::<WorkspaceGraphCacheState>(STATE_CACHE_FILE_NAME)?;
-        let cache_path = cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME);
+        let cache_path = context
+            .cache_engine
+            .state
+            .resolve_path(STATE_GRAPH_FILE_NAME);
 
         if digest.hash == state.data.last_hash && cache_path.exists() {
             let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;
@@ -702,98 +706,14 @@ impl WorkspaceBuilder {
         Ok(())
     }
 
-    /// When caching the graph, we must hash all project and workspace
-    /// config files, and possible plugin input files, that are required
-    /// to invalidate the cache. Missing files are simply omitted from
-    /// the result, so that file existence contributes to the hash.
-    async fn hash_input_paths(
-        &self,
-        paths: BTreeSet<WorkspaceRelativePathBuf>,
-    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
-        let context = self.context();
-        let paths = paths.into_iter().collect::<Vec<_>>();
-
-        if context.workspace_config.experiments.native_file_hashing {
-            context
-                .cache_engine
-                .hash_files(&context.workspace_root, &paths)
-                .await
-        } else {
-            context
-                .vcs
-                .as_ref()
-                .expect("VCS required!")
-                .get_file_hashes(&paths, true)
-                .await
-        }
-    }
-
-    /// Generate a digest for the current workspace, derived from project
-    /// sources, config file contents, plugin input files, plugin versions,
-    /// and environment variables. This digest is used to invalidate the
-    /// cached workspace graph.
-    async fn generate_cache_digest(&self, cache_engine: &CacheEngine) -> miette::Result<Digest> {
-        let context = self.context();
-        let extension_handle = tokio::spawn(async move {
-            let mut versions = BTreeMap::default();
-
-            for extension in context.extension_registry.load_all().await? {
-                if extension.has_func("extend_project_graph").await {
-                    versions.insert(
-                        extension.id.clone(),
-                        extension.metadata.plugin_version.clone(),
-                    );
-                }
-            }
-
-            Ok::<_, miette::Report>(versions)
-        });
-
-        let context = self.context();
-        let project_sources = self.map_project_sources();
-        let toolchain_handle = tokio::spawn(async move {
-            let mut paths = BTreeSet::default();
-            let mut versions = BTreeMap::default();
-
-            for toolchain in context.toolchain_registry.load_all().await? {
-                for file_name in &toolchain.metadata.manifest_file_names {
-                    // In the workspace root, which may not be a project
-                    paths.insert(WorkspaceRelativePathBuf::from(file_name.as_str()));
-
-                    // And in each project source directory
-                    for source in project_sources.values() {
-                        paths.insert(WorkspaceRelativePathBuf::from(source).join(file_name));
-                    }
-                }
-
-                if toolchain.has_func("extend_project_graph").await {
-                    versions.insert(
-                        toolchain.id.clone(),
-                        toolchain.metadata.plugin_version.clone(),
-                    );
-                }
-            }
-
-            Ok::<_, miette::Report>((paths, versions))
-        });
-
-        let extension_versions = extension_handle.await.into_diagnostic()??;
-        let (toolchain_paths, toolchain_versions) = toolchain_handle.await.into_diagnostic()??;
-
-        let mut all_paths = BTreeSet::default();
-        all_paths.extend(self.config_paths.iter().cloned());
-        all_paths.extend(toolchain_paths);
-
-        let mut fingerprint = WorkspaceGraphFingerprint::default();
-        fingerprint.add_projects(&self.project_data);
-        fingerprint.add_inputs(self.hash_input_paths(all_paths).await?);
-        fingerprint.add_extension_versions(&extension_versions);
-        fingerprint.add_toolchain_versions(&toolchain_versions);
-        fingerprint.gather_env();
-
-        cache_engine
-            .hash
-            .save_manifest_without_hasher("workspace-graph", &fingerprint)
+    async fn generate_cache_digest(&self) -> miette::Result<Digest> {
+        generate_graph_cache_digest(
+            self.context(),
+            &self.project_data,
+            self.config_paths.iter().cloned().collect(),
+            false,
+        )
+        .await
     }
 
     /// Preload the graph with project sources from the workspace configuration.
@@ -1130,7 +1050,7 @@ impl WorkspaceBuilder {
         Ok(())
     }
 
-    fn context(&self) -> Arc<WorkspaceBuilderContext> {
+    pub fn context(&self) -> Arc<WorkspaceBuilderContext> {
         Arc::clone(
             self.context
                 .as_ref()

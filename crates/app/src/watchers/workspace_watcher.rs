@@ -4,7 +4,7 @@ use moon_common::path::WorkspaceRelativePath;
 use moon_config::WorkspaceProjects;
 use moon_daemon::AtomicDaemonState;
 use moon_file_watcher::*;
-use moon_workspace::{STATE_GRAPH_FILE_NAME, STATE_PROJECTS_FILE_NAME};
+use moon_workspace::{STATE_CACHE_FILE_NAME, STATE_GRAPH_FILE_NAME};
 use proto_core::ProtoEnvironment;
 use regex::Regex;
 use starbase_utils::fs;
@@ -133,7 +133,7 @@ impl WorkspaceWatcher {
         let cache_engine = self.session.get_cache_engine()?;
 
         fs::remove_file(cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME))?;
-        fs::remove_file(cache_engine.state.resolve_path(STATE_PROJECTS_FILE_NAME))?;
+        fs::remove_file(cache_engine.state.resolve_path(STATE_CACHE_FILE_NAME))?;
 
         // Rebuild the graphs in a background thread
         self.graph_handle = Some(self.session.rebuild_graphs(Arc::clone(state)));

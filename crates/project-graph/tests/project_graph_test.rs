@@ -10,8 +10,7 @@ use moon_task::{Target, TaskFileInput, TaskFileOutput, TaskGlobInput};
 use moon_test_utils::{
     MoonSandbox, WorkspaceGraph, WorkspaceMockOptions, WorkspaceMocker, create_moon_sandbox,
 };
-use moon_workspace::WorkspaceProjectsCacheState;
-use petgraph::prelude::*;
+use moon_workspace::WorkspaceGraphCacheState;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::assert_snapshot;
 use starbase_utils::{fs, json, string_vec};
@@ -345,190 +344,350 @@ mod project_graph {
 
     mod cache {
         use super::*;
-        use moon_workspace::ProjectBuildData;
 
         const CACHE_PATH: &str = ".moon/cache/states/workspaceGraph.json";
-        const STATE_PATH: &str = ".moon/cache/states/projectsBuildDataV1.json";
+        const STATE_PATH: &str = ".moon/cache/states/workspaceGraphStateV1.json";
 
-        async fn do_generate(root: &Path) -> WorkspaceGraph {
-            let mock = create_workspace_mocker(root);
-            let cache_engine = mock.mock_cache_engine();
+        // Written by the `tc-tier1` test plugin when `extend_project_graph`
+        // is called, allowing us to detect if/when it was invoked
+        const MARKER_PATH: &str = ".moon/cache/tcExtendProjectGraph";
+
+        fn load_state(sandbox: &MoonSandbox) -> WorkspaceGraphCacheState {
+            json::read_file(sandbox.path().join(STATE_PATH)).unwrap()
+        }
+
+        async fn do_generate(root: &Path, async_graph: bool) -> WorkspaceGraph {
+            let mut mock = create_workspace_mocker(root);
+
+            if async_graph {
+                mock = mock.update_workspace_config(|config| {
+                    config.experiments.async_graph_building = true;
+                });
+            }
 
             mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
-                cache: if root.join(".git").exists() {
-                    Some(cache_engine)
-                } else {
-                    None
-                },
+                cache: root.join(".git").exists(),
+                ..Default::default()
+            })
+            .await
+        }
+
+        async fn do_generate_with_plugins(root: &Path, async_graph: bool) -> WorkspaceGraph {
+            let mut mock = WorkspaceMocker::new(root)
+                .load_default_configs()
+                .with_default_projects()
+                .with_test_toolchains()
+                .with_inherited_tasks();
+
+            if async_graph {
+                mock = mock.update_workspace_config(|config| {
+                    config.experiments.async_graph_building = true;
+                });
+            }
+
+            mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
+                cache: true,
                 ..Default::default()
             })
             .await
         }
 
         async fn build_cached_graph(
+            async_graph: bool,
             func: impl FnOnce(&MoonSandbox),
         ) -> (MoonSandbox, WorkspaceGraph) {
             let sandbox = create_moon_sandbox("dependencies");
 
             func(&sandbox);
 
-            let graph = do_generate(sandbox.path()).await;
+            let graph = do_generate(sandbox.path(), async_graph).await;
 
             (sandbox, graph)
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn doesnt_cache_if_no_vcs() {
-            let (sandbox, _graph) = build_cached_graph(|_| {}).await;
-
-            assert!(!sandbox.path().join(CACHE_PATH).exists())
-        }
-
-        #[tokio::test(flavor = "multi_thread")]
-        async fn caches_if_vcs() {
-            let (sandbox, _graph) = build_cached_graph(|sandbox| {
+        async fn test_invalidate(async_graph: bool, func: impl FnOnce(&MoonSandbox)) {
+            let (sandbox, _graph) = build_cached_graph(async_graph, |sandbox| {
                 sandbox.enable_git();
             })
             .await;
 
-            assert!(sandbox.path().join(CACHE_PATH).exists());
+            let state1 = load_state(&sandbox);
+
+            func(&sandbox);
+            do_generate(sandbox.path(), async_graph).await;
+
+            let state2 = load_state(&sandbox);
+
+            assert_ne!(state1.last_hash, state2.last_hash);
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn loads_from_cache() {
-            let (sandbox, graph) = build_cached_graph(|sandbox| {
-                sandbox.enable_git();
-            })
-            .await;
-            let cached_graph = do_generate(sandbox.path()).await;
+        async fn build_plugins_cached_graph(
+            async_graph: bool,
+            func: impl FnOnce(&MoonSandbox),
+        ) -> MoonSandbox {
+            let sandbox = create_moon_sandbox("dependencies");
+            sandbox.enable_git();
 
-            assert_eq!(
-                graph.projects.get_node_keys(),
-                cached_graph.projects.get_node_keys()
-            );
+            func(&sandbox);
+
+            do_generate_with_plugins(sandbox.path(), async_graph).await;
+
+            sandbox
         }
 
-        #[tokio::test(flavor = "multi_thread")]
-        async fn creates_states_and_manifests() {
-            let (sandbox, _graph) = build_cached_graph(|sandbox| {
-                sandbox.enable_git();
-            })
-            .await;
+        async fn test_plugins_invalidate(
+            async_graph: bool,
+            setup: impl FnOnce(&MoonSandbox),
+            mutate: impl FnOnce(&MoonSandbox),
+        ) {
+            let sandbox = build_plugins_cached_graph(async_graph, setup).await;
 
-            let state: WorkspaceProjectsCacheState =
-                json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
+            let state1 = load_state(&sandbox);
 
-            assert_eq!(
-                state.projects,
-                FxHashMap::from_iter([
-                    (
-                        Id::raw("a"),
-                        ProjectBuildData {
-                            node_index: Some(NodeIndex::from(1)),
-                            source: "a".into(),
-                            ..Default::default()
-                        }
-                    ),
-                    (
-                        Id::raw("b"),
-                        ProjectBuildData {
-                            node_index: Some(NodeIndex::from(2)),
-                            source: "b".into(),
-                            ..Default::default()
-                        }
-                    ),
-                    (
-                        Id::raw("c"),
-                        ProjectBuildData {
-                            node_index: Some(NodeIndex::from(3)),
-                            source: "c".into(),
-                            ..Default::default()
-                        }
-                    ),
-                    (
-                        Id::raw("d"),
-                        ProjectBuildData {
-                            node_index: Some(NodeIndex::from(0)),
-                            source: "d".into(),
-                            ..Default::default()
-                        }
-                    ),
-                ])
-            );
+            mutate(&sandbox);
+            do_generate_with_plugins(sandbox.path(), async_graph).await;
 
-            assert!(
-                sandbox
-                    .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{}.json", state.last_hash))
-                    .exists()
-            );
+            let state2 = load_state(&sandbox);
+
+            assert_ne!(state1.last_hash, state2.last_hash);
         }
 
-        mod invalidation {
+        // Generates the entire caching suite for the sync or async builder
+        macro_rules! cache_tests {
+            ($async_graph:expr) => {
+                #[tokio::test(flavor = "multi_thread")]
+                async fn doesnt_cache_if_no_vcs() {
+                    let (sandbox, _graph) = build_cached_graph($async_graph, |_| {}).await;
+
+                    assert!(!sandbox.path().join(CACHE_PATH).exists())
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn caches_if_vcs() {
+                    let (sandbox, _graph) = build_cached_graph($async_graph, |sandbox| {
+                        sandbox.enable_git();
+                    })
+                    .await;
+
+                    assert!(sandbox.path().join(CACHE_PATH).exists());
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn loads_from_cache() {
+                    let (sandbox, graph) = build_cached_graph($async_graph, |sandbox| {
+                        sandbox.enable_git();
+                    })
+                    .await;
+                    let cached_graph = do_generate(sandbox.path(), $async_graph).await;
+
+                    assert_eq!(
+                        graph.projects.get_node_keys(),
+                        cached_graph.projects.get_node_keys()
+                    );
+                    assert_eq!(
+                        graph.tasks.get_node_keys(),
+                        cached_graph.tasks.get_node_keys()
+                    );
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn creates_states_and_manifests() {
+                    let (sandbox, _graph) = build_cached_graph($async_graph, |sandbox| {
+                        sandbox.enable_git();
+                    })
+                    .await;
+
+                    let state = load_state(&sandbox);
+
+                    assert!(!state.last_hash.as_str().is_empty());
+
+                    assert!(
+                        sandbox
+                            .path()
+                            .join(".moon/cache/hashes")
+                            .join(format!("{}.json", state.last_hash))
+                            .exists()
+                    );
+                }
+
+                mod invalidation {
+                    use super::*;
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn with_workspace_changes() {
+                        test_invalidate($async_graph, |sandbox| {
+                            sandbox.create_file(".moon/workspace.yml", "# Changes");
+                        })
+                        .await;
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn with_toolchain_changes() {
+                        test_invalidate($async_graph, |sandbox| {
+                            sandbox.create_file(".moon/toolchains.yml", "# Changes");
+                        })
+                        .await;
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn with_scoped_tasks_changes() {
+                        test_invalidate($async_graph, |sandbox| {
+                            sandbox.create_file(".moon/tasks/node.yml", "# Changes");
+                        })
+                        .await;
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn with_project_config_changes() {
+                        test_invalidate($async_graph, |sandbox| {
+                            sandbox.create_file("a/moon.yml", "# Changes");
+                        })
+                        .await;
+
+                        test_invalidate($async_graph, |sandbox| {
+                            sandbox.create_file("b/moon.yml", "# Changes");
+                        })
+                        .await;
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn with_new_source_add() {
+                        test_invalidate($async_graph, |sandbox| {
+                            sandbox.create_file("z/moon.yml", "# Changes");
+                        })
+                        .await;
+                    }
+                }
+
+                mod plugins {
+                    use super::*;
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn skips_extend_project_graph_on_cache_hit() {
+                        let sandbox = build_plugins_cached_graph($async_graph, |_| {}).await;
+                        let marker = sandbox.path().join(MARKER_PATH);
+
+                        // Called on the initial build
+                        assert!(marker.exists());
+
+                        fs::remove_file(&marker).unwrap();
+
+                        // But not on a warm cache
+                        do_generate_with_plugins(sandbox.path(), $async_graph).await;
+
+                        assert!(!marker.exists());
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn calls_extend_project_graph_on_cache_miss() {
+                        let sandbox = build_plugins_cached_graph($async_graph, |_| {}).await;
+                        let marker = sandbox.path().join(MARKER_PATH);
+
+                        fs::remove_file(&marker).unwrap();
+
+                        // Invalidate by changing a project config
+                        sandbox.create_file("a/moon.yml", "# Changes");
+
+                        do_generate_with_plugins(sandbox.path(), $async_graph).await;
+
+                        assert!(marker.exists());
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn resolves_plugin_aliases_on_cache_hit() {
+                        let sandbox = build_plugins_cached_graph($async_graph, |sandbox| {
+                            sandbox.create_file("a/tc.cfg", "a-alias");
+                        })
+                        .await;
+
+                        // Warm run, uses the cached graph
+                        let graph = do_generate_with_plugins(sandbox.path(), $async_graph).await;
+
+                        assert_eq!(graph.get_project("a-alias").unwrap().id, Id::raw("a"));
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn invalidates_with_new_manifest_file() {
+                        test_plugins_invalidate(
+                            $async_graph,
+                            |_| {},
+                            |sandbox| {
+                                sandbox.create_file("a/tc.cfg", "a-alias");
+                            },
+                        )
+                        .await;
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn invalidates_with_changed_manifest_file() {
+                        test_plugins_invalidate(
+                            $async_graph,
+                            |sandbox| {
+                                sandbox.create_file("a/tc.cfg", "a-alias");
+                            },
+                            |sandbox| {
+                                sandbox.create_file("a/tc.cfg", "a-alias-changed");
+                            },
+                        )
+                        .await;
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn invalidates_with_removed_manifest_file() {
+                        test_plugins_invalidate(
+                            $async_graph,
+                            |sandbox| {
+                                sandbox.create_file("a/tc.cfg", "a-alias");
+                            },
+                            |sandbox| {
+                                fs::remove_file(sandbox.path().join("a/tc.cfg")).unwrap();
+                            },
+                        )
+                        .await;
+                    }
+                }
+            };
+        }
+
+        mod async_builder {
             use super::*;
 
-            async fn test_invalidate(func: impl FnOnce(&MoonSandbox)) {
-                let (sandbox, _graph) = build_cached_graph(|sandbox| {
-                    sandbox.enable_git();
-                })
-                .await;
+            cache_tests!(true);
+        }
 
-                let state1: WorkspaceProjectsCacheState =
-                    json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
+        mod sync_builder {
+            use super::*;
 
-                func(&sandbox);
-                do_generate(sandbox.path()).await;
+            cache_tests!(false);
+        }
 
-                let state2: WorkspaceProjectsCacheState =
-                    json::read_file(sandbox.path().join(STATE_PATH)).unwrap();
+        mod interop {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn rebuilds_when_cache_written_by_other_builder() {
+                let sandbox = create_moon_sandbox("dependencies");
+                sandbox.enable_git();
+
+                // Prime the cache with the sync builder
+                do_generate(sandbox.path(), false).await;
+
+                let state1 = load_state(&sandbox);
+
+                // The async builder must rebuild with a different hash, and
+                // not fail deserializing the other builder's cached shape
+                do_generate(sandbox.path(), true).await;
+
+                let state2 = load_state(&sandbox);
 
                 assert_ne!(state1.last_hash, state2.last_hash);
-            }
 
-            #[tokio::test(flavor = "multi_thread")]
-            async fn with_workspace_changes() {
-                test_invalidate(|sandbox| {
-                    sandbox.create_file(".moon/workspace.yml", "# Changes");
-                })
-                .await;
-            }
+                // And switching back must rebuild with a stable hash
+                do_generate(sandbox.path(), false).await;
 
-            #[tokio::test(flavor = "multi_thread")]
-            async fn with_toolchain_changes() {
-                test_invalidate(|sandbox| {
-                    sandbox.create_file(".moon/toolchains.yml", "# Changes");
-                })
-                .await;
-            }
+                let state3 = load_state(&sandbox);
 
-            #[tokio::test(flavor = "multi_thread")]
-            async fn with_scoped_tasks_changes() {
-                test_invalidate(|sandbox| {
-                    sandbox.create_file(".moon/tasks/node.yml", "# Changes");
-                })
-                .await;
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn with_project_config_changes() {
-                test_invalidate(|sandbox| {
-                    sandbox.create_file("a/moon.yml", "# Changes");
-                })
-                .await;
-
-                test_invalidate(|sandbox| {
-                    sandbox.create_file("b/moon.yml", "# Changes");
-                })
-                .await;
-            }
-
-            #[tokio::test(flavor = "multi_thread")]
-            async fn with_new_source_add() {
-                test_invalidate(|sandbox| {
-                    sandbox.create_file("z/moon.yml", "# Changes");
-                })
-                .await;
+                assert_eq!(state1.last_hash, state3.last_hash);
             }
         }
     }

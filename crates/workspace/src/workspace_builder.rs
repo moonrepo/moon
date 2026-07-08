@@ -19,6 +19,7 @@ use moon_config::{
 };
 use moon_config_loader::ConfigLoader;
 use moon_extension_plugin::ExtensionRegistry;
+use moon_hash::Digest;
 use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
 use moon_project::{Project, ProjectAlias, ProjectError};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
@@ -43,7 +44,7 @@ use tracing::{debug, instrument};
 
 pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
 pub const STATE_GRAPH_FILE_NAME: &str = "workspaceGraph.json";
-pub const STATE_PROJECTS_FILE_NAME: &str = "projectsBuildDataV1.json";
+pub const STATE_CACHE_FILE_NAME: &str = "workspaceGraphStateV1.json";
 
 pub struct WorkspaceBuilderContext {
     pub cache_engine: Arc<CacheEngine>,
@@ -110,12 +111,12 @@ impl WorkspaceBuilder {
         debug!("Building workspace graph (project and task graphs)");
 
         let mut graph = WorkspaceBuilder {
+            aliases: FxHashMap::default(),
             config_paths: vec![],
             context: Some(Arc::new(context)),
-            aliases: FxHashMap::default(),
-            projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph: Dag::new(),
+            projects_by_tag: FxHashMap::default(),
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_project_id: None,
@@ -132,7 +133,6 @@ impl WorkspaceBuilder {
     #[instrument(skip_all)]
     pub async fn new_with_cache(
         context: WorkspaceBuilderContext,
-        cache_engine: &CacheEngine,
     ) -> miette::Result<WorkspaceBuilder> {
         let is_vcs_enabled = context
             .vcs
@@ -143,6 +143,7 @@ impl WorkspaceBuilder {
 
         // No VCS to hash with, so abort caching
         if !is_vcs_enabled {
+            graph.extend_projects_from_plugins().await?;
             graph.load_projects().await?;
             graph.load_tasks().await?;
 
@@ -150,17 +151,11 @@ impl WorkspaceBuilder {
         }
 
         // Create a lock to avoid colliding cache writes
-        let _lock = cache_engine.create_lock(LOCK_FILE_NAME)?;
+        let context = graph.context();
+        let _lock = context.cache_engine.create_lock(LOCK_FILE_NAME)?;
 
         // Hash the project graph based on the preloaded state
-        let mut fingerprint = WorkspaceGraphFingerprint::default();
-        fingerprint.add_projects(&graph.project_data);
-        fingerprint.add_configs(graph.hash_required_configs().await?);
-        fingerprint.gather_env();
-
-        let digest = cache_engine
-            .hash
-            .save_manifest_without_hasher("workspace-graph", &fingerprint)?;
+        let digest = graph.generate_cache_digest().await?;
 
         debug!(
             hash = digest.hash.as_str(),
@@ -168,10 +163,14 @@ impl WorkspaceBuilder {
         );
 
         // Check the current state and cache
-        let mut state = cache_engine
+        let mut state = context
+            .cache_engine
             .state
-            .load_state::<WorkspaceProjectsCacheState>(STATE_PROJECTS_FILE_NAME)?;
-        let cache_path = cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME);
+            .load_state::<WorkspaceGraphCacheState>(STATE_CACHE_FILE_NAME)?;
+        let cache_path = context
+            .cache_engine
+            .state
+            .resolve_path(STATE_GRAPH_FILE_NAME);
 
         if digest.hash == state.data.last_hash && cache_path.exists() {
             let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;
@@ -206,11 +205,11 @@ impl WorkspaceBuilder {
             graph.project_data.len(),
         );
 
+        graph.extend_projects_from_plugins().await?;
         graph.load_projects().await?;
         graph.load_tasks().await?;
 
         state.data.last_hash = digest.hash;
-        state.data.projects = graph.project_data.clone();
         state.save()?;
 
         json::write_file(cache_path, &graph, false)?;
@@ -707,31 +706,18 @@ impl WorkspaceBuilder {
         Ok(())
     }
 
-    /// When caching the graph, we must hash all project and workspace
-    /// config files that are required to invalidate the cache.
-    async fn hash_required_configs(
-        &self,
-    ) -> miette::Result<BTreeMap<WorkspaceRelativePathBuf, String>> {
-        let context = self.context();
-
-        if context.workspace_config.experiments.native_file_hashing {
-            context
-                .cache_engine
-                .hash_files(&context.workspace_root, &self.config_paths)
-                .await
-        } else {
-            context
-                .vcs
-                .as_ref()
-                .expect("VCS required!")
-                .get_file_hashes(&self.config_paths, true)
-                .await
-        }
+    async fn generate_cache_digest(&self) -> miette::Result<Digest> {
+        generate_graph_cache_digest(
+            self.context(),
+            &self.project_data,
+            self.config_paths.iter().cloned().collect(),
+            false,
+        )
+        .await
     }
 
     /// Preload the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
-    /// Then extend the graph with aliases, derived from all event subscribers.
     async fn preload_build_data(&mut self) -> miette::Result<()> {
         let context = self.context();
         let mut glob_format = WorkspaceProjectGlobFormat::default();
@@ -778,11 +764,8 @@ impl WorkspaceBuilder {
             locate_projects_with_globs(&context, &globs, &mut sources, glob_format)?;
         }
 
-        // Load projects and configs first
+        // Load projects and configs
         self.load_project_build_data(sources)?;
-
-        // Then extend projects from toolchains
-        self.extend_project_build_data().await?;
 
         // Include all workspace-level config files
         let ext_glob = context.config_loader.get_ext_glob();
@@ -903,75 +886,30 @@ impl WorkspaceBuilder {
         Ok(())
     }
 
-    async fn extend_project_build_data(&mut self) -> miette::Result<()> {
+    /// Extend the graph's project build data with data derived from all
+    /// registered plugins, like aliases, dependencies, and tasks. This
+    /// must be called before projects are loaded into the graph.
+    pub async fn extend_projects_from_plugins(&mut self) -> miette::Result<()> {
+        self.extend_projects_from_extensions().await?;
+        self.extend_projects_from_toolchains().await?;
+
+        debug!("Loaded {} project aliases", self.aliases.len());
+
+        Ok(())
+    }
+
+    #[instrument(skip_all)]
+    async fn extend_projects_from_extensions(&mut self) -> miette::Result<()> {
         let context = self.context();
 
-        debug!("Extending project graph");
-
-        let project_sources = self
-            .project_data
-            .iter()
-            .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
-            .collect::<BTreeMap<_, _>>();
-
-        let mut process_output = |plugin_id: Id,
-                                  output: ExtendProjectGraphOutput,
-                                  is_toolchain: bool|
-         -> miette::Result<()> {
-            let inherit_aliases = if is_toolchain {
-                self.context()
-                    .toolchains_config
-                    .get_plugin_config(&plugin_id)
-                    .is_none_or(|cfg| cfg.inherit_aliases)
-            } else {
-                true
-            };
-
-            for (project_id, mut project_extend) in output.extended_projects {
-                if !self.project_data.contains_key(&project_id) {
-                    return Err(ProjectGraphError::UnconfiguredID {
-                        id: project_id.to_string(),
-                    }
-                    .into());
-                }
-
-                if inherit_aliases && let Some(alias) = project_extend.alias.take() {
-                    self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
-                }
-
-                if let Some(build_data) = self.project_data.get_mut(&project_id) {
-                    build_data.extensions.push(project_extend);
-                }
-            }
-
-            for input_file in output.input_files {
-                self.config_paths.push(
-                    context
-                        .toolchain_registry
-                        .from_virtual_path(input_file)
-                        .relative_to(&context.workspace_root)
-                        .into_diagnostic()?,
-                );
-            }
-
-            Ok(())
-        };
-
-        // From toolchains
-        for result in context
-            .toolchain_registry
-            .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
-                context: registry.create_context(),
-                project_sources: project_sources.clone(),
-                toolchain_config: registry.create_config(&toolchain.id),
-                ..Default::default()
-            })
-            .await?
-        {
-            process_output(result.id.clone(), result.output, true)?;
+        if !context.extension_registry.has_plugin_configs() {
+            return Ok(());
         }
 
-        // From extensions
+        let project_sources = self.map_project_sources();
+
+        debug!("Extending project graph from extension plugins");
+
         for result in context
             .extension_registry
             .extend_project_graph_all(|registry, extension| ExtendProjectGraphInput {
@@ -982,12 +920,77 @@ impl WorkspaceBuilder {
             })
             .await?
         {
-            process_output(result.id.clone(), result.output, false)?;
+            self.apply_extend_output(result.id, result.output, false)?;
         }
 
-        debug!("Loaded {} project aliases", self.aliases.len());
+        Ok(())
+    }
+
+    #[instrument(skip_all)]
+    async fn extend_projects_from_toolchains(&mut self) -> miette::Result<()> {
+        let context = self.context();
+        let project_sources = self.map_project_sources();
+
+        debug!("Extending project graph from toolchain plugins");
+
+        for result in context
+            .toolchain_registry
+            .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
+                context: registry.create_context(),
+                project_sources: project_sources.clone(),
+                toolchain_config: registry.create_config(&toolchain.id),
+                ..Default::default()
+            })
+            .await?
+        {
+            self.apply_extend_output(result.id, result.output, true)?;
+        }
 
         Ok(())
+    }
+
+    fn apply_extend_output(
+        &mut self,
+        plugin_id: Id,
+        output: ExtendProjectGraphOutput,
+        is_toolchain: bool,
+    ) -> miette::Result<()> {
+        let context = self.context();
+
+        let inherit_aliases = if is_toolchain {
+            context
+                .toolchains_config
+                .get_plugin_config(&plugin_id)
+                .is_none_or(|cfg| cfg.inherit_aliases)
+        } else {
+            true
+        };
+
+        for (project_id, mut project_extend) in output.extended_projects {
+            if !self.project_data.contains_key(&project_id) {
+                return Err(ProjectGraphError::UnconfiguredID {
+                    id: project_id.to_string(),
+                }
+                .into());
+            }
+
+            if inherit_aliases && let Some(alias) = project_extend.alias.take() {
+                self.track_alias(project_id.clone(), alias, plugin_id.clone())?;
+            }
+
+            if let Some(build_data) = self.project_data.get_mut(&project_id) {
+                build_data.extensions.push(project_extend);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn map_project_sources(&self) -> BTreeMap<Id, String> {
+        self.project_data
+            .iter()
+            .map(|(id, build_data)| (id.clone(), build_data.source.to_string()))
+            .collect()
     }
 
     fn track_alias(&mut self, id: Id, alias: String, plugin_id: Id) -> miette::Result<()> {
@@ -1047,7 +1050,7 @@ impl WorkspaceBuilder {
         Ok(())
     }
 
-    fn context(&self) -> Arc<WorkspaceBuilderContext> {
+    pub fn context(&self) -> Arc<WorkspaceBuilderContext> {
         Arc::clone(
             self.context
                 .as_ref()

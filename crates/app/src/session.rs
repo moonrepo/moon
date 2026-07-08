@@ -350,16 +350,15 @@ impl MoonSession {
     }
 
     async fn load_workspace_graph(&self) -> miette::Result<Arc<WorkspaceGraph>> {
-        let cache_engine = self.get_cache_engine()?;
         let context = self.create_workspace_graph_context().await?;
 
         let workspace_graph = Arc::new(if self.workspace_config.experiments.async_graph_building {
-            WorkspaceBuilderAsync::new_with_cache(context, &cache_engine)
+            WorkspaceBuilderAsync::new_with_cache(context)
                 .await?
                 .build()
                 .await?
         } else {
-            WorkspaceBuilder::new_with_cache(context, &cache_engine)
+            WorkspaceBuilder::new_with_cache(context)
                 .await?
                 .build()
                 .await?

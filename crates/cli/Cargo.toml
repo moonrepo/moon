@@ -1,6 +1,6 @@
 [package]
 name = "moon_cli"
-version = "2.4.1"
+version = "2.4.2"
 edition = "2024"
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"

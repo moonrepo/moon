@@ -2,7 +2,9 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{Manifest, ManifestFile, ManifestSource, StorageOptions, grant_owner_write};
+use moon_cache::{
+    Manifest, ManifestFile, ManifestSource, StorageOptions, grant_owner_write_access,
+};
 use moon_common::{
     color,
     path::{WorkspaceRelativePath, clean_components},
@@ -259,8 +261,8 @@ impl OutputHydrater<'_> {
             // The reflink clones the source's permissions, which may lack the
             // write bit (stores populated before objects were normalized may
             // contain read-only blobs), so restore it before opening a handle
-            // to apply the mtime/mode below (#2608)
-            grant_owner_write(&output_path)?;
+            // to apply the mtime/mode below
+            grant_owner_write_access(&output_path)?;
 
             fs::open_file_for_writing(&output_path)?
         }

@@ -10,7 +10,6 @@ publish = false
 
 [dependencies]
 moon_blob = { path = "../blob" }
-moon_cache_storage = { path = "../cache-storage" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_hash = { path = "../hash" }

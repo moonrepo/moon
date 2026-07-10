@@ -5204,7 +5204,6 @@ dependencies = [
  "fastrand",
  "miette 7.6.0",
  "moon_blob",
- "moon_cache_storage",
  "moon_common",
  "moon_config",
  "moon_hash",

@@ -5,9 +5,8 @@ use moon_common::{Id, format_error_chain};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
-use starbase_utils::fs::{self, FsError};
 use std::collections::VecDeque;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::{Duration, SystemTime};
@@ -518,32 +517,6 @@ async fn hydrate_manifest_from_backend_and_copy_to_original(
             .store_blobs_batched(digest.to_owned(), blob_inputs)
             .await?;
     }
-
-    Ok(())
-}
-
-/// Grant the owner write permission on the file, leaving all other bits intact.
-/// Reflinks clone the source's permissions, so both storing and hydrating a
-/// read-only file must restore writability on the clone (#2608).
-pub fn grant_owner_write(path: &Path) -> miette::Result<()> {
-    let mut perms = fs::metadata(path)?.permissions();
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-
-        perms.set_mode(perms.mode() | 0o200);
-    }
-
-    // The readonly attribute is the only permission Windows has
-    #[cfg(not(unix))]
-    #[allow(clippy::permissions_set_readonly_false)]
-    perms.set_readonly(false);
-
-    std::fs::set_permissions(path, perms).map_err(|error| FsError::Perms {
-        path: path.to_path_buf(),
-        error: Box::new(error),
-    })?;
 
     Ok(())
 }

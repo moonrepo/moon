@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.750ffd02.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.555b5960.js" defer="defer"></script>
 <script src="/assets/js/main.85772fa5.js" defer="defer"></script>
 </head>
 <body>
@@ -777,8 +777,14 @@ useful for flaky tasks. Defaults to <code>0</code>.</p>
 <!-- -->
 <p>Whether to run the task&#x27;s direct <a href="#deps" class=""><code>deps</code></a> in parallel or serial (in order). Defaults to
 <code>true</code>.</p>
-<p>When disabled, this <em>does not</em> run dependencies of dependencies in serial, only direct dependencies.</p>
+<p>When disabled, each dependency runs after the previous one completes. This ordering applies to a
+dependency&#x27;s entire dependency subtree, so transitive dependencies (dependencies of dependencies)
+also run after the preceding direct dependency — not only the direct dependency itself.</p>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">tasks</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">start</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token comment" style="color:#97a1af;font-style:italic"># ...</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">deps</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;~:clean&#x27;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;~:build&#x27;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">options</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line theme-code-block-highlighted-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">runDepsInParallel</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></div></code></pre></div></div>
+<div class="theme-admonition theme-admonition-caution admonition_WCGJ alert alert--warning"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span>caution</div><div class="admonitionContent_pbrs"><p>Because tasks run only once per pipeline, serializing a dependency&#x27;s subtree also delays any task
+within it that is shared with <em>other</em> targets in the same run (like <code>moon ci</code>), which can reduce
+parallelism. When multiple parents request conflicting orderings for a shared task, the ordering
+that would introduce a cycle is skipped.</p></div></div>
 <h4 class="anchor anchorTargetStickyNavbar_tleR" id="runinci"><code>runInCI</code><a href="#runinci" class="hash-link" aria-label="Direct link to runinci" title="Direct link to runinci" translate="no">​</a></h4>
 <!-- -->
 <p>Whether to run the task automatically in a CI (continuous integration) environment when affected by

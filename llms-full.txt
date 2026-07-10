@@ -6129,7 +6129,9 @@ tasks:
 Whether to run the task's direct [`deps`](#deps) in parallel or serial (in order). Defaults to
 `true`.
 
-When disabled, this _does not_ run dependencies of dependencies in serial, only direct dependencies.
+When disabled, each dependency runs after the previous one completes. This ordering applies to a
+dependency's entire dependency subtree, so transitive dependencies (dependencies of dependencies)
+also run after the preceding direct dependency — not only the direct dependency itself.
 
 ```yaml title="moon.yml" {8}
 tasks:
@@ -6141,6 +6143,15 @@ tasks:
     options:
       runDepsInParallel: false
 ```
+
+:::caution
+
+Because tasks run only once per pipeline, serializing a dependency's subtree also delays any task
+within it that is shared with _other_ targets in the same run (like `moon ci`), which can reduce
+parallelism. When multiple parents request conflicting orderings for a shared task, the ordering
+that would introduce a cycle is skipped.
+
+:::
 
 #### `runInCI`
 

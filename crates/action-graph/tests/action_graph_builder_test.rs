@@ -2267,6 +2267,32 @@ mod action_graph_builder {
                 [Target::parse("app:build").unwrap()]
             );
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn serial_subtree_doesnt_escape_via_shared_node() {
+            let sandbox = create_sandbox("serial-shared");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // parent1 => [p, b] and parent2 => [q, b], both serial, sharing the
+            // node `b`. parent1 adds a serial `b -> p` edge; walking `b` for
+            // parent2 must not follow it into p/pchild and order them after `q`.
+            // The snapshot must contain no `p -> q` or `pchild -> q` edges.
+            for name in ["parent1", "parent2"] {
+                let task = wg.get_task_from_project("proj", name).unwrap();
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+            }
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+        }
     }
 
     mod run_task_by_target {

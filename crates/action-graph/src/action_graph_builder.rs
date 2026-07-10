@@ -135,6 +135,12 @@ pub struct ActionGraphBuilder<'query> {
     ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
+
+    // Serial ordering edges added by `try_link_requirements`. Tracked so the
+    // serial subtree walk doesn't follow them as if they were real dependency
+    // edges (both use `TaskDependencyType::Required`), which would let it escape
+    // into unrelated subtrees when nodes are shared across serial parents.
+    serial_edges: FxHashSet<EdgeIndex>,
 }
 
 impl<'query> ActionGraphBuilder<'query> {
@@ -155,6 +161,7 @@ impl<'query> ActionGraphBuilder<'query> {
             ignored_dependencies: FxHashMap::default(),
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
+            serial_edges: FxHashSet::default(),
             changed_files: None,
             workspace_graph,
         })
@@ -1325,7 +1332,13 @@ impl<'query> ActionGraphBuilder<'query> {
     /// with another target is inserted once and then reused via node
     /// deduplication. Only `RunTask` nodes are ordered; non-task nodes such as
     /// project syncs must not be forced to wait on the previous dependency.
-    /// Cycle-forming edges are skipped via [`Self::try_link_requirements`].
+    ///
+    /// Serial ordering edges (tracked in `serial_edges`) are skipped during the
+    /// walk. They share the `Required` edge type with real dependencies, so
+    /// following them — e.g. a `b -> a` edge left by an earlier serial parent on
+    /// a shared node `b` — would let the walk escape `index`'s real subtree and
+    /// wrongly order unrelated tasks. Cycle-forming edges are skipped when
+    /// linked via [`Self::try_link_requirements`].
     fn link_serial_requirements(&mut self, index: NodeIndex, previous: NodeIndex) {
         let mut visited = FxHashSet::default();
         let mut ordered = vec![];
@@ -1345,11 +1358,13 @@ impl<'query> ActionGraphBuilder<'query> {
 
             let mut children = self.graph.children(node_index);
 
-            while let Some((_, child_index)) = children.walk_next(&self.graph) {
-                if matches!(
-                    self.graph.node_weight(child_index),
-                    Some(ActionNode::RunTask(_))
-                ) {
+            while let Some((edge_index, child_index)) = children.walk_next(&self.graph) {
+                if !self.serial_edges.contains(&edge_index)
+                    && matches!(
+                        self.graph.node_weight(child_index),
+                        Some(ActionNode::RunTask(_))
+                    )
+                {
                     stack.push(child_index);
                 }
             }
@@ -1360,17 +1375,20 @@ impl<'query> ActionGraphBuilder<'query> {
         }
     }
 
-    /// Try to add a serial ordering edge between two dependency nodes.
-    /// Silently skips the edge if it would introduce a cycle — this happens
-    /// when the same task node appears in multiple serial dependency chains
-    /// across different parent tasks.
+    /// Try to add a serial ordering edge between two dependency nodes, recording
+    /// it in `serial_edges` so the subtree walk in
+    /// [`Self::link_serial_requirements`] won't mistake it for a real
+    /// dependency. Silently skips the edge if it would introduce a cycle — this
+    /// happens when the same task node appears in multiple serial dependency
+    /// chains across different parent tasks.
     fn try_link_requirements(&mut self, index: NodeIndex, edge: NodeIndex) {
         if self.graph.find_edge(index, edge).is_none()
-            && self
+            && let Ok(edge_index) = self
                 .graph
                 .add_edge(index, edge, TaskDependencyType::Required)
-                .is_ok()
         {
+            self.serial_edges.insert(edge_index);
+
             trace!(
                 index = index.index(),
                 requires = ?[edge.index()],

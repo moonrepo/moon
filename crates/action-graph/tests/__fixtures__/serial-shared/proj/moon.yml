@@ -1,0 +1,30 @@
+tasks:
+  q:
+    command: 'q'
+  pchild:
+    command: 'pchild'
+  p:
+    command: 'p'
+    deps:
+      - '~:pchild'
+  b:
+    command: 'b'
+
+  # Two serial parents share the node `b`. parent1 orders `b` after `p`
+  # (adding a serial `b -> p` edge); when parent2's subtree walk reaches the
+  # shared `b`, it must NOT follow that serial edge into p/pchild and order
+  # them after `q`.
+  parent1:
+    deps:
+      - '~:p'
+      - '~:b'
+    inputs: []
+    options:
+      runDepsInParallel: false
+  parent2:
+    deps:
+      - '~:q'
+      - '~:b'
+    inputs: []
+    options:
+      runDepsInParallel: false

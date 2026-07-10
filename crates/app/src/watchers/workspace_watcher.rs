@@ -149,8 +149,7 @@ impl WorkspaceWatcher {
 
         self.session.proto_env = Arc::new(env);
         self.session.reset_components();
-
-        state.write().await.app_context = self.session.get_app_context().await?;
+        self.rebuild_graphs(state).await?;
 
         Ok(())
     }
@@ -172,10 +171,10 @@ impl WorkspaceWatcher {
         // Invalidate the extensions registry if the extensions config changed
         if invalidate {
             self.session.reset_components();
-            self.session.download_extensions();
+            self.rebuild_graphs(state).await?;
+        } else {
+            state.write().await.app_context = self.session.get_app_context().await?;
         }
-
-        state.write().await.app_context = self.session.get_app_context().await?;
 
         Ok(())
     }
@@ -204,9 +203,9 @@ impl WorkspaceWatcher {
         if invalidate {
             self.session.reset_components();
             self.rebuild_graphs(state).await?;
+        } else {
+            state.write().await.app_context = self.session.get_app_context().await?;
         }
-
-        state.write().await.app_context = self.session.get_app_context().await?;
 
         Ok(())
     }
@@ -228,10 +227,10 @@ impl WorkspaceWatcher {
         // Invalidate the toolchain registry if the toolchains config changed
         if invalidate {
             self.session.reset_components();
-            self.session.download_toolchains();
+            self.rebuild_graphs(state).await?;
+        } else {
+            state.write().await.app_context = self.session.get_app_context().await?;
         }
-
-        state.write().await.app_context = self.session.get_app_context().await?;
 
         Ok(())
     }
@@ -275,9 +274,9 @@ impl WorkspaceWatcher {
         // Must run after the new config has been set!
         if rebuild {
             self.rebuild_graphs(state).await?;
+        } else {
+            state.write().await.app_context = self.session.get_app_context().await?;
         }
-
-        state.write().await.app_context = self.session.get_app_context().await?;
 
         Ok(())
     }

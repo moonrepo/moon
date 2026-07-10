@@ -607,6 +607,27 @@ mod project_graph {
                     }
 
                     #[tokio::test(flavor = "multi_thread")]
+                    async fn invalidates_with_removed_source() {
+                        // Prime the cache with a project that is removed before
+                        // the next graph build. This mirrors reverting a newly
+                        // created project from a workspace.
+                        let sandbox = build_plugins_cached_graph($async_graph, |sandbox| {
+                            sandbox.create_file("z/moon.yml", "# Changes");
+                        })
+                        .await;
+
+                        let state1 = load_state(&sandbox);
+
+                        fs::remove_dir_all(sandbox.path().join("z")).unwrap();
+
+                        let graph = do_generate_with_plugins(sandbox.path(), $async_graph).await;
+                        let state2 = load_state(&sandbox);
+
+                        assert_ne!(state1.last_hash, state2.last_hash);
+                        assert!(graph.get_project("z").is_err());
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
                     async fn invalidates_with_new_manifest_file() {
                         test_plugins_invalidate(
                             $async_graph,

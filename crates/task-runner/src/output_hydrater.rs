@@ -2,7 +2,7 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{Manifest, ManifestFile, ManifestSource, ManifestSymlink, StorageOptions};
+use moon_cache::{Manifest, ManifestFile, ManifestSource, StorageOptions, grant_owner_write};
 use moon_common::{
     color,
     path::{WorkspaceRelativePath, clean_components},
@@ -157,7 +157,6 @@ impl OutputHydrater<'_> {
                     }
                 })?,
                 output_path,
-                link,
             )?;
         }
 
@@ -257,6 +256,12 @@ impl OutputHydrater<'_> {
         let fd = if let Some(source) = &file.source_path {
             fs::reflink_file(source, &output_path)?;
 
+            // The reflink clones the source's permissions, which may lack the
+            // write bit (stores populated before objects were normalized may
+            // contain read-only blobs), so restore it before opening a handle
+            // to apply the mtime/mode below (#2608)
+            grant_owner_write(&output_path)?;
+
             fs::open_file_for_writing(&output_path)?
         }
         // Otherwise write the bytes from the manifest
@@ -284,14 +289,10 @@ impl OutputHydrater<'_> {
         Ok(())
     }
 
-    // Windows lint!
-    #[allow(unused_variables)]
-    fn link_output_file(
-        &self,
-        from_path: PathBuf,
-        to_path: PathBuf,
-        link: &ManifestSymlink,
-    ) -> miette::Result<()> {
+    // The manifest's unix mode is deliberately not applied: it records the
+    // followed target's mode (which the target's own manifest entry restores),
+    // and a chmod through the link would modify the target, not the link
+    fn link_output_file(&self, from_path: PathBuf, to_path: PathBuf) -> miette::Result<()> {
         if let Some(parent) = to_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -314,19 +315,9 @@ impl OutputHydrater<'_> {
 
         #[cfg(unix)]
         {
-            use std::os::unix::fs::{PermissionsExt, symlink};
+            use std::os::unix::fs::symlink;
 
             symlink(&from_path, &to_path).map_err(map_error)?;
-
-            if let Some(mode) = &link.unix_mode {
-                let fd = fs::open_file_for_writing(&to_path)?;
-
-                fd.set_permissions(std::fs::Permissions::from_mode(*mode))
-                    .map_err(|error| FsError::Write {
-                        path: to_path.clone(),
-                        error: Box::new(error),
-                    })?;
-            }
         }
 
         Ok(())

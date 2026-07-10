@@ -1,5 +1,6 @@
 use crate::cas_error::CasError;
 use moon_blob::{Blob, BlobCleanStats};
+use moon_cache_storage::grant_owner_write;
 use moon_config::CacheCasConfig;
 use moon_hash::{ContentHash, Digest};
 use rustc_hash::FxHashSet;
@@ -93,6 +94,12 @@ impl CasStore {
         let mut guard = self.create_temp_file()?;
 
         fs::reflink_file(source, &guard.path)?;
+
+        // The reflink also clones the source's permissions. Grant the owner
+        // write access so a read-only source (e.g. a task emitting read-only
+        // outputs, #2608) doesn't produce a read-only object, which would fail
+        // later store mutations like `touch`
+        grant_owner_write(&guard.path)?;
 
         // No fsync: see `write` for rationale.
         self.commit_temp_file(hash, &mut guard)?;

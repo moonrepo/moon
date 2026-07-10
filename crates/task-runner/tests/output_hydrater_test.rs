@@ -213,6 +213,56 @@ mod output_hydrater {
             );
         }
 
+        #[cfg(unix)]
+        #[tokio::test(flavor = "multi_thread")]
+        async fn hydrates_read_only_output_file_from_cas() {
+            use std::os::unix::fs::PermissionsExt;
+
+            // A task can emit read-only outputs (#2608). Hydration must replace
+            // the existing read-only file and re-apply the recorded mode, even
+            // when the blob itself is read-only (stores populated before
+            // objects were normalized).
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container
+                .sandbox
+                .create_file("project/file.txt", "read only");
+
+            let file_path = container.sandbox.path().join("project/file.txt");
+
+            fs::set_permissions(&file_path, fs::Permissions::from_mode(0o444)).unwrap();
+
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            let source = archive_and_load(&container, &state).await;
+
+            let blob_digest = Digest::from_bytes(b"read only").unwrap();
+            let blob_path = container
+                .sandbox
+                .path()
+                .join(".moon/cache/blobs")
+                .join(blob_digest.hash.prefix())
+                .join(blob_digest.hash.suffix());
+
+            fs::set_permissions(&blob_path, fs::Permissions::from_mode(0o444)).unwrap();
+
+            // Hydrate over the still-existing read-only output, as a
+            // subsequent cache-hit run would
+            assert_hydrated(
+                container
+                    .create_hydrator()
+                    .hydrate(HydrateFrom::Storage(Box::new(source)), "hash123", &state)
+                    .await
+                    .unwrap(),
+            );
+
+            assert_eq!(fs::read_to_string(&file_path).unwrap(), "read only");
+            assert_eq!(
+                fs::metadata(&file_path).unwrap().permissions().mode() & 0o777,
+                0o444
+            );
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_hydrate_if_cache_disabled() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;

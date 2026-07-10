@@ -14,6 +14,7 @@ use tokio::task::JoinHandle;
 use tracing::debug;
 
 pub struct WorkspaceWatcher {
+    context_handle: Option<JoinHandle<()>>,
     graph_handle: Option<JoinHandle<()>>,
     session: MoonSession,
 
@@ -27,6 +28,7 @@ impl WorkspaceWatcher {
         let exts_group = format!("({})", session.config_loader.extensions.join("|"));
 
         Self {
+            context_handle: None,
             graph_handle: None,
             session,
             project_config_regex: Regex::new(&format!(r"(^|/)moon\.{exts_group}$")).unwrap(),
@@ -123,6 +125,18 @@ impl WorkspaceWatcher {
         Ok(false)
     }
 
+    async fn rebuild_context(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
+        // Abort any existing graph building
+        if let Some(handle) = self.context_handle.take() {
+            handle.abort();
+        }
+
+        // Rebuild the graphs in a background thread
+        self.context_handle = Some(self.session.rebuild_context(Arc::clone(state)));
+
+        Ok(())
+    }
+
     async fn rebuild_graphs(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
         // Abort any existing graph building
         if let Some(handle) = self.graph_handle.take() {
@@ -149,8 +163,7 @@ impl WorkspaceWatcher {
 
         self.session.proto_env = Arc::new(env);
         self.session.reset_components();
-
-        state.write().await.app_context = self.session.get_app_context().await?;
+        self.rebuild_context(state).await?;
 
         Ok(())
     }
@@ -175,7 +188,7 @@ impl WorkspaceWatcher {
             self.session.download_extensions();
         }
 
-        state.write().await.app_context = self.session.get_app_context().await?;
+        self.rebuild_context(state).await?;
 
         Ok(())
     }
@@ -204,9 +217,9 @@ impl WorkspaceWatcher {
         if invalidate {
             self.session.reset_components();
             self.rebuild_graphs(state).await?;
+        } else {
+            self.rebuild_context(state).await?;
         }
-
-        state.write().await.app_context = self.session.get_app_context().await?;
 
         Ok(())
     }
@@ -231,7 +244,7 @@ impl WorkspaceWatcher {
             self.session.download_toolchains();
         }
 
-        state.write().await.app_context = self.session.get_app_context().await?;
+        self.rebuild_context(state).await?;
 
         Ok(())
     }
@@ -275,9 +288,9 @@ impl WorkspaceWatcher {
         // Must run after the new config has been set!
         if rebuild {
             self.rebuild_graphs(state).await?;
+        } else {
+            self.rebuild_context(state).await?;
         }
-
-        state.write().await.app_context = self.session.get_app_context().await?;
 
         Ok(())
     }

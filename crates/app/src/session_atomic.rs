@@ -28,14 +28,29 @@ impl MoonSession {
         });
     }
 
+    pub fn rebuild_context(&self, state: AtomicDaemonState) -> JoinHandle<()> {
+        let session = self.clone();
+
+        tokio::spawn(async move {
+            if let Ok(app_context) = session.get_app_context().await {
+                let mut state = state.write().await;
+                state.app_context = app_context;
+            }
+        })
+    }
+
     pub fn rebuild_graphs(&self, state: AtomicDaemonState) -> JoinHandle<()> {
         debug!("Rebuilding project and task graphs");
 
         let session = self.clone();
 
         tokio::spawn(async move {
-            if let Ok(graph) = session.get_workspace_graph().await {
-                state.write().await.workspace_graph = graph;
+            if let Ok(graph) = session.get_workspace_graph().await
+                && let Ok(app_context) = session.get_app_context().await
+            {
+                let mut state = state.write().await;
+                state.app_context = app_context;
+                state.workspace_graph = graph;
             }
         })
     }

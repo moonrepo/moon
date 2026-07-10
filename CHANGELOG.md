@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated BitBucket codeowners to use the
+  [new syntax & file location](https://support.atlassian.com/bitbucket-cloud/docs/set-up-and-use-code-owners/).
+  If you are using the old syntax, you can use `bitbucket-legacy` instead.
+
 ## 2.4.2
 
 #### 🚀 Updates

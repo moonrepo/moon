@@ -57,7 +57,8 @@ jobs:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           matrix: ${{ toJSON(matrix) }}
   docker:
-    if: ${{ github.repository == 'moonrepo/moon' }}
+    if: ${{ github.repository == 'moonrepo/moon' && (github.event_name != 'pull_request' ||
+      !github.event.pull_request.head.repo.fork) }}
     name: Docker
     # Older required for Docker libc
     runs-on: ubuntu-22.04

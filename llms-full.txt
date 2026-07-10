@@ -7061,6 +7061,9 @@ When `false`, doesn't inherit a version. When `true`, matches the version specif
 using the same toolchain identifier. Otherwise a string can be provided to specify a proto-specific
 identifier. Defaults to `true`.
 
+> Keeping versions in `.prototools` also pairs well with [Renovate](../guides/renovate), which can
+> update them automatically.
+
 ```yaml title=".moon/toolchains.yml"
 node:
   versionFromPrototools: 'nodejs'
@@ -9593,6 +9596,13 @@ However, because tasks can generate a different hash each run, you'll need to ma
 your cache. Blindly storing the `hashes` and `outputs` directories without a mechanism to invalidate
 will simply not work, as the contents will drastically change between CI runs. This is the primary
 reason why the remote caching service exists.
+
+## Keeping dependencies updated
+
+To automate toolchain and dependency updates, moon integrates with
+[Renovate](https://docs.renovatebot.com/). Tool versions in [`.prototools`](../proto/config) are
+updated out of the box, and moon publishes a shared preset for updating moon-specific configuration.
+Refer to the [Renovate guide](./renovate) for setup.
 
 ## Reporting run results
 
@@ -15701,6 +15711,157 @@ No, moon does not collect any PII as part of the remote caching process.
 #### Are artifacts encrypted?
 
 We do not encrypt on moon's side, as encryption is provided by your cloud storage provider.
+
+---
+
+## Renovate
+
+[Renovate](https://docs.renovatebot.com/) automates dependency updates by opening pull requests when
+new versions are released. Because moon builds on [proto](../proto) for toolchain management, and
+proto is supported by Renovate out of the box, most moon repositories work with Renovate with little
+to no configuration. This guide covers that native support, and how to extend it to versions pinned
+in moon's own configuration files.
+
+## Pin versions in `.prototools` (recommended)
+
+The cleanest setup requires **no Renovate configuration and no annotations at all**. Renovate ships a
+built-in [`proto` manager](https://docs.renovatebot.com/modules/manager/proto/) that updates tool
+versions declared in [`.prototools`](../proto/config) files automatically.
+
+```toml title=".prototools"
+node = "22.18.0"
+yarn = "4.16.0"
+rust = "1.85.0"
+moon = "2.4.2"
+```
+
+Because moon toolchains inherit their version from `.prototools` by default (via
+[`versionFromPrototools`](../config/toolchain#versionfromprototools)), you can leave the `version`
+out of [`.moon/toolchains.yml`](../config/toolchain) entirely and let proto be the single source of
+truth:
+
+```yaml title=".moon/toolchains.yml"
+# No version here — inherited from .prototools
+node: {}
+rust: {}
+```
+
+With this approach, Renovate keeps `.prototools` current, moon resolves toolchains from it, and
+derived fields (like `package.json`'s `packageManager`) stay in sync — no `# renovate:` comments
+required.
+
+:::tip
+
+If you can, prefer this over hard-coding a `version` in `.moon/toolchains.yml`. It's the least
+configuration, and nothing drifts out of sync.
+
+:::
+
+## Versions in moon configuration
+
+If you'd rather pin versions in moon's config files — or you have versions that don't live in
+`.prototools` at all (the moon [`versionConstraint`](../config/workspace#versionconstraint), a CI
+input, a WASM plugin) — moon publishes a shared Renovate
+[config preset](https://docs.renovatebot.com/config-presets/) to cover them.
+
+<Tabs groupId="renovate-setup">
+<TabItem value="preset" label="Extend the preset (recommended)">
+
+```json title="renovate.json"
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "github>moonrepo/moon//ecosystem/renovate"]
+}
+```
+
+</TabItem>
+<TabItem value="inline" label="Inline configuration">
+
+If you'd rather not depend on the preset, copy its
+[custom managers](https://docs.renovatebot.com/modules/manager/custom/) directly into your
+configuration — see the source at
+[`ecosystem/renovate.json`](https://github.com/moonrepo/moon/blob/master/ecosystem/renovate.json).
+
+</TabItem>
+</Tabs>
+
+### Toolchain versions (no annotations)
+
+The preset includes [JSONata managers](https://docs.renovatebot.com/modules/manager/jsonata/) that
+read your [`toolchains`](../config/toolchain) config _by structure_, so a `version` pinned for a
+built-in toolchain is updated automatically — **no comments needed**. This works for the `yml`,
+`yaml`, `json`, and `toml` formats (in `.moon/` or `.config/moon/`):
+
+```yaml title=".moon/toolchains.yml"
+node:
+  version: '22.18.0'
+rust:
+  version: '1.85.0'
+```
+
+### Other versions
+
+For anything the structural managers don't cover, the preset also includes a regex manager that reads
+a trailing `# renovate:` (or `// renovate:`) comment. Add it to the _end of the line_ containing the
+version, and point it at a [datasource](https://docs.renovatebot.com/modules/datasource/) and package.
+It applies to `.moon/` (and `.config/moon/`) configs, `moon.*` project files, and
+`.github/workflows/*.yml`, in any comment-supporting format (`yml`, `yaml`, `toml`, `jsonc`, `pkl`,
+`hcl` — strict `json` has no comments):
+
+```yaml title=".moon/workspace.yml"
+# Pin the version of moon itself
+versionConstraint: '>=2.4.2' # renovate: datasource=github-releases depName=moonrepo/moon extractVersion=^v(?<version>.*)$
+```
+
+```yaml title=".github/workflows/ci.yml"
+- uses: 'moonrepo/setup-toolchain@v0'
+  with:
+    proto-version: '0.58.2' # renovate: datasource=github-releases depName=moonrepo/proto extractVersion=^v(?<version>.*)$
+```
+
+In formats that use `//` for comments (JSONC, Pkl, HCL), the `// renovate:` form works the same way:
+
+```json title=".moon/workspace.jsonc"
+{
+  "versionConstraint": ">=2.4.2" // renovate: datasource=github-releases depName=moonrepo/moon extractVersion=^v(?<version>.*)$
+}
+```
+
+To annotate versions in _other_ files — such as WASM plugin versions in `.prototools` — append their
+paths to `managerFilePatterns` in your own `customManagers` entry.
+
+### Datasource reference
+
+Useful when annotating a version, or adding a toolchain the structural manager doesn't cover. These
+mirror the datasources Renovate's native `proto` manager uses.
+
+| Tool       | `datasource`      | `depName` / `packageName` | `extractVersion`        |
+| ---------- | ----------------- | ------------------------- | ----------------------- |
+| node       | `node-version`    | `node`                    |                         |
+| npm / pnpm | `npm`             | `npm` / `pnpm`            |                         |
+| yarn       | `npm`             | `@yarnpkg/cli`            |                         |
+| rust       | `github-tags`     | `rust-lang/rust`          |                         |
+| go         | `github-tags`     | `golang/go`               | `^go(?<version>.*)$`    |
+| python     | `github-tags`     | `python/cpython`          | `^v(?<version>.*)$`     |
+| deno       | `github-releases` | `denoland/deno`           | `^v(?<version>.*)$`     |
+| bun        | `github-releases` | `oven-sh/bun`             | `^bun-v(?<version>.*)$` |
+| moon       | `github-releases` | `moonrepo/moon`           | `^v(?<version>.*)$`     |
+| proto      | `github-releases` | `moonrepo/proto`          | `^v(?<version>.*)$`     |
+
+## Tips and limitations
+
+- **Config format coverage.** Comment-free structural updates work for the `yml`, `yaml`, `json`, and
+  `toml` formats; `jsonc`, `pkl`, and `hcl` are updated through `#` or `//` annotations. Strict `json`
+  can't hold comments, so pin those toolchains structurally or in `.prototools`.
+- **Aliases are skipped.** Values like `latest`, `stable`, `canary`, or `nightly` can't be resolved
+  to a concrete version, and are ignored.
+- **Pin each toolchain in one place.** Don't set the same version in both `.prototools` and
+  `.moon/toolchains.yml` (or add an annotation on top of a structurally-managed version) — you'll get
+  duplicate pull requests.
+- **Propagate changes on self-hosted Renovate.** You can run `moon sync` (or any command) after an
+  update via [`postUpgradeTasks`](https://docs.renovatebot.com/configuration-options/#postupgradetasks)
+  to keep generated files in sync.\
+  to batch toolchain bumps into a single pull request.
 
 ---
 

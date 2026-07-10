@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.f64c53f0.js" defer="defer"></script>
-<script src="/assets/js/main.868604b0.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.e55b7158.js" defer="defer"></script>
+<script src="/assets/js/main.43ba0dfa.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -83,6 +83,10 @@ version across multiple toolchains, and only having to update it in one place.</
 <p>When <code>false</code>, doesn&#x27;t inherit a version. When <code>true</code>, matches the version specified in <code>.prototools</code>
 using the same toolchain identifier. Otherwise a string can be provided to specify a proto-specific
 identifier. Defaults to <code>true</code>.</p>
+<blockquote>
+<p>Keeping versions in <code>.prototools</code> also pairs well with <a class="" href="/docs/guides/renovate">Renovate</a>, which can
+update them automatically.</p>
+</blockquote>
 <div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchains.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">node</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">versionFromPrototools</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&#x27;nodejs&#x27;</span><br></div></code></pre></div></div>
 <div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">nodejs</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">&quot;~24&quot;</span><br></div></code></pre></div></div>
 <h2 class="anchor anchorTargetStickyNavbar_tleR" id="go">Go<a href="#go" class="hash-link" aria-label="Direct link to Go" title="Direct link to Go" translate="no">​</a></h2>

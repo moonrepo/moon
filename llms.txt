@@ -112,6 +112,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Open source usage](https://moonrepo.dev/docs/guides/open-source): import Image from '@site/src/components/Image';
 - [Task profiling](https://moonrepo.dev/docs/guides/profile): import Image from '@site/src/components/Docs/Image';
 - [Remote caching](https://moonrepo.dev/docs/guides/remote-cache): import VersionLabel from '@site/src/components/Docs/VersionLabel';
+- [Renovate](https://moonrepo.dev/docs/guides/renovate): import Tabs from '@theme/Tabs';
 - [Root-level project](https://moonrepo.dev/docs/guides/root-project): Coming from other repositories or task runner, you may be familiar with tasks available at the
 - [Rust handbook](https://moonrepo.dev/docs/guides/rust/handbook): import Tabs from '@theme/Tabs';
 - [Sharing workspace configuration](https://moonrepo.dev/docs/guides/sharing-config): For large companies, open source maintainers, and those that love reusability, more often than not

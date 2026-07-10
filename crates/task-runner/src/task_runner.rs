@@ -128,7 +128,15 @@ impl<'task> TaskRunner<'task> {
         context: &ActionContext,
         node: &ActionNode,
     ) -> miette::Result<TaskRunResult> {
+        let is_primary = context.is_primary_target(&self.task.target);
+
         self.report.output_prefix = Some(context.get_target_prefix(&self.task.target));
+        self.report.output_style = if is_primary {
+            None
+        } else {
+            self.task.options.output_style
+        };
+        self.report.primary = is_primary;
 
         let result = self.internal_run(context, node).await;
 

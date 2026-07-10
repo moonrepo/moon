@@ -18,6 +18,10 @@
 - Fixed `moon ci` failing in certain CI provider pull request builds, where the base branch is
   provided as a fully-qualified `refs/heads/<branch>` ref that couldn't be resolved in a detached
   `HEAD` checkout.
+- Fixed task binaries failing with "command not found" in CI providers like CircleCI, where an
+  `export PATH=...` in the `$BASH_ENV` file would overwrite the `PATH` that moon injects for tasks.
+  `BASH_ENV` is no longer passed to `bash` wrapped child processes, unless explicitly set with the
+  task `env` option.
 
 ## 2.4.2
 

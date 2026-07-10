@@ -397,14 +397,29 @@ impl Command {
         // string of the full command line with args quoted correctly, as
         // it's passed as a single argument to the shell: `bash -c "command line"`
         let mut command = if self.shell.is_some() || self.exe.requires_shell() {
-            let shell = self.shell.unwrap_or_default().build();
+            let shell_type = self.shell.unwrap_or_default();
+            let shell = shell_type.build();
 
             let script = match &self.exe {
                 CommandExecutable::Binary(bin) => join_exe_args(&shell, bin, &self.args, false),
                 CommandExecutable::Script(script) => script.to_owned(),
             };
 
-            shell.create_wrapped_command_with(script)
+            let mut command = shell.create_wrapped_command_with(script);
+
+            // Non-interactive bash sources the file referenced by `BASH_ENV`
+            // on startup, after the process environment has been applied.
+            // CI providers like CircleCI persist environment variables between
+            // steps through this file, so an `export PATH=...` within it will
+            // overwrite the `PATH` we explicitly set for this process.
+            // https://github.com/moonrepo/moon/issues/1998
+            if matches!(shell_type, starbase_shell::ShellType::Bash)
+                && !self.env.contains_key(OsStr::new("BASH_ENV"))
+            {
+                command.env_remove("BASH_ENV");
+            }
+
+            command
         }
         // When the command is not in a shell, we can create a standard command
         // and pass the non-quoted args separately

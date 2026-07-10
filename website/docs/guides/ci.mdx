@@ -263,6 +263,13 @@ your cache. Blindly storing the `hashes` and `outputs` directories without a mec
 will simply not work, as the contents will drastically change between CI runs. This is the primary
 reason why the remote caching service exists.
 
+## Keeping dependencies updated
+
+To automate toolchain and dependency updates, moon integrates with
+[Renovate](https://docs.renovatebot.com/). Tool versions in [`.prototools`](../proto/config) are
+updated out of the box, and moon publishes a shared preset for updating moon-specific configuration.
+Refer to the [Renovate guide](./renovate) for setup.
+
 ## Reporting run results
 
 If you're using GitHub Actions as your CI provider, we suggest using our

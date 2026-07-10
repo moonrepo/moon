@@ -134,6 +134,9 @@ When `false`, doesn't inherit a version. When `true`, matches the version specif
 using the same toolchain identifier. Otherwise a string can be provided to specify a proto-specific
 identifier. Defaults to `true`.
 
+> Keeping versions in `.prototools` also pairs well with [Renovate](../guides/renovate), which can
+> update them automatically.
+
 ```yaml title=".moon/toolchains.yml"
 node:
   versionFromPrototools: 'nodejs'

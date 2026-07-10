@@ -254,6 +254,7 @@ const sidebars: SidebarsConfig = {
 		'guides/offline-mode',
 		'guides/open-source',
 		'guides/remote-cache',
+		'guides/renovate',
 		'guides/root-project',
 		'guides/sharing-config',
 		'guides/notifications',

@@ -4,6 +4,8 @@
 
 #### 🚀 Updates
 
+- Added [Renovate](https://www.mend.io/renovate/) support. View the official guide for more
+  information.
 - Updated BitBucket codeowners to use the
   [new syntax & file location](https://support.atlassian.com/bitbucket-cloud/docs/set-up-and-use-code-owners/).
   If you are using the old syntax, you can use `bitbucket-legacy` instead.

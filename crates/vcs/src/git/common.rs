@@ -24,6 +24,16 @@ pub fn validate_revision(revision: &str) -> Result<(), GitError> {
     Ok(())
 }
 
+/// Strip the fully-qualified `refs/heads/` prefix from a branch reference,
+/// returning the short branch name. Some CI providers (like Azure DevOps)
+/// expose the pull request's target branch as a full ref (`refs/heads/main`),
+/// which Git can't resolve in a detached `HEAD` checkout, and which can't be
+/// joined with a remote to form a `<remote>/<branch>` merge base candidate.
+/// Multi-segment branch names (`refs/heads/foo/bar`) are preserved in full.
+pub fn normalize_branch_ref(revision: &str) -> &str {
+    revision.strip_prefix("refs/heads/").unwrap_or(revision)
+}
+
 pub fn clean_git_version(version: String) -> String {
     let version = if let Some(index) = version.find('(') {
         &version[0..index]
@@ -136,5 +146,27 @@ mod tests {
 
         assert!(validate_revision("-x").is_err());
         assert!(validate_revision("--output=file").is_err());
+    }
+
+    #[test]
+    fn normalizes_branch_refs() {
+        // Strips the fully-qualified prefix
+        assert_eq!(normalize_branch_ref("refs/heads/main"), "main");
+        // Preserves multi-segment branch names
+        assert_eq!(normalize_branch_ref("refs/heads/foo/bar"), "foo/bar");
+
+        // Leaves short branch names untouched
+        assert_eq!(normalize_branch_ref("main"), "main");
+        assert_eq!(normalize_branch_ref("foo/bar"), "foo/bar");
+        // Leaves other revision forms untouched
+        assert_eq!(normalize_branch_ref("origin/main"), "origin/main");
+        assert_eq!(normalize_branch_ref("HEAD~1"), "HEAD~1");
+        assert_eq!(normalize_branch_ref("a1b2c3d"), "a1b2c3d");
+        // Only the leading prefix is stripped, not remotes or tags
+        assert_eq!(
+            normalize_branch_ref("refs/remotes/origin/main"),
+            "refs/remotes/origin/main"
+        );
+        assert_eq!(normalize_branch_ref("refs/tags/v1.2.3"), "refs/tags/v1.2.3");
     }
 }

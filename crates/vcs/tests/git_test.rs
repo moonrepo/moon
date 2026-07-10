@@ -1246,6 +1246,56 @@ mod git {
         }
 
         #[tokio::test]
+        async fn resolves_base_with_refs_heads_prefix_in_detached_head() {
+            // Reproduces Azure DevOps pull request builds: the base is provided
+            // as a fully qualified `refs/heads/<branch>` ref while the checkout
+            // is a detached HEAD with no local branch, only a remote-tracking
+            // ref. The prefix must be stripped so the merge base resolves via
+            // the `origin/<branch>` candidate instead of erroring.
+            let (sandbox, git) = create_git_sandbox("changed");
+
+            // Simulate `master` having been fetched from a remote
+            sandbox.run_git(|cmd| {
+                cmd.args(["update-ref", "refs/remotes/origin/master", "master"]);
+            });
+
+            // Commit a change on a separate branch
+            sandbox.run_git(|cmd| {
+                cmd.args(["checkout", "-b", "feature"]);
+            });
+
+            sandbox.create_file("existing.txt", "modified");
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["commit", "-am", "Modify"]);
+            });
+
+            // Detach HEAD and drop the local branches, leaving only the
+            // remote-tracking `origin/master` ref (mirrors Azure's checkout)
+            sandbox.run_git(|cmd| {
+                cmd.args(["checkout", "--detach"]);
+            });
+
+            sandbox.run_git(|cmd| {
+                cmd.args(["branch", "-D", "master", "feature"]);
+            });
+
+            // `refs/heads/master` no longer resolves locally, so without
+            // normalization this errors instead of diffing against origin/master
+            assert_eq!(
+                git.get_changed_files_between_revisions("refs/heads/master", "")
+                    .await
+                    .unwrap(),
+                ChangedFiles {
+                    files: create_changed_map(
+                        [ChangedStatus::Modified, ChangedStatus::Staged],
+                        ["existing.txt"]
+                    ),
+                }
+            );
+        }
+
+        #[tokio::test]
         async fn handles_root_commits_when_diffing_against_previous() {
             let (_sandbox, git) = create_git_sandbox("changed");
 

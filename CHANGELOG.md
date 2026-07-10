@@ -15,6 +15,9 @@
 - Fixed an issue where `runDepsInParallel: false` would only serialize direct dependencies, allowing
   a dependency's own dependencies (grandchildren) to run in parallel with earlier serial
   dependencies. The entire dependency subtree is now ordered.
+- Fixed `moon ci` failing in certain CI provider pull request builds, where the base branch is
+  provided as a fully-qualified `refs/heads/<branch>` ref that couldn't be resolved in a detached
+  `HEAD` checkout.
 
 ## 2.4.2
 

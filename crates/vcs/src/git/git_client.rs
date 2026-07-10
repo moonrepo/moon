@@ -1,4 +1,4 @@
-use super::common::{clean_git_version, validate_revision};
+use super::common::{clean_git_version, normalize_branch_ref, validate_revision};
 use super::git_error::GitError;
 use super::tree::*;
 use crate::changed_files::*;
@@ -545,6 +545,7 @@ impl Vcs for Git {
         base_revision: &str,
         head_revision: &str, // Can be empty
     ) -> miette::Result<ChangedFiles> {
+        let base_revision = normalize_branch_ref(base_revision);
         let mut changed_files = ChangedFiles::default();
 
         // An empty head implies the current working tree, but the merge base
@@ -552,7 +553,7 @@ impl Vcs for Git {
         let resolved_head_revision = if head_revision.is_empty() {
             "HEAD"
         } else {
-            head_revision
+            normalize_branch_ref(head_revision)
         };
 
         // Determine the merge base revision based on the base/head

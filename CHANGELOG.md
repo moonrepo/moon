@@ -24,6 +24,10 @@
   task `env` option.
 - Fixed an issue where task `outputStyle` was being applied to the primary target. It will only
   apply to transitive targets.
+- Fixed an issue where a task's dependents would not run when requested with a downstream scope
+  (`moon ci`, `--dependents`, `--downstream`), if the task was first added to the action graph as a
+  dependency of another target. For example, `moon run app:build lib:build --dependents` would skip
+  the dependents of `lib:build` when `app:build` depends on it.
 
 ## 2.4.2
 

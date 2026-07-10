@@ -24,6 +24,9 @@
   task `env` option.
 - Fixed an issue where task `outputStyle` was being applied to the primary target. It will only
   apply to transitive targets.
+- Fixed tasks that emit read-only outputs (e.g. `0444` files) failing on every cache hit with a
+  "Permission denied" error when the `casOutputsCache` experiment is enabled. Caches that already
+  contain read-only objects are healed automatically.
 
 ## 2.4.2
 

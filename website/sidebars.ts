@@ -232,6 +232,7 @@ const sidebars: SidebarsConfig = {
 		},
 		'cheat-sheet',
 		// 'comparison',
+		'env-vars',
 		'terminology',
 		'faq',
 		{

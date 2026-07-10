@@ -10110,7 +10110,7 @@ The configuration above would generate the following:
 </TabItem>
 <TabItem value="bitbucket">
 
-```shell title="CODEOWNERS"
+```shell title=".bitbucket/CODEOWNERS"
 # components
 /packages/components/src/ @frontend @design-system
 /packages/components/*.config.js @frontend-infra
@@ -10174,7 +10174,7 @@ config/ @app-platform
 </TabItem>
 <TabItem value="bitbucket">
 
-```shell title="CODEOWNERS"
+```shell title=".bitbucket/CODEOWNERS"
 # (workspace)
 * @admins
 config/ @app-platform
@@ -10215,11 +10215,24 @@ codeowners:
 The following providers are supported, based on the [`vcs.provider`](../config/workspace#provider)
 setting.
 
-- [Bitbucket](https://marketplace.atlassian.com/apps/1218598/code-owners-for-bitbucket?tab=overview&hosting=cloud)
-  (via a 3rd-party app)
+- [Bitbucket](https://support.atlassian.com/bitbucket-cloud/docs/set-up-and-use-code-owners/) (native
+  code owners, uses the same syntax as GitHub)
+- Bitbucket (legacy) — the `bitbucket-legacy` provider, for the 3rd-party
+  [DevSensei / Code Owners for Bitbucket](https://marketplace.atlassian.com/apps/1218598/code-owners-for-bitbucket?tab=overview&hosting=cloud)
+  app, which uses a root `CODEOWNERS` and the `Check()` syntax
 - [GitHub](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners)
 - [GitLab](https://docs.gitlab.com/ee/user/project/codeowners/reference.html)
 - Other (very basic syntax)
+
+:::warning
+
+The `bitbucket` provider now targets Bitbucket's native code owners (`.bitbucket/CODEOWNERS`,
+GitHub-compatible syntax). If you were relying on the
+[DevSensei / Code Owners for Bitbucket](https://marketplace.atlassian.com/apps/1218598/code-owners-for-bitbucket?tab=overview&hosting=cloud)
+app (root `CODEOWNERS` with the `Check()` syntax), set `vcs.provider` to `bitbucket-legacy` to keep
+the previous output.
+
+:::
 
 ### Where does the `CODEOWNERS` file get created?
 
@@ -10227,7 +10240,8 @@ The location of the file is dependent on the configured provider.
 
 - GitHub -> `.github/CODEOWNERS`
 - GitLab -> `.gitlab/CODEOWNERS`
-- Everything else -> `CODEOWNERS`
+- Bitbucket -> `.bitbucket/CODEOWNERS`
+- Everything else (including `bitbucket-legacy`) -> `CODEOWNERS`
 
 ### Why are owners defined in `moon.*` and not an alternative like `OWNERS`?
 

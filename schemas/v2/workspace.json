@@ -1023,7 +1023,7 @@
     "VcsProvider": {
       "description": "The upstream version control provider, where the repository source code is stored.",
       "type": "string",
-      "enum": ["bitbucket", "github", "gitlab", "other"]
+      "enum": ["bitbucket", "bitbucket-legacy", "github", "gitlab", "other"]
     },
     "WorkspaceProjectGlobFormat": {
       "description": "The project identifier format for glob located projects.",

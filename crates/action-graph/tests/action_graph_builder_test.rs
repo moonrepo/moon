@@ -2240,6 +2240,33 @@ mod action_graph_builder {
 
             assert_snapshot!(graph.to_dot());
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn serial_deps_order_grandchildren() {
+            let sandbox = create_sandbox("serial-subtree");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // build => [clean, build-tasks] (serial). build-tasks has its own
+            // deps (cli:build-library-bundle-cli, tsc-project, prepare-package),
+            // all of which must run after clean — not just build-tasks itself.
+            let task = wg.get_task_from_project("app", "build").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                context.primary_targets.into_iter().collect::<Vec<_>>(),
+                [Target::parse("app:build").unwrap()]
+            );
+        }
     }
 
     mod run_task_by_target {

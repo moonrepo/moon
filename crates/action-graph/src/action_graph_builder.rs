@@ -1,6 +1,6 @@
 use crate::action_graph::ActionGraph;
 use crate::action_graph_error::ActionGraphError;
-use daggy::Dag;
+use daggy::{Dag, Walker};
 use miette::IntoDiagnostic;
 use moon_action::{
     ActionNode, InstallDependenciesNode, RunTaskNode, SetupEnvironmentNode, SetupToolchainNode,
@@ -661,13 +661,15 @@ impl<'query> ActionGraphBuilder<'query> {
                     if parallel {
                         indexes.push(Some(dep_index));
                     }
-                    // When serial, next child depends on previous child.
-                    // Use try_link to skip edges that would introduce a
-                    // cycle — this can happen when the same task node
-                    // appears in multiple serial dependency chains across
-                    // different parent tasks.
+                    // When serial, this dependency's entire task subtree must
+                    // run after the previous dependency — not just the
+                    // dependency node itself. Otherwise its own transitive
+                    // dependencies (grandchildren) would run in parallel with
+                    // earlier serial dependencies. Cycle-forming edges are
+                    // skipped, which can happen when the same task node appears
+                    // in multiple serial dependency chains across parent tasks.
                     else if let Some(prev) = previous_target_index {
-                        self.try_link_requirements(dep_index, prev);
+                        self.link_serial_requirements(dep_index, prev);
                     }
 
                     previous_target_index = Some(dep_index);
@@ -1313,6 +1315,49 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         Ok(())
+    }
+
+    /// Add serial ordering edges from every task within `index`'s dependency
+    /// subtree (including `index` itself) to `previous`, so the whole subtree
+    /// runs after the previous serial dependency. The subtree is discovered by
+    /// walking dependency edges — from a node to the tasks it requires — at link
+    /// time (rather than collected during insertion) because a subtree shared
+    /// with another target is inserted once and then reused via node
+    /// deduplication. Only `RunTask` nodes are ordered; non-task nodes such as
+    /// project syncs must not be forced to wait on the previous dependency.
+    /// Cycle-forming edges are skipped via [`Self::try_link_requirements`].
+    fn link_serial_requirements(&mut self, index: NodeIndex, previous: NodeIndex) {
+        let mut visited = FxHashSet::default();
+        let mut ordered = vec![];
+        let mut stack = vec![index];
+
+        // Collect the subtree first, then link. Linking mutates the graph (it
+        // adds `node -> previous` edges), so it must not run mid-walk or the new
+        // edges would pollute the traversal. `ordered` keeps the link order
+        // deterministic — and thus the graph's edge order stable — regardless
+        // of set iteration order.
+        while let Some(node_index) = stack.pop() {
+            if !visited.insert(node_index) {
+                continue;
+            }
+
+            ordered.push(node_index);
+
+            let mut children = self.graph.children(node_index);
+
+            while let Some((_, child_index)) = children.walk_next(&self.graph) {
+                if matches!(
+                    self.graph.node_weight(child_index),
+                    Some(ActionNode::RunTask(_))
+                ) {
+                    stack.push(child_index);
+                }
+            }
+        }
+
+        for node_index in ordered {
+            self.try_link_requirements(node_index, previous);
+        }
     }
 
     /// Try to add a serial ordering edge between two dependency nodes.

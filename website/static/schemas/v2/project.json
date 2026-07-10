@@ -1869,7 +1869,7 @@
         },
         "runDepsInParallel": {
           "title": "runDepsInParallel",
-          "description": "Runs direct task dependencies (via deps) in sequential order. This does not apply to indirect or transient dependencies.",
+          "description": "Runs direct task dependencies (via deps) in sequential order. Each dependency's own dependency subtree is also ordered, so that transitive dependencies run after the preceding direct dependency.",
           "anyOf": [
             {
               "type": "boolean"
@@ -1878,7 +1878,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Runs direct task dependencies (via `deps`) in sequential order. This _does not_ apply to indirect or transient dependencies."
+          "markdownDescription": "Runs direct task dependencies (via `deps`) in sequential order. Each dependency's own dependency subtree is also ordered, so that transitive dependencies run after the preceding direct dependency."
         },
         "runFromWorkspaceRoot": {
           "title": "runFromWorkspaceRoot",

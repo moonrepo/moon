@@ -24,6 +24,10 @@
   task `env` option.
 - Fixed an issue where task `outputStyle` was being applied to the primary target. It will only
   apply to transitive targets.
+- Fixed an issue where captured task output containing non-UTF-8 bytes (for example, Windows
+  codepage output from Python) was discarded entirely, resulting in empty `stdout.log`/`stderr.log`
+  state files, cache hits replaying no output, and missing output in run reports. Invalid bytes are
+  now replaced with `�` instead.
 
 ## 2.4.2
 

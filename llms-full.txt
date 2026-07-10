@@ -6045,9 +6045,9 @@ tasks:
 
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#outputStyle" />
 
-Controls how stdout/stderr is displayed when the task is ran as a _transitive target_. By default,
-this setting is not defined and defers to the action pipeline, but can be overridden with one of the
-following values:
+Controls how stdout/stderr is displayed when the task is run as a _transitive (non-primary) target_.
+Primary targets always display their output and ignore this setting. By default, this setting is not
+defined and defers to the action pipeline, but can be overridden with one of the following values:
 
 - `buffer` - Buffers output and displays after the task has exited (either success or failure).
 - `buffer-only-failure` - Like `buffer`, but only displays on failures.

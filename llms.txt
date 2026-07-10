@@ -76,6 +76,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [Create a project](https://moonrepo.dev/docs/create-project): import Tabs from '@theme/Tabs';
 - [Create a task](https://moonrepo.dev/docs/create-task): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 - [VS Code extension](https://moonrepo.dev/docs/editors/vscode): import Image from '@site/src/components/Image';
+- [Environment variables](https://moonrepo.dev/docs/env-vars): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [FAQ](https://moonrepo.dev/docs/faq): The first incarnation of the name was a misspelling of monorepo (= moonrepo). This is where the
 - [Continuous integration (CI)](https://moonrepo.dev/docs/guides/ci): import Tabs from '@theme/Tabs';
 - [Code generation](https://moonrepo.dev/docs/guides/codegen): import VersionLabel from '@site/src/components/Docs/VersionLabel';

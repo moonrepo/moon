@@ -1327,6 +1327,13 @@ $ MOON_CONCURRENCY=1 moon run app:build
 At minimum, most debugging can be done by passing [`--log debug`](#logging) on the command line and
 sifting through the logs. We also provide the following environment variables to toggle output.
 
+:::info
+
+For a complete list of environment variables that moon sets and reads, see the
+[environment variables](../env-vars) reference.
+
+:::
+
 - `MOON_DEBUG_PROCESS_ENV` - By default moon hides the environment variables (except for `MOON_`)
   passed to processes to avoid leaking sensitive information. However, knowing what environment
   variables are passed around is helpful in debugging. Declare this variable to reveal the entire
@@ -7743,9 +7750,9 @@ notifier:
   webhookUrl: 'https://api.company.com/some/endpoint'
 ```
 
-### `acknowledge`
+### `webhookAcknowledge`
 
-<HeadingApiLink to="/api/types/interface/NotifierConfig#acknowledge" />
+<HeadingApiLink to="/api/types/interface/NotifierConfig#webhookAcknowledge" />
 
 When enabled, webhook notifier will wait for request result and validates the return code for 2xx.
 Defaults to `false`.
@@ -9140,6 +9147,271 @@ command palette, after the extension has been installed.
 View the
 [official VS Code marketplace](https://marketplace.visualstudio.com/items?itemName=moonrepo.moon-console)
 for more information on the extension, its commands, available settings, and more!
+
+---
+
+## Environment variables
+
+moon interacts with environment variables in two directions:
+
+- **[Variables moon sets](#variables-moon-sets)** — injected into the environment of every task
+  process (and the child processes moon spawns), so your commands and scripts can read them.
+- **[Variables moon reads](#variables-moon-reads)** — consumed from the shell to configure moon
+  itself, override [configuration settings](./config/workspace), or toggle behavior.
+
+:::info
+
+moon embeds [proto](/proto) for toolchain management, so proto's own environment variables (like
+`PROTO_HOME` or `PROTO_LOG`) also apply. See the [proto documentation](/proto) for details. This
+page only documents moon's variables.
+
+:::
+
+## Variables moon sets
+
+### Within tasks
+
+The following variables are injected into the environment of _every_ [task](./concepts/task) that
+moon runs, and can be referenced from within your commands, scripts, and `.env` files.
+
+| Variable                | Description                                                                                                                       |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| `MOON_CACHE_DIR`        | Absolute path to moon's cache directory (`.moon/cache`).                                                                          |
+| `MOON_PROJECT_ID`       | ID of the [project](./concepts/project) the running task belongs to.                                                              |
+| `MOON_PROJECT_ROOT`     | Absolute path to the project's root directory.                                                                                    |
+| `MOON_PROJECT_SOURCE`   | The project's source path, relative from the workspace root.                                                                      |
+| `MOON_PROJECT_SNAPSHOT` | Absolute path to a JSON snapshot of the project (the same data as `moon project <id> --json`), regenerated for each run.          |
+| `MOON_TARGET`           | Fully-qualified [target](./concepts/target) of the running task, e.g. `app:build`.                                                |
+| `MOON_TASK_ID`          | ID of the running task.                                                                                                           |
+| `MOON_TASK_HASH`        | The unique hash generated for the running task.                                                                                   |
+| `MOON_WORKSPACE_ROOT`   | Absolute path to the [workspace](./concepts/workspace) root.                                                                      |
+| `MOON_WORKING_DIR`      | Absolute path to the directory moon was invoked from.                                                                             |
+| `PWD`                   | Absolute path to the directory the task runs in — the project root, or the workspace root when `runFromWorkspaceRoot` is enabled. |
+
+:::note
+
+Toolchains may inject additional variables (and prepend their binary directories to `PATH`) when
+setting up a task's environment. The variables above are always present regardless of toolchain.
+
+:::
+
+### During retries
+
+When a task is retried (via [`retryCount`](./config/project#retrycount)), these are set for each
+attempt.
+
+| Variable                  | Description                                      |
+| :------------------------ | :----------------------------------------------- |
+| `MOON_TASK_RETRY_ATTEMPT` | The current attempt number (starts at 1).        |
+| `MOON_TASK_RETRY_TOTAL`   | The total number of attempts that will be tried. |
+
+### Affected files
+
+When a task configures [`affectedFiles`](./config/project#affectedfiles) to pass results through the
+environment, moon sets the following.
+
+| Variable              | Description                                                                                                                                                                 |
+| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MOON_AFFECTED_FILES` | The list of affected files (relative to the working directory), joined by the OS path delimiter. May be `.` or empty when there are no matches, depending on configuration. |
+
+### Terminal & color
+
+When [`pipeline.inheritColorsForPipedTasks`](./config/workspace#inheritcolorsforpipedtasks) is
+enabled (the default), moon inherits the terminal's color support into piped task processes.
+
+| Variable         | Description                                                             |
+| :--------------- | :---------------------------------------------------------------------- |
+| `FORCE_COLOR`    | Set to the detected color support level so child processes emit color.  |
+| `CLICOLOR_FORCE` | Same as `FORCE_COLOR`, for tools that follow the `CLICOLOR` convention. |
+| `COLUMNS`        | Forced to `80` so cached output is consistent across machines.          |
+| `LINES`          | Forced to `24` so cached output is consistent across machines.          |
+
+> `NO_COLOR` is removed from the task environment when colors are being forced.
+
+### proto integration
+
+Set on task processes and any proto/toolchain child processes that moon spawns.
+
+| Variable                       | Value   | Description                                                               |
+| :----------------------------- | :------ | :------------------------------------------------------------------------ |
+| `PROTO_AUTO_INSTALL`           | `false` | Prevents proto from auto-installing tools during a task run.              |
+| `PROTO_IGNORE_MIGRATE_WARNING` | `true`  | Silences proto migration warnings.                                        |
+| `PROTO_NO_PROGRESS`            | `true`  | Disables proto progress bars.                                             |
+| `PROTO_VERSION`                | pinned  | The proto version pinned in [`.moon/toolchains.yml`](./config/toolchain). |
+| `STARBASE_FORCE_TTY`           | `true`  | Forces TTY behavior for consistent output.                                |
+
+### Internal
+
+Set by moon for its own processes and integrations.
+
+| Variable              | Description                                                                                  |
+| :-------------------- | :------------------------------------------------------------------------------------------- |
+| `MOON_VERSION`        | The currently running moon version.                                                          |
+| `MOON_DAEMON_RUNNING` | Set to `true` inside the [daemon](./guides/daemon) server process.                           |
+| `MOON_VCS_REPO_SLUG`  | The detected `owner/repository` slug, derived from the VCS remote (only if not already set). |
+
+## Variables moon reads
+
+### Global options
+
+Each of these has an equivalent [global command line option](./commands/overview). The command line
+option takes precedence over the environment variable.
+
+| Variable           | Option          | Description                                                                                        |
+| :----------------- | :-------------- | :------------------------------------------------------------------------------------------------- |
+| `MOON_CACHE`       | `--cache`       | Mode for [cache](./concepts/cache) operations: `read`, `read-write` (default), `write`, or `off`.  |
+| `MOON_COLOR`       | `--color`       | Force colored output.                                                                              |
+| `MOON_CONCURRENCY` | `--concurrency` | Maximum number of threads to utilize. Defaults to the number of CPU cores.                         |
+| `MOON_DUMP`        | `--dump`        | Dump a trace profile to the working directory.                                                     |
+| `MOON_LOG`         | `--log`         | Lowest log level to output: `off`, `error`, `warn`, `info` (default), `debug`, `trace`, `verbose`. |
+| `MOON_LOG_FILE`    | `--log-file`    | Path to a file to write logs to.                                                                   |
+| `MOON_QUIET`       | `--quiet`       | Hide all moon console output.                                                                      |
+| `MOON_THEME`       | `--theme`       | Terminal theme to print with.                                                                      |
+
+### Running tasks & the pipeline
+
+Read by [`moon exec`](./commands/exec), [`moon run`](./commands/run), [`moon check`](./commands/check), and [`moon ci`](./commands/ci).
+Most map to a command line option.
+
+| Variable                 | Option                | Description                                                                                              |
+| :----------------------- | :-------------------- | :------------------------------------------------------------------------------------------------------- |
+| `MOON_FORCE`             | `--force`             | Force run and bypass cache, ignore changed files, and skip affected checks.                              |
+| `MOON_NO_ACTIONS`        | `--no-actions`        | Run the pipeline without sync and setup related actions.                                                 |
+| `MOON_EXEC_PLAN`         | `--plan`              | Relative path to an execution plan (JSON) that customizes the action graph.                              |
+| `MOON_SUMMARY`           | `--summary`           | Print a summary of all actions that ran in the pipeline.                                                 |
+| `MOON_JOB`               | `--job`               | Zero-based index of the current job (for [CI job sharding](./guides/ci)).                                |
+| `MOON_JOB_TOTAL`         | `--job-total`         | Total amount of jobs to run.                                                                             |
+| `MOON_AFFECTED`          | `--affected`          | Only run tasks affected by changed files.                                                                |
+| `MOON_BASE`              | `--base`              | Base branch, commit, or revision to compare [affected](./concepts/affected) against.                     |
+| `MOON_HEAD`              | `--head`              | Current branch, commit, or revision to compare with.                                                     |
+| `MOON_INCLUDE_RELATIONS` | `--include-relations` | Include graph relations for affected checks, instead of just changed files.                              |
+| `MOON_ON_FAILURE`        | `--on-failure`        | When a task fails, either bail the pipeline or continue executing.                                       |
+| `MOON_OUTPUT_STYLE`      | —                     | The [`outputStyle`](./config/project#outputstyle) task option in which output is printed.                |
+| `MOON_RETRY_COUNT`       | —                     | The [`retryCount`](./config/project#retrycount) task option — number of times a failing task is retried. |
+
+### Skipping actions
+
+Skip individual [pipeline actions](./guides/exec-plan). Set to `true` (or `1`, `*`) to skip all, or
+provide a comma-separated list of project IDs / toolchain IDs / targets to skip only those that
+match.
+
+| Variable                      | Description                                                 |
+| :---------------------------- | :---------------------------------------------------------- |
+| `MOON_SKIP_SYNC_WORKSPACE`    | Skip the `SyncWorkspace` action.                            |
+| `MOON_SKIP_SYNC_PROJECT`      | Skip `SyncProject` actions (matches project IDs).           |
+| `MOON_SKIP_SETUP_TOOLCHAIN`   | Skip `SetupToolchain` actions (matches toolchain IDs).      |
+| `MOON_SKIP_SETUP_ENVIRONMENT` | Skip `SetupEnvironment` actions (matches toolchain IDs).    |
+| `MOON_SKIP_INSTALL_DEPS`      | Skip `InstallDependencies` actions (matches toolchain IDs). |
+
+### Toolchain versions
+
+`MOON_<TOOLCHAIN>_VERSION` overrides the version of a [toolchain](./concepts/toolchain) configured
+in [`.moon/toolchains.yml`](./config/toolchain), where `<TOOLCHAIN>` is the uppercased toolchain ID.
+This is especially useful for testing against multiple versions in a [CI matrix](./guides/open-source).
+
+For example:
+
+```shell
+$ MOON_NODE_VERSION=20.0.0 moon run app:build
+$ MOON_RUST_VERSION=1.90.0 moon run app:build
+```
+
+### Configuration overrides
+
+Override [`.moon/workspace.yml`](./config/workspace) settings without editing the file.
+
+| Variable                               | Setting                                                                    |
+| :------------------------------------- | :------------------------------------------------------------------------- |
+| `MOON_DAEMON`                          | [`daemon`](./guides/daemon)                                                |
+| `MOON_TELEMETRY`                       | [`telemetry`](./config/workspace#telemetry)                                |
+| `MOON_WEBHOOK_URL`                     | [`notifier.webhookUrl`](./config/workspace#webhookurl)                     |
+| `MOON_WEBHOOK_ACKNOWLEDGE`             | [`notifier.webhookAcknowledge`](./config/workspace#webhookacknowledge)     |
+| `MOON_PIPELINE_AUTO_CLEAN_CACHE`       | [`pipeline.autoCleanCache`](./config/workspace#autocleancache)             |
+| `MOON_PIPELINE_CACHE_LIFETIME`         | [`pipeline.cacheLifetime`](./config/workspace#cachelifetime)               |
+| `MOON_PIPELINE_KILL_PROCESS_THRESHOLD` | [`pipeline.killProcessThreshold`](./config/workspace#killprocessthreshold) |
+
+#### Remote caching <VersionLabel version="1.30.0" />
+
+Override [`remote`](./config/workspace#remote) settings for [remote caching](./guides/remote-cache).
+
+| Variable                 | Setting / description                                                                                                                  |
+| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
+| `MOON_REMOTE_HOST`       | [`remote.host`](./config/workspace#host) — gRPC host to connect to.                                                                    |
+| `MOON_REMOTE_API`        | [`remote.api`](./config/workspace#api) — API format of the remote service.                                                             |
+| `MOON_REMOTE_AUTH_TOKEN` | [`remote.auth.token`](./config/workspace#token) — name of the env var to use as a bearer token.                                        |
+| `MOON_REMOTE_CACHE_*`    | Override [`remote.cache`](./config/workspace#remote) fields (e.g. `MOON_REMOTE_CACHE_COMPRESSION`, `MOON_REMOTE_CACHE_INSTANCE_NAME`). |
+| `MOON_REMOTE_TLS_HTTP2`  | [`remote.tls.assumeHttp2`](./config/workspace#tls).                                                                                    |
+| `MOON_REMOTE_TLS_*`      | Override [`remote.tls`](./config/workspace#tls) fields.                                                                                |
+| `MOON_REMOTE_MTLS_HTTP`  | [`remote.mtls.assumeHttp2`](./config/workspace#mtls).                                                                                  |
+| `MOON_REMOTE_MTLS_*`     | Override [`remote.mtls`](./config/workspace#mtls) fields.                                                                              |
+
+#### Experiments
+
+Toggle [`experiments`](./config/workspace#experiments). Accepts a boolean-like value (`true`, `1`,
+`false`, `0`).
+
+| Variable                                  | Setting                                                                         |
+| :---------------------------------------- | :------------------------------------------------------------------------------ |
+| `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` | [`experiments.asyncAffectedTracking`](./config/workspace#asyncaffectedtracking) |
+| `MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING`    | [`experiments.asyncGraphBuilding`](./config/workspace#asyncgraphbuilding)       |
+| `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE`       | [`experiments.casOutputsCache`](./config/workspace#casoutputscache)             |
+| `MOON_EXPERIMENT_NATIVE_FILE_HASHING`     | [`experiments.nativeFileHashing`](./config/workspace#nativefilehashing)         |
+
+### Debugging
+
+Declare any of these (to a truthy value) to reveal additional diagnostic output. See
+[debugging](./commands/overview#debugging) for more.
+
+| Variable                   | Description                                                                                                                           |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| `MOON_DEBUG_PROCESS_ENV`   | Reveal the full environment passed to processes. By default moon hides everything except `MOON_*` variables to avoid leaking secrets. |
+| `MOON_DEBUG_PROCESS_INPUT` | Reveal the full stdin passed to processes, instead of truncating it.                                                                  |
+| `MOON_DEBUG_REMOTE`        | Extra logging for remote caching, including internal connection errors.                                                               |
+| `MOON_DEBUG_WASM`          | Extra logging for [WASM plugins](./guides/wasm-plugins), and optionally dumps memory/core profiles.                                   |
+| `MOON_DEBUG_DAEMON`        | Extra logging for the [daemon](./guides/daemon).                                                                                      |
+| `MOON_DEBUG_MCP`           | Extra logging for the [MCP server](./guides/mcp).                                                                                     |
+
+### Graph visualizer
+
+Read by the graph commands ([`project-graph`](./commands/project-graph),
+[`task-graph`](./commands/task-graph), [`action-graph`](./commands/action-graph)) when starting the
+local visualization server.
+
+| Variable      | Option   | Description                                                      |
+| :------------ | :------- | :--------------------------------------------------------------- |
+| `MOON_HOST`   | `--host` | The host address to bind the server to. Defaults to `127.0.0.1`. |
+| `MOON_PORT`   | `--port` | The port to bind to. Defaults to `0` (a random open port).       |
+| `MOON_JS_URL` | —        | Override the URL of the visualizer JavaScript bundle (advanced). |
+
+### Store & installation
+
+| Variable           | Description                                                                                                    |
+| :----------------- | :------------------------------------------------------------------------------------------------------------- |
+| `MOON_HOME`        | Override moon's store directory. Defaults to `~/.moon` (or `$XDG_DATA_HOME/moon` when `XDG_DATA_HOME` is set). |
+| `MOON_INSTALL_DIR` | Directory that [`moon upgrade`](./commands/upgrade) installs the binary into. Defaults to `~/.moon/bin`.       |
+
+### Advanced
+
+| Variable                       | Description                                                                                                                             |
+| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
+| `MOON_TOOLCHAIN_FORCE_GLOBALS` | Force toolchains to use globally installed tools instead of proto-managed versions. Set automatically within [Docker](./guides/docker). |
+| `MOON_PLUGINS_USE_URL_DIST`    | Load plugins from their URL distribution instead of a locally built artifact.                                                           |
+| `MOON_VCS_REPO_SLUG`           | Override the detected `owner/repository` slug (see [above](#internal)).                                                                 |
+| `MOON_TRACE_ID`                | A trace/correlation ID included in [webhook](./guides/webhooks) payloads.                                                               |
+
+## System variables
+
+moon also inspects a number of standard, third-party variables to detect the current environment.
+These are read, never written.
+
+| Variable(s)                                                                               | Purpose                                                                               |
+| :---------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------ |
+| `CI`, `CI_NAME`, `AZURE_PIPELINES`                                                        | Detect whether moon is running in a [CI](./guides/ci) environment.                    |
+| `NO_COLOR`, `FORCE_COLOR`, `CLICOLOR`, `CLICOLOR_FORCE`                                   | Standard [color output](./commands/overview#colors) controls, honored and propagated. |
+| `XDG_DATA_HOME`                                                                           | Fallback location for moon's store directory.                                         |
+| `SSH_CLIENT`, `SSH_TTY`                                                                   | Detect a remote SSH session.                                                          |
+| `CODESPACES`, `GITHUB_CODESPACES`, `GITPOD_INSTANCE_ID`, `DEVPOD`, `REPL_ID`, and similar | Detect a cloud development environment ("devbox").                                    |
+| `PATH`                                                                                    | Resolve binaries, and the base that toolchains prepend their bin directories to.      |
 
 ---
 

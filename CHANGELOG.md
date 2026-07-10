@@ -22,6 +22,8 @@
   `export PATH=...` in the `$BASH_ENV` file would overwrite the `PATH` that moon injects for tasks.
   `BASH_ENV` is no longer passed to `bash` wrapped child processes, unless explicitly set with the
   task `env` option.
+- Fixed an issue where task `outputStyle` was being applied to the primary target. It will only
+  apply to transitive targets.
 
 ## 2.4.2
 

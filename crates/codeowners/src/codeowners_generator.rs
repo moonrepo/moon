@@ -21,6 +21,7 @@ impl CodeownersGenerator {
         let file_path = workspace_root.join(match provider {
             VcsProvider::GitHub => ".github/CODEOWNERS",
             VcsProvider::GitLab => ".gitlab/CODEOWNERS",
+            VcsProvider::Bitbucket => ".bitbucket/CODEOWNERS",
             _ => "CODEOWNERS",
         });
 
@@ -60,7 +61,7 @@ impl CodeownersGenerator {
             .unwrap_or(0);
 
         match &self.provider {
-            VcsProvider::Bitbucket => {
+            VcsProvider::BitbucketLegacy => {
                 if required_approvals > 0
                     && let Some(default_owner) = &config.default_owner
                 {

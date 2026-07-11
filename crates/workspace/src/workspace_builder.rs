@@ -322,6 +322,14 @@ impl WorkspaceBuilder {
             task_graph.nodes.insert(target, TaskNode { index, task });
         }
 
+        // Weight-based lookups require each node's weight to be its own
+        // index, which may not be the case when placeholder nodes were
+        // dropped by the filter above, so rewrite them
+        for index in 0..task_graph.graph.node_count() {
+            let index = NodeIndex::new(index);
+            *task_graph.graph.node_weight_mut(index).unwrap() = index;
+        }
+
         let task_graph = Arc::new(task_graph);
 
         Ok(WorkspaceGraph::new(
@@ -1213,6 +1221,16 @@ mod tests {
             graph.projects.dependencies_of(app.as_ref()),
             vec![Id::raw("dep")]
         );
+
+        // Weight-based lookups must also resolve the reindexed nodes
+        let mut keys = graph.projects.get_node_keys();
+        keys.sort();
+
+        assert_eq!(keys, vec![Id::raw("app"), Id::raw("dep")]);
+        assert_eq!(
+            graph.projects.deep_dependencies_of(app.as_ref()),
+            vec![Id::raw("dep")]
+        );
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -1280,6 +1298,16 @@ mod tests {
 
         assert_eq!(
             graph.tasks.dependencies_of(build_task.as_ref()),
+            vec![lint_target.clone()]
+        );
+
+        // Weight-based lookups must also resolve the reindexed nodes
+        let mut keys = graph.tasks.get_node_keys();
+        keys.sort_by_key(|target| target.to_string());
+
+        assert_eq!(keys, vec![build_target, lint_target.clone()]);
+        assert_eq!(
+            graph.tasks.deep_dependencies_of(build_task.as_ref()),
             vec![lint_target]
         );
     }

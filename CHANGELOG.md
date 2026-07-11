@@ -46,6 +46,9 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where project and task graph node lookups could resolve the wrong entry, or fail
+  entirely, after building a partial graph (a subset of projects), as internal node identifiers were
+  not re-synced when placeholder nodes were removed.
 - Fixed an issue where `runDepsInParallel: false` would only serialize direct dependencies, allowing
   a dependency's own dependencies (grandchildren) to run in parallel with earlier serial
   dependencies. The entire dependency subtree is now ordered.

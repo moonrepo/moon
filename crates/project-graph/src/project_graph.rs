@@ -321,9 +321,20 @@ impl ProjectGraph {
     /// a single partition return an error, while cycles that cross the partition
     /// boundary are allowed. The `indexes` map should be populated beforehand,
     /// so that cycle errors can report project IDs.
-    pub fn set_graph(&mut self, graph: DiGraph<NodeIndex, DependencyScope>) -> miette::Result<()> {
+    pub fn set_graph(
+        &mut self,
+        mut graph: DiGraph<NodeIndex, DependencyScope>,
+    ) -> miette::Result<()> {
         let mut production_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
         let mut development_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
+
+        // Weight-based lookups require each node's weight to be its own
+        // index, but the builders may provide stale pre-filtered indices
+        // when placeholder nodes were dropped, so rewrite them
+        for index in 0..graph.node_count() {
+            let index = NodeIndex::new(index);
+            graph[index] = index;
+        }
 
         // Mirror the nodes into both graphs, in the same order,
         // so that all node indexes align

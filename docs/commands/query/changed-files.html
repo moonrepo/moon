@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.51945bc5.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.9f0986c7.js" defer="defer"></script>
 <script src="/assets/js/main.85772fa5.js" defer="defer"></script>
 </head>
 <body>
@@ -32,6 +32,9 @@ revision of the default branch (<code>HEAD~1</code>). This is what <a class="" h
 uses.</li>
 <li class="">If <code>--local</code> is provided, changed files are based on your local index only (<code>git status</code>).</li>
 <li class="">Otherwise, then compare the defined base (<code>--base</code>) against head (<code>--head</code>).</li>
+<li class="">When no explicit <code>--head</code> is provided, the comparison targets your working tree, so changed files
+in your local index (<code>git status</code>) are also included. An explicit <code>--head</code> is a pure revision to
+revision comparison, and does not include the local index.</li>
 </ul>
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Return all files</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon query changed-files</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Return deleted files</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon query changed-files </span><span class="token parameter variable" style="color:#fef9c3">--status</span><span class="token plain"> deleted</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Return all files between 2 revisions</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon query changed-files </span><span class="token parameter variable" style="color:#fef9c3">--base</span><span class="token plain"> </span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token plain">branch</span><span class="token operator" style="color:#b7a9f9">&gt;</span><span class="token plain"> </span><span class="token parameter variable" style="color:#fef9c3">--head</span><span class="token plain"> </span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token plain">commit</span><span class="token operator" style="color:#b7a9f9">&gt;</span><br></div></code></pre></div></div>
 <p>This will output a list of workspace relative files as JSON. The output has the following structure:</p>

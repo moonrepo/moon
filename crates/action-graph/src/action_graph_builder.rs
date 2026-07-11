@@ -133,6 +133,10 @@ pub struct ActionGraphBuilder<'query> {
 
     // Target tracking
     ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
+    // Tasks whose dependents were out of scope when their node was created.
+    // Consumed when the task is revisited with dependents in scope, since the
+    // node-exists early return would otherwise skip the expansion entirely.
+    ignored_dependents: FxHashSet<Target>,
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
 
@@ -159,6 +163,7 @@ impl<'query> ActionGraphBuilder<'query> {
             nodes: FxHashMap::default(),
             options,
             ignored_dependencies: FxHashMap::default(),
+            ignored_dependents: FxHashSet::default(),
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
             serial_edges: FxHashSet::default(),
@@ -998,6 +1003,12 @@ impl<'query> ActionGraphBuilder<'query> {
             false
         };
 
+        let had_ignored_dependents = if should_run_dependents {
+            self.ignored_dependents.remove(&task.target)
+        } else {
+            false
+        };
+
         // Check if the node exists to avoid all the overhead below
         if let Some(index) = self.get_index_from_node(&node) {
             if had_ignored_dependencies && !task.deps.is_empty() {
@@ -1006,6 +1017,12 @@ impl<'query> ActionGraphBuilder<'query> {
                 let edges = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
 
                 self.link_optional_requirements(index, edges)?;
+            }
+
+            if had_ignored_dependents {
+                child_reqs.skip_affected = false;
+
+                Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
             }
 
             return Ok(Some(index));
@@ -1047,6 +1064,8 @@ impl<'query> ActionGraphBuilder<'query> {
             child_reqs.skip_affected = false;
 
             Box::pin(self.run_task_dependents(task, &child_reqs, state)).await?;
+        } else {
+            self.ignored_dependents.insert(task.target.clone());
         }
 
         Ok(Some(index))

@@ -13,4 +13,5 @@ pub mod watchers;
 
 pub use app::*;
 pub use app_error::*;
+pub use helpers::extract_task_exit_code;
 pub use session::*;

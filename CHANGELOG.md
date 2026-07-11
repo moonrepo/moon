@@ -35,6 +35,11 @@
 - Fixed tasks that emit read-only outputs (e.g. `0444` files) failing on every cache hit with a
   "Permission denied" error when the `casOutputsCache` experiment is enabled. Caches that already
   contain read-only objects are healed automatically.
+- Fixed an issue where `moon query changed-files` would include uncommitted changes from the local
+  index (`git status`) even when an explicit `--head` revision was provided, causing false positives
+  when comparing 2 revisions. This also applies to affected detection with an explicit head, e.g.
+  the `MOON_HEAD` environment variable or `--affected base:head`. Additionally, `MOON_BASE` and
+  `MOON_HEAD` environment variables that are set but empty are now ignored.
 - Fixed an issue where synced VCS hooks were always written to `.moon/hooks`, even when the workspace
   configuration lived in `.config/moon`. Hooks are now placed alongside the config, in
   `.config/moon/hooks`.

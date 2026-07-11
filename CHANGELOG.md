@@ -35,6 +35,9 @@
 - Fixed tasks that emit read-only outputs (e.g. `0444` files) failing on every cache hit with a
   "Permission denied" error when the `casOutputsCache` experiment is enabled. Caches that already
   contain read-only objects are healed automatically.
+- Fixed an issue where synced VCS hooks were always written to `.moon/hooks`, even when the workspace
+  configuration lived in `.config/moon`. Hooks are now placed alongside the config, in
+  `.config/moon/hooks`.
 
 ## 2.4.2
 

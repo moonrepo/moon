@@ -211,6 +211,45 @@ mod vcs_hooks {
         assert!(config.contains("hooksPath ="));
     }
 
+    #[tokio::test]
+    async fn places_hooks_alongside_config_moon_dir() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        // Workspace config lives at `.config/moon` instead of `.moon`
+        sandbox.create_file(".config/moon/workspace.yml", "");
+
+        run_generator(sandbox.path()).await;
+
+        // Hooks are placed alongside the config, not in `.moon`
+        assert!(
+            sandbox
+                .path()
+                .join(".config/moon/hooks/pre-commit")
+                .exists()
+        );
+        assert!(sandbox.path().join(".config/moon/hooks/post-push").exists());
+        assert!(!sandbox.path().join(".moon/hooks").exists());
+
+        // And the git config points to the correct directory. Normalize the
+        // separators, as Git stores Windows paths with escaped backslashes.
+        let config = fs::read_to_string(sandbox.path().join(".git/config"))
+            .unwrap()
+            .replace(r"\\", "/")
+            .replace('\\', "/");
+
+        assert!(config.contains(".config/moon/hooks"));
+
+        clean_generator(sandbox.path()).await;
+
+        assert!(!sandbox.path().join(".config/moon/hooks").exists());
+        assert!(
+            !fs::read_to_string(sandbox.path().join(".git/config"))
+                .unwrap()
+                .contains("hooksPath =")
+        );
+    }
+
     #[cfg(unix)]
     mod unix {
         use super::*;

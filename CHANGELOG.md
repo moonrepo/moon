@@ -24,6 +24,10 @@
   task `env` option.
 - Fixed an issue where task `outputStyle` was being applied to the primary target. It will only
   apply to transitive targets.
+- Fixed an issue where captured task output containing non-UTF-8 bytes (for example, Windows
+  codepage output from Python) was discarded entirely, resulting in empty `stdout.log`/`stderr.log`
+  state files, cache hits replaying no output, and missing output in run reports. Invalid bytes are
+  now replaced with `�` instead.
 - Fixed an issue where a task's dependents would not run when requested with a downstream scope
   (`moon ci`, `--dependents`, `--downstream`), if the task was first added to the action graph as a
   dependency of another target. For example, `moon run app:build lib:build --dependents` would skip

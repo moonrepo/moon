@@ -410,3 +410,87 @@ impl GraphConversions<Project, DependencyScope, Id> for ProjectGraph {}
 impl GraphToDot<Project, DependencyScope, Id> for ProjectGraph {}
 
 impl GraphToJson<Project, DependencyScope, Id> for ProjectGraph {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn loop_graph(
+        scope_ab: DependencyScope,
+        scope_ba: DependencyScope,
+    ) -> DiGraph<NodeIndex, DependencyScope> {
+        let mut graph = DiGraph::new();
+        let a = graph.add_node(NodeIndex::new(0));
+        let b = graph.add_node(NodeIndex::new(1));
+
+        graph.add_edge(a, b, scope_ab);
+        graph.add_edge(b, a, scope_ba);
+        graph
+    }
+
+    #[test]
+    fn routes_scopes_into_expected_partitions() {
+        assert!(is_production_scope(&DependencyScope::Production));
+        assert!(is_production_scope(&DependencyScope::Peer));
+        assert!(!is_production_scope(&DependencyScope::Build));
+        assert!(!is_production_scope(&DependencyScope::Development));
+        assert!(!is_production_scope(&DependencyScope::Root));
+    }
+
+    #[test]
+    fn would_cycle_for_self_loops_in_either_partition() {
+        let mut graph = DiGraph::<(), DependencyScope>::new();
+        let a = graph.add_node(());
+
+        assert!(would_cycle_in_scope(
+            &graph,
+            a,
+            a,
+            &DependencyScope::Production
+        ));
+        assert!(would_cycle_in_scope(&graph, a, a, &DependencyScope::Build));
+    }
+
+    #[test]
+    fn set_graph_allows_cross_partition_cycles() {
+        let mut project_graph = ProjectGraph::default();
+
+        project_graph
+            .set_graph(loop_graph(
+                DependencyScope::Production,
+                DependencyScope::Development,
+            ))
+            .unwrap();
+
+        assert_eq!(project_graph.production_graph().edge_count(), 1);
+        assert_eq!(project_graph.development_graph().edge_count(), 1);
+    }
+
+    #[test]
+    fn set_graph_errors_for_production_partition_cycles() {
+        let mut project_graph = ProjectGraph::default();
+
+        let error = project_graph
+            .set_graph(loop_graph(
+                DependencyScope::Production,
+                DependencyScope::Peer,
+            ))
+            .unwrap_err();
+
+        assert!(error.to_string().contains("would introduce a cycle"));
+    }
+
+    #[test]
+    fn set_graph_errors_for_development_partition_cycles() {
+        let mut project_graph = ProjectGraph::default();
+
+        let error = project_graph
+            .set_graph(loop_graph(
+                DependencyScope::Build,
+                DependencyScope::Development,
+            ))
+            .unwrap_err();
+
+        assert!(error.to_string().contains("would introduce a cycle"));
+    }
+}

@@ -807,6 +807,52 @@ mod project_graph {
             );
         }
 
+        async fn assert_three_node_chain_cycle(async_graph: bool) {
+            // a -> b (production), b -> c (production), c -> a (development)
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("dev-prod-chain-loop", async_graph).await;
+
+            let a = graph.get_project("a").unwrap();
+            let c = graph.get_project("c").unwrap();
+
+            assert_eq!(graph.projects.get_graph().edge_count(), 3);
+            assert_eq!(map_ids(graph.projects.dependencies_of(&a)), ["b"]);
+            assert_eq!(map_ids(graph.projects.dependencies_of(&c)), ["a"]);
+            assert_eq!(
+                map_ids(graph.projects.deep_dependencies_of(&c)),
+                ["a", "b", "c"]
+            );
+        }
+
+        async fn assert_cached_partition_cycle(async_graph: bool) {
+            let sandbox = create_moon_sandbox("dev-prod-loop");
+            sandbox.enable_git();
+
+            // Prime the cache on the first pass, load from it on the second
+            for _ in 0..2 {
+                let mut mock = create_workspace_mocker(sandbox.path());
+
+                if async_graph {
+                    mock = mock.update_workspace_config(|config| {
+                        config.experiments.async_graph_building = true;
+                    });
+                }
+
+                let graph = mock
+                    .mock_workspace_graph_with_options(WorkspaceMockOptions {
+                        cache: true,
+                        ..Default::default()
+                    })
+                    .await;
+
+                let a = graph.get_project("a").unwrap();
+
+                assert_eq!(graph.projects.get_graph().edge_count(), 2);
+                assert_eq!(map_ids(graph.projects.dependencies_of(&a)), ["b"]);
+                assert_eq!(map_ids(graph.projects.dependents_of(&a)), ["b"]);
+            }
+        }
+
         mod sync_builder {
             use super::*;
 
@@ -839,6 +885,54 @@ mod project_graph {
             }
 
             #[tokio::test(flavor = "multi_thread")]
+            async fn allows_three_node_chain_cycles_across_partitions() {
+                assert_three_node_chain_cycle(false).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn caches_partition_cycles() {
+                assert_cached_partition_cycle(false).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn disconnects_same_partition_peer_loop() {
+                // a -> b (peer), b -> a (production), same partition
+                let (_sandbox, graph) =
+                    build_graph_from_fixture_for_builder("peer-prod-loop", false).await;
+
+                assert_eq!(graph.projects.get_graph().edge_count(), 1);
+                assert_eq!(graph.projects.production_graph().edge_count(), 1);
+                assert_eq!(graph.projects.development_graph().edge_count(), 0);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn disconnects_same_partition_build_dev_loop() {
+                // a -> b (build), b -> a (development), same partition
+                let (_sandbox, graph) =
+                    build_graph_from_fixture_for_builder("build-dev-loop", false).await;
+
+                assert_eq!(graph.projects.get_graph().edge_count(), 1);
+                assert_eq!(graph.projects.production_graph().edge_count(), 0);
+                assert_eq!(graph.projects.development_graph().edge_count(), 1);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn disconnects_self_dependencies() {
+                let (_sandbox, graph) =
+                    build_graph_from_fixture_for_builder("self-loop", false).await;
+
+                assert_eq!(
+                    map_ids(
+                        graph
+                            .projects
+                            .dependencies_of(&graph.get_project("a").unwrap())
+                    ),
+                    string_vec![]
+                );
+                assert_eq!(graph.projects.get_graph().edge_count(), 0);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn can_focus_across_a_partition_cycle() {
                 assert_focus_across_partition_cycle(false).await;
             }
@@ -864,8 +958,36 @@ mod project_graph {
             }
 
             #[tokio::test(flavor = "multi_thread")]
+            #[should_panic(expected = "would introduce a cycle")]
+            async fn errors_for_same_partition_peer_loop() {
+                build_graph_from_fixture_for_builder("peer-prod-loop", true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            #[should_panic(expected = "would introduce a cycle")]
+            async fn errors_for_same_partition_build_dev_loop() {
+                build_graph_from_fixture_for_builder("build-dev-loop", true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            #[should_panic(expected = "would introduce a cycle")]
+            async fn errors_for_self_dependencies() {
+                build_graph_from_fixture_for_builder("self-loop", true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
             async fn allows_cycles_that_cross_scope_partitions() {
                 assert_cross_partition_cycle(true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn allows_three_node_chain_cycles_across_partitions() {
+                assert_three_node_chain_cycle(true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn caches_partition_cycles() {
+                assert_cached_partition_cycle(true).await;
             }
 
             #[tokio::test(flavor = "multi_thread")]

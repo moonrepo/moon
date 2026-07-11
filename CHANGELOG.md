@@ -34,6 +34,10 @@
 
 #### 🚀 Updates
 
+- Reworked the project graph to validate cycles per dependency scope partition. Production scoped
+  dependencies (`production`, `peer`) and development scoped dependencies (`development`, `build`,
+  `root`) are now tracked as separate internal graphs, so relationships that cross the boundary
+  (common in Go) no longer fail with a cycle error, or silently drop dependency edges.
 - Added [Renovate](https://www.mend.io/renovate/) support. View the official guide for more
   information.
 - Updated BitBucket codeowners to use the

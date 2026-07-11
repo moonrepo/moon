@@ -24,7 +24,7 @@ use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput};
 use moon_project::{Project, ProjectAlias, ProjectError};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, would_cycle_in_scope};
 use moon_task::{Target, Task};
 use moon_task_builder::TaskDepsBuilder;
 use moon_task_graph::{GraphExpanderContext, NodeState, TaskGraph, TaskGraphError, TaskNode};
@@ -38,6 +38,7 @@ use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
 use starbase_utils::json;
 use std::collections::BTreeMap;
+use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -61,10 +62,27 @@ pub struct WorkspaceBuilderContext {
     pub workspace_root: PathBuf,
 }
 
+/// A dependency edge that was skipped while recursively loading projects,
+/// because its target was actively being loaded further up the stack. These
+/// are connected once loading completes and the graph can be checked for
+/// cycles within the edge's scope partition.
+struct DeferredProjectEdge {
+    source_id: Id,
+    source_index: NodeIndex,
+    target_id: Id,
+    target_index: NodeIndex,
+    scope: DependencyScope,
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceBuilder {
     #[serde(skip)]
     context: Option<Arc<WorkspaceBuilderContext>>,
+
+    /// Edges that could not be connected during recursive loading.
+    /// Always drained before loading completes.
+    #[serde(skip)]
+    deferred_project_edges: Vec<DeferredProjectEdge>,
 
     /// List of config paths used in the hashing process.
     /// These are used for invalidation.
@@ -83,8 +101,9 @@ pub struct WorkspaceBuilder {
     ///   - Their file source location, relative from the workspace root.
     project_data: FxHashMap<Id, ProjectBuildData>,
 
-    /// The project DAG.
-    project_graph: Dag<NodeState<Project>, DependencyScope>,
+    /// The project graph. Cycle validation happens per scope partition
+    /// when edges are added, not across the graph as a whole.
+    project_graph: DiGraph<NodeState<Project>, DependencyScope>,
 
     /// Projects that have explicitly renamed themselves with the `id` setting.
     /// Maps original ID to renamed ID.
@@ -114,8 +133,9 @@ impl WorkspaceBuilder {
             aliases: FxHashMap::default(),
             config_paths: vec![],
             context: Some(Arc::new(context)),
+            deferred_project_edges: vec![],
             project_data: FxHashMap::default(),
-            project_graph: Dag::new(),
+            project_graph: DiGraph::new(),
             projects_by_tag: FxHashMap::default(),
             renamed_project_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
@@ -251,7 +271,7 @@ impl WorkspaceBuilder {
         project_graph.aliases.extend(self.aliases);
         let mut loaded_projects = FxHashMap::default();
 
-        project_graph.graph = self.project_graph.filter_map(
+        let graph = self.project_graph.filter_map(
             |ni, node| match node {
                 NodeState::Loading => None,
                 NodeState::Loaded(project) => {
@@ -263,8 +283,8 @@ impl WorkspaceBuilder {
             |_, edge| Some(*edge),
         );
 
-        for index in project_graph.graph.graph().node_indices() {
-            let old_index = *project_graph.graph.node_weight(index).unwrap();
+        for index in graph.node_indices() {
+            let old_index = *graph.node_weight(index).unwrap();
             let project = loaded_projects.remove(&old_index).unwrap();
             let id = project.id.clone();
 
@@ -273,6 +293,8 @@ impl WorkspaceBuilder {
                 .nodes
                 .insert(id, ProjectNode { index, project });
         }
+
+        project_graph.set_graph(graph)?;
 
         let project_graph = Arc::new(project_graph);
 
@@ -313,7 +335,33 @@ impl WorkspaceBuilder {
     pub async fn load_project(&mut self, id_or_alias: &str) -> miette::Result<()> {
         Box::pin(self.internal_load_project(id_or_alias, &mut FxHashSet::default())).await?;
 
+        self.connect_deferred_project_edges();
+
         Ok(())
+    }
+
+    /// Connect dependency edges that were deferred during recursive loading,
+    /// now that the graph is whole and cycles can accurately be detected.
+    /// Edges that would cycle within their own scope partition are
+    /// disconnected entirely, while cross-partition cycles are allowed.
+    fn connect_deferred_project_edges(&mut self) {
+        for edge in mem::take(&mut self.deferred_project_edges) {
+            if would_cycle_in_scope(
+                &self.project_graph,
+                edge.source_index,
+                edge.target_index,
+                &edge.scope,
+            ) {
+                debug!(
+                    project_id = edge.source_id.as_str(),
+                    dependency_id = edge.target_id.as_str(),
+                    "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
+                );
+            } else {
+                self.project_graph
+                    .add_edge(edge.source_index, edge.target_index, edge.scope);
+            }
+        }
     }
 
     /// Load all projects into the graph, as configured in the workspace.
@@ -384,11 +432,32 @@ impl WorkspaceBuilder {
         // Then build dependency projects
         for dep_config in &project.dependencies {
             if cycle.contains(&dep_config.id) {
-                debug!(
-                    project_id = id.as_str(),
-                    dependency_id = dep_config.id.as_str(),
-                    "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
-                );
+                let dep_id = ProjectBuildData::resolve_id(&dep_config.id, &self.project_data);
+
+                // The dependency is actively being loaded further up the stack,
+                // so its subtree of edges doesn't exist yet, and a cycle check
+                // here would be meaningless. Defer the edge until loading has
+                // completed and the graph is whole.
+                if !dep_config.is_root_scope()
+                    && let Some(dep_index) = self
+                        .project_data
+                        .get(&dep_id)
+                        .and_then(|build_data| build_data.node_index)
+                {
+                    self.deferred_project_edges.push(DeferredProjectEdge {
+                        source_id: id.clone(),
+                        source_index: index,
+                        target_id: dep_id,
+                        target_index: dep_index,
+                        scope: dep_config.scope,
+                    });
+                } else {
+                    debug!(
+                        project_id = id.as_str(),
+                        dependency_id = dep_config.id.as_str(),
+                        "Encountered a dependency cycle (from project); will disconnect nodes to avoid recursion",
+                    );
+                }
 
                 continue;
             }
@@ -396,12 +465,18 @@ impl WorkspaceBuilder {
             if let Some(dep) = Box::pin(self.internal_load_project(&dep_config.id, cycle)).await? {
                 // Don't link the root project to any project, but still load it
                 if !dep_config.is_root_scope() {
-                    self.project_graph
-                        .add_edge(index, dep.1, dep_config.scope)
-                        .map_err(|_| ProjectGraphError::WouldCycle {
+                    // Only error when the cycle exists within the scope's
+                    // partition, as cycles that cross the production and
+                    // development boundary are legitimate
+                    if would_cycle_in_scope(&self.project_graph, index, dep.1, &dep_config.scope) {
+                        return Err(ProjectGraphError::WouldCycle {
                             source_id: id.to_string(),
                             target_id: dep.0.to_string(),
-                        })?;
+                        }
+                        .into());
+                    }
+
+                    self.project_graph.add_edge(index, dep.1, dep_config.scope);
                 }
             }
         }
@@ -491,6 +566,9 @@ impl WorkspaceBuilder {
     /// Load a single task by target into the graph.
     pub async fn load_task(&mut self, target: &Target) -> miette::Result<()> {
         Box::pin(self.internal_load_task(target, &mut FxHashSet::default())).await?;
+
+        // Tasks may lazily load their owning project
+        self.connect_deferred_project_edges();
 
         Ok(())
     }
@@ -671,7 +749,6 @@ impl WorkspaceBuilder {
 
             let deps: Vec<_> = self
                 .project_graph
-                .graph()
                 .neighbors_directed(project_index, Direction::Outgoing)
                 .flat_map(|dep_index| {
                     self.project_graph.node_weight(dep_index).and_then(|dep| {
@@ -1099,7 +1176,7 @@ mod tests {
             workspace_root: sandbox.path().to_path_buf(),
         };
 
-        let mut project_graph = Dag::new();
+        let mut project_graph = DiGraph::new();
         let _ghost = project_graph.add_node(NodeState::Loading);
         let app_index = project_graph.add_node(NodeState::Loaded(Project {
             id: Id::raw("app"),
@@ -1110,14 +1187,13 @@ mod tests {
             ..Project::default()
         }));
 
-        project_graph
-            .add_edge(app_index, dep_index, DependencyScope::Build)
-            .unwrap();
+        project_graph.add_edge(app_index, dep_index, DependencyScope::Build);
 
         let graph = WorkspaceBuilder {
             context: Some(Arc::new(context)),
             config_paths: vec![],
             aliases: FxHashMap::default(),
+            deferred_project_edges: vec![],
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph,
@@ -1157,7 +1233,7 @@ mod tests {
             workspace_root: sandbox.path().to_path_buf(),
         };
 
-        let mut project_graph = Dag::new();
+        let mut project_graph = DiGraph::new();
         project_graph.add_node(NodeState::Loaded(Project {
             id: Id::raw("app"),
             ..Project::default()
@@ -1186,6 +1262,7 @@ mod tests {
             context: Some(Arc::new(context)),
             config_paths: vec![],
             aliases: FxHashMap::default(),
+            deferred_project_edges: vec![],
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph,

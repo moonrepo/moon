@@ -3,7 +3,6 @@ use crate::repo_type::RepoType;
 use crate::tasks_querent::WorkspaceTasksQuerent;
 use crate::workspace_builder::WorkspaceBuilderContext;
 use crate::workspace_builder_error::WorkspaceBuilderError;
-use daggy::{Dag, NodeIndex};
 use miette::IntoDiagnostic;
 use moon_async_utils::run_pooled_tasks;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
@@ -17,7 +16,7 @@ use moon_pdk_api::{ExtendProjectGraphInput, ExtendProjectGraphOutput, ExtendProj
 use moon_project::{Project, ProjectAlias};
 use moon_project_builder::{ProjectBuilder, ProjectBuilderContext};
 use moon_project_constraints::{enforce_layer_relationships, enforce_tag_relationships};
-use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode};
+use moon_project_graph::{ProjectGraph, ProjectGraphError, ProjectNode, would_cycle_in_scope};
 use moon_task::{Target, Task, TaskOptions};
 use moon_task_builder::TaskDepsBuilder;
 use petgraph::prelude::*;
@@ -31,7 +30,7 @@ use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 
-pub type ProjectDag = Dag<NodeState<Project>, DependencyScope>;
+pub type ProjectDiGraph = DiGraph<NodeState<Project>, DependencyScope>;
 pub type ProjectBuildDataMap = FxHashMap<Id, ProjectBuildData>;
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -232,7 +231,7 @@ pub struct WorkspaceProjectsBuilder {
     target_to_has_outputs: FxHashMap<Target, bool>,
 
     /// The project DAG.
-    pub graph: ProjectDag,
+    pub graph: ProjectDiGraph,
 
     /// Map of original project IDs to renamed IDs.
     renamed_ids: FxHashMap<Id, Id>,
@@ -301,7 +300,7 @@ impl WorkspaceProjectsBuilder {
             ids_to_indexes: FxHashMap::default(),
             ids_to_target_options: FxHashMap::default(),
             target_to_has_outputs: FxHashMap::default(),
-            graph: ProjectDag::default(),
+            graph: ProjectDiGraph::default(),
             renamed_ids: FxHashMap::default(),
             repo_type: RepoType::Unknown,
             root_id: None,
@@ -379,14 +378,14 @@ impl WorkspaceProjectsBuilder {
         Ok(tasks)
     }
 
-    pub fn finalize(self, context: GraphExpanderContext) -> ProjectGraph {
+    pub fn finalize(self, context: GraphExpanderContext) -> miette::Result<ProjectGraph> {
         let mut project_graph = ProjectGraph::new(context);
         project_graph.default_id = self.context().workspace_config.default_project.clone();
         project_graph.aliases.extend(self.aliases_to_ids);
         let mut loaded_projects = FxHashMap::default();
 
         // TODO switch to filter_map_owned
-        project_graph.graph = self.graph.filter_map(
+        let graph = self.graph.filter_map(
             |ni, node| match node {
                 NodeState::Loading => None,
                 NodeState::Loaded(project) => {
@@ -398,8 +397,8 @@ impl WorkspaceProjectsBuilder {
             |_, edge| Some(*edge),
         );
 
-        for index in project_graph.graph.graph().node_indices() {
-            let old_index = *project_graph.graph.node_weight(index).unwrap();
+        for index in graph.node_indices() {
+            let old_index = *graph.node_weight(index).unwrap();
             let project = loaded_projects.remove(&old_index).unwrap();
             let id = project.id.clone();
 
@@ -409,7 +408,9 @@ impl WorkspaceProjectsBuilder {
                 .insert(id, ProjectNode { index, project });
         }
 
-        project_graph
+        project_graph.set_graph(graph)?;
+
+        Ok(project_graph)
     }
 
     #[instrument(skip(self))]
@@ -454,12 +455,23 @@ impl WorkspaceProjectsBuilder {
                     if !dep_config.is_root_scope() {
                         let to_index = self.get_or_insert_node(&dep_config.id);
 
-                        self.graph
-                            .add_edge(from_index, to_index, dep_config.scope)
-                            .map_err(|_| ProjectGraphError::WouldCycle {
+                        // Only error when the cycle exists within the scope's
+                        // partition, as cycles that cross the production and
+                        // development boundary are legitimate
+                        if would_cycle_in_scope(
+                            &self.graph,
+                            from_index,
+                            to_index,
+                            &dep_config.scope,
+                        ) {
+                            return Err(ProjectGraphError::WouldCycle {
                                 source_id: project.id.to_string(),
                                 target_id: dep_config.id.to_string(),
-                            })?;
+                            }
+                            .into());
+                        }
+
+                        self.graph.add_edge(from_index, to_index, dep_config.scope);
                     }
                 }
 
@@ -560,7 +572,6 @@ impl WorkspaceProjectsBuilder {
 
             let deps: Vec<_> = self
                 .graph
-                .graph()
                 .neighbors_directed(project_index, Direction::Outgoing)
                 .flat_map(|dep_index| {
                     self.graph.node_weight(dep_index).and_then(|dep| {

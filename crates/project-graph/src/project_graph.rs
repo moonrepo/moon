@@ -6,13 +6,40 @@ use moon_config::DependencyScope;
 use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
+use petgraph::algo::has_path_connecting;
 use petgraph::graph::{DiGraph, NodeIndex};
+use petgraph::visit::{EdgeFiltered, EdgeRef};
 use rustc_hash::FxHashMap;
 use scc::hash_map::Entry;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument};
+
+/// Return true if the provided scope belongs to the production partition
+/// (production/peer), and false if the development partition
+/// (development/build/root).
+pub fn is_production_scope(scope: &DependencyScope) -> bool {
+    matches!(scope, DependencyScope::Production | DependencyScope::Peer)
+}
+
+/// Return true if adding an edge from source to target with the provided scope
+/// would introduce a cycle within the partition that the scope belongs to.
+/// Edges belonging to the other partition are ignored, so cycles that cross
+/// the production/development boundary are allowed.
+pub fn would_cycle_in_scope<N>(
+    graph: &DiGraph<N, DependencyScope>,
+    source: NodeIndex,
+    target: NodeIndex,
+    scope: &DependencyScope,
+) -> bool {
+    let partition = is_production_scope(scope);
+    let partitioned_graph = EdgeFiltered::from_fn(graph, |edge| {
+        is_production_scope(edge.weight()) == partition
+    });
+
+    has_path_connecting(&partitioned_graph, target, source, None)
+}
 
 #[derive(Clone, Debug)]
 pub struct ProjectNode {
@@ -30,8 +57,17 @@ pub struct ProjectGraph {
     /// ID of the default project.
     pub default_id: Option<Id>,
 
-    /// Directed-acyclic graph (DAG) of projects (by index) and their dependencies.
-    pub graph: Dag<NodeIndex, DependencyScope>,
+    /// Union graph of projects (by index) and their dependencies across every
+    /// scope. Powers all read APIs. May contain cycles that cross the
+    /// production/development boundary; each partitioned graph below is
+    /// individually acyclic. Populate with [`ProjectGraph::set_graph`].
+    graph: DiGraph<NodeIndex, DependencyScope>,
+
+    /// Directed-acyclic graph (DAG) of production and peer dependencies.
+    production_graph: Dag<NodeIndex, DependencyScope>,
+
+    /// Directed-acyclic graph (DAG) of development, build, and root dependencies.
+    development_graph: Dag<NodeIndex, DependencyScope>,
 
     /// Map of node indexes to project IDs.
     pub indexes: FxHashMap<NodeIndex, Id>,
@@ -136,13 +172,66 @@ impl ProjectGraph {
             .collect()
     }
 
+    /// Return the graph of production and peer dependencies.
+    pub fn production_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
+        self.production_graph.graph()
+    }
+
+    /// Return the graph of development, build, and root dependencies.
+    pub fn development_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
+        self.development_graph.graph()
+    }
+
+    /// Set the union graph of all dependency edges, and derive the production
+    /// (production/peer) and development (development/build/root) graphs from it,
+    /// with each partition enforcing acyclicity for its own edges. Cycles within
+    /// a single partition return an error, while cycles that cross the partition
+    /// boundary are allowed. The `indexes` map should be populated beforehand,
+    /// so that cycle errors can report project IDs.
+    pub fn set_graph(&mut self, graph: DiGraph<NodeIndex, DependencyScope>) -> miette::Result<()> {
+        let mut production_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
+        let mut development_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
+
+        // Mirror the nodes into both graphs, in the same order,
+        // so that all node indexes align
+        for index in graph.node_indices() {
+            production_graph.add_node(graph[index]);
+            development_graph.add_node(graph[index]);
+        }
+
+        // Then route each edge into the graph its scope belongs to,
+        // relying on daggy's insertion checks to detect cycles
+        for edge in graph.edge_references() {
+            let scope = *edge.weight();
+
+            let partitioned_graph = if is_production_scope(&scope) {
+                &mut production_graph
+            } else {
+                &mut development_graph
+            };
+
+            partitioned_graph
+                .add_edge(edge.source(), edge.target(), scope)
+                .map_err(|_| ProjectGraphError::WouldCycle {
+                    source_id: self.label_index(edge.source()),
+                    target_id: self.label_index(edge.target()),
+                })?;
+        }
+
+        self.graph = graph;
+        self.production_graph = production_graph;
+        self.development_graph = development_graph;
+
+        Ok(())
+    }
+
     /// Focus the graph for a specific project by ID.
     pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
-        let graph = self.to_focused_graph(&project, with_dependents);
-        let (nodes, edges) = graph.into_nodes_edges();
+        let focused_graph = self.to_focused_graph(&project, with_dependents);
+        let (nodes, edges) = focused_graph.into_nodes_edges();
 
-        let mut dag = Dag::with_capacity(nodes.len(), edges.len());
+        let mut graph = DiGraph::with_capacity(nodes.len(), edges.len());
         let mut indexes = FxHashMap::default();
         let mut projects = FxHashMap::default();
 
@@ -163,12 +252,11 @@ impl ProjectGraph {
                 },
             );
 
-            dag.add_node(new_index);
+            graph.add_node(new_index);
         }
 
         for edge in edges {
-            dag.update_edge(edge.source(), edge.target(), edge.weight)
-                .unwrap();
+            graph.update_edge(edge.source(), edge.target(), edge.weight);
         }
 
         let aliases = self
@@ -183,16 +271,29 @@ impl ProjectGraph {
             })
             .collect();
 
-        Ok(Self {
+        let mut focused = Self {
             aliases,
             context: self.context.clone(),
             indexes,
             default_id: self.default_id.clone(),
             fs_cache: Arc::clone(&self.fs_cache),
-            graph: dag,
             nodes: projects,
             projects: Arc::clone(&self.projects),
-        })
+            ..Default::default()
+        };
+
+        // The focused edges are a subset of already validated partitions,
+        // so deriving them again cannot fail
+        focused.set_graph(graph)?;
+
+        Ok(focused)
+    }
+
+    fn label_index(&self, index: NodeIndex) -> String {
+        self.indexes
+            .get(&index)
+            .map(|id| id.to_string())
+            .unwrap_or_else(|| index.index().to_string())
     }
 
     fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
@@ -279,7 +380,7 @@ impl ProjectGraph {
 
 impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
     fn get_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
-        self.graph.graph()
+        &self.graph
     }
 
     fn get_nodes(&self) -> FxHashMap<NodeIndex, &Project> {

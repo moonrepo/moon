@@ -80,7 +80,7 @@ mod errors {
 
     #[test]
     fn formats_exit_code_without_message() {
-        let ProcessError::ExitNonZero { bin, status } =
+        let ProcessError::ExitNonZero { bin, status, code } =
             create_failed_output().to_error("git", false)
         else {
             panic!("expected ExitNonZero");
@@ -88,6 +88,7 @@ mod errors {
 
         assert_eq!(bin, "git");
         assert_eq!(status, "exit code 1");
+        assert_eq!(code, Some(1));
     }
 
     #[test]
@@ -97,13 +98,15 @@ mod errors {
             (ChildExit::Killed, "killed"),
             (ChildExit::Terminated, "terminated"),
         ] {
-            let ProcessError::ExitNonZero { status, .. } =
+            let ProcessError::ExitNonZero { status, code, .. } =
                 create_output(exit).to_error("git", false)
             else {
                 panic!("expected ExitNonZero");
             };
 
             assert_eq!(status, label);
+            // Signals have no exit code, so we can't propagate one
+            assert_eq!(code, None);
         }
     }
 

@@ -43,6 +43,8 @@
 - Fixed an issue where synced VCS hooks were always written to `.moon/hooks`, even when the workspace
   configuration lived in `.config/moon`. Hooks are now placed alongside the config, in
   `.config/moon/hooks`.
+- Fixed an issue where a failing task would always exit moon with code `1`, instead of propagating
+  the task's actual exit code.
 
 ## 2.4.2
 

@@ -295,5 +295,17 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         return Ok(ExitCode::from(BROKEN_PIPE_EXIT_CODE));
     }
 
+    // A task failed with a specific exit code. Render the error as the
+    // top-level handler would, then exit with the task's actual code so
+    // callers can distinguish between failure codes (like make, npm, and
+    // just). `starbase` otherwise collapses every error to exit code 1.
+    if let Some(error) = &outcome.error
+        && let Some(code) = moon_app::extract_task_exit_code(error)
+    {
+        eprintln!("Error: {error:?}");
+
+        return Ok(ExitCode::from(code));
+    }
+
     outcome.into_exit_result()
 }

@@ -285,7 +285,12 @@ impl ExecWorkflow {
             .execute_action_pipeline(action_context, action_graph)
             .await?;
 
-        let is_single_target = self.targets.len() == 1;
+        let targets = self.get_targets();
+        let is_single_target = targets.len() == 1
+            && targets
+                .first()
+                .is_some_and(|target| target.is_fully_qualified());
+
         let mut any_failed = false;
         let mut exit_code = None;
 

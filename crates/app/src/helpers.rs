@@ -10,38 +10,11 @@ use moon_action_pipeline::ActionPipeline;
 use moon_common::Id;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
 use moon_console::{Console, ConsoleError, Level};
-use moon_process::ProcessError;
 use serde::Serialize;
 use starbase_utils::{fs, json, toml, yaml};
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-
-/// Walk an error chain and return the underlying process exit code, if the
-/// failure originated from a task/process that exited with a non-zero status.
-/// Signals, aborts, and codes that can't be represented as a `u8` yield `None`,
-/// so the caller can fall back to a generic exit code. This lets the pipeline's
-/// bubbled-up error propagate the task's real exit code, which `starbase` would
-/// otherwise collapse to 1.
-pub fn extract_task_exit_code(report: &miette::Report) -> Option<u8> {
-    report
-        .chain()
-        .find_map(|error| {
-            // The process error is usually boxed within its parent (e.g.
-            // `TaskRunnerError` wraps `Box<ProcessError>`), which surfaces as a
-            // `Box<ProcessError>` in the chain, so check both shapes.
-            error
-                .downcast_ref::<ProcessError>()
-                .or_else(|| {
-                    error
-                        .downcast_ref::<Box<ProcessError>>()
-                        .map(|boxed| boxed.as_ref())
-                })
-                .and_then(ProcessError::get_exit_code)
-        })
-        .and_then(|code| u8::try_from(code).ok())
-        .filter(|code| *code != 0)
-}
 
 pub fn serialize_config_based_on_extension(
     plugin_id: &Id,

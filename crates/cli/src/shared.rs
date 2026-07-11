@@ -290,21 +290,21 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         .await;
 
     // Exit quietly instead of rendering an error when our consumer
-    // disappeared mid-output; there's no one left to read the error
+    // disappeared mid-output; there's no one left to read the error.
     if outcome.error.as_ref().is_some_and(is_broken_pipe) {
         return Ok(ExitCode::from(BROKEN_PIPE_EXIT_CODE));
     }
 
-    // A task failed with a specific exit code. Render the error as the
-    // top-level handler would, then exit with the task's actual code so
-    // callers can distinguish between failure codes (like make, npm, and
-    // just). `starbase` otherwise collapses every error to exit code 1.
-    if let Some(error) = &outcome.error
-        && let Some(code) = moon_app::extract_task_exit_code(error)
+    // If we received a custom exit code that is neither 0 or 1,
+    // then we need to manually render the miette pretty output and
+    // exit with that code. This is because miette always renders errors
+    // with exit code 1, but we want to preserve the actual exit code.
+    if outcome.exit_code > 1
+        && let Some(error) = &outcome.error
     {
-        eprintln!("Error: {error:?}");
+        eprintln!("{error:?}");
 
-        return Ok(ExitCode::from(code));
+        return Ok(ExitCode::from(outcome.exit_code));
     }
 
     outcome.into_exit_result()

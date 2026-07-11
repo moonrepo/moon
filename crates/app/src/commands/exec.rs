@@ -285,10 +285,7 @@ impl ExecWorkflow {
             .execute_action_pipeline(action_context, action_graph)
             .await?;
 
-        // Determine the exit code to bubble up. When a task fails, propagate its
-        // actual exit code (like make, npm, and just) so that CI and callers can
-        // distinguish between failure codes. For aborts, signals, non-task
-        // failures, or codes that can't be represented, fall back to a generic 1.
+        let is_single_target = self.targets.len() == 1;
         let mut any_failed = false;
         let mut exit_code = None;
 
@@ -299,13 +296,12 @@ impl ExecWorkflow {
 
             any_failed = true;
 
-            if let Some(code) = result
-                .get_exit_code()
-                .and_then(|code| u8::try_from(code).ok())
-                .filter(|code| *code != 0)
+            if is_single_target
+                && exit_code.is_none()
+                && let Some(code) = result.get_exit_code()
+                && code != 0
             {
-                exit_code = Some(code);
-                break;
+                exit_code = u8::try_from(code).ok();
             }
         }
 

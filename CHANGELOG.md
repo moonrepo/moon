@@ -37,8 +37,8 @@
   contain read-only objects are healed automatically.
 - Fixed an issue where `moon query changed-files` would include uncommitted changes from the local
   index (`git status`) even when an explicit `--head` revision was provided, causing false positives
-  when comparing 2 revisions. This also applies to affected detection with an explicit head, e.g the
-  `MOON_HEAD` environment variable or `--affected base:head`. Additionally, `MOON_BASE` and
+  when comparing 2 revisions. This also applies to affected detection with an explicit head, e.g.
+  the `MOON_HEAD` environment variable or `--affected base:head`. Additionally, `MOON_BASE` and
   `MOON_HEAD` environment variables that are set but empty are now ignored.
 
 ## 2.4.2

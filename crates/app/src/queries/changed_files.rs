@@ -88,14 +88,17 @@ async fn query_changed_files_without_stdin(
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
     // Treat empty values as not provided, as CI templates typically
-    // pass these environment variables through unconditionally
+    // pass these environment variables through unconditionally. An empty
+    // environment variable must not mask an explicit option either
     let base_value = bag
         .get("MOON_BASE")
+        .filter(|value| !value.is_empty())
         .or(options.base.clone())
         .filter(|value| !value.is_empty());
     let base = base_value.as_deref().unwrap_or(&default_branch);
     let head_value = bag
         .get("MOON_HEAD")
+        .filter(|value| !value.is_empty())
         .or(options.head.clone())
         .filter(|value| !value.is_empty());
     let head = head_value.as_deref().unwrap_or("HEAD");

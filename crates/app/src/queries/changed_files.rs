@@ -87,9 +87,17 @@ async fn query_changed_files_without_stdin(
     let bag = GlobalEnvBag::instance();
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
-    let base_value = bag.get("MOON_BASE").or(options.base.clone());
+    // Treat empty values as not provided, as CI templates typically
+    // pass these environment variables through unconditionally
+    let base_value = bag
+        .get("MOON_BASE")
+        .or(options.base.clone())
+        .filter(|value| !value.is_empty());
     let base = base_value.as_deref().unwrap_or(&default_branch);
-    let head_value = bag.get("MOON_HEAD").or(options.head.clone());
+    let head_value = bag
+        .get("MOON_HEAD")
+        .or(options.head.clone())
+        .filter(|value| !value.is_empty());
     let head = head_value.as_deref().unwrap_or("HEAD");
 
     // Determine whether we should check against the previous
@@ -110,7 +118,7 @@ async fn query_changed_files_without_stdin(
         );
     }
 
-    let only_local = options.local && base_value.is_none();
+    let only_local = options.local && base_value.is_none() && head_value.is_none();
     let mut changed_files_map = ChangedFiles::default();
     let mut changed_files = FxHashSet::default();
 
@@ -138,10 +146,14 @@ async fn query_changed_files_without_stdin(
         }
     }
 
-    // Always include local changes
-    debug!("Against local index");
+    // Only include local changes when the head is the working tree;
+    // an explicit head requests a comparison between 2 revisions,
+    // of which the local index is not a part of
+    if head_value.is_none() {
+        debug!("Against local index");
 
-    changed_files_map.merge(vcs.get_changed_files().await?);
+        changed_files_map.merge(vcs.get_changed_files().await?);
+    }
 
     if options.status.is_empty() {
         debug!(

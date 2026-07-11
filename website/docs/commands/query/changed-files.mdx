@@ -15,6 +15,8 @@ Changed files are determined using the following logic:
   uses.
 - If `--local` is provided, changed files are based on your local index only (`git status`).
 - Otherwise, then compare the defined base (`--base`) against head (`--head`).
+- Additionally, unless an explicit `--head` revision is provided, changed files in your local index
+  (`git status`) are also included.
 
 ```shell
 # Return all files

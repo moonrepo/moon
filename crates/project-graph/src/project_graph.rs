@@ -6,15 +6,41 @@ use moon_config::DependencyScope;
 use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
-use petgraph::algo::has_path_connecting;
+use petgraph::Direction;
+use petgraph::algo::{has_path_connecting, toposort};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::{EdgeFiltered, EdgeRef};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use scc::hash_map::Entry;
+use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument};
+
+/// The internal graph partition that a dependency scope belongs to. Each
+/// partition is individually acyclic, while their union may contain cycles
+/// that cross the partition boundary. Anything that requires an acyclic
+/// graph (ordering, unguarded recursion) should operate on a partition.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ScopePartition {
+    /// Production and peer scoped dependencies.
+    Production,
+
+    /// Development, build, and root scoped dependencies.
+    Development,
+}
+
+impl ScopePartition {
+    /// Return the partition that the provided scope belongs to.
+    pub fn of(scope: &DependencyScope) -> ScopePartition {
+        if is_production_scope(scope) {
+            ScopePartition::Production
+        } else {
+            ScopePartition::Development
+        }
+    }
+}
 
 /// Return true if the provided scope belongs to the production partition
 /// (production/peer), and false if the development partition
@@ -174,12 +200,119 @@ impl ProjectGraph {
 
     /// Return the graph of production and peer dependencies.
     pub fn production_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
-        self.production_graph.graph()
+        self.partitioned_graph(ScopePartition::Production)
     }
 
     /// Return the graph of development, build, and root dependencies.
     pub fn development_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
-        self.development_graph.graph()
+        self.partitioned_graph(ScopePartition::Development)
+    }
+
+    /// Return the graph of dependencies for the provided partition. Unlike
+    /// the unioned graph, partitioned graphs are guaranteed to be acyclic.
+    pub fn partitioned_graph(
+        &self,
+        partition: ScopePartition,
+    ) -> &DiGraph<NodeIndex, DependencyScope> {
+        match partition {
+            ScopePartition::Production => self.production_graph.graph(),
+            ScopePartition::Development => self.development_graph.graph(),
+        }
+    }
+
+    /// Return a list of direct project IDs that the provided project depends on,
+    /// only traversing edges within the provided partition.
+    pub fn partitioned_dependencies_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+    ) -> Vec<Id> {
+        self.partitioned_neighbors_of(project, partition, Direction::Outgoing)
+    }
+
+    /// Return a list of direct project IDs that depend on the provided project,
+    /// only traversing edges within the provided partition.
+    pub fn partitioned_dependents_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+    ) -> Vec<Id> {
+        self.partitioned_neighbors_of(project, partition, Direction::Incoming)
+    }
+
+    /// Return a list of all project IDs that the provided project depends on,
+    /// only traversing edges within the provided partition.
+    pub fn partitioned_deep_dependencies_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+    ) -> Vec<Id> {
+        self.partitioned_traverse(project, partition, Direction::Outgoing)
+    }
+
+    /// Return a list of all project IDs that depend on the provided project,
+    /// only traversing edges within the provided partition.
+    pub fn partitioned_deep_dependents_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+    ) -> Vec<Id> {
+        self.partitioned_traverse(project, partition, Direction::Incoming)
+    }
+
+    /// Return all project IDs sorted topologically in dependency-first order
+    /// (dependencies before the projects that depend on them), using only
+    /// edges within the provided partition. Projects without edges in the
+    /// partition are included. Sorting is only possible for partitioned
+    /// graphs, as the unioned graph may contain cycles across partitions.
+    pub fn partitioned_toposort(&self, partition: ScopePartition) -> Vec<Id> {
+        let mut indices = toposort(self.partitioned_graph(partition), None)
+            .expect("Partitioned graphs are always acyclic!");
+
+        // Edges point from a project to its dependency,
+        // so reverse the order to get dependencies first
+        indices.reverse();
+
+        indices
+            .into_iter()
+            .map(|index| self.indexes[&index].clone())
+            .collect()
+    }
+
+    fn partitioned_neighbors_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+        direction: Direction,
+    ) -> Vec<Id> {
+        self.partitioned_graph(partition)
+            .neighbors_directed(self.nodes[&project.id].index, direction)
+            .map(|index| self.indexes[&index].clone())
+            .collect()
+    }
+
+    fn partitioned_traverse(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+        direction: Direction,
+    ) -> Vec<Id> {
+        let graph = self.partitioned_graph(partition);
+        let start = self.nodes[&project.id].index;
+        let mut visited = FxHashSet::from_iter([start]);
+        let mut queue = VecDeque::from([start]);
+        let mut results = vec![];
+
+        while let Some(index) = queue.pop_front() {
+            for next_index in graph.neighbors_directed(index, direction) {
+                if visited.insert(next_index) {
+                    results.push(self.indexes[&next_index].clone());
+                    queue.push_back(next_index);
+                }
+            }
+        }
+
+        results
     }
 
     /// Set the union graph of all dependency edges, and derive the production
@@ -435,6 +568,56 @@ mod tests {
         assert!(!is_production_scope(&DependencyScope::Build));
         assert!(!is_production_scope(&DependencyScope::Development));
         assert!(!is_production_scope(&DependencyScope::Root));
+
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Production),
+            ScopePartition::Production
+        );
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Peer),
+            ScopePartition::Production
+        );
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Build),
+            ScopePartition::Development
+        );
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Development),
+            ScopePartition::Development
+        );
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Root),
+            ScopePartition::Development
+        );
+    }
+
+    #[test]
+    fn toposorts_partitions_in_dependency_first_order() {
+        let mut project_graph = ProjectGraph::default();
+
+        // a -> b (production), b -> a (development)
+        project_graph
+            .set_graph(loop_graph(
+                DependencyScope::Production,
+                DependencyScope::Development,
+            ))
+            .unwrap();
+        project_graph
+            .indexes
+            .insert(NodeIndex::new(0), Id::raw("a"));
+        project_graph
+            .indexes
+            .insert(NodeIndex::new(1), Id::raw("b"));
+
+        // The union cycles, but each partition can still be sorted
+        assert_eq!(
+            project_graph.partitioned_toposort(ScopePartition::Production),
+            [Id::raw("b"), Id::raw("a")]
+        );
+        assert_eq!(
+            project_graph.partitioned_toposort(ScopePartition::Development),
+            [Id::raw("a"), Id::raw("b")]
+        );
     }
 
     #[test]

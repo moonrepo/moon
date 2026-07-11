@@ -789,6 +789,24 @@ mod project_graph {
             // Deep traversals terminate, and include the starting project,
             // since it's reachable through the loop
             assert_eq!(map_ids(graph.projects.deep_dependencies_of(&a)), ["b", "a"]);
+
+            // The union cycles, but each partition can still be sorted
+            assert_eq!(
+                map_ids(
+                    graph
+                        .projects
+                        .partitioned_toposort(ScopePartition::Production)
+                ),
+                ["b", "a"]
+            );
+            assert_eq!(
+                map_ids(
+                    graph
+                        .projects
+                        .partitioned_toposort(ScopePartition::Development)
+                ),
+                ["a", "b"]
+            );
         }
 
         async fn assert_focus_across_partition_cycle(async_graph: bool) {
@@ -1045,12 +1063,77 @@ mod project_graph {
             assert_eq!(projects.development_graph().node_count(), 4);
         }
 
+        async fn assert_partitioned_traversals(async_graph: bool) {
+            // a -> b (development), b -> c (production),
+            // d -> c (production), d -> b (build), d -> a (peer)
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("dependencies", async_graph).await;
+            let projects = &graph.projects;
+
+            let a = graph.get_project("a").unwrap();
+            let b = graph.get_project("b").unwrap();
+            let d = graph.get_project("d").unwrap();
+
+            // Direct dependencies
+            let mut deps =
+                map_ids(projects.partitioned_dependencies_of(&d, ScopePartition::Production));
+            deps.sort();
+
+            assert_eq!(deps, ["a", "c"]);
+            assert_eq!(
+                map_ids(projects.partitioned_dependencies_of(&d, ScopePartition::Development)),
+                ["b"]
+            );
+
+            // Direct dependents
+            let mut deps =
+                map_ids(projects.partitioned_dependents_of(&b, ScopePartition::Development));
+            deps.sort();
+
+            assert_eq!(deps, ["a", "d"]);
+            assert_eq!(
+                map_ids(projects.partitioned_dependents_of(&b, ScopePartition::Production)),
+                string_vec![]
+            );
+
+            // Deep traversals
+            let mut deps =
+                map_ids(projects.partitioned_deep_dependencies_of(&d, ScopePartition::Production));
+            deps.sort();
+
+            assert_eq!(deps, ["a", "c"]);
+            assert_eq!(
+                map_ids(projects.partitioned_deep_dependencies_of(&a, ScopePartition::Development)),
+                ["b"]
+            );
+
+            let mut deps =
+                map_ids(projects.partitioned_deep_dependents_of(&b, ScopePartition::Development));
+            deps.sort();
+
+            assert_eq!(deps, ["a", "d"]);
+
+            // Topological ordering (dependencies first)
+            let order = map_ids(projects.partitioned_toposort(ScopePartition::Production));
+            let pos = |id: &str| order.iter().position(|order_id| order_id == id).unwrap();
+
+            assert_eq!(order.len(), 4);
+            assert!(pos("c") < pos("b")); // b -> c
+            assert!(pos("c") < pos("d")); // d -> c
+            assert!(pos("a") < pos("d")); // d -> a
+        }
+
         mod sync_builder {
             use super::*;
 
             #[tokio::test(flavor = "multi_thread")]
             async fn routes_edges_into_partitioned_graphs() {
                 assert_partitioned_graphs(false).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn traverses_within_a_partition() {
+                assert_partitioned_traversals(false).await;
             }
         }
 
@@ -1060,6 +1143,11 @@ mod project_graph {
             #[tokio::test(flavor = "multi_thread")]
             async fn routes_edges_into_partitioned_graphs() {
                 assert_partitioned_graphs(true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn traverses_within_a_partition() {
+                assert_partitioned_traversals(true).await;
             }
         }
     }

@@ -28,6 +28,13 @@
   codepage output from Python) was discarded entirely, resulting in empty `stdout.log`/`stderr.log`
   state files, cache hits replaying no output, and missing output in run reports. Invalid bytes are
   now replaced with `�` instead.
+- Fixed an issue where a task's dependents would not run when requested with a downstream scope
+  (`moon ci`, `--dependents`, `--downstream`), if the task was first added to the action graph as a
+  dependency of another target. For example, `moon run app:build lib:build --dependents` would skip
+  the dependents of `lib:build` when `app:build` depends on it.
+- Fixed tasks that emit read-only outputs (e.g. `0444` files) failing on every cache hit with a
+  "Permission denied" error when the `casOutputsCache` experiment is enabled. Caches that already
+  contain read-only objects are healed automatically.
 
 ## 2.4.2
 

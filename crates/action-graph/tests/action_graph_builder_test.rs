@@ -2049,6 +2049,54 @@ mod action_graph_builder {
 
                 assert_snapshot!(graph.to_dot());
             }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn expands_skipped_dependents_when_task_is_revisited_in_scope() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let parent = wg.get_task_from_project("deps", "parent1").unwrap();
+                let task = wg.get_task_from_project("deps", "base").unwrap();
+
+                // First insert the task as a dependency of another target,
+                // with dependents out of scope
+                builder
+                    .run_task(
+                        &parent,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                // Then run it as an explicit target with dependents in scope
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Direct,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+
+                assert!(topo(graph).into_iter().any(|node| matches!(
+                    node,
+                    ActionNode::RunTask(inner) if inner.target == Target::parse("deps:parent2").unwrap()
+                )));
+            }
         }
     }
 

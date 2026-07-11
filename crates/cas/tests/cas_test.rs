@@ -232,6 +232,40 @@ mod cas {
         }
 
         #[test]
+        fn normalizes_read_only_source_permissions() {
+            // A reflink clones the source's permissions, so a read-only output
+            // must not produce a read-only object — later store mutations and
+            // hydration clones would fail on it (#2608).
+            let sandbox = create_empty_sandbox();
+            let store = create_store(&sandbox);
+
+            let source = sandbox.path().join("input.txt");
+            std::fs::write(&source, b"read only").unwrap();
+
+            let mut perms = std::fs::metadata(&source).unwrap().permissions();
+            perms.set_readonly(true);
+            std::fs::set_permissions(&source, perms).unwrap();
+
+            let digest = store.store_file(&source).unwrap();
+            let object_perms = std::fs::metadata(store.object_path(&digest.hash))
+                .unwrap()
+                .permissions();
+
+            // Restore the source so the sandbox can clean up on Windows,
+            // where read-only files block directory removal.
+            #[cfg(windows)]
+            #[allow(clippy::permissions_set_readonly_false)]
+            {
+                let mut perms = std::fs::metadata(&source).unwrap().permissions();
+                perms.set_readonly(false);
+                std::fs::set_permissions(&source, perms).unwrap();
+            }
+
+            assert!(!object_perms.readonly());
+            assert_eq!(store.read(&digest.hash).unwrap(), b"read only");
+        }
+
+        #[test]
         fn warm_cache_creates_no_temp_file() {
             // Regression: a file already present in the store must short-circuit
             // *before* any temp file is created. Streaming used to write the

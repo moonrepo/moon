@@ -231,8 +231,12 @@ mod vcs_hooks {
         assert!(sandbox.path().join(".config/moon/hooks/post-push").exists());
         assert!(!sandbox.path().join(".moon/hooks").exists());
 
-        // And the git config points to the correct directory
-        let config = fs::read_to_string(sandbox.path().join(".git/config")).unwrap();
+        // And the git config points to the correct directory. Normalize the
+        // separators, as Git stores Windows paths with escaped backslashes.
+        let config = fs::read_to_string(sandbox.path().join(".git/config"))
+            .unwrap()
+            .replace(r"\\", "/")
+            .replace('\\', "/");
 
         assert!(config.contains(".config/moon/hooks"));
 

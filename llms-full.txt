@@ -16740,7 +16740,8 @@ When hooks are [enabled](#enabling-hooks), the following processes will take pla
 1. The configured [hooks](#defining-hooks) will be generated as individual script files in the
    `.moon/hooks` directory. Whether or not you commit or ignore these script files is your choice.
    They are written to the `.moon` directory so that they can be reviewed, audited, and easily
-   tested, but _are required_.
+   tested, but _are required_. If your workspace configuration lives in `.config/moon` instead of
+   `.moon`, the hooks are written to `.config/moon/hooks`.
 
 2. We then sync these generated hook scripts with the current VCS. For Git, we set `core.hooksPath`
    to point to the `.moon/hooks` directory, which tells Git to look for hook scripts in that

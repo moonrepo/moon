@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.c7101246.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.51945bc5.js" defer="defer"></script>
 <script src="/assets/js/main.85772fa5.js" defer="defer"></script>
 </head>
 <body>
@@ -81,7 +81,8 @@ developer that is using hooks will need to run this command.</p>
 <p>The configured <a href="#defining-hooks" class="">hooks</a> will be generated as individual script files in the
 <code>.moon/hooks</code> directory. Whether or not you commit or ignore these script files is your choice.
 They are written to the <code>.moon</code> directory so that they can be reviewed, audited, and easily
-tested, but <em>are required</em>.</p>
+tested, but <em>are required</em>. If your workspace configuration lives in <code>.config/moon</code> instead of
+<code>.moon</code>, the hooks are written to <code>.config/moon/hooks</code>.</p>
 </li>
 <li class="">
 <p>We then sync these generated hook scripts with the current VCS. For Git, we set <code>core.hooksPath</code>

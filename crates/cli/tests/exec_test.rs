@@ -169,6 +169,20 @@ mod exec {
                 .stderr(predicate::str::contains("stderr"));
         }
 
+        // The script exits with a distinct code (2) so we can verify moon
+        // propagates the task's actual exit code, instead of collapsing it to 1.
+        #[test]
+        #[cfg(unix)]
+        fn propagates_process_exit_code() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(target("exitNonZeroInline"));
+            });
+
+            assert.failure().code(2);
+        }
+
         #[test]
         fn passes_args_through() {
             let sandbox = create_pipeline_sandbox();

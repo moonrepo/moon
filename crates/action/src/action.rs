@@ -153,6 +153,16 @@ impl Action {
         miette::miette!("Unknown error!")
     }
 
+    /// Return the exit code of the last executed task operation, if this
+    /// action ran a task/process. Returns `None` when no execution occurred
+    /// (setup/sync actions), or when a code wasn't captured (aborts, signals).
+    pub fn get_exit_code(&self) -> Option<i32> {
+        self.operations
+            .get_last_execution()
+            .and_then(|operation| operation.get_exec_output())
+            .and_then(|output| output.exit_code)
+    }
+
     pub fn get_prefix(&self) -> &str {
         match &*self.node {
             ActionNode::None => "unknown",

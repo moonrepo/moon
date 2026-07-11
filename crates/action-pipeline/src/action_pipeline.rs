@@ -176,11 +176,18 @@ impl ActionPipeline {
 
         let process_registry = ProcessRegistry::instance();
         let mut actions = vec![];
+        let mut error = None;
 
-        while let Some(action) = receiver.recv().await {
+        while let Some(mut action) = receiver.recv().await {
             if self.bail && action.should_bail() || action.should_abort() {
                 process_registry.terminate_running();
                 abort_token.cancel();
+            }
+
+            // Only bubble up an error on a hard failure, otherwise we can
+            // continue to run and collect other actions
+            if action.should_abort() {
+                error = Some(action.get_error());
             }
 
             actions.push(action);
@@ -236,6 +243,10 @@ impl ActionPipeline {
 
         self.actions = actions;
         self.duration = Some(start.elapsed());
+
+        if let Some(error) = error {
+            return Err(error);
+        }
 
         Ok(())
     }

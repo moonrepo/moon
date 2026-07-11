@@ -40,6 +40,9 @@
   when comparing 2 revisions. This also applies to affected detection with an explicit head, e.g.
   the `MOON_HEAD` environment variable or `--affected base:head`. Additionally, `MOON_BASE` and
   `MOON_HEAD` environment variables that are set but empty are now ignored.
+- Fixed an issue where synced VCS hooks were always written to `.moon/hooks`, even when the workspace
+  configuration lived in `.config/moon`. Hooks are now placed alongside the config, in
+  `.config/moon/hooks`.
 
 ## 2.4.2
 

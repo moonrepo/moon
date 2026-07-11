@@ -12,6 +12,7 @@ use gix::{
 use miette::IntoDiagnostic;
 use moon_common::path::{
     PathExt, RelativePathBuf, WorkspaceRelativePath, WorkspaceRelativePathBuf, clean_components,
+    locate_config_dir,
 };
 use moon_process::find_command_on_path;
 use semver::Version;
@@ -731,8 +732,9 @@ impl Vcs for Git {
             ..Default::default()
         };
 
-        // The hooks directory that moon owns and manages
-        let hooks_dir = self.workspace_root.join(".moon").join("hooks");
+        // The hooks directory that moon owns and manages. This lives alongside
+        // the workspace config, which may be `.moon` or `.config/moon`.
+        let hooks_dir = locate_config_dir(&self.workspace_root).join("hooks");
 
         // Check if the path has already been configured. Only accept the
         // exact moon-owned directory, otherwise we may adopt a directory

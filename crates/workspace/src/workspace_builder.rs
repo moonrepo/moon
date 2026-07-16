@@ -40,7 +40,7 @@ use starbase_utils::json;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 pub const LOCK_FILE_NAME: &str = "workspaceGraph.lock";
 pub const STATE_GRAPH_FILE_NAME: &str = "workspaceGraph.json";
@@ -172,31 +172,54 @@ impl WorkspaceBuilder {
             .state
             .resolve_path(STATE_GRAPH_FILE_NAME);
 
-        if digest.hash == state.data.last_hash && cache_path.exists() {
-            let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;
+        let use_storage = is_remote_graph_cache_enabled(&context).await;
+        let mut cache_hit = digest.hash == state.data.last_hash && cache_path.exists();
 
-            // Verify that the cached projects match the current projects
-            // on disk. If a project has been added or removed since the
-            // cache was created, we need to rebuild the graph
-            let cached_ids: FxHashSet<&Id> = cache.project_data.keys().collect();
-            let current_ids: FxHashSet<&Id> = graph.project_data.keys().collect();
+        // On a local cache miss, attempt to hydrate the serialized graph
+        // from storage backends (typically remote), keyed by the same digest
+        if !cache_hit && use_storage {
+            cache_hit = load_graph_from_storage(&context, &digest, &cache_path).await;
+        }
 
-            if cached_ids == current_ids {
-                debug!(
-                    cache = ?cache_path,
-                    "Loading workspace graph with {} projects from cache",
-                    cache.project_data.len(),
-                );
+        if cache_hit {
+            match json::read_file::<WorkspaceBuilder>(&cache_path) {
+                Ok(mut cache) => {
+                    // Verify that the cached projects match the current projects
+                    // on disk. If a project has been added or removed since the
+                    // cache was created, we need to rebuild the graph
+                    let cached_ids: FxHashSet<&Id> = cache.project_data.keys().collect();
+                    let current_ids: FxHashSet<&Id> = graph.project_data.keys().collect();
 
-                cache.context = graph.context;
+                    if cached_ids == current_ids {
+                        debug!(
+                            cache = ?cache_path,
+                            "Loading workspace graph with {} projects from cache",
+                            cache.project_data.len(),
+                        );
 
-                return Ok(cache);
+                        cache.context = graph.context;
+                        cache.rehydrate_machine_specific_state();
+
+                        if state.data.last_hash != digest.hash {
+                            state.data.last_hash = digest.hash;
+                            state.save()?;
+                        }
+
+                        return Ok(cache);
+                    }
+
+                    debug!(
+                        cache = ?cache_path,
+                        "Cached workspace graph has mismatched projects, rebuilding",
+                    );
+                }
+                Err(error) => {
+                    warn!(
+                        cache = ?cache_path,
+                        "Failed to load cached workspace graph, rebuilding: {error}",
+                    );
+                }
             }
-
-            debug!(
-                cache = ?cache_path,
-                "Cached workspace graph has mismatched projects, rebuilding",
-            );
         }
 
         // Build the graph, update the state, and save the cache
@@ -209,12 +232,36 @@ impl WorkspaceBuilder {
         graph.load_projects().await?;
         graph.load_tasks().await?;
 
-        state.data.last_hash = digest.hash;
+        state.data.last_hash = digest.hash.clone();
         state.save()?;
 
-        json::write_file(cache_path, &graph, false)?;
+        json::write_file(&cache_path, &graph, false)?;
+
+        // Persist the serialized graph to storage backends (typically
+        // remote), so that other machines can hydrate it
+        if use_storage {
+            save_graph_to_storage(&context, &digest, &cache_path).await;
+        }
 
         Ok(graph)
+    }
+
+    /// Recompute machine-specific values after loading a serialized graph
+    /// from the cache. The cache may have been created on another machine
+    /// (when hydrated from a remote storage backend), or the workspace may
+    /// have moved on disk, leaving stale absolute paths behind.
+    fn rehydrate_machine_specific_state(&mut self) {
+        let workspace_root = &self
+            .context
+            .as_ref()
+            .expect("Missing workspace builder context!")
+            .workspace_root;
+
+        for node in self.project_graph.node_weights_mut() {
+            if let NodeState::Loaded(project) = node {
+                project.root = project.source.to_logical_path(workspace_root);
+            }
+        }
     }
 
     /// Build the project graph and return a new structure.

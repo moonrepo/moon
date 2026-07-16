@@ -201,6 +201,15 @@ export interface ExperimentsConfig {
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
 	nativeFileHashing: boolean;
+	/**
+	 * Store the workspace graph cache in storage backends (typically
+	 * remote), so that other machines can hydrate it instead of
+	 * rebuilding the graph from scratch.
+	 * @since 2.5.0
+	 *
+	 * @env MOON_EXPERIMENT_REMOTE_WORKSPACE_GRAPH_CACHE
+	 */
+	remoteWorkspaceGraphCache: boolean;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -890,6 +899,15 @@ export interface PartialExperimentsConfig {
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
 	nativeFileHashing?: boolean | null;
+	/**
+	 * Store the workspace graph cache in storage backends (typically
+	 * remote), so that other machines can hydrate it instead of
+	 * rebuilding the graph from scratch.
+	 * @since 2.5.0
+	 *
+	 * @env MOON_EXPERIMENT_REMOTE_WORKSPACE_GRAPH_CACHE
+	 */
+	remoteWorkspaceGraphCache?: boolean | null;
 }
 
 /** Configures the generator for scaffolding from templates. */

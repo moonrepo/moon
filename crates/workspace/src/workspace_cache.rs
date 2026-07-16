@@ -2,13 +2,17 @@ use crate::projects_builder::{ProjectBuildData, ProjectBuildDataMap};
 use crate::workspace_builder::WorkspaceBuilderContext;
 use miette::IntoDiagnostic;
 use moon_cache::{ContentHash, cache_item};
+use moon_cache_storage::{Manifest, ManifestFile};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{Id, is_docker};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::{Digest, fingerprint};
 use rustc_hash::FxHashMap;
+use starbase_utils::fs;
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::Path;
 use std::sync::Arc;
+use tracing::{debug, warn};
 
 cache_item!(
     pub struct WorkspaceGraphCacheState {
@@ -208,4 +212,143 @@ pub async fn generate_graph_cache_digest(
         .cache_engine
         .hash
         .save_manifest_without_hasher("workspace-graph", &fingerprint)
+}
+
+/// Check whether the serialized workspace graph should also be persisted
+/// to storage backends (typically remote), and if so, connect the backends.
+/// The graph is built before the pipeline's sync workspace action, which
+/// normally connects the backends, so we must connect here. Connecting is
+/// idempotent, and failures disable the offending backend.
+pub async fn is_remote_graph_cache_enabled(context: &WorkspaceBuilderContext) -> bool {
+    if !context
+        .workspace_config
+        .experiments
+        .remote_workspace_graph_cache
+        || !context.cache_engine.storage.is_remote_enabled()
+    {
+        return false;
+    }
+
+    if let Err(error) = context.cache_engine.storage.connect_backends().await {
+        warn!("Failed to connect to storage backends for workspace graph caching: {error}");
+
+        return false;
+    }
+
+    true
+}
+
+/// Attempt to hydrate the serialized workspace graph from storage backends
+/// (typically remote) when the local state is missing or stale. The graph
+/// is keyed by the same fingerprint digest as the local state, so a fetched
+/// entry always matches the current workspace inputs. Failures are lossy
+/// and non-fatal, as this is purely an optimization over rebuilding.
+pub async fn load_graph_from_storage(
+    context: &WorkspaceBuilderContext,
+    digest: &Digest,
+    cache_path: &Path,
+) -> bool {
+    let storage = &context.cache_engine.storage;
+
+    let result: miette::Result<bool> = async {
+        let Some(source) = storage.load_manifest(digest).await? else {
+            return Ok(false);
+        };
+
+        let Some(manifest) = storage.hydrate_manifest(digest, source).await? else {
+            return Ok(false);
+        };
+
+        let Some(file) = manifest.files.first() else {
+            return Ok(false);
+        };
+
+        if let Some(bytes) = &file.bytes {
+            fs::write_file(cache_path, bytes)?;
+        } else if let Some(source_path) = &file.source_path {
+            fs::copy_file(source_path, cache_path)?;
+        } else {
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+    .await;
+
+    match result {
+        Ok(hydrated) => {
+            if hydrated {
+                debug!(
+                    hash = digest.hash.as_str(),
+                    "Hydrated workspace graph from storage backends"
+                );
+            }
+
+            hydrated
+        }
+        Err(error) => {
+            warn!(
+                hash = digest.hash.as_str(),
+                "Failed to hydrate workspace graph from storage backends: {error}"
+            );
+
+            false
+        }
+    }
+}
+
+/// Persist the serialized workspace graph to storage backends (typically
+/// remote), keyed by its fingerprint digest, so that other machines can
+/// hydrate it instead of rebuilding the graph from scratch. The upload is
+/// awaited so that short-lived commands don't drop it. Failures are non-fatal.
+pub async fn save_graph_to_storage(
+    context: &WorkspaceBuilderContext,
+    digest: &Digest,
+    cache_path: &Path,
+) {
+    let result: miette::Result<()> = async {
+        // The cache directory can technically be relocated outside of the
+        // workspace, in which case a workspace relative path can not be
+        // created, so simply don't persist the graph.
+        let Ok(relative_path) = cache_path.strip_prefix(&context.workspace_root) else {
+            return Ok(());
+        };
+
+        let Some(relative_path) = relative_path.to_str() else {
+            return Ok(());
+        };
+
+        let manifest = Manifest {
+            files: vec![ManifestFile {
+                digest: Some(Digest::from_file(cache_path)?),
+                path: WorkspaceRelativePathBuf::from(relative_path),
+                source_path: Some(cache_path.to_path_buf()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        context
+            .cache_engine
+            .storage
+            .archive_manifest(digest, manifest)
+            .await?;
+
+        // Archiving queues the upload as a background task, which is only
+        // awaited when a task pipeline runs, so await it here for
+        // graph-only commands (query, docker, etc.)
+        context
+            .cache_engine
+            .storage
+            .wait_for_background_tasks()
+            .await
+    }
+    .await;
+
+    if let Err(error) = result {
+        warn!(
+            hash = digest.hash.as_str(),
+            "Failed to persist workspace graph to storage backends: {error}"
+        );
+    }
 }

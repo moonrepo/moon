@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a new experiment, `experiments.remoteWorkspaceGraphCache`, that stores the workspace graph
+  cache in remote storage backends (Bazel RE API compatible), so that other machines — most notably
+  ephemeral CI runners — can hydrate the graph instead of rebuilding it from scratch. Rebuilding
+  invokes toolchain plugin calls (like the Go toolchain's `go list --deps`), which can be very slow
+  in large workspaces.
+- When loading the workspace graph from the cache, machine-specific absolute paths (project roots)
+  are now recomputed against the current workspace root, so a cache created in another location
+  (containers, moved workspaces, remote hydration) no longer leaks stale paths.
+- A corrupted workspace graph cache is now discarded and rebuilt, instead of erroring.
+
 ## 2.4.3
 
 #### 🚀 Updates

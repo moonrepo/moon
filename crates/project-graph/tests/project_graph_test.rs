@@ -392,6 +392,30 @@ mod project_graph {
             .await
         }
 
+        async fn do_generate_with_plugins_and_storage(
+            root: &Path,
+            async_graph: bool,
+            remote_dir: &Path,
+        ) -> WorkspaceGraph {
+            let mut mock = WorkspaceMocker::new(root)
+                .load_default_configs()
+                .with_default_projects()
+                .with_test_toolchains()
+                .with_inherited_tasks()
+                .update_workspace_config(|config| {
+                    config.experiments.async_graph_building = async_graph;
+                    config.experiments.remote_workspace_graph_cache = true;
+                });
+
+            mock.remote_storage_dir = Some(remote_dir.to_path_buf());
+
+            mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
+                cache: true,
+                ..Default::default()
+            })
+            .await
+        }
+
         async fn build_cached_graph(
             async_graph: bool,
             func: impl FnOnce(&MoonSandbox),
@@ -665,6 +689,108 @@ mod project_graph {
                             },
                         )
                         .await;
+                    }
+                }
+
+                mod storage {
+                    use super::*;
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn hydrates_graph_from_storage_on_other_machine() {
+                        let sandbox1 = create_moon_sandbox("dependencies");
+                        sandbox1.enable_git();
+
+                        // Shared "remote" storage, outside of both workspaces
+                        let remote_dir = sandbox1.path().join(".remote-storage");
+
+                        let graph1 = do_generate_with_plugins_and_storage(
+                            sandbox1.path(),
+                            $async_graph,
+                            &remote_dir,
+                        )
+                        .await;
+
+                        // Cold build calls plugins and persists to storage
+                        assert!(sandbox1.path().join(MARKER_PATH).exists());
+                        assert!(remote_dir.join("manifests").exists());
+
+                        // A second machine: same repo contents, different path,
+                        // no local graph cache
+                        let sandbox2 = create_moon_sandbox("dependencies");
+                        sandbox2.enable_git();
+
+                        let graph2 = do_generate_with_plugins_and_storage(
+                            sandbox2.path(),
+                            $async_graph,
+                            &remote_dir,
+                        )
+                        .await;
+
+                        // Hydrated from storage: plugins were never called,
+                        // and the local cache + state now exist
+                        assert!(!sandbox2.path().join(MARKER_PATH).exists());
+                        assert!(sandbox2.path().join(CACHE_PATH).exists());
+                        assert_eq!(
+                            load_state(&sandbox1).last_hash,
+                            load_state(&sandbox2).last_hash
+                        );
+                        assert_eq!(
+                            graph1.projects.get_node_keys(),
+                            graph2.projects.get_node_keys()
+                        );
+
+                        // And machine-specific paths point into THIS workspace
+                        let project = graph2.get_project("a").unwrap();
+
+                        assert_eq!(project.root, sandbox2.path().join("a"));
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn rehydrates_stale_project_roots_from_local_cache() {
+                        let (sandbox, _graph) = build_cached_graph($async_graph, |sandbox| {
+                            sandbox.enable_git();
+                        })
+                        .await;
+
+                        // Simulate the workspace having moved on disk by
+                        // poisoning the serialized absolute roots
+                        let cache_file = sandbox.path().join(CACHE_PATH);
+                        let content = fs::read_file(&cache_file).unwrap();
+
+                        fs::write_file(
+                            &cache_file,
+                            content.replace(
+                                sandbox.path().to_str().unwrap(),
+                                "/a/stale/workspace/root",
+                            ),
+                        )
+                        .unwrap();
+
+                        let graph = do_generate(sandbox.path(), $async_graph).await;
+                        let project = graph.get_project("a").unwrap();
+
+                        assert_eq!(project.root, sandbox.path().join("a"));
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn rebuilds_if_cached_graph_is_corrupt() {
+                        let (sandbox, graph) = build_cached_graph($async_graph, |sandbox| {
+                            sandbox.enable_git();
+                        })
+                        .await;
+
+                        sandbox.create_file(CACHE_PATH, "{ not valid json !");
+
+                        let rebuilt_graph = do_generate(sandbox.path(), $async_graph).await;
+
+                        // The async builder inserts nodes in a nondeterministic
+                        // order, so compare as sets
+                        let mut expected = graph.projects.get_node_keys();
+                        let mut actual = rebuilt_graph.projects.get_node_keys();
+                        expected.sort();
+                        actual.sort();
+
+                        assert_eq!(expected, actual);
                     }
                 }
             };

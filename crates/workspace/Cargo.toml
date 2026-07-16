@@ -15,6 +15,7 @@ harness = false
 [dependencies]
 moon_async_utils = { path = "../async-utils" }
 moon_cache = { path = "../cache" }
+moon_cache_storage = { path = "../cache-storage" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_config_loader = { path = "../config-loader" }

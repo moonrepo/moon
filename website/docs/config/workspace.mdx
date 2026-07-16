@@ -404,6 +404,25 @@ Can also be enabled with the `MOON_EXPERIMENT_NATIVE_FILE_HASHING` environment v
 
 > The hasher can be tuned through the top-level [`cache`](#cache) setting.
 
+### `remoteWorkspaceGraphCache`<VersionLabel version="2.5.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#remoteWorkspaceGraphCache" />
+
+Stores the workspace graph cache in remote [storage backends](../guides/remote-cache) (in addition
+to the local state), so that other machines — most notably ephemeral CI runners — can hydrate the
+serialized graph instead of rebuilding it from scratch. Rebuilding the graph invokes toolchain
+plugin calls (like the Go toolchain's `go list --deps`), which can be very slow in large
+workspaces. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  remoteWorkspaceGraphCache: true
+```
+
+Can also be enabled with the `MOON_EXPERIMENT_REMOTE_WORKSPACE_GRAPH_CACHE` environment variable.
+
+> Requires [`remote`](#remote) to be configured, otherwise does nothing.
+
 ## `generator`
 
 <HeadingApiLink to="/api/types/interface/WorkspaceConfig#generator" />

@@ -73,6 +73,54 @@ mod from_bazel {
     }
 
     #[test]
+    fn empty_stdio_raw_with_digest_keeps_no_inline_bytes() {
+        // Inlining the raw output is optional for a server, so a digest can arrive
+        // without bytes. Treating the empty raw as the payload would mark the manifest
+        // hydrated and replay no output on a cache hit.
+        let result = ActionResult {
+            stdout_digest: Some(BazelDigest {
+                hash: hex('c'),
+                size_bytes: 13,
+            }),
+            stdout_raw: vec![],
+            stderr_digest: Some(BazelDigest {
+                hash: hex('d'),
+                size_bytes: 4,
+            }),
+            stderr_raw: vec![],
+            ..Default::default()
+        };
+
+        let manifest = Manifest::from_bazel_action_result(result).unwrap();
+
+        assert!(manifest.stdout_bytes.is_none());
+        assert!(manifest.stderr_bytes.is_none());
+        assert!(!manifest.is_hydrated());
+        assert_eq!(manifest.collect_unhydrated_blob_digests().len(), 2);
+    }
+
+    #[test]
+    fn upload_never_populates_the_raw_stdio_fields() {
+        // The RE API reserves `stdout_raw`/`stderr_raw` for server responses; a client
+        // that populates them on `UpdateActionResult` is rejected by backends that
+        // validate the contract. The digests carry the output instead.
+        let manifest = Manifest {
+            stdout_bytes: Some(Bytes::from_static(b"out")),
+            stdout_digest: Some(digest('c', 3)),
+            stderr_bytes: Some(Bytes::from_static(b"err")),
+            stderr_digest: Some(digest('d', 3)),
+            ..Default::default()
+        };
+
+        let result = manifest.into_bazel_action_result();
+
+        assert!(result.stdout_raw.is_empty());
+        assert!(result.stderr_raw.is_empty());
+        assert!(result.stdout_digest.is_some());
+        assert!(result.stderr_digest.is_some());
+    }
+
+    #[test]
     fn action_result_round_trip() {
         let result = ActionResult {
             exit_code: 7,

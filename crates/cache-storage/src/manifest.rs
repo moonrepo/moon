@@ -56,19 +56,23 @@ impl Manifest {
             files,
             symlinks,
             exit_code: result.exit_code,
-            stderr_bytes: if result.stderr_digest.is_some() {
-                Some(Bytes::from(result.stderr_raw))
-            } else {
+            // Inlining the raw output is optional for a server, so key off the bytes it
+            // actually sent rather than the presence of a digest. Treating an empty
+            // `stdout_raw` as the payload would mark the manifest hydrated and replay no
+            // output on a cache hit; leaving it `None` lets hydration fetch the blob.
+            stderr_bytes: if result.stderr_raw.is_empty() {
                 None
+            } else {
+                Some(Bytes::from(result.stderr_raw))
             },
             stderr_digest: match result.stderr_digest {
                 Some(digest) => Some(digest.to_internal_digest()?),
                 None => None,
             },
-            stdout_bytes: if result.stdout_digest.is_some() {
-                Some(Bytes::from(result.stdout_raw))
-            } else {
+            stdout_bytes: if result.stdout_raw.is_empty() {
                 None
+            } else {
+                Some(Bytes::from(result.stdout_raw))
             },
             stdout_digest: match result.stdout_digest {
                 Some(digest) => Some(digest.to_internal_digest()?),
@@ -100,16 +104,14 @@ impl Manifest {
                 .map(|symlink| symlink.into_bazel_symlink())
                 .collect(),
             exit_code: self.exit_code,
+            // The RE API reserves `stdout_raw`/`stderr_raw` for server responses: a
+            // client that populates them when calling `UpdateActionResult` is rejected
+            // by backends that validate the contract ("client should not populate
+            // stdout_raw during upload"). The output is already uploaded to the CAS by
+            // `collect_blob_inputs` and referenced here by digest, so leave the raw
+            // fields empty and let the digests carry it.
             stderr_digest: self.stderr_digest.map(|digest| digest.to_external_digest()),
-            stderr_raw: self
-                .stderr_bytes
-                .map(|bytes| bytes.to_vec())
-                .unwrap_or_default(),
             stdout_digest: self.stdout_digest.map(|digest| digest.to_external_digest()),
-            stdout_raw: self
-                .stdout_bytes
-                .map(|bytes| bytes.to_vec())
-                .unwrap_or_default(),
             execution_metadata: Some(ExecutedActionMetadata {
                 worker: "moon".into(),
                 output_upload_completed_timestamp: self

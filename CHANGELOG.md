@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed remote caching against backends that validate the Bazel RE contract (like Depot), where
+  every upload was rejected with "client should not populate stdout_raw during upload" or "action
+  digest not found in CAS", leaving the cache permanently empty.
+- Fixed cache hits replaying no task output when a remote server returns a stdout/stderr digest
+  without also inlining the raw bytes.
+
 ## 2.4.3
 
 #### 🚀 Updates

@@ -1,0 +1,42 @@
+name: Cache moon workspace graph
+description: >
+  Persists moon's workspace graph cache between CI runs, avoiding expensive toolchain plugin calls
+  (like the Go toolchain's `go list -deps`) when the graph hasn't changed. Remote caching only
+  stores task hashes and outputs, so without this action the workspace graph is rebuilt from
+  scratch on every run.
+author: moonrepo
+branding:
+  icon: layers
+  color: purple
+
+inputs:
+  workspace-root:
+    description: Relative path from the repository root to the moon workspace root.
+    required: false
+    default: '.'
+  key-prefix:
+    description: Prefix for the cache key. Change it to force a fresh cache.
+    required: false
+    default: moon-workspace-graph
+  manifests:
+    description: >
+      Newline-separated globs of toolchain manifest files that contribute to the workspace graph
+      digest. Include the manifests of every toolchain enabled in the workspace.
+    required: false
+    default: |
+      **/go.mod
+      **/package.json
+      **/Cargo.toml
+
+runs:
+  using: composite
+  steps:
+    - name: Cache workspace graph state
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ inputs.workspace-root }}/.moon/cache/states/workspaceGraph.json
+          ${{ inputs.workspace-root }}/.moon/cache/states/workspaceGraphStateV1.json
+        key: ${{ inputs.key-prefix }}-${{ runner.os }}-${{ hashFiles(format('{0}/.moon/*.yml', inputs.workspace-root), format('{0}/.moon/tasks/**', inputs.workspace-root), format('{0}/**/moon.yml', inputs.workspace-root), inputs.manifests) }}
+        restore-keys: |
+          ${{ inputs.key-prefix }}-${{ runner.os }}-

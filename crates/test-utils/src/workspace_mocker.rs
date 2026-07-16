@@ -34,6 +34,9 @@ pub struct WorkspaceMocker {
     pub proto_env: ProtoEnvironment,
     pub extensions_config: ExtensionsConfig,
     pub toolchains_config: ToolchainsConfig,
+    /// When set, adds a local CAS at this directory as a *remote* storage
+    /// backend, for testing remote-dependent flows without a real server.
+    pub remote_storage_dir: Option<PathBuf>,
     pub working_dir: PathBuf,
     pub workspace_config: WorkspaceConfig,
     pub workspace_root: PathBuf,
@@ -371,6 +374,12 @@ impl WorkspaceMocker {
         engine.storage.add_local_backend(
             LocalStorage::new(context.clone(), &context.cache_dir, false).unwrap(),
         );
+
+        if let Some(remote_dir) = &self.remote_storage_dir {
+            engine
+                .storage
+                .add_remote_backend(LocalStorage::new(context.clone(), remote_dir, false).unwrap());
+        }
 
         engine
     }

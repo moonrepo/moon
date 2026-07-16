@@ -6148,6 +6148,7 @@ dependencies = [
  "moon_async_utils",
  "moon_bench_utils",
  "moon_cache",
+ "moon_cache_storage",
  "moon_common",
  "moon_config",
  "moon_config_loader",

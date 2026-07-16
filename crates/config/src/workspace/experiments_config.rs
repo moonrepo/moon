@@ -24,5 +24,12 @@ config_struct!(
         /// @since 2.3.0
         #[setting(env = "MOON_EXPERIMENT_NATIVE_FILE_HASHING", parse_env = env::parse_bool)]
         pub native_file_hashing: bool,
+
+        /// Store the workspace graph cache in storage backends (typically
+        /// remote), so that other machines can hydrate it instead of
+        /// rebuilding the graph from scratch.
+        /// @since 2.5.0
+        #[setting(env = "MOON_EXPERIMENT_REMOTE_WORKSPACE_GRAPH_CACHE", parse_env = env::parse_bool)]
+        pub remote_workspace_graph_cache: bool,
     }
 );

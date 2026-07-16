@@ -495,6 +495,11 @@
           "title": "nativeFileHashing",
           "description": "Use native file hashing instead of using the VCS. @since 2.3.0",
           "type": "boolean"
+        },
+        "remoteWorkspaceGraphCache": {
+          "title": "remoteWorkspaceGraphCache",
+          "description": "Store the workspace graph cache in storage backends (typically remote), so that other machines can hydrate it instead of rebuilding the graph from scratch. @since 2.5.0",
+          "type": "boolean"
         }
       },
       "additionalProperties": false

@@ -3,14 +3,14 @@ use crate::tasks_builder::*;
 use crate::workspace_builder::*;
 use crate::workspace_cache::*;
 use moon_common::Id;
-use moon_graph_utils::GraphExpanderContext;
+use moon_graph_utils::{GraphExpanderContext, NodeState};
 use moon_hash::Digest;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase_utils::json;
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceBuilderAsync {
@@ -77,32 +77,55 @@ impl WorkspaceBuilderAsync {
             .state
             .resolve_path(STATE_GRAPH_FILE_NAME);
 
-        if digest.hash == state.data.last_hash && cache_path.exists() {
-            let mut cache: WorkspaceBuilderAsync = json::read_file(&cache_path)?;
+        let use_storage = is_remote_graph_cache_enabled(&context).await;
+        let mut cache_hit = digest.hash == state.data.last_hash && cache_path.exists();
 
-            // Verify that the cached projects match the current projects
-            // on disk. If a project has been added or removed since the
-            // cache was created, we need to rebuild the graph
-            let cached_ids: FxHashSet<&Id> = cache.projects.ids_to_indexes.keys().collect();
-            let current_ids: FxHashSet<&Id> = graph.projects.build_data.keys().collect();
+        // On a local cache miss, attempt to hydrate the serialized graph
+        // from storage backends (typically remote), keyed by the same digest
+        if !cache_hit && use_storage {
+            cache_hit = load_graph_from_storage(&context, &digest, &cache_path).await;
+        }
 
-            if cached_ids == current_ids {
-                debug!(
-                    cache = ?cache_path,
-                    "Loading workspace graph with {} projects from cache",
-                    cache.projects.ids_to_indexes.len(),
-                );
+        if cache_hit {
+            match json::read_file::<WorkspaceBuilderAsync>(&cache_path) {
+                Ok(mut cache) => {
+                    // Verify that the cached projects match the current projects
+                    // on disk. If a project has been added or removed since the
+                    // cache was created, we need to rebuild the graph
+                    let cached_ids: FxHashSet<&Id> = cache.projects.ids_to_indexes.keys().collect();
+                    let current_ids: FxHashSet<&Id> = graph.projects.build_data.keys().collect();
 
-                cache.projects.context = graph.projects.context.take();
-                cache.context = graph.context;
+                    if cached_ids == current_ids {
+                        debug!(
+                            cache = ?cache_path,
+                            "Loading workspace graph with {} projects from cache",
+                            cache.projects.ids_to_indexes.len(),
+                        );
 
-                return Ok(cache);
+                        cache.projects.context = graph.projects.context.take();
+                        cache.context = graph.context;
+                        cache.rehydrate_machine_specific_state();
+
+                        if state.data.last_hash != digest.hash {
+                            state.data.last_hash = digest.hash;
+                            state.save()?;
+                        }
+
+                        return Ok(cache);
+                    }
+
+                    debug!(
+                        cache = ?cache_path,
+                        "Cached workspace graph has mismatched projects, rebuilding",
+                    );
+                }
+                Err(error) => {
+                    warn!(
+                        cache = ?cache_path,
+                        "Failed to load cached workspace graph, rebuilding: {error}",
+                    );
+                }
             }
-
-            debug!(
-                cache = ?cache_path,
-                "Cached workspace graph has mismatched projects, rebuilding",
-            );
         }
 
         // Build the graph, update the state, and save the cache
@@ -113,12 +136,36 @@ impl WorkspaceBuilderAsync {
 
         graph.load_graphs().await?;
 
-        state.data.last_hash = digest.hash;
+        state.data.last_hash = digest.hash.clone();
         state.save()?;
 
-        json::write_file(cache_path, &graph, false)?;
+        json::write_file(&cache_path, &graph, false)?;
+
+        // Persist the serialized graph to storage backends (typically
+        // remote), so that other machines can hydrate it
+        if use_storage {
+            save_graph_to_storage(&context, &digest, &cache_path).await;
+        }
 
         Ok(graph)
+    }
+
+    /// Recompute machine-specific values after loading a serialized graph
+    /// from the cache. The cache may have been created on another machine
+    /// (when hydrated from a remote storage backend), or the workspace may
+    /// have moved on disk, leaving stale absolute paths behind.
+    fn rehydrate_machine_specific_state(&mut self) {
+        let workspace_root = &self
+            .context
+            .as_ref()
+            .expect("Missing workspace builder context!")
+            .workspace_root;
+
+        for node in self.projects.graph.node_weights_mut() {
+            if let NodeState::Loaded(project) = node {
+                project.root = project.source.to_logical_path(workspace_root);
+            }
+        }
     }
 
     pub async fn preload(&mut self) -> miette::Result<()> {

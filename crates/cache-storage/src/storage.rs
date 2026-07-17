@@ -209,7 +209,7 @@ impl Storage {
                 .retrieve_blobs_batched(Digest::default(), digests.clone())
                 .await?;
 
-            if result.blobs.len() > 0 {
+            if !result.blobs.is_empty() {
                 return Ok(result.blobs);
             }
         }

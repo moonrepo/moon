@@ -3,6 +3,7 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
+use moon_blob::{BlobContent, BlobInput};
 use moon_cache::{Manifest, StorageOptions};
 use moon_common::color;
 use moon_task::Task;
@@ -72,6 +73,8 @@ impl OutputArchiver<'_> {
 
         // Store the manifest in the local/remote caches
         if use_local || use_remote {
+            let manifest = self.create_cache_manifest(state).await?;
+
             self.app_context
                 .cache_engine
                 .storage
@@ -80,7 +83,7 @@ impl OutputArchiver<'_> {
                     include_remote: use_remote,
                     ..Default::default()
                 })
-                .archive_manifest(&state.digest, self.create_cache_manifest(state).await?)
+                .archive_manifest(&state.digest, manifest, self.get_action_blob(state))
                 .await?;
         }
 
@@ -90,6 +93,26 @@ impl OutputArchiver<'_> {
         }
 
         Ok(ArchiveOutcome::Queued)
+    }
+
+    /// The action digest addresses moon's fingerprint hash manifest at
+    /// `.moon/cache/hashes/<hash>.json` — that file *is* the blob the digest
+    /// names. Backends that validate the Bazel RE contract reject an action
+    /// result whose action digest is absent from the CAS, so it must be
+    /// uploaded alongside the outputs. Returns `None` when the file is absent
+    /// (e.g. archiving without a computed fingerprint), leaving the upload a
+    /// no-op rather than an error.
+    fn get_action_blob(&self, state: &TaskRunState) -> Option<BlobInput> {
+        let path = self
+            .app_context
+            .cache_engine
+            .hash
+            .get_manifest_path(&state.digest.hash);
+
+        path.exists().then(|| BlobInput {
+            content: BlobContent::File(path),
+            digest: state.digest.clone(),
+        })
     }
 
     #[instrument(skip(self))]

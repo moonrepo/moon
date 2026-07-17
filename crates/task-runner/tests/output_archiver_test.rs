@@ -480,6 +480,62 @@ mod output_archiver {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn stores_the_action_blob_in_storage() {
+            // The action digest addresses moon's fingerprint hash manifest at
+            // `.moon/cache/hashes/<hash>.json`, which must be uploaded to the CAS
+            // so an RE-compliant backend can resolve the action result.
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            // Stand in for the fingerprint file the hash engine writes during
+            // hashing, and point the digest at it (content-addressed by
+            // construction so the local CAS accepts it).
+            let fingerprint = b"[\"hash123\"]";
+            let digest = Digest::from_bytes(fingerprint).unwrap();
+            container.sandbox.create_file(
+                format!(".moon/cache/hashes/{}.json", digest.hash),
+                std::str::from_utf8(fingerprint).unwrap(),
+            );
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            state.local_cas_enabled = true;
+            state.digest = digest.clone();
+
+            archiver.archive("hash123", &state).await.unwrap();
+            container.flush_storage().await;
+
+            assert!(
+                container.blob_exists(&digest).await,
+                "the action blob must be uploaded alongside the outputs"
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn skips_the_action_blob_when_the_hash_file_is_missing() {
+            // Without a fingerprint file on disk there is no action blob to
+            // upload; archiving must still succeed and store the manifest.
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+
+            archiver.archive("hash123", &state).await.unwrap();
+            container.flush_storage().await;
+
+            assert!(
+                !container.blob_exists(&state.digest).await,
+                "no action blob is uploaded when the fingerprint file is absent"
+            );
+            assert!(
+                container.manifest_exists(&state.digest).await,
+                "the manifest is still stored"
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_create_a_local_archive() {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             container.sandbox.create_file("project/file.txt", "");

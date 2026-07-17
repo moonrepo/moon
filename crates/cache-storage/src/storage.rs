@@ -227,6 +227,7 @@ impl Storage {
         &self,
         digest: &Digest,
         manifest: Manifest,
+        action_blob: Option<BlobInput>,
     ) -> miette::Result<()> {
         let mut background_tasks = self.background_tasks.lock().unwrap();
 
@@ -250,7 +251,7 @@ impl Storage {
                 digest.to_owned(),
                 manifest.clone(),
                 self.context.workspace_root.clone(),
-                self.context.cache_dir.clone(),
+                action_blob.clone(),
             ))));
         }
 
@@ -349,12 +350,15 @@ impl Storage {
                 "Warming local storage backend from remote cache hit"
             );
 
+            // No action blob here: warming targets local backends only, which
+            // don't validate the RE contract, so the fingerprint file needn't be
+            // re-stored into the local CAS.
             background_tasks.push(tokio::spawn(Box::pin(persist_manifest_in_backend(
                 Arc::clone(backend),
                 digest.to_owned(),
                 manifest.clone(),
                 self.context.workspace_root.clone(),
-                self.context.cache_dir.clone(),
+                None,
             ))));
         }
     }
@@ -419,23 +423,17 @@ async fn persist_manifest_in_backend(
     digest: Digest,
     mut manifest: Manifest,
     workspace_root: PathBuf,
-    cache_dir: PathBuf,
+    action_blob: Option<BlobInput>,
 ) -> miette::Result<()> {
     let mut blob_inputs = manifest.collect_blob_inputs(&workspace_root);
 
-    // The action digest is the content hash (and byte length) of the hash manifest that
-    // produced it, so that manifest *is* the blob the digest addresses. Upload it with
-    // the outputs: backends that validate the RE contract reject an action result whose
-    // action digest is absent from the CAS ("action digest <hash>/<size> not found in
-    // CAS"), because a client is expected to have uploaded it before referencing it.
-    let action_blob_path = cache_dir.join("hashes").join(format!("{}.json", *digest));
-
-    if action_blob_path.exists() {
-        blob_inputs.push(BlobInput {
-            content: BlobContent::File(action_blob_path),
-            digest: digest.clone(),
-        });
-    }
+    // The action digest addresses the hash manifest that produced it, so that
+    // file *is* the blob the digest names. The task runner (which owns the cache
+    // layout) supplies it, and it's uploaded with the outputs: backends that
+    // validate the RE contract reject an action result whose action digest is
+    // absent from the CAS ("action digest <hash>/<size> not found in CAS"),
+    // because a client is expected to have uploaded it before referencing it.
+    blob_inputs.extend(action_blob);
 
     // Before we store the manifest, we should ensure all associated blobs are stored.
     // This ensures we don't end up with dangling manifests that reference missing blobs.

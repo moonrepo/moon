@@ -35,6 +35,7 @@ impl BlobContent {
     }
 }
 
+#[derive(Clone)]
 pub struct BlobInput {
     pub content: BlobContent,
     pub digest: Digest,

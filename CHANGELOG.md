@@ -12,6 +12,8 @@
 - Fixed an issue where gRPC remote cache uploads would fail with "Failed to store blob" when the
   server returned a `RESOURCE_EXHAUSTED` error, because a blob was too large. We now set the max
   size to 4MB (the gRPC limit).
+- Fixed an issue where HTTP remote cache was not respecting the
+  `unstable_remote.cache.localReadOnly` setting.
 
 ## 2.4.3
 

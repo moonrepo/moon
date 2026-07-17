@@ -838,7 +838,7 @@ fn negotiate_compression(
     }
 }
 
-fn is_upload_allowed(enabled: bool, is_ci: bool, local_read_only: bool) -> bool {
+pub(crate) fn is_upload_allowed(enabled: bool, is_ci: bool, local_read_only: bool) -> bool {
     enabled && (is_ci || !local_read_only)
 }
 

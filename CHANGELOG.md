@@ -9,6 +9,11 @@
   digest not found in CAS", leaving the cache permanently empty.
 - Fixed cache hits replaying no task output when a remote server returns a stdout/stderr digest
   without also inlining the raw bytes.
+- Fixed an issue where gRPC remote cache uploads would fail with "Failed to store blob" when the
+  server returned a `RESOURCE_EXHAUSTED` error, because a blob was too large. We now set the max
+  size to 4MB (the gRPC limit).
+- Fixed an issue where HTTP remote cache was not respecting the
+  `unstable_remote.cache.localReadOnly` setting.
 
 ## 2.4.3
 
@@ -50,8 +55,8 @@
   when comparing 2 revisions. This also applies to affected detection with an explicit head, e.g.
   the `MOON_HEAD` environment variable or `--affected base:head`. Additionally, `MOON_BASE` and
   `MOON_HEAD` environment variables that are set but empty are now ignored.
-- Fixed an issue where synced VCS hooks were always written to `.moon/hooks`, even when the workspace
-  configuration lived in `.config/moon`. Hooks are now placed alongside the config, in
+- Fixed an issue where synced VCS hooks were always written to `.moon/hooks`, even when the
+  workspace configuration lived in `.config/moon`. Hooks are now placed alongside the config, in
   `.config/moon/hooks`.
 
 ## 2.4.2

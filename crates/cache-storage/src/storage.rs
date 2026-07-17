@@ -1,6 +1,6 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
-use moon_blob::{BlobCleanStats, BlobContent, BlobInput};
+use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
@@ -187,6 +187,60 @@ impl Storage {
         }
 
         Ok(stats)
+    }
+
+    pub async fn retrieve_blob(&self, digest: Digest) -> miette::Result<Option<BlobOutput>> {
+        let mut results = self.retrieve_blobs(vec![digest]).await?;
+
+        if !results.is_empty() {
+            return Ok(Some(results.remove(0)));
+        }
+
+        Ok(None)
+    }
+
+    pub async fn retrieve_blobs(&self, digests: Vec<Digest>) -> miette::Result<Vec<BlobOutput>> {
+        for backend in self.get_backends() {
+            if !backend.is_readable() {
+                continue;
+            }
+
+            let result = Arc::clone(backend)
+                .retrieve_blobs_batched(Digest::default(), digests.clone())
+                .await?;
+
+            if !result.blobs.is_empty() {
+                return Ok(result.blobs);
+            }
+        }
+
+        Ok(vec![])
+    }
+
+    pub async fn store_blob(&self, blob: BlobInput) -> miette::Result<()> {
+        self.store_blobs(vec![blob]).await
+    }
+
+    pub async fn store_blobs(&self, blobs: Vec<BlobInput>) -> miette::Result<()> {
+        let mut background_tasks = self.background_tasks.lock().unwrap();
+
+        for backend in self.get_backends() {
+            if !backend.is_writable() {
+                continue;
+            }
+
+            let backend = Arc::clone(backend);
+            let blobs = blobs.clone();
+
+            background_tasks.push(tokio::spawn(Box::pin(async move {
+                backend
+                    .store_blobs_batched(Digest::default(), blobs)
+                    .await
+                    .map(|_| ())
+            })));
+        }
+
+        Ok(())
     }
 
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {

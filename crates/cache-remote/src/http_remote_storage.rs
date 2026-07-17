@@ -1,3 +1,4 @@
+use crate::grpc_remote_storage::is_upload_allowed;
 use crate::headers::extract_headers;
 use crate::http_tls::*;
 use crate::remote_error::RemoteError;
@@ -7,7 +8,7 @@ use moon_blob::{BlobContent, BlobInput, BlobOutput};
 use moon_cache_storage::{
     CacheCapabilities, CacheContext, Manifest, StorageBackend, check_blob_integrity,
 };
-use moon_common::{Id, color, is_remote};
+use moon_common::{Id, color, is_ci, is_remote};
 use moon_config::RemoteCompression;
 use moon_hash::Digest;
 use reqwest::Client;
@@ -98,7 +99,12 @@ impl StorageBackend for HttpRemoteStorage {
     }
 
     fn is_writable(&self) -> bool {
-        self.is_readable()
+        self.context.remote_config.is_enabled()
+            && is_upload_allowed(
+                self.client.get().is_some(),
+                is_ci(),
+                self.context.remote_config.cache.local_read_only,
+            )
     }
 
     async fn connect(&self) -> miette::Result<()> {

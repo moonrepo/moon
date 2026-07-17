@@ -804,6 +804,12 @@ fn evaluate_capabilities(
                 color::property("remote.cache.compression"),
             );
         }
+
+        // If the server doesn't advertise a max batch size, assume 4MB to avoid
+        // sending a batch that is too large and triggering a gRPC error
+        if cap.max_batch_total_size_bytes == 0 {
+            cap.max_batch_total_size_bytes = 4194304; // 4MB
+        }
     } else {
         enabled = false;
 

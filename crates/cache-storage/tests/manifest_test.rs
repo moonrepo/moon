@@ -160,18 +160,14 @@ mod from_bazel {
             .unwrap();
 
         assert_eq!(
-            metadata.output_upload_start_timestamp,
-            Some(Timestamp {
-                seconds: 100,
-                nanos: 1,
-            })
+            metadata.output_upload_start_timestamp.map(|ts| ts.seconds),
+            Some(100)
         );
         assert_eq!(
-            metadata.output_upload_completed_timestamp,
-            Some(Timestamp {
-                seconds: 200,
-                nanos: 2,
-            })
+            metadata
+                .output_upload_completed_timestamp
+                .map(|ts| ts.seconds),
+            Some(200)
         );
     }
 

@@ -1,7 +1,7 @@
 use httpmock::prelude::*;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::HttpRemoteStorage;
-use moon_cache_storage::{CacheContext, Manifest, StorageBackend};
+use moon_cache_storage::{CacheContext, Manifest, ManifestFile, ManifestSymlink, StorageBackend};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
@@ -90,35 +90,175 @@ mod http_remote_storage {
         use super::*;
 
         #[tokio::test]
-        async fn stores_manifest() {
+        async fn stores_manifest_as_bazel_action_result() {
             let server = MockServer::start_async().await;
             let digest = digest_of(b"action");
+            let file_digest = digest_of(b"file contents");
+            let stdout_digest = digest_of(b"out");
+
+            // The AC entry must go over the wire as an RE API `ActionResult` in
+            // proto3 JSON form (camelCase keys, int64 sizes as strings), not as
+            // moon's internal manifest format. The exact body match also proves
+            // `stdoutRaw` stays empty on upload even though the manifest holds
+            // the bytes — the raw fields are reserved for server responses, the
+            // CAS digest carries the output.
+            let expected_body = serde_json::json!({
+                "exitCode": 2,
+                "outputFiles": [{
+                    "path": "out/file.txt",
+                    "digest": {
+                        "hash": file_digest.hash.to_string(),
+                        "sizeBytes": file_digest.size.to_string(),
+                    },
+                    "isExecutable": true,
+                    "nodeProperties": {},
+                }],
+                "outputSymlinks": [{
+                    "path": "out/link",
+                    "target": "out/file.txt",
+                    "nodeProperties": {},
+                }],
+                "stdoutDigest": {
+                    "hash": stdout_digest.hash.to_string(),
+                    "sizeBytes": stdout_digest.size.to_string(),
+                },
+                "executionMetadata": {
+                    "worker": "moon",
+                },
+            });
+
             let mock = server.mock(|when, then| {
                 when.method(PUT)
-                    .path(format!("/{INSTANCE}/ac/{}", digest.hash));
+                    .path(format!("/{INSTANCE}/ac/{}", digest.hash))
+                    .header("content-type", "application/json")
+                    .json_body(expected_body);
                 then.status(200);
             });
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            storage
-                .store_manifest(digest, Manifest::default())
-                .await
-                .unwrap();
+            let manifest = Manifest {
+                exit_code: 2,
+                files: vec![ManifestFile {
+                    digest: Some(file_digest),
+                    is_executable: true,
+                    path: "out/file.txt".into(),
+                    ..Default::default()
+                }],
+                symlinks: vec![ManifestSymlink {
+                    path: "out/link".into(),
+                    target: "out/file.txt".into(),
+                    ..Default::default()
+                }],
+                stdout_bytes: Some(Bytes::from_static(b"out")),
+                stdout_digest: Some(stdout_digest),
+                ..Default::default()
+            };
+
+            storage.store_manifest(digest, manifest).await.unwrap();
 
             mock.assert_calls_async(1).await;
         }
 
         #[tokio::test]
-        async fn retrieves_manifest() {
+        async fn store_errors_on_server_error() {
             let server = MockServer::start_async().await;
             let digest = digest_of(b"action");
-            let manifest = Manifest {
+            server.mock(|when, then| {
+                when.method(PUT)
+                    .path(format!("/{INSTANCE}/ac/{}", digest.hash));
+                then.status(500);
+            });
+            let sandbox = create_empty_sandbox();
+            let storage = create_storage(&sandbox, server.base_url());
+
+            assert!(
+                storage
+                    .store_manifest(digest, Manifest::default())
+                    .await
+                    .is_err()
+            );
+        }
+
+        #[tokio::test]
+        async fn retrieves_manifest_from_bazel_action_result() {
+            let server = MockServer::start_async().await;
+            let digest = digest_of(b"action");
+            let file_digest = digest_of(b"file contents");
+            let stdout_digest = digest_of(b"out");
+            let stderr_digest = digest_of(b"error");
+
+            // A response in the shape a real RE server produces: proto3 JSON
+            // with camelCase keys, int64 sizes as strings, raw output base64
+            // encoded, and stderr provided only by digest (inlining the raw
+            // output is optional for a server).
+            let body = serde_json::json!({
+                "exitCode": 7,
+                "outputFiles": [{
+                    "path": "out/file.txt",
+                    "digest": {
+                        "hash": file_digest.hash.to_string(),
+                        "sizeBytes": file_digest.size.to_string(),
+                    },
+                    "isExecutable": true,
+                    "nodeProperties": { "unixMode": 493 },
+                }],
+                "outputSymlinks": [{ "path": "out/link", "target": "out/file.txt" }],
+                "stdoutRaw": "b3V0",
+                "stdoutDigest": {
+                    "hash": stdout_digest.hash.to_string(),
+                    "sizeBytes": stdout_digest.size.to_string(),
+                },
+                "stderrDigest": {
+                    "hash": stderr_digest.hash.to_string(),
+                    "sizeBytes": stderr_digest.size.to_string(),
+                },
+            });
+            let mock = server.mock(|when, then| {
+                when.method(GET)
+                    .path(format!("/{INSTANCE}/ac/{}", digest.hash))
+                    .header("accept", "application/json");
+                then.status(200)
+                    .header("content-type", "application/json")
+                    .body(body.to_string());
+            });
+            let sandbox = create_empty_sandbox();
+            let storage = create_storage(&sandbox, server.base_url());
+
+            let manifest = storage.retrieve_manifest(digest).await.unwrap().unwrap();
+
+            mock.assert_calls_async(1).await;
+            assert_eq!(manifest.exit_code, 7);
+            assert_eq!(manifest.files.len(), 1);
+            assert_eq!(manifest.files[0].path.as_str(), "out/file.txt");
+            assert_eq!(manifest.files[0].digest, Some(file_digest));
+            assert!(manifest.files[0].is_executable);
+            assert_eq!(manifest.files[0].unix_mode, Some(493));
+            assert_eq!(manifest.symlinks.len(), 1);
+            assert_eq!(manifest.symlinks[0].path.as_str(), "out/link");
+            assert_eq!(manifest.symlinks[0].target.as_str(), "out/file.txt");
+            // Inlined raw output is decoded; the non-inlined stream stays a
+            // digest to be fetched from the CAS during hydration.
+            assert_eq!(manifest.stdout_bytes, Some(Bytes::from_static(b"out")));
+            assert_eq!(manifest.stdout_digest, Some(stdout_digest));
+            assert!(manifest.stderr_bytes.is_none());
+            assert_eq!(manifest.stderr_digest, Some(stderr_digest));
+        }
+
+        #[tokio::test]
+        async fn retrieve_errors_on_legacy_manifest_body() {
+            // Entries written by older moon versions stored moon's internal
+            // manifest JSON in the AC. Those no longer parse as an
+            // `ActionResult`, and must surface as an error instead of a bogus
+            // cache hit.
+            let server = MockServer::start_async().await;
+            let digest = digest_of(b"action");
+            let body = serde_json::to_string(&Manifest {
                 exit_code: 7,
                 ..Default::default()
-            };
-            let body = serde_json::to_string(&manifest).unwrap();
-            let mock = server.mock(|when, then| {
+            })
+            .unwrap();
+            server.mock(|when, then| {
                 when.method(GET)
                     .path(format!("/{INSTANCE}/ac/{}", digest.hash));
                 then.status(200)
@@ -128,10 +268,7 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            let result = storage.retrieve_manifest(digest).await.unwrap();
-
-            mock.assert_calls_async(1).await;
-            assert_eq!(result.unwrap().exit_code, 7);
+            assert!(storage.retrieve_manifest(digest).await.is_err());
         }
 
         #[tokio::test]

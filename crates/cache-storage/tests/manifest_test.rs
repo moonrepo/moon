@@ -1,6 +1,7 @@
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
-    ActionResult, Digest as BazelDigest, OutputFile, OutputSymlink,
+    ActionResult, Digest as BazelDigest, ExecutedActionMetadata, OutputFile, OutputSymlink,
 };
+use bazel_remote_apis::google::protobuf::Timestamp;
 use moon_blob::{BlobContent, Bytes};
 use moon_cache_storage::{Manifest, ManifestFile};
 use moon_hash::{ContentHash, Digest};
@@ -118,6 +119,60 @@ mod from_bazel {
         assert!(result.stderr_raw.is_empty());
         assert!(result.stdout_digest.is_some());
         assert!(result.stderr_digest.is_some());
+    }
+
+    #[test]
+    fn round_trips_both_upload_timestamps() {
+        // Each timestamp must survive independently — an implementation that
+        // consumes the metadata while reading the first one silently drops the
+        // second (`upload_started_at` came back `None`).
+        use std::time::{Duration, UNIX_EPOCH};
+
+        let result = ActionResult {
+            execution_metadata: Some(ExecutedActionMetadata {
+                output_upload_start_timestamp: Some(Timestamp {
+                    seconds: 100,
+                    nanos: 1,
+                }),
+                output_upload_completed_timestamp: Some(Timestamp {
+                    seconds: 200,
+                    nanos: 2,
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let manifest = Manifest::from_bazel_action_result(result).unwrap();
+
+        assert_eq!(
+            manifest.upload_started_at,
+            Some(UNIX_EPOCH + Duration::new(100, 1))
+        );
+        assert_eq!(
+            manifest.upload_completed_at,
+            Some(UNIX_EPOCH + Duration::new(200, 2))
+        );
+
+        let metadata = manifest
+            .into_bazel_action_result()
+            .execution_metadata
+            .unwrap();
+
+        assert_eq!(
+            metadata.output_upload_start_timestamp,
+            Some(Timestamp {
+                seconds: 100,
+                nanos: 1,
+            })
+        );
+        assert_eq!(
+            metadata.output_upload_completed_timestamp,
+            Some(Timestamp {
+                seconds: 200,
+                nanos: 2,
+            })
+        );
     }
 
     #[test]

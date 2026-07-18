@@ -3,6 +3,7 @@ use crate::headers::extract_headers;
 use crate::http_tls::*;
 use crate::remote_error::RemoteError;
 use async_trait::async_trait;
+use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
 use miette::IntoDiagnostic;
 use moon_blob::{BlobContent, BlobInput, BlobOutput};
 use moon_cache_storage::{
@@ -186,7 +187,7 @@ impl StorageBackend for HttpRemoteStorage {
                 let status = response.status();
 
                 if status.is_success() {
-                    let manifest: Manifest =
+                    let result: ActionResult =
                         response
                             .json()
                             .await
@@ -194,7 +195,7 @@ impl StorageBackend for HttpRemoteStorage {
                                 error: Box::new(error),
                             })?;
 
-                    Ok(Some(manifest))
+                    Ok(Some(Manifest::from_bazel_action_result(result)?))
                 } else if status.as_u16() == 404 {
                     Ok(None)
                 } else {
@@ -217,7 +218,7 @@ impl StorageBackend for HttpRemoteStorage {
             .get_client()
             .put(self.get_endpoint("ac", &digest.hash))
             .header("Content-Type", "application/json")
-            .json(&manifest)
+            .json(&manifest.into_bazel_action_result())
             .send()
             .await
         {

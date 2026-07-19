@@ -1,0 +1,26 @@
+[package]
+name = "moon_vcs_plugin"
+version = "0.0.1"
+edition = "2024"
+publish = false
+
+[dependencies]
+moon_common = { path = "../common" }
+moon_pdk_api = { path = "../pdk-api" }
+moon_plugin = { path = "../plugin" }
+moon_vcs = { path = "../vcs" }
+async-trait = { workspace = true }
+miette = { workspace = true }
+semver = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+starbase_utils = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+warpgate = { workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
+
+[lints]
+workspace = true

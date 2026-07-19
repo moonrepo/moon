@@ -5004,6 +5004,7 @@ dependencies = [
  "moon_toolchain",
  "moon_toolchain_plugin",
  "moon_vcs",
+ "moon_vcs_plugin",
  "moon_workspace",
  "moon_workspace_graph",
  "open",
@@ -5710,6 +5711,7 @@ dependencies = [
  "tokio",
  "tracing",
  "warpgate",
+ "warpgate_api",
 ]
 
 [[package]]
@@ -6111,6 +6113,7 @@ dependencies = [
  "serde",
  "soft-canonicalize",
  "starbase_sandbox",
+ "starbase_utils",
  "thiserror 2.0.18",
  "tokio",
  "tracing",
@@ -6136,6 +6139,45 @@ dependencies = [
  "system_env",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "moon_vcs_plugin"
+version = "0.0.1"
+dependencies = [
+ "async-trait",
+ "miette 7.6.0",
+ "moon_common",
+ "moon_pdk_api",
+ "moon_plugin",
+ "moon_vcs",
+ "semver",
+ "serde",
+ "serde_json",
+ "starbase_sandbox",
+ "starbase_utils",
+ "tokio",
+ "tracing",
+ "warpgate",
+]
+
+[[package]]
+name = "moon_vcs_plugin_prototype"
+version = "0.0.0"
+dependencies = [
+ "async-trait",
+ "miette 7.6.0",
+ "minisign-verify",
+ "moon_pdk_api",
+ "moon_plugin",
+ "moon_vcs",
+ "moon_vcs_plugin",
+ "serde",
+ "serde_json",
+ "starbase_utils",
+ "tokio",
+ "warpgate",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

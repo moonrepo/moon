@@ -20,6 +20,7 @@ pub struct PluginRegistration {
 pub enum PluginType {
     Extension,
     Toolchain,
+    Vcs,
 }
 
 impl PluginType {
@@ -27,6 +28,7 @@ impl PluginType {
         match self {
             PluginType::Extension => "extensions",
             PluginType::Toolchain => "toolchains",
+            PluginType::Vcs => "vcs",
         }
     }
 
@@ -34,6 +36,7 @@ impl PluginType {
         match self {
             PluginType::Extension => "extension",
             PluginType::Toolchain => "toolchain",
+            PluginType::Vcs => "VCS",
         }
     }
 }

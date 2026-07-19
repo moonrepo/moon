@@ -1,0 +1,25 @@
+[package]
+name = "moon_vcs_plugin_prototype"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+async-trait = { workspace = true }
+miette = { workspace = true }
+minisign-verify = { workspace = true }
+moon_pdk_api = { path = "../pdk-api" }
+moon_plugin = { path = "../plugin" }
+moon_vcs = { path = "../vcs" }
+moon_vcs_plugin = { path = "../vcs-plugin" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+starbase_utils = { workspace = true, features = ["hash"] }
+tokio = { workspace = true }
+warpgate = { workspace = true }
+
+[lints]
+workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_Storage_FileSystem"] }

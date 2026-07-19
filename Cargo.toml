@@ -37,6 +37,7 @@ iocraft = "0.8.3"
 libc = "0.2.186"
 md5 = "0.8.0"
 miette = "7.6.0"
+minisign-verify = "0.2.5"
 num_cpus = "1.17.0"
 pathdiff = "0.2.3"
 petgraph = { version = "0.8.3", default-features = false, features = [

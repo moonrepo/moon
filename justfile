@@ -9,8 +9,39 @@ init:
 build:
 	cargo build --workspace
 
+build-vcs-git:
+	cd wasm && cargo build --package vcs_git --target wasm32-wasip1 --release
+	cp wasm/target/wasm32-wasip1/release/vcs_git.wasm crates/vcs-plugin/res/vcs_git.wasm
+
 build-wasm:
 	cd wasm && cargo build --workspace --target wasm32-wasip1 --release
+	cp wasm/target/wasm32-wasip1/release/vcs_git.wasm crates/vcs-plugin/res/vcs_git.wasm
+
+# PROTOTYPES
+
+# PROTOTYPE: Build and explore the source-control provider seam.
+prototype-vcs:
+	just build-wasm
+	cargo run -p moon_vcs_plugin_prototype
+
+# PROTOTYPE: Check Git and jj against Moon-level provider semantics.
+prototype-vcs-conformance:
+	just build-wasm
+	cargo run -p moon_vcs_plugin_prototype -- --conformance
+
+# PROTOTYPE: Measure provider boundary latency.
+prototype-vcs-benchmark:
+	just build-wasm
+	cargo run --release -p moon_vcs_plugin_prototype -- --benchmark
+
+# PROTOTYPE: Fail when release VCS plugin p95 latency exceeds its budget.
+prototype-vcs-benchmark-check:
+	just build-wasm
+	cargo run --release -p moon_vcs_plugin_prototype -- --benchmark-check
+
+# PROTOTYPE: Compare master and current Git-provider performance.
+prototype-vcs-benchmark-comparison:
+	bash "{{justfile_directory()}}/scripts/benchmark/vcsPlugin.sh"
 
 # CHECKING
 

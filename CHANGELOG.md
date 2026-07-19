@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where HTTP remote cache would deserialize manifests into the wrong shape, resulting
+  in failed caching.
+- Fixed an issue where dependency deduping would run on fresh/initial installs.
+
 ## 2.4.4
 
 #### 🐞 Fixes

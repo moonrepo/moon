@@ -40,7 +40,8 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    pub fn from_bazel_action_result(mut result: ActionResult) -> miette::Result<Self> {
+    pub fn from_bazel_action_result(result: ActionResult) -> miette::Result<Self> {
+        let metadata = result.execution_metadata.unwrap_or_default();
         let mut files = vec![];
         let mut symlinks = vec![];
 
@@ -78,15 +79,11 @@ impl Manifest {
                 Some(digest) => Some(digest.to_internal_digest()?),
                 None => None,
             },
-            upload_completed_at: result
-                .execution_metadata
-                .take()
-                .and_then(|metadata| metadata.output_upload_completed_timestamp)
+            upload_completed_at: metadata
+                .output_upload_completed_timestamp
                 .map(create_from_timestamp),
-            upload_started_at: result
-                .execution_metadata
-                .take()
-                .and_then(|metadata| metadata.output_upload_start_timestamp)
+            upload_started_at: metadata
+                .output_upload_start_timestamp
                 .map(create_from_timestamp),
         })
     }

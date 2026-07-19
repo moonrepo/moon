@@ -55,9 +55,25 @@ pub fn locate_dependencies_root(
 
 #[plugin_fn]
 pub fn install_dependencies(
-    Json(_): Json<InstallDependenciesInput>,
+    Json(input): Json<InstallDependenciesInput>,
 ) -> FnResult<Json<InstallDependenciesOutput>> {
-    Ok(Json(InstallDependenciesOutput::default()))
+    let mut output = InstallDependenciesOutput::default();
+
+    // Only return commands when a test opts in via toolchain config,
+    // otherwise unrelated tests would execute real processes
+    if input
+        .toolchain_config
+        .get("testInstallCommands")
+        .and_then(|value| value.as_bool())
+        .unwrap_or_default()
+    {
+        output.install_command =
+            Some(ExecCommand::new(ExecCommandInput::pipe("git", ["--version"])).label("install"));
+        output.dedupe_command =
+            Some(ExecCommand::new(ExecCommandInput::pipe("git", ["--version"])).label("dedupe"));
+    }
+
+    Ok(Json(output))
 }
 
 #[plugin_fn]

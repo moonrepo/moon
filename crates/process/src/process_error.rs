@@ -2,6 +2,17 @@ use miette::Diagnostic;
 use moon_common::{Style, Stylize};
 use thiserror::Error;
 
+impl ProcessError {
+    /// Return the underlying process exit code, if this error represents a
+    /// process that exited with a non-zero status (and not a signal).
+    pub fn get_exit_code(&self) -> Option<i32> {
+        match self {
+            Self::ExitNonZero { code, .. } | Self::ExitNonZeroWithOutput { code, .. } => *code,
+            _ => None,
+        }
+    }
+}
+
 #[derive(Error, Debug, Diagnostic)]
 pub enum ProcessError {
     #[diagnostic(code(process::capture::failed))]
@@ -21,7 +32,11 @@ pub enum ProcessError {
         "Process {} failed: {status}",
         .bin.style(Style::Shell),
     )]
-    ExitNonZero { bin: String, status: String },
+    ExitNonZero {
+        bin: String,
+        status: String,
+        code: Option<i32>,
+    },
 
     #[diagnostic(code(process::failed))]
     #[error(
@@ -32,6 +47,7 @@ pub enum ProcessError {
     ExitNonZeroWithOutput {
         bin: String,
         status: String,
+        code: Option<i32>,
         output: String,
     },
 

@@ -590,6 +590,9 @@ impl<'task> TaskRunner<'task> {
                 error: Box::new(ProcessError::ExitNonZero {
                     bin: self.task.command.value.clone(),
                     status: last_attempt.get_exec_output_status(),
+                    code: last_attempt
+                        .get_exec_output()
+                        .and_then(|output| output.exit_code),
                 }),
             }
             .into());

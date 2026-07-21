@@ -67,6 +67,7 @@ impl Output {
 
     pub fn to_error(&self, bin: impl AsRef<str>, with_message: bool) -> ProcessError {
         let bin = bin.as_ref().to_owned();
+        let code = self.code();
 
         let status = match &self.exit {
             ChildExit::Completed(status) => match status.code() {
@@ -79,7 +80,7 @@ impl Output {
         };
 
         if !with_message {
-            return ProcessError::ExitNonZero { bin, status };
+            return ProcessError::ExitNonZero { bin, status, code };
         }
 
         let mut message = output_to_trimmed_string(&self.stderr);
@@ -96,6 +97,7 @@ impl Output {
         ProcessError::ExitNonZeroWithOutput {
             bin,
             status,
+            code,
             output: message,
         }
     }

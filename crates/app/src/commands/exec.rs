@@ -285,15 +285,36 @@ impl ExecWorkflow {
             .execute_action_pipeline(action_context, action_graph)
             .await?;
 
-        let failed = results.into_iter().any(|result| {
-            if result.has_failed() {
-                !result.allow_failure
-            } else {
-                false
-            }
-        });
+        let targets = self.get_targets();
+        let is_single_target = targets.len() == 1
+            && targets
+                .first()
+                .is_some_and(|target| target.is_fully_qualified());
 
-        if failed {
+        let mut any_failed = false;
+        let mut exit_code = None;
+
+        for result in &results {
+            if !result.has_failed() || result.allow_failure {
+                continue;
+            }
+
+            any_failed = true;
+
+            if is_single_target
+                && exit_code.is_none()
+                && let Some(code) = result.get_exit_code()
+                && code != 0
+            {
+                exit_code = u8::try_from(code).ok();
+            }
+        }
+
+        if let Some(code) = exit_code {
+            return Ok(Some(code));
+        }
+
+        if any_failed {
             return Ok(Some(1));
         }
 

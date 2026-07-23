@@ -57,15 +57,53 @@ This is opt-in, and enabled with the following global options (or environment va
 
 - `--otel` (`PROTO_OTEL`) - Export traces and metrics over OTLP.
 - `--otel-logs` (`PROTO_OTEL_LOGS`) - Also export log events as OTLP logs.
-- `--otel-service-name <name>` (`PROTO_OTEL_SERVICE_NAME`) - The service name to report.
+- `--otel-service-name <name>` (`PROTO_OTEL_SERVICE_NAME`) - The service name to report. If not
+  provided, the standard `OTEL_SERVICE_NAME` environment variable is used.
+  <VersionLabel version="0.59.0" />
 
 The OTLP destination and transport are configured using the standard `OTEL_EXPORTER_OTLP_*`
 environment variables, like `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
 ```shell
+$ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+$ proto --otel install node
+```
+
+### Transports<VersionLabel version="0.59.0" />
+
+OTLP payloads can be delivered over HTTP (`http/protobuf`) or gRPC (`grpc`). The transport is
+selected with the standard environment variables, where the per-signal variable takes precedence
+over the generic one:
+
+- `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`, `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`,
+  `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL` - The transport for an individual signal.
+- `OTEL_EXPORTER_OTLP_PROTOCOL` - The transport for all signals. When not set, defaults to
+  `http/protobuf`.
+
+The same precedence applies to endpoints, using `OTEL_EXPORTER_OTLP_ENDPOINT` and the per-signal
+`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (and friends) variables. When an endpoint starts with
+`https://`, TLS is enabled, and the collector's certificate is verified against the operating
+system's trust store.
+
+```shell
+# OTLP over gRPC
+$ export OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
 $ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 $ proto --otel install node
 ```
+
+:::caution
+
+The HTTP transport and TLS support are currently considered experimental.
+
+:::
+
+### Disabling signals<VersionLabel version="0.59.0" />
+
+The standard environment variables can also force signals off, even when the options above have
+enabled them. `OTEL_SDK_DISABLED=true` disables all signals, while `OTEL_TRACES_EXPORTER=none`,
+`OTEL_METRICS_EXPORTER=none`, and `OTEL_LOGS_EXPORTER=none` disable an individual signal. These
+variables can only disable a signal, never enable one.
 
 ### Metrics
 

@@ -63,8 +63,9 @@ designed for — calendar versions, partial versions, and tool-specific quirks. 
 been a constant source of edge cases, so in this release, we threw it all away and wrote a custom
 grammar-based parser designed for how proto actually consumes versions.
 
-What does this unlock? For starters, first-class version scopes: a named prefix attached to a
-version or requirement, such as `openjdk-21.0.2`, `zulu-26`, or `pypy-2.1`. Scopes are what power
+What does this unlock? For starters, first-class
+[version scopes](/docs/proto/tool-spec#version-scopes): a named prefix attached to a version or
+requirement, such as `openjdk-21.0.2`, `zulu-26`, or `pypy-2.1`. Scopes are what power
 Java distributions above, are passed through the WASM plugin API for any plugin to consume, and
 remote version lists are now cached per scope.
 
@@ -112,10 +113,11 @@ This release fixes two long-standing `PATH` issues in `proto run` and shim execu
 
 ### Calendar version build segments
 
-As part of the new parser, the proto-specific underscore "micro/build" segment has been removed
-from calendar versions. Use standard build metadata instead.
+As part of the new parser, the proto-specific "micro" build segment (dot or underscore separated)
+has been removed from calendar versions. Use standard build metadata instead.
 
 ```
+2024-02-26.123          ->  2024-02-26+123
 2024-02-26_123-alpha.0  ->  2024-02-26-alpha.0+123
 ```
 

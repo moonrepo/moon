@@ -33,7 +33,7 @@ $DownloadUrl = if ($Version -eq "latest") {
 
 $HomeDir = if ($env:MOON_HOME) {
   $env:MOON_HOME
-} else if ($env:XDG_DATA_HOME) {
+} elseif ($env:XDG_DATA_HOME) {
   "$($env:XDG_DATA_HOME)\moon"
 } else {
   "${Home}\.moon"

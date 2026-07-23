@@ -31,7 +31,7 @@ $DownloadUrl = if ($Version -eq "latest") {
 
 $HomeDir = if ($env:PROTO_HOME) {
   $env:PROTO_HOME
-} else if ($env:XDG_DATA_HOME) {
+} elseif ($env:XDG_DATA_HOME) {
   "$($env:XDG_DATA_HOME)\proto"
 } else {
   "${Home}\.proto"

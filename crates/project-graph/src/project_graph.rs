@@ -34,19 +34,12 @@ pub enum ScopePartition {
 impl ScopePartition {
     /// Return the partition that the provided scope belongs to.
     pub fn of(scope: &DependencyScope) -> ScopePartition {
-        if is_production_scope(scope) {
+        if scope.is_production_group() {
             ScopePartition::Production
         } else {
             ScopePartition::Development
         }
     }
-}
-
-/// Return true if the provided scope belongs to the production partition
-/// (production/peer), and false if the development partition
-/// (development/build/root).
-pub fn is_production_scope(scope: &DependencyScope) -> bool {
-    matches!(scope, DependencyScope::Production | DependencyScope::Peer)
 }
 
 /// Return true if adding an edge from source to target with the provided scope
@@ -59,9 +52,9 @@ pub fn would_cycle_in_scope<N>(
     target: NodeIndex,
     scope: &DependencyScope,
 ) -> bool {
-    let partition = is_production_scope(scope);
+    let partition = scope.is_production_group();
     let partitioned_graph = EdgeFiltered::from_fn(graph, |edge| {
-        is_production_scope(edge.weight()) == partition
+        edge.weight().is_production_group() == partition
     });
 
     has_path_connecting(&partitioned_graph, target, source, None)
@@ -348,7 +341,7 @@ impl ProjectGraph {
         for edge in graph.edge_references() {
             let scope = *edge.weight();
 
-            let partitioned_graph = if is_production_scope(&scope) {
+            let partitioned_graph = if scope.is_production_group() {
                 &mut production_graph
             } else {
                 &mut development_graph
@@ -574,12 +567,6 @@ mod tests {
 
     #[test]
     fn routes_scopes_into_expected_partitions() {
-        assert!(is_production_scope(&DependencyScope::Production));
-        assert!(is_production_scope(&DependencyScope::Peer));
-        assert!(!is_production_scope(&DependencyScope::Build));
-        assert!(!is_production_scope(&DependencyScope::Development));
-        assert!(!is_production_scope(&DependencyScope::Root));
-
         assert_eq!(
             ScopePartition::of(&DependencyScope::Production),
             ScopePartition::Production

@@ -48,8 +48,8 @@ export interface CodeownersConfig {
 	 */
 	orderBy: CodeownersOrderBy;
 	/**
-	 * Bitbucket and GitLab only. The number of approvals required for the
-	 * request to be satisfied. This will be applied to all paths.
+	 * `bitbucket-legacy` and GitLab only. The number of approvals required
+	 * for the request to be satisfied. This will be applied to all paths.
 	 * @since 1.28.0
 	 */
 	requiredApprovals?: number | null;
@@ -608,6 +608,8 @@ export interface VcsConfig {
 	sync?: boolean;
 }
 
+export type Requirement = string;
+
 /**
  * Configures all aspects of the moon workspace.
  * Docs: https://moonrepo.dev/docs/config/workspace
@@ -694,7 +696,7 @@ export interface WorkspaceConfig {
 	 */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
-	versionConstraint?: string | null;
+	versionConstraint?: Requirement | null;
 }
 
 /** Configures aspects of the content-addressable storage (CAS) cache. */
@@ -737,8 +739,8 @@ export interface PartialCodeownersConfig {
 	 */
 	orderBy?: CodeownersOrderBy | null;
 	/**
-	 * Bitbucket and GitLab only. The number of approvals required for the
-	 * request to be satisfied. This will be applied to all paths.
+	 * `bitbucket-legacy` and GitLab only. The number of approvals required
+	 * for the request to be satisfied. This will be applied to all paths.
 	 * @since 1.28.0
 	 */
 	requiredApprovals?: number | null;
@@ -1339,5 +1341,5 @@ export interface PartialWorkspaceConfig {
 	 */
 	vcs?: PartialVcsConfig | null;
 	/** Requires a specific version of the `moon` binary. */
-	versionConstraint?: string | null;
+	versionConstraint?: Requirement | null;
 }

@@ -9,7 +9,7 @@ pub enum GitError {
     #[error("Invalid or unsupported git version.")]
     InvalidVersion {
         #[source]
-        error: Box<semver::Error>,
+        error: Box<version_spec::SpecError>,
     },
 
     #[diagnostic(code(git::ignore::load_failed))]

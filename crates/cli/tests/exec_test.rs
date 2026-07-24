@@ -2242,7 +2242,7 @@ mod exec {
 
         fn untar(tarball: &Path, root: &Path) {
             starbase_archive::Archiver::new(root, tarball)
-                .unpack(starbase_archive::tar::TarUnpacker::new_gz)
+                .unpack_from_ext()
                 .unwrap();
         }
 

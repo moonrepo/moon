@@ -61,7 +61,7 @@ clap = { workspace = true, features = [
   "wrap_help",
 ] }
 clap_complete = { workspace = true }
-clap_complete_nushell = "4.6.0"
+clap_complete_nushell = "4.6.1"
 convert_case = { workspace = true }
 diff = "0.1.13"
 indexmap = { workspace = true }
@@ -76,7 +76,6 @@ schematic = { workspace = true, features = [
   "schema",
   "renderer_template",
 ] }
-semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }
 starbase_archive = { workspace = true }
@@ -91,9 +90,10 @@ starbase_utils = { workspace = true, features = [
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+version_spec = { workspace = true }
 
 # Visualizer
-open = "5.3.6"
+open = "5.4.0"
 petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"

@@ -25,7 +25,6 @@ pub use inherited_tasks_manager::*;
 pub use project::*;
 pub use project_config::*;
 pub use schematic;
-pub use semver::{Version, VersionReq};
 pub use shapes::*;
 pub use task::*;
 pub use task_config::*;
@@ -34,7 +33,7 @@ pub use template::*;
 pub use template_config::*;
 pub use toolchain::*;
 pub use toolchains_config::*;
-pub use version_spec::{CalVer, SemVer, UnresolvedVersionSpec, VersionSpec};
+pub use version_spec::{Range, Requirement, UnresolvedVersionSpec, Version, VersionSpec};
 pub use workspace::*;
 pub use workspace_config::*;
 

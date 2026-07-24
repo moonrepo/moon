@@ -28,7 +28,6 @@ use moon_vcs::{BoxedVcs, git::Git};
 use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync, WorkspaceBuilderContext};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
-use semver::Version;
 use starbase::{AppResult, AppSession};
 use std::env;
 use std::fmt;
@@ -37,6 +36,7 @@ use std::sync::{Arc, OnceLock};
 use tokio::sync::OnceCell;
 use tokio::try_join;
 use tracing::debug;
+use version_spec::Version;
 
 pub type SessionResult = AppResult<miette::Report>;
 

@@ -295,5 +295,5 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         return Ok(ExitCode::from(BROKEN_PIPE_EXIT_CODE));
     }
 
-    outcome.into_exit_result()
+    outcome.into_miette_result()
 }

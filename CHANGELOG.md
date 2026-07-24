@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added OpenTelemetry (OTEL) support, for exporting traces and logs over OTLP.
+  - Added a `--otel` global option (`MOON_OTEL`), for exporting traces.
+  - Added a `--otel-logs` global option (`MOON_OTEL_LOGS`), for exporting log events as OTLP logs.
+  - Added a `--otel-service-name` global option (`MOON_OTEL_SERVICE_NAME`), for the reported service
+    name.
+  - The destination and transport are configured with the standard `OTEL_EXPORTER_OTLP_*`
+    environment variables.
+
 #### ⚙️ Internal
 
 - Updated proto to [v0.59.0](https://github.com/moonrepo/proto/releases/tag/v0.59.0) from 0.58.2.

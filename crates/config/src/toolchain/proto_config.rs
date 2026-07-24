@@ -2,7 +2,7 @@ use crate::config_struct;
 use schematic::{Config, DefaultValueResult};
 use version_spec::VersionSpec;
 
-pub const PROTO_CLI_VERSION: &str = "0.58.2";
+pub const PROTO_CLI_VERSION: &str = "0.59.0";
 
 fn default_version(_: &()) -> DefaultValueResult<VersionSpec> {
     Ok(VersionSpec::parse(PROTO_CLI_VERSION).ok())

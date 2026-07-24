@@ -6,8 +6,8 @@ use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements}
 use moon_affected::{AffectedBy, DownstreamScope, UpstreamScope};
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    EnvMap, PROTO_CLI_VERSION, PipelineActionSwitch, SemVer, TaskDependencyConfig,
-    TaskOptionRunInCI, UnresolvedVersionSpec, Version, VersionSpec,
+    EnvMap, PROTO_CLI_VERSION, PipelineActionSwitch, TaskDependencyConfig, TaskOptionRunInCI,
+    UnresolvedVersionSpec, Version, VersionSpec,
 };
 use moon_exec_plan::{ExecutionPlan, GraphBlock, TargetsBlock};
 use moon_graph_utils::*;
@@ -31,7 +31,7 @@ fn create_proto_version() -> VersionSpec {
 }
 
 fn create_unresolved_version(version: Version) -> UnresolvedVersionSpec {
-    UnresolvedVersionSpec::Semantic(SemVer(version))
+    UnresolvedVersionSpec::Version(version)
 }
 
 fn create_node_spec() -> ToolchainSpec {

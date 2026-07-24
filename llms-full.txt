@@ -21917,15 +21917,53 @@ This is opt-in, and enabled with the following global options (or environment va
 
 - `--otel` (`PROTO_OTEL`) - Export traces and metrics over OTLP.
 - `--otel-logs` (`PROTO_OTEL_LOGS`) - Also export log events as OTLP logs.
-- `--otel-service-name <name>` (`PROTO_OTEL_SERVICE_NAME`) - The service name to report.
+- `--otel-service-name <name>` (`PROTO_OTEL_SERVICE_NAME`) - The service name to report. If not
+  provided, the standard `OTEL_SERVICE_NAME` environment variable is used.
+  <VersionLabel version="0.59.0" />
 
 The OTLP destination and transport are configured using the standard `OTEL_EXPORTER_OTLP_*`
 environment variables, like `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
 ```shell
+$ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+$ proto --otel install node
+```
+
+### Transports<VersionLabel version="0.59.0" />
+
+OTLP payloads can be delivered over HTTP (`http/protobuf`) or gRPC (`grpc`). The transport is
+selected with the standard environment variables, where the per-signal variable takes precedence
+over the generic one:
+
+- `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`, `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`,
+  `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL` - The transport for an individual signal.
+- `OTEL_EXPORTER_OTLP_PROTOCOL` - The transport for all signals. When not set, defaults to
+  `http/protobuf`.
+
+The same precedence applies to endpoints, using `OTEL_EXPORTER_OTLP_ENDPOINT` and the per-signal
+`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (and friends) variables. When an endpoint starts with
+`https://`, TLS is enabled, and the collector's certificate is verified against the operating
+system's trust store.
+
+```shell
+# OTLP over gRPC
+$ export OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
 $ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 $ proto --otel install node
 ```
+
+:::caution
+
+The HTTP transport and TLS support are currently considered experimental.
+
+:::
+
+### Disabling signals<VersionLabel version="0.59.0" />
+
+The standard environment variables can also force signals off, even when the options above have
+enabled them. `OTEL_SDK_DISABLED=true` disables all signals, while `OTEL_TRACES_EXPORTER=none`,
+`OTEL_METRICS_EXPORTER=none`, and `OTEL_LOGS_EXPORTER=none` disable an individual signal. These
+variables can only disable a signal, never enable one.
 
 ### Metrics
 
@@ -22059,7 +22097,9 @@ tool = "1.2.3"
 ### Guidelines
 
 - major, minor, patch - `0-9` of any length
-- pre, build - `a-z`, `0-9`, `-`, `.`
+- pre, build - `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`
+  - Must start with a letter or number.
+- A leading `v` or `V` prefix is accepted and ignored (`v1.2.3`).
 
 > [Learn more about this format!](https://semver.org/#backusnaur-form-grammar-for-valid-semver-versions)
 
@@ -22077,30 +22117,64 @@ tool = "2025-02-26"
 
 - `<year>-<month>` - 2024-02
 - `<year>-<month>-<day>` - 2024-02-26
-- `<year>-<month>-<day>.<build>` - 2024-02-26.123
-- `<year>-<month>-<day>_<build>` - 2024-02-26_123
-- `<year>-<month>-<day>.<build>-<pre>` - 2024-02-26.123-alpha.0
-- `<year>-<month>-<day>_<build>-<pre>` - 2024-02-26_123-alpha.0
 - `<year>-<month>-<day>-<pre>` - 2024-02-26-alpha.0
+- `<year>-<month>-<day>+<build>` - 2024-02-26+123
+- `<year>-<month>-<day>-<pre>+<build>` - 2024-02-26-alpha.0+123
 
 ### Guidelines
 
-- year - `0-9` of 1-4 length
+- year - `0-9` of 2-4 length
   - If the year is not YYYY format, it will use the year 2000 as the base. For example, `24` becomes
     `2024`, and `124` becomes `2124`.
 - month - `0-9` of 1-2 length
   - Supports with and without a leading zero (`02` vs `2`).
   - Does not support invalid months (`0` or `13`).
 - day - `0-9` of 1-2 length
-  - Can be omitted, even with build/pre.
+  - Can be omitted, even with pre/build.
   - Supports with and without a leading zero (`02` vs `2`).
   - Does not support invalid days (`0` or `32`).
-- build - `0-9` of any length
-  - Also known as a "micro" number.
-  - The leading dot `.` format is preferred.
-- pre - `a-z`, `0-9`, `-`, `.`
+- pre - `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`
+  - Must start with a letter, so that it is not mistaken for a day number.
+- build - `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`
+  - Uses the same `+` prefixed build metadata syntax as semver.
+- A leading `v` or `V` prefix is accepted and ignored (`v2024-02`).
+
+:::caution
+
+The dot (`2024-02-26.123`) and underscore (`2024-02-26_123`) suffixed "micro" build segments from
+older proto versions were removed in v0.59. Use build metadata instead, for example
+`2024-02-26+123`.
+
+:::
 
 > [Learn more about this format!](https://calver.org/#scheme)
+
+## Version scopes<VersionLabel version="0.59.0" />
+
+Both version formats support an optional scope, which is a named prefix attached to the version
+with a dash. What a scope represents is defined by each tool's plugin — for example, the built-in
+Java plugin uses scopes to choose a [distribution vendor](./tools) — but the format itself is
+universal.
+
+```toml title=".prototools"
+java = "openjdk-21.0.2"
+jdk = "temurin-21"
+```
+
+### Syntax
+
+- `<scope>-<version>` - openjdk-21.0.2, zulu-2026-01-15
+- `<scope>-<requirement>` - temurin-21, ^zulu-26
+
+### Guidelines
+
+- scope - `a-z`, `A-Z`, `0-9`, `-`, `_`, `.`
+  - Must start with a letter or number.
+  - May itself contain dashes, as the scope ends where a valid version or requirement begins. For
+    example, `graalvm-community-24.1.2` is the scope `graalvm-community` with the version `24.1.2`.
+- Scopes also work within [requirements and ranges](#requirements-and-ranges), for example
+  `temurin-21 || zulu-22`.
+- Available version lists are fetched and cached separately for each scope.
 
 ## Requirements and ranges
 
@@ -22117,8 +22191,9 @@ tool-c = ">=2000-10"
 
 ### Syntax
 
-- Requirement - `[<op>]<pattern>` - `1.2.3`, `>4.5`, `~3`, `^2000-10`, etc
-- AND range - `<requirement>[,] <requirement> ...` - `>=1, <2`, `^1.3 <=1.3.9`, etc
+- Requirement - `[<op>]<pattern>` - `1.2.3`, `>4.5`, `~3`, `^2000-10`, `1.x`, etc
+- AND range - `<requirement>[,|&&] <requirement> ...` - `>=1, <2`, `>=1 && <2`, `^1.3 <=1.3.9`,
+  etc
 - OR range - `<requirement> || <requirement> ...` - `^1.2 || ^2.3`, `~2000-10 || ~2010-2`, etc
 
 ### Guidelines
@@ -22130,9 +22205,11 @@ tool-c = ">=2000-10"
     compatible)
   - To specify an _exact_ version, use the `=` operator explicitly.
 - pattern
-  - Dot-separated semver, with optional major and patch numbers.
+  - Dot-separated semver, with optional minor and patch numbers.
   - Dash-separated calver, with optional month and day numbers.
-  - Pre-release and build metadata are only supported when suffixed to full versions.
+  - Numbers may be a wildcard (`*`, `x`, `X`) to match any value, for example `1.x` or `2024-2-*`.
+  - May be prefixed with a [version scope](#version-scopes).
+  - Pre-releases may be suffixed to partial versions, but must start with a letter.
 
 For example, if you want to use `npm` 11.6.2 but 11.6.3 has an issue, use:
 `npm = "^11.6.4 || =11.6.2"`
@@ -36628,3 +36705,137 @@ changes.
 - Updated `--log` level handling: `debug` covers most day-to-day debugging needs, while `trace` now
   includes significantly more detail, geared towards agents and deep diagnostics.
 - Updated proto to [v0.58.2](https://github.com/moonrepo/proto/releases/tag/v0.58.0).
+
+---
+
+## proto v0.59 - Java support, a new version parser, improved OpenTelemetry, and more
+
+In this release, we're shipping one of our most requested tools to date, Java, alongside a
+ground-up rewrite of our version parsing layer that makes it possible.
+
+<!--truncate-->
+
+## Java support
+
+Java has been requested since proto's early days, but between the sheer number of vendors,
+distributions, and packaging formats, it was never a simple plugin to write. Until now, the closest
+workaround was the `asdf` backend, which doesn't work on Windows. That changes today, as proto now
+ships with a built-in Java plugin, powered by the [foojay.io Disco API](https://foojay.io/)!
+
+The plugin is available through 3 tool identifiers: `java` or `jdk` for the full development kit,
+and `jre` for the slimmer runtime-only package.
+
+```shell
+$ proto install java
+$ proto install jre 21
+```
+
+On top of installing Java itself (with shims for `java`, `javac`, and `jar`), the plugin will
+detect versions from `.java-version` and `.sdkmanrc` files (easing migration from other version
+managers), and will export `JAVA_HOME` for
+[activated shells](/docs/proto/commands/activate).
+
+### Choosing a distribution
+
+Java isn't a single tool with a single publisher — it's an ecosystem of vendors, each shipping
+their own builds. By default, the plugin installs the `openjdk` distribution (Oracle OpenJDK
+builds), but you can choose another by prefixing the version with a scope:
+
+```toml title=".prototools"
+jdk = "temurin-21"
+```
+
+Over 30 distributions are supported through the Disco API, including Temurin, Zulu, Corretto,
+Liberica, GraalVM, Microsoft, SapMachine, Semeru, Kona, Dragonwell, and more. Common
+[SDKMAN!](https://sdkman.io/) shorthands (`tem`, `amzn`, `librca`, etc) are also accepted, both in
+version specifications and in `.sdkmanrc` files.
+
+And lastly, if you need early access builds instead of general availability, or want to route
+through a self-hosted Disco API, the plugin supports both:
+
+```toml title=".prototools"
+[tools.java]
+api-url = "https://custom-foojay.hosted.com/disco/v3.0"
+release-type = "ea"
+```
+
+## A new version specification parser
+
+Since its inception, proto has parsed versions with the [`semver`](https://crates.io/crates/semver)
+crate, wrapped in layers of regex and string munging to squeeze in everything that crate wasn't
+designed for — calendar versions, partial versions, and tool-specific quirks. This approach has
+been a constant source of edge cases, so in this release, we threw it all away and wrote a custom
+grammar-based parser designed for how proto actually consumes versions.
+
+What does this unlock? For starters, first-class
+[version scopes](/docs/proto/tool-spec#version-scopes): a named prefix attached to a version or
+requirement, such as `openjdk-21.0.2`, `zulu-26`, or `pypy-2.1`. Scopes are what power
+Java distributions above, are passed through the WASM plugin API for any plugin to consume, and
+remote version lists are now cached per scope.
+
+Beyond scopes, the new parser brings consistency to both versioning schemes:
+
+- [Semantic versions](/docs/proto/tool-spec#semantic-versions) and
+  [calendar versions](/docs/proto/tool-spec#calendar-versions) now support the same features:
+  pre-releases, build metadata (`+123`), leading `v` prefixes, and
+  [requirements and ranges](/docs/proto/tool-spec#requirements-and-ranges) (`^`, `~`, comparison
+  operators, wildcards, `&&`, `||`).
+- Calendar versions are parsed with dash separators exclusively, so ambiguous values like `24.12`
+  are always treated as semantic versions.
+- Better error messages when a version fails to parse, instead of cryptic `semver` errors.
+
+## OpenTelemetry improvements
+
+We introduced [OpenTelemetry support](./proto-v0.58#opentelemetry-support) in the last release,
+with traces, metrics, and logs exported over gRPC. In this release, we've expanded the
+implementation:
+
+- Added experimental HTTP transport support, enabled with
+  `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`.
+- Added experimental TLS support for both HTTP and gRPC transports.
+- Added support for the standard `OTEL_SERVICE_NAME`, `OTEL_*_EXPORTER`,
+  `OTEL_EXPORTER_OTLP_*_PROTOCOL`, and `OTEL_EXPORTER_OTLP_*_ENDPOINT` environment variables
+  (including their signal-specific variants).
+
+If your environment already configures OTEL exporters through these variables, proto will now
+respect them out of the box.
+
+## Smarter `PATH` handling in shims
+
+This release fixes two long-standing `PATH` issues in `proto run` and shim executions:
+
+- When a tool requires another tool to function (npm requires node), the required tool's paths were
+  placed _before_ the paths of the tool being ran. For example, `npm run` scripts that execute
+  `npm` would resolve node's bundled npm, instead of the npm version managed by proto. The tool
+  being ran now takes precedence.
+- When falling back to a global executable on `PATH`, proto could recursively execute forever if
+  that executable was itself a proto shim from _another store_ (typically caused by `HOME` or
+  `PROTO_HOME` changing, or symlinked paths). We now skip shims from foreign stores during the
+  lookup, and detect and error on the loop instead of hanging.
+
+## Breaking changes
+
+### Calendar version build segments
+
+As part of the new parser, the proto-specific "micro" build segment (dot or underscore separated)
+has been removed from calendar versions. Use standard build metadata instead.
+
+```
+2024-02-26.123          ->  2024-02-26+123
+2024-02-26_123-alpha.0  ->  2024-02-26-alpha.0+123
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.59.0) for a full
+list of changes.
+
+- Added `bzip2`, `xz`, and `z` codec support for self-compressed binaries (not packed with tar or
+  zip), as well as `.tar.Z` (LZW) archive support.
+- Updated archive unpacking to be streamed when applicable, reducing memory usage.
+- Updated offline detection to take AI agent firewall policies into account. If networking is
+  disabled, we mark as offline, otherwise if it's open or filtered, we mark it as online.
+- Fixed an issue where `proto clean` would not recursively clean certain directories.
+- Fixed an issue where we didn't check for an internet connection when downloading a plugin from an
+  OCI registry or GitHub.
+- Updated Rust to v1.97.

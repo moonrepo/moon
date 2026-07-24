@@ -61,8 +61,16 @@ else
 	download_url="https://github.com/moonrepo/moon/releases/download/v${version}/${target}"
 fi
 
+if [[ -n "$MOON_HOME" ]]; then
+	home_dir="$MOON_HOME"
+elif [[ -n "$XDG_DATA_HOME" ]]; then
+	home_dir="$XDG_DATA_HOME/moon"
+else
+	home_dir="$HOME/.moon"
+fi
+
 if [ -z "$MOON_INSTALL_DIR" ]; then
-	install_dir="$HOME/.moon/bin"
+	install_dir="$home_dir/bin"
 else
 	install_dir="$MOON_INSTALL_DIR"
 fi

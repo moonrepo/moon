@@ -2,11 +2,124 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-07-05T00:00:00.000Z</updated>
+    <updated>2026-07-23T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.59 - Java support, a new version parser, improved OpenTelemetry, and more]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.59</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.59"/>
+        <updated>2026-07-23T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[In this release, we're shipping one of our most requested tools to date, Java, alongside a]]></summary>
+        <content type="html"><![CDATA[<p>In this release, we're shipping one of our most requested tools to date, Java, alongside a
+ground-up rewrite of our version parsing layer that makes it possible.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="java-support">Java support<a href="https://moonrepo.dev/blog/proto-v0.59#java-support" class="hash-link" aria-label="Direct link to Java support" title="Direct link to Java support" translate="no">​</a></h2>
+<p>Java has been requested since proto's early days, but between the sheer number of vendors,
+distributions, and packaging formats, it was never a simple plugin to write. Until now, the closest
+workaround was the <code>asdf</code> backend, which doesn't work on Windows. That changes today, as proto now
+ships with a built-in Java plugin, powered by the <a href="https://foojay.io/" target="_blank" rel="noopener noreferrer" class="">foojay.io Disco API</a>!</p>
+<p>The plugin is available through 3 tool identifiers: <code>java</code> or <code>jdk</code> for the full development kit,
+and <code>jre</code> for the slimmer runtime-only package.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">java</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> jre </span><span class="token number" style="color:#94dded">21</span><br></div></code></pre></div></div>
+<p>On top of installing Java itself (with shims for <code>java</code>, <code>javac</code>, and <code>jar</code>), the plugin will
+detect versions from <code>.java-version</code> and <code>.sdkmanrc</code> files (easing migration from other version
+managers), and will export <code>JAVA_HOME</code> for
+<a class="" href="https://moonrepo.dev/docs/proto/commands/activate">activated shells</a>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="choosing-a-distribution">Choosing a distribution<a href="https://moonrepo.dev/blog/proto-v0.59#choosing-a-distribution" class="hash-link" aria-label="Direct link to Choosing a distribution" title="Direct link to Choosing a distribution" translate="no">​</a></h3>
+<p>Java isn't a single tool with a single publisher — it's an ecosystem of vendors, each shipping
+their own builds. By default, the plugin installs the <code>openjdk</code> distribution (Oracle OpenJDK
+builds), but you can choose another by prefixing the version with a scope:</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">jdk</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"temurin-21"</span><br></div></code></pre></div></div>
+<p>Over 30 distributions are supported through the Disco API, including Temurin, Zulu, Corretto,
+Liberica, GraalVM, Microsoft, SapMachine, Semeru, Kona, Dragonwell, and more. Common
+<a href="https://sdkman.io/" target="_blank" rel="noopener noreferrer" class="">SDKMAN!</a> shorthands (<code>tem</code>, <code>amzn</code>, <code>librca</code>, etc) are also accepted, both in
+version specifications and in <code>.sdkmanrc</code> files.</p>
+<p>And lastly, if you need early access builds instead of general availability, or want to route
+through a self-hosted Disco API, the plugin supports both:</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.java</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">api-url</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://custom-foojay.hosted.com/disco/v3.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">release-type</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"ea"</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="a-new-version-specification-parser">A new version specification parser<a href="https://moonrepo.dev/blog/proto-v0.59#a-new-version-specification-parser" class="hash-link" aria-label="Direct link to A new version specification parser" title="Direct link to A new version specification parser" translate="no">​</a></h2>
+<p>Since its inception, proto has parsed versions with the <a href="https://crates.io/crates/semver" target="_blank" rel="noopener noreferrer" class=""><code>semver</code></a>
+crate, wrapped in layers of regex and string munging to squeeze in everything that crate wasn't
+designed for — calendar versions, partial versions, and tool-specific quirks. This approach has
+been a constant source of edge cases, so in this release, we threw it all away and wrote a custom
+grammar-based parser designed for how proto actually consumes versions.</p>
+<p>What does this unlock? For starters, first-class
+<a class="" href="https://moonrepo.dev/docs/proto/tool-spec#version-scopes">version scopes</a>: a named prefix attached to a version or
+requirement, such as <code>openjdk-21.0.2</code>, <code>zulu-26</code>, or <code>pypy-2.1</code>. Scopes are what power
+Java distributions above, are passed through the WASM plugin API for any plugin to consume, and
+remote version lists are now cached per scope.</p>
+<p>Beyond scopes, the new parser brings consistency to both versioning schemes:</p>
+<ul>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/tool-spec#semantic-versions">Semantic versions</a> and
+<a class="" href="https://moonrepo.dev/docs/proto/tool-spec#calendar-versions">calendar versions</a> now support the same features:
+pre-releases, build metadata (<code>+123</code>), leading <code>v</code> prefixes, and
+<a class="" href="https://moonrepo.dev/docs/proto/tool-spec#requirements-and-ranges">requirements and ranges</a> (<code>^</code>, <code>~</code>, comparison
+operators, wildcards, <code>&amp;&amp;</code>, <code>||</code>).</li>
+<li class="">Calendar versions are parsed with dash separators exclusively, so ambiguous values like <code>24.12</code>
+are always treated as semantic versions.</li>
+<li class="">Better error messages when a version fails to parse, instead of cryptic <code>semver</code> errors.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="opentelemetry-improvements">OpenTelemetry improvements<a href="https://moonrepo.dev/blog/proto-v0.59#opentelemetry-improvements" class="hash-link" aria-label="Direct link to OpenTelemetry improvements" title="Direct link to OpenTelemetry improvements" translate="no">​</a></h2>
+<p>We introduced <a class="" href="https://moonrepo.dev/blog/proto-v0.58#opentelemetry-support">OpenTelemetry support</a> in the last release,
+with traces, metrics, and logs exported over gRPC. In this release, we've expanded the
+implementation:</p>
+<ul>
+<li class="">Added experimental HTTP transport support, enabled with
+<code>OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf</code>.</li>
+<li class="">Added experimental TLS support for both HTTP and gRPC transports.</li>
+<li class="">Added support for the standard <code>OTEL_SERVICE_NAME</code>, <code>OTEL_*_EXPORTER</code>,
+<code>OTEL_EXPORTER_OTLP_*_PROTOCOL</code>, and <code>OTEL_EXPORTER_OTLP_*_ENDPOINT</code> environment variables
+(including their signal-specific variants).</li>
+</ul>
+<p>If your environment already configures OTEL exporters through these variables, proto will now
+respect them out of the box.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="smarter-path-handling-in-shims">Smarter <code>PATH</code> handling in shims<a href="https://moonrepo.dev/blog/proto-v0.59#smarter-path-handling-in-shims" class="hash-link" aria-label="Direct link to smarter-path-handling-in-shims" title="Direct link to smarter-path-handling-in-shims" translate="no">​</a></h2>
+<p>This release fixes two long-standing <code>PATH</code> issues in <code>proto run</code> and shim executions:</p>
+<ul>
+<li class="">When a tool requires another tool to function (npm requires node), the required tool's paths were
+placed <em>before</em> the paths of the tool being ran. For example, <code>npm run</code> scripts that execute
+<code>npm</code> would resolve node's bundled npm, instead of the npm version managed by proto. The tool
+being ran now takes precedence.</li>
+<li class="">When falling back to a global executable on <code>PATH</code>, proto could recursively execute forever if
+that executable was itself a proto shim from <em>another store</em> (typically caused by <code>HOME</code> or
+<code>PROTO_HOME</code> changing, or symlinked paths). We now skip shims from foreign stores during the
+lookup, and detect and error on the loop instead of hanging.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="breaking-changes">Breaking changes<a href="https://moonrepo.dev/blog/proto-v0.59#breaking-changes" class="hash-link" aria-label="Direct link to Breaking changes" title="Direct link to Breaking changes" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="calendar-version-build-segments">Calendar version build segments<a href="https://moonrepo.dev/blog/proto-v0.59#calendar-version-build-segments" class="hash-link" aria-label="Direct link to Calendar version build segments" title="Direct link to Calendar version build segments" translate="no">​</a></h3>
+<p>As part of the new parser, the proto-specific "micro" build segment (dot or underscore separated)
+has been removed from calendar versions. Use standard build metadata instead.</p>
+<div class="language-text codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-text codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">2024-02-26.123          -&gt;  2024-02-26+123</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">2024-02-26_123-alpha.0  -&gt;  2024-02-26-alpha.0+123</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.59#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.59.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full
+list of changes.</p>
+<ul>
+<li class="">Added <code>bzip2</code>, <code>xz</code>, and <code>z</code> codec support for self-compressed binaries (not packed with tar or
+zip), as well as <code>.tar.Z</code> (LZW) archive support.</li>
+<li class="">Updated archive unpacking to be streamed when applicable, reducing memory usage.</li>
+<li class="">Updated offline detection to take AI agent firewall policies into account. If networking is
+disabled, we mark as offline, otherwise if it's open or filtered, we mark it as online.</li>
+<li class="">Fixed an issue where <code>proto clean</code> would not recursively clean certain directories.</li>
+<li class="">Fixed an issue where we didn't check for an internet connection when downloading a plugin from an
+OCI registry or GitHub.</li>
+<li class="">Updated Rust to v1.97.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="java" term="java"/>
+        <category label="jdk" term="jdk"/>
+        <category label="jre" term="jre"/>
+        <category label="foojay" term="foojay"/>
+        <category label="versions" term="versions"/>
+        <category label="semver" term="semver"/>
+        <category label="calver" term="calver"/>
+        <category label="scopes" term="scopes"/>
+        <category label="otel" term="otel"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[moon v2.4 - Task checks, Ruby toolchain, storage APIs, and much more]]></title>
         <id>https://moonrepo.dev/blog/moon-v2.4</id>
@@ -2037,119 +2150,5 @@ toolchains, please ping us in Discord!</p>
         <category label="rust" term="rust"/>
         <category label="mcp" term="mcp"/>
         <category label="ai" term="ai"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[moon v1.36 - Toolchain plugins beta, optimized remote caching, and codegen improvements]]></title>
-        <id>https://moonrepo.dev/blog/moon-v1.36</id>
-        <link href="https://moonrepo.dev/blog/moon-v1.36"/>
-        <updated>2025-05-18T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're very excited to fully release toolchain plugins!]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're very excited to fully release toolchain plugins!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="beta-release-of-toolchain-wasm-plugins">Beta release of toolchain WASM plugins<a href="https://moonrepo.dev/blog/moon-v1.36#beta-release-of-toolchain-wasm-plugins" class="hash-link" aria-label="Direct link to Beta release of toolchain WASM plugins" title="Direct link to Beta release of toolchain WASM plugins" translate="no">​</a></h2>
-<p>Two months ago we announced <a class="" href="https://moonrepo.dev/blog/moon-v1.33">alpha toolchain plugins</a> with support for tier 3, but not
-tier 2. The reason for this was that tier 3 is powered by <a class="" href="https://moonrepo.dev/docs/proto/wasm-plugin">proto APIs</a>,
-which already existed! We simply hooked them up to moon. The bulk of the remaining plugin work was
-tier 2 support, which we are excited to announce has been completed! The following APIs have been
-implemented:</p>
-<ul>
-<li class=""><code>extend_project_graph</code> - Extend projects with toolchain specific info.</li>
-<li class=""><code>extend_task_command</code> - Extend the command child process with parameters.</li>
-<li class=""><code>extend_task_script</code> - Extend the script child process with parameters.</li>
-<li class=""><code>locate_dependencies_root</code> - Locate the package dependencies workspace root.</li>
-<li class=""><code>parse_manifest</code> - Parse a manifest file to extract dependencies.</li>
-<li class=""><code>parse_lock</code> - Parse a lock file to extract resolved dependencies.</li>
-</ul>
-<p>And the following surface areas have been integrated with:</p>
-<ul>
-<li class="">In the project graph:<!-- -->
-<ul>
-<li class="">Extend projects with dependencies, tasks, and an alias.</li>
-</ul>
-</li>
-<li class="">In the action pipeline:<!-- -->
-<ul>
-<li class="">Added <code>SetupEnvironment</code> action that executes the <code>setup_environment</code> API.</li>
-<li class="">Added <code>InstallDependencies</code> action that executes the <code>install_dependencies</code> API.</li>
-</ul>
-</li>
-<li class="">When running tasks:<!-- -->
-<ul>
-<li class="">Extend the command/script with additional parameters before executing.</li>
-<li class="">Inject dependency and lock information into the hash.</li>
-</ul>
-</li>
-<li class="">With Docker:<!-- -->
-<ul>
-<li class="">Updated <code>docker prune</code> to utilize the new WASM APIs for toolchain plugins.</li>
-</ul>
-</li>
-</ul>
-<p>As of this release, all 27 APIs have been implemented, and toolchain plugins are now available for
-general use! However, they are still quite unstable, not fully tested, and the APIs may change
-between releases, but you can start using them today if you're feeling adventurous!</p>
-<p>With all this said, we do not have documentation yet. We plan to slowly work on this across the next
-few releases. In the meantime, check out the following resources for more information:</p>
-<ul>
-<li class=""><a href="https://docs.rs/moon_pdk/" target="_blank" rel="noopener noreferrer" class=""><code>moon_pdk</code></a> - Rust plugin development kit.</li>
-<li class="">Existing <a href="https://github.com/moonrepo/plugins/tree/master/toolchains" target="_blank" rel="noopener noreferrer" class="">toolchain plugins</a>.</li>
-<li class="">In development <a href="https://github.com/moonrepo/plugins/pull/48" target="_blank" rel="noopener noreferrer" class="">Rust toolchain</a>.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="optimized-remote-caching">Optimized remote caching<a href="https://moonrepo.dev/blog/moon-v1.36#optimized-remote-caching" class="hash-link" aria-label="Direct link to Optimized remote caching" title="Direct link to Optimized remote caching" translate="no">​</a></h2>
-<p>Like the past few releases, we've made some improvements to the remote caching layer.</p>
-<p>To start, we're adding a new
-<a class="" href="https://moonrepo.dev/docs/config/workspace#verifyintegrity"><code>unstable_remote.cache.verifyIntegrity</code></a> setting, that will
-verify the digest (hash) of downloaded blobs to ensure they aren't corrupted or incomplete. We
-currently check the file size, but this will also now check the content. This setting will slightly
-degrade performance but ensure reliability.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_remote</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">cache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">verifyIntegrity</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
-<p>While we're on the topic of reliability, we're also introducing an implicit rollback mechanic that
-will remove partially downloaded or incomplete blobs if hydration ever fails at some point. This
-will also run between executions to ensure there are no stale artifacts lying around.</p>
-<p>And lastly, we've parallelized the blob existence checks, reducing the amount of large requests for
-heavy tasks, and reworked how we inherit <code>MOON_REMOTE_*</code> environment variables.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="improved-code-generation">Improved code generation<a href="https://moonrepo.dev/blog/moon-v1.36#improved-code-generation" class="hash-link" aria-label="Direct link to Improved code generation" title="Direct link to Improved code generation" translate="no">​</a></h2>
-<p>It's been a while since we've added new features to code generation, but thanks to some great
-requests from the community, we have 2 this release!</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="archive-urls">Archive URLs<a href="https://moonrepo.dev/blog/moon-v1.36#archive-urls" class="hash-link" aria-label="Direct link to Archive URLs" title="Direct link to Archive URLs" translate="no">​</a></h3>
-<p>The first is that <a class="" href="https://moonrepo.dev/docs/guides/codegen#archive-urls">remote archives</a> (zip, tar, etc) can be used
-as template locations. The archive will then be downloaded and unpacked into <code>~/.moon/templates</code>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">generator</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">templates</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'https://domain.com/some/path/to/archive.zip'</span><br></div></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="array-and-object-types">Array and object types<a href="https://moonrepo.dev/blog/moon-v1.36#array-and-object-types" class="hash-link" aria-label="Direct link to Array and object types" title="Direct link to Array and object types" translate="no">​</a></h3>
-<p>The second is that we now support <code>array</code> and <code>object</code>
-<a class="" href="https://moonrepo.dev/docs/config/template#variables">variable types</a> in <code>template.yml</code>. The values within each of these
-collections can be any JSON-compatible type.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">template.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">variables</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'array'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">prompt</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'Type?'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">default</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'app'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'lib'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">metadata</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">type</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'object'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">prompt</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'Metadata?'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">default</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token key atrule">internal</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
-<p>These variables and their nested values can then be accessed within templates using dot or bracket
-notation.</p>
-<div class="language-twig codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-twig codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token delimiter punctuation" style="color:#cad4e2">{{</span><span class="token plain"> type</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token number" style="color:#94dded">0</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"> metadata</span><span class="token punctuation" style="color:#cad4e2">.</span><span class="token plain">internal </span><span class="token delimiter punctuation" style="color:#cad4e2">}}</span><br></div></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.36#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.36.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added <code>--host</code> and <code>--port</code> options to <code>moon action-graph</code>, <code>moon task-graph</code>, and
-<code>moon project-graph</code>.</li>
-<li class="">Added <code>--stdin</code> option to <code>moon ci</code> and <code>moon run</code>, which will allow touched files to be passed
-via stdin, instead of running VCS commands to determine them.</li>
-<li class="">Removed the restriction around <code>moon.{yml,pkl}</code> not being allowed as a task input. However, will
-not be included when using <code>**/*</code>.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.36#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?" translate="no">​</a></h2>
-<p>Now that toolchain plugins are in beta, we can take the next step in migrating an existing platform
-into a toolchain.</p>
-<ul>
-<li class="">Migrate the Rust toolchain to a WASM plugin.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="toolchain" term="toolchain"/>
-        <category label="wasm" term="wasm"/>
-        <category label="plugin" term="plugin"/>
-        <category label="remote" term="remote"/>
-        <category label="cache" term="cache"/>
-        <category label="integrity" term="integrity"/>
-        <category label="codegen" term="codegen"/>
-        <category label="template" term="template"/>
     </entry>
 </feed>

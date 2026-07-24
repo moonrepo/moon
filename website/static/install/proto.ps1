@@ -29,15 +29,17 @@ $DownloadUrl = if ($Version -eq "latest") {
   "https://github.com/moonrepo/proto/releases/download/v${Version}/${Target}.zip"
 }
 
-$TempDir = "${HOME}\.proto\temp\proto\${Target}"
-$DownloadFile = "${TempDir}.zip"
-
-$InstallDir = if ($env:PROTO_HOME) {
-  "$($env:PROTO_HOME)\bin"
+$HomeDir = if ($env:PROTO_HOME) {
+  $env:PROTO_HOME
+} elseif ($env:XDG_DATA_HOME) {
+  "$($env:XDG_DATA_HOME)\proto"
 } else {
-  "${Home}\.proto\bin"
+  "${Home}\.proto"
 }
 
+$TempDir = "${HomeDir}\temp\proto\${Target}"
+$DownloadFile = "${TempDir}.zip"
+$InstallDir =  "${HomeDir}\bin"
 $BinPath = "${InstallDir}\proto.exe"
 $ShimPath = "${InstallDir}\proto-shim.exe"
 

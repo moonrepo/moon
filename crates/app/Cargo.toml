@@ -76,7 +76,6 @@ schematic = { workspace = true, features = [
   "schema",
   "renderer_template",
 ] }
-semver = { workspace = true }
 serde = { workspace = true }
 starbase = { workspace = true }
 starbase_archive = { workspace = true }

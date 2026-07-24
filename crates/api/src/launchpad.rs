@@ -4,7 +4,7 @@ use moon_common::{is_local, is_test_env};
 use moon_env::MoonEnvironment;
 use moon_env_var::GlobalEnvBag;
 use moon_time::now_millis;
-use semver::Version;
+use proto_core::Version;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
 use std::collections::BTreeMap;

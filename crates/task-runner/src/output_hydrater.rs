@@ -11,7 +11,6 @@ use moon_common::{
 };
 use moon_task::Task;
 use starbase_archive::Archiver;
-use starbase_archive::tar::TarUnpacker;
 use starbase_utils::{
     fs::{self, FsError},
     glob::GlobSet,
@@ -208,7 +207,7 @@ impl OutputHydrater<'_> {
             }
 
             // Unpack the archive
-            if let Err(error) = archive.unpack(TarUnpacker::new_gz) {
+            if let Err(error) = archive.unpack_from_ext() {
                 warn!(
                     task_target = task.target.as_str(),
                     hash,

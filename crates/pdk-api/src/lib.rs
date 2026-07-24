@@ -15,7 +15,9 @@ pub use moon_project::ProjectFragment;
 pub use moon_task::TaskFragment;
 pub use prompts::*;
 pub use proto_pdk_api::{
-    CalVer, ExecCommandInput, SemVer, UnresolvedVersionSpec, Version, VersionReq, VersionSpec,
+    ExecCommandInput, ExecCommandOutput, HostArch, HostLibc, HostLogInput, HostLogTarget, HostOS,
+    Range, Requirement, SendRequestInput, SendRequestOutput, UnresolvedVersionSpec, Version,
+    VersionSpec,
 };
 pub use toolchain::*;
 pub use warpgate_api::*;

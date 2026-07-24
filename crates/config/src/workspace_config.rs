@@ -4,7 +4,7 @@ use crate::{config_enum, config_struct, config_unit_enum};
 use moon_common::Id;
 use rustc_hash::FxHashMap;
 use schematic::{Config, ConfigEnum, PathSegment, ValidateError, env, validate};
-use semver::VersionReq;
+use version_spec::Requirement;
 
 // We can't use serde based types in the enum below to handle validation,
 // as serde fails to parse correctly. So we must manually validate here.
@@ -199,6 +199,6 @@ config_struct!(
 
         /// Requires a specific version of the `moon` binary.
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub version_constraint: Option<VersionReq>,
+        pub version_constraint: Option<Requirement>,
     }
 );

@@ -821,7 +821,7 @@ vcs:
         use super::*;
 
         #[test]
-        #[should_panic(expected = "unexpected character '@' while parsing major version number")]
+        #[should_panic(expected = "Failed to parse a version requirement")]
         fn errors_on_invalid_req() {
             test_load_config(FILENAME, "versionConstraint: '@1.0.0'", |path| {
                 load_config_from_root(path)

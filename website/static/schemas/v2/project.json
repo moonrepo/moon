@@ -574,7 +574,7 @@
       "properties": {
         "customGroups": {
           "title": "customGroups",
-          "description": "Bitbucket only. A map of custom groups (prefixed with @@@), to a list of user and normal groups.",
+          "description": "bitbucket-legacy only. A map of custom groups (prefixed with @@@), to a list of user and normal groups.",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -585,7 +585,7 @@
           "propertyNames": {
             "type": "string"
           },
-          "markdownDescription": "Bitbucket only. A map of custom groups (prefixed with `@@@`), to a list of user and normal groups."
+          "markdownDescription": "`bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`), to a list of user and normal groups."
         },
         "defaultOwner": {
           "title": "defaultOwner",
@@ -617,7 +617,7 @@
         },
         "requiredApprovals": {
           "title": "requiredApprovals",
-          "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the Check() condition. For GitLab, marks the code owners section as required.",
+          "description": "bitbucket-legacy and GitLab only. The number of approvals required for the request to be satisfied. For bitbucket-legacy, utilizes the Check() condition. For GitLab, marks the code owners section as required.",
           "anyOf": [
             {
               "type": "number"
@@ -626,7 +626,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required."
+          "markdownDescription": "`bitbucket-legacy` and GitLab only. The number of approvals required for the request to be satisfied. For `bitbucket-legacy`, utilizes the `Check()` condition. For GitLab, marks the code owners section as required."
         }
       },
       "additionalProperties": false

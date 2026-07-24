@@ -106,7 +106,7 @@ export type OwnersPaths = string[] | Record<string, string[]>;
  */
 export interface OwnersConfig {
 	/**
-	 * Bitbucket only. A map of custom groups (prefixed with `@@@`),
+	 * `bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`),
 	 * to a list of user and normal groups.
 	 */
 	customGroups?: Record<string, string[]>;
@@ -121,9 +121,9 @@ export interface OwnersConfig {
 	 */
 	paths: OwnersPaths;
 	/**
-	 * Bitbucket and GitLab only. The number of approvals required for the
-	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
-	 * For GitLab, marks the code owners section as required.
+	 * `bitbucket-legacy` and GitLab only. The number of approvals required
+	 * for the request to be satisfied. For `bitbucket-legacy`, utilizes the
+	 * `Check()` condition. For GitLab, marks the code owners section as required.
 	 */
 	requiredApprovals?: number | null;
 }
@@ -331,7 +331,7 @@ export type PartialOwnersPaths = string[] | Record<string, string[]>;
  */
 export interface PartialOwnersConfig {
 	/**
-	 * Bitbucket only. A map of custom groups (prefixed with `@@@`),
+	 * `bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`),
 	 * to a list of user and normal groups.
 	 */
 	customGroups?: Record<string, string[]> | null;
@@ -346,9 +346,9 @@ export interface PartialOwnersConfig {
 	 */
 	paths?: PartialOwnersPaths | null;
 	/**
-	 * Bitbucket and GitLab only. The number of approvals required for the
-	 * request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
-	 * For GitLab, marks the code owners section as required.
+	 * `bitbucket-legacy` and GitLab only. The number of approvals required
+	 * for the request to be satisfied. For `bitbucket-legacy`, utilizes the
+	 * `Check()` condition. For GitLab, marks the code owners section as required.
 	 */
 	requiredApprovals?: number | null;
 }

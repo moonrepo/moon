@@ -970,25 +970,25 @@ mod project_graph {
             use super::*;
 
             #[tokio::test(flavor = "multi_thread")]
-            #[should_panic(expected = "would introduce a cycle")]
+            #[should_panic(expected = "project_graph::would_cycle")]
             async fn errors_for_same_scope_cycle() {
                 build_graph_from_fixture_for_builder("cycle", true).await;
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            #[should_panic(expected = "would introduce a cycle")]
+            #[should_panic(expected = "project_graph::would_cycle")]
             async fn errors_for_same_partition_peer_loop() {
                 build_graph_from_fixture_for_builder("peer-prod-loop", true).await;
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            #[should_panic(expected = "would introduce a cycle")]
+            #[should_panic(expected = "project_graph::would_cycle")]
             async fn errors_for_same_partition_build_dev_loop() {
                 build_graph_from_fixture_for_builder("build-dev-loop", true).await;
             }
 
             #[tokio::test(flavor = "multi_thread")]
-            #[should_panic(expected = "would introduce a cycle")]
+            #[should_panic(expected = "project_graph::would_cycle")]
             async fn errors_for_self_dependencies() {
                 build_graph_from_fixture_for_builder("self-loop", true).await;
             }

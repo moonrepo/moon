@@ -110,16 +110,19 @@ Set by moon for its own processes and integrations.
 Each of these has an equivalent [global command line option](./commands/overview). The command line
 option takes precedence over the environment variable.
 
-| Variable           | Option          | Description                                                                                        |
-| :----------------- | :-------------- | :------------------------------------------------------------------------------------------------- |
-| `MOON_CACHE`       | `--cache`       | Mode for [cache](./concepts/cache) operations: `read`, `read-write` (default), `write`, or `off`.  |
-| `MOON_COLOR`       | `--color`       | Force colored output.                                                                              |
-| `MOON_CONCURRENCY` | `--concurrency` | Maximum number of threads to utilize. Defaults to the number of CPU cores.                         |
-| `MOON_DUMP`        | `--dump`        | Dump a trace profile to the working directory.                                                     |
-| `MOON_LOG`         | `--log`         | Lowest log level to output: `off`, `error`, `warn`, `info` (default), `debug`, `trace`, `verbose`. |
-| `MOON_LOG_FILE`    | `--log-file`    | Path to a file to write logs to.                                                                   |
-| `MOON_QUIET`       | `--quiet`       | Hide all moon console output.                                                                      |
-| `MOON_THEME`       | `--theme`       | Terminal theme to print with.                                                                      |
+| Variable                 | Option                | Description                                                                                        |
+| :----------------------- | :-------------------- | :------------------------------------------------------------------------------------------------- |
+| `MOON_CACHE`             | `--cache`             | Mode for [cache](./concepts/cache) operations: `read`, `read-write` (default), `write`, or `off`.  |
+| `MOON_COLOR`             | `--color`             | Force colored output.                                                                              |
+| `MOON_CONCURRENCY`       | `--concurrency`       | Maximum number of threads to utilize. Defaults to the number of CPU cores.                         |
+| `MOON_DUMP`              | `--dump`              | Dump a trace profile to the working directory.                                                     |
+| `MOON_LOG`               | `--log`               | Lowest log level to output: `off`, `error`, `warn`, `info` (default), `debug`, `trace`, `verbose`. |
+| `MOON_LOG_FILE`          | `--log-file`          | Path to a file to write logs to.                                                                   |
+| `MOON_OTEL`              | `--otel`              | Export [OpenTelemetry](./commands/overview#opentelemetry) traces over OTLP.                        |
+| `MOON_OTEL_LOGS`         | `--otel-logs`         | Export tracing events as OTLP logs.                                                                |
+| `MOON_OTEL_SERVICE_NAME` | `--otel-service-name` | Service name to report when OTLP tracing is enabled.                                               |
+| `MOON_QUIET`             | `--quiet`             | Hide all moon console output.                                                                      |
+| `MOON_THEME`             | `--theme`             | Terminal theme to print with.                                                                      |
 
 ### Running tasks & the pipeline
 
@@ -265,3 +268,4 @@ These are read, never written.
 | `SSH_CLIENT`, `SSH_TTY`                                                                   | Detect a remote SSH session.                                                          |
 | `CODESPACES`, `GITHUB_CODESPACES`, `GITPOD_INSTANCE_ID`, `DEVPOD`, `REPL_ID`, and similar | Detect a cloud development environment ("devbox").                                    |
 | `PATH`                                                                                    | Resolve binaries, and the base that toolchains prepend their bin directories to.      |
+| `OTEL_EXPORTER_OTLP_*`, `OTEL_SERVICE_NAME`, `OTEL_SDK_DISABLED`, and similar             | Standard [OpenTelemetry](./commands/overview#opentelemetry) export settings.          |

@@ -336,6 +336,33 @@ pub struct Cli {
 
     #[arg(
         long,
+        global = true,
+        env = "MOON_OTEL",
+        help = "Export traces and metrics over OTLP using OTEL_EXPORTER_OTLP_* settings",
+        help_heading = "Global options"
+    )]
+    pub otel: bool,
+
+    #[arg(
+        long,
+        global = true,
+        env = "MOON_OTEL_LOGS",
+        help = "Export tracing events as OTLP logs using OTEL_EXPORTER_OTLP_* settings",
+        help_heading = "Global options"
+    )]
+    pub otel_logs: bool,
+
+    #[arg(
+        long,
+        global = true,
+        env = "MOON_OTEL_SERVICE_NAME",
+        help = "Service name to report when OTLP tracing is enabled",
+        help_heading = "Global options"
+    )]
+    pub otel_service_name: Option<String>,
+
+    #[arg(
+        long,
         short = 'q',
         global = true,
         env = "MOON_QUIET",

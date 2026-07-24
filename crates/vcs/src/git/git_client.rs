@@ -15,12 +15,12 @@ use moon_common::path::{
     locate_config_dir,
 };
 use moon_process::find_command_on_path;
-use semver::Version;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, warn};
+use version_spec::Version;
 
 fn get_repository_root(common_dir: &Path) -> PathBuf {
     // Worktrees trail with "../.." so we need to remove them
@@ -654,7 +654,7 @@ impl Vcs for Git {
             .await?;
 
         Ok(
-            Version::parse(&version).map_err(|error| GitError::InvalidVersion {
+            Version::parse(version.as_str()).map_err(|error| GitError::InvalidVersion {
                 error: Box::new(error),
             })?,
         )

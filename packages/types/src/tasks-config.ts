@@ -416,7 +416,8 @@ export interface TaskOptionsConfig {
 	retryCount?: number | null;
 	/**
 	 * Runs direct task dependencies (via `deps`) in sequential order.
-	 * This _does not_ apply to indirect or transient dependencies.
+	 * Each dependency's own dependency subtree is also ordered, so that
+	 * transitive dependencies run after the preceding direct dependency.
 	 */
 	runDepsInParallel?: boolean | null;
 	/** Runs the task from the workspace root, instead of the project root. */
@@ -940,7 +941,8 @@ export interface PartialTaskOptionsConfig {
 	retryCount?: number | null;
 	/**
 	 * Runs direct task dependencies (via `deps`) in sequential order.
-	 * This _does not_ apply to indirect or transient dependencies.
+	 * Each dependency's own dependency subtree is also ordered, so that
+	 * transitive dependencies run after the preceding direct dependency.
 	 */
 	runDepsInParallel?: boolean | null;
 	/** Runs the task from the workspace root, instead of the project root. */

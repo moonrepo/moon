@@ -8,7 +8,6 @@ use moon_cache::{Manifest, StorageOptions};
 use moon_common::color;
 use moon_task::Task;
 use starbase_archive::Archiver;
-use starbase_archive::tar::TarPacker;
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
@@ -234,7 +233,7 @@ impl OutputArchiver<'_> {
             archive.add_source_file(state_dir.join("stderr.log"), None);
 
             // Pack the archive
-            if let Err(error) = archive.pack(TarPacker::new_gz) {
+            if let Err(error) = archive.pack_from_ext() {
                 warn!(
                     task_target = task.target.as_str(),
                     hash,

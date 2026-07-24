@@ -1,5 +1,5 @@
 use moon_test_utils::{create_empty_moon_sandbox, create_moon_sandbox, predicates::prelude::*};
-use proto_core::VersionReq;
+use proto_core::Requirement;
 use std::fs;
 
 mod cli {
@@ -10,7 +10,7 @@ mod cli {
         let sandbox = create_empty_moon_sandbox();
 
         sandbox.update_workspace_config(|config| {
-            config.version_constraint = Some(VersionReq::parse(">=1000.0.0").unwrap());
+            config.version_constraint = Some(Requirement::parse(">=1000.0.0").unwrap());
         });
 
         sandbox

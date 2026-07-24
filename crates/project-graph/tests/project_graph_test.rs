@@ -69,6 +69,26 @@ pub async fn build_graph_from_fixture(fixture: &str) -> (MoonSandbox, WorkspaceG
     (sandbox, graph)
 }
 
+pub async fn build_graph_from_fixture_for_builder(
+    fixture: &str,
+    async_graph: bool,
+) -> (MoonSandbox, WorkspaceGraph) {
+    let sandbox = create_moon_sandbox(fixture);
+    let mut mock = create_workspace_mocker(sandbox.path());
+
+    if async_graph {
+        mock = mock.update_workspace_config(|config| {
+            config.experiments.async_graph_building = true;
+        });
+    }
+
+    let graph = mock
+        .mock_workspace_graph_with_options(WorkspaceMockOptions::default())
+        .await;
+
+    (sandbox, graph)
+}
+
 mod project_graph {
     use super::*;
 
@@ -751,6 +771,384 @@ mod project_graph {
                 ),
                 string_vec![]
             );
+        }
+
+        async fn assert_cross_partition_cycle(async_graph: bool) {
+            // a -> b (production), b -> a (development)
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("dev-prod-loop", async_graph).await;
+
+            let a = graph.get_project("a").unwrap();
+            let b = graph.get_project("b").unwrap();
+
+            assert_eq!(map_ids(graph.projects.dependencies_of(&a)), ["b"]);
+            assert_eq!(map_ids(graph.projects.dependencies_of(&b)), ["a"]);
+            assert_eq!(map_ids(graph.projects.dependents_of(&a)), ["b"]);
+            assert_eq!(map_ids(graph.projects.dependents_of(&b)), ["a"]);
+
+            // Deep traversals terminate, and include the starting project,
+            // since it's reachable through the loop
+            assert_eq!(map_ids(graph.projects.deep_dependencies_of(&a)), ["b", "a"]);
+
+            // The union cycles, but each partition can still be sorted
+            assert_eq!(
+                map_ids(
+                    graph
+                        .projects
+                        .partitioned_toposort(ScopePartition::Production)
+                ),
+                ["b", "a"]
+            );
+            assert_eq!(
+                map_ids(
+                    graph
+                        .projects
+                        .partitioned_toposort(ScopePartition::Development)
+                ),
+                ["a", "b"]
+            );
+        }
+
+        async fn assert_focus_across_partition_cycle(async_graph: bool) {
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("dev-prod-loop", async_graph).await;
+
+            let focused = graph.projects.focus_for(&Id::raw("a"), true).unwrap();
+
+            let mut ids = map_ids(focused.get_node_keys());
+            ids.sort();
+
+            assert_eq!(ids, ["a", "b"]);
+            assert_eq!(
+                map_ids(focused.dependencies_of(&focused.get("a").unwrap())),
+                ["b"]
+            );
+        }
+
+        async fn assert_three_node_chain_cycle(async_graph: bool) {
+            // a -> b (production), b -> c (production), c -> a (development)
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("dev-prod-chain-loop", async_graph).await;
+
+            let a = graph.get_project("a").unwrap();
+            let c = graph.get_project("c").unwrap();
+
+            assert_eq!(graph.projects.get_graph().edge_count(), 3);
+            assert_eq!(map_ids(graph.projects.dependencies_of(&a)), ["b"]);
+            assert_eq!(map_ids(graph.projects.dependencies_of(&c)), ["a"]);
+            assert_eq!(
+                map_ids(graph.projects.deep_dependencies_of(&c)),
+                ["a", "b", "c"]
+            );
+        }
+
+        async fn assert_cached_partition_cycle(async_graph: bool) {
+            let sandbox = create_moon_sandbox("dev-prod-loop");
+            sandbox.enable_git();
+
+            // Prime the cache on the first pass, load from it on the second
+            for _ in 0..2 {
+                let mut mock = create_workspace_mocker(sandbox.path());
+
+                if async_graph {
+                    mock = mock.update_workspace_config(|config| {
+                        config.experiments.async_graph_building = true;
+                    });
+                }
+
+                let graph = mock
+                    .mock_workspace_graph_with_options(WorkspaceMockOptions {
+                        cache: true,
+                        ..Default::default()
+                    })
+                    .await;
+
+                let a = graph.get_project("a").unwrap();
+
+                assert_eq!(graph.projects.get_graph().edge_count(), 2);
+                assert_eq!(map_ids(graph.projects.dependencies_of(&a)), ["b"]);
+                assert_eq!(map_ids(graph.projects.dependents_of(&a)), ["b"]);
+            }
+        }
+
+        mod sync_builder {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn disconnects_same_scope_cycle() {
+                // a -> b -> c -> a, all production
+                let (_sandbox, graph) = build_graph_from_fixture_for_builder("cycle", false).await;
+
+                assert_eq!(
+                    map_ids(
+                        graph
+                            .projects
+                            .dependencies_of(&graph.get_project("a").unwrap())
+                    ),
+                    ["b"]
+                );
+                assert_eq!(
+                    map_ids(
+                        graph
+                            .projects
+                            .dependencies_of(&graph.get_project("c").unwrap())
+                    ),
+                    string_vec![]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn allows_cycles_that_cross_scope_partitions() {
+                assert_cross_partition_cycle(false).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn allows_three_node_chain_cycles_across_partitions() {
+                assert_three_node_chain_cycle(false).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn caches_partition_cycles() {
+                assert_cached_partition_cycle(false).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn disconnects_same_partition_peer_loop() {
+                // a -> b (peer), b -> a (production), same partition
+                let (_sandbox, graph) =
+                    build_graph_from_fixture_for_builder("peer-prod-loop", false).await;
+
+                assert_eq!(graph.projects.get_graph().edge_count(), 1);
+                assert_eq!(graph.projects.production_graph().edge_count(), 1);
+                assert_eq!(graph.projects.development_graph().edge_count(), 0);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn disconnects_same_partition_build_dev_loop() {
+                // a -> b (build), b -> a (development), same partition
+                let (_sandbox, graph) =
+                    build_graph_from_fixture_for_builder("build-dev-loop", false).await;
+
+                assert_eq!(graph.projects.get_graph().edge_count(), 1);
+                assert_eq!(graph.projects.production_graph().edge_count(), 0);
+                assert_eq!(graph.projects.development_graph().edge_count(), 1);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn disconnects_self_dependencies() {
+                let (_sandbox, graph) =
+                    build_graph_from_fixture_for_builder("self-loop", false).await;
+
+                assert_eq!(
+                    map_ids(
+                        graph
+                            .projects
+                            .dependencies_of(&graph.get_project("a").unwrap())
+                    ),
+                    string_vec![]
+                );
+                assert_eq!(graph.projects.get_graph().edge_count(), 0);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_focus_across_a_partition_cycle() {
+                assert_focus_across_partition_cycle(false).await;
+            }
+
+            // No async builder variant, as its pooled build order isn't
+            // deterministic, so node indexes may differ between runs
+            #[tokio::test(flavor = "multi_thread")]
+            async fn renders_a_partition_cycle_to_dot() {
+                let (_sandbox, graph) =
+                    build_graph_from_fixture_for_builder("dev-prod-loop", false).await;
+
+                assert_snapshot!(graph.projects.to_dot());
+            }
+        }
+
+        mod async_builder {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            #[should_panic(expected = "project_graph::would_cycle")]
+            async fn errors_for_same_scope_cycle() {
+                build_graph_from_fixture_for_builder("cycle", true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            #[should_panic(expected = "project_graph::would_cycle")]
+            async fn errors_for_same_partition_peer_loop() {
+                build_graph_from_fixture_for_builder("peer-prod-loop", true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            #[should_panic(expected = "project_graph::would_cycle")]
+            async fn errors_for_same_partition_build_dev_loop() {
+                build_graph_from_fixture_for_builder("build-dev-loop", true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            #[should_panic(expected = "project_graph::would_cycle")]
+            async fn errors_for_self_dependencies() {
+                build_graph_from_fixture_for_builder("self-loop", true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn allows_cycles_that_cross_scope_partitions() {
+                assert_cross_partition_cycle(true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn allows_three_node_chain_cycles_across_partitions() {
+                assert_three_node_chain_cycle(true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn caches_partition_cycles() {
+                assert_cached_partition_cycle(true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_focus_across_a_partition_cycle() {
+                assert_focus_across_partition_cycle(true).await;
+            }
+        }
+    }
+
+    mod scope_partitions {
+        use super::*;
+
+        async fn assert_partitioned_graphs(async_graph: bool) {
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("dependencies", async_graph).await;
+            let projects = &graph.projects;
+
+            // a -> b (development), b -> c (production),
+            // d -> c (production), d -> b (build), d -> a (peer)
+            assert_eq!(projects.get_graph().edge_count(), 5);
+            assert_eq!(projects.production_graph().edge_count(), 3);
+            assert_eq!(projects.development_graph().edge_count(), 2);
+
+            let mut production_scopes = projects
+                .production_graph()
+                .edge_weights()
+                .copied()
+                .collect::<Vec<_>>();
+            production_scopes.sort();
+
+            assert_eq!(
+                production_scopes,
+                [
+                    DependencyScope::Peer,
+                    DependencyScope::Production,
+                    DependencyScope::Production
+                ]
+            );
+
+            let mut development_scopes = projects
+                .development_graph()
+                .edge_weights()
+                .copied()
+                .collect::<Vec<_>>();
+            development_scopes.sort();
+
+            assert_eq!(
+                development_scopes,
+                [DependencyScope::Build, DependencyScope::Development]
+            );
+
+            // All graphs share the same nodes and indexes
+            assert_eq!(projects.get_graph().node_count(), 4);
+            assert_eq!(projects.production_graph().node_count(), 4);
+            assert_eq!(projects.development_graph().node_count(), 4);
+        }
+
+        async fn assert_partitioned_traversals(async_graph: bool) {
+            // a -> b (development), b -> c (production),
+            // d -> c (production), d -> b (build), d -> a (peer)
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("dependencies", async_graph).await;
+            let projects = &graph.projects;
+
+            let a = graph.get_project("a").unwrap();
+            let b = graph.get_project("b").unwrap();
+            let d = graph.get_project("d").unwrap();
+
+            // Direct dependencies
+            let mut deps =
+                map_ids(projects.partitioned_dependencies_of(&d, ScopePartition::Production));
+            deps.sort();
+
+            assert_eq!(deps, ["a", "c"]);
+            assert_eq!(
+                map_ids(projects.partitioned_dependencies_of(&d, ScopePartition::Development)),
+                ["b"]
+            );
+
+            // Direct dependents
+            let mut deps =
+                map_ids(projects.partitioned_dependents_of(&b, ScopePartition::Development));
+            deps.sort();
+
+            assert_eq!(deps, ["a", "d"]);
+            assert_eq!(
+                map_ids(projects.partitioned_dependents_of(&b, ScopePartition::Production)),
+                string_vec![]
+            );
+
+            // Deep traversals
+            let mut deps =
+                map_ids(projects.partitioned_deep_dependencies_of(&d, ScopePartition::Production));
+            deps.sort();
+
+            assert_eq!(deps, ["a", "c"]);
+            assert_eq!(
+                map_ids(projects.partitioned_deep_dependencies_of(&a, ScopePartition::Development)),
+                ["b"]
+            );
+
+            let mut deps =
+                map_ids(projects.partitioned_deep_dependents_of(&b, ScopePartition::Development));
+            deps.sort();
+
+            assert_eq!(deps, ["a", "d"]);
+
+            // Topological ordering (dependencies first)
+            let order = map_ids(projects.partitioned_toposort(ScopePartition::Production));
+            let pos = |id: &str| order.iter().position(|order_id| order_id == id).unwrap();
+
+            assert_eq!(order.len(), 4);
+            assert!(pos("c") < pos("b")); // b -> c
+            assert!(pos("c") < pos("d")); // d -> c
+            assert!(pos("a") < pos("d")); // d -> a
+        }
+
+        mod sync_builder {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn routes_edges_into_partitioned_graphs() {
+                assert_partitioned_graphs(false).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn traverses_within_a_partition() {
+                assert_partitioned_traversals(false).await;
+            }
+        }
+
+        mod async_builder {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn routes_edges_into_partitioned_graphs() {
+                assert_partitioned_graphs(true).await;
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn traverses_within_a_partition() {
+                assert_partitioned_traversals(true).await;
+            }
         }
     }
 

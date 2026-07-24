@@ -17,6 +17,16 @@ config_unit_enum!(
     }
 );
 
+impl DependencyScope {
+    pub fn is_development_group(&self) -> bool {
+        matches!(self, Self::Development | Self::Build | Self::Root)
+    }
+
+    pub fn is_production_group(&self) -> bool {
+        matches!(self, Self::Production | Self::Peer)
+    }
+}
+
 config_unit_enum!(
     /// The source where the dependency comes from. Either explicitly
     /// defined in configuration, or implicitly derived from source files.

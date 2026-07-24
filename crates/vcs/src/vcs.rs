@@ -2,11 +2,11 @@ use crate::changed_files::ChangedFiles;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_common::path::{WorkspaceRelativePath, WorkspaceRelativePathBuf};
-use semver::{Version, VersionReq};
 use std::collections::BTreeMap;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use version_spec::{MatchesVersion, Requirement, Version};
 
 #[derive(Default)]
 pub struct VcsHookEnvironment {
@@ -89,7 +89,7 @@ pub trait Vcs: Debug {
     async fn is_version_supported(&self, req: &str) -> miette::Result<bool> {
         let version = self.get_version().await?;
 
-        Ok(VersionReq::parse(req).into_diagnostic()?.matches(&version))
+        Ok(Requirement::parse(req).into_diagnostic()?.matches(&version))
     }
 
     /// Setup the hooks environment and return an absolute path to the hooks directory, when applicable.

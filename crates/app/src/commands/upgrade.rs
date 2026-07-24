@@ -11,13 +11,13 @@ use moon_config_loader::{read_config_based_on_extension, write_config_based_on_e
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
 use moon_process::Command;
-use semver::{Version, VersionReq};
 use starbase_archive::Archiver;
 use starbase_utils::fs::FsError;
 use starbase_utils::{fs, net};
 use std::env::{self, consts};
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument};
+use version_spec::{Requirement, Version};
 
 pub fn is_musl() -> bool {
     match std::process::Command::new("ldd").arg("--version").output() {
@@ -287,7 +287,7 @@ fn update_constraint(session: &MoonSession, version: &Version) -> miette::Result
 
         let mut config: PartialWorkspaceConfig = read_config_based_on_extension(&file)?;
 
-        if let Ok(req) = VersionReq::parse(&format!("^{version}")) {
+        if let Ok(req) = Requirement::parse(format!("^{version}")) {
             config.version_constraint = Some(req);
 
             write_config_based_on_extension(&file, config)?;

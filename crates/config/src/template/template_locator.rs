@@ -2,10 +2,10 @@ use crate::is_glob_like;
 use crate::shapes::{FilePath, GlobPath};
 use regex::Regex;
 use schematic::{ParseError, Schema, SchemaBuilder, Schematic, derive_enum};
-use semver::Version;
 use std::fmt;
 use std::str::FromStr;
 use std::sync::LazyLock;
+use version_spec::Version;
 
 static GIT: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new("^(?<url>[a-zA-Z@0-9.-]+/[a-zA-Z0-9-_./]+)#(?<revision>[a-z0-9-_.@]+)$").unwrap()

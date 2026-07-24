@@ -23,11 +23,11 @@ miette = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 scc = { workspace = true }
-semver = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
+version_spec = { workspace = true }
 
 [dev-dependencies]
 moon_env_var = { path = "../env-var" }

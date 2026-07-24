@@ -45,6 +45,8 @@
 
 ## 2.4.3
 
+#### 🚀 Updates
+
 - Added [Renovate](https://www.mend.io/renovate/) support. View the official guide for more
   information.
 - Updated BitBucket codeowners to use the

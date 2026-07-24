@@ -9,10 +9,10 @@ use moon_config::{
 use moon_config_loader::ConfigLoader;
 use rustc_hash::FxHashMap;
 use schematic::ConfigLoader as BaseLoader;
-use semver::Version;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::path::Path;
 use utils::*;
+use version_spec::Version;
 
 const FILENAME: &str = ".moon/workspace.yml";
 

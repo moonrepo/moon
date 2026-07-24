@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.59.0](https://github.com/moonrepo/proto/releases/tag/v0.59.0) from 0.58.2.
+- Updated dependencies.
+
 ## 2.4.5
 
 #### 🐞 Fixes

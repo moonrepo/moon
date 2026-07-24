@@ -313,13 +313,13 @@ impl ActionPipeline {
                 }
 
                 // Otherwise run the action topologically
-                job_handles.spawn(Box::new(dispatch_job_with_permit(
+                job_handles.spawn(dispatch_job_with_permit(
                     node.to_owned(),
                     node_index.index(),
                     job_context.clone(),
                     Arc::clone(&app_context),
                     Arc::clone(&action_context),
-                )));
+                ));
 
                 // Run this in isolation by exhausting the current list of handles
                 if node.is_interactive()

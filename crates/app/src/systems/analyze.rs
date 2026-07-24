@@ -1,8 +1,8 @@
 use crate::app_error::AppError;
 use moon_env_var::GlobalEnvBag;
 use moon_vcs::BoxedVcs;
-use semver::{Version, VersionReq};
 use tracing::instrument;
+use version_spec::{MatchesVersion, Requirement, Version};
 
 #[instrument(skip_all)]
 pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
@@ -20,7 +20,7 @@ pub async fn extract_repo_info(vcs: &BoxedVcs) -> miette::Result<()> {
 
 #[instrument]
 pub fn validate_version_constraint(
-    constraint: &VersionReq,
+    constraint: &Requirement,
     version: &Version,
 ) -> miette::Result<()> {
     if !constraint.matches(version) {

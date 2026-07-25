@@ -12,7 +12,7 @@ use moon_app::commands::toolchain::ToolchainCommands;
 use moon_app::{Cli, Commands, MoonSession, commands};
 use moon_env_var::GlobalEnvBag;
 use starbase::diagnostics::IntoDiagnostic;
-use starbase::tracing::TracingOptions;
+use starbase::tracing::{OtelOptions, TracingOptions};
 use starbase::{App, MainResult};
 use starbase_styles::color;
 use starbase_utils::{dirs, string_vec};
@@ -144,9 +144,15 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         filter_modules: get_tracing_modules(),
         log_env: "STARBASE_LOG".into(), // Don't conflict with proto
         log_file: cli.log_file.clone(),
+        otel: OtelOptions {
+            enabled: cli.otel,
+            logs_enabled: cli.otel_logs,
+            service_name: cli.otel_service_name.clone(),
+            ..Default::default()
+        },
         show_spans: cli.log.is_verbose(),
         ..TracingOptions::default()
-    });
+    })?;
 
     let pid = std::process::id();
 

@@ -194,7 +194,7 @@ impl WorkspaceBuilderAsync {
         }
 
         // Build the graphs
-        let project_graph = Arc::new(self.projects.finalize(graph_context.clone()));
+        let project_graph = Arc::new(self.projects.finalize(graph_context.clone())?);
 
         let task_graph = Arc::new(
             self.tasks

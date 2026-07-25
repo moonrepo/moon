@@ -70,6 +70,7 @@ pub fn create_context(workspace_root: &Path) -> GraphExpanderContext {
         vcs_revision: Arc::new(String::from("abcd1234")),
         working_dir: workspace_root.to_path_buf(),
         workspace_root: workspace_root.to_path_buf(),
+        ..Default::default()
     }
 }
 

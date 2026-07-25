@@ -5499,7 +5499,7 @@ dependencies = [
  "moon_target",
  "starbase_sandbox",
  "starbase_utils",
- "tera",
+ "tera 1.20.1",
  "tracing",
 ]
 
@@ -5592,6 +5592,7 @@ version = "0.0.1"
 dependencies = [
  "miette 7.6.0",
  "moon_common",
+ "moon_config",
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",
@@ -6095,6 +6096,27 @@ version = "0.0.1"
 dependencies = [
  "chrono",
  "humantime",
+]
+
+[[package]]
+name = "moon_token"
+version = "0.0.1"
+dependencies = [
+ "convert_case 0.11.0",
+ "moon_common",
+ "moon_config",
+ "moon_env_var",
+ "moon_file_group",
+ "moon_graph_utils",
+ "moon_project",
+ "moon_project_graph",
+ "moon_task",
+ "moon_time",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "starbase_sandbox",
+ "tera 2.1.0",
 ]
 
 [[package]]
@@ -7427,6 +7449,12 @@ dependencies = [
  "memchr",
  "unicase",
 ]
+
+[[package]]
+name = "pulldown-cmark-escape"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "007d8adb5ddab6f8e3f491ac63566a7d5002cc7ed73901f72057943fa71ae1ae"
 
 [[package]]
 name = "pulldown-cmark-to-cmark"
@@ -9137,6 +9165,18 @@ dependencies = [
  "serde_json",
  "slug",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "tera"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "511f07fd91a70e92efbe4793d111aaa9035f8474dd157aaa1e31e7c27f5051da"
+dependencies = [
+ "ahash",
+ "itoa",
+ "pulldown-cmark-escape",
+ "serde",
 ]
 
 [[package]]

@@ -1,19 +1,15 @@
+use moon_config::{ExtensionsConfig, ToolchainsConfig, WorkspaceConfig};
 use std::{path::PathBuf, sync::Arc};
 
 #[derive(Clone, Debug, Default)]
 pub struct GraphExpanderContext {
-    /// The current VCS branch.
+    pub config_dir: PathBuf,
+    pub extensions_config: Arc<ExtensionsConfig>,
+    pub toolchains_config: Arc<ToolchainsConfig>,
     pub vcs_branch: Arc<String>,
-
-    /// The VCS repository slug.
     pub vcs_repository: Arc<String>,
-
-    /// The current VCS revision, commit, etc.
     pub vcs_revision: Arc<String>,
-
-    /// The current working directory.
     pub working_dir: PathBuf,
-
-    /// The workspace root.
+    pub workspace_config: Arc<WorkspaceConfig>,
     pub workspace_root: PathBuf,
 }

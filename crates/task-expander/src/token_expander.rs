@@ -97,6 +97,12 @@ impl<'graph> TokenExpander<'graph> {
         value.contains('$') && patterns::TOKEN_VAR.is_match(value)
     }
 
+    pub fn has_template_syntax(&self, value: &str) -> bool {
+        value.contains("{{") && value.contains("}}")
+            || value.contains("{%") && value.contains("%}")
+            || value.contains("{#") && value.contains("#}")
+    }
+
     #[instrument(skip_all)]
     pub fn expand_command(&mut self, task: &mut Task) -> miette::Result<String> {
         self.scope = TokenScope::Command;

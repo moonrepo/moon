@@ -14,6 +14,7 @@ const ignorePatterns = [
 	'.moon/docker/',
 	'.yarn/',
 	'packages/visualizer/*timestamp*',
+	'scripts/otel/data',
 	'target/',
 	'wasm/target/',
 	'**/.docusaurus/',

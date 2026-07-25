@@ -5,7 +5,7 @@ Contributions are always welcome, no matter how large or small!
 ## Prerequisites
 
 - Node.js >= v22.18
-- Rust >= 1.96
+- Rust >= 1.97
 - Git >= 2.28 (for `test-coverage`)
 - Just
 

@@ -148,6 +148,14 @@ impl WorkspaceTasksBuilder {
             task_graph.nodes.insert(target, TaskNode { index, task });
         }
 
+        // Weight-based lookups require each node's weight to be its own
+        // index, which may not be the case when placeholder nodes were
+        // dropped by the filter above, so rewrite them
+        for index in 0..task_graph.graph.node_count() {
+            let index = NodeIndex::new(index);
+            *task_graph.graph.node_weight_mut(index).unwrap() = index;
+        }
+
         task_graph
     }
 }

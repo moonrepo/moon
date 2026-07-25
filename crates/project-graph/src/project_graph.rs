@@ -6,13 +6,59 @@ use moon_config::DependencyScope;
 use moon_graph_utils::*;
 use moon_project::Project;
 use moon_project_expander::{ProjectExpander, ProjectExpanderContext};
+use petgraph::Direction;
+use petgraph::algo::{has_path_connecting, toposort};
 use petgraph::graph::{DiGraph, NodeIndex};
-use rustc_hash::FxHashMap;
+use petgraph::visit::{EdgeFiltered, EdgeRef};
+use rustc_hash::{FxHashMap, FxHashSet};
 use scc::hash_map::Entry;
+use std::collections::VecDeque;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument};
+
+/// The internal graph partition that a dependency scope belongs to. Each
+/// partition is individually acyclic, while their union may contain cycles
+/// that cross the partition boundary. Anything that requires an acyclic
+/// graph (ordering, unguarded recursion) should operate on a partition.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ScopePartition {
+    /// Production and peer scoped dependencies.
+    Production,
+
+    /// Development, build, and root scoped dependencies.
+    Development,
+}
+
+impl ScopePartition {
+    /// Return the partition that the provided scope belongs to.
+    pub fn of(scope: &DependencyScope) -> ScopePartition {
+        if scope.is_production_group() {
+            ScopePartition::Production
+        } else {
+            ScopePartition::Development
+        }
+    }
+}
+
+/// Return true if adding an edge from source to target with the provided scope
+/// would introduce a cycle within the partition that the scope belongs to.
+/// Edges belonging to the other partition are ignored, so cycles that cross
+/// the production/development boundary are allowed.
+pub fn would_cycle_in_scope<N>(
+    graph: &DiGraph<N, DependencyScope>,
+    source: NodeIndex,
+    target: NodeIndex,
+    scope: &DependencyScope,
+) -> bool {
+    let partition = scope.is_production_group();
+    let partitioned_graph = EdgeFiltered::from_fn(graph, |edge| {
+        edge.weight().is_production_group() == partition
+    });
+
+    has_path_connecting(&partitioned_graph, target, source, None)
+}
 
 #[derive(Clone, Debug)]
 pub struct ProjectNode {
@@ -30,8 +76,17 @@ pub struct ProjectGraph {
     /// ID of the default project.
     pub default_id: Option<Id>,
 
-    /// Directed-acyclic graph (DAG) of projects (by index) and their dependencies.
-    pub graph: Dag<NodeIndex, DependencyScope>,
+    /// Union graph of projects (by index) and their dependencies across every
+    /// scope. Powers all read APIs. May contain cycles that cross the
+    /// production/development boundary; each partitioned graph below is
+    /// individually acyclic. Populate with [`ProjectGraph::set_graph`].
+    graph: DiGraph<NodeIndex, DependencyScope>,
+
+    /// Directed-acyclic graph (DAG) of production and peer dependencies.
+    production_graph: Dag<NodeIndex, DependencyScope>,
+
+    /// Directed-acyclic graph (DAG) of development, build, and root dependencies.
+    development_graph: Dag<NodeIndex, DependencyScope>,
 
     /// Map of node indexes to project IDs.
     pub indexes: FxHashMap<NodeIndex, Id>,
@@ -136,13 +191,184 @@ impl ProjectGraph {
             .collect()
     }
 
+    /// Return the graph of production and peer dependencies.
+    pub fn production_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
+        self.partitioned_graph(ScopePartition::Production)
+    }
+
+    /// Return the graph of development, build, and root dependencies.
+    pub fn development_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
+        self.partitioned_graph(ScopePartition::Development)
+    }
+
+    /// Return the graph of dependencies for the provided partition. Unlike
+    /// the unioned graph, partitioned graphs are guaranteed to be acyclic.
+    pub fn partitioned_graph(
+        &self,
+        partition: ScopePartition,
+    ) -> &DiGraph<NodeIndex, DependencyScope> {
+        match partition {
+            ScopePartition::Production => self.production_graph.graph(),
+            ScopePartition::Development => self.development_graph.graph(),
+        }
+    }
+
+    /// Return a list of direct project IDs that the provided project depends on,
+    /// only traversing edges within the provided partition.
+    pub fn partitioned_dependencies_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+    ) -> Vec<Id> {
+        self.partitioned_neighbors_of(project, partition, Direction::Outgoing)
+    }
+
+    /// Return a list of direct project IDs that depend on the provided project,
+    /// only traversing edges within the provided partition.
+    pub fn partitioned_dependents_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+    ) -> Vec<Id> {
+        self.partitioned_neighbors_of(project, partition, Direction::Incoming)
+    }
+
+    /// Return a list of all project IDs that the provided project depends on,
+    /// only traversing edges within the provided partition.
+    pub fn partitioned_deep_dependencies_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+    ) -> Vec<Id> {
+        self.partitioned_traverse(project, partition, Direction::Outgoing)
+    }
+
+    /// Return a list of all project IDs that depend on the provided project,
+    /// only traversing edges within the provided partition.
+    pub fn partitioned_deep_dependents_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+    ) -> Vec<Id> {
+        self.partitioned_traverse(project, partition, Direction::Incoming)
+    }
+
+    /// Return all project IDs sorted topologically in dependency-first order
+    /// (dependencies before the projects that depend on them), using only
+    /// edges within the provided partition. Projects without edges in the
+    /// partition are included. Sorting is only possible for partitioned
+    /// graphs, as the unioned graph may contain cycles across partitions.
+    pub fn partitioned_toposort(&self, partition: ScopePartition) -> Vec<Id> {
+        let mut indices = toposort(self.partitioned_graph(partition), None)
+            .expect("Partitioned graphs are always acyclic!");
+
+        // Edges point from a project to its dependency,
+        // so reverse the order to get dependencies first
+        indices.reverse();
+
+        indices
+            .into_iter()
+            .map(|index| self.indexes[&index].clone())
+            .collect()
+    }
+
+    fn partitioned_neighbors_of(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+        direction: Direction,
+    ) -> Vec<Id> {
+        self.partitioned_graph(partition)
+            .neighbors_directed(self.nodes[&project.id].index, direction)
+            .map(|index| self.indexes[&index].clone())
+            .collect()
+    }
+
+    fn partitioned_traverse(
+        &self,
+        project: &Project,
+        partition: ScopePartition,
+        direction: Direction,
+    ) -> Vec<Id> {
+        let graph = self.partitioned_graph(partition);
+        let start = self.nodes[&project.id].index;
+        let mut visited = FxHashSet::from_iter([start]);
+        let mut queue = VecDeque::from([start]);
+        let mut results = vec![];
+
+        while let Some(index) = queue.pop_front() {
+            for next_index in graph.neighbors_directed(index, direction) {
+                if visited.insert(next_index) {
+                    results.push(self.indexes[&next_index].clone());
+                    queue.push_back(next_index);
+                }
+            }
+        }
+
+        results
+    }
+
+    /// Set the union graph of all dependency edges, and derive the production
+    /// (production/peer) and development (development/build/root) graphs from it,
+    /// with each partition enforcing acyclicity for its own edges. Cycles within
+    /// a single partition return an error, while cycles that cross the partition
+    /// boundary are allowed. The `indexes` map should be populated beforehand,
+    /// so that cycle errors can report project IDs.
+    pub fn set_graph(
+        &mut self,
+        mut graph: DiGraph<NodeIndex, DependencyScope>,
+    ) -> miette::Result<()> {
+        let mut production_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
+        let mut development_graph = Dag::with_capacity(graph.node_count(), graph.edge_count());
+
+        // Weight-based lookups require each node's weight to be its own
+        // index, but the builders may provide stale pre-filtered indices
+        // when placeholder nodes were dropped, so rewrite them
+        for index in 0..graph.node_count() {
+            let index = NodeIndex::new(index);
+            graph[index] = index;
+        }
+
+        // Mirror the nodes into both graphs, in the same order,
+        // so that all node indexes align
+        for index in graph.node_indices() {
+            production_graph.add_node(graph[index]);
+            development_graph.add_node(graph[index]);
+        }
+
+        // Then route each edge into the graph its scope belongs to,
+        // relying on daggy's insertion checks to detect cycles
+        for edge in graph.edge_references() {
+            let scope = *edge.weight();
+
+            let partitioned_graph = if scope.is_production_group() {
+                &mut production_graph
+            } else {
+                &mut development_graph
+            };
+
+            partitioned_graph
+                .add_edge(edge.source(), edge.target(), scope)
+                .map_err(|_| ProjectGraphError::WouldCycle {
+                    source_id: self.label_index(edge.source()),
+                    target_id: self.label_index(edge.target()),
+                })?;
+        }
+
+        self.graph = graph;
+        self.production_graph = production_graph;
+        self.development_graph = development_graph;
+
+        Ok(())
+    }
+
     /// Focus the graph for a specific project by ID.
     pub fn focus_for(&self, id_or_alias: &Id, with_dependents: bool) -> miette::Result<Self> {
         let project = self.get(id_or_alias)?;
-        let graph = self.to_focused_graph(&project, with_dependents);
-        let (nodes, edges) = graph.into_nodes_edges();
+        let focused_graph = self.to_focused_graph(&project, with_dependents);
+        let (nodes, edges) = focused_graph.into_nodes_edges();
 
-        let mut dag = Dag::with_capacity(nodes.len(), edges.len());
+        let mut graph = DiGraph::with_capacity(nodes.len(), edges.len());
         let mut indexes = FxHashMap::default();
         let mut projects = FxHashMap::default();
 
@@ -163,12 +389,11 @@ impl ProjectGraph {
                 },
             );
 
-            dag.add_node(new_index);
+            graph.add_node(new_index);
         }
 
         for edge in edges {
-            dag.update_edge(edge.source(), edge.target(), edge.weight)
-                .unwrap();
+            graph.update_edge(edge.source(), edge.target(), edge.weight);
         }
 
         let aliases = self
@@ -183,16 +408,29 @@ impl ProjectGraph {
             })
             .collect();
 
-        Ok(Self {
+        let mut focused = Self {
             aliases,
             context: self.context.clone(),
             indexes,
             default_id: self.default_id.clone(),
             fs_cache: Arc::clone(&self.fs_cache),
-            graph: dag,
             nodes: projects,
             projects: Arc::clone(&self.projects),
-        })
+            ..Default::default()
+        };
+
+        // The focused edges are a subset of already validated partitions,
+        // so deriving them again cannot fail
+        focused.set_graph(graph)?;
+
+        Ok(focused)
+    }
+
+    fn label_index(&self, index: NodeIndex) -> String {
+        self.indexes
+            .get(&index)
+            .map(|id| id.to_string())
+            .unwrap_or_else(|| index.index().to_string())
     }
 
     fn internal_get(&self, id_or_alias: &str) -> miette::Result<Arc<Project>> {
@@ -279,7 +517,7 @@ impl ProjectGraph {
 
 impl GraphData<Project, DependencyScope, Id> for ProjectGraph {
     fn get_graph(&self) -> &DiGraph<NodeIndex, DependencyScope> {
-        self.graph.graph()
+        &self.graph
     }
 
     fn get_nodes(&self) -> FxHashMap<NodeIndex, &Project> {
@@ -309,3 +547,131 @@ impl GraphConversions<Project, DependencyScope, Id> for ProjectGraph {}
 impl GraphToDot<Project, DependencyScope, Id> for ProjectGraph {}
 
 impl GraphToJson<Project, DependencyScope, Id> for ProjectGraph {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn loop_graph(
+        scope_ab: DependencyScope,
+        scope_ba: DependencyScope,
+    ) -> DiGraph<NodeIndex, DependencyScope> {
+        let mut graph = DiGraph::new();
+        let a = graph.add_node(NodeIndex::new(0));
+        let b = graph.add_node(NodeIndex::new(1));
+
+        graph.add_edge(a, b, scope_ab);
+        graph.add_edge(b, a, scope_ba);
+        graph
+    }
+
+    #[test]
+    fn routes_scopes_into_expected_partitions() {
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Production),
+            ScopePartition::Production
+        );
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Peer),
+            ScopePartition::Production
+        );
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Build),
+            ScopePartition::Development
+        );
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Development),
+            ScopePartition::Development
+        );
+        assert_eq!(
+            ScopePartition::of(&DependencyScope::Root),
+            ScopePartition::Development
+        );
+    }
+
+    #[test]
+    fn toposorts_partitions_in_dependency_first_order() {
+        let mut project_graph = ProjectGraph::default();
+
+        // a -> b (production), b -> a (development)
+        project_graph
+            .set_graph(loop_graph(
+                DependencyScope::Production,
+                DependencyScope::Development,
+            ))
+            .unwrap();
+        project_graph
+            .indexes
+            .insert(NodeIndex::new(0), Id::raw("a"));
+        project_graph
+            .indexes
+            .insert(NodeIndex::new(1), Id::raw("b"));
+
+        // The union cycles, but each partition can still be sorted
+        assert_eq!(
+            project_graph.partitioned_toposort(ScopePartition::Production),
+            [Id::raw("b"), Id::raw("a")]
+        );
+        assert_eq!(
+            project_graph.partitioned_toposort(ScopePartition::Development),
+            [Id::raw("a"), Id::raw("b")]
+        );
+    }
+
+    #[test]
+    fn would_cycle_for_self_loops_in_either_partition() {
+        let mut graph = DiGraph::<(), DependencyScope>::new();
+        let a = graph.add_node(());
+
+        assert!(would_cycle_in_scope(
+            &graph,
+            a,
+            a,
+            &DependencyScope::Production
+        ));
+        assert!(would_cycle_in_scope(&graph, a, a, &DependencyScope::Build));
+    }
+
+    #[test]
+    fn set_graph_allows_cross_partition_cycles() {
+        let mut project_graph = ProjectGraph::default();
+
+        project_graph
+            .set_graph(loop_graph(
+                DependencyScope::Production,
+                DependencyScope::Development,
+            ))
+            .unwrap();
+
+        assert_eq!(project_graph.production_graph().edge_count(), 1);
+        assert_eq!(project_graph.development_graph().edge_count(), 1);
+    }
+
+    #[test]
+    fn set_graph_errors_for_production_partition_cycles() {
+        let mut project_graph = ProjectGraph::default();
+
+        let error = project_graph
+            .set_graph(loop_graph(
+                DependencyScope::Production,
+                DependencyScope::Peer,
+            ))
+            .unwrap_err();
+
+        assert!(error.to_string().contains("would introduce a cycle"));
+    }
+
+    #[test]
+    fn set_graph_errors_for_development_partition_cycles() {
+        let mut project_graph = ProjectGraph::default();
+
+        let error = project_graph
+            .set_graph(loop_graph(
+                DependencyScope::Build,
+                DependencyScope::Development,
+            ))
+            .unwrap_err();
+
+        assert!(error.to_string().contains("would introduce a cycle"));
+    }
+}

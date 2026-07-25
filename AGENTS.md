@@ -17,7 +17,7 @@ npm package is itself a moon project.
 
 ## Prerequisites
 
-- Rust >= 1.96 (pinned in `rust-toolchain.toml`, edition 2024)
+- Rust >= 1.97 (pinned in `rust-toolchain.toml`, edition 2024)
 - Cargo — Rust toolchain
 - Node.js >= 22.18
 - Yarn >= 4

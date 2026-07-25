@@ -25,6 +25,7 @@ lib/
 mjs/
 umd/
 dist/
+scripts/otel/data
 
 # Artifacts
 *.map

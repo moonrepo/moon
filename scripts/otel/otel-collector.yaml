@@ -1,0 +1,34 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size_mib: 32
+
+processors:
+  batch: {}
+
+exporters:
+  debug:
+    verbosity: detailed
+  file/traces:
+    path: /data/traces.json
+  file/metrics:
+    path: /data/metrics.json
+  file/logs:
+    path: /data/logs.json
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, file/traces]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, file/metrics]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug, file/logs]

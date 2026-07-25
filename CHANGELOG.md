@@ -4,10 +4,19 @@
 
 #### 🚀 Updates
 
-- Reworked the project graph to validate cycles per dependency scope partition. Production scoped
-  dependencies (`production`, `peer`) and development scoped dependencies (`development`, `build`,
-  `root`) are now tracked as separate internal graphs, so relationships that cross the boundary no
-  longer fail with a cycle error, or silently drop dependency edges.
+- **CLI**
+  - Added OpenTelemetry (OTEL) support, for exporting traces, metrics, and logs over OTLP.
+    - Added a `--otel` global option (`MOON_OTEL`), for exporting traces and metrics.
+    - Added a `--otel-logs` global option (`MOON_OTEL_LOGS`), for exporting log events as OTLP logs.
+    - Added a `--otel-service-name` global option (`MOON_OTEL_SERVICE_NAME`), for the reported
+      service name.
+    - The destination and transport are configured with the standard `OTEL_EXPORTER_OTLP_*`
+      environment variables.
+- **Project graph**
+  - Reworked the project graph to validate cycles per dependency scope partition. Production scoped
+    dependencies (`production`, `peer`) and development scoped dependencies (`development`, `build`,
+    `root`) are now tracked as separate internal graphs, so relationships that cross the boundary no
+    longer fail with a cycle error, or silently drop dependency edges.
 
 #### 🐞 Fixes
 

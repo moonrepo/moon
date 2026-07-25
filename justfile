@@ -90,3 +90,9 @@ bazel-remote-tls:
 
 bazel-remote-mtls:
 	just clean-bazel-remote && bazel-remote --dir ~/.moon/bazel-cache --max_size 10 --storage_mode uncompressed --tls_cert_file=./crates/remote/tests/__fixtures__/certs-local/server.crt --tls_key_file=./crates/remote/tests/__fixtures__/certs-local/server.key --tls_ca_file=./crates/remote/tests/__fixtures__/certs-local/ca.crt
+
+otel-collector:
+	docker run --rm --name proto-otel -p 3000:3000 -p 4317:4317 -p 4318:4318 -v "$PWD/scripts/otel/otel-collector.yaml:/etc/otelcol/config.yaml" -v "$PWD/scripts/otel/data:/data" grafana/otel-lgtm:latest
+
+otel-test *args:
+	OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 OTEL_EXPORTER_OTLP_PROTOCOL=grpc cargo run -p moon_cli -- --otel --otel-logs --otel-service-name moon-local --log trace {{args}}

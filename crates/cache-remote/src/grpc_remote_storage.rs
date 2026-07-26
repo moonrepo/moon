@@ -372,7 +372,7 @@ impl StorageBackend for GrpcRemoteStorage {
             .update_action_result(UpdateActionResultRequest {
                 instance_name: self.get_instance_name().into(),
                 action_digest: Some(digest.to_external_digest()),
-                action_result: Some(manifest.into_bazel_action_result()),
+                action_result: Some(manifest.into_bazel_action_result(false)),
                 digest_function: DigestFunction::Sha256 as i32,
                 ..Default::default()
             })

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package moon.daemon.v1;
 
+import "build/bazel/remote/execution/v2/remote_execution.proto";
+
 service MoonDaemon {
   rpc ArchiveTaskOutputs(ArchiveTaskOutputsRequest) returns (ArchiveTaskOutputsResponse);
   rpc CleanCache(CleanCacheRequest) returns (CleanCacheResponse);
@@ -14,7 +16,8 @@ service MoonDaemon {
 
 message ArchiveTaskOutputsRequest {
   string task_target = 1;
-  string hash = 2;
+  build.bazel.remote.execution.v2.Digest digest = 2;
+  build.bazel.remote.execution.v2.ActionResult manifest = 3;
 }
 
 message ArchiveTaskOutputsResponse {

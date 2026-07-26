@@ -1,8 +1,10 @@
 use crate::daemon_client_error::DaemonClientError;
 use hyper_util::rt::TokioIo;
+use moon_cache_storage::{InternalDigestExt, Manifest};
 use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{moon_daemon_client::MoonDaemonClient, *};
 use moon_daemon_utils::endpoint::*;
+use moon_hash::Digest;
 use std::future::Future;
 use std::io::Error;
 use std::path::Path;
@@ -198,11 +200,12 @@ impl DaemonClient {
         }
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip(self, manifest))]
     pub async fn archive_task_outputs(
         &mut self,
         task_target: String,
-        hash: String,
+        digest: Digest,
+        manifest: Manifest,
     ) -> miette::Result<ArchiveTaskOutputsResponse> {
         let response = with_deadline(
             "ArchiveTaskOutputs",
@@ -210,7 +213,8 @@ impl DaemonClient {
             self.inner.archive_task_outputs(request_with_deadline(
                 ArchiveTaskOutputsRequest {
                     task_target: task_target.to_owned(),
-                    hash: hash.to_owned(),
+                    digest: Some(digest.into_external_digest()),
+                    manifest: Some(manifest.into_bazel_action_result(true)),
                 },
                 WORK_DEADLINE,
             )),

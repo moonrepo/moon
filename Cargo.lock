@@ -5420,9 +5420,11 @@ version = "0.0.1"
 dependencies = [
  "hyper-util",
  "miette 7.6.0",
+ "moon_cache_storage",
  "moon_common",
  "moon_daemon_proto",
  "moon_daemon_utils",
+ "moon_hash",
  "thiserror 2.0.19",
  "tokio",
  "tonic",
@@ -5435,6 +5437,7 @@ dependencies = [
 name = "moon_daemon_proto"
 version = "0.0.1"
 dependencies = [
+ "bazel-remote-apis",
  "prost",
  "tonic",
  "tonic-prost",

@@ -88,7 +88,7 @@ impl Manifest {
         })
     }
 
-    pub fn into_bazel_action_result(self) -> ActionResult {
+    pub fn into_bazel_action_result(self, persist_stdio: bool) -> ActionResult {
         ActionResult {
             output_files: self
                 .files
@@ -108,7 +108,21 @@ impl Manifest {
             // `collect_blob_inputs` and referenced here by digest, so leave the raw
             // fields empty and let the digests carry it.
             stderr_digest: self.stderr_digest.map(|digest| digest.to_external_digest()),
+            stderr_raw: if persist_stdio {
+                self.stderr_bytes
+                    .map(|bytes| bytes.to_vec())
+                    .unwrap_or_default()
+            } else {
+                vec![]
+            },
             stdout_digest: self.stdout_digest.map(|digest| digest.to_external_digest()),
+            stdout_raw: if persist_stdio {
+                self.stdout_bytes
+                    .map(|bytes| bytes.to_vec())
+                    .unwrap_or_default()
+            } else {
+                vec![]
+            },
             execution_metadata: Some(ExecutedActionMetadata {
                 worker: "moon".into(),
                 output_upload_completed_timestamp: self

@@ -6113,6 +6113,8 @@ dependencies = [
  "moon_project_graph",
  "moon_task",
  "moon_time",
+ "pest",
+ "pest_derive",
  "rustc-hash",
  "serde",
  "serde_json",

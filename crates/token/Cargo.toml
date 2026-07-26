@@ -20,6 +20,8 @@ moon_task = {  path = "../task" }
 moon_time = { path = "../time" }
 convert_case = { workspace = true }
 rustc-hash = { workspace = true }
+pest = { workspace = true }
+pest_derive = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tera = { version = "2.1.0", features = ["fast"] }

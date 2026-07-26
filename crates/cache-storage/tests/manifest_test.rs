@@ -113,7 +113,7 @@ mod from_bazel {
             ..Default::default()
         };
 
-        let result = manifest.into_bazel_action_result();
+        let result = manifest.into_bazel_action_result(false);
 
         assert!(result.stdout_raw.is_empty());
         assert!(result.stderr_raw.is_empty());
@@ -155,7 +155,7 @@ mod from_bazel {
         );
 
         let metadata = manifest
-            .into_bazel_action_result()
+            .into_bazel_action_result(false)
             .execution_metadata
             .unwrap();
 
@@ -200,7 +200,7 @@ mod from_bazel {
         assert!(manifest.files[0].is_executable);
         assert_eq!(manifest.symlinks.len(), 1);
 
-        let back = manifest.into_bazel_action_result();
+        let back = manifest.into_bazel_action_result(false);
         assert_eq!(back.exit_code, 7);
         assert_eq!(back.output_files.len(), 1);
         assert_eq!(back.output_files[0].path, "out/a.txt");

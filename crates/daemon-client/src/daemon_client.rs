@@ -206,6 +206,8 @@ impl DaemonClient {
         task_target: String,
         digest: Digest,
         manifest: Manifest,
+        include_local: bool,
+        include_remote: bool,
     ) -> miette::Result<ArchiveTaskOutputsResponse> {
         let response = with_deadline(
             "ArchiveTaskOutputs",
@@ -215,6 +217,8 @@ impl DaemonClient {
                     task_target: task_target.to_owned(),
                     digest: Some(digest.into_external_digest()),
                     manifest: Some(manifest.into_bazel_action_result(true)),
+                    include_local,
+                    include_remote,
                 },
                 WORK_DEADLINE,
             )),

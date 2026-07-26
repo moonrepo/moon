@@ -10,6 +10,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::{CacheItem, StorageOptions};
 use moon_console::TaskReportItem;
+use moon_daemon_client::DaemonClient;
 use moon_hash::{ContentHash, ContentHasher};
 use moon_process::ProcessError;
 use moon_project::Project;
@@ -47,6 +48,7 @@ impl<'task> TaskRunner<'task> {
         app_context: &'task Arc<AppContext>,
         project: &'task Arc<Project>,
         task: &'task Arc<Task>,
+        daemon_client: Option<DaemonClient>,
     ) -> miette::Result<Self> {
         debug!(
             task_target = task.target.as_str(),
@@ -65,7 +67,7 @@ impl<'task> TaskRunner<'task> {
         Ok(Self {
             state: TaskRunState::new(app_context, task),
             cache,
-            archiver: OutputArchiver::new(app_context, task)?,
+            archiver: OutputArchiver::new(app_context, task, daemon_client)?,
             hydrater: OutputHydrater::new(app_context, task)?,
             project,
             report: TaskReportItem {

@@ -2,6 +2,7 @@ use moon_action::{Action, ActionStatus, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_common::color;
+use moon_daemon_client::DaemonClient;
 use moon_task_runner::TaskRunner;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
@@ -13,6 +14,7 @@ pub async fn run_task(
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
     workspace_graph: Arc<WorkspaceGraph>,
+    daemon_client: Option<DaemonClient>,
     node: &RunTaskNode,
 ) -> miette::Result<ActionStatus> {
     let project_id = node.target.get_project_id()?;
@@ -23,7 +25,7 @@ pub async fn run_task(
     // and error is bubbled up the stack
     action.allow_failure = task.options.allow_failure;
 
-    let result = TaskRunner::new(&app_context, &project, &task)?
+    let result = TaskRunner::new(&app_context, &project, &task, daemon_client)?
         .run(&action_context, &action.node)
         .await?;
 

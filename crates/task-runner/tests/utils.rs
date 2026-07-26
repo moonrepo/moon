@@ -193,7 +193,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_runner(&self) -> TaskRunner<'_> {
-        TaskRunner::new(&self.app_context, &self.project, &self.task).unwrap()
+        TaskRunner::new(&self.app_context, &self.project, &self.task, None).unwrap()
     }
 
     pub fn create_action_node(&self) -> ActionNode {

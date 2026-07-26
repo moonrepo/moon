@@ -18,6 +18,9 @@ message ArchiveTaskOutputsRequest {
   string task_target = 1;
   build.bazel.remote.execution.v2.Digest digest = 2;
   build.bazel.remote.execution.v2.ActionResult manifest = 3;
+
+  bool include_local = 4;
+  bool include_remote = 5;
 }
 
 message ArchiveTaskOutputsResponse {

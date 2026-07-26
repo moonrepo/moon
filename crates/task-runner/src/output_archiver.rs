@@ -6,6 +6,7 @@ use moon_app_context::AppContext;
 use moon_blob::{BlobContent, BlobInput};
 use moon_cache::{Manifest, StorageOptions};
 use moon_common::color;
+use moon_daemon_client::DaemonClient;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use std::sync::Arc;
@@ -23,14 +24,20 @@ pub enum ArchiveOutcome {
 pub struct OutputArchiver<'task> {
     app_context: &'task Arc<AppContext>,
     task: &'task Arc<Task>,
+    daemon_client: Option<DaemonClient>,
 }
 
 impl OutputArchiver<'_> {
     pub fn new<'task>(
         app_context: &'task Arc<AppContext>,
         task: &'task Arc<Task>,
+        daemon_client: Option<DaemonClient>,
     ) -> miette::Result<OutputArchiver<'task>> {
-        Ok(OutputArchiver { task, app_context })
+        Ok(OutputArchiver {
+            task,
+            app_context,
+            daemon_client,
+        })
     }
 
     #[instrument(skip(self, state))]
@@ -74,16 +81,28 @@ impl OutputArchiver<'_> {
         if use_local || use_remote {
             let manifest = self.create_cache_manifest(state).await?;
 
-            self.app_context
-                .cache_engine
-                .storage
-                .with_options(StorageOptions {
-                    include_local: use_local,
-                    include_remote: use_remote,
-                    ..Default::default()
-                })
-                .archive_manifest(&state.digest, manifest, self.get_action_blob(state))
-                .await?;
+            if let Some(mut daemon) = self.daemon_client.clone() {
+                daemon
+                    .archive_task_outputs(
+                        self.task.target.to_string(),
+                        state.digest.clone(),
+                        manifest,
+                        use_local,
+                        use_remote,
+                    )
+                    .await?;
+            } else {
+                self.app_context
+                    .cache_engine
+                    .storage
+                    .with_options(StorageOptions {
+                        include_local: use_local,
+                        include_remote: use_remote,
+                        ..Default::default()
+                    })
+                    .archive_manifest(&state.digest, manifest, self.get_action_blob(state))
+                    .await?;
+            }
         }
 
         // Create the archive file (legacy / temporary)

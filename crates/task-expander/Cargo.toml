@@ -17,6 +17,7 @@ moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_task = { path = "../task" }
 moon_time = { path = "../time" }
+moon_token = { path = "../token" }
 cd_env = { workspace = true }
 ci_env = { workspace = true }
 miette = { workspace = true }

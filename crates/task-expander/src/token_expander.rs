@@ -1,4 +1,5 @@
 use crate::token_expander_error::TokenExpanderError;
+use miette::IntoDiagnostic;
 use moon_common::path::{self, RelativeFrom, WorkspaceRelativePathBuf};
 use moon_config::{EnvMap, Input, Output, ProjectMetadataConfig, patterns};
 use moon_env_var::{EnvScanner, EnvSubstitutor, GlobalEnvBag};
@@ -7,6 +8,7 @@ use moon_project::{FileGroup, Project};
 use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use moon_time::{now_millis, now_timestamp};
+use moon_token::TokenEngine;
 use pathdiff::diff_paths;
 use regex::Regex;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -14,6 +16,7 @@ use std::borrow::Cow;
 use std::env;
 use std::mem;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
@@ -57,16 +60,19 @@ pub struct TokenExpander<'graph> {
     pub scope: TokenScope,
     pub context: &'graph GraphExpanderContext,
     pub project: &'graph Project,
-    pub project_graph: &'graph ProjectGraph,
+    pub project_graph: &'graph Arc<ProjectGraph>,
+
+    engine: TokenEngine<'graph>,
 }
 
 impl<'graph> TokenExpander<'graph> {
     pub fn new(
-        project_graph: &'graph ProjectGraph,
+        project_graph: &'graph Arc<ProjectGraph>,
         project: &'graph Project,
         context: &'graph GraphExpanderContext,
     ) -> Self {
         Self {
+            engine: TokenEngine::new(project_graph, project, context),
             scope: TokenScope::Args,
             context,
             project,
@@ -110,15 +116,19 @@ impl<'graph> TokenExpander<'graph> {
         // Expand on quoted value if available
         let mut command = Cow::Owned(task.command.get_value().to_owned());
 
-        if self.has_token_function(&command) {
-            let result = self.replace_function(task, &command)?;
+        if self.has_template_syntax(&command) {
+            self.replace_template(&command)
+        } else {
+            if self.has_token_function(&command) {
+                let result = self.replace_function(task, &command)?;
 
-            if let (Some(token), Some(value)) = (result.token, result.value) {
-                command = Cow::Owned(command.replace(&token, &value));
+                if let (Some(token), Some(value)) = (result.token, result.value) {
+                    command = Cow::Owned(command.replace(&token, &value));
+                }
             }
-        }
 
-        self.replace_variables_and_scan(task, command)
+            self.replace_variables_and_scan(task, command)
+        }
     }
 
     #[instrument(skip_all)]
@@ -775,6 +785,10 @@ impl<'graph> TokenExpander<'graph> {
         }
 
         Ok(result)
+    }
+
+    fn replace_template(&self, value: &str) -> miette::Result<String> {
+        Ok(self.engine.render(value).into_diagnostic()?) // TODO
     }
 
     fn resolve_path_for_task(

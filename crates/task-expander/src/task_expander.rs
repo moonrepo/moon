@@ -8,19 +8,20 @@ use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use moon_task::{Task, TaskArg, TaskFileInput, TaskFileOutput, TaskGlobInput, TaskGlobOutput};
 use std::mem;
+use std::sync::Arc;
 use tracing::{debug, instrument, trace};
 
 pub struct TaskExpander<'graph> {
     pub context: &'graph GraphExpanderContext,
     pub token: TokenExpander<'graph>,
     pub project: &'graph Project,
-    pub project_graph: &'graph ProjectGraph,
+    pub project_graph: &'graph Arc<ProjectGraph>,
     pub task_lookup: &'graph dyn TaskLookup,
 }
 
 impl<'graph> TaskExpander<'graph> {
     pub fn new(
-        project_graph: &'graph ProjectGraph,
+        project_graph: &'graph Arc<ProjectGraph>,
         project: &'graph Project,
         context: &'graph GraphExpanderContext,
         task_lookup: &'graph dyn TaskLookup,

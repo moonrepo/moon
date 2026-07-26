@@ -5961,6 +5961,7 @@ dependencies = [
  "moon_project_graph",
  "moon_task",
  "moon_time",
+ "moon_token",
  "pathdiff",
  "petgraph 0.8.3",
  "regex",

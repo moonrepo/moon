@@ -9,44 +9,19 @@ use moon_project_graph::ProjectGraph;
 use moon_task::Task;
 use tera::{Context, Tera};
 
-#[derive(PartialEq)]
-pub enum TokenScope {
-    Command,
-    Script,
-    Args,
-    Env,
-    Inputs,
-    Outputs,
-}
-
-impl TokenScope {
-    pub fn label(&self) -> String {
-        match self {
-            TokenScope::Command => "commands",
-            TokenScope::Script => "scripts",
-            TokenScope::Args => "args",
-            TokenScope::Env => "env",
-            TokenScope::Inputs => "inputs",
-            TokenScope::Outputs => "outputs",
-        }
-        .into()
-    }
-}
-
 pub struct TokenEngine<'graph> {
     engine: Tera,
 
-    pub scope: TokenScope,
     pub context: &'graph GraphExpanderContext,
     pub project: &'graph Project,
-    pub project_graph: &'graph ProjectGraph,
+    pub project_graph: &'graph Arc<ProjectGraph>,
 }
 
 impl<'graph> TokenEngine<'graph> {
     pub fn new(
-        context: &'graph GraphExpanderContext,
         project_graph: &'graph Arc<ProjectGraph>,
         project: &'graph Project,
+        context: &'graph GraphExpanderContext,
     ) -> Self {
         let mut engine = Tera::new();
         engine.register_filter("camel_case", camel_case);
@@ -70,7 +45,6 @@ impl<'graph> TokenEngine<'graph> {
         global_context.insert("project", &ProjectContext::new(project));
 
         Self {
-            scope: TokenScope::Args,
             context,
             engine,
             project,

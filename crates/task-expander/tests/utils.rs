@@ -74,7 +74,7 @@ pub fn create_context(workspace_root: &Path) -> GraphExpanderContext {
     }
 }
 
-pub fn create_project_graph(projects: impl IntoIterator<Item = Project>) -> ProjectGraph {
+pub fn create_project_graph(projects: impl IntoIterator<Item = Project>) -> Arc<ProjectGraph> {
     let mut graph = ProjectGraph::default();
 
     for (i, project) in projects.into_iter().enumerate() {
@@ -87,7 +87,7 @@ pub fn create_project_graph(projects: impl IntoIterator<Item = Project>) -> Proj
         );
     }
 
-    graph
+    Arc::new(graph)
 }
 
 pub fn create_project(workspace_root: &Path) -> Project {

@@ -24,6 +24,10 @@
     operations will now be offloaded into the background via the daemon. Because of this, you'll
     need to inspect the daemon server logs to understand when something fails during archiving or
     hydrating, as the main process will no longer block on these operations.
+- **Experiments**
+  - The `asyncAffectedTracking`, `asyncGraphBuilding`, and `nativeFileHashing` experiments are now
+    enabled by default. If you run into issues, please report it, and then disable the experiment to
+    continue.
 - **Project graph**
   - Reworked the project graph to validate cycles per dependency scope partition. Production scoped
     dependencies (`production`, `peer`) and development scoped dependencies (`development`, `build`,

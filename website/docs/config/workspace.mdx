@@ -363,7 +363,7 @@ Experiments are a work in progress and may be buggy. Please report any issues yo
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncAffectedTracking" />
 
 Utilizes a new asynchronous implementation of the affected tracker that can improve performance by
-100-150%. Defaults to `false`.
+100-150%. Defaults to `true` in v2.5+, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
@@ -377,7 +377,7 @@ Can also be enabled with the `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environme
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncGraphBuilding" />
 
 Utilizes an asynchronous graph building implementation that can improve performance by 100-170% in
-large workspaces. Defaults to `false`.
+large workspaces. Defaults to `true` in v2.5+, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
@@ -409,7 +409,7 @@ Can also be enabled with the `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment var
 
 Replaces the VCS-based file hashing mechanism with a custom native implementation that runs within
 moon's task pool. In our benchmarks this improves performance by 10-50% depending on workspace size
-and file count. Defaults to `false`.
+and file count. Defaults to `true` in v2.5+, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:

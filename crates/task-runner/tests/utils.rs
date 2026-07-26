@@ -87,7 +87,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_archiver(&self) -> OutputArchiver<'_> {
-        OutputArchiver::new(&self.app_context, &self.task).unwrap()
+        OutputArchiver::new(&self.app_context, &self.task, None).unwrap()
     }
 
     pub fn create_hydrator(&self) -> OutputHydrater<'_> {

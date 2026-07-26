@@ -100,7 +100,7 @@ impl OutputArchiver<'_> {
                         include_remote: use_remote,
                         ..Default::default()
                     })
-                    .archive_manifest(&state.digest, manifest, self.get_action_blob(state))
+                    .archive_manifest(&state.digest, manifest)
                     .await?;
             }
         }
@@ -111,26 +111,6 @@ impl OutputArchiver<'_> {
         }
 
         Ok(ArchiveOutcome::Queued)
-    }
-
-    /// The action digest addresses moon's fingerprint hash manifest at
-    /// `.moon/cache/hashes/<hash>.json` — that file *is* the blob the digest
-    /// names. Backends that validate the Bazel RE contract reject an action
-    /// result whose action digest is absent from the CAS, so it must be
-    /// uploaded alongside the outputs. Returns `None` when the file is absent
-    /// (e.g. archiving without a computed fingerprint), leaving the upload a
-    /// no-op rather than an error.
-    fn get_action_blob(&self, state: &TaskRunState) -> Option<BlobInput> {
-        let path = self
-            .app_context
-            .cache_engine
-            .hash
-            .get_manifest_path(&state.digest.hash);
-
-        path.exists().then(|| BlobInput {
-            content: BlobContent::File(path),
-            digest: state.digest.clone(),
-        })
     }
 
     #[instrument(skip(self))]
@@ -199,6 +179,20 @@ impl OutputArchiver<'_> {
 
         // Then inherit the execution operation metadata
         builder.inherit_operation(&state.operation)?;
+
+        // The action digest addresses the hash manifest that produced it, so that
+        // file *is* the blob the digest names. The task runner (which owns the cache
+        // layout) supplies it, and it's uploaded with the outputs: backends that
+        // validate the RE contract reject an action result whose action digest is
+        // absent from the CAS ("action digest <hash>/<size> not found in CAS"),
+        // because a client is expected to have uploaded it before referencing it.
+        builder.inherit_source(
+            &state.digest,
+            self.app_context
+                .cache_engine
+                .hash
+                .get_manifest_path(&state.digest.hash),
+        )?;
 
         Ok(builder.build())
     }

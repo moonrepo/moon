@@ -220,7 +220,7 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob), None)
+            .archive_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
@@ -309,7 +309,7 @@ mod storage {
         let action = digest('a', 0);
 
         storage
-            .archive_manifest(&action, Manifest::default(), None)
+            .archive_manifest(&action, Manifest::default())
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
@@ -361,7 +361,7 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob), None)
+            .archive_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         // A failed upload must not surface as a program error.
@@ -384,7 +384,7 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob), None)
+            .archive_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();

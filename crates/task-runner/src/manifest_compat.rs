@@ -27,6 +27,19 @@ impl ManifestBuilder {
         self.manifest
     }
 
+    pub fn inherit_source(&mut self, digest: &Digest, path: PathBuf) -> miette::Result<()> {
+        if path.exists() {
+            self.manifest.digest_source = Some(ManifestFile {
+                digest: Some(digest.to_owned()),
+                path: self.convert_path(&path)?,
+                source_path: Some(path),
+                ..Default::default()
+            });
+        }
+
+        Ok(())
+    }
+
     pub fn inherit_operation(&mut self, operation: &Operation) -> miette::Result<()> {
         if let Some(exec) = operation.get_exec_output() {
             self.manifest.exit_code = exec.exit_code.unwrap_or_default();

@@ -149,7 +149,7 @@ impl MoonDaemon for DaemonService {
                     include_remote: request.include_remote,
                     ..Default::default()
                 })
-                .archive_manifest(&digest, manifest, None) // TODO
+                .archive_manifest(&digest, manifest)
                 .await
             {
                 warn!(

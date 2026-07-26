@@ -281,7 +281,6 @@ impl Storage {
         &self,
         digest: &Digest,
         manifest: Manifest,
-        action_blob: Option<BlobInput>,
     ) -> miette::Result<()> {
         let mut background_tasks = self.background_tasks.lock().unwrap();
 
@@ -305,7 +304,6 @@ impl Storage {
                 digest.to_owned(),
                 manifest.clone(),
                 self.context.workspace_root.clone(),
-                action_blob.clone(),
             ))));
         }
 
@@ -412,7 +410,6 @@ impl Storage {
                 digest.to_owned(),
                 manifest.clone(),
                 self.context.workspace_root.clone(),
-                None,
             ))));
         }
     }
@@ -477,17 +474,8 @@ async fn persist_manifest_in_backend(
     digest: Digest,
     mut manifest: Manifest,
     workspace_root: PathBuf,
-    action_blob: Option<BlobInput>,
 ) -> miette::Result<()> {
-    let mut blob_inputs = manifest.collect_blob_inputs(&workspace_root);
-
-    // The action digest addresses the hash manifest that produced it, so that
-    // file *is* the blob the digest names. The task runner (which owns the cache
-    // layout) supplies it, and it's uploaded with the outputs: backends that
-    // validate the RE contract reject an action result whose action digest is
-    // absent from the CAS ("action digest <hash>/<size> not found in CAS"),
-    // because a client is expected to have uploaded it before referencing it.
-    blob_inputs.extend(action_blob);
+    let blob_inputs = manifest.collect_blob_inputs(&workspace_root);
 
     // Before we store the manifest, we should ensure all associated blobs are stored.
     // This ensures we don't end up with dangling manifests that reference missing blobs.

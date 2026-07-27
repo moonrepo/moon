@@ -23,11 +23,6 @@ pub async fn sync_workspace(
 ) -> miette::Result<ActionStatus> {
     let _lock = app_context.cache_engine.create_lock(action.get_prefix())?;
 
-    // Connect to the remote service in this action,
-    // as it always runs before tasks, and we don't need it
-    // for non-pipeline related features!
-    app_context.cache_engine.storage.connect_backends().await?;
-
     if should_skip_action("MOON_SKIP_SYNC_WORKSPACE").is_some() {
         debug!(
             "Skipping workspace sync because {} is set",

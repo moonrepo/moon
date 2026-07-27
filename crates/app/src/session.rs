@@ -335,6 +335,7 @@ impl MoonSession {
                 | Commands::Exec(_)
                 | Commands::Run(_)
                 | Commands::Sync { .. }
+                | Commands::Daemon { .. }
         )
     }
 
@@ -467,6 +468,9 @@ impl AppSession for MoonSession {
 
     // This function runs in an async task (background thread)
     async fn execute(&mut self) -> AppResult<Self::Error> {
+        // Connect to the storage backends as early as possible
+        self.get_cache_engine()?.storage.connect_backends().await?;
+
         // Check for a new version and log to the console
         if self.is_telemetry_enabled() && self.is_pipeline_command() {
             execute::check_for_new_version(&self, &self.toolchains_config.moon.manifest_url)

@@ -226,7 +226,6 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
                     env = "MOON_BASE",
                     help = "Base branch, commit, or revision to compare against",
                     help_heading = super::HEADING_AFFECTED,
-                    requires = "affected-args",
                 )]
                 pub base: Option<String>
             },
@@ -236,7 +235,6 @@ pub fn with_affected_args(attr: TokenStream, item: TokenStream) -> TokenStream {
                     env = "MOON_HEAD",
                     help = "Current branch, commit, or revision to compare with",
                     help_heading = super::HEADING_AFFECTED,
-                    requires = "affected-args",
                 )]
                 pub head: Option<String>
             },

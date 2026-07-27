@@ -1,7 +1,7 @@
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
 use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput};
-use moon_common::{Id, format_error_chain, is_daemon_env};
+use moon_common::{Id, format_error_chain, is_daemon_env, is_local};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use moon_manifest::Manifest;
@@ -394,7 +394,7 @@ impl Storage {
             // A remote hit leaves the local tier cold. Warm it from the
             // now-in-memory blobs so the next run resolves locally instead of
             // round-tripping to the remote again
-            if remote {
+            if remote && is_local() {
                 self.warm_local_backends(digest, &manifest).await;
             }
 

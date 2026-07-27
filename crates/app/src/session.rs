@@ -1,5 +1,6 @@
 use crate::app::{Cli, Commands};
 use crate::app_error::AppError;
+use crate::commands::daemon::DaemonCommands;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
@@ -327,6 +328,15 @@ impl MoonSession {
         self.workspace_config.daemon && self.is_pipeline_command() && !is_docker() && !is_test_env()
     }
 
+    pub fn is_daemon_server_command(&self) -> bool {
+        matches!(
+            self.cli.command,
+            Commands::Daemon {
+                command: DaemonCommands::Server
+            }
+        )
+    }
+
     pub fn is_pipeline_command(&self) -> bool {
         matches!(
             self.cli.command,
@@ -335,7 +345,6 @@ impl MoonSession {
                 | Commands::Exec(_)
                 | Commands::Run(_)
                 | Commands::Sync { .. }
-                | Commands::Daemon { .. }
         )
     }
 
@@ -468,8 +477,11 @@ impl AppSession for MoonSession {
 
     // This function runs in an async task (background thread)
     async fn execute(&mut self) -> AppResult<Self::Error> {
-        // Connect to the storage backends as early as possible
-        self.get_cache_engine()?.storage.connect_backends().await?;
+        // Connect to the storage backends as early as possible,
+        // but only for commands that will actually read/write to it
+        if self.is_pipeline_command() || self.is_daemon_server_command() {
+            self.get_cache_engine()?.storage.connect_backends().await?;
+        }
 
         // Check for a new version and log to the console
         if self.is_telemetry_enabled() && self.is_pipeline_command() {

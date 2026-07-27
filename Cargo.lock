@@ -904,9 +904,9 @@ checksum = "6e4de3bc4ea267985becf712dc6d9eed8b04c953b3fcfb339ebc87acd9804901"
 
 [[package]]
 name = "ci_env"
-version = "0.5.1"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "751350244a17b2e42948deca418f9009250586beb9d11375cef3cc6a4fb88a16"
+checksum = "fc568278debc89cf04144427c021e6412cfc4f9d112a488a0a11a496bb3f2c06"
 dependencies = [
  "serde",
 ]

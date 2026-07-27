@@ -67,8 +67,8 @@ impl<'task> TaskRunner<'task> {
         Ok(Self {
             state: TaskRunState::new(app_context, task),
             cache,
-            archiver: OutputArchiver::new(app_context, task, daemon_client)?,
-            hydrater: OutputHydrater::new(app_context, task)?,
+            archiver: OutputArchiver::new(app_context, task, daemon_client.clone())?,
+            hydrater: OutputHydrater::new(app_context, task, daemon_client)?,
             project,
             report: TaskReportItem {
                 output_style: task.options.output_style,

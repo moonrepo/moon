@@ -15,12 +15,11 @@ service MoonDaemon {
 }
 
 message ArchiveTaskOutputsRequest {
-  string task_target = 1;
-  build.bazel.remote.execution.v2.Digest digest = 2;
-  build.bazel.remote.execution.v2.ActionResult manifest = 3;
-
-  bool include_local = 4;
-  bool include_remote = 5;
+  string                                       task_target    = 1;
+  build.bazel.remote.execution.v2.Digest       digest         = 2;
+  build.bazel.remote.execution.v2.ActionResult manifest       = 3;
+  bool                                         include_local  = 4;
+  bool                                         include_remote = 5;
 }
 
 message ArchiveTaskOutputsResponse {
@@ -28,13 +27,13 @@ message ArchiveTaskOutputsResponse {
 }
 
 message CleanCacheRequest {
-  bool all = 1;
+  bool   all      = 1;
   string lifetime = 2;
 }
 
 message CleanCacheResponse {
   uint32 files_deleted = 1;
-  uint64 bytes_saved = 2;
+  uint64 bytes_saved   = 2;
 }
 
 message HashFilesRequest {
@@ -45,8 +44,21 @@ message HashFilesResponse {
   map<string, string> files = 1;
 }
 
+// message HydrateTaskOutputsRequest {
+//   string task_target = 1;
+//   build.bazel.remote.execution.v2.Digest digest = 2;
+//   build.bazel.remote.execution.v2.ActionResult manifest = 3;
+//   bool include_local = 4;
+//   bool include_remote = 5;
+//   string backend_id = 6;
+// }
+
+// message HydrateTaskOutputsResponse {
+//   bool hydrated = 1;
+// }
+
 message SendWebhookRequest {
-  string url = 1;
+  string url  = 1;
   string body = 2;
 }
 
@@ -59,20 +71,20 @@ message StartRequest {
 }
 
 message StartResponse {
-  uint32 pid = 1;
-  string endpoint = 2;
-  bool already_running = 3;
+  uint32 pid             = 1;
+  string endpoint        = 2;
+  bool   already_running = 3;
 }
 
 message StatusRequest {}
 
 message StatusResponse {
-  bool running = 1;
-  uint32 pid = 2;
-  string endpoint = 3;
-  uint64 uptime_secs = 4;
-  string moon_version = 5;
-  string workspace_root = 6;
+  bool   running          = 1;
+  uint32 pid              = 2;
+  string endpoint         = 3;
+  uint64 uptime_secs      = 4;
+  string moon_version     = 5;
+  string workspace_root   = 6;
   uint32 protocol_version = 7;
 }
 

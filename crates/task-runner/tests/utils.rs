@@ -91,7 +91,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_hydrator(&self) -> OutputHydrater<'_> {
-        OutputHydrater::new(&self.app_context, &self.task).unwrap()
+        OutputHydrater::new(&self.app_context, &self.task, None).unwrap()
     }
 
     pub fn create_state(&self) -> TaskRunState {

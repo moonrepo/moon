@@ -9,6 +9,7 @@ use moon_common::{
     color,
     path::{WorkspaceRelativePath, clean_components},
 };
+use moon_daemon_client::DaemonClient;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use starbase_utils::{
@@ -51,17 +52,20 @@ pub struct OutputHydrater<'task> {
     app_context: &'task Arc<AppContext>,
     task: &'task Arc<Task>,
     task_output_globset: GlobSet<'static>,
+    daemon_client: Option<DaemonClient>,
 }
 
 impl OutputHydrater<'_> {
     pub fn new<'task>(
         app_context: &'task Arc<AppContext>,
         task: &'task Arc<Task>,
+        daemon_client: Option<DaemonClient>,
     ) -> miette::Result<OutputHydrater<'task>> {
         Ok(OutputHydrater {
             task_output_globset: GlobSet::new_owned(task.output_globs.keys())?,
             task,
             app_context,
+            daemon_client,
         })
     }
 

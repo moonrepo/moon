@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 
+use crate::content_hash::ContentHash;
+use crate::digest::Digest;
+
 pub use bazel_remote_apis::build::bazel::remote::execution::v2::Digest as ExternalDigest;
-use moon_hash::{ContentHash, Digest};
 
 pub trait InternalDigestExt {
     fn from_external(digest: ExternalDigest) -> miette::Result<Digest>;

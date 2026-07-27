@@ -1,25 +1,23 @@
 [package]
-name = "moon_hash"
+name = "moon_manifest"
 version = "0.0.1"
 edition = "2024"
 license = "MIT"
-description = "Content hashing engine."
+description = "Cache manifests."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_blob = { path = "../blob" }
+moon_hash = { path = "../hash" }
 bazel-remote-apis = { workspace = true }
-compact_str = { workspace = true }
+bytes = { workspace = true }
+chrono = { workspace = true }
 miette = { workspace = true }
+rustc-hash = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true, features = ["hash", "json"] }
-thiserror = { workspace = true }
-tracing = { workspace = true }
-
-[dev-dependencies]
-starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

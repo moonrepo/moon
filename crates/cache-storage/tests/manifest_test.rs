@@ -3,8 +3,8 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 };
 use bazel_remote_apis::google::protobuf::Timestamp;
 use moon_blob::{BlobContent, Bytes};
-use moon_cache_storage::{Manifest, ManifestFile};
 use moon_hash::{ContentHash, Digest};
+use moon_manifest::{Manifest, ManifestFile};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::json::serde_json;

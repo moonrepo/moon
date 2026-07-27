@@ -1,15 +1,16 @@
-use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
+use miette::IntoDiagnostic;
 use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain, is_daemon_env};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
+use moon_manifest::Manifest;
 use rustc_hash::FxHashMap;
 use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::sync::Mutex;
 use std::time::{Duration, SystemTime};
+use tokio::sync::Mutex;
 use tokio::task::{AbortHandle, JoinHandle, JoinSet};
 use tracing::{debug, warn};
 
@@ -18,6 +19,12 @@ use tracing::{debug, warn};
 /// slower than just running the task would have been; stragglers past this are
 /// aborted and reported, and simply get re-uploaded on the next run.
 const BACKGROUND_FLUSH_TIMEOUT: Duration = Duration::from_secs(60);
+
+pub struct ManifestSource {
+    pub backend: BoxedStorageBackend,
+    pub manifest: Manifest,
+    pub remote: bool,
+}
 
 #[derive(Clone, Debug)]
 pub struct CacheContext {
@@ -222,7 +229,7 @@ impl Storage {
     }
 
     pub async fn store_blobs(&self, blobs: Vec<BlobInput>) -> miette::Result<()> {
-        let mut background_tasks = self.background_tasks.lock().unwrap();
+        let mut background_tasks = self.background_tasks.lock().await;
 
         for backend in self.get_backends() {
             if !backend.is_writable() {
@@ -282,7 +289,7 @@ impl Storage {
         digest: &Digest,
         manifest: Manifest,
     ) -> miette::Result<()> {
-        let mut background_tasks = self.background_tasks.lock().unwrap();
+        let mut background_tasks = self.background_tasks.lock().await;
 
         debug!(
             hash = digest.hash.as_str(),
@@ -314,6 +321,10 @@ impl Storage {
             } else {
                 set.spawn(future);
             }
+        }
+
+        while let Some(result) = set.join_next().await {
+            result.into_diagnostic()??;
         }
 
         debug!(
@@ -403,7 +414,7 @@ impl Storage {
     /// backend, so the next run resolves locally instead of round-tripping to
     /// the remote.
     async fn warm_local_backends(&self, digest: &Digest, manifest: &Manifest) {
-        let mut background_tasks = self.background_tasks.lock().unwrap();
+        let mut background_tasks = self.background_tasks.lock().await;
 
         for backend in self.get_local_backends() {
             if !backend.is_writable() {
@@ -432,7 +443,7 @@ impl Storage {
         let background_tasks = {
             self.background_tasks
                 .lock()
-                .unwrap()
+                .await
                 .drain(0..)
                 .collect::<Vec<_>>()
         };

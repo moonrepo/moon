@@ -1,10 +1,10 @@
 use crate::daemon_client_error::DaemonClientError;
 use hyper_util::rt::TokioIo;
-use moon_cache_storage::{InternalDigestExt, Manifest};
 use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{moon_daemon_client::MoonDaemonClient, *};
 use moon_daemon_utils::endpoint::*;
-use moon_hash::Digest;
+use moon_hash::{Digest, InternalDigestExt};
+use moon_manifest::Manifest;
 use std::future::Future;
 use std::io::Error;
 use std::path::Path;

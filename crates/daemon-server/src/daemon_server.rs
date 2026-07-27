@@ -1,7 +1,7 @@
 use crate::daemon_server_error::DaemonServerError;
 use crate::daemon_watcher::{start_file_listener, start_file_watcher};
 use moon_app_context::AppContext;
-use moon_cache_storage::{InternalDigestExt, Manifest, StorageOptions};
+use moon_cache_storage::{Manifest, StorageOptions};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{
@@ -11,7 +11,7 @@ use moon_daemon_proto::{
 use moon_daemon_utils::endpoint::*;
 use moon_daemon_utils::lock::DaemonLock;
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
-use moon_hash::Digest;
+use moon_hash::{Digest, InternalDigestExt};
 use moon_notifier::notify_webhook;
 use moon_process::ProcessRegistry;
 use moon_workspace_graph::WorkspaceGraph;
@@ -123,7 +123,7 @@ impl MoonDaemon for DaemonService {
     ) -> Result<Response<ArchiveTaskOutputsResponse>, Status> {
         self.track_activity("ArchiveTaskOutputs");
 
-        let app_context = Arc::clone(&self.state.read().await.app_context);
+        let app_context = { Arc::clone(&self.state.read().await.app_context) };
         let request = request.into_inner();
 
         let digest = Digest::from_external(

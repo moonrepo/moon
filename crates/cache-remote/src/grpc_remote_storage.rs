@@ -18,12 +18,12 @@ use bazel_remote_apis::google::bytestream::{
 };
 use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
 use moon_cache_storage::{
-    CacheCapabilities, CacheContext, Compressor, DigestFunction, ExternalDigestExt,
-    InternalDigestExt, Manifest, StorageBackend, check_blob_integrity,
+    CacheCapabilities, CacheContext, Compressor, DigestFunction, Manifest, StorageBackend,
+    check_blob_integrity,
 };
 use moon_common::{Id, color, is_ci, is_remote};
 use moon_config::{RemoteCompression, RemoteConfig};
-use moon_hash::Digest;
+use moon_hash::{Digest, ExternalDigestExt, InternalDigestExt};
 use reqwest::header::HeaderMap;
 use std::fmt::Debug;
 use std::sync::{Arc, OnceLock};

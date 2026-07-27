@@ -5207,6 +5207,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
+ "moon_manifest",
  "moon_process",
  "rustc-hash",
  "serde",
@@ -5421,11 +5422,11 @@ version = "0.0.1"
 dependencies = [
  "hyper-util",
  "miette 7.6.0",
- "moon_cache_storage",
  "moon_common",
  "moon_daemon_proto",
  "moon_daemon_utils",
  "moon_hash",
+ "moon_manifest",
  "thiserror 2.0.19",
  "tokio",
  "tonic",
@@ -5604,6 +5605,7 @@ dependencies = [
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [
+ "bazel-remote-apis",
  "compact_str 0.10.0",
  "miette 7.6.0",
  "moon_common",
@@ -5612,6 +5614,21 @@ dependencies = [
  "starbase_utils",
  "thiserror 2.0.19",
  "tracing",
+]
+
+[[package]]
+name = "moon_manifest"
+version = "0.0.1"
+dependencies = [
+ "bazel-remote-apis",
+ "bytes",
+ "chrono",
+ "miette 7.6.0",
+ "moon_blob",
+ "moon_common",
+ "moon_hash",
+ "rustc-hash",
+ "serde",
 ]
 
 [[package]]

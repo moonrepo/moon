@@ -1,12 +1,12 @@
 use async_trait::async_trait;
 use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
 use moon_cache_storage::{
-    CacheCapabilities, CacheContext, Manifest, ManifestFile, Storage, StorageBackend,
-    StorageOptions,
+    CacheCapabilities, CacheContext, Storage, StorageBackend, StorageOptions,
 };
 use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::{ContentHash, Digest};
+use moon_manifest::{Manifest, ManifestFile};
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};

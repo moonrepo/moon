@@ -1,11 +1,11 @@
 use crate::capabilities::CacheCapabilities;
 use crate::helpers::{Batch, create_batches};
-use crate::manifest::Manifest;
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_blob::{BlobCleanStats, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain};
 use moon_hash::Digest;
+use moon_manifest::Manifest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;

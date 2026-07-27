@@ -1,23 +1,15 @@
-use crate::digest_compat::{ExternalDigestExt, InternalDigestExt};
 use crate::helpers::{create_from_timestamp, create_timestamp};
-use crate::storage_backend::BoxedStorageBackend;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
 };
 use bazel_remote_apis::google::protobuf::UInt32Value;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_hash::Digest;
+use moon_hash::{Digest, ExternalDigestExt, InternalDigestExt};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-
-pub struct ManifestSource {
-    pub backend: BoxedStorageBackend,
-    pub manifest: Manifest,
-    pub remote: bool,
-}
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {

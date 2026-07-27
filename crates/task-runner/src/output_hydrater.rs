@@ -42,7 +42,9 @@ pub enum HydrateOutcome {
     Skipped,
     Missed,
     Hit,
-    HitFromStorage(Manifest, bool),
+    // Boxed to keep the enum small: `Manifest` dwarfs the unit variants, so
+    // every `HydrateOutcome` would otherwise be sized for this one case.
+    HitFromStorage(Box<Manifest>, bool),
 }
 
 pub struct OutputHydrater<'task> {
@@ -128,7 +130,9 @@ impl OutputHydrater<'_> {
                 }
 
                 Ok(match manifest {
-                    Some(manifest) => HydrateOutcome::HitFromStorage(manifest, is_remote_backend),
+                    Some(manifest) => {
+                        HydrateOutcome::HitFromStorage(Box::new(manifest), is_remote_backend)
+                    }
                     None => HydrateOutcome::Missed,
                 })
             }

@@ -1,7 +1,7 @@
 use crate::manifest::{Manifest, ManifestSource};
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput};
-use moon_common::{Id, format_error_chain};
+use moon_common::{Id, format_error_chain, is_daemon_env};
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
@@ -294,17 +294,26 @@ impl Storage {
 
         // Store the manifest in all backends in parallel, but if any fail,
         // continue storing the rest for failover/redundancy in the future
+        let mut set = JoinSet::new();
+        let in_background = !is_daemon_env();
+
         for backend in self.get_backends() {
             if !backend.is_writable() {
                 continue;
             }
 
-            background_tasks.push(tokio::spawn(Box::pin(persist_manifest_in_backend(
+            let future = Box::pin(persist_manifest_in_backend(
                 Arc::clone(backend),
                 digest.to_owned(),
                 manifest.clone(),
                 self.context.workspace_root.clone(),
-            ))));
+            ));
+
+            if in_background {
+                background_tasks.push(tokio::spawn(future));
+            } else {
+                set.spawn(future);
+            }
         }
 
         debug!(
@@ -312,7 +321,12 @@ impl Storage {
             files = manifest.files.len(),
             symlinks = manifest.symlinks.len(),
             exit_code = manifest.exit_code,
-            "Archived cache manifest (in background queue)"
+            "Archived cache manifest {}",
+            if in_background {
+                "(in background queue)"
+            } else {
+                ""
+            }
         );
 
         Ok(())

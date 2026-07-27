@@ -8,7 +8,7 @@ use moon_hash::{ContentHash, Digest};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::json::serde_json;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 fn hex(seed: char) -> String {
     std::iter::repeat_n(seed, 64).collect()
@@ -119,6 +119,85 @@ mod from_bazel {
         assert!(result.stderr_raw.is_empty());
         assert!(result.stdout_digest.is_some());
         assert!(result.stderr_digest.is_some());
+    }
+
+    #[test]
+    fn persisting_stdio_inlines_the_raw_fields() {
+        // The daemon hop is moon's own RPC, not `UpdateActionResult`, and the
+        // console output lives only in the client's memory — so it has to be
+        // inlined or the daemon has no bytes to upload for it.
+        let manifest = Manifest {
+            stdout_bytes: Some(Bytes::from_static(b"out")),
+            stdout_digest: Some(digest('c', 3)),
+            stderr_bytes: Some(Bytes::from_static(b"err")),
+            stderr_digest: Some(digest('d', 3)),
+            ..Default::default()
+        };
+
+        let result = manifest.into_bazel_action_result(true);
+
+        assert_eq!(result.stdout_raw, b"out");
+        assert_eq!(result.stderr_raw, b"err");
+        assert!(result.stdout_digest.is_some());
+        assert!(result.stderr_digest.is_some());
+    }
+
+    #[test]
+    fn persisting_stdio_without_bytes_leaves_the_raw_fields_empty() {
+        // A digest can be present with no bytes (nothing was captured, or the
+        // manifest isn't hydrated). That must stay an empty raw field rather
+        // than becoming an empty blob under the real, non-empty digest.
+        let manifest = Manifest {
+            stdout_bytes: None,
+            stdout_digest: Some(digest('c', 3)),
+            stderr_bytes: None,
+            stderr_digest: Some(digest('d', 3)),
+            ..Default::default()
+        };
+
+        let result = manifest.into_bazel_action_result(true);
+
+        assert!(result.stdout_raw.is_empty());
+        assert!(result.stderr_raw.is_empty());
+    }
+
+    #[test]
+    fn stdio_bytes_survive_a_persisted_round_trip() {
+        // What the daemon actually relies on: bytes handed to the client come
+        // back out the other side, since it can't re-read them from anywhere.
+        let manifest = Manifest {
+            exit_code: 4,
+            stdout_bytes: Some(Bytes::from_static(b"out")),
+            stdout_digest: Some(digest('c', 3)),
+            stderr_bytes: Some(Bytes::from_static(b"err")),
+            stderr_digest: Some(digest('d', 3)),
+            ..Default::default()
+        };
+
+        let restored =
+            Manifest::from_bazel_action_result(manifest.into_bazel_action_result(true)).unwrap();
+
+        assert_eq!(restored.exit_code, 4);
+        assert_eq!(restored.stdout_bytes, Some(Bytes::from_static(b"out")));
+        assert_eq!(restored.stderr_bytes, Some(Bytes::from_static(b"err")));
+        assert!(restored.is_hydrated());
+    }
+
+    #[test]
+    fn stdio_bytes_are_lost_on_an_unpersisted_round_trip() {
+        // The counterpart to the above: an upload-shaped conversion drops the
+        // bytes and leaves only the digests to fetch them by.
+        let manifest = Manifest {
+            stdout_bytes: Some(Bytes::from_static(b"out")),
+            stdout_digest: Some(digest('c', 3)),
+            ..Default::default()
+        };
+
+        let restored =
+            Manifest::from_bazel_action_result(manifest.into_bazel_action_result(false)).unwrap();
+
+        assert!(restored.stdout_bytes.is_none());
+        assert_eq!(restored.stdout_digest, Some(digest('c', 3)));
     }
 
     #[test]
@@ -261,6 +340,72 @@ mod collect_blob_sources {
     }
 
     #[test]
+    fn prefers_the_source_path_over_the_workspace_path() {
+        // Once a file records where its bytes actually live, that wins over
+        // resolving the workspace-relative path — the two differ for blobs
+        // sourced from outside the output tree (e.g. the fingerprint file).
+        let manifest = Manifest {
+            files: vec![ManifestFile {
+                digest: Some(digest('a', 5)),
+                path: "out/a.txt".into(),
+                source_path: Some(PathBuf::from("/elsewhere/cached.txt")),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
+
+        assert_eq!(sources.len(), 1);
+        match &sources[0].content {
+            BlobContent::File(path) => {
+                assert_eq!(path, Path::new("/elsewhere/cached.txt"));
+            }
+            _ => panic!("expected a file-backed source"),
+        }
+    }
+
+    #[test]
+    fn includes_the_digest_source() {
+        // The action digest names the fingerprint file, and a backend that
+        // validates the RE contract rejects an action result whose action
+        // digest is absent from the CAS — so it must be uploaded too.
+        let manifest = Manifest {
+            files: vec![file(None, Some(digest('a', 5)))],
+            digest_source: Some(ManifestFile {
+                digest: Some(digest('f', 11)),
+                path: ".moon/cache/hashes/abc.json".into(),
+                source_path: Some(PathBuf::from("/workspace/.moon/cache/hashes/abc.json")),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let sources = manifest.collect_blob_inputs(Path::new("/workspace"));
+
+        assert_eq!(sources.len(), 2);
+        assert!(
+            sources
+                .iter()
+                .any(|source| source.digest == digest('f', 11)),
+            "the digest source must be uploaded alongside the outputs"
+        );
+    }
+
+    #[test]
+    fn omits_the_digest_source_when_unset() {
+        let manifest = Manifest {
+            files: vec![file(None, Some(digest('a', 5)))],
+            ..Default::default()
+        };
+
+        assert_eq!(
+            manifest.collect_blob_inputs(Path::new("/workspace")).len(),
+            1
+        );
+    }
+
+    #[test]
     fn empty_file_uses_inline_empty_blob_not_a_path() {
         // A size-0 output must become a shared inline empty blob, never a
         // File(path): the path isn't materialized when warming runs, and empty
@@ -295,6 +440,24 @@ mod hydration {
     #[test]
     fn empty_manifest_is_hydrated() {
         assert!(Manifest::default().is_hydrated());
+    }
+
+    #[test]
+    fn digest_source_is_never_fetched_during_hydration() {
+        // The digest source is upload-only: it's the action the manifest was
+        // produced from, not an output to restore. Pulling it in here would
+        // make every cache hit download a blob it never writes anywhere.
+        let manifest = Manifest {
+            digest_source: Some(ManifestFile {
+                digest: Some(digest('f', 11)),
+                path: ".moon/cache/hashes/abc.json".into(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        assert!(manifest.collect_unhydrated_blob_digests().is_empty());
+        assert!(manifest.is_hydrated());
     }
 
     #[test]
@@ -414,6 +577,28 @@ mod serialization {
         assert!(!json.contains("stderr_bytes"));
         assert!(!json.contains("stdout_bytes"));
         assert!(!json.contains("\"bytes\""));
+    }
+
+    #[test]
+    fn digest_source_is_never_serialized() {
+        // It only exists to get the action blob uploaded during archiving; a
+        // persisted manifest has no use for it, and the local GC reads these
+        // files back to decide which blobs to keep.
+        let manifest = Manifest {
+            digest_source: Some(ManifestFile {
+                digest: Some(digest('f', 11)),
+                path: ".moon/cache/hashes/abc.json".into(),
+                source_path: Some(PathBuf::from("/workspace/.moon/cache/hashes/abc.json")),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+
+        let json = serde_json::to_string(&manifest).unwrap();
+        assert!(!json.contains("digest_source"));
+
+        let restored: Manifest = serde_json::from_str(&json).unwrap();
+        assert!(restored.digest_source.is_none());
     }
 
     #[test]

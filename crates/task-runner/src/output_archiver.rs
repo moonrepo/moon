@@ -3,7 +3,6 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_blob::{BlobContent, BlobInput};
 use moon_cache::{Manifest, StorageOptions};
 use moon_common::color;
 use moon_daemon_client::DaemonClient;

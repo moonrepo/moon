@@ -31,7 +31,7 @@ impl ManifestPacker {
         if path.exists() {
             self.manifest.digest_source = Some(ManifestFile {
                 digest: Some(digest.to_owned()),
-                path: self.convert_path(&path)?,
+                path: self.resolve_rel_path(&path)?,
                 source_path: Some(path),
                 ..Default::default()
             });
@@ -96,7 +96,7 @@ impl ManifestPacker {
             digest: Some(Digest::from_file(&abs_path)?),
             is_executable: is_file_executable(&abs_path, &metadata),
             modified_at: metadata.modified().ok(),
-            path: self.convert_path(&abs_path)?,
+            path: self.resolve_rel_path(&abs_path)?,
             source_path: Some(abs_path),
             unix_mode: extract_unix_mode(&metadata),
         });
@@ -122,15 +122,15 @@ impl ManifestPacker {
 
         self.manifest.symlinks.push(ManifestSymlink {
             modified_at: metadata.modified().ok(),
-            path: self.convert_path(&abs_path)?,
-            target: self.convert_path(&link)?,
+            path: self.resolve_rel_path(&abs_path)?,
+            target: self.resolve_rel_path(&link)?,
             unix_mode: extract_unix_mode(&metadata),
         });
 
         Ok(())
     }
 
-    fn convert_path(&self, abs_path: &Path) -> miette::Result<WorkspaceRelativePathBuf> {
+    fn resolve_rel_path(&self, abs_path: &Path) -> miette::Result<WorkspaceRelativePathBuf> {
         let rel_path = abs_path.relative_to(&self.workspace_root).map_err(|_| {
             ManifestError::OutputFileOutsideOfWorkspace {
                 output: abs_path.to_owned(),

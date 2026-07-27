@@ -18,7 +18,7 @@ impl ToolchainsConfigExt {
             "node" => Some(locate("node_toolchain", "1.0.2")),
             "npm" => Some(locate("node_depman_toolchain", "1.0.3")),
             "pnpm" => Some(locate("node_depman_toolchain", "1.0.3")),
-            "rust" => Some(locate("rust_toolchain", "1.0.7")),
+            "rust" => Some(locate("rust_toolchain", "1.0.6")),
             "typescript" => Some(locate("typescript_toolchain", "1.1.3")),
             "unstable_python" => Some(locate("python_toolchain", "0.2.0")),
             "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.2")),

@@ -187,9 +187,16 @@ impl MoonDaemon for DaemonService {
         )
         .map_err(|error| Status::unknown(error.to_string()))?;
 
-        let backend = app_context
+        let storage = app_context
             .cache_engine
             .storage
+            .with_options(StorageOptions {
+                include_local: request.include_local,
+                include_remote: request.include_remote,
+                ..Default::default()
+            });
+
+        let backend = storage
             .get_backends()
             .iter()
             .find(|backend| backend.get_id() == &request.backend_id)
@@ -197,23 +204,13 @@ impl MoonDaemon for DaemonService {
             .ok_or_else(|| Status::invalid_argument("Missing storage backend"))?;
 
         let source = ManifestSource {
+            // This is questionable, but we'll see how it pans out
+            remote: backend.get_id().contains("remote") || !backend.get_id().contains("local"),
             backend,
             manifest,
-            // Not required in the daemon, only in the output hydrater!
-            remote: false,
         };
 
-        match app_context
-            .cache_engine
-            .storage
-            .with_options(StorageOptions {
-                include_local: request.include_local,
-                include_remote: request.include_remote,
-                ..Default::default()
-            })
-            .hydrate_manifest(&digest, source)
-            .await
-        {
+        match storage.hydrate_manifest(&digest, source).await {
             Ok(mut maybe_manifest) => {
                 if let Some(manifest) = &mut maybe_manifest {
                     ManifestUnpacker::new(manifest, app_context.workspace_root.clone())
@@ -228,7 +225,7 @@ impl MoonDaemon for DaemonService {
                 }
 
                 Ok(Response::new(HydrateTaskOutputsResponse {
-                    hydrated: true,
+                    hydrated: maybe_manifest.is_some(),
                     // Keep stdout/stderr as it's required for hydrating the terminal output
                     manifest: maybe_manifest
                         .map(|manifest| manifest.into_bazel_action_result(true)),
@@ -239,7 +236,7 @@ impl MoonDaemon for DaemonService {
                     task_target = &request.task_target,
                     hash = digest.hash.as_str(),
                     error = format_error_chain(&error),
-                    "Failed to archive task outputs",
+                    "Failed to hydrate task outputs",
                 );
 
                 Ok(Response::new(HydrateTaskOutputsResponse {

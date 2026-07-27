@@ -19,11 +19,4 @@ pub enum ManifestError {
         .output.style(Style::Path),
     )]
     OutputFileOutsideOfWorkspace { output: PathBuf },
-    // #[diagnostic(code(manifest::undeclared_output))]
-    // #[error(
-    //     "Unable to hydrate cached output for task {}, as the file {} is not declared as an output.",
-    //     .target.style(Style::Label),
-    //     .output.style(Style::Path),
-    // )]
-    // OutputFileNotDeclared { target: Target, output: PathBuf },
 }

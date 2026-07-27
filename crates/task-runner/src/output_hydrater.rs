@@ -113,7 +113,7 @@ impl OutputHydrater<'_> {
                 let mut manifest = None;
 
                 if let Some(mut daemon) = self.daemon_client.clone() {
-                    if let Some(action_result) = daemon
+                    let res = daemon
                         .hydrate_task_outputs(
                             self.task.target.to_string(),
                             state.digest.clone(),
@@ -122,8 +122,10 @@ impl OutputHydrater<'_> {
                             use_remote,
                             source.backend.get_id().to_string(),
                         )
-                        .await?
-                        .manifest
+                        .await?;
+
+                    if res.hydrated
+                        && let Some(action_result) = res.manifest
                     {
                         manifest = Some(Manifest::from_bazel_action_result(action_result)?);
                     }

@@ -46,11 +46,7 @@ impl CasStore {
         let root = root.as_ref();
         let temp_dir = root.join("temp");
 
-        if config.verify_integrity {
-            debug!(root = ?root, "Creating CAS store");
-        } else {
-            debug!(root = ?root, "Creating KV store");
-        }
+        debug!(root = ?root, "Creating CAS store");
 
         fs::create_dir_all(&temp_dir)?;
 

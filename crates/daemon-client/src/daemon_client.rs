@@ -228,6 +228,36 @@ impl DaemonClient {
         Ok(response.into_inner())
     }
 
+    #[instrument(skip(self, manifest))]
+    pub async fn hydrate_task_outputs(
+        &mut self,
+        task_target: String,
+        digest: Digest,
+        manifest: Manifest,
+        include_local: bool,
+        include_remote: bool,
+        backend_id: String,
+    ) -> miette::Result<HydrateTaskOutputsResponse> {
+        let response = with_deadline(
+            "HydrateTaskOutputs",
+            WORK_DEADLINE,
+            self.inner.hydrate_task_outputs(request_with_deadline(
+                HydrateTaskOutputsRequest {
+                    task_target,
+                    digest: Some(digest.into_external_digest()),
+                    manifest: Some(manifest.into_bazel_action_result(true)),
+                    include_local,
+                    include_remote,
+                    backend_id,
+                },
+                WORK_DEADLINE,
+            )),
+        )
+        .await?;
+
+        Ok(response.into_inner())
+    }
+
     #[instrument(skip(self))]
     pub async fn clean_cache(
         &mut self,

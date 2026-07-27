@@ -8,6 +8,7 @@ service MoonDaemon {
   rpc ArchiveTaskOutputs(ArchiveTaskOutputsRequest) returns (ArchiveTaskOutputsResponse);
   rpc CleanCache(CleanCacheRequest) returns (CleanCacheResponse);
   rpc HashFiles(HashFilesRequest) returns (HashFilesResponse);
+  rpc HydrateTaskOutputs(HydrateTaskOutputsRequest) returns (HydrateTaskOutputsResponse);
   rpc SendWebhook(SendWebhookRequest) returns (SendWebhookResponse);
   rpc Start(StartRequest) returns (StartResponse);
   rpc Status(StatusRequest) returns (StatusResponse);
@@ -44,18 +45,19 @@ message HashFilesResponse {
   map<string, string> files = 1;
 }
 
-// message HydrateTaskOutputsRequest {
-//   string task_target = 1;
-//   build.bazel.remote.execution.v2.Digest digest = 2;
-//   build.bazel.remote.execution.v2.ActionResult manifest = 3;
-//   bool include_local = 4;
-//   bool include_remote = 5;
-//   string backend_id = 6;
-// }
+message HydrateTaskOutputsRequest {
+  string                                       task_target    = 1;
+  build.bazel.remote.execution.v2.Digest       digest         = 2;
+  build.bazel.remote.execution.v2.ActionResult manifest       = 3;
+  bool                                         include_local  = 4;
+  bool                                         include_remote = 5;
+  string                                       backend_id     = 6;
+}
 
-// message HydrateTaskOutputsResponse {
-//   bool hydrated = 1;
-// }
+message HydrateTaskOutputsResponse {
+  bool                                         hydrated = 1;
+  build.bazel.remote.execution.v2.ActionResult manifest = 2;
+}
 
 message SendWebhookRequest {
   string url  = 1;

@@ -103,27 +103,47 @@ impl OutputHydrater<'_> {
                 let use_remote = state.remote_cache_readable;
                 let is_remote_backend = source.remote;
 
+                // Validate the output paths are legit before doing anything
+                self.validate_output_paths(&source.manifest)?;
+
                 // Delete existing outputs first so that reflinking works
                 self.delete_existing_outputs()?;
 
                 // Retrieve the manifest from the local/remote caches
-                let manifest = self
-                    .app_context
-                    .cache_engine
-                    .storage
-                    .with_options(StorageOptions {
-                        include_local: use_local,
-                        include_remote: use_remote,
-                        ..Default::default()
-                    })
-                    .hydrate_manifest(&state.digest, *source)
-                    .await?;
+                let mut manifest = None;
 
-                if let Some(manifest) = &manifest {
-                    self.validate_output_paths(manifest)?;
+                if let Some(mut daemon) = self.daemon_client.clone() {
+                    if let Some(action_result) = daemon
+                        .hydrate_task_outputs(
+                            self.task.target.to_string(),
+                            state.digest.clone(),
+                            source.manifest,
+                            use_local,
+                            use_remote,
+                            source.backend.get_id().to_string(),
+                        )
+                        .await?
+                        .manifest
+                    {
+                        manifest = Some(Manifest::from_bazel_action_result(action_result)?);
+                    }
+                } else {
+                    manifest = self
+                        .app_context
+                        .cache_engine
+                        .storage
+                        .with_options(StorageOptions {
+                            include_local: use_local,
+                            include_remote: use_remote,
+                            ..Default::default()
+                        })
+                        .hydrate_manifest(&state.digest, *source)
+                        .await?;
 
-                    ManifestUnpacker::new(manifest, self.app_context.workspace_root.clone())
-                        .unpack()?;
+                    if let Some(manifest) = &manifest {
+                        ManifestUnpacker::new(manifest, self.app_context.workspace_root.clone())
+                            .unpack()?;
+                    }
                 }
 
                 Ok(match manifest {

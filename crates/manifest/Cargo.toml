@@ -9,6 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = false
 
 [dependencies]
+moon_action = { path = "../action" }
 moon_common = { path = "../common" }
 moon_blob = { path = "../blob" }
 moon_hash = { path = "../hash" }
@@ -18,6 +19,11 @@ chrono = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
+starbase_utils = { workspace = true, features = ["glob"] }
+thiserror ={ workspace = true }
+
+[dev-dependencies]
+starbase_sandbox = { workspace = true }
 
 [lints]
 workspace = true

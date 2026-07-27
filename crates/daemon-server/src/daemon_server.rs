@@ -123,7 +123,7 @@ impl MoonDaemon for DaemonService {
     ) -> Result<Response<ArchiveTaskOutputsResponse>, Status> {
         self.track_activity("ArchiveTaskOutputs");
 
-        let app_context = { Arc::clone(&self.state.read().await.app_context) };
+        let app_context = Arc::clone(&self.state.read().await.app_context);
         let request = request.into_inner();
 
         let digest = Digest::from_external(

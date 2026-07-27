@@ -5624,11 +5624,15 @@ dependencies = [
  "bytes",
  "chrono",
  "miette 7.6.0",
+ "moon_action",
  "moon_blob",
  "moon_common",
  "moon_hash",
  "rustc-hash",
  "serde",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -6036,6 +6040,7 @@ dependencies = [
  "moon_daemon_client",
  "moon_env_var",
  "moon_hash",
+ "moon_manifest",
  "moon_process",
  "moon_process_augment",
  "moon_project",

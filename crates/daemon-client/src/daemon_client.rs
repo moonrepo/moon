@@ -214,7 +214,7 @@ impl DaemonClient {
             WORK_DEADLINE,
             self.inner.archive_task_outputs(request_with_deadline(
                 ArchiveTaskOutputsRequest {
-                    task_target: task_target.to_owned(),
+                    task_target,
                     digest: Some(digest.into_external_digest()),
                     manifest: Some(manifest.into_bazel_action_result(true)),
                     include_local,

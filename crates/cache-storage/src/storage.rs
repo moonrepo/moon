@@ -336,7 +336,7 @@ impl Storage {
             if in_background {
                 "(in background queue)"
             } else {
-                ""
+                "(in daemon)"
             }
         );
 

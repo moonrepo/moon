@@ -1,4 +1,3 @@
-use crate::manifest_compat::ManifestBuilder;
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
@@ -6,6 +5,7 @@ use moon_app_context::AppContext;
 use moon_cache::{Manifest, StorageOptions};
 use moon_common::color;
 use moon_daemon_client::DaemonClient;
+use moon_manifest::ManifestPacker;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use std::sync::Arc;
@@ -163,29 +163,24 @@ impl OutputArchiver<'_> {
 
         // Building the manifest incurs a lot of file system calls,
         // so we run it in a blocking thread to avoid blocking the async runtime
-        let mut builder = spawn_blocking(move || {
+        let mut packer = spawn_blocking(move || {
             let outputs = task.get_output_files(&workspace_root, true)?;
-            let mut builder = ManifestBuilder::new(workspace_root);
+            let mut packer = ManifestPacker::new(workspace_root);
 
             for output in outputs {
-                builder.inherit_output(output)?;
+                packer.inherit_output(output)?;
             }
 
-            Ok::<_, miette::Report>(builder)
+            Ok::<_, miette::Report>(packer)
         })
         .await
         .into_diagnostic()??;
 
         // Then inherit the execution operation metadata
-        builder.inherit_operation(&state.operation)?;
+        packer.inherit_operation(&state.operation)?;
 
-        // The action digest addresses the hash manifest that produced it, so that
-        // file *is* the blob the digest names. The task runner (which owns the cache
-        // layout) supplies it, and it's uploaded with the outputs: backends that
-        // validate the RE contract reject an action result whose action digest is
-        // absent from the CAS ("action digest <hash>/<size> not found in CAS"),
-        // because a client is expected to have uploaded it before referencing it.
-        builder.inherit_source(
+        // Then inherit the source fingerprint file
+        packer.inherit_source(
             &state.digest,
             self.app_context
                 .cache_engine
@@ -193,7 +188,7 @@ impl OutputArchiver<'_> {
                 .get_manifest_path(&state.digest.hash),
         )?;
 
-        Ok(builder.build())
+        Ok(packer.pack())
     }
 
     #[instrument(skip(self, state))]

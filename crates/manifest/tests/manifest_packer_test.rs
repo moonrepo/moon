@@ -1,5 +1,5 @@
 use moon_hash::Digest;
-use moon_task_runner::manifest_compat::ManifestBuilder;
+use moon_manifest::ManifestPacker;
 use starbase_sandbox::create_empty_sandbox;
 
 mod inherit_source {
@@ -17,11 +17,11 @@ mod inherit_source {
         let path = sandbox.path().join(".moon/cache/hashes/abc.json");
         let digest = Digest::from_file(&path).unwrap();
 
-        let mut builder = ManifestBuilder::new(sandbox.path().to_path_buf());
-        builder.inherit_source(&digest, path.clone()).unwrap();
+        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        packer.inherit_source(&digest, path.clone()).unwrap();
 
-        let source = builder
-            .build()
+        let source = packer
+            .pack()
             .digest_source
             .expect("an existing fingerprint file must be recorded");
 
@@ -40,10 +40,10 @@ mod inherit_source {
         let path = sandbox.path().join(".moon/cache/hashes/missing.json");
         let digest = Digest::from_bytes(b"missing").unwrap();
 
-        let mut builder = ManifestBuilder::new(sandbox.path().to_path_buf());
-        builder.inherit_source(&digest, path).unwrap();
+        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        packer.inherit_source(&digest, path).unwrap();
 
-        assert!(builder.build().digest_source.is_none());
+        assert!(packer.pack().digest_source.is_none());
     }
 
     #[test]
@@ -56,10 +56,10 @@ mod inherit_source {
         let path = sandbox.path().join(".moon/cache/hashes/abc.json");
         let digest = Digest::from_file(&path).unwrap();
 
-        let mut builder = ManifestBuilder::new(sandbox.path().to_path_buf());
-        builder.inherit_source(&digest, path).unwrap();
+        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        packer.inherit_source(&digest, path).unwrap();
 
-        assert!(builder.build().digest_source.unwrap().bytes.is_none());
+        assert!(packer.pack().digest_source.unwrap().bytes.is_none());
     }
 
     #[test]
@@ -72,10 +72,10 @@ mod inherit_source {
         let path = sandbox.path().join(".moon/cache/hashes/abc.json");
         let digest = Digest::from_file(&path).unwrap();
 
-        let mut builder = ManifestBuilder::new(sandbox.path().to_path_buf());
-        builder.inherit_source(&digest, path).unwrap();
+        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        packer.inherit_source(&digest, path).unwrap();
 
-        let manifest = builder.build();
+        let manifest = packer.pack();
 
         assert!(manifest.files.is_empty());
         assert!(manifest.symlinks.is_empty());

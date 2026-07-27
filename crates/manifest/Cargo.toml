@@ -19,7 +19,7 @@ chrono = { workspace = true }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
-starbase_utils = { workspace = true, features = ["glob"] }
+starbase_utils = { workspace = true, features = ["glob", "json"] }
 thiserror ={ workspace = true }
 
 [dev-dependencies]

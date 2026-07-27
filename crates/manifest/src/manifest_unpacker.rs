@@ -1,5 +1,6 @@
 use crate::ManifestError;
 use crate::manifest::{Manifest, ManifestFile};
+use moon_blob::grant_owner_write_access;
 use moon_common::path::{WorkspaceRelativePath, clean_components};
 use starbase_utils::fs::{self, FsError};
 use std::io::Write;
@@ -61,8 +62,7 @@ impl<'owner> ManifestUnpacker<'owner> {
             // write bit (stores populated before objects were normalized may
             // contain read-only blobs), so restore it before opening a handle
             // to apply the mtime/mode below
-            // grant_owner_write_access(&output_path)?;
-            // TODO
+            grant_owner_write_access(&output_path)?;
 
             fs::open_file_for_writing(&output_path)?
         }

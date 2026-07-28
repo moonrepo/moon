@@ -1,21 +1,21 @@
-use crate::task_runner_error::TaskRunnerError;
+use crate::helpers::*;
+use crate::manifest::{Manifest, ManifestFile, ManifestSymlink};
+use crate::manifest_error::ManifestError;
 use moon_action::Operation;
 use moon_blob::Blob;
-use moon_cache::{Manifest, ManifestFile, ManifestSymlink};
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_hash::Digest;
 use starbase_utils::fs::{self, FsError};
 use starbase_utils::glob::{self, GlobWalkOptions};
-use std::fs::Metadata;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
-pub struct ManifestBuilder {
+pub struct ManifestPacker {
     manifest: Manifest,
     workspace_root: PathBuf,
 }
 
-impl ManifestBuilder {
+impl ManifestPacker {
     pub fn new(workspace_root: PathBuf) -> Self {
         Self {
             manifest: Manifest::default(),
@@ -23,8 +23,21 @@ impl ManifestBuilder {
         }
     }
 
-    pub fn build(self) -> Manifest {
+    pub fn pack(self) -> Manifest {
         self.manifest
+    }
+
+    pub fn inherit_source(&mut self, digest: &Digest, path: PathBuf) -> miette::Result<()> {
+        if path.exists() {
+            self.manifest.digest_source = Some(ManifestFile {
+                digest: Some(digest.to_owned()),
+                path: self.resolve_rel_path(&path)?,
+                source_path: Some(path),
+                ..Default::default()
+            });
+        }
+
+        Ok(())
     }
 
     pub fn inherit_operation(&mut self, operation: &Operation) -> miette::Result<()> {
@@ -51,7 +64,7 @@ impl ManifestBuilder {
 
     pub fn inherit_output(&mut self, abs_path: PathBuf) -> miette::Result<()> {
         if !abs_path.starts_with(&self.workspace_root) {
-            return Err(TaskRunnerError::OutputFileOutsideOfWorkspace { output: abs_path }.into());
+            return Err(ManifestError::OutputFileOutsideOfWorkspace { output: abs_path }.into());
         }
 
         if abs_path.is_symlink() {
@@ -83,7 +96,7 @@ impl ManifestBuilder {
             digest: Some(Digest::from_file(&abs_path)?),
             is_executable: is_file_executable(&abs_path, &metadata),
             modified_at: metadata.modified().ok(),
-            path: self.convert_path(&abs_path)?,
+            path: self.resolve_rel_path(&abs_path)?,
             source_path: Some(abs_path),
             unix_mode: extract_unix_mode(&metadata),
         });
@@ -98,7 +111,7 @@ impl ManifestBuilder {
         })?;
 
         if !link.starts_with(&self.workspace_root) {
-            return Err(TaskRunnerError::OutputSymlinkOutsideOfWorkspace {
+            return Err(ManifestError::OutputSymlinkOutsideOfWorkspace {
                 output: abs_path,
                 target: link,
             }
@@ -109,45 +122,21 @@ impl ManifestBuilder {
 
         self.manifest.symlinks.push(ManifestSymlink {
             modified_at: metadata.modified().ok(),
-            path: self.convert_path(&abs_path)?,
-            target: self.convert_path(&link)?,
+            path: self.resolve_rel_path(&abs_path)?,
+            target: self.resolve_rel_path(&link)?,
             unix_mode: extract_unix_mode(&metadata),
         });
 
         Ok(())
     }
 
-    fn convert_path(&self, abs_path: &Path) -> miette::Result<WorkspaceRelativePathBuf> {
+    fn resolve_rel_path(&self, abs_path: &Path) -> miette::Result<WorkspaceRelativePathBuf> {
         let rel_path = abs_path.relative_to(&self.workspace_root).map_err(|_| {
-            TaskRunnerError::OutputFileOutsideOfWorkspace {
+            ManifestError::OutputFileOutsideOfWorkspace {
                 output: abs_path.to_owned(),
             }
         })?;
 
         Ok(rel_path)
     }
-}
-
-#[cfg(unix)]
-fn is_file_executable(_path: &Path, metadata: &Metadata) -> bool {
-    use std::os::unix::fs::PermissionsExt;
-
-    metadata.permissions().mode() & 0o111 != 0
-}
-
-#[cfg(windows)]
-fn is_file_executable(path: &Path, _metadata: &Metadata) -> bool {
-    path.extension().is_some_and(|ext| ext == "exe")
-}
-
-#[cfg(unix)]
-fn extract_unix_mode(metadata: &Metadata) -> Option<u32> {
-    use std::os::unix::fs::PermissionsExt;
-
-    Some(metadata.permissions().mode())
-}
-
-#[cfg(windows)]
-fn extract_unix_mode(_metadata: &Metadata) -> Option<u32> {
-    None
 }

@@ -1,12 +1,12 @@
 use async_trait::async_trait;
 use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
 use moon_cache_storage::{
-    CacheCapabilities, CacheContext, Manifest, ManifestFile, Storage, StorageBackend,
-    StorageOptions,
+    CacheCapabilities, CacheContext, Storage, StorageBackend, StorageOptions,
 };
 use moon_common::Id;
 use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::{ContentHash, Digest};
+use moon_manifest::{Manifest, ManifestFile};
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -220,7 +220,7 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob), None)
+            .archive_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
@@ -309,7 +309,7 @@ mod storage {
         let action = digest('a', 0);
 
         storage
-            .archive_manifest(&action, Manifest::default(), None)
+            .archive_manifest(&action, Manifest::default())
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
@@ -321,10 +321,11 @@ mod storage {
     }
 
     #[tokio::test]
-    async fn archives_the_provided_action_blob() {
-        // The action digest addresses the fingerprint hash manifest. When the
-        // caller supplies it as a blob, it must be uploaded to the CAS alongside
-        // the outputs so an RE-compliant backend can resolve the action result.
+    async fn archives_the_manifests_digest_source() {
+        // The action digest addresses the fingerprint hash manifest. The caller
+        // supplies it as the manifest's `digest_source`, and it must be uploaded
+        // to the CAS alongside the outputs so an RE-compliant backend can
+        // resolve the action result.
         let backend = MemoryBackend::new("mem");
         let blobs = Arc::clone(&backend.blobs);
 
@@ -333,21 +334,44 @@ mod storage {
 
         let action = digest('a', 6);
         let output_blob = Digest::from_bytes(b"output").unwrap();
-        let action_blob = BlobInput {
-            content: BlobContent::Inline(Bytes::from_static(b"action")),
-            digest: action.clone(),
-        };
 
-        storage
-            .archive_manifest(&action, manifest_with_file(&output_blob), Some(action_blob))
-            .await
-            .unwrap();
+        let mut manifest = manifest_with_file(&output_blob);
+        manifest.digest_source = Some(ManifestFile {
+            bytes: Some(Bytes::from_static(b"action")),
+            digest: Some(action.clone()),
+            path: ".moon/cache/hashes/action.json".into(),
+            ..Default::default()
+        });
+
+        storage.archive_manifest(&action, manifest).await.unwrap();
         storage.wait_for_background_tasks().await.unwrap();
 
         assert!(
             blobs.lock().unwrap().contains_key(&action),
             "the action blob must be uploaded to the CAS"
         );
+    }
+
+    #[tokio::test]
+    async fn archives_a_manifest_without_a_digest_source() {
+        // Archiving without a fingerprint file on disk leaves `digest_source`
+        // unset, which must still store the manifest rather than error.
+        let backend = MemoryBackend::new("mem");
+        let manifests = Arc::clone(&backend.manifests);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        let action = digest('a', 6);
+        let output_blob = Digest::from_bytes(b"output").unwrap();
+
+        let manifest = manifest_with_file(&output_blob);
+        assert!(manifest.digest_source.is_none());
+
+        storage.archive_manifest(&action, manifest).await.unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        assert!(manifests.lock().unwrap().contains_key(&action));
     }
 
     #[tokio::test]
@@ -361,7 +385,7 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob), None)
+            .archive_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         // A failed upload must not surface as a program error.
@@ -384,7 +408,7 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob), None)
+            .archive_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();

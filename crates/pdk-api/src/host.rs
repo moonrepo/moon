@@ -1,8 +1,22 @@
 use crate::{is_false, is_zero};
 use derive_setters::*;
-use warpgate_api::{ExecCommandInput, VirtualPath, api_enum, api_struct};
+use warpgate_api::{ExecCommandInput, VirtualPath, api_enum, api_struct, api_unit_enum};
+
+api_unit_enum!(
+    /// Types of caching strategies.
+    pub enum CacheStrategy {
+        /// Cache in-memory for the current process.
+        #[default]
+        Memory,
+
+        /// Cache on disk using a hashed fingerprint,
+        /// which is useful for caching across processes.
+        Hash,
+    }
+);
 
 api_struct!(
+    /// A command to be executed on the host machine, with optional caching and retrying.
     #[derive(Setters)]
     #[serde(default)]
     pub struct ExecCommand {
@@ -13,12 +27,11 @@ api_struct!(
         #[setters(bool)]
         pub allow_failure: bool,
 
-        /// Cache the command based on its inputs/params and
-        /// avoid re-executing until they change. Enabling
-        /// this cache requires a label for debug purposes.
+        /// Cache the command, either in-memory or on disk.
+        /// If not provided, the command will not be cached.
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[setters(into, strip_option)]
-        pub cache: Option<String>,
+        #[setters(strip_option)]
+        pub cache: Option<CacheStrategy>,
 
         /// The command parameters.
         #[setters(skip)]

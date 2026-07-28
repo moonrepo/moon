@@ -4,7 +4,6 @@ expression: "json::format(&data, true).unwrap()"
 ---
 [
   {
-    "key": "key",
     "command": {
       "command": "echo",
       "args": [

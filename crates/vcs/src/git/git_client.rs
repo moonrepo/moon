@@ -2,7 +2,7 @@ use super::common::{clean_git_version, normalize_branch_ref, validate_revision};
 use super::git_error::GitError;
 use super::tree::*;
 use crate::changed_files::*;
-use crate::process_cache::ProcessCache;
+use crate::git::common::create_command;
 use crate::vcs::{Vcs, VcsHookEnvironment};
 use async_trait::async_trait;
 use git_url_parse::types::provider::GenericProvider;
@@ -14,7 +14,7 @@ use moon_common::path::{
     PathExt, RelativePathBuf, WorkspaceRelativePath, WorkspaceRelativePathBuf, clean_components,
     locate_config_dir,
 };
-use moon_process::find_command_on_path;
+use moon_process::{Command, CommandArg, find_command_on_path, output_to_trimmed_string};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -44,7 +44,7 @@ enum GitConfigAction {
 #[derive(Debug)]
 pub struct Git {
     /// Default branch name.
-    pub default_branch: Arc<String>,
+    pub default_branch: String,
 
     /// List of remotes to use as merge candidates.
     pub remote_candidates: Vec<String>,
@@ -74,25 +74,6 @@ impl Git {
         debug!("Using git as a version control system (using v2 implementation)");
 
         let workspace_root = workspace_root.as_ref();
-
-        let mut process = ProcessCache::new("git", workspace_root);
-        process.env.insert("GIT_OPTIONAL_LOCKS".into(), "0".into());
-        process.env.insert("GIT_PAGER".into(), "".into());
-
-        // We run non-interactively, so error immediately instead of
-        // hanging forever if a command ever prompts for credentials
-        process.env.insert("GIT_TERMINAL_PROMPT".into(), "0".into());
-
-        // Disable the fsmonitor daemon (git >= 2.31, ignored by older
-        // versions), as it inherits our captured stdout/stderr pipes
-        // and keeps them open, blocking output capture indefinitely
-        process.env.insert("GIT_CONFIG_COUNT".into(), "1".into());
-        process
-            .env
-            .insert("GIT_CONFIG_KEY_0".into(), "core.fsmonitor".into());
-        process
-            .env
-            .insert("GIT_CONFIG_VALUE_0".into(), "false".into());
 
         debug!(
             starting_dir = ?workspace_root,
@@ -212,18 +193,14 @@ impl Git {
 
         // Load ignore files and create the instance. Trees are wrapped
         // in `Arc` so they can be cheaply shared with spawned tasks.
-        let process = Arc::new(process);
-
         for tree in &mut submodules {
-            tree.process = Some(Arc::clone(&process));
             tree.load_ignore()?;
         }
 
-        worktree.process = Some(process);
         worktree.load_ignore()?;
 
         Ok(Git {
-            default_branch: Arc::new(default_branch.as_ref().to_owned()),
+            default_branch: default_branch.as_ref().to_owned(),
             remote_candidates: remote_candidates.to_owned(),
             repository_root,
             submodules: submodules.into_iter().map(Arc::new).collect(),
@@ -232,14 +209,24 @@ impl Git {
         })
     }
 
+    pub fn create_command<I, A>(&self, args: I) -> Command
+    where
+        I: IntoIterator<Item = A>,
+        A: Into<CommandArg>,
+    {
+        let mut command = create_command(args);
+
+        // Run from workspace root instead of git root so that we can avoid
+        // prefixing all file paths to ensure everything is relative and accurate.
+        command.cwd(&self.workspace_root);
+
+        command
+    }
+
     fn get_all_trees(&self) -> Vec<Arc<GitTree>> {
         let mut trees = vec![Arc::clone(&self.worktree)];
         trees.extend(self.submodules.iter().cloned());
         trees
-    }
-
-    fn get_process(&self) -> &ProcessCache {
-        self.worktree.get_process()
     }
 
     fn has_linked_worktrees(&self) -> bool {
@@ -250,25 +237,23 @@ impl Git {
             .is_ok_and(|mut entries| entries.next().is_some())
     }
 
-    pub async fn get_remote_default_branch(&self) -> miette::Result<Arc<String>> {
+    pub async fn get_remote_default_branch(&self) -> miette::Result<String> {
         // This only reads the local ref, and does not query the remote,
         // so it will only resolve if the repository was cloned, or the
         // remote HEAD was explicitly set
         for remote in &self.remote_candidates {
-            if let Ok(result) = self
-                .get_process()
-                .run(
-                    [
-                        "symbolic-ref",
-                        &format!("refs/remotes/{remote}/HEAD"),
-                        "--short",
-                    ],
-                    true,
-                )
+            if let Ok(output) = self
+                .create_command([
+                    "symbolic-ref",
+                    &format!("refs/remotes/{remote}/HEAD"),
+                    "--short",
+                ])
+                .exec_capture_output()
                 .await
-                && let Some(branch) = result.strip_prefix(&format!("{remote}/"))
+                && let Some(branch) =
+                    output_to_trimmed_string(&output.stdout).strip_prefix(&format!("{remote}/"))
             {
-                return Ok(Arc::new(branch.to_owned()));
+                return Ok(branch.to_owned());
             }
         }
 
@@ -279,7 +264,7 @@ impl Git {
         &self,
         action: GitConfigAction,
         other_args: Vec<String>,
-    ) -> miette::Result<Arc<String>> {
+    ) -> miette::Result<String> {
         let use_new_commands = self.is_version_supported(">=2.46.0").await?;
         let other_args = other_args.iter().map(|arg| arg.as_str());
         let mut args = vec!["config"];
@@ -316,37 +301,48 @@ impl Git {
             }
         };
 
-        self.get_process().run(args, true).await
+        let output = self.create_command(args).exec_capture_output().await?;
+
+        Ok(output_to_trimmed_string(&output.stdout))
     }
 }
 
 #[async_trait]
 impl Vcs for Git {
-    async fn get_local_branch(&self) -> miette::Result<Arc<String>> {
-        if self.is_version_supported(">=2.22.0").await? {
-            return self
-                .get_process()
-                .run(["branch", "--show-current"], true)
-                .await;
-        }
+    async fn get_local_branch(&self) -> miette::Result<String> {
+        let output = if self.is_version_supported(">=2.22.0").await? {
+            self.create_command(["branch", "--show-current"])
+                .exec_capture_output()
+                .await?
+        } else {
+            self.create_command(["rev-parse", "--abbrev-ref", "HEAD"])
+                .exec_capture_output()
+                .await?
+        };
 
-        self.get_process()
-            .run(["rev-parse", "--abbrev-ref", "HEAD"], true)
-            .await
+        Ok(output_to_trimmed_string(&output.stdout))
     }
 
-    async fn get_local_branch_revision(&self) -> miette::Result<Arc<String>> {
-        self.get_process().run(["rev-parse", "HEAD"], true).await
+    async fn get_local_branch_revision(&self) -> miette::Result<String> {
+        let output = self
+            .create_command(["rev-parse", "HEAD"])
+            .exec_capture_output()
+            .await?;
+
+        Ok(output_to_trimmed_string(&output.stdout))
     }
 
-    async fn get_default_branch(&self) -> miette::Result<Arc<String>> {
+    async fn get_default_branch(&self) -> miette::Result<String> {
         Ok(self.default_branch.clone())
     }
 
-    async fn get_default_branch_revision(&self) -> miette::Result<Arc<String>> {
-        self.get_process()
-            .run(["rev-parse", &self.default_branch], true)
-            .await
+    async fn get_default_branch_revision(&self) -> miette::Result<String> {
+        let output = self
+            .create_command(["rev-parse", &self.default_branch])
+            .exec_capture_output()
+            .await?;
+
+        Ok(output_to_trimmed_string(&output.stdout))
     }
 
     async fn get_file_hashes(
@@ -389,17 +385,17 @@ impl Vcs for Git {
         // Sort for deterministic caching within the vcs layer
         objects.sort();
 
-        let process = self.get_process();
-        let mut command = process.create_command_in_cwd(["hash-object", "--stdin-paths"], work_dir);
-
+        let mut command = self.create_command(["hash-object", "--stdin-paths"]);
+        command.cwd(work_dir);
+        command.set_cache(false);
         command.set_continuous_pipe(true);
-
         // hash-object requires new lines
         command.input(objects.iter().map(|obj| format!("{obj}\n")));
 
-        let output = process.run_command(command, true).await?;
+        let output = command.exec_capture_output().await?;
+        let hashes = output_to_trimmed_string(&output.stdout);
 
-        for (hash, object) in output.split('\n').zip(&objects) {
+        for (hash, object) in hashes.split('\n').zip(&objects) {
             if !hash.is_empty() {
                 map.insert(
                     work_dir
@@ -472,24 +468,26 @@ impl Vcs for Git {
         Ok(self.repository_root.clone())
     }
 
-    async fn get_repository_slug(&self) -> miette::Result<Arc<String>> {
+    async fn get_repository_slug(&self) -> miette::Result<String> {
         use git_url_parse::GitUrl;
 
         for candidate in &self.remote_candidates {
             if let Ok(output) = self
-                .get_process()
-                .run_with_formatter(["remote", "get-url", candidate], true, |out| {
-                    if let Ok(url) =
-                        GitUrl::parse(&out).and_then(|url| url.provider_info::<GenericProvider>())
+                .create_command(["remote", "get-url", candidate])
+                .exec_capture_output()
+                .await
+            {
+                let remote_url = output_to_trimmed_string(&output.stdout);
+
+                return Ok(
+                    if let Ok(url) = GitUrl::parse(&remote_url)
+                        .and_then(|url| url.provider_info::<GenericProvider>())
                     {
                         url.fullname()
                     } else {
-                        out
-                    }
-                })
-                .await
-            {
-                return Ok(output);
+                        remote_url
+                    },
+                );
             }
         }
 
@@ -527,11 +525,13 @@ impl Vcs for Git {
         // command will error, so detect this by counting the commits.
         // The count is capped to avoid walking the entire history!
         let output = self
-            .get_process()
-            .run(["rev-list", "--count", "--max-count=2", revision], true)
+            .create_command(["rev-list", "--count", "--max-count=2", revision])
+            .exec_capture_output()
             .await?;
 
-        let prev_revision = if matches!(output.as_str(), "" | "0" | "1") {
+        let revision_list = output_to_trimmed_string(&output.stdout);
+
+        let prev_revision = if matches!(revision_list.as_str(), "" | "0" | "1") {
             revision.to_owned()
         } else {
             format!("{revision}~1")
@@ -648,13 +648,15 @@ impl Vcs for Git {
     }
 
     async fn get_version(&self) -> miette::Result<Version> {
-        let version = self
-            .get_process()
-            .run_with_formatter(["--version"], true, clean_git_version)
+        let output = self
+            .create_command(["--version"])
+            .exec_capture_output()
             .await?;
 
+        let version = clean_git_version(output_to_trimmed_string(&output.stdout));
+
         Ok(
-            Version::parse(version.as_str()).map_err(|error| GitError::InvalidVersion {
+            Version::parse(version).map_err(|error| GitError::InvalidVersion {
                 error: Box::new(error),
             })?,
         )
@@ -697,22 +699,22 @@ impl Vcs for Git {
 
     async fn is_shallow_checkout(&self) -> miette::Result<bool> {
         let result = if self.is_version_supported(">=2.15.0").await? {
-            let result = self
-                .get_process()
-                .run(["rev-parse", "--is-shallow-repository"], true)
+            let output = self
+                .create_command(["rev-parse", "--is-shallow-repository"])
+                .exec_capture_output()
                 .await?;
 
-            result.as_str() == "true"
+            output_to_trimmed_string(&output.stdout) == "true"
         } else {
             // A checkout is shallow when a `shallow` file exists in the
             // .git directory. `--git-path` resolves the file correctly
             // for all checkout types (worktrees, submodules, etc)
-            let result = self
-                .get_process()
-                .run(["rev-parse", "--git-path", "shallow"], true)
+            let output = self
+                .create_command(["rev-parse", "--git-path", "shallow"])
+                .exec_capture_output()
                 .await?;
 
-            let file = PathBuf::from(result.as_str());
+            let file = PathBuf::from(output_to_trimmed_string(&output.stdout));
 
             if file.is_absolute() {
                 file.exists()

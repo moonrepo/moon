@@ -3,6 +3,8 @@ use hyper_util::rt::TokioIo;
 use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{moon_daemon_client::MoonDaemonClient, *};
 use moon_daemon_utils::endpoint::*;
+use moon_hash::{Digest, InternalDigestExt};
+use moon_manifest::Manifest;
 use std::future::Future;
 use std::io::Error;
 use std::path::Path;
@@ -198,19 +200,55 @@ impl DaemonClient {
         }
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip(self, manifest))]
     pub async fn archive_task_outputs(
         &mut self,
         task_target: String,
-        hash: String,
+        digest: Digest,
+        manifest: Manifest,
+        include_local: bool,
+        include_remote: bool,
     ) -> miette::Result<ArchiveTaskOutputsResponse> {
         let response = with_deadline(
             "ArchiveTaskOutputs",
             WORK_DEADLINE,
             self.inner.archive_task_outputs(request_with_deadline(
                 ArchiveTaskOutputsRequest {
-                    task_target: task_target.to_owned(),
-                    hash: hash.to_owned(),
+                    task_target,
+                    digest: Some(digest.into_external_digest()),
+                    manifest: Some(manifest.into_bazel_action_result(true)),
+                    include_local,
+                    include_remote,
+                },
+                WORK_DEADLINE,
+            )),
+        )
+        .await?;
+
+        Ok(response.into_inner())
+    }
+
+    #[instrument(skip(self, manifest))]
+    pub async fn hydrate_task_outputs(
+        &mut self,
+        task_target: String,
+        digest: Digest,
+        manifest: Manifest,
+        include_local: bool,
+        include_remote: bool,
+        backend_id: String,
+    ) -> miette::Result<HydrateTaskOutputsResponse> {
+        let response = with_deadline(
+            "HydrateTaskOutputs",
+            WORK_DEADLINE,
+            self.inner.hydrate_task_outputs(request_with_deadline(
+                HydrateTaskOutputsRequest {
+                    task_target,
+                    digest: Some(digest.into_external_digest()),
+                    manifest: Some(manifest.into_bazel_action_result(true)),
+                    include_local,
+                    include_remote,
+                    backend_id,
                 },
                 WORK_DEADLINE,
             )),

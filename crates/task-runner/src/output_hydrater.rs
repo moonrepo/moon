@@ -2,22 +2,13 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{
-    Manifest, ManifestFile, ManifestSource, StorageOptions, grant_owner_write_access,
-};
-use moon_common::{
-    color,
-    path::{WorkspaceRelativePath, clean_components},
-};
+use moon_cache::{Manifest, ManifestSource, ManifestUnpacker, StorageOptions};
+use moon_common::{color, path::WorkspaceRelativePath};
+use moon_daemon_client::DaemonClient;
 use moon_task::Task;
 use starbase_archive::Archiver;
-use starbase_utils::{
-    fs::{self, FsError},
-    glob::GlobSet,
-};
+use starbase_utils::{fs, glob::GlobSet};
 use std::fmt::{self, Debug};
-use std::io::Write;
-use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tokio::task::spawn_blocking;
 use tracing::{debug, instrument, warn};
@@ -42,24 +33,29 @@ pub enum HydrateOutcome {
     Skipped,
     Missed,
     Hit,
-    HitFromStorage(Manifest, bool),
+    // Boxed to keep the enum small: `Manifest` dwarfs the unit variants, so
+    // every `HydrateOutcome` would otherwise be sized for this one case.
+    HitFromStorage(Box<Manifest>, bool),
 }
 
 pub struct OutputHydrater<'task> {
     app_context: &'task Arc<AppContext>,
     task: &'task Arc<Task>,
     task_output_globset: GlobSet<'static>,
+    daemon_client: Option<DaemonClient>,
 }
 
 impl OutputHydrater<'_> {
     pub fn new<'task>(
         app_context: &'task Arc<AppContext>,
         task: &'task Arc<Task>,
+        daemon_client: Option<DaemonClient>,
     ) -> miette::Result<OutputHydrater<'task>> {
         Ok(OutputHydrater {
             task_output_globset: GlobSet::new_owned(task.output_globs.keys())?,
             task,
             app_context,
+            daemon_client,
         })
     }
 
@@ -107,61 +103,59 @@ impl OutputHydrater<'_> {
                 let use_remote = state.remote_cache_readable;
                 let is_remote_backend = source.remote;
 
+                // Validate the output paths are legit before doing anything
+                self.validate_output_paths(&source.manifest)?;
+
                 // Delete existing outputs first so that reflinking works
                 self.delete_existing_outputs()?;
 
                 // Retrieve the manifest from the local/remote caches
-                let manifest = self
-                    .app_context
-                    .cache_engine
-                    .storage
-                    .with_options(StorageOptions {
-                        include_local: use_local,
-                        include_remote: use_remote,
-                        ..Default::default()
-                    })
-                    .hydrate_manifest(&state.digest, *source)
-                    .await?;
+                let mut manifest = None;
 
-                if let Some(manifest) = &manifest {
-                    self.write_manifest_outputs(manifest)?;
+                if let Some(mut daemon) = self.daemon_client.clone() {
+                    let res = daemon
+                        .hydrate_task_outputs(
+                            self.task.target.to_string(),
+                            state.digest.clone(),
+                            source.manifest,
+                            use_local,
+                            use_remote,
+                            source.backend.get_id().to_string(),
+                        )
+                        .await?;
+
+                    if res.hydrated
+                        && let Some(action_result) = res.manifest
+                    {
+                        manifest = Some(Manifest::from_bazel_action_result(action_result)?);
+                    }
+                } else {
+                    manifest = self
+                        .app_context
+                        .cache_engine
+                        .storage
+                        .with_options(StorageOptions {
+                            include_local: use_local,
+                            include_remote: use_remote,
+                            ..Default::default()
+                        })
+                        .hydrate_manifest(&state.digest, *source)
+                        .await?;
+
+                    if let Some(manifest) = &manifest {
+                        ManifestUnpacker::new(manifest, self.app_context.workspace_root.clone())
+                            .unpack()?;
+                    }
                 }
 
                 Ok(match manifest {
-                    Some(manifest) => HydrateOutcome::HitFromStorage(manifest, is_remote_backend),
+                    Some(manifest) => {
+                        HydrateOutcome::HitFromStorage(Box::new(manifest), is_remote_backend)
+                    }
                     None => HydrateOutcome::Missed,
                 })
             }
         }
-    }
-
-    #[instrument(skip(self))]
-    fn write_manifest_outputs(&self, manifest: &Manifest) -> miette::Result<()> {
-        for file in &manifest.files {
-            if file.digest.is_none() {
-                continue;
-            }
-
-            let output_path = self.resolve_declared_output_path(&file.path)?;
-
-            self.write_output_file(output_path, file)?;
-        }
-
-        for link in &manifest.symlinks {
-            let output_path = self.resolve_declared_output_path(&link.path)?;
-
-            self.link_output_file(
-                self.resolve_workspace_path(&link.target).map_err(|_| {
-                    TaskRunnerError::OutputSymlinkOutsideOfWorkspace {
-                        output: output_path.clone(),
-                        target: PathBuf::from(link.target.as_str()),
-                    }
-                })?,
-                output_path,
-            )?;
-        }
-
-        Ok(())
     }
 
     #[instrument(skip(self, state))]
@@ -247,130 +241,39 @@ impl OutputHydrater<'_> {
         Ok(())
     }
 
-    fn write_output_file(&self, output_path: PathBuf, file: &ManifestFile) -> miette::Result<()> {
-        let map_error = |error| FsError::Write {
-            path: output_path.clone(),
-            error: Box::new(error),
-        };
-
-        // Reflink-or-copy from source file if available
-        let fd = if let Some(source) = &file.source_path {
-            fs::reflink_file(source, &output_path)?;
-
-            // The reflink clones the source's permissions, which may lack the
-            // write bit (stores populated before objects were normalized may
-            // contain read-only blobs), so restore it before opening a handle
-            // to apply the mtime/mode below
-            grant_owner_write_access(&output_path)?;
-
-            fs::open_file_for_writing(&output_path)?
-        }
-        // Otherwise write the bytes from the manifest
-        else {
-            let mut fd = fs::create_file(&output_path)?;
-
-            fd.write_all(file.bytes.as_deref().unwrap_or_default())
-                .map_err(map_error)?;
-
-            fd
-        };
-
-        if let Some(modified) = &file.modified_at {
-            fd.set_modified(*modified).map_err(map_error)?;
+    fn validate_output_paths(&self, manifest: &Manifest) -> miette::Result<()> {
+        for file in &manifest.files {
+            if file.digest.is_some() {
+                self.validate_output_path(&file.path)?;
+            }
         }
 
-        #[cfg(unix)]
-        if let Some(mode) = &file.unix_mode {
-            use std::os::unix::fs::PermissionsExt;
-
-            fd.set_permissions(std::fs::Permissions::from_mode(*mode))
-                .map_err(map_error)?;
+        for link in &manifest.symlinks {
+            self.validate_output_path(&link.path)?;
         }
 
         Ok(())
     }
 
-    // The manifest's unix mode is deliberately not applied: it records the
-    // followed target's mode (which the target's own manifest entry restores),
-    // and a chmod through the link would modify the target, not the link
-    fn link_output_file(&self, from_path: PathBuf, to_path: PathBuf) -> miette::Result<()> {
-        if let Some(parent) = to_path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-
-        let map_error = |error| FsError::Create {
-            path: to_path.clone(),
-            error: Box::new(error),
-        };
-
-        #[cfg(windows)]
-        {
-            use std::os::windows::fs::{symlink_dir, symlink_file};
-
-            if from_path.is_dir() {
-                symlink_dir(&from_path, &to_path).map_err(map_error)?;
-            } else {
-                symlink_file(&from_path, &to_path).map_err(map_error)?;
-            }
-        }
-
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::symlink;
-
-            symlink(&from_path, &to_path).map_err(map_error)?;
-        }
-
-        Ok(())
-    }
-
-    fn resolve_workspace_path(&self, rel_path: &WorkspaceRelativePath) -> miette::Result<PathBuf> {
-        let abs_path = Path::new(rel_path.as_str());
-
-        if abs_path.is_absolute() {
-            return Err(TaskRunnerError::OutputFileOutsideOfWorkspace {
-                output: abs_path.to_path_buf(),
-            }
-            .into());
-        }
-
-        let output_path =
-            clean_components(rel_path.to_logical_path(&self.app_context.workspace_root));
-
-        if !output_path.starts_with(&self.app_context.workspace_root) {
-            return Err(TaskRunnerError::OutputFileOutsideOfWorkspace {
-                output: output_path,
-            }
-            .into());
-        }
-
-        Ok(output_path)
-    }
-
-    fn resolve_declared_output_path(
-        &self,
-        rel_path: &WorkspaceRelativePath,
-    ) -> miette::Result<PathBuf> {
-        let output_path = self.resolve_workspace_path(rel_path)?;
-
+    fn validate_output_path(&self, rel_path: &WorkspaceRelativePath) -> miette::Result<()> {
         if self.task.output_files.contains_key(rel_path) {
-            return Ok(output_path);
+            return Ok(());
         }
 
         for declared_output in self.task.output_files.keys() {
             if rel_path.starts_with(declared_output) {
-                return Ok(output_path);
+                return Ok(());
             }
         }
 
         if !self.task.output_globs.is_empty() && self.task_output_globset.matches(rel_path.as_str())
         {
-            return Ok(output_path);
+            return Ok(());
         }
 
         Err(TaskRunnerError::OutputFileNotDeclared {
             target: self.task.target.clone(),
-            output: output_path,
+            output: rel_path.to_logical_path(&self.app_context.workspace_root),
         }
         .into())
     }

@@ -1,5 +1,6 @@
 use crate::event_emitter::EventEmitter;
 use moon_action::Action;
+use moon_daemon_client::DaemonClient;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -17,6 +18,9 @@ pub struct JobContext {
 
     /// Completed jobs (used by the dispatcher)
     pub completed_jobs: Arc<RwLock<FxHashSet<NodeIndex>>>,
+
+    /// Optional daemon client for use within actions.
+    pub daemon_client: Option<DaemonClient>,
 
     /// Internal pipeline event emitter
     pub emitter: Arc<EventEmitter>,

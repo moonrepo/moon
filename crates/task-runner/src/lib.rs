@@ -2,7 +2,6 @@
 mod check_executor;
 mod checks_runner;
 pub mod command_builder;
-pub mod manifest_compat;
 pub mod output_archiver;
 pub mod output_hydrater;
 mod run_state;

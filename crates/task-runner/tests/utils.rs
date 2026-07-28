@@ -87,11 +87,11 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_archiver(&self) -> OutputArchiver<'_> {
-        OutputArchiver::new(&self.app_context, &self.task).unwrap()
+        OutputArchiver::new(&self.app_context, &self.task, None).unwrap()
     }
 
     pub fn create_hydrator(&self) -> OutputHydrater<'_> {
-        OutputHydrater::new(&self.app_context, &self.task).unwrap()
+        OutputHydrater::new(&self.app_context, &self.task, None).unwrap()
     }
 
     pub fn create_state(&self) -> TaskRunState {
@@ -193,7 +193,7 @@ impl TaskRunnerContainer {
     }
 
     pub fn create_runner(&self) -> TaskRunner<'_> {
-        TaskRunner::new(&self.app_context, &self.project, &self.task).unwrap()
+        TaskRunner::new(&self.app_context, &self.project, &self.task, None).unwrap()
     }
 
     pub fn create_action_node(&self) -> ActionNode {

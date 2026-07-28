@@ -56,3 +56,6 @@ dockerManifest.json
 result
 result-*
 .direnv/
+
+# Misc
+!crates/daemon-proto/vendor/remote-api/build

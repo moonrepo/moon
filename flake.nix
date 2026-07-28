@@ -20,6 +20,13 @@
 
         rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
 
+        devRustToolchain = rustToolchain.override {
+          extensions = [ "rust-src" ];
+        };
+
+        moonVersion = (builtins.fromTOML
+          (builtins.readFile ./crates/cli/Cargo.toml)).package.version;
+
         nativeDeps = with pkgs; [ pkg-config protobuf ];
         buildDeps = with pkgs; [ openssl ];
       in
@@ -29,7 +36,7 @@
           rustc = rustToolchain;
         }).buildRustPackage {
           pname = "moon";
-          version = "2.3.2";
+          version = moonVersion;
           src = ./.;
 
           cargoLock.lockFile = ./Cargo.lock;
@@ -42,7 +49,7 @@
 
           env = {
             RUSTFLAGS = "-C strip=symbols";
-            OPENSSL_NO_VENDOR = 1;
+            OPENSSL_NO_VENDOR = "1";
           };
 
           postInstall = pkgs.lib.optionalString
@@ -63,7 +70,7 @@
             description = "A monorepo build system and task runner for the web ecosystem";
             mainProgram = "moon";
             homepage = "https://github.com/moonrepo/moon";
-            changelog = "https://github.com/moonrepo/moon/releases/tag/v2.3.2";
+            changelog = "https://github.com/moonrepo/moon/releases/tag/v${moonVersion}";
             license = licenses.mit;
             maintainers = [ ];
             platforms = platforms.linux;
@@ -72,7 +79,7 @@
 
         devShells.default = pkgs.mkShell {
           nativeBuildInputs = nativeDeps ++ [
-            rustToolchain
+            devRustToolchain
             pkgs.just
             pkgs.cargo-nextest
           ];
@@ -80,7 +87,7 @@
 
           env = {
             OPENSSL_NO_VENDOR = "1";
-            RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+            RUST_SRC_PATH = "${devRustToolchain}/lib/rustlib/src/rust/library";
           };
         };
       }

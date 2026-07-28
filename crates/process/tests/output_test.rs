@@ -1,9 +1,11 @@
+use bytes::Bytes;
+
 #[cfg(unix)]
 fn create_output(exit: moon_process::ChildExit) -> moon_process::Output {
     moon_process::Output {
         exit,
-        stdout: vec![],
-        stderr: vec![],
+        stdout: Bytes::new(),
+        stderr: Bytes::new(),
     }
 }
 
@@ -110,8 +112,8 @@ mod errors {
     #[test]
     fn prefers_stderr_for_message() {
         let mut output = create_failed_output();
-        output.stdout = b"from stdout".to_vec();
-        output.stderr = b"from stderr\n".to_vec();
+        output.stdout = Bytes::from_static(b"from stdout");
+        output.stderr = Bytes::from_static(b"from stderr\n");
 
         let ProcessError::ExitNonZeroWithOutput {
             output: message, ..
@@ -126,7 +128,7 @@ mod errors {
     #[test]
     fn falls_back_to_stdout_for_message() {
         let mut output = create_failed_output();
-        output.stdout = b"from stdout".to_vec();
+        output.stdout = Bytes::from_static(b"from stdout");
 
         let ProcessError::ExitNonZeroWithOutput {
             output: message, ..

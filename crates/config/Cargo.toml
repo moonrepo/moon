@@ -1,6 +1,6 @@
 [package]
 name = "moon_config"
-version = "2.0.13"
+version = "2.1.0"
 edition = "2024"
 license = "MIT"
 description = "Core workspace, project, and moon configuration."
@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
-moon_common = { version = "2.0.6", path = "../common" }
+moon_common = { version = "2.0.7", path = "../common" }
 moon_target = { version = "3.0.0", path = "../target" }
 deserialize_untagged_verbose_error = "0.1.5"
 indexmap = { workspace = true }
@@ -40,7 +40,7 @@ warpgate_api = { workspace = true, features = ["schematic"] }
 
 [dev-dependencies]
 moon_config_loader = { path = "../config-loader" }
-httpmock = "0.8.3"
+httpmock = { workspace = true }
 proto_core = { workspace = true }
 serial_test = { workspace = true }
 starbase_sandbox = { workspace = true }

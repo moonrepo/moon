@@ -1,4 +1,5 @@
 import type { Action, ActionStatus } from '@moonrepo/types';
+
 import { getDurationInMillis } from './time';
 
 export function getIconForStatus(status: ActionStatus): string {
@@ -42,7 +43,7 @@ export function isSlow(action: Action, slowThreshold: number): boolean {
 	}
 
 	const millis = getDurationInMillis(action.duration);
-	// eslint-disable-next-line no-magic-numbers
+	// oxlint-disable-next-line no-magic-numbers
 	const threshold = slowThreshold * 1000; // In seconds
 
 	return millis > threshold;

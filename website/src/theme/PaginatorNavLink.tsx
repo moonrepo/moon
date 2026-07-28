@@ -1,5 +1,6 @@
-import cx from 'clsx';
 import type { Props } from '@theme/PaginatorNavLink';
+import cx from 'clsx';
+
 import Icon from '../ui/iconography/Icon';
 import Link from '../ui/typography/Link';
 

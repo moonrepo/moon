@@ -24,17 +24,12 @@ pub enum GitError {
     #[error("Failed to extract a repository slug from Git remote candidates.")]
     ExtractRepoSlugFailed,
 
-    #[diagnostic(code(git::file::parse_failed))]
-    #[error("Failed to parse .git file {} and extract Git directory.", .path.style(Style::Path))]
-    ParseGitFileFailed { path: PathBuf },
-
-    #[diagnostic(code(git::dir::load_failed))]
-    #[error("Failed to canonicalize Git directory {} to a valid path.", .path.style(Style::Path))]
-    LoadGitDirFailed {
-        path: PathBuf,
-        #[source]
-        error: Box<std::io::Error>,
-    },
+    #[diagnostic(code(git::revision::invalid))]
+    #[error(
+        "Invalid Git revision {}, must not start with a dash.",
+        .revision.style(Style::Hash),
+    )]
+    InvalidRevision { revision: String },
 
     #[diagnostic(code(git::repository_failed))]
     #[error("Failed to load Git repository.")]

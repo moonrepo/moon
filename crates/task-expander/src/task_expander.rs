@@ -224,8 +224,8 @@ impl<'graph> TaskExpander<'graph> {
                             file_input.file.as_str(),
                         )?;
 
-                        // Parse the expanded path back into an Input
-                        // Note: After expansion, the path might become a glob pattern
+                        // Parse the expanded path back into an Input.
+                        // After expansion, the path might become a glob pattern!
                         expanded_files.push(Input::parse(&expanded_path)?);
                     }
                     // Other Input types are kept as-is (though envFile should only be File)

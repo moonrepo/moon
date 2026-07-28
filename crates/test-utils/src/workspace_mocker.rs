@@ -1,7 +1,8 @@
 use moon_action_graph::ActionGraphBuilder;
 use moon_action_pipeline::ActionPipeline;
 use moon_app_context::AppContext;
-use moon_cache::CacheEngine;
+use moon_cache::{CacheContext, CacheEngine};
+use moon_cache_local::LocalStorage;
 use moon_common::{Id, IdExt, path::WorkspaceRelativePathBuf};
 use moon_config::*;
 use moon_config_loader::{ConfigLoader, ExtensionsConfigExt, ToolchainsConfigExt};
@@ -286,7 +287,7 @@ impl WorkspaceMocker {
             },
         );
 
-        // Note: this list isn't accurate for a real world scenario!
+        // Note: This list isn't accurate for a real world scenario!
         let stable_toolchains = project
             .toolchains
             .iter()
@@ -356,7 +357,22 @@ impl WorkspaceMocker {
     }
 
     pub fn mock_cache_engine(&self) -> CacheEngine {
-        CacheEngine::new(&self.config_dir, &self.workspace_config.cache).unwrap()
+        let context = CacheContext {
+            cache_dir: self.config_dir.join("cache"),
+            cache_config: Arc::new(self.workspace_config.cache.clone()),
+            config_dir: self.config_dir.clone(),
+            remote_config: Arc::new(self.workspace_config.remote.clone()),
+            remote_debug: false,
+            workspace_root: self.workspace_root.clone(),
+        };
+
+        let mut engine = CacheEngine::new(context.clone()).unwrap();
+
+        engine.storage.add_local_backend(
+            LocalStorage::new(context.clone(), &context.cache_dir, false).unwrap(),
+        );
+
+        engine
     }
 
     pub fn mock_console(&self) -> Console {
@@ -449,13 +465,12 @@ impl WorkspaceMocker {
             .take()
             .unwrap_or_else(|| self.mock_workspace_builder_context());
 
-        // let workspace_graph = if options.sync {
-        //     self.build_workspace_sync(context, &options).await
-        // } else {
-        //     self.build_workspace_async(context, &options).await
-        // };
-
-        let workspace_graph = self.build_workspace_sync(context, &options).await;
+        // Mirror how the session decides which builder to use
+        let workspace_graph = if self.workspace_config.experiments.async_graph_building {
+            self.build_workspace_async(context, &options).await
+        } else {
+            self.build_workspace_sync(context, &options).await
+        };
 
         if options.ids.is_empty() {
             workspace_graph.projects.get_all().unwrap();
@@ -468,17 +483,17 @@ impl WorkspaceMocker {
         workspace_graph
     }
 
-    #[allow(dead_code)]
     async fn build_workspace_async(
         &self,
         context: WorkspaceBuilderContext,
         options: &WorkspaceMockOptions,
     ) -> WorkspaceGraph {
-        let mut builder = match &options.cache {
-            Some(engine) => WorkspaceBuilderAsync::new_with_cache(context, engine)
+        let mut builder = if options.cache {
+            WorkspaceBuilderAsync::new_with_cache(context)
                 .await
-                .unwrap(),
-            None => WorkspaceBuilderAsync::new(context).await.unwrap(),
+                .unwrap()
+        } else {
+            WorkspaceBuilderAsync::new(context).await.unwrap()
         };
 
         if options.ids.is_empty() {
@@ -498,11 +513,15 @@ impl WorkspaceMocker {
         context: WorkspaceBuilderContext,
         options: &WorkspaceMockOptions,
     ) -> WorkspaceGraph {
-        let mut builder = match &options.cache {
-            Some(engine) => WorkspaceBuilder::new_with_cache(context, engine)
-                .await
-                .unwrap(),
-            None => WorkspaceBuilder::new(context).await.unwrap(),
+        let mut builder = if options.cache {
+            WorkspaceBuilder::new_with_cache(context).await.unwrap()
+        } else {
+            let mut builder = WorkspaceBuilder::new(context).await.unwrap();
+
+            // The cached flow above extends internally, so only
+            // extend for the uncached flow
+            builder.extend_projects_from_plugins().await.unwrap();
+            builder
         };
 
         if options.ids.is_empty() {
@@ -520,7 +539,7 @@ impl WorkspaceMocker {
 
 #[derive(Default)]
 pub struct WorkspaceMockOptions {
-    pub cache: Option<CacheEngine>,
+    pub cache: bool,
     pub context: Option<WorkspaceBuilderContext>,
     pub ids: Vec<String>,
     pub sync: bool,

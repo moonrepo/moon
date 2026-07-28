@@ -1,4 +1,4 @@
-/* eslint-disable sort-keys */
+/* oxlint-disable sort-keys */
 
 import Link from '@docusaurus/Link';
 import AdditionalFeatures from '@site/src/components/Products/AdditionalFeatures';

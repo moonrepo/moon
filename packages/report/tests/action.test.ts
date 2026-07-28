@@ -1,4 +1,6 @@
 import type { Action } from '@moonrepo/types';
+import { describe, expect, it } from 'vite-plus/test';
+
 import { isFlaky, isSlow } from '../src';
 
 const action: Action = {

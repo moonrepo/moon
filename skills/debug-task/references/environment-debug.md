@@ -84,10 +84,12 @@ Control verbosity with the `--log` global option or `MOON_LOG` environment varia
 
 ### Recommendations
 
-- **Start with `debug`** for most issues. It shows why moon made each decision without drowning you
-  in noise.
-- **Escalate to `trace`** only if `debug` doesn't reveal the problem. Trace output is voluminous —
-  pipe it to a file.
+- **Start with `debug`** for most issues. As of v2.4 this is the recommended level for day-to-day
+  debugging — it includes the majority of useful diagnostic information without drowning you in
+  noise.
+- **Escalate to `trace`** only if `debug` doesn't reveal the problem. <sup>v2.4+</sup> `trace` was
+  made _significantly_ more verbose and is now primarily intended for agents and deep diagnostics —
+  it may be too spammy for normal debugging, so pipe it to a file.
 - **Use `verbose`** for performance profiling. The span information shows exactly how long each
   operation took.
 
@@ -206,15 +208,13 @@ moon query tasks --project <project>
 moon query tasks --tags quality
 ```
 
-**MQL `tag` → `projectTag` rename** (v2.3+): the MQL field `tag` was renamed to `projectTag` so it
-can coexist with the new `taskTag` field. Stale queries error.
+**MQL `tag` vs `taskTag`** (v2.3+): MQL's `tag` field is a legacy alias for `projectTag` — it
+matches **project** tags, not task tags. Old `tag=...` queries still run, but on task queries they
+filter by the parent project's tags, which is usually not what you want. Use `taskTag` for task
+tags.
 
 ```bash
-# Pre-v2.3
-moon query tasks --query "tag=quality"
-
-# v2.3+
-moon query tasks --query "projectTag=quality"  # by project tag
+moon query tasks --query "projectTag=quality"  # by project tag (alias: tag)
 moon query tasks --query "taskTag=quality"     # by task tag
 ```
 
@@ -266,9 +266,10 @@ Quick reference for where moon stores internal state:
 
 All paths are relative to the workspace root. The `.moon/cache/` directory should be git-ignored.
 
-> When `experiments.casOutputsCache` is enabled (v2.3+), `outputs/` is replaced by a
-> content-addressable store sharded by hash prefix — the per-target `.tar.gz` files do not exist.
-> See `cache-issues.md` § Experimental caching layers.
+> When `experiments.casOutputsCache` is enabled (v2.3+), new task outputs are stored in a
+> content-addressable store at `.moon/cache/manifests/` and `.moon/cache/blobs/` (prefix-sharded by
+> hash; renamed in v2.4 from `ac/` and `cas/`) — per-hash `.tar.gz` files stop being created in
+> `outputs/`. See `cache-issues.md` § Experimental caching layers.
 
 ---
 
@@ -289,6 +290,22 @@ MOON_DEBUG_PROCESS_ENV=true moon run <project>:<task> --log trace --force
 # 4. Check stderr from last run
 cat .moon/cache/states/<project>/<task>/stderr.log
 ```
+
+### "My task fails, skips, or re-runs because of a check" <sup>v2.4+</sup>
+
+`checks` run before the task and emit debug logs. Grep for them to see which check fired:
+
+```bash
+moon run <project>:<task> --log debug --force 2>&1 | grep -i "check\|condition\|requirement"
+
+# Signals to look for:
+#   "Running task check"                                       → a check executed
+#   "Checking requirement" (+ non-zero exit_code)              → requirement failed → task fails
+#   "Skipping task as all conditional checks have passed"      → condition skip
+#   "Will continue to run the task as not all conditional…"    → conditions didn't all pass → ran
+```
+
+See `config-mistakes.md` § Task checks and `cache-issues.md` § Fingerprint checks in the hash.
 
 ### "My task is cached when it shouldn't be"
 

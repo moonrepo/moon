@@ -1,5 +1,264 @@
 # Changelog
 
+## 2.4.6
+
+#### 🚀 Updates
+
+- Updated `MOON_BASE` and `MOON_HEAD` to no longer require also passing `--affected`.
+
+#### 🐞 Fixes
+
+- Fixed an issue in GitLab CI where the wrong `HEAD` would be used for merge request pipelines.
+
+## 2.4.5
+
+#### 🐞 Fixes
+
+- Fixed an issue where HTTP remote cache would deserialize manifests into the wrong shape, resulting
+  in failed caching.
+- Fixed an issue where dependency deduping would run on fresh/initial installs.
+
+## 2.4.4
+
+#### 🐞 Fixes
+
+- Fixed remote caching against backends that validate the Bazel RE contract (like Depot), where
+  every upload was rejected with "client should not populate stdout_raw during upload" or "action
+  digest not found in CAS", leaving the cache permanently empty.
+- Fixed cache hits replaying no task output when a remote server returns a stdout/stderr digest
+  without also inlining the raw bytes.
+- Fixed an issue where gRPC remote cache uploads would fail with "Failed to store blob" when the
+  server returned a `RESOURCE_EXHAUSTED` error, because a blob was too large. We now set the max
+  size to 4MB (the gRPC limit).
+- Fixed an issue where HTTP remote cache was not respecting the
+  `unstable_remote.cache.localReadOnly` setting.
+
+## 2.4.3
+
+#### 🚀 Updates
+
+- Added [Renovate](https://www.mend.io/renovate/) support. View the official guide for more
+  information.
+- Updated BitBucket codeowners to use the
+  [new syntax & file location](https://support.atlassian.com/bitbucket-cloud/docs/set-up-and-use-code-owners/).
+  If you are using the old syntax, you can use `bitbucket-legacy` instead.
+
+#### 🐞 Fixes
+
+- Fixed an issue where `runDepsInParallel: false` would only serialize direct dependencies, allowing
+  a dependency's own dependencies (grandchildren) to run in parallel with earlier serial
+  dependencies. The entire dependency subtree is now ordered.
+- Fixed `moon ci` failing in certain CI provider pull request builds, where the base branch is
+  provided as a fully-qualified `refs/heads/<branch>` ref that couldn't be resolved in a detached
+  `HEAD` checkout.
+- Fixed task binaries failing with "command not found" in CI providers like CircleCI, where an
+  `export PATH=...` in the `$BASH_ENV` file would overwrite the `PATH` that moon injects for tasks.
+  `BASH_ENV` is no longer passed to `bash` wrapped child processes, unless explicitly set with the
+  task `env` option.
+- Fixed an issue where task `outputStyle` was being applied to the primary target. It will only
+  apply to transitive targets.
+- Fixed an issue where captured task output containing non-UTF-8 bytes (for example, Windows
+  codepage output from Python) was discarded entirely, resulting in empty `stdout.log`/`stderr.log`
+  state files, cache hits replaying no output, and missing output in run reports. Invalid bytes are
+  now replaced with `�` instead.
+- Fixed an issue where a task's dependents would not run when requested with a downstream scope
+  (`moon ci`, `--dependents`, `--downstream`), if the task was first added to the action graph as a
+  dependency of another target. For example, `moon run app:build lib:build --dependents` would skip
+  the dependents of `lib:build` when `app:build` depends on it.
+- Fixed tasks that emit read-only outputs (e.g. `0444` files) failing on every cache hit with a
+  "Permission denied" error when the `casOutputsCache` experiment is enabled. Caches that already
+  contain read-only objects are healed automatically.
+- Fixed an issue where `moon query changed-files` would include uncommitted changes from the local
+  index (`git status`) even when an explicit `--head` revision was provided, causing false positives
+  when comparing 2 revisions. This also applies to affected detection with an explicit head, e.g.
+  the `MOON_HEAD` environment variable or `--affected base:head`. Additionally, `MOON_BASE` and
+  `MOON_HEAD` environment variables that are set but empty are now ignored.
+- Fixed an issue where synced VCS hooks were always written to `.moon/hooks`, even when the
+  workspace configuration lived in `.config/moon`. Hooks are now placed alongside the config, in
+  `.config/moon/hooks`.
+
+## 2.4.2
+
+#### 🚀 Updates
+
+- Reworked the workspace graph caching to avoid plugin calls on cache hits, which can improve
+  performance in large workspaces.
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Fixed `go list -deps` running on non-Go projects.
+
+## 2.4.1
+
+#### 🐞 Fixes
+
+- Fixed an issue where the daemon wouldn't start if the cache directory did not exist.
+- Fixed some error messages being swallowed in the logs.
+
+## 2.4.0
+
+#### 🚀 Updates
+
+- **CLI**
+  - Added a `--update-constraint` option to `moon upgrade` that will update the workspace config
+    version constraint to the latest version.
+  - Updated `--log` level handling. `debug` should be used for the most part, as it includes most
+    debug information. `trace` now includes a ton of information, which may be too spammy for normal
+    debugging (is meant for agents and deep diagnostics).
+- **CAS**
+  - Further improvements to the content-addressable storage (CAS) cache, including better error
+    handling and performance improvements.
+  - Added a new storage API for local/remote cache interoperability. This will unlock many
+    improvements in the future, including better cache hit rates and more efficient storage.
+  - When copying files to/from the CAS, we now use OS reflink's when available, which can improve
+    performance and reduce disk space usage.
+  - When the local/remote cache is missing a blob, we'll attempt to retrieve it from the other
+    cache, which can improve cache hit rates in some scenarios.
+  - When a remote cache hit, we'll now warm the local cache with the hydrated manifest and its
+    blobs, so the next run resolves locally instead of round-tripping to the remote.
+- **Daemon**
+  - Server log files will now rotate up to 7 times. Older log files will be automatically deleted.
+  - Webhook delivery and task output archiving are now acknowledged immediately and run in the
+    background on the daemon, so a client exiting or hitting a deadline no longer cancels the work
+    mid-flight.
+  - The daemon now takes exclusive ownership of its workspace through an advisory file lock held for
+    its entire lifetime, replacing PID-liveness checks that could be fooled by zombie processes,
+    reused PIDs, or processes owned by another user. A crashed daemon releases the lock
+    automatically, so a stale socket or state file can no longer block or misdirect the next start.
+  - Whether the daemon is running is now determined by connecting to it rather than probing a PID,
+    and its metadata is recorded in a `daemon.json` state file (replacing `moond.pid`).
+  - Connecting to the daemon and starting it are now a single operation, so a command that needs the
+    daemon will start one itself if the background pre-warm hasn't yet, instead of silently running
+    without it. Concurrent starts still coordinate so only one daemon is spawned.
+  - When connecting, the client now checks the running daemon's moon and protocol version against
+    its own and, on a mismatch, restarts it — so a daemon left over from before a `moon upgrade` is
+    replaced instead of serving the old binary indefinitely.
+  - The daemon now retires itself after a long idle period (no requests), and exits immediately if
+    its workspace is deleted, so an abandoned workspace no longer leaves a daemon running forever.
+- **Processes**
+  - Improved our "stream and capture output" child process handling to operate on bytes instead of
+    lines, which should resolve some edge cases with output not being written to the console, or
+    being written out of order.
+- **Remote cache**
+  - Added compression support for streamed read/writes of blobs (large files).
+  - Added extensive testing to account for edge cases.
+  - When the server doesn't support the configured compression, it will now default to "identity"
+    (uncompressed) instead of disabling the cache entirely.
+- **Tasks**
+  - Added a `checks` setting to tasks that allows you to define shell scripts that execute before
+    the task runs, and depending on their type, different outcomes can be achieved. The following
+    types are supported:
+    - `fingerprint` - if the check fails, the task will fail and not run, otherwise the process
+      output will be included in the task hash.
+    - `requirement` — if the check fails, the task will fail and not run.
+    - `condition` - if all conditions pass, the task will be skipped, otherwise it will run as
+      normal.
+  - Added a `mergeChecks` option to tasks to control the merge behavior of checks when extending
+    tasks.
+  - Added a top-level `taskOptions` setting to `moon.*` that allows you to configure default task
+    options for all tasks within the current project, which can be overridden per task.
+- **Toolchains**
+  - Added caching around executable location lookups to improve performance. Previously, these were
+    running over and over again for each task.
+- **VCS**
+  - Hardened all executed Git commands: revisions are validated against argument injection,
+    credential prompts now fail immediately instead of hanging, and the fsmonitor daemon is now
+    disabled to avoid it blocking process pipes.
+  - Reworked merge base resolution to be more accurate and performant. The most recent divergence
+    point is now preferred when local and remote branches are out of sync, and a warning is now
+    logged when a merge base could not be resolved, as diffs may be inaccurate without one.
+  - Reworked how renames are handled. When diffing between revisions, the old path is now reported
+    as "deleted" and the new path as "added", instead of both being "modified". For statuses, the
+    old path is now reported as "deleted", instead of being omitted entirely. Additionally, type
+    changes and unmerged files are now reported, instead of being omitted.
+
+#### 🧰 Toolchains
+
+- **Python**
+  - Added Poetry package manager support.
+    - Can be enabled with `unstable_python.packageManager: 'poetry'` in `.moon/toolchains.*`.
+    - Can be configured with `unstable_poetry.*` settings in `.moon/toolchains.*`.
+    - Supports tiers 1-3.
+- **Ruby**
+  - Added unstable Ruby toolchain support!
+    - Can be configured with `unstable_ruby.*` settings in `.moon/toolchains.*`.
+    - Supports tiers 1-3. Tier 3 requires building from source (which may not be desirable).
+    - Will use Bundler as the package manager.
+
+#### 🐞 Fixes
+
+- **CLI**
+  - Fixed an issue where moon would silently exit with code 141 (SIGPIPE) when a child process
+    exited before consuming its stdin. Broken pipes are now handled explicitly instead of resetting
+    the SIGPIPE disposition, while piping moon's output to a consumer that closes early still exits
+    quietly with the conventional code.
+- **Daemon**
+  - Fixed an issue where every daemon RPC was capped by a 1 second client-side timeout, causing slow
+    procedures (webhook delivery, cache cleaning) to be cancelled even though the daemon was
+    healthy. Connection establishment is now bounded separately, and each procedure has an
+    appropriate deadline that is also enforced by the server.
+  - Fixed an issue where connecting to the daemon while it was still starting up — or being started
+    by another process — would fail immediately with "connection refused", and the run would
+    continue without the daemon. Connection attempts are now retried with a bounded backoff.
+  - Fixed an issue on Windows where the daemon briefly had no listening pipe instance between client
+    connections, causing sporadic connection failures, and where busy pipe instances were not
+    retried.
+- **VCS**
+  - Fixed an issue where an explicit head revision was ignored when diffing between revisions, and
+    the current working tree was compared against instead.
+  - Fixed an issue where diffing against the previous revision would fail in repositories with a
+    single commit.
+  - Fixed an issue where file names with spaces or special characters were excluded from file tree
+    results.
+  - Fixed an issue where Git submodules added between 2 revisions were not included when diffing.
+  - Fixed an issue where Git hooks could not be set up from the primary working tree when other
+    worktrees exist.
+  - Fixed an issue where moon would take over a hooks directory managed by another tool (husky,
+    lefthook, etc) when `core.hooksPath` was already configured, overwriting its hook files, and
+    deleting the entire directory when hooks were disabled.
+  - Fixed an issue where Windows hook wrappers would not forward arguments containing spaces
+    correctly, and would arbitrarily cap forwarding at 5 arguments.
+  - Fixed an issue where PowerShell hooks would mangle user variables that start with `$ARG`, like
+    `$ARGS`.
+
+#### ⚙️ Internal
+
+- Updated proto to [v0.58.2](https://github.com/moonrepo/proto/releases/tag/v0.58.0) from 0.57.4.
+- Updated dependencies.
+
+## 2.3.5
+
+#### 🐞 Fixes
+
+- Fixed an issue where Git hooks would not work correctly in submodules.
+- Fixed an issue where `moon docker` commands may generate non-deterministic output, resulting in
+  invalid Docker layer caching.
+
+#### 🧰 Toolchains
+
+- **Go**
+  - Fixed `go list -deps` relationship inference not detecting sibling workspace modules imported
+    via subpackages (e.g. `example.com/org/a/pkg`).
+- **JavaScript**
+  - Added Deno v2.9 support.
+
+## 2.3.4
+
+#### 🐞 Fixes
+
+- Fixed an issue where projects with the same name/ID as their underlying toolchain package would
+  cause issues when pruning within Docker.
+- Fixed an issue where remote caching wasn't being updated unless the `casOutputsCache` experiment
+  was enabled.
+
+#### 🧰 Toolchains
+
+- **Python**
+  - Updated `uv sync` to use `--no-dev` when installing production only dependencies.
+- **Rust**
+  - Updated `cargo-binstall` installation to use `--locked`.
+
 ## 2.3.3
 
 #### 🛡️ Security

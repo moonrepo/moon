@@ -24,6 +24,49 @@ use tracing::debug;
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
 
+/// The conventional exit code for a process killed by SIGPIPE (128 + 13).
+/// Rust ignores SIGPIPE by default, so a closed consumer surfaces as
+/// `BrokenPipe` I/O errors instead of killing the process; translate them
+/// back to the exit code shells expect from a broken pipeline. We must NOT
+/// reset SIGPIPE to its default disposition instead: that makes every pipe
+/// write in the process lethal, including streaming stdin to a child that
+/// exits early (e.g. `git hash-object --stdin-paths`), which silently
+/// killed moon with 141.
+const BROKEN_PIPE_EXIT_CODE: u8 = 141;
+
+fn is_broken_pipe(report: &miette::Report) -> bool {
+    report.chain().any(|error| {
+        error
+            .downcast_ref::<std::io::Error>()
+            .is_some_and(|io_error| io_error.kind() == std::io::ErrorKind::BrokenPipe)
+    })
+}
+
+/// `print!`/`println!` and friends panic when stdout goes away instead of
+/// returning an error. Catch specifically that panic and exit quietly with
+/// the conventional broken-pipe code.
+fn install_broken_pipe_panic_hook() {
+    let previous_hook = std::panic::take_hook();
+
+    std::panic::set_hook(Box::new(move |panic_info| {
+        let message = if let Some(message) = panic_info.payload().downcast_ref::<&str>() {
+            *message
+        } else if let Some(message) = panic_info.payload().downcast_ref::<String>() {
+            message.as_str()
+        } else {
+            ""
+        };
+
+        // The message embeds the formatted `io::Error`; "os error 32" is
+        // EPIPE, covering non-English locales where the text may differ.
+        if message.contains("Broken pipe") || message.contains("os error 32") {
+            std::process::exit(BROKEN_PIPE_EXIT_CODE as i32);
+        }
+
+        previous_hook(panic_info);
+    }));
+}
+
 fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
 
@@ -82,7 +125,6 @@ fn exec_local_bin(mut command: Command) -> std::io::Result<u8> {
 
 pub async fn run_cli(args: Vec<OsString>) -> MainResult {
     crate::stdio::normalize_stdio_blocking();
-    sigpipe::reset();
 
     // Detect info about the current process
     let version = get_version();
@@ -94,6 +136,8 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
     // Setup diagnostics and tracing
     let app = App::default();
     app.setup_diagnostics();
+
+    install_broken_pipe_panic_hook();
 
     let _guard = app.setup_tracing(TracingOptions {
         dump_trace: cli.dump,
@@ -136,7 +180,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
     }
 
     // Otherwise just run the CLI
-    let exit_code = app
+    let outcome = app
         .run(MoonSession::new(cli, version), |session| async {
             match session.cli.command.clone() {
                 Commands::ActionGraph(args) => {
@@ -240,10 +284,16 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
                         commands::toolchain::info::info(session, args).await
                     }
                 },
-                Commands::Upgrade => commands::upgrade::upgrade(session).await,
+                Commands::Upgrade(args) => commands::upgrade::upgrade(session, args).await,
             }
         })
-        .await?;
+        .await;
 
-    Ok(ExitCode::from(exit_code))
+    // Exit quietly instead of rendering an error when our consumer
+    // disappeared mid-output; there's no one left to read the error
+    if outcome.error.as_ref().is_some_and(is_broken_pipe) {
+        return Ok(ExitCode::from(BROKEN_PIPE_EXIT_CODE));
+    }
+
+    outcome.into_exit_result()
 }

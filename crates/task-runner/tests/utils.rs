@@ -3,17 +3,20 @@
 use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
+use moon_blob::{BlobContent, BlobInput, Bytes};
+use moon_cache::Manifest;
 use moon_env_var::GlobalEnvBag;
+use moon_hash::Digest;
 use moon_process::Command;
 use moon_project::Project;
 use moon_task::Task;
 use moon_task_runner::TaskRunState;
 use moon_task_runner::TaskRunner;
 use moon_task_runner::command_builder::CommandBuilder;
-use moon_task_runner::command_executor::CommandExecutor;
 use moon_task_runner::output_archiver::OutputArchiver;
 use moon_task_runner::output_hydrater::OutputHydrater;
-use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
+use moon_task_runner::task_executor::TaskExecutor;
+use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use starbase_archive::Archiver;
 use starbase_sandbox::{Sandbox, create_sandbox};
 use std::fs;
@@ -95,6 +98,70 @@ impl TaskRunnerContainer {
         TaskRunState::new(&self.app_context, &self.task)
     }
 
+    /// Archiving into storage is fire-and-forget; flush the background queue so
+    /// the CAS/AC writes are observable before asserting on them.
+    pub async fn flush_storage(&self) {
+        self.app_context
+            .cache_engine
+            .storage
+            .wait_for_background_tasks()
+            .await
+            .unwrap();
+    }
+
+    /// Whether a manifest for the given digest exists in any storage backend.
+    pub async fn manifest_exists(&self, digest: &Digest) -> bool {
+        self.app_context
+            .cache_engine
+            .storage
+            .load_manifest(digest)
+            .await
+            .unwrap()
+            .is_some()
+    }
+
+    /// Whether a blob for the given digest exists in the local storage backend.
+    pub async fn blob_exists(&self, digest: &Digest) -> bool {
+        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+
+        backend
+            .find_missing_blobs(vec![digest.clone()])
+            .await
+            .unwrap()
+            .is_empty()
+    }
+
+    /// Persist a manifest directly into the local storage backend, so it can be
+    /// loaded back as a hydration source.
+    pub async fn seed_manifest(&self, digest: &Digest, manifest: Manifest) {
+        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+
+        backend
+            .store_manifest(digest.clone(), manifest)
+            .await
+            .unwrap();
+    }
+
+    /// Persist an inline blob into the local storage backend's CAS and return
+    /// its digest.
+    pub async fn seed_blob(&self, content: &'static [u8]) -> Digest {
+        let digest = Digest::from_bytes(content).unwrap();
+        let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
+
+        backend
+            .store_blobs(
+                vec![BlobInput {
+                    content: BlobContent::Inline(Bytes::from_static(content)),
+                    digest: digest.clone(),
+                }],
+                false,
+            )
+            .await
+            .unwrap();
+
+        digest
+    }
+
     pub async fn create_command(&self, context: ActionContext) -> Command {
         self.create_command_with_config(context, |_, _| {}).await
     }
@@ -112,10 +179,10 @@ impl TaskRunnerContainer {
         self.internal_create_command(&context, &task, &node).await
     }
 
-    pub async fn create_command_executor(&self, context: &ActionContext) -> CommandExecutor<'_> {
+    pub async fn create_command_executor(&self, context: &ActionContext) -> TaskExecutor<'_> {
         let node = create_node(&self.task);
 
-        CommandExecutor::new(
+        TaskExecutor::new(
             &self.app_context,
             &self.project,
             &self.task,
@@ -167,14 +234,22 @@ impl TaskRunnerContainer {
         file
     }
 
+    pub async fn create_check_command(&self, check: &moon_task::TaskCheck) -> Command {
+        let task = self.task.as_ref();
+
+        let mut builder = CommandBuilder::new(&self.app_context, &self.project, task);
+        builder.set_env_bag(&self.env_bag);
+        builder.build_check(check).await.unwrap()
+    }
+
     async fn internal_create_command(
         &self,
         context: &ActionContext,
         task: &Task,
         node: &ActionNode,
     ) -> Command {
-        let mut builder = CommandBuilder::new(&self.app_context, &self.project, task, node);
+        let mut builder = CommandBuilder::new(&self.app_context, &self.project, task);
         builder.set_env_bag(&self.env_bag);
-        builder.build(context, "abc123").await.unwrap()
+        builder.build(context, node, "abc123").await.unwrap()
     }
 }

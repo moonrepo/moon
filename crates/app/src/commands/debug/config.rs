@@ -1,7 +1,6 @@
-use crate::session::MoonSession;
-use starbase::AppResult;
+use crate::session::{MoonSession, SessionResult};
 
-pub async fn debug_config(session: MoonSession) -> AppResult {
+pub async fn debug_config(session: MoonSession) -> SessionResult {
     dbg!(&session.moon_env);
 
     dbg!(&session.proto_env);
@@ -12,7 +11,6 @@ pub async fn debug_config(session: MoonSession) -> AppResult {
 
     dbg!(&session.extensions_config);
 
-    // TODO: fix the system toolchain data being too large to print
     dbg!(&session.toolchains_config);
 
     dbg!(&session.tasks_config);

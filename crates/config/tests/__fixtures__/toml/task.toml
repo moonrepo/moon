@@ -14,15 +14,7 @@ deps = [
 
 env = { ENV = "development" }
 
-inputs = [
-  "$ENV",
-  "$ENV_*",
-  "file.txt",
-  "file.*",
-  "/file.txt",
-  "/file.*",
-  "@dirs(name)",
-]
+inputs = ["$ENV", "$ENV_*", "file.txt", "file.*", "/file.txt", "/file.*", "@dirs(name)"]
 
 outputs = ["$workspaceRoot", "file.txt", "file.*", "/file.txt", "/file.*"]
 

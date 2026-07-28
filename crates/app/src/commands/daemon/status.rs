@@ -1,14 +1,13 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_console::ui::*;
 use moon_time::elapsed;
-use starbase::AppResult;
 use std::time::Duration;
 
-pub async fn status(session: MoonSession) -> AppResult {
+pub async fn status(session: MoonSession) -> SessionResult {
     let connector = session.get_daemon_connector()?;
 
-    if connector.is_running().is_none() {
+    if !connector.is_running().await {
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Caution) {
@@ -20,16 +19,21 @@ pub async fn status(session: MoonSession) -> AppResult {
         return Ok(None);
     }
 
-    let Some(mut client) = connector.connect().await? else {
-        session.console.render(element! {
-            Container {
-                Notice(variant: Variant::Caution) {
-                    StyledText(content: "Unable to connect to the daemon")
+    // The PID may be stale (a crashed daemon, or the PID was reused by
+    // another process), so a connect failure here is a report, not an error.
+    let mut client = match connector.connect_once().await {
+        Ok(Some(client)) => client,
+        _ => {
+            session.console.render(element! {
+                Container {
+                    Notice(variant: Variant::Caution) {
+                        StyledText(content: "Unable to connect to the daemon")
+                    }
                 }
-            }
-        })?;
+            })?;
 
-        return Ok(None);
+            return Ok(None);
+        }
     };
 
     let status = client.status().await?;
@@ -67,10 +71,10 @@ pub async fn status(session: MoonSession) -> AppResult {
 
             Section(title: "Paths") {
                 Entry(
-                    name: "PID file",
+                    name: "State file",
                     value: element! {
                         StyledText(
-                            content: connector.get_pid_file().to_string_lossy(),
+                            content: connector.get_state_file().to_string_lossy(),
                             style: Style::Path
                         )
                     }.into_any()

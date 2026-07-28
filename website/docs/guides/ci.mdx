@@ -72,6 +72,7 @@ jobs:
       - uses: 'actions/checkout@v4'
         with:
           fetch-depth: 0
+          filter: 'blob:none'
       - uses: 'moonrepo/setup-toolchain@v0'
       - run: 'moon ci'
 ```
@@ -114,6 +115,17 @@ script: 'moon ci'
 
 </TabItem>
 </Tabs>
+
+:::info
+
+moon requires a full commit history to accurately determine the merge base and changed files
+between revisions. Avoid shallow clones (e.g. a fetch depth of 1), as affected detection will be
+inaccurate or fail entirely. If clone speed is a concern, use a blobless
+[partial clone](https://git-scm.com/docs/partial-clone) instead — `git clone --filter=blob:none`,
+or `filter: 'blob:none'` with `actions/checkout` — which keeps the full history while only
+downloading file content on demand.
+
+:::
 
 ## Choosing targets<VersionLabel version="1.14.0" />
 
@@ -250,6 +262,13 @@ However, because tasks can generate a different hash each run, you'll need to ma
 your cache. Blindly storing the `hashes` and `outputs` directories without a mechanism to invalidate
 will simply not work, as the contents will drastically change between CI runs. This is the primary
 reason why the remote caching service exists.
+
+## Keeping dependencies updated
+
+To automate toolchain and dependency updates, moon integrates with
+[Renovate](https://docs.renovatebot.com/). Tool versions in [`.prototools`](../proto/config) are
+updated out of the box, and moon publishes a shared preset for updating moon-specific configuration.
+Refer to the [Renovate guide](./renovate) for setup.
 
 ## Reporting run results
 

@@ -7,6 +7,7 @@ module.exports = {
 	darkMode: 'class',
 	plugins: [
 		// Generate CSS variables so that we may overwrite Docusaurus styles with them
+		// oxlint-disable-next-line typescript/unbound-method
 		plugin(({ addComponents, config }) => {
 			const cssVars = {};
 

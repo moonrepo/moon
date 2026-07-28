@@ -1,0 +1,9 @@
+language: typescript
+stack: frontend
+layer: tool
+tags:
+  - extension
+
+project:
+  title: VS Code extension
+  description: This is to purely test metadata in the extension.

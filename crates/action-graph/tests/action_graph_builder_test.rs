@@ -2049,6 +2049,54 @@ mod action_graph_builder {
 
                 assert_snapshot!(graph.to_dot());
             }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn expands_skipped_dependents_when_task_is_revisited_in_scope() {
+                let sandbox = create_sandbox("tasks");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let parent = wg.get_task_from_project("deps", "parent1").unwrap();
+                let task = wg.get_task_from_project("deps", "base").unwrap();
+
+                // First insert the task as a dependency of another target,
+                // with dependents out of scope
+                builder
+                    .run_task(
+                        &parent,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::None,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                // Then run it as an explicit target with dependents in scope
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Direct,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_snapshot!(graph.to_dot());
+
+                assert!(topo(graph).into_iter().any(|node| matches!(
+                    node,
+                    ActionNode::RunTask(inner) if inner.target == Target::parse("deps:parent2").unwrap()
+                )));
+            }
         }
     }
 
@@ -2232,6 +2280,59 @@ mod action_graph_builder {
             for task in &tasks {
                 builder
                     .run_task(task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+            }
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn serial_deps_order_grandchildren() {
+            let sandbox = create_sandbox("serial-subtree");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // build => [clean, build-tasks] (serial). build-tasks has its own
+            // deps (cli:build-library-bundle-cli, tsc-project, prepare-package),
+            // all of which must run after clean — not just build-tasks itself.
+            let task = wg.get_task_from_project("app", "build").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (context, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+            assert_eq!(
+                context.primary_targets.into_iter().collect::<Vec<_>>(),
+                [Target::parse("app:build").unwrap()]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn serial_subtree_doesnt_escape_via_shared_node() {
+            let sandbox = create_sandbox("serial-shared");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // parent1 => [p, b] and parent2 => [q, b], both serial, sharing the
+            // node `b`. parent1 adds a serial `b -> p` edge; walking `b` for
+            // parent2 must not follow it into p/pchild and order them after `q`.
+            // The snapshot must contain no `p -> q` or `pchild -> q` edges.
+            for name in ["parent1", "parent2"] {
+                let task = wg.get_task_from_project("proj", name).unwrap();
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
                     .await
                     .unwrap();
             }

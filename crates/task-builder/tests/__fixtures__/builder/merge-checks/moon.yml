@@ -1,0 +1,23 @@
+tags: [checks]
+
+tasks:
+  checks-append:
+    extends: checks
+    checks:
+      - 'echo local-req'
+    options:
+      mergeChecks: append
+
+  checks-prepend:
+    extends: checks
+    checks:
+      - 'echo local-req'
+    options:
+      mergeChecks: prepend
+
+  checks-replace:
+    extends: checks
+    checks:
+      - 'echo local-req'
+    options:
+      mergeChecks: replace

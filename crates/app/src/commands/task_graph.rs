@@ -1,9 +1,8 @@
 use crate::commands::graph::run_server;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_task::Target;
 use moon_task_graph::{GraphToDot, GraphToJson};
-use starbase::AppResult;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -39,7 +38,7 @@ pub struct TaskGraphArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn task_graph(session: MoonSession, args: TaskGraphArgs) -> AppResult {
+pub async fn task_graph(session: MoonSession, args: TaskGraphArgs) -> SessionResult {
     let mut task_graph = session.get_task_graph().await?;
 
     if let Some(target) = &args.target {

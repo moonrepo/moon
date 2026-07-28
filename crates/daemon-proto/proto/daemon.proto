@@ -67,6 +67,7 @@ message StatusResponse {
   uint64 uptime_secs = 4;
   string moon_version = 5;
   string workspace_root = 6;
+  uint32 protocol_version = 7;
 }
 
 message StopRequest {}

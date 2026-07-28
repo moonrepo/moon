@@ -4,6 +4,7 @@ import ProductSection from '@site/src/components/Home/ProductSection';
 // import MoonbaseScreenshots from '@site/src/components/Products/Moonbase/Screenshots';
 import Link from '@site/src/ui/typography/Link';
 import Layout from '@theme/Layout';
+
 import TextVector from '../../static/brand/moonrepo/text-vector.svg';
 
 export default function Home() {

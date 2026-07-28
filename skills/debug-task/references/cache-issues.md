@@ -14,9 +14,13 @@ what you think they should.
 1. [Unexpected cache hit](#unexpected-cache-hit) — task uses stale results
 2. [Unexpected cache miss](#unexpected-cache-miss) — task re-runs every time
 3. [Outputs not restored](#outputs-not-restored) — cache hit but files missing
-4. [Dependency cache strategies](#dependency-cache-strategies) — controlling how deps invalidate the hash (v2.3+)
-5. [Experimental caching layers](#experimental-caching-layers) — native file hashing, local CAS (v2.3+)
-6. [Debugging tools](#debugging-tools) — commands for any cache issue
+4. [Dependency cache strategies](#dependency-cache-strategies) — controlling how deps invalidate the
+   hash (v2.3+)
+5. [Fingerprint checks in the hash](#fingerprint-checks-in-the-hash) — checks that fold script
+   output into the hash (v2.4+)
+6. [Experimental caching layers](#experimental-caching-layers) — native file hashing, local CAS
+   (v2.3+)
+7. [Debugging tools](#debugging-tools) — commands for any cache issue
 
 ---
 
@@ -175,6 +179,13 @@ build manifests with dates — cause the hash to differ even when the source has
 If `package-lock.json`, `yarn.lock`, etc, is in `inputs`, any dependency change invalidates the
 cache for every task. This is usually correct behavior, but can be surprising.
 
+**A `fingerprint` check with volatile output** <sup>v2.4+</sup>:
+
+If the task has a `fingerprint` check, the script's output is folded into the hash on every run. If
+that output changes each time (a timestamp, PID, random value, or a rapidly-changing version), the
+hash changes and the cache always misses. See
+[Fingerprint checks in the hash](#fingerprint-checks-in-the-hash).
+
 **Git-ignored files leaking in:**
 
 moon filters VCS-ignored files from `inputs` (including `node_modules` and `.git` which are globally
@@ -214,8 +225,8 @@ tar tzf .moon/cache/outputs/<hash>.tar.gz
 ```
 
 > If `experiments.casOutputsCache` is enabled (v2.3+), outputs are stored in a content-addressable
-> store rather than per-hash tarballs — see [Experimental caching layers](#experimental-caching-layers)
-> for what to look for instead.
+> store rather than per-hash tarballs — see
+> [Experimental caching layers](#experimental-caching-layers) for what to look for instead.
 
 ### Common causes
 
@@ -273,11 +284,11 @@ Available in v2.3+.
 Each entry in `deps` can declare a `cacheStrategy` that controls how that dep contributes to the
 current task's cache hash:
 
-| Strategy    | Effect on this task's hash                                                                                            | Use when                                                            |
-| ----------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `'hash'`    | Mixes in the dep's full hash. Any change to the dep (inputs, command, args, env) invalidates this task.               | You want any upstream change to force a rebuild.                    |
-| `'ignored'` | Dep is a sequencing edge only; its changes never invalidate this task.                                                | The dep produces no artifact you care about (e.g. lint, test).      |
-| `'outputs'` | Mixes in the dep's output files instead of its hash. This task is only invalidated when upstream **outputs** change.  | Build tasks that consume a dep's artifacts but not its source.      |
+| Strategy    | Effect on this task's hash                                                                                           | Use when                                                       |
+| ----------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `'hash'`    | Mixes in the dep's full hash. Any change to the dep (inputs, command, args, env) invalidates this task.              | You want any upstream change to force a rebuild.               |
+| `'ignored'` | Dep is a sequencing edge only; its changes never invalidate this task.                                               | The dep produces no artifact you care about (e.g. lint, test). |
+| `'outputs'` | Mixes in the dep's output files instead of its hash. This task is only invalidated when upstream **outputs** change. | Build tasks that consume a dep's artifacts but not its source. |
 
 ### The v2.3 default change
 
@@ -327,8 +338,65 @@ tasks:
 **Build invalidated by a `test` dep**
 
 You declared `deps: ['~:test']` on a build task in pre-v2.3 expecting the lint/test changes to
-invalidate. v2.3 makes this `ignored` by default. Set `cacheStrategy: 'hash'` explicitly if you
-need the old behavior.
+invalidate. v2.3 makes this `ignored` by default. Set `cacheStrategy: 'hash'` explicitly if you need
+the old behavior.
+
+---
+
+## Fingerprint checks in the hash
+
+Available in v2.4+.
+
+A task's `checks` can include one or more `fingerprint` entries. Unlike `requirement` and
+`condition` checks (which gate or skip a task), a `fingerprint` check always runs and folds its
+script output into the task's cache hash. This lets you invalidate the cache based on **external
+state** that isn't captured by `inputs` — for example, a compiler version or a remote API's schema.
+
+```yaml
+tasks:
+  build:
+    command: 'cargo build'
+    checks:
+      - check: 'fingerprint'
+        script: 'rustc --version'
+        # What portion of the run to hash:
+        #   true (default) → all output   'exit-code' → just the code
+        #   'stdout' → stdout only         'stderr' → stderr only
+        hash: 'stdout'
+```
+
+### Symptom: cache misses on every run after adding a fingerprint
+
+The fingerprint script's output is volatile. `rustc --version` is stable; `date` or a build
+timestamp is not. Anything non-deterministic in the hashed portion changes the hash each run.
+
+**Diagnosis:**
+
+```bash
+# Diff two consecutive runs — the fingerprint check contributes to the hash manifest
+moon run <project>:<task> --force
+moon hash <hash1> <hash2>
+```
+
+If the differing field corresponds to a check, the fingerprint output is the cause.
+
+**Fixes:**
+
+- Narrow what's hashed with the `hash` field — `hash: 'exit-code'` ignores volatile stdout/stderr.
+- Make the script deterministic (print only a stable version string, not a timestamp).
+- Remove the fingerprint if the external state doesn't actually affect the output.
+
+### Symptom: a fingerprint check aborts the task
+
+If the fingerprint script exits **non-zero** (or fails to spawn at all), moon raises
+`FingerprintCheckFailed` (`task_runner::hash_check_failed`) during hash generation and the task does
+not run. Unlike a `condition`, a failing fingerprint is always fatal. Run the script manually to
+debug it.
+
+> Fingerprint checks run during hash generation, which happens on **every** run — even on cache
+> hits, and even when the task's cache is disabled. Setting `hash: false` still runs the script but
+> hashes nothing. For the gating/skipping check types (`requirement`, `condition`), see
+> [config-mistakes.md § Task checks](./config-mistakes.md#task-checks).
 
 ---
 
@@ -336,9 +404,8 @@ need the old behavior.
 
 Available in v2.3+.
 
-Two opt-in experiments can change how the local cache stores and verifies content. If a user
-reports unexpected cache behavior, check whether either of these is enabled in
-`.moon/workspace.yml`:
+Two opt-in experiments can change how the local cache stores and verifies content. If a user reports
+unexpected cache behavior, check whether either of these is enabled in `.moon/workspace.yml`:
 
 ```yaml
 experiments:
@@ -349,15 +416,18 @@ experiments:
 ### `casOutputsCache`
 
 When enabled, task outputs are stored in a local content-addressable store (CAS) instead of as
-`.tar.gz` archives. This changes the on-disk layout of `.moon/cache/outputs/` significantly — if you
-inspect cache files directly, the per-hash `.tar.gz` will not be there.
+per-hash `.tar.gz` archives under `.moon/cache/outputs/`. The CAS lives in **sibling directories**:
+`.moon/cache/manifests/` and `.moon/cache/blobs/`, each prefix-sharded by hash (e.g.
+`blobs/ab/cdef1234…`). In v2.4 these were renamed from the earlier `ac/` and `cas/` directories
+(migrated automatically).
 
 **What to check when this is on:**
 
-- `ls .moon/cache/outputs/` will look different (sharded by content hash, not flat).
-- `tar tzf` won't work on individual blobs.
-- Archiving and hydration currently run on the main thread (not the daemon), so they may be slower
-  than the legacy tarball path.
+- New `.tar.gz` files stop appearing in `.moon/cache/outputs/` — look under `manifests/` and
+  `blobs/` instead.
+- `tar tzf` won't work on individual blobs; they're raw content-addressed files.
+- <sup>v2.4+</sup> If `cache.cas.maxSize` is set (e.g. `'10gb'`), least-recently-used outputs are
+  **evicted** when the limit is exceeded — a missing archive may simply have been evicted.
 
 **Quick toggle for diagnosis:**
 

@@ -182,6 +182,10 @@ The following fields are available:
 - `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
 - `checksum_public_key` - Public key used for verifying checksums. Only used for `.minisig` files.
+- `post_script` - A script file, relative from the install directory, to execute after the prebuilt
+  has been installed.
+- `post_script_args` - A list of arguments to pass to the post-install script when executing it.
+  <VersionLabel version="0.58.0" />
 
 ```rust
 #[plugin_fn]
@@ -230,9 +234,11 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
 ##### Unpacking an archive
 
 Our plugin layer will do its best to detect file extensions, unpack the downloaded file (if an
-archive), and install the tool to the correct directory. However, we're unable to account for _all_
-edge cases, so for situations where the install params above are not sufficient, you may define an
-`unpack_archive` function.
+archive), and install the tool to the correct directory. On macOS, `.pkg` installers and `.dmg` disk
+images are also detected and unpacked automatically. <VersionLabel version="0.58.0" />
+
+However, we're unable to account for _all_ edge cases, so for situations where the install params
+above are not sufficient, you may define an `unpack_archive` function.
 
 This function receives an input with the following fields:
 

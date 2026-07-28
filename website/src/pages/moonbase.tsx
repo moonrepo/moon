@@ -1,4 +1,4 @@
-/* eslint-disable sort-keys */
+/* oxlint-disable sort-keys */
 
 import Features, { Feature } from '@site/src/components/Products/Features';
 import Hero from '@site/src/components/Products/Moonbase/Hero';

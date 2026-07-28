@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import Text from '@site/src/ui/typography/Text';
 import Bun from '@site/static/img/tools/bun.svg';
@@ -10,6 +8,9 @@ import Node from '@site/static/img/tools/node.svg';
 import Python from '@site/static/img/tools/python.svg';
 import Ruby from '@site/static/img/tools/ruby.svg';
 import Rust from '@site/static/img/tools/rust.svg';
+import clsx from 'clsx';
+import { useEffect, useState } from 'react';
+
 import { loadToolsData, ProtoTool } from '../../../data/proto-tools';
 
 export interface ToolsGridProps {
@@ -20,7 +21,7 @@ export default function ToolsGrid({ cols = 3 }: ToolsGridProps) {
 	const [tools, setTools] = useState<ProtoTool[]>([]);
 
 	useEffect(() => {
-		// eslint-disable-next-line promise/prefer-await-to-then
+		// oxlint-disable-next-line promise/prefer-await-to-then
 		loadToolsData('third-party').then(setTools).catch(console.error);
 	}, []);
 

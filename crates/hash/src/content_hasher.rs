@@ -1,7 +1,7 @@
 use crate::content_hash::ContentHash;
 use serde::Serialize;
 use starbase_utils::json;
-use tracing::{debug, instrument, trace};
+use tracing::{debug, instrument};
 
 pub struct ContentHasher {
     content_cache: Option<String>,
@@ -16,7 +16,7 @@ unsafe impl Sync for ContentHasher {}
 
 impl ContentHasher {
     pub fn new(label: &str) -> ContentHasher {
-        trace!(label, "Created new content hasher");
+        debug!(label, "Created new content hasher");
 
         ContentHasher {
             content_cache: None,
@@ -34,7 +34,11 @@ impl ContentHasher {
 
         let hash = ContentHash::hash_bytes(self.serialize()?)?;
 
-        debug!(label = &self.label, %hash, "Generated content hash");
+        debug!(
+            label = &self.label,
+            hash = hash.as_str(),
+            "Generated content hash"
+        );
 
         self.hash_cache = Some(hash.clone());
 
@@ -42,8 +46,6 @@ impl ContentHasher {
     }
 
     pub fn hash_content<T: Serialize>(&mut self, content: T) -> miette::Result<()> {
-        trace!(label = &self.label, "Adding content to hasher");
-
         self.contents.push(json::format(&content, false)?);
         self.content_cache = None;
         self.hash_cache = None;

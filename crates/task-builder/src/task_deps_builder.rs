@@ -10,7 +10,7 @@ use moon_task::{
     TaskOptionRunInCI, TaskOptions,
 };
 use std::mem;
-use tracing::trace;
+use tracing::debug;
 
 pub trait TasksQuerent {
     fn query_projects_by_tag(&self, tag: &str) -> miette::Result<Vec<&Id>>;
@@ -249,7 +249,7 @@ pub fn create_project_dep_from_task_dep(
         return None;
     }
 
-    trace!(
+    debug!(
         project_id = project_id.as_str(),
         dep_id = dep_project_id.as_str(),
         task_target = task_dep.target.as_str(),

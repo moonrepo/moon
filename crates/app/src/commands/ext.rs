@@ -1,7 +1,6 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_common::Id;
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
@@ -15,7 +14,7 @@ pub struct ExtArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn ext(session: MoonSession, args: ExtArgs) -> AppResult {
+pub async fn ext(session: MoonSession, args: ExtArgs) -> SessionResult {
     let extension_registry = session.get_extension_registry().await?;
 
     extension_registry

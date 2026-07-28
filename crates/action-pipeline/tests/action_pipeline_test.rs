@@ -1,7 +1,7 @@
 use moon_action::Action;
 use moon_action_graph::RunRequirements;
 use moon_task::Target;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use starbase_sandbox::create_sandbox;
 
 fn get_labels(actions: Vec<Action>) -> Vec<String> {

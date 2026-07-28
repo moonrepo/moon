@@ -1,5 +1,6 @@
-import cx from 'clsx';
 import BaseLink, { Props as BaseLinkProps } from '@docusaurus/Link';
+import cx from 'clsx';
+
 import { sizes, TextSize, transforms, weights } from './Text';
 import { TypographyProps } from './types';
 

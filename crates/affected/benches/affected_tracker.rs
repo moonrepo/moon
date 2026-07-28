@@ -3,7 +3,7 @@ use moon_affected::AffectedTracker;
 use moon_bench_utils::create_simple_workspace;
 use moon_common::is_local;
 use moon_common::{is_ci, path::WorkspaceRelativePathBuf};
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use rustc_hash::FxHashSet;
 use starbase_sandbox::Sandbox;
 use std::sync::Arc;

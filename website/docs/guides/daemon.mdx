@@ -48,12 +48,20 @@ server process. This process detaches from the terminal and continues running af
 completes. Subsequent CLI invocations connect to the running daemon instead of starting fresh.
 
 The daemon communicates with CLI processes over a local IPC channel — Unix domain sockets on
-macOS/Linux, and named pipes on Windows. All daemon files (PID, socket, and logs) are stored in
-`.moon/cache/daemon`.
+macOS/Linux, and named pipes on Windows. All daemon files (state, socket, and logs) are stored in
+`.moon/cache/daemon`. The daemon records its metadata in a `daemon.json` state file, and takes exclusive ownership of its workspace through an
+advisory file lock held for its entire lifetime. A crashed daemon releases the lock automatically,
+so a stale socket or state file can no longer block or misdirect the next start.
 
 If the daemon fails to start or is unavailable, the CLI falls back to building graphs in-process as
 it normally would without the daemon. You won't see an error — the CLI simply proceeds without the
 performance benefit.
+
+Connecting to the daemon and starting it are a single operation — a command that needs
+the daemon will start one itself if a background pre-warm hasn't already, with concurrent starts
+coordinating so only one daemon is ever spawned. The daemon also retires itself after a long idle
+period with no requests, and exits immediately if its workspace is deleted, so an abandoned
+workspace no longer leaves a daemon running forever.
 
 ### File watching
 
@@ -104,7 +112,7 @@ $ moon daemon stop
 ```
 
 Stops the daemon gracefully. If the daemon does not shut down within a few seconds, it will be
-forcefully killed. Daemon files (PID, socket) are cleaned up automatically. See
+forcefully killed. Daemon files (state, socket) are cleaned up automatically. See
 [`moon daemon stop`](../commands/daemon/stop).
 
 ### Restarting
@@ -123,7 +131,8 @@ $ moon daemon status
 ```
 
 Displays information about the running daemon, including its process ID, uptime, socket/pipe
-endpoint, and file paths for the PID and log files. See
+endpoint, and file paths for the state and log files. Whether the daemon is running is determined by
+connecting to it, rather than probing a process ID. See
 [`moon daemon status`](../commands/daemon/status).
 
 ### Viewing logs
@@ -133,7 +142,8 @@ $ moon daemon logs
 ```
 
 Tails the daemon's log file in real time. The daemon must be running for this command to work. The
-log file is located at `.moon/cache/daemon/server.log` and contains detailed trace-level output. See
+log file is located at `.moon/cache/daemon/server.log` and contains detailed trace-level output. As
+of v2.4, log files are rotated up to 7 times, with older files automatically deleted. See
 [`moon daemon logs`](../commands/daemon/logs).
 
 ## Troubleshooting
@@ -144,8 +154,8 @@ log file is located at `.moon/cache/daemon/server.log` and contains detailed tra
   [`.moon/workspace.yml`](../config/workspace), or that the `MOON_DAEMON` environment variable is
   set.
 - Check if a daemon is already running with [`moon daemon status`](../commands/daemon/status).
-- If the daemon crashed previously, a stale PID file may be blocking startup. Delete
-  `.moon/cache/daemon` and try again.
+- As of v2.4, a crashed daemon releases its workspace lock automatically, so a stale state file no
+  longer blocks startup. If startup still fails, delete `.moon/cache/daemon` and try again.
 
 ### The graph seems stale
 
@@ -160,9 +170,11 @@ The daemon writes detailed logs to `.moon/cache/daemon/server.log`. Use
 
 ### After upgrading moon
 
-After upgrading moon to a new version, restart the daemon with
-[`moon daemon restart`](../commands/daemon/restart). A running daemon from a previous version may
-behave unexpectedly or return stale data. We'll attempt to automate this when applicable.
+As of v2.4, this is handled automatically — when connecting, the CLI checks the running daemon's
+moon and protocol version against its own, and restarts it on a mismatch, so a daemon left over from
+before a `moon upgrade` is replaced instead of serving the old binary indefinitely. If you ever need
+to force it, restart the daemon manually with
+[`moon daemon restart`](../commands/daemon/restart).
 
 ### CI environments
 

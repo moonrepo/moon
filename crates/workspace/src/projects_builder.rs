@@ -24,11 +24,12 @@ use petgraph::prelude::*;
 use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
+use starbase_utils::glob::{self, GlobWalkOptions};
 use std::collections::{BTreeMap, VecDeque};
 use std::mem;
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::{debug, instrument, trace};
+use tracing::{debug, instrument};
 
 pub type ProjectDag = Dag<NodeState<Project>, DependencyScope>;
 pub type ProjectBuildDataMap = FxHashMap<Id, ProjectBuildData>;
@@ -209,17 +210,17 @@ pub async fn build_project(
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceProjectsBuilder {
     #[serde(skip)]
-    context: Option<Arc<WorkspaceBuilderContext>>,
+    pub context: Option<Arc<WorkspaceBuilderContext>>,
 
     /// Map of aliases to project IDs.
     aliases_to_ids: FxHashMap<String, Id>,
 
     /// Cached projects build data.
-    build_data: ProjectBuildDataMap,
+    pub build_data: ProjectBuildDataMap,
 
     /// List of config paths used in the hashing process.
     /// These are used for invalidation.
-    config_paths: FxHashSet<WorkspaceRelativePathBuf>,
+    pub config_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
     /// Map of project IDs to their graph index.
     pub ids_to_indexes: FxHashMap<Id, NodeIndex>,
@@ -320,15 +321,17 @@ impl WorkspaceProjectsBuilder {
     /// Load and build all projects into the graph, as configured in the workspace.
     #[instrument(skip(self))]
     pub async fn build(&mut self, ids: Option<Vec<Id>>) -> miette::Result<()> {
-        let data = if self.build_data.is_empty() {
+        let mut data = if self.build_data.is_empty() {
             self.load().await?
         } else {
             mem::take(&mut self.build_data)
         };
 
+        // Extend projects with plugins before building, so that the
+        // cached flow can skip these plugin calls entirely on a hit
+        self.extend_build_data(&mut data).await?;
         self.determine_repo_type(&data)?;
         self.build_graph(ids, data).await?;
-        self.enforce_constraints()?;
 
         Ok(())
     }
@@ -534,7 +537,7 @@ impl WorkspaceProjectsBuilder {
     }
 
     /// Enforce project constraints and boundaries after all nodes have been inserted.
-    fn enforce_constraints(&self) -> miette::Result<()> {
+    pub fn enforce_constraints(&self) -> miette::Result<()> {
         debug!("Enforcing project constraints");
 
         let context = self.context();
@@ -594,7 +597,6 @@ impl WorkspaceProjectsBuilder {
 
     /// Load the graph with project sources from the workspace configuration.
     /// If globs are provided, walk the file system and gather sources.
-    /// Then extend the graph with aliases, derived from all event subscribers.
     #[instrument(skip(self))]
     async fn load(&mut self) -> miette::Result<ProjectBuildDataMap> {
         let context = self.context();
@@ -642,11 +644,22 @@ impl WorkspaceProjectsBuilder {
             locate_projects_with_globs(&context, &globs, &mut sources, glob_format)?;
         }
 
-        // Load projects and configs first
-        let mut build_data = self.load_build_data(sources).await?;
+        // Load projects and configs
+        let build_data = self.load_build_data(sources).await?;
 
-        // Then extend projects with plugins
-        self.extend_build_data(&mut build_data).await?;
+        // Include all workspace-level config files
+        let ext_glob = context.config_loader.get_ext_glob();
+
+        for file in glob::walk_fast_with_options(
+            &context.config_loader.dir,
+            [&format!("*.{ext_glob}"), &format!("tasks/**/*.{ext_glob}")],
+            GlobWalkOptions::default().cache().log_results(),
+        )? {
+            self.config_paths.insert(
+                file.relative_to(&context.workspace_root)
+                    .into_diagnostic()?,
+            );
+        }
 
         // Validate the default project exists
         if let Some(default_id) = &context.workspace_config.default_project
@@ -680,7 +693,7 @@ impl WorkspaceProjectsBuilder {
         let mut set = JoinSet::new();
 
         for (id, source) in sources {
-            trace!(
+            debug!(
                 project_id = id.as_str(),
                 "Attempting to load {} (optional)",
                 color::file(source.join(&config_label))
@@ -723,7 +736,7 @@ impl WorkspaceProjectsBuilder {
         }
 
         if !dupe_original_ids.is_empty() {
-            trace!(
+            debug!(
                 original_ids = ?dupe_original_ids.iter().collect::<Vec<_>>(),
                 "Found multiple renamed projects with the same original ID; will ignore these IDs within lookups"
             );
@@ -782,16 +795,6 @@ impl WorkspaceProjectsBuilder {
                     build_data.extensions.push(project_extend);
                 }
             }
-
-            for input_file in output.input_files {
-                self.config_paths.insert(
-                    context
-                        .toolchain_registry
-                        .from_virtual_path(input_file)
-                        .relative_to(&context.workspace_root)
-                        .into_diagnostic()?,
-                );
-            }
         }
 
         debug!("Loaded {} project aliases", self.aliases_to_ids.len());
@@ -806,15 +809,11 @@ impl WorkspaceProjectsBuilder {
         plugin_id: &Id,
         projects_data: &mut ProjectBuildDataMap,
     ) -> miette::Result<()> {
-        // Skip aliases that match its own ID
-        if alias == id.as_str() {
-            return Ok(());
-        }
-
         // Skip aliases that are an invalid ID format
         if let Err(error) = Id::new(&alias) {
             debug!(
-                "Skipping alias {} for project {} as its an invalid format: {error}",
+                error = error.to_string(),
+                "Skipping alias {} for project {} as its an invalid format",
                 color::label(&alias),
                 color::id(id),
             );
@@ -822,8 +821,8 @@ impl WorkspaceProjectsBuilder {
             return Ok(());
         }
 
-        // Skip aliases that would override an ID
-        if projects_data.contains_key(alias.as_str()) {
+        // Skip aliases that would override a different ID
+        if alias != id.as_str() && projects_data.contains_key(alias.as_str()) {
             debug!(
                 "Skipping alias {} for project {} as it conflicts with the existing project {}",
                 color::label(&alias),
@@ -859,7 +858,9 @@ impl WorkspaceProjectsBuilder {
             .aliases
             .insert(alias.clone(), plugin_id.to_owned());
 
-        self.aliases_to_ids.insert(alias, id.to_owned());
+        if alias != id.as_str() {
+            self.aliases_to_ids.insert(alias, id.to_owned());
+        }
 
         Ok(())
     }

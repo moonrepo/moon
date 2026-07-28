@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+
 import { renderGraph } from '../../utils/renderGraph';
 
 export default function ProjectGraph() {

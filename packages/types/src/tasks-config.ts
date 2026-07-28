@@ -336,6 +336,13 @@ export interface TaskOptionsConfig {
 	 */
 	mergeArgs?: TaskMergeStrategy | null;
 	/**
+	 * The strategy to use when merging `checks` with an inherited task.
+	 * @since 2.4.0
+	 *
+	 * @default 'append'
+	 */
+	mergeChecks?: TaskMergeStrategy | null;
+	/**
 	 * The strategy to use when merging `deps` with an inherited task.
 	 *
 	 * @default 'append'
@@ -446,6 +453,36 @@ export interface TaskOptionsConfig {
 
 export type TaskArgs = null | string | string[];
 
+/** Task check configuration for conditions. */
+export interface TaskCheckConditionConfig {
+	check: 'condition';
+	/** The shell script to execute. */
+	script: string;
+}
+
+/** Task check configuration for requirements. */
+export interface TaskCheckRequirementConfig {
+	check: 'requirement';
+	/** The shell script to execute. */
+	script: string;
+}
+
+/** Task check configuration for fingerprinting. */
+export interface TaskCheckFingerprintConfig {
+	check: 'fingerprint';
+	/** The content hashing strategy. */
+	hash?: boolean | 'exit-code' | 'stderr' | 'stdout';
+	/** The shell script to execute. */
+	script: string;
+}
+
+export type TaggedTaskCheck =
+	| TaskCheckConditionConfig
+	| TaskCheckRequirementConfig
+	| TaskCheckFingerprintConfig;
+
+export type TaskCheck = string | TaggedTaskCheck;
+
 /** A file path output. */
 export interface FileOutput {
 	/** The literal file path. */
@@ -483,6 +520,14 @@ export interface TaskConfig {
 	 * defined as a string, or a list of individual arguments.
 	 */
 	args: TaskArgs;
+	/**
+	 * Checks are shell scripts that run before the task is executed,
+	 * and are categorized into three types: conditions, requirements,
+	 * and fingerprints. Depending on the result of the script and the
+	 * type of check, the task may be skipped, will fail, or continue.
+	 * @since 2.4.0
+	 */
+	checks?: TaskCheck[] | null;
 	/**
 	 * The command line to execute when the task is ran.
 	 * Supports the command (executable) with or without arguments.
@@ -815,6 +860,13 @@ export interface PartialTaskOptionsConfig {
 	 */
 	mergeArgs?: TaskMergeStrategy | null;
 	/**
+	 * The strategy to use when merging `checks` with an inherited task.
+	 * @since 2.4.0
+	 *
+	 * @default 'append'
+	 */
+	mergeChecks?: TaskMergeStrategy | null;
+	/**
 	 * The strategy to use when merging `deps` with an inherited task.
 	 *
 	 * @default 'append'
@@ -932,6 +984,14 @@ export interface PartialTaskConfig {
 	 * defined as a string, or a list of individual arguments.
 	 */
 	args?: PartialTaskArgs | null;
+	/**
+	 * Checks are shell scripts that run before the task is executed,
+	 * and are categorized into three types: conditions, requirements,
+	 * and fingerprints. Depending on the result of the script and the
+	 * type of check, the task may be skipped, will fail, or continue.
+	 * @since 2.4.0
+	 */
+	checks?: TaskCheck[] | null;
 	/**
 	 * The command line to execute when the task is ran.
 	 * Supports the command (executable) with or without arguments.

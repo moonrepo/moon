@@ -6,13 +6,16 @@ use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
-use proto_core::flow::locate::Locator;
+use proto_core::flow::locate::{Locator, LocatorResponse};
 use proto_core::flow::manage::Manager;
 use proto_core::flow::resolve::Resolver;
+use proto_core::reporter::ProtoConsole;
+use proto_core::utils::log::LogWriter;
 use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
+use proto_pdk_api::InstallStrategy;
 use scc::hash_map::Entry;
 use starbase_utils::glob::{self, GlobSet};
 use std::fmt;
@@ -32,7 +35,8 @@ pub struct ToolchainPlugin {
     plugin: Arc<PluginContainer>,
     tool: Option<RwLock<Tool>>,
 
-    globals_cache: scc::HashMap<VersionSpec, Option<PathBuf>>,
+    globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
+    locations_cache: scc::HashMap<UnresolvedVersionSpec, LocatorResponse>,
 }
 
 #[async_trait]
@@ -67,6 +71,7 @@ impl Plugin for ToolchainPlugin {
             id: registration.id,
             locator: registration.locator,
             globals_cache: scc::HashMap::new(),
+            locations_cache: scc::HashMap::new(),
             metadata,
             plugin,
         })
@@ -84,19 +89,45 @@ impl Plugin for ToolchainPlugin {
 impl ToolchainPlugin {
     async fn cache_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
         if let Some(tool) = &self.tool {
-            let tool = tool.read().await;
-            let spec = ToolSpec::default();
-
             return match self
                 .globals_cache
-                .entry_async(spec.to_resolved_spec())
+                .entry_async(UnresolvedVersionSpec::default())
                 .await
             {
                 Entry::Occupied(entry) => Ok(entry.get().to_owned()),
                 Entry::Vacant(entry) => {
+                    let tool = tool.read().await;
+                    let spec = ToolSpec::default();
                     let locations = Locator::new(&tool, &spec).locate_globals_dir().await?;
+
                     entry.insert_entry(locations.clone());
+
                     Ok(locations)
+                }
+            };
+        }
+
+        Ok(None)
+    }
+
+    async fn cache_locations(
+        &self,
+        version: &UnresolvedVersionSpec,
+    ) -> miette::Result<Option<LocatorResponse>> {
+        if let Some(tool) = &self.tool {
+            return match self.locations_cache.entry_async(version.to_owned()).await {
+                Entry::Occupied(entry) => Ok(Some(entry.get().to_owned())),
+                Entry::Vacant(entry) => {
+                    let tool = tool.read().await;
+                    let mut spec = ToolSpec::new(version.to_owned());
+
+                    Resolver::resolve(&tool, &mut spec, false).await?;
+
+                    let locations = Locator::locate(&tool, &spec).await?;
+
+                    entry.insert_entry(locations.clone());
+
+                    Ok(Some(locations))
                 }
             };
         }
@@ -150,7 +181,8 @@ impl ToolchainPlugin {
         self.has_func("setup_toolchain").await
             || self.tool.is_some()
                 && (self.has_func("download_prebuilt").await
-                    || self.has_func("native_install").await)
+                    || self.has_func("native_install").await
+                    || self.has_func("build_instructions").await)
     }
 
     #[instrument(skip(self))]
@@ -161,15 +193,8 @@ impl ToolchainPlugin {
         let mut paths = IndexSet::<PathBuf>::default();
 
         if let Some(version) = &version
-            && let Some(tool) = &self.tool
+            && let Some(locations) = self.cache_locations(version).await?
         {
-            let tool = tool.read().await;
-            let mut spec = ToolSpec::new(version.to_owned());
-
-            Resolver::resolve(&tool, &mut spec, false).await?;
-
-            let locations = Locator::locate(&tool, &spec).await?;
-
             if let Some(dir) = locations.exe_file.parent() {
                 paths.insert(dir.to_path_buf());
             }
@@ -511,6 +536,7 @@ impl ToolchainPlugin {
     pub async fn setup_toolchain(
         &self,
         mut input: SetupToolchainInput,
+        console: Option<ProtoConsole>,
         on_setup: impl FnOnce() -> miette::Result<()>,
     ) -> miette::Result<SetupToolchainOutput> {
         let mut output = SetupToolchainOutput::default();
@@ -529,6 +555,16 @@ impl ToolchainPlugin {
                 if !tool.is_installed(&spec) {
                     on_setup()?;
 
+                    // Honor the tool's declared install strategy (e.g. Ruby
+                    // builds from source); otherwise proto defaults to a
+                    // prebuilt download and errors for source-only tools.
+                    let strategy = tool.metadata.default_install_strategy;
+
+                    // Only the build-from-source path routes through proto's
+                    // Builder, which requires a console + log writer. Prebuilt
+                    // installs don't, so leave them `None` to avoid the
+                    // allocation and any change to prebuilt logging behavior.
+                    let building = matches!(strategy, InstallStrategy::BuildFromSource);
                     let mut manager = Manager::new(&mut tool);
 
                     output.installed = manager
@@ -537,6 +573,9 @@ impl ToolchainPlugin {
                             InstallOptions {
                                 skip_prompts: true,
                                 skip_ui: true,
+                                strategy,
+                                console: building.then_some(console).flatten(),
+                                log_writer: building.then(LogWriter::default),
                                 ..Default::default()
                             },
                         )

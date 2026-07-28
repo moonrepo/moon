@@ -14,7 +14,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 pub struct ProjectBuilderContext<'app> {
     pub config_loader: &'app ConfigLoader,
@@ -60,7 +60,7 @@ impl<'app> ProjectBuilder<'app> {
         source: &'app WorkspaceRelativePath,
         context: ProjectBuilderContext<'app>,
     ) -> miette::Result<Self> {
-        trace!(
+        debug!(
             project_id = id.as_str(),
             source = source.as_str(),
             "Building project {} from source",

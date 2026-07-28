@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_config::PartialToolchainPluginConfig;
-use moon_test_utils2::{create_empty_moon_sandbox, predicates::prelude::*};
+use moon_test_utils::{create_empty_moon_sandbox, predicates::prelude::*};
 use proto_core::UnresolvedVersionSpec;
 
 mod setup {

@@ -4,7 +4,7 @@ use moon_common::color;
 use moon_config::{ToolchainPluginVersionFrom, ToolchainsConfig};
 use proto_core::{DataLocator, PluginLocator, ProtoConfig, ToolContext};
 use schematic::{ConfigError, Path, PathSegment, ValidateError, ValidatorError};
-use tracing::trace;
+use tracing::debug;
 
 pub struct ToolchainsConfigExt;
 
@@ -13,16 +13,18 @@ impl ToolchainsConfigExt {
         match id.as_str() {
             "bun" => Some(locate("bun_toolchain", "1.0.2")),
             "deno" => Some(locate("deno_toolchain", "1.1.0")),
-            "go" => Some(locate("go_toolchain", "1.4.2")),
-            "javascript" => Some(locate("javascript_toolchain", "1.1.0")),
+            "go" => Some(locate("go_toolchain", "1.4.4")),
+            "javascript" => Some(locate("javascript_toolchain", "1.2.1")),
             "node" => Some(locate("node_toolchain", "1.0.2")),
             "npm" => Some(locate("node_depman_toolchain", "1.0.3")),
             "pnpm" => Some(locate("node_depman_toolchain", "1.0.3")),
-            "rust" => Some(locate("rust_toolchain", "1.0.5")),
+            "rust" => Some(locate("rust_toolchain", "1.0.6")),
             "typescript" => Some(locate("typescript_toolchain", "1.1.3")),
-            "unstable_python" => Some(locate("python_toolchain", "0.1.9")),
+            "unstable_python" => Some(locate("python_toolchain", "0.2.0")),
             "unstable_pip" => Some(locate("python_pip_toolchain", "0.1.2")),
+            "unstable_poetry" => Some(locate("python_poetry_toolchain", "0.1.0")),
             "unstable_uv" => Some(locate("python_uv_toolchain", "0.1.3")),
+            "unstable_ruby" => Some(locate("ruby_toolchain", "0.1.0")),
             "yarn" => Some(locate("node_depman_toolchain", "1.0.3")),
             "system" => Some(PluginLocator::Data(Box::new(DataLocator {
                 data: "data://system_toolchain".into(),
@@ -65,7 +67,7 @@ impl ToolchainsConfigExt {
             let proto_context = ToolContext::parse(proto_id).unwrap();
 
             if let Some(version) = proto_config.versions.get(&proto_context) {
-                trace!(
+                debug!(
                     "Inheriting {} version {} from .prototools",
                     color::id(id),
                     version
@@ -126,8 +128,8 @@ impl ToolchainsConfigExt {
 
             match id.as_str() {
                 "bun" | "deno" | "go" | "javascript" | "node" | "npm" | "pnpm" | "rust"
-                | "system" | "typescript" | "unstable_python" | "unstable_pip" | "unstable_uv"
-                | "yarn" => {
+                | "system" | "typescript" | "unstable_python" | "unstable_pip"
+                | "unstable_poetry" | "unstable_uv" | "unstable_ruby" | "yarn" => {
                     config.plugin = Self::get_plugin_locator(id);
                 }
                 #[cfg(debug_assertions)]

@@ -281,8 +281,6 @@ mod file_group {
 
             assert_eq!(
                 file_group.root(workspace_root, "project").unwrap(),
-                // Note: globbing results changed in starbase!
-                // RelativePathBuf::from("project/dir")
                 RelativePathBuf::from(".")
             );
         }

@@ -5,7 +5,8 @@ $schema: './cache/schemas/workspace.json'
 defaultProject: 'website'
 
 projects:
-  sources: {}
+  sources:
+    root: '.'
   globs:
     - './packages/*'
     - '!packages/cli'

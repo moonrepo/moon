@@ -27,7 +27,6 @@ umd/
 dist/
 
 # Artifacts
-.eslintcache
 *.map
 *.min.js
 *.tsbuildinfo
@@ -47,9 +46,6 @@ tests/repros/*/.moon/cache
 *.profraw
 *profdata
 dockerManifest.json
-
-# vscode
-.vscode/settings.json
 
 # AI / agents
 .claude/settings.local.json

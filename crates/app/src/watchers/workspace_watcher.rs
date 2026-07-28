@@ -4,16 +4,17 @@ use moon_common::path::WorkspaceRelativePath;
 use moon_config::WorkspaceProjects;
 use moon_daemon::AtomicDaemonState;
 use moon_file_watcher::*;
-use moon_workspace::{STATE_GRAPH_FILE_NAME, STATE_PROJECTS_FILE_NAME};
+use moon_workspace::{STATE_CACHE_FILE_NAME, STATE_GRAPH_FILE_NAME};
 use proto_core::ProtoEnvironment;
 use regex::Regex;
 use starbase_utils::fs;
 use starbase_utils::glob::GlobSet;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
-use tracing::trace;
+use tracing::debug;
 
 pub struct WorkspaceWatcher {
+    context_handle: Option<JoinHandle<()>>,
     graph_handle: Option<JoinHandle<()>>,
     session: MoonSession,
 
@@ -27,6 +28,7 @@ impl WorkspaceWatcher {
         let exts_group = format!("({})", session.config_loader.extensions.join("|"));
 
         Self {
+            context_handle: None,
             graph_handle: None,
             session,
             project_config_regex: Regex::new(&format!(r"(^|/)moon\.{exts_group}$")).unwrap(),
@@ -123,6 +125,18 @@ impl WorkspaceWatcher {
         Ok(false)
     }
 
+    async fn rebuild_context(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
+        // Abort any existing graph building
+        if let Some(handle) = self.context_handle.take() {
+            handle.abort();
+        }
+
+        // Rebuild the graphs in a background thread
+        self.context_handle = Some(self.session.rebuild_context(Arc::clone(state)));
+
+        Ok(())
+    }
+
     async fn rebuild_graphs(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
         // Abort any existing graph building
         if let Some(handle) = self.graph_handle.take() {
@@ -133,7 +147,7 @@ impl WorkspaceWatcher {
         let cache_engine = self.session.get_cache_engine()?;
 
         fs::remove_file(cache_engine.state.resolve_path(STATE_GRAPH_FILE_NAME))?;
-        fs::remove_file(cache_engine.state.resolve_path(STATE_PROJECTS_FILE_NAME))?;
+        fs::remove_file(cache_engine.state.resolve_path(STATE_CACHE_FILE_NAME))?;
 
         // Rebuild the graphs in a background thread
         self.graph_handle = Some(self.session.rebuild_graphs(Arc::clone(state)));
@@ -142,21 +156,20 @@ impl WorkspaceWatcher {
     }
 
     async fn reset_proto(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating proto environment");
+        debug!("Updating proto environment");
 
         let mut env = ProtoEnvironment::new()?;
         env.working_dir = self.session.working_dir.clone();
 
         self.session.proto_env = Arc::new(env);
         self.session.reset_components();
-
-        state.write().await.app_context = self.session.get_app_context().await?;
+        self.rebuild_context(state).await?;
 
         Ok(())
     }
 
     async fn reset_extensions(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating extensions config");
+        debug!("Updating extensions config");
 
         let extensions_config = self
             .session
@@ -175,7 +188,7 @@ impl WorkspaceWatcher {
             self.session.download_extensions();
         }
 
-        state.write().await.app_context = self.session.get_app_context().await?;
+        self.rebuild_context(state).await?;
 
         Ok(())
     }
@@ -189,7 +202,7 @@ impl WorkspaceWatcher {
     }
 
     async fn reset_tasks(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating inherited tasks config");
+        debug!("Updating inherited tasks config");
 
         let tasks_config = self
             .session
@@ -204,15 +217,15 @@ impl WorkspaceWatcher {
         if invalidate {
             self.session.reset_components();
             self.rebuild_graphs(state).await?;
+        } else {
+            self.rebuild_context(state).await?;
         }
-
-        state.write().await.app_context = self.session.get_app_context().await?;
 
         Ok(())
     }
 
     async fn reset_toolchains(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating toolchains config");
+        debug!("Updating toolchains config");
 
         let toolchains_config = self.session.config_loader.load_toolchains_config(
             &self.session.workspace_root,
@@ -231,13 +244,13 @@ impl WorkspaceWatcher {
             self.session.download_toolchains();
         }
 
-        state.write().await.app_context = self.session.get_app_context().await?;
+        self.rebuild_context(state).await?;
 
         Ok(())
     }
 
     async fn reset_workspace(&mut self, state: &AtomicDaemonState) -> miette::Result<()> {
-        trace!("Updating workspace config");
+        debug!("Updating workspace config");
 
         let workspace_config = self
             .session
@@ -275,9 +288,9 @@ impl WorkspaceWatcher {
         // Must run after the new config has been set!
         if rebuild {
             self.rebuild_graphs(state).await?;
+        } else {
+            self.rebuild_context(state).await?;
         }
-
-        state.write().await.app_context = self.session.get_app_context().await?;
 
         Ok(())
     }

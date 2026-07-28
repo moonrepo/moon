@@ -11,7 +11,7 @@ use moon_task::{Target, Task};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::glob::GlobSet;
 use std::path::PathBuf;
-use tracing::{trace, warn};
+use tracing::{debug, warn};
 
 // Hash all inputs for a task, but exclude outputs and moon specific configuration files!
 pub struct TaskHasher<'task> {
@@ -261,7 +261,7 @@ impl<'task> TaskHasher<'task> {
             }
 
             if ignore.is_included(abs_path) {
-                trace!(
+                debug!(
                     "Not hashing input {} as it matches an ignore pattern",
                     color::rel_path(&rel_path),
                 );

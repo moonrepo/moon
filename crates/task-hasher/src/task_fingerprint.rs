@@ -2,6 +2,7 @@ use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::Output;
 use moon_hash::fingerprint;
+use moon_process::OutputInfo;
 use moon_project::Project;
 use moon_task::{Target, Task};
 use std::collections::BTreeMap;
@@ -77,3 +78,11 @@ impl<'task> TaskFingerprint<'task> {
         }
     }
 }
+
+fingerprint!(
+    #[derive(Default)]
+    pub struct TaskChecksFingerprint {
+        // Check script to their executed output
+        pub checks: BTreeMap<String, OutputInfo>,
+    }
+);

@@ -1,6 +1,7 @@
 import { FooterLinkItem } from '@docusaurus/theme-common';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import type { Props } from '@theme/Footer/Links/MultiColumn';
+
 import Heading from '../../../ui/typography/Heading';
 import Link from '../../../ui/typography/Link';
 

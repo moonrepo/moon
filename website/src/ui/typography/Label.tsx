@@ -1,5 +1,6 @@
-import cx from 'clsx';
 import type { IconifyIcon } from '@iconify/react';
+import cx from 'clsx';
+
 import Icon from '../iconography/Icon';
 
 export type LabelVariant = 'failure' | 'info' | 'success' | 'warning';

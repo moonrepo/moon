@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vite-plus/test';
+
 import { formatDuration, formatTime } from '../src';
 
 describe('formatTime()', () => {

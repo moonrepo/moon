@@ -1,0 +1,15 @@
+language: javascript
+layer: library
+
+taskOptions:
+  retryCount: 7
+  cache: false
+
+tasks:
+  inherits: {}
+  overrides:
+    options:
+      retryCount: 2
+  overrides-cache:
+    options:
+      cache: true

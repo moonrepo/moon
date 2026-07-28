@@ -1,7 +1,8 @@
-/* eslint-disable promise/prefer-await-to-then */
+/* oxlint-disable promise/prefer-await-to-then */
 
-import React, { useEffect, useState } from 'react';
 import Link from '@docusaurus/Link';
+import React, { useEffect, useState } from 'react';
+
 import LogoIcon from '../../../../static/brand/proto/icon.svg';
 import TextVector from '../../../../static/brand/proto/text-vector.svg';
 import YC from '../../../../static/img/logo-yc.svg';
@@ -19,7 +20,7 @@ export default function Hero() {
 	useEffect(() => {
 		void fetch('https://raw.githubusercontent.com/moonrepo/proto/master/version')
 			.then((res) => res.text())
-			.then((text) => void setVersion(text.trim()))
+			.then((text) => setVersion(text.trim()))
 			.catch(console.error);
 	}, []);
 

@@ -18,6 +18,8 @@ config_unit_enum!(
     pub enum VcsProvider {
         Bitbucket,
 
+        BitbucketLegacy,
+
         #[default]
         #[serde(rename = "github")]
         GitHub,

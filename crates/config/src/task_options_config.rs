@@ -324,6 +324,11 @@ config_struct!(
         #[serde(skip_serializing_if = "Option::is_none")]
         pub merge_args: Option<TaskMergeStrategy>,
 
+        /// The strategy to use when merging `checks` with an inherited task.
+        /// @since 2.4.0
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub merge_checks: Option<TaskMergeStrategy>,
+
         /// The strategy to use when merging `deps` with an inherited task.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub merge_deps: Option<TaskMergeStrategy>,
@@ -382,7 +387,8 @@ config_struct!(
         pub retry_count: Option<u8>,
 
         /// Runs direct task dependencies (via `deps`) in sequential order.
-        /// This _does not_ apply to indirect or transient dependencies.
+        /// Each dependency's own dependency subtree is also ordered, so that
+        /// transitive dependencies run after the preceding direct dependency.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub run_deps_in_parallel: Option<bool>,
 

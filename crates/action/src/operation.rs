@@ -148,8 +148,10 @@ impl Operation {
                 output.exit_status = Some(status);
             }
 
-            output.set_stderr(String::from_utf8(stderr).unwrap_or_default());
-            output.set_stdout(String::from_utf8(stdout).unwrap_or_default());
+            // Lossy conversion, as output from foreign processes may not
+            // be UTF-8 (Windows codepages, etc), and we can't lose it all
+            output.set_stderr(String::from_utf8_lossy(&stderr).into_owned());
+            output.set_stdout(String::from_utf8_lossy(&stdout).into_owned());
         }
 
         self.finish(if success {

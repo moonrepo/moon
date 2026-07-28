@@ -1,9 +1,8 @@
 use crate::commands::graph::run_server;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_common::Id;
 use moon_project_graph::{GraphToDot, GraphToJson};
-use starbase::AppResult;
 use std::sync::Arc;
 use tracing::instrument;
 
@@ -39,7 +38,7 @@ pub struct ProjectGraphArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn project_graph(session: MoonSession, args: ProjectGraphArgs) -> AppResult {
+pub async fn project_graph(session: MoonSession, args: ProjectGraphArgs) -> SessionResult {
     let mut project_graph = session.get_project_graph().await?;
 
     if let Some(id) = &args.id {

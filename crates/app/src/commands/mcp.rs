@@ -1,9 +1,8 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use miette::IntoDiagnostic;
 use moon_mcp::{SdkResult, run_mcp};
 use moon_process::ProcessRegistry;
-use starbase::AppResult;
 use tokio::task::JoinHandle;
 use tracing::instrument;
 
@@ -11,7 +10,7 @@ use tracing::instrument;
 pub struct McpArgs {}
 
 #[instrument(skip(session))]
-pub async fn mcp(session: MoonSession, _args: McpArgs) -> AppResult {
+pub async fn mcp(session: MoonSession, _args: McpArgs) -> SessionResult {
     let app_context = session.get_app_context().await?;
     let workspace_graph = session.get_workspace_graph().await?;
 

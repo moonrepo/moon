@@ -5,7 +5,7 @@ use crate::process_cache::ProcessCache;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::IntoDiagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::path::{Path, PathBuf};
@@ -124,6 +124,9 @@ impl GitTree {
         base_revision: &str,
         head_revision: &str,
     ) -> miette::Result<ChangedFiles<PathBuf>> {
+        validate_revision(base_revision)?;
+        validate_revision(head_revision)?;
+
         let process = self.get_process();
         let mut args = vec![
             "diff",
@@ -132,6 +135,11 @@ impl GitTree {
             "--relative",
             // Ignore submodules since they would have different revisions
             "--ignore-submodules",
+            // Disable rename detection, as it requires content comparisons
+            // (slow, and triggers blob fetches in partial clones). Renames
+            // are instead reported as a deletion and an addition, which is
+            // more accurate for change detection anyway
+            "--no-renames",
             // We use this option so that file names with special characters
             // are displayed as-is and are not quoted/escaped
             "-z",
@@ -151,32 +159,27 @@ impl GitTree {
         }
 
         let mut files = FxHashMap::default();
-        let mut last_status = "A";
+        let mut tokens = output.split('\0');
 
-        // Lines AND statuses are terminated by a NUL byte
+        // Statuses AND paths are terminated by a NUL byte, and strictly
+        // alternate, so consume them in pairs (renames and copies are
+        // disabled above, so a status is always followed by one path)
         //  X\0file\0
-        //  X000\0file\0
-        //  X000\0file\0renamed_file\0
-        for line in output.split('\0') {
-            if line.is_empty() {
+        while let Some(token) = tokens.next() {
+            if token.is_empty() {
                 continue;
             }
 
             // X\0
-            // X000\0
-            if DIFF_SCORE_PATTERN.is_match(line) || DIFF_PATTERN.is_match(line) {
-                last_status = &line[0..1];
+            if !DIFF_PATTERN.is_match(token) {
                 continue;
             }
 
-            let x = last_status.chars().next().unwrap_or_default();
-
-            // Paths are relative from the cwd
-            let file = self.work_dir.join(line);
+            let x = token.chars().next().unwrap_or_default();
             let mut statuses = vec![];
 
             match x {
-                'A' | 'C' => {
+                'A' => {
                     statuses.push(ChangedStatus::Added);
                     statuses.push(ChangedStatus::Staged);
                 }
@@ -184,7 +187,7 @@ impl GitTree {
                     statuses.push(ChangedStatus::Deleted);
                     statuses.push(ChangedStatus::Staged);
                 }
-                'M' | 'R' | 'T' => {
+                'M' | 'T' => {
                     statuses.push(ChangedStatus::Modified);
                     statuses.push(ChangedStatus::Staged);
                 }
@@ -194,10 +197,27 @@ impl GitTree {
                 _ => {}
             }
 
-            files.insert(file, statuses);
+            if let Some(path) = tokens.next()
+                && !path.is_empty()
+            {
+                // Paths are relative from the cwd
+                files.insert(self.work_dir.join(path), statuses);
+            }
         }
 
         Ok(ChangedFiles { files })
+    }
+
+    // Hash the empty tree, respecting the repository's object format
+    // (sha1 or sha256). Used as a diff base when no other revision exists.
+    #[instrument(skip(self))]
+    pub async fn exec_hash_empty_tree(&self) -> miette::Result<Arc<String>> {
+        let process = self.get_process();
+        let mut command =
+            process.create_command_in_cwd(["hash-object", "-t", "tree", "--stdin"], &self.work_dir);
+        command.input([""]);
+
+        process.run_command(command, true).await
     }
 
     // https://git-scm.com/docs/git-ls-files
@@ -220,6 +240,9 @@ impl GitTree {
             // Includes untracked files
             "--others",
             "--exclude-standard",
+            // We use this option so that file names with special characters
+            // are displayed as-is and are not quoted/escaped
+            "-z",
             // This doesn't work with the `--modified` and `--others`
             // flags, so we need to drill into each submodule manually
             // "--recurse-submodules",
@@ -235,49 +258,71 @@ impl GitTree {
             .run_command(process.create_command_in_cwd(args, &self.work_dir), false)
             .await?;
 
-        let paths = output
-            .split('\n')
-            .filter_map(|file| {
-                // Paths are relative from the cwd
-                let path = self.work_dir.join(file);
+        let mut paths = vec![];
+        let mut seen = FxHashSet::default();
 
-                // Do not include directories, which will be included in this list
-                // when git encounters a submodule (it doesn't traverse into it)
-                if path.is_file() { Some(path) } else { None }
-            })
-            .collect::<Vec<_>>();
+        for file in output.split('\0') {
+            // Files are listed once for each criteria above that they
+            // match, so any duplicates must be filtered out
+            if file.is_empty() || !seen.insert(file) {
+                continue;
+            }
+
+            // Paths are relative from the cwd
+            let path = self.work_dir.join(file);
+
+            // Do not include directories, which will be included in this list
+            // when git encounters a submodule (it doesn't traverse into it)
+            if path.is_file() {
+                paths.push(path);
+            }
+        }
 
         Ok(paths)
     }
 
     // https://git-scm.com/docs/git-ls-tree
     //
+    // Extracts submodule (gitlink) entries at the provided paths, mapping
+    // the absolute path of each submodule to its commit hash. We pass the
+    // paths as pathspecs instead of recursing with `-r`, as the latter
+    // would list every file in the repository.
+    //
     // Requirements:
     //  Root/Worktree:
-    //    - Run at the worktree root.
-    //    - Includes submodule directories in the output, but not their files.
-    //  Submodule:
-    //    - Run in the submodule root.
+    //    - Run at the worktree root, with paths relative from it.
     #[instrument(skip(self))]
-    pub async fn exec_ls_tree(&self, revision: &str) -> miette::Result<BTreeMap<PathBuf, String>> {
+    pub async fn exec_ls_tree(
+        &self,
+        revision: &str,
+        paths: &[&str],
+    ) -> miette::Result<BTreeMap<PathBuf, String>> {
+        validate_revision(revision)?;
+
         let process = self.get_process();
+        let mut args = vec!["ls-tree", "-z", revision, "--"];
+        args.extend(paths.iter().copied());
+
         let output = process
-            .run_command(
-                process.create_command_in_cwd(["ls-tree", "-r", "-z", revision], &self.work_dir),
-                false,
-            )
+            .run_command(process.create_command_in_cwd(args, &self.work_dir), false)
             .await?;
 
         let mut tree = BTreeMap::default();
 
+        // Lines are formatted as:
+        //  <mode> <type> <hash>\t<path>\0
         for line in output.split('\0') {
             if line.is_empty() {
                 continue;
             }
 
-            let parts = line.split(" ");
-
-            if let Some((hash, path)) = parts.last().and_then(|part| part.split_once("\t")) {
+            // Split on the tab first, as the path may contain spaces
+            if let Some((meta, path)) = line.split_once('\t')
+                && let Some((mode_type, hash)) = meta.rsplit_once(' ')
+                // Only include submodule entries, as a path may point to
+                // a regular directory in revisions before it was added
+                && mode_type.ends_with(" commit")
+            {
                 tree.insert(self.work_dir.join(path), hash.to_owned());
             }
         }
@@ -292,32 +337,72 @@ impl GitTree {
         head_revision: &str,
         remote_candidates: &[String],
     ) -> miette::Result<Option<Arc<String>>> {
-        let mut args = vec!["merge-base".to_owned(), head_revision.to_owned()];
+        validate_revision(base_revision)?;
+        validate_revision(head_revision)?;
+
         let mut candidates = vec![base_revision.to_owned()];
 
         for remote in remote_candidates {
             candidates.push(format!("{remote}/{base_revision}"));
         }
 
-        // To start, we need to find a working base
+        // To start, find all the candidates that share history
+        // with the head, and extract their merge base
         let mut set = JoinSet::new();
+        let mut resolved = vec![None; candidates.len()];
 
-        for candidate in candidates {
+        for (index, candidate) in candidates.into_iter().enumerate() {
             let process = Arc::clone(self.process.as_ref().unwrap());
             let command = process
                 .create_command_in_cwd(["merge-base", &candidate, head_revision], &self.work_dir);
 
-            set.spawn(async move { process.run_command(command, true).await.map(|_| candidate) });
+            set.spawn(async move {
+                (
+                    index,
+                    process
+                        .run_command(command, true)
+                        .await
+                        .map(|hash| (candidate, hash)),
+                )
+            });
         }
 
+        // Tasks complete in any order, so preserve the candidate
+        // order to keep the final command deterministic
         while let Some(result) = set.join_next().await {
-            if let Ok(candidate) = result.into_diagnostic()? {
-                args.push(candidate);
+            let (index, result) = result.into_diagnostic()?;
+
+            if let Ok(pair) = result {
+                resolved[index] = Some(pair);
             }
         }
 
-        // Then we need to run it again and extract the base hash.
-        // This is necessary to support comparisons between forks!
+        let mut resolved = resolved.into_iter().flatten();
+
+        // No candidates resolved, so a merge base can't be found
+        let Some((first_candidate, first_hash)) = resolved.next() else {
+            return Ok(None);
+        };
+
+        let other_candidates = resolved.map(|(candidate, _)| candidate).collect::<Vec<_>>();
+
+        // Only 1 candidate resolved, so reuse the merge base from its probe
+        if other_candidates.is_empty() {
+            return Ok(Some(first_hash));
+        }
+
+        // Otherwise run it again with all the viable candidates. When given
+        // multiple commits, Git computes the merge base between the head and
+        // a hypothetical merge of all the others, which surfaces the most
+        // recent divergence point when the candidates are out of sync. This
+        // is necessary to support stale local branches and forks!
+        let mut args = vec![
+            "merge-base".to_owned(),
+            head_revision.to_owned(),
+            first_candidate,
+        ];
+        args.extend(other_candidates);
+
         let process = self.get_process();
 
         if let Ok(hash) = process
@@ -327,7 +412,9 @@ impl GitTree {
             return Ok(Some(hash));
         }
 
-        Ok(None)
+        // The combined command failed unexpectedly, so fall
+        // back to the first candidate's merge base
+        Ok(Some(first_hash))
     }
 
     // https://git-scm.com/docs/git-status#_short_format
@@ -367,27 +454,29 @@ impl GitTree {
         }
 
         let mut files = FxHashMap::default();
+        let mut tokens = output.split('\0');
 
-        // Lines are terminated by a NUL byte:
+        // Lines are terminated by a NUL byte, and rename/copy entries
+        // are followed by the original path as a separate token:
         //  XY file\0
         //  XY file\0orig_file\0
-        for line in output.split('\0') {
-            if line.is_empty() {
+        while let Some(token) = tokens.next() {
+            if token.is_empty() {
                 continue;
             }
 
-            // orig_file\0
-            if !STATUS_PATTERN.is_match(line) {
+            // Unknown token (the original path should be consumed below)
+            if !STATUS_PATTERN.is_match(token) {
                 continue;
             }
 
             // XY file\0
-            let mut chars = line.chars();
+            let mut chars = token.chars();
             let x = chars.next().unwrap_or_default(); // 0
             let y = chars.next().unwrap_or_default(); // 1
 
             // Paths are relative from the cwd
-            let file = self.work_dir.join(&line[3..]);
+            let file = self.work_dir.join(&token[3..]);
             let mut statuses = vec![];
 
             match x {
@@ -399,9 +488,13 @@ impl GitTree {
                     statuses.push(ChangedStatus::Deleted);
                     statuses.push(ChangedStatus::Staged);
                 }
-                'M' | 'R' => {
+                'M' | 'R' | 'T' => {
                     statuses.push(ChangedStatus::Modified);
                     statuses.push(ChangedStatus::Staged);
+                }
+                // Unmerged (conflicted)
+                'U' => {
+                    statuses.push(ChangedStatus::Unstaged);
                 }
                 _ => {}
             }
@@ -415,14 +508,39 @@ impl GitTree {
                     statuses.push(ChangedStatus::Deleted);
                     statuses.push(ChangedStatus::Unstaged);
                 }
-                'M' | 'R' => {
+                'M' | 'R' | 'T' => {
                     statuses.push(ChangedStatus::Modified);
+                    statuses.push(ChangedStatus::Unstaged);
+                }
+                // Unmerged (conflicted)
+                'U' => {
                     statuses.push(ChangedStatus::Unstaged);
                 }
                 '?' => {
                     statuses.push(ChangedStatus::Untracked);
                 }
                 _ => {}
+            }
+
+            // Renames and copies are followed by the original path, so
+            // consume it. For renames the original path no longer exists,
+            // so also mark it as deleted.
+            if (x == 'R' || x == 'C' || y == 'R' || y == 'C')
+                && let Some(orig) = tokens.next()
+                && !orig.is_empty()
+                && (x == 'R' || y == 'R')
+            {
+                files.insert(
+                    self.work_dir.join(orig),
+                    vec![
+                        ChangedStatus::Deleted,
+                        if x == 'R' {
+                            ChangedStatus::Staged
+                        } else {
+                            ChangedStatus::Unstaged
+                        },
+                    ],
+                );
             }
 
             files.insert(file, statuses);

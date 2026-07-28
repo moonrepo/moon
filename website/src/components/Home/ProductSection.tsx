@@ -1,8 +1,9 @@
-import cx from 'clsx';
 import type { IconifyIcon } from '@iconify/react';
 import Icon from '@site/src/ui/iconography/Icon';
 import Heading from '@site/src/ui/typography/Heading';
 import Text from '@site/src/ui/typography/Text';
+import cx from 'clsx';
+
 import CTA, { CTAProps } from './CTA';
 
 export interface ProductItem {

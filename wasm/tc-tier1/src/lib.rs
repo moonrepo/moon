@@ -1,4 +1,5 @@
 use extism_pdk::*;
+use moon_pdk::get_plugin_id;
 use moon_pdk_api::*;
 use std::fs;
 
@@ -13,6 +14,58 @@ pub fn register_toolchain(
         vendor_dir_name: Some("vendor".into()),
         ..Default::default()
     }))
+}
+
+#[plugin_fn]
+pub fn extend_project_graph(
+    Json(input): Json<ExtendProjectGraphInput>,
+) -> FnResult<Json<ExtendProjectGraphOutput>> {
+    let mut output = ExtendProjectGraphOutput::default();
+
+    // This function is exported by all `tc-tier*` plugins through crate
+    // re-exports, but only one should act, otherwise the concurrent
+    // instances race on the same marker and manifest files
+    if get_plugin_id()? != "tc-tier1" {
+        return Ok(Json(output));
+    }
+
+    // Write a marker file so that tests can detect if/when this
+    // function was called, primarily for caching scenarios
+    let marker = input
+        .context
+        .workspace_root
+        .join(".moon/cache/tcExtendProjectGraph");
+
+    if let Some(parent) = marker.parent() {
+        fs::create_dir_all(&parent)?;
+    }
+
+    fs::write(&marker, "")?;
+
+    // Extract an alias from the manifest declared in our metadata
+    for (id, source) in &input.project_sources {
+        let manifest = input.context.workspace_root.join(source).join("tc.cfg");
+
+        if manifest.exists() {
+            let alias = fs::read_to_string(&manifest)?.trim().to_owned();
+
+            if !alias.is_empty() {
+                output.extended_projects.insert(
+                    id.to_owned(),
+                    ExtendProjectOutput {
+                        alias: Some(alias),
+                        ..Default::default()
+                    },
+                );
+            }
+
+            if let Some(file) = manifest.virtual_path() {
+                output.input_files.push(file);
+            }
+        }
+    }
+
+    Ok(Json(output))
 }
 
 #[plugin_fn]

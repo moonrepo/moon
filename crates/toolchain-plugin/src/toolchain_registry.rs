@@ -14,7 +14,7 @@ use std::future::Future;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
-use tracing::trace;
+use tracing::debug;
 
 #[derive(Debug)]
 pub struct ToolchainRegistry {
@@ -141,7 +141,7 @@ impl ToolchainRegistry {
                     .load_with_config(&id, config.plugin.as_ref().unwrap(), |manifest| {
                         let value = serialize_config(config.config.iter())?;
 
-                        trace!(
+                        debug!(
                             toolchain_id = id.as_str(),
                             config = %value,
                             "Storing moon toolchain configuration",

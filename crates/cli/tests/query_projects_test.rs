@@ -2,7 +2,7 @@ mod utils;
 
 use moon_app::queries::projects::QueryProjectsResult;
 use moon_common::is_ci;
-use moon_test_utils2::MoonSandbox;
+use moon_test_utils::MoonSandbox;
 use starbase_utils::json::serde_json;
 use utils::{change_files, create_query_sandbox};
 

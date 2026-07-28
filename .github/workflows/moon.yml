@@ -35,19 +35,20 @@ jobs:
         with:
           fetch-depth: 0
       - uses: actions/setup-node@v6
+      - uses: voidzero-dev/setup-vp@v1
       - uses: arduino/setup-protoc@v3
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: moonrepo/setup-rust@v1
         with:
-          cache-base: "^(master|develop-)"
-      - run: cargo run -- --color --log trace ci --base ${{ github.base_ref || 'master' }}
+          cache-base: '^(master|develop-)'
+      - run: cargo run -- --color --log debug ci --base ${{ github.base_ref || 'master' }}
         env:
           DEPOT_TOKEN: ${{ secrets.DEPOT_TOKEN }}
           MOON_DEBUG_DAEMON: true
           MOON_DEBUG_REMOTE: true
           MOON_DEBUG_PROCESS_ENV: true
-          RUST_BACKTRACE: "1"
+          RUST_BACKTRACE: '1'
       - run: cat .moon/cache/daemon/server.log
         if: failure()
       - uses: moonrepo/run-report-action@v1
@@ -56,7 +57,8 @@ jobs:
           access-token: ${{ secrets.GITHUB_TOKEN }}
           matrix: ${{ toJSON(matrix) }}
   docker:
-    if: ${{ github.repository == 'moonrepo/moon' }}
+    if: ${{ github.repository == 'moonrepo/moon' && (github.event_name != 'pull_request' ||
+      !github.event.pull_request.head.repo.fork) }}
     name: Docker
     # Older required for Docker libc
     runs-on: ubuntu-22.04
@@ -77,7 +79,7 @@ jobs:
       # Non-staged
       - run: ./target/debug/moon docker scaffold website --log trace
         env:
-          MOON_SKIP_SETUP_TOOLCHAIN: "*"
+          MOON_SKIP_SETUP_TOOLCHAIN: '*'
       - uses: depot/build-push-action@v1
         with:
           context: .

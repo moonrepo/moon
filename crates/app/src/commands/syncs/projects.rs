@@ -1,13 +1,12 @@
 use crate::helpers::run_action_pipeline;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_action_graph::{ActionGraphBuilderOptions, RunRequirements};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 use tracing::instrument;
 
 #[instrument(skip_all)]
-pub async fn sync(session: MoonSession) -> AppResult {
+pub async fn sync(session: MoonSession) -> SessionResult {
     let workspace_graph = session.get_workspace_graph().await?;
     let mut project_count = 0;
     let mut action_graph_builder = session

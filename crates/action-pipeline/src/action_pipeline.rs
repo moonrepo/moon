@@ -5,7 +5,6 @@ use crate::job_dispatcher::JobDispatcher;
 use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
 use crate::subscribers::notifications_subscriber::NotificationsSubscriber;
-use crate::subscribers::remote_subscriber::RemoteSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 // use crate::subscribers::telemetry_subscriber::TelemetrySubscriber;
 use crate::subscribers::webhooks_subscriber::WebhooksSubscriber;
@@ -26,7 +25,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::{RwLock, Semaphore, mpsc};
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
-use tracing::{debug, instrument, trace, warn};
+use tracing::{debug, instrument, warn};
 
 pub struct ActionPipeline {
     pub bail: bool,
@@ -301,7 +300,7 @@ impl ActionPipeline {
 
                 // Run persistent actions later, so only grab the index for now
                 if node.is_persistent() {
-                    trace!(
+                    debug!(
                         index = node_index.index(),
                         "Marking action as persistent, will defer dispatch",
                     );
@@ -402,10 +401,6 @@ impl ActionPipeline {
                 ))
                 .await;
         }
-
-        debug!("Subscribing remote services");
-
-        self.emitter.subscribe(RemoteSubscriber).await;
 
         debug!("Subscribing run reports and estimates");
 

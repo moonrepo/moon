@@ -1,10 +1,9 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use moon_actions::plugins::{ExecCommandOptions, exec_plugin_command};
 use moon_pdk_api::{InstallDependenciesInput, LocateDependenciesRootInput, PruneDockerInput};
 use moon_project::Project;
 use moon_toolchain_plugin::ToolchainPlugin;
-use starbase::AppResult;
 use starbase_utils::json;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -16,6 +15,21 @@ struct PruneToolchainInstance {
     deps_root: PathBuf,
     projects: Vec<Arc<Project>>,
     toolchain: Arc<ToolchainPlugin>,
+}
+
+fn get_install_packages_for_projects(projects: &[Arc<Project>], toolchain_id: &str) -> Vec<String> {
+    projects
+        .iter()
+        .flat_map(|project| {
+            project.aliases.iter().filter_map(|alias| {
+                if alias.plugin == toolchain_id {
+                    Some(alias.alias.clone())
+                } else {
+                    None
+                }
+            })
+        })
+        .collect()
 }
 
 #[instrument(skip_all)]
@@ -144,23 +158,10 @@ pub async fn prune_toolchains(
                 let output = toolchain
                     .install_dependencies(InstallDependenciesInput {
                         context: toolchain_registry.create_context(),
-                        packages: instance
-                            .projects
-                            .iter()
-                            .flat_map(|project| {
-                                project
-                                    .aliases
-                                    .iter()
-                                    .filter_map(|alias| {
-                                        if alias.plugin == toolchain.id {
-                                            Some(alias.alias.clone())
-                                        } else {
-                                            None
-                                        }
-                                    })
-                                    .collect::<Vec<_>>()
-                            })
-                            .collect(),
+                        packages: get_install_packages_for_projects(
+                            &instance.projects,
+                            &toolchain.id,
+                        ),
                         production: true,
                         project: in_project.as_ref().map(|project| project.to_fragment()),
                         root: toolchain.to_virtual_path(&instance.deps_root),
@@ -205,7 +206,7 @@ pub async fn prune_toolchains(
 }
 
 #[instrument(skip_all)]
-pub async fn prune(session: MoonSession) -> AppResult {
+pub async fn prune(session: MoonSession) -> SessionResult {
     let manifest_path = session.workspace_root.join(MANIFEST_NAME);
 
     if !manifest_path.exists() {
@@ -222,4 +223,67 @@ pub async fn prune(session: MoonSession) -> AppResult {
     prune_toolchains(&session, &manifest).await?;
 
     Ok(None)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_common::Id;
+    use moon_project::ProjectAlias;
+
+    fn create_project(id: &str, aliases: Vec<ProjectAlias>) -> Arc<Project> {
+        Arc::new(Project {
+            id: Id::raw(id),
+            aliases,
+            ..Project::default()
+        })
+    }
+
+    #[test]
+    fn uses_matching_toolchain_aliases_as_install_packages() {
+        let projects = vec![create_project(
+            "app",
+            vec![
+                ProjectAlias {
+                    alias: "@scope/app".into(),
+                    plugin: Id::raw("javascript"),
+                },
+                ProjectAlias {
+                    alias: "py-app".into(),
+                    plugin: Id::raw("python"),
+                },
+            ],
+        )];
+
+        assert_eq!(
+            get_install_packages_for_projects(&projects, "javascript"),
+            ["@scope/app"]
+        );
+    }
+
+    #[test]
+    fn uses_same_id_aliases_as_install_packages() {
+        let projects = vec![create_project(
+            "app",
+            vec![ProjectAlias {
+                alias: "app".into(),
+                plugin: Id::raw("javascript"),
+            }],
+        )];
+
+        assert_eq!(
+            get_install_packages_for_projects(&projects, "javascript"),
+            ["app"]
+        );
+    }
+
+    #[test]
+    fn preserves_empty_packages_without_aliases() {
+        let projects = vec![create_project("app", vec![])];
+
+        assert_eq!(
+            get_install_packages_for_projects(&projects, "javascript"),
+            Vec::<String>::new()
+        );
+    }
 }

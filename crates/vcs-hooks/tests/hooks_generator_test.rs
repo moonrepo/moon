@@ -1,5 +1,5 @@
 use moon_config::VcsConfig;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use moon_vcs_hooks::HooksGenerator;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{assert_snapshot, create_empty_sandbox};
@@ -114,6 +114,60 @@ mod vcs_hooks {
     }
 
     #[tokio::test]
+    async fn doesnt_adopt_a_foreign_hooks_dir() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        // Simulate another tool managing hooks (husky, lefthook, etc)
+        sandbox.create_file(".husky/pre-commit", "echo husky");
+
+        sandbox.run_git(|cmd| {
+            cmd.args([
+                "config",
+                "core.hooksPath",
+                sandbox.path().join(".husky").to_str().unwrap(),
+            ]);
+        });
+
+        run_generator(sandbox.path()).await;
+
+        // Hooks are written to the moon-owned directory,
+        // and the foreign directory is left untouched
+        assert!(sandbox.path().join(".moon/hooks/pre-commit").exists());
+        assert_eq!(
+            fs::read_to_string(sandbox.path().join(".husky/pre-commit")).unwrap(),
+            "echo husky"
+        );
+
+        clean_generator(sandbox.path()).await;
+
+        assert!(!sandbox.path().join(".moon/hooks").exists());
+        assert!(sandbox.path().join(".husky/pre-commit").exists());
+    }
+
+    #[tokio::test]
+    async fn cleanup_doesnt_delete_a_foreign_hooks_dir_from_state() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        sandbox.create_file(".husky/pre-commit", "echo husky");
+        sandbox.create_file(".husky/other-file", "keep me");
+
+        // Simulate state from an older moon version that adopted a foreign dir
+        sandbox.create_file(
+            ".moon/cache/states/vcsHooks.json",
+            r#"{"hookNames":["pre-commit"],"relativeHooksDir":".husky"}"#,
+        );
+
+        clean_generator(sandbox.path()).await;
+
+        // moon's named hook is removed, but the directory
+        // and all other files remain untouched
+        assert!(!sandbox.path().join(".husky/pre-commit").exists());
+        assert!(sandbox.path().join(".husky/other-file").exists());
+    }
+
+    #[tokio::test]
     async fn removes_stale_hooks_on_subsequent_runs() {
         let sandbox = create_empty_sandbox();
         sandbox.enable_git();
@@ -155,6 +209,45 @@ mod vcs_hooks {
         let config = fs::read_to_string(sandbox.path().join(".git/config")).unwrap();
 
         assert!(config.contains("hooksPath ="));
+    }
+
+    #[tokio::test]
+    async fn places_hooks_alongside_config_moon_dir() {
+        let sandbox = create_empty_sandbox();
+        sandbox.enable_git();
+
+        // Workspace config lives at `.config/moon` instead of `.moon`
+        sandbox.create_file(".config/moon/workspace.yml", "");
+
+        run_generator(sandbox.path()).await;
+
+        // Hooks are placed alongside the config, not in `.moon`
+        assert!(
+            sandbox
+                .path()
+                .join(".config/moon/hooks/pre-commit")
+                .exists()
+        );
+        assert!(sandbox.path().join(".config/moon/hooks/post-push").exists());
+        assert!(!sandbox.path().join(".moon/hooks").exists());
+
+        // And the git config points to the correct directory. Normalize the
+        // separators, as Git stores Windows paths with escaped backslashes.
+        let config = fs::read_to_string(sandbox.path().join(".git/config"))
+            .unwrap()
+            .replace(r"\\", "/")
+            .replace('\\', "/");
+
+        assert!(config.contains(".config/moon/hooks"));
+
+        clean_generator(sandbox.path()).await;
+
+        assert!(!sandbox.path().join(".config/moon/hooks").exists());
+        assert!(
+            !fs::read_to_string(sandbox.path().join(".git/config"))
+                .unwrap()
+                .contains("hooksPath =")
+        );
     }
 
     #[cfg(unix)]

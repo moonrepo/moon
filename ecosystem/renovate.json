@@ -1,0 +1,58 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Shared Renovate preset for moon repositories. Keeps toolchain and moon versions up to date across moon's supported config formats (YAML, JSON, JSONC, TOML, Pkl, HCL). The jsonata managers update built-in toolchain versions in `toolchains.{yml,yaml,json,toml}` by structure, with no annotation comments required. The regex manager updates any other version annotated with a trailing `# renovate:` or `// renovate:` comment, in `.moon/` (or `.config/moon/`) configs, `moon.*` project configs, and GitHub Actions workflows. Tool versions in `.prototools` are handled by Renovate's built-in `proto` manager and are intentionally not matched here. See https://moonrepo.dev/docs/guides/renovate.",
+  "customManagers": [
+    {
+      "customType": "jsonata",
+      "description": "Update built-in toolchain versions in YAML toolchains config (no annotations needed).",
+      "fileFormat": "yaml",
+      "managerFilePatterns": [
+        "/(^|/)\\.moon/toolchains\\.(yml|yaml)$/",
+        "/(^|/)\\.config/moon/toolchains\\.(yml|yaml)$/"
+      ],
+      "matchStrings": [
+        "[ node[version].{ \"depName\": \"node\", \"packageName\": \"node\", \"currentValue\": version, \"datasource\": \"node-version\" }, npm[version].{ \"depName\": \"npm\", \"packageName\": \"npm\", \"currentValue\": version, \"datasource\": \"npm\" }, pnpm[version].{ \"depName\": \"pnpm\", \"packageName\": \"pnpm\", \"currentValue\": version, \"datasource\": \"npm\" }, yarn[version].{ \"depName\": \"yarn\", \"packageName\": \"@yarnpkg/cli\", \"currentValue\": version, \"datasource\": \"npm\" }, bun[version].{ \"depName\": \"bun\", \"packageName\": \"oven-sh/bun\", \"currentValue\": version, \"datasource\": \"github-releases\", \"extractVersion\": \"^bun-v(?<version>\\\\S+)\" }, deno[version].{ \"depName\": \"deno\", \"packageName\": \"denoland/deno\", \"currentValue\": version, \"datasource\": \"github-releases\", \"extractVersion\": \"^v(?<version>\\\\S+)\" }, go[version].{ \"depName\": \"go\", \"packageName\": \"golang/go\", \"currentValue\": version, \"datasource\": \"github-tags\", \"extractVersion\": \"^go(?<version>\\\\S+)\" }, rust[version].{ \"depName\": \"rust\", \"packageName\": \"rust-lang/rust\", \"currentValue\": version, \"datasource\": \"github-tags\" } ]"
+      ]
+    },
+    {
+      "customType": "jsonata",
+      "description": "Update built-in toolchain versions in JSON toolchains config (no annotations needed).",
+      "fileFormat": "json",
+      "managerFilePatterns": [
+        "/(^|/)\\.moon/toolchains\\.json$/",
+        "/(^|/)\\.config/moon/toolchains\\.json$/"
+      ],
+      "matchStrings": [
+        "[ node[version].{ \"depName\": \"node\", \"packageName\": \"node\", \"currentValue\": version, \"datasource\": \"node-version\" }, npm[version].{ \"depName\": \"npm\", \"packageName\": \"npm\", \"currentValue\": version, \"datasource\": \"npm\" }, pnpm[version].{ \"depName\": \"pnpm\", \"packageName\": \"pnpm\", \"currentValue\": version, \"datasource\": \"npm\" }, yarn[version].{ \"depName\": \"yarn\", \"packageName\": \"@yarnpkg/cli\", \"currentValue\": version, \"datasource\": \"npm\" }, bun[version].{ \"depName\": \"bun\", \"packageName\": \"oven-sh/bun\", \"currentValue\": version, \"datasource\": \"github-releases\", \"extractVersion\": \"^bun-v(?<version>\\\\S+)\" }, deno[version].{ \"depName\": \"deno\", \"packageName\": \"denoland/deno\", \"currentValue\": version, \"datasource\": \"github-releases\", \"extractVersion\": \"^v(?<version>\\\\S+)\" }, go[version].{ \"depName\": \"go\", \"packageName\": \"golang/go\", \"currentValue\": version, \"datasource\": \"github-tags\", \"extractVersion\": \"^go(?<version>\\\\S+)\" }, rust[version].{ \"depName\": \"rust\", \"packageName\": \"rust-lang/rust\", \"currentValue\": version, \"datasource\": \"github-tags\" } ]"
+      ]
+    },
+    {
+      "customType": "jsonata",
+      "description": "Update built-in toolchain versions in TOML toolchains config (no annotations needed).",
+      "fileFormat": "toml",
+      "managerFilePatterns": [
+        "/(^|/)\\.moon/toolchains\\.toml$/",
+        "/(^|/)\\.config/moon/toolchains\\.toml$/"
+      ],
+      "matchStrings": [
+        "[ node[version].{ \"depName\": \"node\", \"packageName\": \"node\", \"currentValue\": version, \"datasource\": \"node-version\" }, npm[version].{ \"depName\": \"npm\", \"packageName\": \"npm\", \"currentValue\": version, \"datasource\": \"npm\" }, pnpm[version].{ \"depName\": \"pnpm\", \"packageName\": \"pnpm\", \"currentValue\": version, \"datasource\": \"npm\" }, yarn[version].{ \"depName\": \"yarn\", \"packageName\": \"@yarnpkg/cli\", \"currentValue\": version, \"datasource\": \"npm\" }, bun[version].{ \"depName\": \"bun\", \"packageName\": \"oven-sh/bun\", \"currentValue\": version, \"datasource\": \"github-releases\", \"extractVersion\": \"^bun-v(?<version>\\\\S+)\" }, deno[version].{ \"depName\": \"deno\", \"packageName\": \"denoland/deno\", \"currentValue\": version, \"datasource\": \"github-releases\", \"extractVersion\": \"^v(?<version>\\\\S+)\" }, go[version].{ \"depName\": \"go\", \"packageName\": \"golang/go\", \"currentValue\": version, \"datasource\": \"github-tags\", \"extractVersion\": \"^go(?<version>\\\\S+)\" }, rust[version].{ \"depName\": \"rust\", \"packageName\": \"rust-lang/rust\", \"currentValue\": version, \"datasource\": \"github-tags\" } ]"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Update any version annotated with a trailing `# renovate:` or `// renovate:` comment (YAML, TOML, JSONC, Pkl, HCL).",
+      "managerFilePatterns": [
+        "/(^|/)\\.moon/.*\\.(ya?ml|jsonc|toml|pkl|hcl)$/",
+        "/(^|/)\\.config/moon/.*\\.(ya?ml|jsonc|toml|pkl|hcl)$/",
+        "/(^|/)moon\\.(ya?ml|jsonc|toml|pkl|hcl)$/",
+        "/(^|/)\\.github/workflows/.*\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "['\"]?(?<currentValue>[^'\"\\s,#]+)['\"]?[,\\s]*(?:#|//)\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+packageName=(?<packageName>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?"
+      ],
+      "datasourceTemplate": "{{{datasource}}}",
+      "depNameTemplate": "{{{depName}}}",
+      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver{{/if}}"
+    }
+  ]
+}

@@ -1,12 +1,13 @@
 mod utils;
 
-use moon_cache::CacheEngine;
+use moon_cache::{CacheContext, CacheEngine};
 use moon_common::is_ci;
-use moon_config::{CacheConfig, HasherWalkStrategy, PartialHasherConfig};
+use moon_config::{CacheConfig, HasherWalkStrategy, PartialHasherConfig, RemoteConfig};
 use moon_task_runner::TaskRunCacheState;
-use moon_test_utils2::predicates::prelude::*;
+use moon_test_utils::predicates::prelude::*;
 use starbase_utils::{fs, json};
 use std::path::{MAIN_SEPARATOR_STR, Path};
+use std::sync::Arc;
 use utils::{
     change_files, create_cases_sandbox, create_cases_sandbox_with_config, create_pipeline_sandbox,
     create_sync_heavy_pipeline_sandbox,
@@ -19,7 +20,16 @@ fn target(task: &str) -> String {
 }
 
 fn extract_hash_from_run(fixture: &Path, target_id: &str) -> String {
-    let engine = CacheEngine::new(fixture.join(".moon"), &CacheConfig::default()).unwrap();
+    let config_dir = fixture.join(".moon");
+    let engine = CacheEngine::new(CacheContext {
+        cache_dir: config_dir.join("cache"),
+        cache_config: Arc::new(CacheConfig::default()),
+        config_dir,
+        remote_config: Arc::new(RemoteConfig::default()),
+        remote_debug: false,
+        workspace_root: fixture.to_path_buf(),
+    })
+    .unwrap();
     let cache: TaskRunCacheState = json::read_file(
         engine
             .state
@@ -442,13 +452,17 @@ mod exec {
                 cmd.arg("exec").arg(target("syntaxVar"));
             });
 
-            assert
-                .success()
-                .stdout(predicate::str::contains(if cfg!(windows) {
-                    "substituted-value\nin substituted-value quotes\nprefixed-substituted-value\nsubstituted-value-suffixed"
-                } else {
-                    "substituted-value in substituted-value quotes prefixed-substituted-value substituted-value-suffixed"
-                }));
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
+            let expected = if cfg!(windows) {
+                "substituted-value\nin substituted-value quotes\nprefixed-substituted-value\nsubstituted-value-suffixed"
+            } else {
+                "substituted-value in substituted-value quotes prefixed-substituted-value substituted-value-suffixed"
+            };
+
+            assert!(stdout.contains(expected), "stdout: {stdout}");
         }
 
         #[test]
@@ -954,7 +968,7 @@ mod exec {
                             .join(".moon/cache/states/outputs/noOutput/stdout.log")
                     )
                     .unwrap(),
-                    "No outputs!"
+                    "No outputs!\n"
                 );
             }
 
@@ -1564,6 +1578,10 @@ mod exec {
                 cmd.arg("exec").arg(target("affectedFiles"));
             });
 
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
             let root = sandbox.path().join(PROJECT_DIR);
 
             let mut files = fs::read_dir(&root)
@@ -1587,9 +1605,13 @@ mod exec {
                 .join(" ");
             let envs = files.join(if cfg!(windows) { ";" } else { ":" });
 
-            assert.success().stdout(
-                predicate::str::contains(format!("Args: {args}\n"))
-                    .and(predicate::str::contains(format!("Env: {envs}\n"))),
+            assert!(
+                stdout.contains(&format!("Args: {args}\n")),
+                "stdout: {stdout}"
+            );
+            assert!(
+                stdout.contains(&format!("Env: {envs}\n")),
+                "stdout: {stdout}"
             );
         }
 
@@ -1612,9 +1634,17 @@ mod exec {
             });
             let envs = ["input1.txt", "input2.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
-            assert.success().stdout(
-                predicate::str::contains("Args: ./input1.txt ./input2.txt\n")
-                    .and(predicate::str::contains(format!("Env: {envs}\n"))),
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
+            assert!(
+                stdout.contains("Args: ./input1.txt ./input2.txt\n"),
+                "stdout: {stdout}"
+            );
+            assert!(
+                stdout.contains(&format!("Env: {envs}\n")),
+                "stdout: {stdout}"
             );
         }
 
@@ -1636,10 +1666,15 @@ mod exec {
                     .arg("--affected");
             });
 
-            assert.success().stdout(
-                predicate::str::contains("Args: ./input1.txt ./input2.txt\n")
-                    .and(predicate::str::contains("Env: \n")),
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
+            assert!(
+                stdout.contains("Args: ./input1.txt ./input2.txt\n"),
+                "stdout: {stdout}"
             );
+            assert!(stdout.contains("Env: \n"), "stdout: {stdout}");
         }
 
         #[test]
@@ -1661,9 +1696,14 @@ mod exec {
             });
             let envs = ["input1.txt", "input2.txt"].join(if cfg!(windows) { ";" } else { ":" });
 
-            assert.success().stdout(
-                predicate::str::contains("Args: \n")
-                    .and(predicate::str::contains(format!("Env: {envs}\n"))),
+            // Windows tasks emit CRLF line endings, so normalize before asserting
+            let stdout = assert.stdout().replace("\r\n", "\n");
+            assert.success();
+
+            assert!(stdout.contains("Args: \n"), "stdout: {stdout}");
+            assert!(
+                stdout.contains(&format!("Env: {envs}\n")),
+                "stdout: {stdout}"
             );
         }
     }
@@ -2566,6 +2606,35 @@ mod exec {
                     .not()
                     .eval(&output)
             );
+            assert!(
+                predicate::str::contains("outputStyles:none | stderr")
+                    .not()
+                    .eval(&output)
+            );
+        }
+
+        #[test]
+        fn ignores_style_for_direct_tasks() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run").arg("outputStyles:none");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run").arg("outputStyles:none");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("cached").eval(&output));
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
         }
 
         #[test]
@@ -2793,7 +2862,7 @@ mod exec {
                 cmd.arg("exec").arg("base:standard");
             });
 
-            assert!(sandbox.path().join("CODEOWNERS").exists());
+            assert!(sandbox.path().join(".bitbucket/CODEOWNERS").exists());
         }
     }
 
@@ -2989,6 +3058,217 @@ mod exec {
             }
 
             assert.success();
+        }
+    }
+
+    // Tasks are using unix commands!
+    #[cfg(unix)]
+    mod checks {
+        use super::*;
+
+        mod requirements {
+            use super::*;
+
+            #[test]
+            fn runs_task_when_requirement_passes() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:requirementPass");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("requirement-passed"));
+            }
+
+            #[test]
+            fn fails_task_when_requirement_fails() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:requirementFail");
+                });
+
+                assert
+                    .failure()
+                    .stderr(predicate::str::contains("requirement check"));
+            }
+
+            #[test]
+            fn does_not_run_command_when_requirement_fails() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:requirementFail");
+                });
+
+                assert
+                    .failure()
+                    .stdout(predicate::str::contains("should-not-run").not());
+            }
+        }
+
+        mod conditions {
+            use super::*;
+
+            #[test]
+            fn skips_task_when_condition_passes() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionSkip");
+                });
+
+                let output = assert.output();
+
+                assert!(
+                    predicate::str::contains("should-be-skipped")
+                        .not()
+                        .eval(&output)
+                );
+                assert!(predicate::str::contains("Tasks: 1 skipped").eval(&output));
+            }
+
+            #[test]
+            fn runs_task_when_condition_fails() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionRun");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("condition-ran"));
+            }
+
+            #[test]
+            fn runs_task_when_not_all_conditions_pass() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionAllMustPass");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("should-run"));
+            }
+
+            #[test]
+            fn downstream_task_runs_when_dep_is_conditionally_skipped() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:downstreamOfConditional");
+                });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("downstream-ran").eval(&output));
+                assert!(predicate::str::contains("1 completed").eval(&output));
+                assert!(predicate::str::contains("1 skipped").eval(&output));
+            }
+
+            #[test]
+            fn skipped_conditional_exits_successfully() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionSkip");
+                });
+
+                assert.success();
+            }
+        }
+
+        mod fingerprints {
+            use super::*;
+
+            #[test]
+            fn runs_task_with_fingerprint_check() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:fingerprint");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("fingerprinted"));
+            }
+
+            #[test]
+            fn fingerprint_affects_hash() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:fingerprint");
+                });
+
+                let hash1 = extract_hash_from_run(sandbox.path(), "checks:fingerprint");
+                assert!(!hash1.is_empty());
+            }
+
+            #[test]
+            fn same_fingerprint_produces_same_hash() {
+                let sandbox = create_cases_sandbox();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:fingerprintStdout");
+                });
+
+                let hash1 = extract_hash_from_run(sandbox.path(), "checks:fingerprintStdout");
+
+                // Clear cache to force re-run
+                starbase_utils::fs::remove_dir_all(sandbox.path().join(".moon/cache")).unwrap();
+
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:fingerprintStdout");
+                });
+
+                let hash2 = extract_hash_from_run(sandbox.path(), "checks:fingerprintStdout");
+
+                assert_eq!(hash1, hash2);
+            }
+        }
+
+        mod mixed {
+            use super::*;
+
+            #[test]
+            fn runs_with_passing_requirement_and_failing_condition() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:mixed");
+                });
+
+                assert
+                    .success()
+                    .stdout(predicate::str::contains("mixed-passed"));
+            }
+
+            #[test]
+            fn conditional_skip_with_deps_runs_dep_first() {
+                let sandbox = create_cases_sandbox();
+
+                let assert = sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("checks:conditionSkipWithDownstream");
+                });
+
+                let output = assert.output();
+
+                assert!(predicate::str::contains("dep-task").eval(&output));
+                assert!(
+                    predicate::str::contains("should-be-skipped-with-dep")
+                        .not()
+                        .eval(&output)
+                );
+                assert!(predicate::str::contains("1 completed").eval(&output));
+                assert!(predicate::str::contains("1 skipped").eval(&output));
+            }
         }
     }
 }

@@ -142,6 +142,11 @@ pub async fn install_dependencies(
         None => None,
     };
 
+    // Determine this before any commands run, as the install itself
+    // will create the vendor directory
+    let first_install = toolchain.metadata.vendor_dir_name.is_some()
+        && !has_vendor_installed_dependencies(&toolchain, &deps_root);
+
     // Create a lock if we haven't run before
     let Some(mut lock) = create_hash_and_return_lock_if_changed(
         action,
@@ -155,10 +160,7 @@ pub async fn install_dependencies(
             &input,
         )
         .await?,
-        || {
-            toolchain.metadata.vendor_dir_name.is_some()
-                && !has_vendor_installed_dependencies(&toolchain, &deps_root)
-        },
+        || first_install,
     )?
     else {
         debug!(
@@ -210,18 +212,30 @@ pub async fn install_dependencies(
     if !is_ci()
         && let Some(mut dedupe) = output.dedupe_command
     {
-        debug!(
-            root = node.root.as_str(),
-            toolchain_id = node.toolchain_id.as_str(),
-            "Deduping {} dependencies",
-            toolchain.metadata.name
-        );
+        // On the very first install there are no existing dependencies to
+        // dedupe against, and worse, deduping would re-resolve the graph and
+        // rewrite a pristine lockfile, since a cold cache always hashes as
+        // "changed". Only dedupe once dependencies exist on disk.
+        if first_install {
+            debug!(
+                root = node.root.as_str(),
+                toolchain_id = node.toolchain_id.as_str(),
+                "Dependencies were installed for the first time, skipping dedupe"
+            );
+        } else {
+            debug!(
+                root = node.root.as_str(),
+                toolchain_id = node.toolchain_id.as_str(),
+                "Deduping {} dependencies",
+                toolchain.metadata.name
+            );
 
-        dedupe.cache = None; // Disable
-        dedupe.command.stream = !hide_output;
-        action
-            .operations
-            .extend(exec_plugin_command(app_context, &dedupe, &options).await?);
+            dedupe.cache = None; // Disable
+            dedupe.command.stream = !hide_output;
+            action
+                .operations
+                .extend(exec_plugin_command(app_context, &dedupe, &options).await?);
+        }
     }
 
     finalize_action_operations(action, &toolchain, setup_op, output.operations, vec![])?;

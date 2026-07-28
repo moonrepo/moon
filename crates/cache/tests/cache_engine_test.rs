@@ -1,8 +1,23 @@
 use moon_cache::*;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::CacheConfig;
+use moon_config::{CacheConfig, RemoteConfig};
 use moon_env_var::GlobalEnvBag;
-use starbase_sandbox::create_empty_sandbox;
+use starbase_sandbox::{Sandbox, create_empty_sandbox};
+use std::sync::Arc;
+
+fn create_engine(sandbox: &Sandbox) -> CacheEngine {
+    let config_dir = sandbox.path().join(".moon");
+
+    CacheEngine::new(CacheContext {
+        cache_dir: config_dir.join("cache"),
+        cache_config: Arc::new(CacheConfig::default()),
+        config_dir,
+        remote_config: Arc::new(RemoteConfig::default()),
+        remote_debug: false,
+        workspace_root: sandbox.path().to_path_buf(),
+    })
+    .unwrap()
+}
 
 mod cache_engine {
     use super::*;
@@ -11,7 +26,7 @@ mod cache_engine {
     fn creates_cache_dir_tag() {
         let sandbox = create_empty_sandbox();
 
-        CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+        create_engine(&sandbox);
 
         assert!(sandbox.path().join(".moon/cache/CACHEDIR.TAG").exists());
     }
@@ -19,8 +34,7 @@ mod cache_engine {
     #[test]
     fn returns_default_if_cache_missing() {
         let sandbox = create_empty_sandbox();
-        let engine =
-            CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+        let engine = create_engine(&sandbox);
         let item = engine
             .state
             .load_state::<CommonCacheState>("state.json")
@@ -37,8 +51,7 @@ mod cache_engine {
             r#"{ "lastHash": "abc123" }"#,
         );
 
-        let engine =
-            CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+        let engine = create_engine(&sandbox);
         let item = engine
             .state
             .load_state::<CommonCacheState>("state.json")
@@ -55,8 +68,7 @@ mod cache_engine {
     #[test]
     fn can_write_cache_if_mode_off() {
         let sandbox = create_empty_sandbox();
-        let engine =
-            CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+        let engine = create_engine(&sandbox);
         let bag = GlobalEnvBag::instance();
 
         bag.set("MOON_CACHE", "off");
@@ -78,8 +90,7 @@ mod cache_engine {
     #[test]
     fn can_write_cache_if_mode_readonly() {
         let sandbox = create_empty_sandbox();
-        let engine =
-            CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+        let engine = create_engine(&sandbox);
         let bag = GlobalEnvBag::instance();
 
         bag.set("MOON_CACHE", "read");
@@ -111,8 +122,7 @@ mod cache_engine {
             sandbox.create_file("a.txt", "hello");
             sandbox.create_file("b.txt", "world");
 
-            let engine =
-                CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+            let engine = create_engine(&sandbox);
 
             let files = vec![rel("a.txt"), rel("b.txt")];
             let result = engine.hash_files(sandbox.path(), &files).await.unwrap();
@@ -134,8 +144,7 @@ mod cache_engine {
             sandbox.create_file("a.txt", "same");
             sandbox.create_file("b.txt", "same");
 
-            let engine =
-                CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+            let engine = create_engine(&sandbox);
 
             let result = engine
                 .hash_files(sandbox.path(), &[rel("a.txt"), rel("b.txt")])
@@ -151,8 +160,7 @@ mod cache_engine {
             sandbox.create_file("a.txt", "one");
             sandbox.create_file("b.txt", "two");
 
-            let engine =
-                CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+            let engine = create_engine(&sandbox);
 
             let result = engine
                 .hash_files(sandbox.path(), &[rel("a.txt"), rel("b.txt")])
@@ -165,8 +173,7 @@ mod cache_engine {
         #[tokio::test]
         async fn returns_empty_map_for_empty_input() {
             let sandbox = create_empty_sandbox();
-            let engine =
-                CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+            let engine = create_engine(&sandbox);
 
             let result = engine.hash_files(sandbox.path(), &[]).await.unwrap();
 
@@ -178,8 +185,7 @@ mod cache_engine {
             let sandbox = create_empty_sandbox();
             sandbox.create_file("exists.txt", "here");
 
-            let engine =
-                CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+            let engine = create_engine(&sandbox);
 
             let result = engine
                 .hash_files(
@@ -203,8 +209,7 @@ mod cache_engine {
             sandbox.create_file("file.txt", "content");
             std::fs::create_dir_all(sandbox.path().join("subdir")).unwrap();
 
-            let engine =
-                CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+            let engine = create_engine(&sandbox);
 
             let result = engine
                 .hash_files(sandbox.path(), &[rel("file.txt"), rel("subdir")])
@@ -223,8 +228,7 @@ mod cache_engine {
             sandbox.create_file("nested/mid.txt", "b");
             sandbox.create_file("nested/deeper/bottom.txt", "c");
 
-            let engine =
-                CacheEngine::new(sandbox.path().join(".moon"), &CacheConfig::default()).unwrap();
+            let engine = create_engine(&sandbox);
 
             let files = vec![
                 rel("top.txt"),

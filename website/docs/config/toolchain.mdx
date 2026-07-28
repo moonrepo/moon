@@ -134,6 +134,9 @@ When `false`, doesn't inherit a version. When `true`, matches the version specif
 using the same toolchain identifier. Otherwise a string can be provided to specify a proto-specific
 identifier. Defaults to `true`.
 
+> Keeping versions in `.prototools` also pairs well with [Renovate](../guides/renovate), which can
+> update them automatically.
+
 ```yaml title=".moon/toolchains.yml"
 node:
   versionFromPrototools: 'nodejs'
@@ -235,6 +238,16 @@ This toolchain requires the [`unstable_python`](#unstable_python) toolchain to a
 
 :::
 
+## `unstable_poetry`
+
+Run `moon toolchain info unstable_poetry` for all available settings.
+
+:::info
+
+This toolchain requires the [`unstable_python`](#unstable_python) toolchain to also be enabled.
+
+:::
+
 ## `unstable_uv`
 
 Run `moon toolchain info unstable_uv` for all available settings.
@@ -244,6 +257,12 @@ Run `moon toolchain info unstable_uv` for all available settings.
 This toolchain requires the [`unstable_python`](#unstable_python) toolchain to also be enabled.
 
 :::
+
+## Ruby
+
+## `unstable_ruby`
+
+Run `moon toolchain info unstable_ruby` for all available settings.
 
 ## Rust
 

@@ -1,7 +1,6 @@
-use crate::session::MoonSession;
-use starbase::AppResult;
+use crate::session::{MoonSession, SessionResult};
 
-pub async fn debug_vcs(session: MoonSession) -> AppResult {
+pub async fn debug_vcs(session: MoonSession) -> SessionResult {
     let vcs = session.get_vcs_adapter()?;
 
     println!("config");

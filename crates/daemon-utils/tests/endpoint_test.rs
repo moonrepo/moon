@@ -7,11 +7,27 @@ mod endpoint {
     use super::*;
 
     #[test]
-    fn test_get_pid_path() {
+    fn test_get_state_path() {
         let daemon_dir = Path::new("/home/user/.moon/daemon");
-        let pid_path = get_pid_path(daemon_dir);
 
-        assert_eq!(pid_path, daemon_dir.join("moond.pid"));
+        assert_eq!(get_state_path(daemon_dir), daemon_dir.join("daemon.json"));
+    }
+
+    #[test]
+    fn test_get_lock_path() {
+        let daemon_dir = Path::new("/home/user/.moon/daemon");
+
+        assert_eq!(get_lock_path(daemon_dir), daemon_dir.join("daemon.lock"));
+    }
+
+    #[test]
+    fn test_get_spawn_lock_path() {
+        let daemon_dir = Path::new("/home/user/.moon/daemon");
+
+        assert_eq!(
+            get_spawn_lock_path(daemon_dir),
+            daemon_dir.join("spawn.lock")
+        );
     }
 
     #[cfg(unix)]
@@ -42,59 +58,44 @@ mod endpoint {
     }
 
     #[test]
-    fn test_read_write_pid() {
+    fn test_read_write_state() {
         let sandbox = create_empty_sandbox();
-        let pid_path = sandbox.path().join("test.pid");
+        let daemon_dir = sandbox.path();
 
-        write_pid(&pid_path, 12345).unwrap();
-        assert_eq!(read_pid(&pid_path), Some(12345));
+        let info = DaemonInfo::new(12345, "1.2.3".into(), "/tmp/moond.sock".into());
+        write_state(daemon_dir, info.clone()).unwrap();
+
+        assert_eq!(read_state(daemon_dir), Some(info));
     }
 
     #[test]
-    fn test_write_pid_overwrites_existing() {
+    fn test_write_state_overwrites_existing() {
         let sandbox = create_empty_sandbox();
-        let pid_path = sandbox.path().join("test.pid");
+        let daemon_dir = sandbox.path();
 
-        write_pid(&pid_path, 111).unwrap();
-        write_pid(&pid_path, 222).unwrap();
+        write_state(daemon_dir, DaemonInfo::new(111, "1.0.0".into(), "a".into())).unwrap();
+        write_state(daemon_dir, DaemonInfo::new(222, "2.0.0".into(), "b".into())).unwrap();
 
-        assert_eq!(read_pid(&pid_path), Some(222));
+        let state = read_state(daemon_dir).unwrap();
+        assert_eq!(state.pid, 222);
+        assert_eq!(state.version, "2.0.0");
     }
 
     #[test]
-    fn test_read_pid_missing_file() {
-        let path = Path::new("/nonexistent/path/test.pid");
-        assert_eq!(read_pid(path), None);
+    fn test_read_state_missing_file() {
+        let daemon_dir = Path::new("/nonexistent/path/daemon");
+
+        assert_eq!(read_state(daemon_dir), None);
     }
 
     #[test]
-    fn test_read_pid_invalid_content() {
+    fn test_read_state_invalid_content() {
         let sandbox = create_empty_sandbox();
-        let pid_path = sandbox.path().join("bad.pid");
+        let daemon_dir = sandbox.path();
 
-        std::fs::write(&pid_path, "not-a-number").unwrap();
+        std::fs::write(get_state_path(daemon_dir), "not-json").unwrap();
 
-        assert_eq!(read_pid(&pid_path), None);
-    }
-
-    #[test]
-    fn test_read_pid_empty_file() {
-        let sandbox = create_empty_sandbox();
-        let pid_path = sandbox.path().join("empty.pid");
-
-        std::fs::write(&pid_path, "").unwrap();
-
-        assert_eq!(read_pid(&pid_path), None);
-    }
-
-    #[test]
-    fn test_read_pid_with_whitespace() {
-        let sandbox = create_empty_sandbox();
-        let pid_path = sandbox.path().join("ws.pid");
-
-        std::fs::write(&pid_path, "  42  \n").unwrap();
-
-        assert_eq!(read_pid(&pid_path), Some(42));
+        assert_eq!(read_state(daemon_dir), None);
     }
 
     #[test]
@@ -103,13 +104,31 @@ mod endpoint {
         let daemon_dir = sandbox.path().join("daemon");
 
         fs::create_dir_all(&daemon_dir).unwrap();
-        std::fs::write(daemon_dir.join("moond.pid"), "123").unwrap();
-        std::fs::write(daemon_dir.join("moond.sock"), "").unwrap();
+        write_state(
+            &daemon_dir,
+            DaemonInfo::new(123, "1.0.0".into(), "s".into()),
+        )
+        .unwrap();
+        std::fs::write(get_sock_path(&daemon_dir), "").unwrap();
 
         cleanup_daemon_files(&daemon_dir).unwrap();
 
-        assert!(!daemon_dir.join("moond.pid").exists());
-        assert!(!daemon_dir.join("moond.sock").exists());
+        assert!(!get_state_path(&daemon_dir).exists());
+        assert!(!get_sock_path(&daemon_dir).exists());
+    }
+
+    #[test]
+    fn test_cleanup_daemon_files_leaves_lock_files() {
+        let sandbox = create_empty_sandbox();
+        let daemon_dir = sandbox.path().join("daemon");
+
+        fs::create_dir_all(&daemon_dir).unwrap();
+        std::fs::write(get_lock_path(&daemon_dir), "").unwrap();
+
+        cleanup_daemon_files(&daemon_dir).unwrap();
+
+        // Lock files are reused across runs and must survive cleanup.
+        assert!(get_lock_path(&daemon_dir).exists());
     }
 
     #[test]
@@ -117,8 +136,7 @@ mod endpoint {
         let sandbox = create_empty_sandbox();
         let daemon_dir = sandbox.path().join("nonexistent");
 
-        // Should not panic or error on missing dir
-        let result = cleanup_daemon_files(&daemon_dir);
-        assert!(result.is_ok());
+        // Should not panic or error on missing dir.
+        assert!(cleanup_daemon_files(&daemon_dir).is_ok());
     }
 }

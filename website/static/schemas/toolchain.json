@@ -534,12 +534,7 @@
     "NodePackageManager": {
       "description": "The available package managers for Node.js.",
       "type": "string",
-      "enum": [
-        "bun",
-        "npm",
-        "pnpm",
-        "yarn"
-      ]
+      "enum": ["bun", "npm", "pnpm", "yarn"]
     },
     "NodeVersionFormat": {
       "description": "Formats that a package.json version dependency can be.",
@@ -560,10 +555,7 @@
     "NodeVersionManager": {
       "description": "The available version managers for Node.js.",
       "type": "string",
-      "enum": [
-        "nodenv",
-        "nvm"
-      ]
+      "enum": ["nodenv", "nvm"]
     },
     "NpmConfig": {
       "description": "Options for npm, when used as a package manager.",
@@ -763,10 +755,7 @@
     "PythonPackageManager": {
       "description": "The available package managers for Python.",
       "type": "string",
-      "enum": [
-        "pip",
-        "uv"
-      ]
+      "enum": ["pip", "uv"]
     },
     "RustConfig": {
       "description": "Configures and enables the Rust platform. Docs: https://moonrepo.dev/docs/config/toolchain#rust",
@@ -853,14 +842,7 @@
           "description": "Arbitrary configuration that'll be passed to the WASM plugin.",
           "type": "object",
           "additionalProperties": {
-            "type": [
-              "boolean",
-              "object",
-              "array",
-              "number",
-              "string",
-              "integer"
-            ]
+            "type": ["boolean", "object", "array", "number", "string", "integer"]
           },
           "propertyNames": {
             "type": "string"

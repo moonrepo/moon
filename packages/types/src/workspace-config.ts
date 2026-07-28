@@ -7,15 +7,26 @@ import type { ExtendsFrom, Id } from './common';
 /** Configures aspects of the content-addressable storage (CAS) cache. */
 export interface CacheCasConfig {
 	/**
+	 * Maximum total size of the local cache, for example "10gb" or
+	 * "512mib". When exceeded, the least recently used cached task outputs
+	 * are evicted. Unlimited when unset.
+	 * @since 2.4.0
+	 */
+	maxSize: string | null;
+	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.
+	 * @since 2.3.0
 	 */
 	verifyIntegrity: boolean;
 }
 
 /** Configures aspects of the caching engine and layer. */
 export interface CacheConfig {
-	/** Configures aspects of the content-addressable storage (CAS) cache. */
+	/**
+	 * Configures aspects of the content-addressable storage (CAS) cache.
+	 * @since 2.3.0
+	 */
 	cas: CacheCasConfig;
 }
 
@@ -164,24 +175,28 @@ export interface DockerConfig {
 export interface ExperimentsConfig {
 	/**
 	 * Track and determine affected projects and tasks asynchronously.
+	 * @since 2.2.0
 	 *
 	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
 	 */
 	asyncAffectedTracking: boolean;
 	/**
 	 * Build the project and task graphs asynchronously.
+	 * @since 2.2.0
 	 *
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding: boolean;
 	/**
 	 * Store task outputs in a local CAS (content-addressable storage) cache.
+	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
 	 */
 	casOutputsCache: boolean;
 	/**
 	 * Use native file hashing instead of using the VCS.
+	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
@@ -258,9 +273,15 @@ export interface NotifierConfig {
 	 * When enabled, will bypass the daemon and send webhooks in the
 	 * main process.
 	 * @since 1.38.0
+	 *
+	 * @env MOON_WEBHOOK_ACKNOWLEDGE
 	 */
 	webhookAcknowledge?: boolean;
-	/** A secure URL in which to send webhooks to. */
+	/**
+	 * A secure URL in which to send webhooks to.
+	 *
+	 * @env MOON_WEBHOOK_URL
+	 */
 	webhookUrl?: string | null;
 }
 
@@ -538,7 +559,7 @@ export type VcsHookFormat = 'bash' | 'native';
  * The upstream version control provider, where the repository
  * source code is stored.
  */
-export type VcsProvider = 'bitbucket' | 'github' | 'gitlab' | 'other';
+export type VcsProvider = 'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other';
 
 /** Configures the version control system (VCS). */
 export interface VcsConfig {
@@ -574,7 +595,7 @@ export interface VcsConfig {
 	 * @since 1.8.0
 	 *
 	 * @default 'github'
-	 * @type {'bitbucket' | 'github' | 'gitlab' | 'other'}
+	 * @type {'bitbucket' | 'bitbucket-legacy' | 'github' | 'gitlab' | 'other'}
 	 */
 	provider: VcsProvider;
 	/** List of remote's in which to compare branches against. */
@@ -679,15 +700,26 @@ export interface WorkspaceConfig {
 /** Configures aspects of the content-addressable storage (CAS) cache. */
 export interface PartialCacheCasConfig {
 	/**
+	 * Maximum total size of the local cache, for example "10gb" or
+	 * "512mib". When exceeded, the least recently used cached task outputs
+	 * are evicted. Unlimited when unset.
+	 * @since 2.4.0
+	 */
+	maxSize?: string | null;
+	/**
 	 * Verify hash on every read. When enabled, reads are slower
 	 * but detect on-disk corruption.
+	 * @since 2.3.0
 	 */
 	verifyIntegrity?: boolean | null;
 }
 
 /** Configures aspects of the caching engine and layer. */
 export interface PartialCacheConfig {
-	/** Configures aspects of the content-addressable storage (CAS) cache. */
+	/**
+	 * Configures aspects of the content-addressable storage (CAS) cache.
+	 * @since 2.3.0
+	 */
 	cas?: PartialCacheCasConfig | null;
 }
 
@@ -832,24 +864,28 @@ export interface PartialDockerConfig {
 export interface PartialExperimentsConfig {
 	/**
 	 * Track and determine affected projects and tasks asynchronously.
+	 * @since 2.2.0
 	 *
 	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
 	 */
 	asyncAffectedTracking?: boolean | null;
 	/**
 	 * Build the project and task graphs asynchronously.
+	 * @since 2.2.0
 	 *
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding?: boolean | null;
 	/**
 	 * Store task outputs in a local CAS (content-addressable storage) cache.
+	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
 	 */
 	casOutputsCache?: boolean | null;
 	/**
 	 * Use native file hashing instead of using the VCS.
+	 * @since 2.3.0
 	 *
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
@@ -915,9 +951,15 @@ export interface PartialNotifierConfig {
 	 * When enabled, will bypass the daemon and send webhooks in the
 	 * main process.
 	 * @since 1.38.0
+	 *
+	 * @env MOON_WEBHOOK_ACKNOWLEDGE
 	 */
 	webhookAcknowledge?: boolean | null;
-	/** A secure URL in which to send webhooks to. */
+	/**
+	 * A secure URL in which to send webhooks to.
+	 *
+	 * @env MOON_WEBHOOK_URL
+	 */
 	webhookUrl?: string | null;
 }
 

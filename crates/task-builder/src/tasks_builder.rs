@@ -28,7 +28,7 @@ use std::hash::Hash;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 use system_env::is_command_on_path;
-use tracing::{instrument, trace};
+use tracing::{debug, instrument, trace};
 
 #[derive(Debug, Default)]
 struct CommandLineParseResult {
@@ -111,8 +111,8 @@ pub struct TasksBuilder<'proj> {
     // Tasks to merge and build
     task_ids: FxHashSet<&'proj Id>,
     global_tasks: FxHashMap<&'proj Id, Vec<&'proj TaskConfig>>,
-    global_task_options: Vec<&'proj TaskOptionsConfig>,
     local_tasks: FxHashMap<&'proj Id, &'proj TaskConfig>,
+    shared_task_options: Vec<&'proj TaskOptionsConfig>,
     filters: Option<&'proj ProjectWorkspaceInheritedTasksConfig>,
 }
 
@@ -135,7 +135,7 @@ impl<'proj> TasksBuilder<'proj> {
             implicit_inputs: vec![],
             task_ids: FxHashSet::default(),
             global_tasks: FxHashMap::default(),
-            global_task_options: vec![],
+            shared_task_options: vec![],
             local_tasks: FxHashMap::default(),
             filters: None,
         }
@@ -234,7 +234,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(options) = &global_config.task_options {
-                self.global_task_options.push(options);
+                self.shared_task_options.push(options);
             }
 
             self.implicit_deps.extend(&global_config.implicit_deps);
@@ -263,6 +263,10 @@ impl<'proj> TasksBuilder<'proj> {
             self.task_ids.insert(id);
         }
 
+        if let Some(options) = &local_config.task_options {
+            self.shared_task_options.push(options);
+        }
+
         self
     }
 
@@ -281,7 +285,7 @@ impl<'proj> TasksBuilder<'proj> {
     async fn build_task(&self, id: &Id) -> miette::Result<Task> {
         let target = Target::new(self.project_id, id)?;
 
-        trace!(
+        debug!(
             task_target = target.as_str(),
             "Building task {}",
             color::id(id.as_str())
@@ -361,6 +365,16 @@ impl<'proj> TasksBuilder<'proj> {
 
             if config.script.is_some() {
                 task.script = config.script.clone();
+            }
+
+            if let Some(checks) = &config.checks {
+                task.checks = self.merge_vec(
+                    task.checks,
+                    checks.to_owned(),
+                    task.options.merge_checks,
+                    index,
+                    true,
+                );
             }
 
             if let Some(deps) = &config.deps {
@@ -617,7 +631,7 @@ impl<'proj> TasksBuilder<'proj> {
         options.unix_shell = default_unix_shell();
         options.windows_shell = default_windows_shell();
 
-        let mut chain = self.global_task_options.clone();
+        let mut chain = self.shared_task_options.clone();
 
         chain.extend(
             self.get_config_inherit_chain(id)?
@@ -684,6 +698,7 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(merge) = &config.merge {
                 options.merge_args = *merge;
+                options.merge_checks = *merge;
                 options.merge_deps = *merge;
                 options.merge_env = *merge;
                 options.merge_inputs = *merge;
@@ -694,6 +709,10 @@ impl<'proj> TasksBuilder<'proj> {
 
             if let Some(merge_args) = &config.merge_args {
                 options.merge_args = *merge_args;
+            }
+
+            if let Some(merge_checks) = &config.merge_checks {
+                options.merge_checks = *merge_checks;
             }
 
             if let Some(merge_deps) = &config.merge_deps {

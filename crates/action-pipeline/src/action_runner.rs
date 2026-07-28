@@ -6,7 +6,7 @@ use moon_app_context::AppContext;
 use moon_common::color;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
-use tracing::{instrument, trace};
+use tracing::{debug, instrument};
 
 #[instrument(skip_all)]
 pub async fn run_action(
@@ -21,7 +21,7 @@ pub async fn run_action(
     let node = Arc::clone(&action.node);
     let log_label = color::muted_light(&action.label);
 
-    trace!(index = action.node_index, "Running action {}", log_label);
+    debug!(index = action.node_index, "Running action {}", log_label);
 
     emitter
         .emit(Event::ActionStarted {
@@ -223,7 +223,7 @@ pub async fn run_action(
     };
 
     if action.has_failed() {
-        trace!(
+        debug!(
             index = action.node_index,
             status = ?action.status,
             "Failed to run action {}",
@@ -238,7 +238,7 @@ pub async fn run_action(
             action.abort();
         }
     } else {
-        trace!(
+        debug!(
             index = action.node_index,
             status = ?action.status,
             "Ran action {} in {:?}",

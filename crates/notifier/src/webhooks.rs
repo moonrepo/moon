@@ -7,7 +7,7 @@ use serde::Serialize;
 use starbase_utils::json;
 use std::env;
 use tokio::task::JoinHandle;
-use tracing::{debug, trace, warn};
+use tracing::{debug, warn};
 use uuid::Uuid;
 
 #[derive(Serialize)]
@@ -91,7 +91,7 @@ impl WebhooksNotifier {
             return Ok(());
         }
 
-        trace!("Posting webhook event {} to endpoint", color::id(name));
+        debug!("Posting webhook event {} to endpoint", color::id(name));
 
         let payload = WebhookPayload {
             created_at: now_timestamp(),
@@ -125,7 +125,7 @@ impl WebhooksNotifier {
             let url = self.url.to_owned();
 
             if let Some(mut daemon) = self.daemon_client.clone() {
-                tokio::spawn(async move { daemon.send_webhook(url, body).await });
+                daemon.send_webhook(url, body).await?;
             } else {
                 self.requests.push(tokio::spawn(async move {
                     let _ = notify_webhook(&url, body, false).await;

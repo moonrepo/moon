@@ -1,0 +1,30 @@
+tasks:
+  tsc-project:
+    command: 'tsc'
+  prepare-package:
+    command: 'prepare'
+    deps:
+      - '~:tsc-project'
+
+  # Aggregator with its own (grandchild) dependencies
+  build-tasks:
+    deps:
+      - 'cli:build-library-bundle-cli'
+      - '~:tsc-project'
+      - '~:prepare-package'
+    inputs: []
+
+  clean:
+    command: 'clean'
+    options:
+      cache: false
+
+  # Serial deps where the second dep (build-tasks) has its own subtree.
+  # Every task in that subtree must run after clean.
+  build:
+    deps:
+      - '~:clean'
+      - '~:build-tasks'
+    inputs: []
+    options:
+      runDepsInParallel: false

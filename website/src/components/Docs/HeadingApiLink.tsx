@@ -4,7 +4,7 @@ export interface HeadingApiLinkProps {
 	to: string;
 }
 
-export default function HeadingApiLink({ to }: HeadingApiLinkProps) {
+export default function HeadingApiLink(_props: HeadingApiLinkProps) {
 	return null;
 
 	// return (

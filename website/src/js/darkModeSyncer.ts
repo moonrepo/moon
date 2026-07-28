@@ -1,3 +1,5 @@
+/* oxlint-disable typescript/unbound-method */
+
 // Docusaurus triggers dark mode through the `data-theme="dark"` attribute
 // on the `html` element, while Tailwind uses a `dark` class. This code
 // listens to the `data-theme` attribute for changes, and updates the class

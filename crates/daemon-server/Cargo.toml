@@ -21,13 +21,14 @@ rustc-hash = { workspace = true }
 starbase_utils = { workspace = true, features = ["fs-lock"] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true, features = ["rt"] }
 tonic = { workspace = true, features = ["transport"] }
 tracing = { workspace = true }
 
 [dev-dependencies]
 moon_daemon_client = { path = "../daemon-client" }
 moon_file_watcher = { path = "../file-watcher" }
-moon_test_utils2 = { path = "../test-utils" }
+moon_test_utils = { path = "../test-utils" }
 async-trait = { workspace = true }
 starbase_sandbox = { workspace = true }
 

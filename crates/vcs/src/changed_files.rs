@@ -4,7 +4,7 @@ use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::hash::Hash;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
 #[derive(Debug, Default, Eq, PartialEq)]
@@ -64,7 +64,7 @@ impl<T: Hash + Eq + PartialEq> ChangedFiles<T> {
 impl ChangedFiles<PathBuf> {
     pub fn into_workspace_relative(
         self,
-        workspace_root: &PathBuf,
+        workspace_root: &Path,
     ) -> miette::Result<ChangedFiles<WorkspaceRelativePathBuf>> {
         let mut files = ChangedFiles::default();
 

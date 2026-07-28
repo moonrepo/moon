@@ -44,6 +44,8 @@ cacheable!(
 
         pub merge_args: TaskMergeStrategy,
 
+        pub merge_checks: TaskMergeStrategy,
+
         pub merge_deps: TaskMergeStrategy,
 
         pub merge_env: TaskMergeStrategy,
@@ -105,6 +107,7 @@ impl Default for TaskOptions {
             internal: false,
             interactive: false,
             merge_args: TaskMergeStrategy::Append,
+            merge_checks: TaskMergeStrategy::Append,
             merge_deps: TaskMergeStrategy::Append,
             merge_env: TaskMergeStrategy::Append,
             merge_inputs: TaskMergeStrategy::Append,

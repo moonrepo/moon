@@ -8,7 +8,6 @@ use moon_app_context::AppContext;
 use moon_common::color;
 use moon_common::is_ci;
 use moon_pdk_api::SyncWorkspaceInput;
-use moon_remote::RemoteService;
 use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tokio::task::JoinSet;
@@ -27,13 +26,7 @@ pub async fn sync_workspace(
     // Connect to the remote service in this action,
     // as it always runs before tasks, and we don't need it
     // for non-pipeline related features!
-    if app_context.workspace_config.remote.is_enabled() {
-        RemoteService::connect(
-            &app_context.workspace_config.remote,
-            &app_context.workspace_root,
-        )
-        .await?;
-    }
+    app_context.cache_engine.storage.connect_backends().await?;
 
     if should_skip_action("MOON_SKIP_SYNC_WORKSPACE").is_some() {
         debug!(

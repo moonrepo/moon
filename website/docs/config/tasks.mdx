@@ -183,6 +183,14 @@ Like [tasks](#tasks), this setting allows you to define task options that will b
 tasks_ within the configured file, and by all project-level inherited tasks. This setting is the 1st
 link in the inheritance chain, and can be overridden within each task.
 
+:::info
+
+As of v2.4, task options can also be defined per project with the
+[`taskOptions`](./project#taskoptions) setting in [`moon.*`](./project), which sits later in the
+inheritance chain and takes precedence over these workspace-level defaults.
+
+:::
+
 ```yaml title=".moon/tasks/all.yml"
 taskOptions:
   # Never cache builds

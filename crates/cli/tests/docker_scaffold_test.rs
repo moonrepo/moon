@@ -1,4 +1,4 @@
-use moon_test_utils2::create_moon_sandbox;
+use moon_test_utils::create_moon_sandbox;
 use std::fs;
 
 mod docker_scaffold {

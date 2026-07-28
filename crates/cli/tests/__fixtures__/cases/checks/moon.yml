@@ -1,0 +1,101 @@
+tasks:
+  requirementPass:
+    command: 'echo requirement-passed'
+    toolchain: system
+    options:
+      shell: true
+    checks:
+      - 'exit 0'
+
+  requirementFail:
+    command: 'echo should-not-run'
+    toolchain: system
+    options:
+      shell: true
+    checks:
+      - 'exit 1'
+
+  conditionSkip:
+    command: 'echo should-be-skipped'
+    toolchain: system
+    options:
+      shell: true
+    checks:
+      - check: condition
+        script: 'exit 0'
+
+  conditionRun:
+    command: 'echo condition-ran'
+    toolchain: system
+    options:
+      shell: true
+    checks:
+      - check: condition
+        script: 'exit 1'
+
+  conditionAllMustPass:
+    command: 'echo should-run'
+    toolchain: system
+    options:
+      shell: true
+    checks:
+      - check: condition
+        script: 'exit 0'
+      - check: condition
+        script: 'exit 1'
+
+  fingerprint:
+    command: 'echo fingerprinted'
+    toolchain: system
+    options:
+      shell: true
+    checks:
+      - check: fingerprint
+        script: 'echo version-1'
+
+  fingerprintStdout:
+    command: 'echo fingerprinted-stdout'
+    toolchain: system
+    options:
+      shell: true
+    checks:
+      - check: fingerprint
+        script: 'echo version-1'
+        hash: stdout
+
+  mixed:
+    command: 'echo mixed-passed'
+    toolchain: system
+    options:
+      shell: true
+    checks:
+      - 'exit 0'
+      - check: condition
+        script: 'exit 1'
+      - check: fingerprint
+        script: 'echo fp'
+
+  conditionWithDep:
+    command: 'echo dep-task'
+    toolchain: system
+    options:
+      shell: true
+
+  conditionSkipWithDownstream:
+    command: 'echo should-be-skipped-with-dep'
+    toolchain: system
+    deps:
+      - '~:conditionWithDep'
+    options:
+      shell: true
+    checks:
+      - check: condition
+        script: 'exit 0'
+
+  downstreamOfConditional:
+    command: 'echo downstream-ran'
+    toolchain: system
+    deps:
+      - '~:conditionSkip'
+    options:
+      shell: true

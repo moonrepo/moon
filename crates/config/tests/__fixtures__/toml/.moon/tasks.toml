@@ -8,14 +8,7 @@ implicitDeps = [
   ], env = { KEY = "value" } },
 ]
 
-implicitInputs = [
-  "$ENV",
-  "$ENV_*",
-  "file.txt",
-  "file.*",
-  "/file.txt",
-  "/file.*",
-]
+implicitInputs = ["$ENV", "$ENV_*", "file.txt", "file.*", "/file.txt", "/file.*"]
 
 [fileGroups]
 sources = ["src/**/*"]

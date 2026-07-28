@@ -738,7 +738,7 @@ function isSupported(data?: string[] | string): boolean {
 	return (
 		data === SUPPORTED ||
 		(data !== NOT_SUPPORTED && data !== PARTIALLY_SUPPORTED && data !== SIMILARLY_SUPPORTED) ||
-		// eslint-disable-next-line @typescript-eslint/prefer-string-starts-ends-with
+		// oxlint-disable-next-line @typescript-eslint/prefer-string-starts-ends-with
 		(Array.isArray(data) && data[0] === SUPPORTED)
 	);
 }

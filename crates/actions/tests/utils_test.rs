@@ -1,7 +1,7 @@
 use moon_action::Action;
 use moon_actions::utils::create_hash_and_return_lock_if_changed;
 use moon_app_context::AppContext;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use serde::Serialize;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::fs;

@@ -1,9 +1,8 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 
-pub async fn restart(session: MoonSession) -> AppResult {
+pub async fn restart(session: MoonSession) -> SessionResult {
     if !session.workspace_config.daemon {
         session.console.render(element! {
             Container {
@@ -17,7 +16,7 @@ pub async fn restart(session: MoonSession) -> AppResult {
     }
 
     let connector = session.get_daemon_connector()?;
-    let old_pid = connector.is_running();
+    let old_pid = connector.read_state().map(|state| state.pid);
 
     connector.stop_daemon().await?;
 

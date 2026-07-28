@@ -1,4 +1,6 @@
 import type { RunReport } from '@moonrepo/types';
+import { describe, expect, it } from 'vite-plus/test';
+
 import { prepareReportActions, sortReport } from '../src';
 
 function mockReport(): RunReport {

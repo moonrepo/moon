@@ -2,7 +2,7 @@ use moon_affected::*;
 use moon_common::Id;
 use moon_env_var::GlobalEnvBag;
 use moon_task::Target;
-use moon_test_utils2::{WorkspaceGraph, WorkspaceMocker};
+use moon_test_utils::{WorkspaceGraph, WorkspaceMocker};
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{Sandbox, create_sandbox};
 

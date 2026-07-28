@@ -1,15 +1,14 @@
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::element;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
-use starbase::AppResult;
 use tracing::instrument;
 
 #[derive(Args, Clone, Debug)]
 pub struct ToolchainDownloadArgs;
 
 #[instrument(skip(session))]
-pub async fn download(session: MoonSession, _args: ToolchainDownloadArgs) -> AppResult {
+pub async fn download(session: MoonSession, _args: ToolchainDownloadArgs) -> SessionResult {
     let registry = session.get_toolchain_registry().await?;
 
     if !registry.has_plugin_configs() {

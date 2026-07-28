@@ -1,0 +1,10 @@
+inheritedBy:
+  tags: ['checks']
+
+tasks:
+  checks:
+    command: noop
+    checks:
+      - 'echo global-req'
+      - check: condition
+        script: 'echo global-cond'

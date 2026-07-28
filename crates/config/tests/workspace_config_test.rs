@@ -796,6 +796,25 @@ vcs:
                 load_config_from_root,
             );
         }
+
+        #[test]
+        fn parses_providers() {
+            for (value, expected) in [
+                ("bitbucket", VcsProvider::Bitbucket),
+                ("bitbucket-legacy", VcsProvider::BitbucketLegacy),
+                ("github", VcsProvider::GitHub),
+                ("gitlab", VcsProvider::GitLab),
+                ("other", VcsProvider::Other),
+            ] {
+                let config = test_load_config(
+                    FILENAME,
+                    &format!("vcs:\n  provider: {value}"),
+                    load_config_from_root,
+                );
+
+                assert_eq!(config.vcs.provider, expected);
+            }
+        }
     }
 
     mod version_constraint {

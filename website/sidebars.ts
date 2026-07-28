@@ -1,4 +1,4 @@
-/* eslint-disable sort-keys */
+/* oxlint-disable sort-keys */
 import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
 const sidebars: SidebarsConfig = {
@@ -232,6 +232,7 @@ const sidebars: SidebarsConfig = {
 		},
 		'cheat-sheet',
 		// 'comparison',
+		'env-vars',
 		'terminology',
 		'faq',
 		{
@@ -254,6 +255,7 @@ const sidebars: SidebarsConfig = {
 		'guides/offline-mode',
 		'guides/open-source',
 		'guides/remote-cache',
+		'guides/renovate',
 		'guides/root-project',
 		'guides/sharing-config',
 		'guides/notifications',
@@ -328,6 +330,7 @@ const sidebars: SidebarsConfig = {
 		'proto/config',
 		'proto/tool-spec',
 		'proto/detection',
+		'proto/reporting',
 		'proto/tools',
 		{
 			type: 'category',

@@ -23,7 +23,7 @@ export interface GetProjectToolResponse {
 	projectDependencies?: Project[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
+// oxlint-disable-next-line @typescript-eslint/no-empty-interface
 export interface GetProjectsTool {}
 
 export interface GetProjectsToolResponse {

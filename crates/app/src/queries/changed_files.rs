@@ -87,9 +87,20 @@ async fn query_changed_files_without_stdin(
     let bag = GlobalEnvBag::instance();
     let default_branch = vcs.get_default_branch().await?;
     let current_branch = vcs.get_local_branch().await?;
-    let base_value = bag.get("MOON_BASE").or(options.base.clone());
+    // Treat empty values as not provided, as CI templates typically
+    // pass these environment variables through unconditionally. An empty
+    // environment variable must not mask an explicit option either
+    let base_value = bag
+        .get("MOON_BASE")
+        .filter(|value| !value.is_empty())
+        .or(options.base.clone())
+        .filter(|value| !value.is_empty());
     let base = base_value.as_deref().unwrap_or(&default_branch);
-    let head_value = bag.get("MOON_HEAD").or(options.head.clone());
+    let head_value = bag
+        .get("MOON_HEAD")
+        .filter(|value| !value.is_empty())
+        .or(options.head.clone())
+        .filter(|value| !value.is_empty());
     let head = head_value.as_deref().unwrap_or("HEAD");
 
     // Determine whether we should check against the previous
@@ -99,13 +110,18 @@ async fn query_changed_files_without_stdin(
         && vcs.is_default_branch(&current_branch)
         && options.default_branch;
 
-    // Don't check for shallow if base is set,
-    // since we can assume the user knows what they're doing
+    // Don't bail on shallow if base is set, since we can assume the
+    // user knows what they're doing, but still warn them, as the diff
+    // may be inaccurate without a merge base
     if base_value.is_none() {
         check_shallow!(vcs);
+    } else if vcs.is_shallow_checkout().await? {
+        warn!(
+            "Detected a shallow checkout while comparing against an explicit base, changed files may be inaccurate. A full Git history is recommended, e.g. a fetch depth of 0."
+        );
     }
 
-    let only_local = options.local && base_value.is_none();
+    let only_local = options.local && base_value.is_none() && head_value.is_none();
     let mut changed_files_map = ChangedFiles::default();
     let mut changed_files = FxHashSet::default();
 
@@ -133,10 +149,14 @@ async fn query_changed_files_without_stdin(
         }
     }
 
-    // Always include local changes
-    debug!("Against local index");
+    // Only include local changes when the head is the working tree;
+    // an explicit head requests a comparison between 2 revisions,
+    // of which the local index is not a part of
+    if head_value.is_none() {
+        debug!("Against local index");
 
-    changed_files_map.merge(vcs.get_changed_files().await?);
+        changed_files_map.merge(vcs.get_changed_files().await?);
+    }
 
     if options.status.is_empty() {
         debug!(

@@ -28,11 +28,13 @@ use crate::commands::tasks::TasksArgs;
 use crate::commands::template::TemplateArgs;
 use crate::commands::templates::TemplatesArgs;
 use crate::commands::toolchain::ToolchainCommands;
+use crate::commands::upgrade::UpgradeArgs;
 use crate::systems::bootstrap;
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use moon_cache::CacheMode;
 use moon_env_var::GlobalEnvBag;
+use starbase::tracing::LogLevel;
 use starbase_styles::color::Color as ColorType;
 use std::env;
 use std::path::PathBuf;
@@ -244,7 +246,7 @@ pub enum Commands {
         name = "upgrade",
         about = "Upgrade to the latest version of moon."
     )]
-    Upgrade,
+    Upgrade(UpgradeArgs),
 }
 
 fn fg(ty: ColorType) -> Style {

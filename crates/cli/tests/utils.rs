@@ -2,7 +2,7 @@
 
 use moon_common::{Id, is_ci};
 use moon_config::{PartialToolchainPluginConfig, PartialWorkspaceConfig, PartialWorkspaceProjects};
-use moon_test_utils2::{MoonSandbox, create_empty_moon_sandbox, create_moon_sandbox};
+use moon_test_utils::{MoonSandbox, create_empty_moon_sandbox, create_moon_sandbox};
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::FxHashMap;
 
@@ -71,6 +71,7 @@ fn apply_cases_config(sandbox: &MoonSandbox) {
             // Outputs
             (Id::raw("outputs"), "outputs".to_owned()),
             (Id::raw("outputsFiltering"), "outputs-filtering".to_owned()),
+            (Id::raw("checks"), "checks".to_owned()),
             (Id::raw("outputStyles"), "output-styles".to_owned()),
         ])));
     });

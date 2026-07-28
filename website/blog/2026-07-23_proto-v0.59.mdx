@@ -1,0 +1,137 @@
+---
+slug: proto-v0.59
+title: proto v0.59 - Java support, a new version parser, improved OpenTelemetry, and more
+authors: [milesj]
+tags: [java, jdk, jre, foojay, versions, semver, calver, scopes, otel]
+image: ./img/proto/v0.59.png
+---
+
+In this release, we're shipping one of our most requested tools to date, Java, alongside a
+ground-up rewrite of our version parsing layer that makes it possible.
+
+<!--truncate-->
+
+## Java support
+
+Java has been requested since proto's early days, but between the sheer number of vendors,
+distributions, and packaging formats, it was never a simple plugin to write. Until now, the closest
+workaround was the `asdf` backend, which doesn't work on Windows. That changes today, as proto now
+ships with a built-in Java plugin, powered by the [foojay.io Disco API](https://foojay.io/)!
+
+The plugin is available through 3 tool identifiers: `java` or `jdk` for the full development kit,
+and `jre` for the slimmer runtime-only package.
+
+```shell
+$ proto install java
+$ proto install jre 21
+```
+
+On top of installing Java itself (with shims for `java`, `javac`, and `jar`), the plugin will
+detect versions from `.java-version` and `.sdkmanrc` files (easing migration from other version
+managers), and will export `JAVA_HOME` for
+[activated shells](/docs/proto/commands/activate).
+
+### Choosing a distribution
+
+Java isn't a single tool with a single publisher — it's an ecosystem of vendors, each shipping
+their own builds. By default, the plugin installs the `openjdk` distribution (Oracle OpenJDK
+builds), but you can choose another by prefixing the version with a scope:
+
+```toml title=".prototools"
+jdk = "temurin-21"
+```
+
+Over 30 distributions are supported through the Disco API, including Temurin, Zulu, Corretto,
+Liberica, GraalVM, Microsoft, SapMachine, Semeru, Kona, Dragonwell, and more. Common
+[SDKMAN!](https://sdkman.io/) shorthands (`tem`, `amzn`, `librca`, etc) are also accepted, both in
+version specifications and in `.sdkmanrc` files.
+
+And lastly, if you need early access builds instead of general availability, or want to route
+through a self-hosted Disco API, the plugin supports both:
+
+```toml title=".prototools"
+[tools.java]
+api-url = "https://custom-foojay.hosted.com/disco/v3.0"
+release-type = "ea"
+```
+
+## A new version specification parser
+
+Since its inception, proto has parsed versions with the [`semver`](https://crates.io/crates/semver)
+crate, wrapped in layers of regex and string munging to squeeze in everything that crate wasn't
+designed for — calendar versions, partial versions, and tool-specific quirks. This approach has
+been a constant source of edge cases, so in this release, we threw it all away and wrote a custom
+grammar-based parser designed for how proto actually consumes versions.
+
+What does this unlock? For starters, first-class
+[version scopes](/docs/proto/tool-spec#version-scopes): a named prefix attached to a version or
+requirement, such as `openjdk-21.0.2`, `zulu-26`, or `pypy-2.1`. Scopes are what power
+Java distributions above, are passed through the WASM plugin API for any plugin to consume, and
+remote version lists are now cached per scope.
+
+Beyond scopes, the new parser brings consistency to both versioning schemes:
+
+- [Semantic versions](/docs/proto/tool-spec#semantic-versions) and
+  [calendar versions](/docs/proto/tool-spec#calendar-versions) now support the same features:
+  pre-releases, build metadata (`+123`), leading `v` prefixes, and
+  [requirements and ranges](/docs/proto/tool-spec#requirements-and-ranges) (`^`, `~`, comparison
+  operators, wildcards, `&&`, `||`).
+- Calendar versions are parsed with dash separators exclusively, so ambiguous values like `24.12`
+  are always treated as semantic versions.
+- Better error messages when a version fails to parse, instead of cryptic `semver` errors.
+
+## OpenTelemetry improvements
+
+We introduced [OpenTelemetry support](./proto-v0.58#opentelemetry-support) in the last release,
+with traces, metrics, and logs exported over gRPC. In this release, we've expanded the
+implementation:
+
+- Added experimental HTTP transport support, enabled with
+  `OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf`.
+- Added experimental TLS support for both HTTP and gRPC transports.
+- Added support for the standard `OTEL_SERVICE_NAME`, `OTEL_*_EXPORTER`,
+  `OTEL_EXPORTER_OTLP_*_PROTOCOL`, and `OTEL_EXPORTER_OTLP_*_ENDPOINT` environment variables
+  (including their signal-specific variants).
+
+If your environment already configures OTEL exporters through these variables, proto will now
+respect them out of the box.
+
+## Smarter `PATH` handling in shims
+
+This release fixes two long-standing `PATH` issues in `proto run` and shim executions:
+
+- When a tool requires another tool to function (npm requires node), the required tool's paths were
+  placed _before_ the paths of the tool being ran. For example, `npm run` scripts that execute
+  `npm` would resolve node's bundled npm, instead of the npm version managed by proto. The tool
+  being ran now takes precedence.
+- When falling back to a global executable on `PATH`, proto could recursively execute forever if
+  that executable was itself a proto shim from _another store_ (typically caused by `HOME` or
+  `PROTO_HOME` changing, or symlinked paths). We now skip shims from foreign stores during the
+  lookup, and detect and error on the loop instead of hanging.
+
+## Breaking changes
+
+### Calendar version build segments
+
+As part of the new parser, the proto-specific "micro" build segment (dot or underscore separated)
+has been removed from calendar versions. Use standard build metadata instead.
+
+```
+2024-02-26.123          ->  2024-02-26+123
+2024-02-26_123-alpha.0  ->  2024-02-26-alpha.0+123
+```
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.59.0) for a full
+list of changes.
+
+- Added `bzip2`, `xz`, and `z` codec support for self-compressed binaries (not packed with tar or
+  zip), as well as `.tar.Z` (LZW) archive support.
+- Updated archive unpacking to be streamed when applicable, reducing memory usage.
+- Updated offline detection to take AI agent firewall policies into account. If networking is
+  disabled, we mark as offline, otherwise if it's open or filtered, we mark it as online.
+- Fixed an issue where `proto clean` would not recursively clean certain directories.
+- Fixed an issue where we didn't check for an internet connection when downloading a plugin from an
+  OCI registry or GitHub.
+- Updated Rust to v1.97.

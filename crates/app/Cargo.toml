@@ -15,6 +15,8 @@ moon_api = { path = "../api" }
 moon_app_context = { path = "../app-context" }
 moon_app_macros = { path = "../app-macros" }
 moon_cache = { path = "../cache" }
+moon_cache_local = { path = "../cache-local" }
+moon_cache_remote = { path = "../cache-remote" }
 moon_codegen = { path = "../codegen" }
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
@@ -36,7 +38,6 @@ moon_process_augment = { path = "../process-augment" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
 moon_query = { path = "../query" }
-moon_remote = { path = "../remote" }
 moon_task = { path = "../task" }
 moon_task_graph = { path = "../task-graph" }
 moon_task_runner = { path = "../task-runner" }
@@ -48,21 +49,22 @@ moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-recursion = { workspace = true }
 async-trait = { workspace = true }
-bytes = "1.11.1"
+bytes = { workspace = true }
 ci_env = { workspace = true }
 clap = { workspace = true, features = [
-    "color",
-    "env",
-    "help",
-    "string",
-    "suggestions",
-    "usage",
-    "wrap_help",
+  "color",
+  "env",
+  "help",
+  "string",
+  "suggestions",
+  "usage",
+  "wrap_help",
 ] }
 clap_complete = { workspace = true }
 clap_complete_nushell = "4.6.0"
 convert_case = { workspace = true }
 diff = "0.1.13"
+indexmap = { workspace = true }
 iocraft = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
@@ -70,9 +72,9 @@ regex = { workspace = true }
 reqwest = { workspace = true }
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
-    "config",
-    "schema",
-    "renderer_template",
+  "config",
+  "schema",
+  "renderer_template",
 ] }
 semver = { workspace = true }
 serde = { workspace = true }
@@ -81,17 +83,17 @@ starbase_archive = { workspace = true }
 starbase_shell = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true, features = [
-    "editor-config",
-    "json",
-    "toml",
-    "yaml",
+  "editor-config",
+  "json",
+  "toml",
+  "yaml",
 ] }
 thiserror = { workspace = true }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
 # Visualizer
-open = "5.3.5"
+open = "5.3.6"
 petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"

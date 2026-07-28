@@ -4,9 +4,9 @@ dependsOn:
 
 tasks:
   test:
-    script: "echo test-d"
+    script: 'echo test-d'
     deps:
-      - "^:test"
+      - '^:test'
     options:
       runDepsInParallel: false
       cache: false

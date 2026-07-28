@@ -16,5 +16,5 @@ vcs:
   # The upstream version control provider, where the repository
   # source code is stored.
   # @since 1.8.0
-  # @values "bitbucket" | "github" | "gitlab" | "other"
+  # @values "bitbucket" | "bitbucket-legacy" | "github" | "gitlab" | "other"
   provider: "github"

@@ -1,5 +1,6 @@
 import Link from '@docusaurus/Link';
 import Text from '@site/src/ui/typography/Text';
+
 import LogoIcon from '../../../../static/brand/moon/icon.svg';
 import TextVector from '../../../../static/brand/moon/text-vector.svg';
 import YC from '../../../../static/img/logo-yc.svg';
@@ -9,7 +10,7 @@ import CTA from '../../Home/CTA';
 import HeroIcon from '../HeroIcon';
 import HeroTerminal from './HeroTerminal';
 
-// eslint-disable-next-line unicorn/prefer-module
+// oxlint-disable-next-line unicorn/prefer-module
 const { version } = require('@moonrepo/cli/package.json') as { version: string };
 
 export default function Hero() {

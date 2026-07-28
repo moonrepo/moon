@@ -137,11 +137,14 @@ pub fn get_named_pipe_server_stream(
         loop {
             server.connect().await?;
 
-            let instance = TonicNamedPipeServer::new(server);
+            // Publish the replacement instance before handing off the
+            // connected one, so a client connecting right now always finds
+            // a listening instance. Creating it only after the yield leaves
+            // a window with no instance at all, where clients fail with
+            // `ERROR_FILE_NOT_FOUND` as if no daemon were running.
+            let instance = std::mem::replace(&mut server, ServerOptions::new().create(endpoint)?);
 
-            yield Ok(instance);
-
-            server = ServerOptions::new().create(endpoint)?;
+            yield Ok(TonicNamedPipeServer::new(instance));
         }
     }
 }

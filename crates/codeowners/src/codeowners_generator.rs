@@ -3,7 +3,7 @@ use starbase_utils::fs::{self, FsError};
 use std::fs::File;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use tracing::{debug, trace};
+use tracing::debug;
 
 pub struct CodeownersGenerator {
     pub file_path: PathBuf,
@@ -21,6 +21,7 @@ impl CodeownersGenerator {
         let file_path = workspace_root.join(match provider {
             VcsProvider::GitHub => ".github/CODEOWNERS",
             VcsProvider::GitLab => ".gitlab/CODEOWNERS",
+            VcsProvider::Bitbucket => ".bitbucket/CODEOWNERS",
             _ => "CODEOWNERS",
         });
 
@@ -47,7 +48,7 @@ impl CodeownersGenerator {
             return Ok(());
         }
 
-        trace!(project_id = id, source, "Adding project entries");
+        debug!(project_id = id, source, "Adding project entries");
 
         self.write("")?;
 
@@ -60,7 +61,7 @@ impl CodeownersGenerator {
             .unwrap_or(0);
 
         match &self.provider {
-            VcsProvider::Bitbucket => {
+            VcsProvider::BitbucketLegacy => {
                 if required_approvals > 0
                     && let Some(default_owner) = &config.default_owner
                 {
@@ -132,7 +133,7 @@ impl CodeownersGenerator {
             return Ok(());
         }
 
-        trace!("Adding workspace entries");
+        debug!("Adding workspace entries");
 
         self.write("")?;
         self.write("# (workspace)")?;

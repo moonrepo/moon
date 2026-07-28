@@ -8,7 +8,7 @@ use tokio::sync::RwLock;
 use tokio::sync::broadcast::{self, Receiver, Sender};
 use tokio::task::{JoinHandle, JoinSet};
 use tokio::time::sleep;
-use tracing::{debug, trace, warn};
+use tracing::{debug, warn};
 
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
 
@@ -149,16 +149,24 @@ async fn shutdown_processes_from_signal(
 
         set.spawn(async move {
             if threshold == 0 {
-                trace!(pid, "Waiting on child process");
+                debug!(pid, "Waiting on child process");
 
                 if let Err(error) = child.wait().await {
-                    warn!(pid, "Failed to wait on child process: {error}");
+                    warn!(
+                        pid,
+                        error = error.to_string(),
+                        "Failed to wait on child process"
+                    );
                 }
             } else {
-                trace!(pid, "Shutting down child process");
+                debug!(pid, "Shutting down child process");
 
                 if let Err(error) = child.kill_with_signal(signal).await {
-                    warn!(pid, "Failed to shutdown child process: {error}");
+                    warn!(
+                        pid,
+                        error = error.to_string(),
+                        "Failed to shutdown child process"
+                    );
                 }
             }
 
@@ -198,14 +206,18 @@ async fn kill_processes(processes: Arc<RwLock<FxHashMap<u32, SharedChild>>>) {
 
     for (pid, child) in children {
         set.spawn(async move {
-            trace!(pid, "Killing child process");
+            debug!(pid, "Killing child process");
 
             if let Err(error) = child.kill_with_signal(SignalType::Kill).await {
-                warn!(pid, "Failed to kill child process: {error}");
+                warn!(
+                    pid,
+                    error = error.to_string(),
+                    "Failed to kill child process"
+                );
             }
         });
     }
 
-    processes.write().await.clear();
     set.join_all().await;
+    processes.write().await.clear();
 }

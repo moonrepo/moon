@@ -1,11 +1,11 @@
 use crate::session::MoonSession;
 use moon_daemon::AtomicDaemonState;
 use tokio::task::JoinHandle;
-use tracing::trace;
+use tracing::debug;
 
 impl MoonSession {
     pub fn download_extensions(&self) {
-        trace!("Downloading extensions");
+        debug!("Downloading extensions");
 
         let session = self.clone();
 
@@ -17,7 +17,7 @@ impl MoonSession {
     }
 
     pub fn download_toolchains(&self) {
-        trace!("Downloading toolchains");
+        debug!("Downloading toolchains");
 
         let session = self.clone();
 
@@ -28,20 +28,35 @@ impl MoonSession {
         });
     }
 
+    pub fn rebuild_context(&self, state: AtomicDaemonState) -> JoinHandle<()> {
+        let session = self.clone();
+
+        tokio::spawn(async move {
+            if let Ok(app_context) = session.get_app_context().await {
+                let mut state = state.write().await;
+                state.app_context = app_context;
+            }
+        })
+    }
+
     pub fn rebuild_graphs(&self, state: AtomicDaemonState) -> JoinHandle<()> {
-        trace!("Rebuilding project and task graphs");
+        debug!("Rebuilding project and task graphs");
 
         let session = self.clone();
 
         tokio::spawn(async move {
-            if let Ok(graph) = session.get_workspace_graph().await {
-                state.write().await.workspace_graph = graph;
+            if let Ok(graph) = session.get_workspace_graph().await
+                && let Ok(app_context) = session.get_app_context().await
+            {
+                let mut state = state.write().await;
+                state.app_context = app_context;
+                state.workspace_graph = graph;
             }
         })
     }
 
     pub fn reset_components(&mut self) {
-        trace!("Resetting registries and graphs cache");
+        debug!("Resetting registries and graphs cache");
 
         self.extension_registry.take();
         self.toolchain_registry.take();
@@ -51,7 +66,7 @@ impl MoonSession {
     }
 
     pub fn reset_vcs(&mut self) {
-        trace!("Resetting VCS adapter");
+        debug!("Resetting VCS adapter");
 
         self.vcs_adapter.take();
     }

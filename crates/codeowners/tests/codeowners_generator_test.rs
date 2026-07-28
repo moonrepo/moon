@@ -52,6 +52,13 @@ mod codeowners {
     fn generates_bitbucket() {
         let sandbox = load_generator(VcsProvider::Bitbucket);
 
+        assert_snapshot!(fs::read_to_string(sandbox.path().join(".bitbucket/CODEOWNERS")).unwrap());
+    }
+
+    #[test]
+    fn generates_bitbucket_legacy() {
+        let sandbox = load_generator(VcsProvider::BitbucketLegacy);
+
         assert_snapshot!(fs::read_to_string(sandbox.path().join("CODEOWNERS")).unwrap());
     }
 

@@ -25,15 +25,14 @@ tasks:
       - '^:build'
     preset: 'server'
 
-  typecheck:
-    command: 'tsc --build --pretty'
-    inputs:
-      - '@globs(sources)'
-      - '*.js'
-      - 'tsconfig.json'
+  # typecheck:
+  #   command: 'tsc --build --pretty'
+  #   inputs:
+  #     - '@globs(sources)'
+  #     - '*.js'
+  #     - 'tsconfig.json'
 
 workspace:
   inheritedTasks:
     exclude:
       - 'build'
-      - 'typecheck'

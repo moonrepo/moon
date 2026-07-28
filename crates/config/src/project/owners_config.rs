@@ -62,7 +62,7 @@ config_struct!(
     /// file paths and glob patterns to owners. An owner is either a user, team, or group.
     #[derive(Config)]
     pub struct OwnersConfig {
-        /// Bitbucket only. A map of custom groups (prefixed with `@@@`),
+        /// `bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`),
         /// to a list of user and normal groups.
         #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
         pub custom_groups: FxHashMap<String, Vec<String>>,
@@ -81,9 +81,9 @@ config_struct!(
         #[setting(nested, validate = validate_paths)]
         pub paths: OwnersPaths,
 
-        /// Bitbucket and GitLab only. The number of approvals required for the
-        /// request to be satisfied. For Bitbucket, utilizes the `Check()` condition.
-        /// For GitLab, marks the code owners section as required.
+        /// `bitbucket-legacy` and GitLab only. The number of approvals required
+        /// for the request to be satisfied. For `bitbucket-legacy`, utilizes the
+        /// `Check()` condition. For GitLab, marks the code owners section as required.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub required_approvals: Option<u8>,
     }

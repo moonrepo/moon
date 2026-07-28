@@ -1,10 +1,9 @@
 use super::exec::*;
-use crate::session::MoonSession;
+use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_task::TargetLocator;
-use starbase::AppResult;
 use tracing::instrument;
 
 #[with_affected_args]
@@ -23,7 +22,7 @@ pub struct RunArgs {
 }
 
 #[instrument(skip(session))]
-pub async fn run(session: MoonSession, args: RunArgs) -> AppResult {
+pub async fn run(session: MoonSession, args: RunArgs) -> SessionResult {
     exec(session, {
         let mut exec = args.to_exec_args();
         args.apply_affected_to_exec_args(&mut exec);

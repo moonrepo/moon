@@ -1,6 +1,6 @@
 use moon_common::Id;
 use moon_task::Task;
-use moon_test_utils2::WorkspaceMocker;
+use moon_test_utils::WorkspaceMocker;
 use std::collections::BTreeMap;
 use std::path::Path;
 

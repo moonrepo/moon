@@ -5759,6 +5759,7 @@ dependencies = [
 name = "moon_process"
 version = "0.0.1"
 dependencies = [
+ "bytes",
  "libc",
  "miette 7.6.0",
  "moon_common",

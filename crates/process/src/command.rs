@@ -1,5 +1,5 @@
 use crate::helpers::get_default_shell;
-use moon_common::{color, is_test_env};
+use moon_common::{color, is_daemon_env, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
@@ -591,6 +591,10 @@ impl Command {
     pub fn set_shell(&mut self, shell: ShellType) -> &mut Self {
         self.shell = Some(shell);
         self
+    }
+
+    pub fn should_cache_output(&self) -> bool {
+        self.cache && !is_test_env() && !is_daemon_env()
     }
 
     pub fn should_error_nonzero(&self) -> bool {

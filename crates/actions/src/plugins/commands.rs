@@ -148,7 +148,11 @@ async fn internal_exec_plugin_command_as_operation(
     match result {
         Ok(maybe_output) => {
             if let Some(output) = maybe_output {
-                op.finish_from_output(output.status(), output.stdout, output.stderr);
+                op.finish_from_output(
+                    output.status(),
+                    output.stdout.to_vec(),
+                    output.stderr.to_vec(),
+                );
             } else {
                 op.finish(ActionStatus::Skipped);
             }

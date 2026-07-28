@@ -4,6 +4,7 @@ use crate::output::Output;
 use crate::process_error::ProcessError;
 use crate::process_registry::ProcessRegistry;
 use crate::shared_child::SharedChild;
+use bytes::Bytes;
 use miette::IntoDiagnostic;
 use moon_common::color;
 use moon_console::ConsoleStream;
@@ -30,7 +31,7 @@ impl Command {
 
         let registry = ProcessRegistry::instance();
 
-        if !self.cache {
+        if !self.should_cache_output() {
             return self.internal_exec_capture_output(&registry).await;
         }
 
@@ -177,16 +178,8 @@ impl Command {
 
         let output = Output {
             exit,
-            stdout: stdout_handle
-                .await
-                .into_diagnostic()?
-                .join("\n")
-                .into_bytes(),
-            stderr: stderr_handle
-                .await
-                .into_diagnostic()?
-                .join("\n")
-                .into_bytes(),
+            stdout: Bytes::from(stdout_handle.await.into_diagnostic()?.join("\n")),
+            stderr: Bytes::from(stderr_handle.await.into_diagnostic()?.join("\n")),
         };
 
         self.handle_nonzero_status(&output, true)?;
@@ -236,8 +229,8 @@ impl Command {
         let exit = result?;
         let output = Output {
             exit,
-            stderr: vec![],
-            stdout: vec![],
+            stderr: Bytes::new(),
+            stdout: Bytes::new(),
         };
 
         self.handle_nonzero_status(&output, false)?;
@@ -322,8 +315,8 @@ impl Command {
         let exit = result?;
         let output = Output {
             exit,
-            stdout: captured_stdout.join("\n").into_bytes(),
-            stderr: captured_stderr.join("\n").into_bytes(),
+            stdout: Bytes::from(captured_stdout.join("\n")),
+            stderr: Bytes::from(captured_stderr.join("\n")),
         };
 
         self.handle_nonzero_status(&output, true)?;
@@ -339,7 +332,7 @@ impl Command {
     pub async fn exec_stream_and_capture_output_bytes(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
 
-        if !self.cache {
+        if !self.should_cache_output() {
             return self
                 .internal_exec_stream_and_capture_output_bytes(&registry)
                 .await;
@@ -430,8 +423,8 @@ impl Command {
         let exit = result?;
         let output = Output {
             exit,
-            stdout: captured_stdout,
-            stderr: captured_stderr,
+            stdout: Bytes::from(captured_stdout),
+            stderr: Bytes::from(captured_stderr),
         };
 
         self.handle_nonzero_status(&output, true)?;

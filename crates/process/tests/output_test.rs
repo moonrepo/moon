@@ -1,7 +1,7 @@
-use bytes::Bytes;
-
 #[cfg(unix)]
 fn create_output(exit: moon_process::ChildExit) -> moon_process::Output {
+    use bytes::Bytes;
+
     moon_process::Output {
         exit,
         stdout: Bytes::new(),
@@ -72,6 +72,7 @@ mod statuses {
 #[cfg(unix)]
 mod errors {
     use super::*;
+    use bytes::Bytes;
     use moon_process::{ChildExit, ProcessError};
     use std::os::unix::process::ExitStatusExt;
     use std::process::ExitStatus;

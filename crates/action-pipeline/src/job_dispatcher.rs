@@ -174,6 +174,7 @@ mod tests {
             abort_token: CancellationToken::new(),
             cancel_token: CancellationToken::new(),
             completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
+            daemon_client: None,
             emitter: Arc::new(EventEmitter::default()),
             result_sender: sender,
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),

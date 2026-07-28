@@ -1,11 +1,11 @@
-use crate::manifest_compat::ManifestBuilder;
 use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_blob::{BlobContent, BlobInput};
 use moon_cache::{Manifest, StorageOptions};
 use moon_common::color;
+use moon_daemon_client::DaemonClient;
+use moon_manifest::ManifestPacker;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use std::sync::Arc;
@@ -23,14 +23,20 @@ pub enum ArchiveOutcome {
 pub struct OutputArchiver<'task> {
     app_context: &'task Arc<AppContext>,
     task: &'task Arc<Task>,
+    daemon_client: Option<DaemonClient>,
 }
 
 impl OutputArchiver<'_> {
     pub fn new<'task>(
         app_context: &'task Arc<AppContext>,
         task: &'task Arc<Task>,
+        daemon_client: Option<DaemonClient>,
     ) -> miette::Result<OutputArchiver<'task>> {
-        Ok(OutputArchiver { task, app_context })
+        Ok(OutputArchiver {
+            task,
+            app_context,
+            daemon_client,
+        })
     }
 
     #[instrument(skip(self, state))]
@@ -74,16 +80,28 @@ impl OutputArchiver<'_> {
         if use_local || use_remote {
             let manifest = self.create_cache_manifest(state).await?;
 
-            self.app_context
-                .cache_engine
-                .storage
-                .with_options(StorageOptions {
-                    include_local: use_local,
-                    include_remote: use_remote,
-                    ..Default::default()
-                })
-                .archive_manifest(&state.digest, manifest, self.get_action_blob(state))
-                .await?;
+            if let Some(mut daemon) = self.daemon_client.clone() {
+                daemon
+                    .archive_task_outputs(
+                        self.task.target.to_string(),
+                        state.digest.clone(),
+                        manifest,
+                        use_local,
+                        use_remote,
+                    )
+                    .await?;
+            } else {
+                self.app_context
+                    .cache_engine
+                    .storage
+                    .with_options(StorageOptions {
+                        include_local: use_local,
+                        include_remote: use_remote,
+                        ..Default::default()
+                    })
+                    .archive_manifest(&state.digest, manifest)
+                    .await?;
+            }
         }
 
         // Create the archive file (legacy / temporary)
@@ -92,26 +110,6 @@ impl OutputArchiver<'_> {
         }
 
         Ok(ArchiveOutcome::Queued)
-    }
-
-    /// The action digest addresses moon's fingerprint hash manifest at
-    /// `.moon/cache/hashes/<hash>.json` — that file *is* the blob the digest
-    /// names. Backends that validate the Bazel RE contract reject an action
-    /// result whose action digest is absent from the CAS, so it must be
-    /// uploaded alongside the outputs. Returns `None` when the file is absent
-    /// (e.g. archiving without a computed fingerprint), leaving the upload a
-    /// no-op rather than an error.
-    fn get_action_blob(&self, state: &TaskRunState) -> Option<BlobInput> {
-        let path = self
-            .app_context
-            .cache_engine
-            .hash
-            .get_manifest_path(&state.digest.hash);
-
-        path.exists().then(|| BlobInput {
-            content: BlobContent::File(path),
-            digest: state.digest.clone(),
-        })
     }
 
     #[instrument(skip(self))]
@@ -165,23 +163,32 @@ impl OutputArchiver<'_> {
 
         // Building the manifest incurs a lot of file system calls,
         // so we run it in a blocking thread to avoid blocking the async runtime
-        let mut builder = spawn_blocking(move || {
+        let mut packer = spawn_blocking(move || {
             let outputs = task.get_output_files(&workspace_root, true)?;
-            let mut builder = ManifestBuilder::new(workspace_root);
+            let mut packer = ManifestPacker::new(workspace_root);
 
             for output in outputs {
-                builder.inherit_output(output)?;
+                packer.inherit_output(output)?;
             }
 
-            Ok::<_, miette::Report>(builder)
+            Ok::<_, miette::Report>(packer)
         })
         .await
         .into_diagnostic()??;
 
         // Then inherit the execution operation metadata
-        builder.inherit_operation(&state.operation)?;
+        packer.inherit_operation(&state.operation)?;
 
-        Ok(builder.build())
+        // Then inherit the source fingerprint file
+        packer.inherit_source(
+            &state.digest,
+            self.app_context
+                .cache_engine
+                .hash
+                .get_manifest_path(&state.digest.hash),
+        )?;
+
+        Ok(packer.pack())
     }
 
     #[instrument(skip(self, state))]

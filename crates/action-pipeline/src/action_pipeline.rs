@@ -158,6 +158,7 @@ impl ActionPipeline {
             abort_token: abort_token.clone(),
             cancel_token: cancel_token.clone(),
             completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
+            daemon_client: self.daemon_client.clone(),
             emitter: Arc::clone(&self.emitter),
             result_sender: sender,
             semaphore: Arc::new(Semaphore::new(self.concurrency)),

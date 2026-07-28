@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+bazel-remote-apis = { workspace = true }
 compact_str = { workspace = true }
 miette = { workspace = true }
 serde = { workspace = true }

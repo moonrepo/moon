@@ -972,9 +972,9 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.6.7"
+version = "4.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db8b397918185f0161ff3d6fcaa9e4bfc09b8367caf6e1d4a2848e5477ed027b"
+checksum = "b1f84a88507dbd05c695f2cb5e8558e747179134005e9893882dec964190ed89"
 dependencies = [
  "clap",
 ]
@@ -2054,11 +2054,10 @@ dependencies = [
 
 [[package]]
 name = "event-listener"
-version = "5.4.1"
+version = "5.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e13b66accf52311f30a0db42147dadea9850cb48cd070028831ae5f5d4b856ab"
+checksum = "5a23add41df1562121a9393cb065eab5146a1242410f23a644851e90cfd669d2"
 dependencies = [
- "concurrent-queue",
  "parking",
  "pin-project-lite",
 ]
@@ -4154,9 +4153,9 @@ dependencies = [
 
 [[package]]
 name = "jiff"
-version = "0.2.34"
+version = "0.2.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e184d09547b80eb7e20d141ba2fb1fbac843ca53f4cf1b31210adc4c1adc6e16"
+checksum = "668b7183bd07af9a4885f5c35b0cc5c83c4607a913c16b7e17291832910d2dcc"
 dependencies = [
  "defmt",
  "jiff-core",
@@ -4180,9 +4179,9 @@ dependencies = [
 
 [[package]]
 name = "jiff-static"
-version = "0.2.34"
+version = "0.2.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "323da076b7a6faf914dc677cb05a4b907742ff7375c8322c9e7f5061e5e0e9de"
+checksum = "3a69dcb3a21cfb32ce1cd056169337ca284af0766dd766e7878819b251a49204"
 dependencies = [
  "jiff-core",
  "proc-macro2",
@@ -4302,9 +4301,9 @@ dependencies = [
 
 [[package]]
 name = "json-strip-comments"
-version = "3.1.1"
+version = "3.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9301b34ecbe81051a62001a2dfa56d906628efdfbc68153e0a4d5eba58181ece"
+checksum = "01ed659c5f428031b9c1fb7de6729af2eb491654d4bcd416a5b5b704986b9658"
 dependencies = [
  "memchr",
 ]
@@ -4895,6 +4894,7 @@ dependencies = [
  "moon_config",
  "moon_config_schema",
  "moon_console",
+ "moon_daemon_client",
  "moon_env_var",
  "moon_feature_flags",
  "moon_hash",
@@ -5206,6 +5206,7 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_hash",
+ "moon_manifest",
  "moon_process",
  "rustc-hash",
  "serde",
@@ -5423,6 +5424,8 @@ dependencies = [
  "moon_common",
  "moon_daemon_proto",
  "moon_daemon_utils",
+ "moon_hash",
+ "moon_manifest",
  "thiserror 2.0.19",
  "tokio",
  "tonic",
@@ -5435,6 +5438,7 @@ dependencies = [
 name = "moon_daemon_proto"
 version = "0.0.1"
 dependencies = [
+ "bazel-remote-apis",
  "prost",
  "tonic",
  "tonic-prost",
@@ -5448,15 +5452,16 @@ dependencies = [
  "async-trait",
  "miette 7.6.0",
  "moon_app_context",
+ "moon_cache_storage",
  "moon_common",
  "moon_daemon_client",
  "moon_daemon_proto",
  "moon_daemon_utils",
  "moon_file_watcher",
+ "moon_hash",
  "moon_notifier",
  "moon_process",
  "moon_target",
- "moon_task_runner",
  "moon_test_utils",
  "moon_workspace_graph",
  "notify-debouncer-full",
@@ -5599,6 +5604,7 @@ dependencies = [
 name = "moon_hash"
 version = "0.0.1"
 dependencies = [
+ "bazel-remote-apis",
  "compact_str 0.10.0",
  "miette 7.6.0",
  "moon_common",
@@ -5607,6 +5613,25 @@ dependencies = [
  "starbase_utils",
  "thiserror 2.0.19",
  "tracing",
+]
+
+[[package]]
+name = "moon_manifest"
+version = "0.0.1"
+dependencies = [
+ "bazel-remote-apis",
+ "bytes",
+ "chrono",
+ "miette 7.6.0",
+ "moon_action",
+ "moon_blob",
+ "moon_common",
+ "moon_hash",
+ "rustc-hash",
+ "serde",
+ "starbase_sandbox",
+ "starbase_utils",
+ "thiserror 2.0.19",
 ]
 
 [[package]]
@@ -6011,8 +6036,10 @@ dependencies = [
  "moon_common",
  "moon_config",
  "moon_console",
+ "moon_daemon_client",
  "moon_env_var",
  "moon_hash",
+ "moon_manifest",
  "moon_process",
  "moon_process_augment",
  "moon_project",
@@ -8159,9 +8186,9 @@ dependencies = [
 
 [[package]]
 name = "scc"
-version = "3.8.5"
+version = "3.8.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f733aa28b85255811ad1358d559fe9a182e39327cf5470140ed9d444de86e6d5"
+checksum = "f8af0b99483d1c3e59471d4f0cb58b244169436a8979c889a91a3f697075ea01"
 dependencies = [
  "saa",
  "sdd",
@@ -9424,9 +9451,9 @@ dependencies = [
 
 [[package]]
 name = "toml_parser"
-version = "1.1.2+spec-1.1.0"
+version = "1.1.3+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2abe9b86193656635d2411dc43050282ca48aa31c2451210f4202550afb7526"
+checksum = "1d38ac1cf9b95face32296c0a3ede1fdc270627c9d9c02a7274dd6d960dc4d56"
 dependencies = [
  "winnow 1.0.4",
 ]

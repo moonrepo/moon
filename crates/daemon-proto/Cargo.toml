@@ -5,7 +5,8 @@ edition = "2024"
 publish = false
 
 [dependencies]
-prost = "0.14.3"
+bazel-remote-apis = { workspace = true }
+prost = "0.14.4"
 tonic = { workspace = true, features = ["channel", "codegen", "transport"] }
 tonic-prost = { workspace = true }
 

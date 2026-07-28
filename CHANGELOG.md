@@ -12,6 +12,11 @@
       service name.
     - The destination and transport are configured with the standard `OTEL_EXPORTER_OTLP_*`
       environment variables.
+- **Daemon**
+  - Added task output archiving and hydrating to the daemon. All of these heavy file system
+    operations will now be offloaded into the background via the daemon. Because of this, you'll
+    need to inspect the daemon server logs to understand when something fails during archiving or
+    hydrating, as the main process will no longer block on these operations.
 - **Project graph**
   - Reworked the project graph to validate cycles per dependency scope partition. Production scoped
     dependencies (`production`, `peer`) and development scoped dependencies (`development`, `build`,

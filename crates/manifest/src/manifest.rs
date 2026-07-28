@@ -1,23 +1,15 @@
-use crate::digest_compat::{ExternalDigestExt, InternalDigestExt};
 use crate::helpers::{create_from_timestamp, create_timestamp};
-use crate::storage_backend::BoxedStorageBackend;
 use bazel_remote_apis::build::bazel::remote::execution::v2::{
     ActionResult, ExecutedActionMetadata, NodeProperties, OutputFile, OutputSymlink,
 };
 use bazel_remote_apis::google::protobuf::UInt32Value;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_hash::Digest;
+use moon_hash::{Digest, ExternalDigestExt, InternalDigestExt};
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
-
-pub struct ManifestSource {
-    pub backend: BoxedStorageBackend,
-    pub manifest: Manifest,
-    pub remote: bool,
-}
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Manifest {
@@ -37,6 +29,15 @@ pub struct Manifest {
     // Timings
     pub upload_started_at: Option<SystemTime>,
     pub upload_completed_at: Option<SystemTime>,
+
+    // The manifest cache storage does NOT store bytes by their own digest,
+    // it stores them by a custom digest, and works more like a key-value store.
+    // This source path is the location of the file used to generate the custom
+    // digest, which is required to be uploaded to satisfy Bazel's RE contract.
+    // In Bazel terms, this source path is the "action", while this manifest
+    // is the "action result".
+    #[serde(skip)]
+    pub digest_source: Option<ManifestFile>,
 }
 
 impl Manifest {
@@ -85,10 +86,11 @@ impl Manifest {
             upload_started_at: metadata
                 .output_upload_start_timestamp
                 .map(create_from_timestamp),
+            digest_source: None,
         })
     }
 
-    pub fn into_bazel_action_result(self) -> ActionResult {
+    pub fn into_bazel_action_result(self, persist_stdio: bool) -> ActionResult {
         ActionResult {
             output_files: self
                 .files
@@ -108,7 +110,21 @@ impl Manifest {
             // `collect_blob_inputs` and referenced here by digest, so leave the raw
             // fields empty and let the digests carry it.
             stderr_digest: self.stderr_digest.map(|digest| digest.to_external_digest()),
+            stderr_raw: if persist_stdio {
+                self.stderr_bytes
+                    .map(|bytes| bytes.to_vec())
+                    .unwrap_or_default()
+            } else {
+                vec![]
+            },
             stdout_digest: self.stdout_digest.map(|digest| digest.to_external_digest()),
+            stdout_raw: if persist_stdio {
+                self.stdout_bytes
+                    .map(|bytes| bytes.to_vec())
+                    .unwrap_or_default()
+            } else {
+                vec![]
+            },
             execution_metadata: Some(ExecutedActionMetadata {
                 worker: "moon".into(),
                 output_upload_completed_timestamp: self
@@ -235,40 +251,49 @@ impl Manifest {
     }
 
     pub fn collect_blob_inputs(&self, workspace_root: &Path) -> Vec<BlobInput> {
-        let mut sources = vec![];
+        let mut inputs = vec![];
 
-        if let (Some(digest), Some(bytes)) = (&self.stderr_digest, &self.stderr_bytes) {
-            sources.push(BlobInput {
-                content: BlobContent::Inline(bytes.clone()),
-                digest: digest.to_owned(),
-            });
-        }
-
-        if let (Some(digest), Some(bytes)) = (&self.stdout_digest, &self.stdout_bytes) {
-            sources.push(BlobInput {
-                content: BlobContent::Inline(bytes.clone()),
-                digest: digest.to_owned(),
-            });
-        }
-
-        for file in &self.files {
+        let collect_file = |file: &ManifestFile, inputs: &mut Vec<BlobInput>| {
             if let Some(digest) = &file.digest {
                 let content = if digest.size == 0 {
                     BlobContent::Inline(Bytes::new())
                 } else if let Some(bytes) = &file.bytes {
                     BlobContent::Inline(bytes.clone())
+                } else if let Some(source) = &file.source_path {
+                    BlobContent::File(source.clone())
                 } else {
                     BlobContent::File(file.path.to_logical_path(workspace_root))
                 };
 
-                sources.push(BlobInput {
+                inputs.push(BlobInput {
                     content,
                     digest: digest.to_owned(),
                 });
             }
+        };
+
+        let collect_stdio =
+            |digest: &Option<Digest>, bytes: &Option<Bytes>, inputs: &mut Vec<BlobInput>| {
+                if let (Some(digest), Some(bytes)) = (digest, bytes) {
+                    inputs.push(BlobInput {
+                        content: BlobContent::Inline(bytes.clone()),
+                        digest: digest.to_owned(),
+                    });
+                }
+            };
+
+        if let Some(source) = &self.digest_source {
+            collect_file(source, &mut inputs);
         }
 
-        sources
+        for file in &self.files {
+            collect_file(file, &mut inputs);
+        }
+
+        collect_stdio(&self.stderr_digest, &self.stderr_bytes, &mut inputs);
+        collect_stdio(&self.stdout_digest, &self.stdout_bytes, &mut inputs);
+
+        inputs
     }
 }
 

@@ -1,5 +1,6 @@
 use crate::process_error::ProcessError;
 use crate::shared_child::ChildExit;
+use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::process::ExitStatus;
 
@@ -23,8 +24,8 @@ pub struct OutputInfo {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Output {
     pub exit: ChildExit,
-    pub stderr: Vec<u8>,
-    pub stdout: Vec<u8>,
+    pub stderr: Bytes,
+    pub stdout: Bytes,
 }
 
 impl Output {

@@ -3,13 +3,13 @@ source: crates/project-graph/tests/project_graph_test.rs
 expression: graph.projects.to_dot()
 ---
 digraph {
-    0 [ label="d"]
-    1 [ label="a"]
-    2 [ label="b"]
-    3 [ label="c"]
-    2 -> 3 [ label="production"]
-    1 -> 2 [ label="development"]
-    0 -> 1 [ label="peer"]
-    0 -> 3 [ label="production"]
-    0 -> 2 [ label="build"]
+    0 [ label="a"]
+    1 [ label="b"]
+    2 [ label="c"]
+    3 [ label="d"]
+    0 -> 1 [ label="development"]
+    1 -> 2 [ label="production"]
+    3 -> 0 [ label="peer"]
+    3 -> 2 [ label="production"]
+    3 -> 1 [ label="build"]
 }

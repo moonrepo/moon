@@ -24,6 +24,22 @@ async fn build_graph(fixture: &str) -> WorkspaceGraph {
     build_graph_with_sandbox(fixture).await.0
 }
 
+// Cycles are only tolerated by the sync builder (which disconnects offending
+// edges), while the async builder errors when building the graph
+async fn build_graph_with_sync_builder(fixture: &str) -> WorkspaceGraph {
+    let sandbox = create_sandbox(fixture);
+
+    WorkspaceMocker::new(sandbox.path())
+        .with_default_projects()
+        .with_global_envs()
+        .with_inherited_tasks()
+        .update_workspace_config(|config| {
+            config.experiments.async_graph_building = false;
+        })
+        .mock_workspace_graph()
+        .await
+}
+
 mod affected_projects {
     use super::*;
 
@@ -220,7 +236,7 @@ mod affected_projects {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
-            let workspace_graph = build_graph("projects").await;
+            let workspace_graph = build_graph_with_sync_builder("projects-cycle").await;
             let changed_files = FxHashSet::from_iter(["cycle-a/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
@@ -348,7 +364,7 @@ mod affected_projects {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
-            let workspace_graph = build_graph("projects").await;
+            let workspace_graph = build_graph_with_sync_builder("projects-cycle").await;
             let changed_files = FxHashSet::from_iter(["cycle-c/file.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
@@ -808,7 +824,7 @@ mod affected_tasks {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
-            let workspace_graph = build_graph("tasks").await;
+            let workspace_graph = build_graph_with_sync_builder("tasks-cycle").await;
             let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);
@@ -987,7 +1003,7 @@ mod affected_tasks {
 
         #[tokio::test(flavor = "multi_thread")]
         async fn deep_cycle() {
-            let workspace_graph = build_graph("tasks").await;
+            let workspace_graph = build_graph_with_sync_builder("tasks-cycle").await;
             let changed_files = FxHashSet::from_iter(["cycle/c.txt".into()]);
 
             let mut tracker = AffectedTracker::new(workspace_graph.into(), changed_files);

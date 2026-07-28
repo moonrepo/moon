@@ -39,6 +39,14 @@
 - Fixed an issue where project and task graph node lookups could resolve the wrong entry, or fail
   entirely, after building a partial graph (a subset of projects), as internal node identifiers were
   not re-synced when placeholder nodes were removed.
+- Fixed an issue where the async graph builder would fail with "unknown target" when a task
+  dependency referenced a project by its alias.
+- Fixed an issue where the async graph builder would produce differently ordered graphs across
+  runs, as projects were inserted in completion order instead of a stable order. This could cause
+  unstable hashes and `--dot`/`--json` output.
+- Fixed an issue where a task with `runDepsInParallel: false` would not be linked to all of its
+  dependencies when a serial ordering edge was skipped to avoid a cycle, allowing the task to run
+  before a dependency had finished.
 
 #### ⚙️ Internal
 

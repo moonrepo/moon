@@ -1,5 +1,5 @@
 use crate::helpers::get_default_shell;
-use moon_common::{color, is_test_env};
+use moon_common::{color, is_daemon_env, is_test_env};
 use moon_console::Console;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::{FxHashMap, FxHasher};
@@ -139,6 +139,8 @@ impl CommandExecutable {
 pub struct Command {
     pub args: VecDeque<CommandArg>,
 
+    pub cache: bool,
+
     /// Continuously write to stdin and read from stdout
     pub continuous_pipe: bool,
 
@@ -174,6 +176,7 @@ impl Command {
     pub fn new<T: AsRef<OsStr>>(bin: T) -> Self {
         Command {
             args: VecDeque::new(),
+            cache: false,
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
@@ -546,6 +549,11 @@ impl Command {
         self
     }
 
+    pub fn set_cache(&mut self, state: bool) -> &mut Self {
+        self.cache = state;
+        self
+    }
+
     pub fn set_console(&mut self, console: Arc<Console>) -> &mut Self {
         self.console = Some(console);
         self
@@ -583,6 +591,10 @@ impl Command {
     pub fn set_shell(&mut self, shell: ShellType) -> &mut Self {
         self.shell = Some(shell);
         self
+    }
+
+    pub fn should_cache_output(&self) -> bool {
+        self.cache && !is_test_env() && !is_daemon_env()
     }
 
     pub fn should_error_nonzero(&self) -> bool {

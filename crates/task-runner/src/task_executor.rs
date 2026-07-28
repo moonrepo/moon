@@ -160,7 +160,11 @@ impl<'task> TaskExecutor<'task> {
                             "Ran task",
                         );
 
-                        attempt.finish_from_output(output.status(), output.stdout, output.stderr);
+                        attempt.finish_from_output(
+                            output.status(),
+                            output.stdout.to_vec(),
+                            output.stderr.to_vec(),
+                        );
                     } else {
                         debug!(
                             task_target = self.task.target.as_str(),

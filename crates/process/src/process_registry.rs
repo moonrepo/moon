@@ -1,3 +1,4 @@
+use crate::output::Output;
 use crate::shared_child::*;
 use crate::signal::*;
 use core::time::Duration;
@@ -13,6 +14,7 @@ use tracing::{debug, warn};
 static INSTANCE: OnceLock<Arc<ProcessRegistry>> = OnceLock::new();
 
 pub struct ProcessRegistry {
+    pub cache: Arc<scc::HashCache<String, Output>>,
     pub threshold: u32,
 
     running: Arc<RwLock<FxHashMap<u32, SharedChild>>>,
@@ -44,6 +46,7 @@ impl ProcessRegistry {
         });
 
         Self {
+            cache: Arc::new(scc::HashCache::new()),
             running: processes,
             signal_sender: sender,
             signal_wait_handle,

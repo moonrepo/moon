@@ -8,7 +8,7 @@ use moon_common::{
 use moon_console::{Checkpoint, Console};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::fingerprint;
-use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
+use moon_pdk_api::{CacheInput, CacheStrategy, ExecCommand, ExecCommandInput, VirtualPath};
 use moon_process::Output;
 use moon_process_augment::AugmentedCommand;
 use moon_project::Project;
@@ -22,7 +22,8 @@ use tracing::{debug, warn};
 
 fingerprint!(
     struct ExecCommandFingerprint<'data> {
-        key: &'data str,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        label: Option<&'data str>,
 
         command: &'data ExecCommandInput,
 
@@ -78,6 +79,11 @@ async fn internal_exec_plugin_command(
         cmd.cwd(cwd);
     }
 
+    cmd.set_cache(
+        command
+            .cache
+            .is_some_and(|cache| cache == CacheStrategy::Memory),
+    );
     cmd.set_console(app_context.console.clone());
     cmd.set_error_on_nonzero(!command.allow_failure);
     cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
@@ -112,34 +118,43 @@ async fn internal_exec_plugin_command_as_operation(
     let mut op = Operation::process_execution(&command.command.command); // hah
 
     let result = match &command.cache {
-        Some(key) => {
-            let mut fingerprint = ExecCommandFingerprint {
-                key,
-                command: &command.command,
-                input_env: BTreeMap::new(),
-                input_files: BTreeMap::new(),
-            };
-
-            if !command.inputs.is_empty() {
-                gather_cache_inputs(&app_context, &command.inputs, &mut fingerprint).await?;
+        Some(cache_type) => match cache_type {
+            CacheStrategy::Memory => {
+                // Caching enabled later on!
+                internal_exec_plugin_command(app_context, command, options, attempts)
+                    .await
+                    .map(Some)
             }
+            CacheStrategy::Hash => {
+                let mut fingerprint = ExecCommandFingerprint {
+                    label: command.label.as_deref(),
+                    command: &command.command,
+                    input_env: BTreeMap::new(),
+                    input_files: BTreeMap::new(),
+                };
 
-            app_context
-                .clone()
-                .cache_engine
-                .execute_if_changed(
-                    format!(
-                        "{}:{}",
-                        options.prefix,
-                        encode_component(key).to_lowercase()
-                    ),
-                    fingerprint,
-                    async move |_| {
-                        internal_exec_plugin_command(app_context, command, options, attempts).await
-                    },
-                )
-                .await
-        }
+                if !command.inputs.is_empty() {
+                    gather_cache_inputs(&app_context, &command.inputs, &mut fingerprint).await?;
+                }
+
+                app_context
+                    .clone()
+                    .cache_engine
+                    .execute_if_changed(
+                        format!(
+                            "{}:{}",
+                            options.prefix,
+                            encode_component(command.get_label()).to_lowercase()
+                        ),
+                        fingerprint,
+                        async move |_| {
+                            internal_exec_plugin_command(app_context, command, options, attempts)
+                                .await
+                        },
+                    )
+                    .await
+            }
+        },
         None => internal_exec_plugin_command(app_context, command, options, attempts)
             .await
             .map(Some),
@@ -148,7 +163,11 @@ async fn internal_exec_plugin_command_as_operation(
     match result {
         Ok(maybe_output) => {
             if let Some(output) = maybe_output {
-                op.finish_from_output(output.status(), output.stdout, output.stderr);
+                op.finish_from_output(
+                    output.status(),
+                    output.stdout.to_vec(),
+                    output.stderr.to_vec(),
+                );
             } else {
                 op.finish(ActionStatus::Skipped);
             }

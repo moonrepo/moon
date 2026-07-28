@@ -1,4 +1,5 @@
 use super::git_error::GitError;
+use moon_process::{Command, CommandArg};
 use regex::Regex;
 use std::sync::LazyLock;
 
@@ -10,6 +11,51 @@ pub static DIFF_PATTERN: LazyLock<Regex> =
 
 pub static VERSION_CLEAN: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"\.(windows|win|msysgit|msys|vfs)(\.\d+){1,2}").unwrap());
+
+pub fn create_command<I, A>(args: I) -> Command
+where
+    I: IntoIterator<Item = A>,
+    A: Into<CommandArg>,
+{
+    let mut command = Command::new("git");
+    command.args(args);
+    command.envs([
+        ("GIT_OPTIONAL_LOCKS", "0"),
+        // We run non-interactively, so error immediately instead of
+        // hanging forever if a command ever prompts for credentials
+        ("GIT_PAGER", ""),
+        ("GIT_TERMINAL_PROMPT", "0"),
+        // Disable the fsmonitor daemon (git >= 2.31, ignored by older
+        // versions), as it inherits our captured stdout/stderr pipes
+        // and keeps them open, blocking output capture indefinitely
+        ("GIT_CONFIG_COUNT", "1"),
+        ("GIT_CONFIG_KEY_0", "core.fsmonitor"),
+        ("GIT_CONFIG_VALUE_0", "false"),
+    ]);
+
+    // Strip git's per-invocation environment. In a hook, git sets a relative
+    // GIT_INDEX_FILE (.git/index); since we run with the cwd in a project
+    // directory, for a submodule (where `.git` is a file) that resolves to
+    // `<submodule>/.git/index` and fails with "index file open failed: Not a
+    // directory". Clearing it lets each call resolve its repo from its cwd.
+    command.envs_remove([
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_PREFIX",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_COMMON_DIR",
+    ]);
+
+    // The VCS binary should be available on the system,
+    // so avoid the shell overhead
+    command.no_shell();
+
+    // Always cache the output of git commands, as they are expensive to run
+    // and we often run the same commands multiple times (e.g. `git status`).
+    command.set_cache(true);
+    command
+}
 
 /// Validate that a revision (typically user provided) doesn't look like a
 /// command line option, otherwise it can be abused for argument injection,

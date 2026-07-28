@@ -254,14 +254,14 @@ impl WorkspaceBuilder {
         // initialized, which is most of them!
         if let Some(vcs) = &context.vcs {
             if vcs.is_enabled() {
-                graph_context.vcs_branch = vcs.get_local_branch().await?;
-                graph_context.vcs_revision = vcs.get_local_branch_revision().await?;
+                graph_context.vcs_branch = Arc::new(vcs.get_local_branch().await?);
+                graph_context.vcs_revision = Arc::new(vcs.get_local_branch_revision().await?);
 
                 if let Ok(repo) = vcs.get_repository_slug().await {
-                    graph_context.vcs_repository = repo;
+                    graph_context.vcs_repository = Arc::new(repo);
                 }
             } else {
-                graph_context.vcs_branch = vcs.get_default_branch().await?;
+                graph_context.vcs_branch = Arc::new(vcs.get_default_branch().await?);
             }
         }
 

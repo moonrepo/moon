@@ -51,3 +51,6 @@ dockerManifest.json
 # AI / agents
 .claude/settings.local.json
 .claude/worktrees
+
+# Misc
+!crates/daemon-proto/vendor/remote-api/build

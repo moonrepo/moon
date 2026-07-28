@@ -34,8 +34,7 @@ impl Job {
             &mut action,
             self.action_context,
             self.app_context,
-            self.context.workspace_graph.clone(),
-            self.context.emitter.clone(),
+            self.context.clone(),
         ))
         .await
         .is_err()

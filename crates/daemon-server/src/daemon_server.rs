@@ -1,6 +1,7 @@
 use crate::daemon_server_error::DaemonServerError;
 use crate::daemon_watcher::{start_file_listener, start_file_watcher};
 use moon_app_context::AppContext;
+use moon_cache_storage::{Manifest, ManifestSource, ManifestUnpacker, StorageOptions};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{
@@ -10,11 +11,9 @@ use moon_daemon_proto::{
 use moon_daemon_utils::endpoint::*;
 use moon_daemon_utils::lock::DaemonLock;
 use moon_file_watcher::{BoxedFileWatcher, FileEvent};
+use moon_hash::{Digest, InternalDigestExt};
 use moon_notifier::notify_webhook;
 use moon_process::ProcessRegistry;
-use moon_target::Target;
-use moon_task_runner::output_archiver::ArchiveOutcome;
-use moon_task_runner::{TaskRunState, output_archiver::OutputArchiver};
 use moon_workspace_graph::WorkspaceGraph;
 use starbase_utils::fs;
 use std::env;
@@ -124,51 +123,128 @@ impl MoonDaemon for DaemonService {
     ) -> Result<Response<ArchiveTaskOutputsResponse>, Status> {
         self.track_activity("ArchiveTaskOutputs");
 
-        let req = request.into_inner();
+        let app_context = Arc::clone(&self.state.read().await.app_context);
+        let request = request.into_inner();
 
-        let target = Target::parse(&req.task_target)
-            .map_err(|error| Status::invalid_argument(error.to_string()))?;
+        let digest = Digest::from_external(
+            request
+                .digest
+                .ok_or_else(|| Status::invalid_argument("Missing digest"))?,
+        )
+        .map_err(|error| Status::unknown(error.to_string()))?;
 
-        let (app_context, task) = {
-            let state = self.state.read().await;
-            let task = state
-                .workspace_graph
-                .get_task(&target)
-                .map_err(|error| Status::not_found(error.to_string()))?;
-
-            (Arc::clone(&state.app_context), task)
-        };
+        let manifest = Manifest::from_bazel_action_result(
+            request
+                .manifest
+                .ok_or_else(|| Status::invalid_argument("Missing manifest"))?,
+        )
+        .map_err(|error| Status::unknown(error.to_string()))?;
 
         self.run_in_background(async move {
-            // TODO populate the action digest/bytes!
-            let task_state = TaskRunState::new(&app_context, &task);
-
-            let result = match OutputArchiver::new(&app_context, &task) {
-                Ok(archiver) => archiver.archive(&req.hash, &task_state).await,
-                Err(error) => Err(error),
-            };
-
-            match result {
-                Ok(outcome) => {
-                    debug!(
-                        target = target.as_str(),
-                        hash = &req.hash,
-                        queued = matches!(outcome, ArchiveOutcome::Queued),
-                        "Archived task outputs"
-                    );
-                }
-                Err(error) => {
-                    warn!(
-                        target = target.as_str(),
-                        hash = &req.hash,
-                        error = format_error_chain(&error),
-                        "Failed to archive task outputs"
-                    );
-                }
+            if let Err(error) = app_context
+                .cache_engine
+                .storage
+                .with_options(StorageOptions {
+                    include_local: request.include_local,
+                    include_remote: request.include_remote,
+                    ..Default::default()
+                })
+                .archive_manifest(&digest, manifest)
+                .await
+            {
+                warn!(
+                    task_target = &request.task_target,
+                    hash = digest.hash.as_str(),
+                    error = format_error_chain(&error),
+                    "Failed to archive task outputs",
+                );
             }
         });
 
         Ok(Response::new(ArchiveTaskOutputsResponse { archived: true }))
+    }
+
+    async fn hydrate_task_outputs(
+        &self,
+        request: Request<HydrateTaskOutputsRequest>,
+    ) -> Result<Response<HydrateTaskOutputsResponse>, Status> {
+        self.track_activity("HydrateTaskOutputs");
+
+        let app_context = Arc::clone(&self.state.read().await.app_context);
+        let request = request.into_inner();
+
+        let digest = Digest::from_external(
+            request
+                .digest
+                .ok_or_else(|| Status::invalid_argument("Missing digest"))?,
+        )
+        .map_err(|error| Status::unknown(error.to_string()))?;
+
+        let manifest = Manifest::from_bazel_action_result(
+            request
+                .manifest
+                .ok_or_else(|| Status::invalid_argument("Missing manifest"))?,
+        )
+        .map_err(|error| Status::unknown(error.to_string()))?;
+
+        let storage = app_context
+            .cache_engine
+            .storage
+            .with_options(StorageOptions {
+                include_local: request.include_local,
+                include_remote: request.include_remote,
+                ..Default::default()
+            });
+
+        let backend = storage
+            .get_backends()
+            .iter()
+            .find(|backend| backend.get_id() == &request.backend_id)
+            .map(|backend| Arc::clone(backend))
+            .ok_or_else(|| Status::invalid_argument("Missing storage backend"))?;
+
+        let source = ManifestSource {
+            // This is questionable, but we'll see how it pans out
+            remote: backend.get_id().contains("remote") || !backend.get_id().contains("local"),
+            backend,
+            manifest,
+        };
+
+        match storage.hydrate_manifest(&digest, source).await {
+            Ok(mut maybe_manifest) => {
+                if let Some(manifest) = &mut maybe_manifest {
+                    ManifestUnpacker::new(manifest, app_context.workspace_root.clone())
+                        .unpack()
+                        .map_err(|error| Status::unknown(error.to_string()))?;
+
+                    // Remove file contents from the manifest before returning to the client,
+                    // since they are not needed (we just unpacked them) and can be quite large
+                    for file in &mut manifest.files {
+                        file.bytes = None;
+                    }
+                }
+
+                Ok(Response::new(HydrateTaskOutputsResponse {
+                    hydrated: maybe_manifest.is_some(),
+                    // Keep stdout/stderr as it's required for hydrating the terminal output
+                    manifest: maybe_manifest
+                        .map(|manifest| manifest.into_bazel_action_result(true)),
+                }))
+            }
+            Err(error) => {
+                warn!(
+                    task_target = &request.task_target,
+                    hash = digest.hash.as_str(),
+                    error = format_error_chain(&error),
+                    "Failed to hydrate task outputs",
+                );
+
+                Ok(Response::new(HydrateTaskOutputsResponse {
+                    hydrated: false,
+                    manifest: None,
+                }))
+            }
+        }
     }
 
     async fn clean_cache(

@@ -8,6 +8,8 @@ publish = false
 moon_common = { path = "../common" }
 moon_daemon_proto = { path = "../daemon-proto" }
 moon_daemon_utils = { path = "../daemon-utils" }
+moon_hash = { path = "../hash" }
+moon_manifest = { path = "../manifest" }
 hyper-util = "0.1.20"
 miette = { workspace = true }
 thiserror = { workspace = true }

@@ -202,6 +202,7 @@ const config: Config = {
 				'docker',
 				'json',
 				'markup-templating',
+				'nix',
 				'rust',
 				'toml',
 				'twig',

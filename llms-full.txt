@@ -18288,6 +18288,38 @@ denotes the exact version the repository is pinned it.
 
 :::
 
+### Nix
+
+On Linux, moon can be run directly from the flake in the repository, without installing anything
+first.
+
+```shell
+nix run github:moonrepo/moon -- --version
+```
+
+Append any git ref that contains `flake.nix` to build that revision instead, such as
+`github:moonrepo/moon/master`. To keep moon around, install it into your profile.
+
+```shell
+nix profile install github:moonrepo/moon
+```
+
+For a flake based NixOS or home-manager setup, add moon as an input and take the package from it.
+
+```nix
+{
+  inputs.moon.url = "github:moonrepo/moon";
+
+  outputs = { nixpkgs, moon, ... }: {
+    # Somewhere in your configuration
+    environment.systemPackages = [ moon.packages.x86_64-linux.default ];
+  };
+}
+```
+
+moon is also in [nixpkgs](https://search.nixos.org/packages?query=moon), but that package is updated
+separately from this repository and may lag behind the latest release.
+
 ### Other
 
 moon can also be downloaded and installed manually, by downloading an asset from

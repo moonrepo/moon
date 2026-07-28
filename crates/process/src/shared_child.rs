@@ -1,5 +1,6 @@
 use crate::output::Output;
 use crate::signal::*;
+use bytes::Bytes;
 use std::io;
 use std::process::ExitStatus;
 use std::sync::{Arc, OnceLock};
@@ -123,8 +124,8 @@ impl SharedChild {
 
         Ok(Output {
             exit: convert_exit_status(status, self.signal.get().copied()),
-            stdout,
-            stderr,
+            stdout: Bytes::from(stdout),
+            stderr: Bytes::from(stderr),
         })
     }
 }

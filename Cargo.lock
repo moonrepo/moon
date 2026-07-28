@@ -913,9 +913,9 @@ checksum = "6e4de3bc4ea267985becf712dc6d9eed8b04c953b3fcfb339ebc87acd9804901"
 
 [[package]]
 name = "ci_env"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c1c48001069a2c618e1d7ff2a87a618a4c8254f564d970ac8787ace8432d35b"
+checksum = "fc568278debc89cf04144427c021e6412cfc4f9d112a488a0a11a496bb3f2c06"
 dependencies = [
  "serde",
 ]
@@ -1914,13 +1914,13 @@ dependencies = [
 
 [[package]]
 name = "displaydoc"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ac70aa55017e108007fbaf5aa0f54b021c98f92ff8af59d42eda9da96e3dd4f"
+checksum = "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -5759,12 +5759,14 @@ dependencies = [
 name = "moon_process"
 version = "0.0.1"
 dependencies = [
+ "bytes",
  "libc",
  "miette 7.6.0",
  "moon_common",
  "moon_console",
  "moon_env_var",
  "rustc-hash",
+ "scc",
  "serde",
  "starbase_shell",
  "system_env",

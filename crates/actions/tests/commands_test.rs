@@ -1,7 +1,7 @@
 use moon_action::{ActionStatus, Operation};
 use moon_actions::plugins::*;
 use moon_env_var::GlobalEnvBag;
-use moon_pdk_api::{CacheInput, ExecCommand, ExecCommandInput, VirtualPath};
+use moon_pdk_api::{CacheInput, CacheStrategy, ExecCommand, ExecCommandInput, VirtualPath};
 use moon_test_utils::WorkspaceMocker;
 use starbase_sandbox::{Sandbox, assert_snapshot, create_empty_sandbox};
 use starbase_utils::json;
@@ -361,7 +361,8 @@ mod plugin_commands {
 
             exec_plugin_command(
                 ctx,
-                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"])).cache("key"),
+                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
+                    .cache(CacheStrategy::Hash),
                 &ExecCommandOptions::default(),
             )
             .await
@@ -377,7 +378,8 @@ mod plugin_commands {
 
             exec_plugin_command(
                 ctx.clone(),
-                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"])).cache("key"),
+                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
+                    .cache(CacheStrategy::Hash),
                 &ExecCommandOptions::default(),
             )
             .await
@@ -385,7 +387,8 @@ mod plugin_commands {
 
             let ops = exec_plugin_command(
                 ctx,
-                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"])).cache("key"),
+                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
+                    .cache(CacheStrategy::Hash),
                 &ExecCommandOptions::default(),
             )
             .await
@@ -397,29 +400,29 @@ mod plugin_commands {
         }
 
         #[tokio::test]
-        async fn differentiates_between_keys() {
+        async fn differentiates_between_labels() {
             let (sandbox, ws) = create_workspace();
             let ctx = Arc::new(ws.mock_app_context());
 
             exec_plugin_command(
                 ctx.clone(),
-                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"])).cache("key1"),
+                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
+                    .cache(CacheStrategy::Hash)
+                    .label("a"),
                 &ExecCommandOptions::default(),
             )
             .await
             .unwrap();
 
-            let ops = exec_plugin_command(
+            exec_plugin_command(
                 ctx,
-                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"])).cache("key2"),
+                &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
+                    .cache(CacheStrategy::Hash)
+                    .label("b"),
                 &ExecCommandOptions::default(),
             )
             .await
             .unwrap();
-
-            let op = ops.first().unwrap();
-
-            assert_ne!(op.status, ActionStatus::Skipped);
 
             assert_eq!(get_hashes(sandbox.path()).len(), 2);
         }
@@ -435,7 +438,7 @@ mod plugin_commands {
             exec_plugin_command(
                 ctx,
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
-                    .cache("key")
+                    .cache(CacheStrategy::Hash)
                     .inputs(vec![
                         CacheInput::EnvVar("EXISTS".into()),
                         CacheInput::EnvVar("MISSING".into()),
@@ -461,7 +464,7 @@ mod plugin_commands {
             exec_plugin_command(
                 Arc::new(ws.mock_app_context()),
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
-                    .cache("key")
+                    .cache(CacheStrategy::Hash)
                     .inputs(vec![
                         CacheInput::FileSize(VirtualPath::Real(sandbox.path().join("input.txt"))),
                         CacheInput::FileSize(VirtualPath::Real(sandbox.path().join("missing.txt"))),
@@ -485,7 +488,7 @@ mod plugin_commands {
             exec_plugin_command(
                 Arc::new(ws.mock_app_context()),
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
-                    .cache("key")
+                    .cache(CacheStrategy::Hash)
                     .inputs(vec![
                         CacheInput::FileHash(VirtualPath::Real(sandbox.path().join("input.txt"))),
                         CacheInput::FileHash(VirtualPath::Real(sandbox.path().join("missing.txt"))),
@@ -510,7 +513,7 @@ mod plugin_commands {
             exec_plugin_command(
                 Arc::new(ws.mock_app_context()),
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
-                    .cache("key")
+                    .cache(CacheStrategy::Hash)
                     .inputs(vec![
                         CacheInput::FileHash(VirtualPath::Real(sandbox.path().join("input.txt"))),
                         CacheInput::FileHash(VirtualPath::Real(sandbox.path().join("missing.txt"))),
@@ -534,7 +537,7 @@ mod plugin_commands {
             exec_plugin_command(
                 Arc::new(ws.mock_app_context()),
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
-                    .cache("key")
+                    .cache(CacheStrategy::Hash)
                     .inputs(vec![
                         CacheInput::FileTimestamp(VirtualPath::Real(
                             sandbox.path().join("input.txt"),

@@ -1,10 +1,10 @@
 use super::common::*;
 use super::git_error::GitError;
 use crate::changed_files::*;
-use crate::process_cache::ProcessCache;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::IntoDiagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf};
+use moon_process::{Command, CommandArg, output_to_string, output_to_trimmed_string};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::fmt;
@@ -40,9 +40,6 @@ pub struct GitTree {
 
     /// Relative path from the worktree root to the this tree root.
     pub path: RelativePathBuf,
-
-    /// Process runner and caching.
-    pub process: Option<Arc<ProcessCache>>,
 
     /// The type of tree.
     pub type_of: GitTreeType,
@@ -106,8 +103,14 @@ impl GitTree {
         self.type_of == GitTreeType::Worktree
     }
 
-    pub fn get_process(&self) -> &ProcessCache {
-        self.process.as_deref().unwrap()
+    pub fn create_command<I, A>(&self, args: I) -> Command
+    where
+        I: IntoIterator<Item = A>,
+        A: Into<CommandArg>,
+    {
+        let mut command = create_command(args);
+        command.cwd(&self.work_dir);
+        command
     }
 
     // https://git-scm.com/docs/git-diff
@@ -127,7 +130,6 @@ impl GitTree {
         validate_revision(base_revision)?;
         validate_revision(head_revision)?;
 
-        let process = self.get_process();
         let mut args = vec![
             "diff",
             "--name-status",
@@ -150,16 +152,15 @@ impl GitTree {
             args.push(head_revision);
         }
 
-        let output = process
-            .run_command(process.create_command_in_cwd(args, &self.work_dir), false)
-            .await?;
+        let output = self.create_command(args).exec_capture_output().await?;
 
-        if output.is_empty() {
+        if output.stdout.is_empty() {
             return Ok(ChangedFiles::default());
         }
 
+        let diff_output = output_to_string(&output.stdout);
         let mut files = FxHashMap::default();
-        let mut tokens = output.split('\0');
+        let mut tokens = diff_output.split('\0');
 
         // Statuses AND paths are terminated by a NUL byte, and strictly
         // alternate, so consume them in pairs (renames and copies are
@@ -211,13 +212,13 @@ impl GitTree {
     // Hash the empty tree, respecting the repository's object format
     // (sha1 or sha256). Used as a diff base when no other revision exists.
     #[instrument(skip(self))]
-    pub async fn exec_hash_empty_tree(&self) -> miette::Result<Arc<String>> {
-        let process = self.get_process();
-        let mut command =
-            process.create_command_in_cwd(["hash-object", "-t", "tree", "--stdin"], &self.work_dir);
+    pub async fn exec_hash_empty_tree(&self) -> miette::Result<String> {
+        let mut command = self.create_command(["hash-object", "-t", "tree", "--stdin"]);
         command.input([""]);
 
-        process.run_command(command, true).await
+        let output = command.exec_capture_output().await?;
+
+        Ok(output_to_trimmed_string(&output.stdout))
     }
 
     // https://git-scm.com/docs/git-ls-files
@@ -231,7 +232,6 @@ impl GitTree {
     //    - Run in the submodule root.
     #[instrument(skip(self))]
     pub async fn exec_ls_files(&self, dir: &RelativePath) -> miette::Result<Vec<PathBuf>> {
-        let process = self.get_process();
         let mut args = vec![
             "ls-files",
             "--full-name",
@@ -254,14 +254,13 @@ impl GitTree {
             args.push(dir.as_str());
         }
 
-        let output = process
-            .run_command(process.create_command_in_cwd(args, &self.work_dir), false)
-            .await?;
+        let output = self.create_command(args).exec_capture_output().await?;
+        let files_output = output_to_string(&output.stdout);
 
         let mut paths = vec![];
         let mut seen = FxHashSet::default();
 
-        for file in output.split('\0') {
+        for file in files_output.split('\0') {
             // Files are listed once for each criteria above that they
             // match, so any duplicates must be filtered out
             if file.is_empty() || !seen.insert(file) {
@@ -299,19 +298,17 @@ impl GitTree {
     ) -> miette::Result<BTreeMap<PathBuf, String>> {
         validate_revision(revision)?;
 
-        let process = self.get_process();
         let mut args = vec!["ls-tree", "-z", revision, "--"];
         args.extend(paths.iter().copied());
 
-        let output = process
-            .run_command(process.create_command_in_cwd(args, &self.work_dir), false)
-            .await?;
+        let output = self.create_command(args).exec_capture_output().await?;
+        let tree_output = output_to_string(&output.stdout);
 
         let mut tree = BTreeMap::default();
 
         // Lines are formatted as:
         //  <mode> <type> <hash>\t<path>\0
-        for line in output.split('\0') {
+        for line in tree_output.split('\0') {
             if line.is_empty() {
                 continue;
             }
@@ -336,7 +333,7 @@ impl GitTree {
         base_revision: &str,
         head_revision: &str,
         remote_candidates: &[String],
-    ) -> miette::Result<Option<Arc<String>>> {
+    ) -> miette::Result<Option<String>> {
         validate_revision(base_revision)?;
         validate_revision(head_revision)?;
 
@@ -352,17 +349,15 @@ impl GitTree {
         let mut resolved = vec![None; candidates.len()];
 
         for (index, candidate) in candidates.into_iter().enumerate() {
-            let process = Arc::clone(self.process.as_ref().unwrap());
-            let command = process
-                .create_command_in_cwd(["merge-base", &candidate, head_revision], &self.work_dir);
+            let mut command = self.create_command(["merge-base", &candidate, head_revision]);
 
             set.spawn(async move {
                 (
                     index,
-                    process
-                        .run_command(command, true)
+                    command
+                        .exec_capture_output()
                         .await
-                        .map(|hash| (candidate, hash)),
+                        .map(|output| (candidate, output_to_trimmed_string(&output.stdout))),
                 )
             });
         }
@@ -403,13 +398,8 @@ impl GitTree {
         ];
         args.extend(other_candidates);
 
-        let process = self.get_process();
-
-        if let Ok(hash) = process
-            .run_command(process.create_command_in_cwd(args, &self.work_dir), true)
-            .await
-        {
-            return Ok(Some(hash));
+        if let Ok(output) = self.create_command(args).exec_capture_output().await {
+            return Ok(Some(output_to_trimmed_string(&output.stdout)));
         }
 
         // The combined command failed unexpectedly, so fall
@@ -427,34 +417,29 @@ impl GitTree {
     //    - Run in the submodule root.
     #[instrument(skip(self))]
     pub async fn exec_status(&self) -> miette::Result<ChangedFiles<PathBuf>> {
-        let process = self.get_process();
-        let output = process
-            .run_command(
-                process.create_command_in_cwd(
-                    [
-                        "status",
-                        "--porcelain",
-                        "--untracked-files",
-                        // Status does not show files within a submodule, and instead
-                        // shows something like `modified: submodules/name (untracked content)`,
-                        // so we need to ignore it, and run a status in the submodule directly
-                        "--ignore-submodules",
-                        // We use this option so that file names with special characters
-                        // are displayed as-is and are not quoted/escaped
-                        "-z",
-                    ],
-                    &self.work_dir,
-                ),
-                false,
-            )
+        let output = self
+            .create_command([
+                "status",
+                "--porcelain",
+                "--untracked-files",
+                // Status does not show files within a submodule, and instead
+                // shows something like `modified: submodules/name (untracked content)`,
+                // so we need to ignore it, and run a status in the submodule directly
+                "--ignore-submodules",
+                // We use this option so that file names with special characters
+                // are displayed as-is and are not quoted/escaped
+                "-z",
+            ])
+            .exec_capture_output()
             .await?;
 
-        if output.is_empty() {
+        if output.stdout.is_empty() {
             return Ok(ChangedFiles::default());
         }
 
+        let status_output = output_to_string(&output.stdout);
         let mut files = FxHashMap::default();
-        let mut tokens = output.split('\0');
+        let mut tokens = status_output.split('\0');
 
         // Lines are terminated by a NUL byte, and rename/copy entries
         // are followed by the original path as a separate token:

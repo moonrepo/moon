@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Updated `MOON_BASE` and `MOON_HEAD` to no longer require also passing `--affected`.
+
+#### 🐞 Fixes
+
+- Fixed an issue in GitLab CI where the wrong `HEAD` would be used for merge request pipelines.
+
 ## 2.4.5
 
 #### 🐞 Fixes

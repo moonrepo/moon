@@ -78,8 +78,8 @@ impl CheckExecutor {
 
                     attempt.finish_from_output(
                         output.status(),
-                        output.stdout.clone(),
-                        output.stderr.clone(),
+                        output.stdout.to_vec(),
+                        output.stderr.to_vec(),
                     );
                 } else {
                     debug!(

@@ -23,8 +23,8 @@ mod exec_capture_output {
             .unwrap();
 
         assert!(output.success());
-        assert_eq!(output.stdout, b"out");
-        assert_eq!(output.stderr, b"err");
+        assert_eq!(output.stdout.as_ref(), b"out");
+        assert_eq!(output.stderr.as_ref(), b"err");
     }
 
     #[tokio::test]
@@ -61,7 +61,7 @@ mod exec_capture_output {
 
         let output = command.exec_capture_output().await.unwrap();
 
-        assert_eq!(output.stdout, b"hello world");
+        assert_eq!(output.stdout.as_ref(), b"hello world");
     }
 
     #[tokio::test]
@@ -101,7 +101,7 @@ mod exec_capture_continuous_output {
         let output = command.exec_capture_output().await.unwrap();
 
         assert!(output.success());
-        assert_eq!(output.stdout, b"one\ntwo");
+        assert_eq!(output.stdout.as_ref(), b"one\ntwo");
     }
 
     #[tokio::test]
@@ -161,8 +161,8 @@ mod exec_stream_and_capture_output {
             .unwrap();
 
         assert!(output.success());
-        assert_eq!(output.stdout, b"a\nb\n");
-        assert_eq!(output.stderr, b"err");
+        assert_eq!(output.stdout.as_ref(), b"a\nb\n");
+        assert_eq!(output.stderr.as_ref(), b"err");
     }
 }
 
@@ -176,7 +176,7 @@ mod child_env {
 
         let output = command.exec_capture_output().await.unwrap();
 
-        assert_eq!(output.stdout, b"value");
+        assert_eq!(output.stdout.as_ref(), b"value");
     }
 
     #[tokio::test]
@@ -186,7 +186,7 @@ mod child_env {
 
         let output = command.exec_capture_output().await.unwrap();
 
-        assert_eq!(output.stdout, b"unset");
+        assert_eq!(output.stdout.as_ref(), b"unset");
     }
 
     #[tokio::test]
@@ -223,8 +223,8 @@ mod exec_stream_and_capture_output_bytes {
             .unwrap();
 
         assert!(output.success());
-        assert_eq!(output.stdout, b"out");
-        assert_eq!(output.stderr, b"err");
+        assert_eq!(output.stdout.as_ref(), b"out");
+        assert_eq!(output.stderr.as_ref(), b"err");
     }
 
     #[tokio::test]
@@ -234,7 +234,7 @@ mod exec_stream_and_capture_output_bytes {
             .await
             .unwrap();
 
-        assert_eq!(output.stdout, b"a\xffb");
+        assert_eq!(output.stdout.as_ref(), b"a\xffb");
     }
 
     #[tokio::test]
@@ -244,7 +244,7 @@ mod exec_stream_and_capture_output_bytes {
             .await
             .unwrap();
 
-        assert_eq!(output.stdout, b"3/3 done\nnext\n");
+        assert_eq!(output.stdout.as_ref(), b"3/3 done\nnext\n");
     }
 
     #[tokio::test]
@@ -254,6 +254,6 @@ mod exec_stream_and_capture_output_bytes {
             .await
             .unwrap();
 
-        assert_eq!(output.stdout, b"one\r\ntwo\r\n");
+        assert_eq!(output.stdout.as_ref(), b"one\r\ntwo\r\n");
     }
 }

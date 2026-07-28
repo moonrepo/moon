@@ -128,7 +128,7 @@ impl<'owner> ManifestUnpacker<'owner> {
     fn resolve_abs_path(&self, rel_path: &WorkspaceRelativePath) -> miette::Result<PathBuf> {
         let abs_path = Path::new(rel_path.as_str());
 
-        if abs_path.is_absolute() {
+        if abs_path.is_absolute() || abs_path.has_root() {
             return Err(ManifestError::OutputFileOutsideOfWorkspace {
                 output: abs_path.to_path_buf(),
             }

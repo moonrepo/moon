@@ -292,21 +292,49 @@ mod path_containment {
         );
     }
 
-    #[test]
-    fn rejects_an_absolute_file_path() {
-        // The manifest comes from a shared cache, so a path that escapes the
-        // workspace must be refused rather than written.
-        let sandbox = create_empty_sandbox();
-
-        let manifest = manifest_with(ManifestFile {
+    fn manifest_at(path: &str) -> Manifest {
+        manifest_with(ManifestFile {
             bytes: Some(Bytes::from_static(b"pwned")),
             digest: digest(b"pwned"),
-            path: "/tmp/moon-escape.txt".into(),
+            path: path.into(),
             ..Default::default()
-        });
+        })
+    }
 
-        assert_outside_workspace(unpack(&sandbox, &manifest));
-        assert!(!PathBuf::from("/tmp/moon-escape.txt").exists());
+    #[test]
+    fn rejects_a_rooted_file_path() {
+        // The manifest comes from a shared cache, so a path that escapes the
+        // workspace must be refused rather than written. Windows treats this as
+        // rooted-but-not-absolute, which is why the guard checks both.
+        let sandbox = create_empty_sandbox();
+
+        assert_outside_workspace(unpack(&sandbox, &manifest_at("/tmp/moon-escape.txt")));
+        assert!(!sandbox.path().join("tmp/moon-escape.txt").exists());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn rejects_a_drive_absolute_file_path() {
+        // The shape Windows actually considers absolute, and the one that would
+        // genuinely escape the workspace if it slipped through.
+        let sandbox = create_empty_sandbox();
+
+        assert_outside_workspace(unpack(
+            &sandbox,
+            &manifest_at(r"C:\Windows\moon-escape.txt"),
+        ));
+        assert!(!PathBuf::from(r"C:\Windows\moon-escape.txt").exists());
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn rejects_a_unc_file_path() {
+        let sandbox = create_empty_sandbox();
+
+        assert_outside_workspace(unpack(
+            &sandbox,
+            &manifest_at(r"\\server\share\moon-escape.txt"),
+        ));
     }
 
     #[test]

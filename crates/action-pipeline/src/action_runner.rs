@@ -1,10 +1,10 @@
-use crate::event_emitter::{Event, EventEmitter};
+use crate::event_emitter::Event;
+use crate::job_context::JobContext;
 use moon_action::{Action, ActionNode, ActionStatus};
 use moon_action_context::ActionContext;
 use moon_actions::actions::*;
 use moon_app_context::AppContext;
 use moon_common::color;
-use moon_workspace_graph::WorkspaceGraph;
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
@@ -13,9 +13,14 @@ pub async fn run_action(
     action: &mut Action,
     action_context: Arc<ActionContext>,
     app_context: Arc<AppContext>,
-    workspace_graph: Arc<WorkspaceGraph>,
-    emitter: Arc<EventEmitter>,
+    job_context: JobContext,
 ) -> miette::Result<()> {
+    let JobContext {
+        emitter,
+        workspace_graph,
+        ..
+    } = job_context;
+
     action.start();
 
     let node = Arc::clone(&action.node);
@@ -178,6 +183,7 @@ pub async fn run_action(
                 action_context,
                 app_context,
                 workspace_graph.clone(),
+                job_context.daemon_client.clone(),
                 inner,
             )
             .await;

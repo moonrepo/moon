@@ -218,7 +218,7 @@ impl StorageBackend for HttpRemoteStorage {
             .get_client()
             .put(self.get_endpoint("ac", &digest.hash))
             .header("Content-Type", "application/json")
-            .json(&manifest.into_bazel_action_result())
+            .json(&manifest.into_bazel_action_result(false))
             .send()
             .await
         {

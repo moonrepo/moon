@@ -287,7 +287,7 @@ impl DaemonConnector {
         let mut command = create_detached_command(&exe_path);
 
         command
-            .args(["daemon", "server", "--log", "debug", "--log-file"])
+            .args(["daemon", "server", "--log", "trace", "--log-file"])
             .arg(self.get_log_file())
             .env("MOON_DAEMON_RUNNING", "true")
             .current_dir(&self.workspace_root);

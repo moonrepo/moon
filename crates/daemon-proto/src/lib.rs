@@ -6,4 +6,4 @@ tonic::include_proto!("moon.daemon.v1");
 /// `daemon.proto` or a handler's semantics would make an already-running
 /// daemon incompatible with a newer client, so the client restarts it
 /// instead of talking to a daemon it can't fully understand.
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const PROTOCOL_VERSION: u32 = 2;

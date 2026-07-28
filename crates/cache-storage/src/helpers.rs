@@ -1,31 +1,6 @@
-use bazel_remote_apis::google::protobuf::Timestamp;
-use chrono::NaiveDateTime;
 use moon_common::BLOCKING_THREAD_COUNT;
 use moon_hash::Digest;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tracing::warn;
-
-pub fn create_timestamp(time: SystemTime) -> Option<Timestamp> {
-    time.duration_since(UNIX_EPOCH)
-        .ok()
-        .map(|duration| Timestamp {
-            seconds: duration.as_secs() as i64,
-            nanos: duration.subsec_nanos() as i32,
-        })
-}
-
-pub fn create_timestamp_from_naive(time: NaiveDateTime) -> Option<Timestamp> {
-    let utc = time.and_utc();
-
-    Some(Timestamp {
-        seconds: utc.timestamp(),
-        nanos: utc.timestamp_subsec_nanos() as i32,
-    })
-}
-
-pub fn create_from_timestamp(timestamp: Timestamp) -> SystemTime {
-    UNIX_EPOCH + Duration::new(timestamp.seconds as u64, timestamp.nanos as u32)
-}
 
 pub fn check_blob_integrity(expected_digest: &Digest, bytes: &[u8]) -> miette::Result<bool> {
     if bytes.len() != expected_digest.size as usize {
@@ -300,22 +275,6 @@ mod tests {
 
             assert_eq!(batches.len(), 1);
             assert!(batches.iter().all(|batch| batch.items.len() == 3));
-        }
-    }
-
-    mod timestamps {
-        use super::*;
-
-        #[test]
-        fn round_trips_through_protobuf() {
-            let now = SystemTime::now();
-
-            let restored = create_from_timestamp(create_timestamp(now).unwrap());
-
-            let original = now.duration_since(UNIX_EPOCH).unwrap();
-            let after = restored.duration_since(UNIX_EPOCH).unwrap();
-            assert_eq!(original.as_secs(), after.as_secs());
-            assert_eq!(original.subsec_nanos(), after.subsec_nanos());
         }
     }
 }

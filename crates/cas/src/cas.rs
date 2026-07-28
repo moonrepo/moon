@@ -1,9 +1,9 @@
 use crate::cas_error::CasError;
-use moon_blob::{Blob, BlobCleanStats};
+use moon_blob::{Blob, BlobCleanStats, grant_owner_write_access};
 use moon_config::CacheCasConfig;
 use moon_hash::{ContentHash, Digest};
 use rustc_hash::FxHashSet;
-use starbase_utils::fs::{self, FsError};
+use starbase_utils::fs;
 use starbase_utils::hash::{
     self, hex,
     sha256::native::{Digest as ShaDigest, Sha256},
@@ -387,30 +387,4 @@ impl CasStore {
 
         Ok(())
     }
-}
-
-/// Grant the owner write permission on the file, leaving all other bits intact.
-/// Reflinks clone the source's permissions, so both storing and hydrating a
-/// read-only file must restore writability on the clone.
-pub fn grant_owner_write_access(path: &Path) -> miette::Result<()> {
-    let mut perms = fs::metadata(path)?.permissions();
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-
-        perms.set_mode(perms.mode() | 0o200);
-    }
-
-    // The readonly attribute is the only permission Windows has
-    #[cfg(not(unix))]
-    #[allow(clippy::permissions_set_readonly_false)]
-    perms.set_readonly(false);
-
-    std::fs::set_permissions(path, perms).map_err(|error| FsError::Perms {
-        path: path.to_path_buf(),
-        error: Box::new(error),
-    })?;
-
-    Ok(())
 }

@@ -139,6 +139,8 @@ impl CommandExecutable {
 pub struct Command {
     pub args: VecDeque<CommandArg>,
 
+    pub cache: bool,
+
     /// Continuously write to stdin and read from stdout
     pub continuous_pipe: bool,
 
@@ -174,6 +176,7 @@ impl Command {
     pub fn new<T: AsRef<OsStr>>(bin: T) -> Self {
         Command {
             args: VecDeque::new(),
+            cache: false,
             continuous_pipe: false,
             cwd: None,
             env: FxHashMap::default(),
@@ -543,6 +546,11 @@ impl Command {
 
     pub fn set_bin<T: Into<CommandArg>>(&mut self, bin: T) -> &mut Self {
         self.exe = CommandExecutable::Binary(bin.into());
+        self
+    }
+
+    pub fn set_cache(&mut self, state: bool) -> &mut Self {
+        self.cache = state;
         self
     }
 

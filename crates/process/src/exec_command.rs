@@ -9,6 +9,7 @@ use moon_common::color;
 use moon_console::ConsoleStream;
 use moon_env_var::GlobalEnvBag;
 use rustc_hash::FxHashMap;
+use scc::hash_cache::Entry;
 use starbase_shell::join_exe_args;
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -28,6 +29,27 @@ impl Command {
         }
 
         let registry = ProcessRegistry::instance();
+
+        if !self.cache {
+            return self.internal_exec_capture_output(&registry).await;
+        }
+
+        match registry.cache.entry_async(self.get_cache_key()).await {
+            Entry::Occupied(entry) => Ok(entry.get().clone()),
+            Entry::Vacant(entry) => {
+                let output = self.internal_exec_capture_output(&registry).await?;
+
+                entry.put_entry(output.clone());
+
+                Ok(output)
+            }
+        }
+    }
+
+    async fn internal_exec_capture_output(
+        &mut self,
+        registry: &ProcessRegistry,
+    ) -> miette::Result<Output> {
         let instant = Instant::now();
         let mut command = self.create_async_command()?;
 
@@ -316,6 +338,31 @@ impl Command {
     /// redraw frames are collapsed so cache replays only render the final frame.
     pub async fn exec_stream_and_capture_output_bytes(&mut self) -> miette::Result<Output> {
         let registry = ProcessRegistry::instance();
+
+        if !self.cache {
+            return self
+                .internal_exec_stream_and_capture_output_bytes(&registry)
+                .await;
+        }
+
+        match registry.cache.entry_async(self.get_cache_key()).await {
+            Entry::Occupied(entry) => Ok(entry.get().clone()),
+            Entry::Vacant(entry) => {
+                let output = self
+                    .internal_exec_stream_and_capture_output_bytes(&registry)
+                    .await?;
+
+                entry.put_entry(output.clone());
+
+                Ok(output)
+            }
+        }
+    }
+
+    async fn internal_exec_stream_and_capture_output_bytes(
+        &mut self,
+        registry: &ProcessRegistry,
+    ) -> miette::Result<Output> {
         let instant = Instant::now();
         let mut command = self.create_async_command()?;
 

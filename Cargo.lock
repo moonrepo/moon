@@ -5765,6 +5765,7 @@ dependencies = [
  "moon_console",
  "moon_env_var",
  "rustc-hash",
+ "scc",
  "serde",
  "starbase_shell",
  "system_env",

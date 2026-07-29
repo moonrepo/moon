@@ -12,6 +12,13 @@
       service name.
     - The destination and transport are configured with the standard `OTEL_EXPORTER_OTLP_*`
       environment variables.
+- **Config**
+  - Project globs can now be configured with a trailing file, allowing more precise project
+    matching. For example, `apps/*/package.json` will only find Node.js projects, and
+    `src/**/*.csproj` will only find .NET projects. The path without file name will be used as the
+    project identifier (if not defined).
+    - This change does not apply to root-level projects. Use a `.` glob or target a moon
+      configuration file.
 - **Daemon**
   - Added task output archiving and hydrating to the daemon. All of these heavy file system
     operations will now be offloaded into the background via the daemon. Because of this, you'll

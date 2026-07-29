@@ -8,9 +8,10 @@
 
 [profile.dev]
 split-debuginfo = "unpacked"
+opt-level = 1
 # Uncomment these 2 if using the debugger!
-debug = 0
-strip = "debuginfo"
+# debug = 0
+# strip = "debuginfo"
 
 [profile.release]
 codegen-units = 1

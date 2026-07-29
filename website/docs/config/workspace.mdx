@@ -70,6 +70,11 @@ If manually mapping projects is too tedious or cumbersome, you may provide a lis
 [globs](../concepts/file-pattern#globs) to automatically locate all project folders, relative from
 the workspace root.
 
+Globs can match both folders and files. When a folder is matched, it's used as the project root
+as-is, while a matched file will use its parent folder as the project root. Matching files is
+useful for only including folders that contain a specific file, like a moon configuration file, or
+a toolchain specific manifest.
+
 When using this approach, the project name is derived from the project folder name, and is cleaned
 to our [supported characters](../concepts/project#names), but can be customized with the
 [`id`](./project#id) setting in [`moon.*`](./project). Furthermore, globbing **does risk the chance
@@ -82,7 +87,18 @@ projects:
   - 'packages/*'
   # Only shared folders with a moon configuration
   - 'shared/*/moon.yml'
+  # Only crates with a Cargo manifest
+  - 'crates/*/Cargo.toml'
 ```
+
+:::info
+
+Matching any kind of file is a new feature in moon v2.5. In previous versions, only moon
+configuration files (`moon.*`) could be matched, while all other files were skipped. Additionally,
+for the workspace root itself, only a matched moon configuration file will create a
+[root-level project](../guides/root-project), all other root files are ignored.
+
+:::
 
 ### Using a map _and_ globs
 
@@ -99,7 +115,7 @@ projects:
 ```
 
 Additionally, you can customize the format of project IDs for glob discovered projects. By default
-it inherits the fodler name, but this has a high chance of collision. Instead you can configure
+it inherits the folder name, but this has a high chance of collision. Instead you can configure
 `globFormat` to use a different format, for example, using the full workspace relative path as the
 project ID.
 

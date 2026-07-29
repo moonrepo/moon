@@ -4,15 +4,14 @@ use moon_common::{Id, color};
 use moon_config::WorkspaceProjectGlobFormat;
 use starbase_utils::fs;
 use starbase_utils::glob::{self, GlobWalkOptions};
+use std::path::Path;
 use tracing::{debug, instrument, warn};
 
-fn is_hidden(path: &str) -> bool {
-    let last = match path.rfind('/') {
-        Some(index) => &path[index + 1..],
-        None => path,
-    };
-
-    last.starts_with('.')
+fn is_hidden(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .map(|name| name.starts_with('.'))
+        .unwrap_or_default()
 }
 
 /// Infer a project name from a source path, by using the name of
@@ -75,70 +74,67 @@ where
         locate_globs,
         GlobWalkOptions::default().log_results(),
     )?;
+
     potential_projects.sort();
 
     for mut project_root in potential_projects {
-        // Remove trailing moon filename
+        // Remove trailing filename
         if project_root.is_file() {
-            if config_names.iter().any(|name| project_root.ends_with(name)) {
-                project_root = project_root.parent().unwrap().to_owned();
+            let is_config_file = config_names.iter().any(|name| project_root.ends_with(name));
 
-                // Avoid overwriting an existing root project
-                if project_root == context.workspace_root && has_root_level {
-                    continue;
-                }
-            } else {
-                // Don't warn on dotfiles
-                if project_root
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .map(|name| !is_hidden(name))
-                    .unwrap_or_default()
-                {
-                    warn!(
-                        source = ?project_root,
-                        "Received a file path for a project root, must be a directory",
-                    );
-                }
+            project_root = project_root.parent().unwrap().to_owned();
 
-                continue;
-            }
-        }
-
-        if project_root.is_dir() {
+            // Handle root-level project; only a moon config file marks the
+            // workspace root as a project, otherwise globs like `*` would
+            // create one for any matched root-level file
             if project_root == context.workspace_root {
-                add_root_level = true;
-                continue;
-            }
-
-            let project_source =
-                to_virtual_string(project_root.strip_prefix(&context.workspace_root).unwrap())?;
-
-            if project_source.starts_with(".moon") || project_source.starts_with(".config/moon") {
-                continue;
-            }
-
-            if let Some(vcs) = &context.vcs
-                && vcs.is_ignored(&project_root)
-            {
-                warn!(
-                    source = project_source,
-                    "Found a project with source {}, but this path has been ignored by your VCS, skipping",
-                    color::file(&project_source)
-                );
+                if is_config_file {
+                    add_root_level = true;
+                }
 
                 continue;
-            }
-
-            if is_hidden(&project_source) {
-                debug!(
-                    source = project_source,
-                    "Received a project for a hidden folder. These are not supported through globs, but can be mapped explicitly with project sources!"
-                );
-            } else {
-                sources.push(infer_project_id_and_source(&project_source, format)?);
             }
         }
+        // Handle root-level project
+        else if project_root.is_dir() && project_root == context.workspace_root {
+            add_root_level = true;
+            continue;
+        }
+
+        // Skip projects within hidden folders
+        if is_hidden(&project_root) {
+            debug!(
+                path = ?project_root,
+                "Received a project within a hidden folder. These are not supported through globs, but can be mapped explicitly with project sources!"
+            );
+
+            continue;
+        }
+
+        let project_source =
+            to_virtual_string(project_root.strip_prefix(&context.workspace_root).unwrap())?;
+
+        // Don't allow projects within the config directory
+        if project_source.is_empty()
+            || project_source.starts_with(".moon")
+            || project_source.starts_with(".config/moon")
+        {
+            continue;
+        }
+
+        if let Some(vcs) = &context.vcs
+            && vcs.is_ignored(&project_root)
+        {
+            warn!(
+                source = project_source,
+                "Found a project with source {}, but this path has been ignored by your VCS, skipping",
+                color::file(&project_source)
+            );
+
+            continue;
+        }
+
+        sources.push(infer_project_id_and_source(&project_source, format)?);
     }
 
     if add_root_level && !has_root_level {

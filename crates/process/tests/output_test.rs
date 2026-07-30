@@ -83,7 +83,7 @@ mod errors {
 
     #[test]
     fn formats_exit_code_without_message() {
-        let ProcessError::ExitNonZero { bin, status } =
+        let ProcessError::ExitNonZero { bin, status, code } =
             create_failed_output().to_error("git", false)
         else {
             panic!("expected ExitNonZero");
@@ -91,6 +91,7 @@ mod errors {
 
         assert_eq!(bin, "git");
         assert_eq!(status, "exit code 1");
+        assert_eq!(code, Some(1));
     }
 
     #[test]
@@ -100,13 +101,15 @@ mod errors {
             (ChildExit::Killed, "killed"),
             (ChildExit::Terminated, "terminated"),
         ] {
-            let ProcessError::ExitNonZero { status, .. } =
+            let ProcessError::ExitNonZero { status, code, .. } =
                 create_output(exit).to_error("git", false)
             else {
                 panic!("expected ExitNonZero");
             };
 
             assert_eq!(status, label);
+            // Signals have no exit code, so we can't propagate one
+            assert_eq!(code, None);
         }
     }
 
@@ -151,5 +154,38 @@ mod errors {
         };
 
         assert_eq!(message, "");
+    }
+
+    #[test]
+    fn get_exit_code_returns_code_for_exit_errors() {
+        assert_eq!(
+            create_failed_output()
+                .to_error("git", false)
+                .get_exit_code(),
+            Some(1)
+        );
+        assert_eq!(
+            create_failed_output().to_error("git", true).get_exit_code(),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn get_exit_code_returns_none_otherwise() {
+        // Signals carry no code
+        assert_eq!(
+            create_output(ChildExit::Terminated)
+                .to_error("git", false)
+                .get_exit_code(),
+            None
+        );
+
+        // Non-exit process errors have no code at all
+        let error = ProcessError::Capture {
+            bin: "git".into(),
+            error: Box::new(std::io::Error::other("boom")),
+        };
+
+        assert_eq!(error.get_exit_code(), None);
     }
 }

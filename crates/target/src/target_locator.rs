@@ -27,6 +27,13 @@ impl TargetLocator {
         self.as_ref()
     }
 
+    pub fn is_fully_qualified(&self) -> bool {
+        match self {
+            Self::Qualified(target) => target.is_fully_qualified(),
+            _ => false,
+        }
+    }
+
     #[tracing::instrument(name = "parse_target_locator")]
     pub fn parse(value: &str) -> miette::Result<TargetLocator> {
         if value.contains(':') {

@@ -131,6 +131,13 @@ impl Target {
         false
     }
 
+    pub fn is_fully_qualified(&self) -> bool {
+        matches!(
+            self.project,
+            TargetProjectScope::Id | TargetProjectScope::OwnSelf
+        ) && matches!(self.task, TargetTaskScope::Id)
+    }
+
     pub fn get_project_id(&self) -> miette::Result<&str> {
         let (scope, value) = self.get_project_scope();
 

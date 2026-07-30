@@ -29,7 +29,7 @@ use moon_vcs::{BoxedVcs, git::Git};
 use moon_workspace::{WorkspaceBuilder, WorkspaceBuilderAsync, WorkspaceBuilderContext};
 use moon_workspace_graph::WorkspaceGraph;
 use proto_core::ProtoEnvironment;
-use starbase::{AppResult, AppSession};
+use starbase::{AppExitCode, AppResult, AppSession};
 use std::env;
 use std::fmt;
 use std::path::PathBuf;
@@ -45,6 +45,7 @@ pub type SessionResult = AppResult<miette::Report>;
 pub struct MoonSession {
     pub cli: Cli,
     pub cli_version: Version,
+    pub exit_code: AppExitCode,
 
     // Components
     pub config_loader: ConfigLoader,
@@ -79,6 +80,7 @@ impl MoonSession {
         debug!("Creating new application session");
 
         Self {
+            exit_code: AppExitCode::default(),
             cache_engine: OnceLock::new(),
             cli_version: Version::parse(&cli_version).unwrap(),
             config_dir: PathBuf::new(),
@@ -399,6 +401,10 @@ impl MoonSession {
 #[async_trait]
 impl AppSession for MoonSession {
     type Error = miette::Report;
+
+    async fn initialize(&mut self, exit_code: AppExitCode) {
+        self.exit_code = exit_code;
+    }
 
     /// Setup initial state for the session. Order is very important!!!
     async fn startup(&mut self) -> AppResult<Self::Error> {

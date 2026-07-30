@@ -152,6 +152,10 @@ pub fn load_project_config_in_format(format: &str) {
                     exclude: vec![Id::raw("build")],
                     include: Some(vec![Id::raw("test")]),
                     rename: FxHashMap::from_iter([(Id::raw("old"), Id::raw("new"))])
+                },
+                merge_strategies: ProjectWorkspaceMergeStrategiesConfig {
+                    env: Some(MergeStrategy::Preserve),
+                    file_groups: Some(MergeStrategy::Replace)
                 }
             },
             ..Default::default()
@@ -238,6 +242,7 @@ pub fn load_tasks_config_in_format(format: &str) {
     assert_eq!(
         config,
         InheritedTasksConfig {
+            env: IndexMap::from_iter([("KEY".into(), Some("value".to_owned()))]),
             file_groups: FxHashMap::from_iter([
                 (
                     Id::raw("sources"),
@@ -293,11 +298,11 @@ pub fn load_tasks_config_in_format(format: &str) {
                 interactive: Some(false),
                 internal: Some(true),
                 merge: None,
-                merge_args: Some(TaskMergeStrategy::Append),
+                merge_args: Some(MergeStrategy::Append),
                 merge_checks: None,
-                merge_deps: Some(TaskMergeStrategy::Prepend),
-                merge_env: Some(TaskMergeStrategy::Replace),
-                merge_inputs: Some(TaskMergeStrategy::Preserve),
+                merge_deps: Some(MergeStrategy::Prepend),
+                merge_env: Some(MergeStrategy::Replace),
+                merge_inputs: Some(MergeStrategy::Preserve),
                 merge_outputs: None,
                 merge_tags: None,
                 merge_toolchains: None,

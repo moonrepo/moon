@@ -1,3 +1,7 @@
+env {
+	["KEY"] = "value"
+}
+
 fileGroups {
 	["sources"] = new Listing {
 		"src/**/*"

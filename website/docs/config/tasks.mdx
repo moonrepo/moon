@@ -25,11 +25,25 @@ extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon
 
 :::caution
 
-For map-based settings, `fileGroups` and `tasks`, entries from both the extended configuration and
-local configuration are merged into a new map, with the values of the local taking precedence. Map
-values _are not_ deep merged!
+For map-based settings, `env`, `fileGroups`, and `tasks`, entries from both the extended
+configuration and local configuration are merged into a new map, with the values of the local taking
+precedence. Map values _are not_ deep merged!
 
 :::
+
+## `env`<VersionLabel version="2.5.0" />
+
+<HeadingApiLink to="/api/types/interface/InheritedTasksConfig#env" />
+
+Defines a map of environment variables that will be inherited by all matching projects, and are
+merged into each project's [`env`](./project#env) setting, with project-level variables taking
+precedence on conflicting keys. The merge behavior can be customized per project with the
+[`workspace.mergeStrategies.env`](./project#mergestrategies) setting.
+
+```yaml title=".moon/tasks/node.yml"
+env:
+  NODE_ENV: 'production'
+```
 
 ## `fileGroups`
 

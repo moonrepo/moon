@@ -10,6 +10,9 @@ implicitDeps = [
 
 implicitInputs = ["$ENV", "$ENV_*", "file.txt", "file.*", "/file.txt", "/file.*"]
 
+[env]
+KEY = "value"
+
 [fileGroups]
 sources = ["src/**/*"]
 tests = ["*.test.ts", "*.test.tsx"]

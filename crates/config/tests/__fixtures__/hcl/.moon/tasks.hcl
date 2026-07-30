@@ -4,6 +4,10 @@ locals {
 	sharedInputs = ["src/**/*"]
 }
 
+env {
+	KEY = "value"
+}
+
 fileGroups {
 	sources = [
 		"src/**/*"

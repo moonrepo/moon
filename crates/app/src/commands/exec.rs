@@ -311,6 +311,8 @@ impl ExecWorkflow {
         }
 
         if let Some(code) = exit_code {
+            self.session.exit_code.set(code);
+
             return Ok(Some(code));
         }
 

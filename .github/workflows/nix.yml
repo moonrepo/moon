@@ -27,12 +27,26 @@ concurrency:
 
 jobs:
   build:
-    name: Build
-    runs-on: ubuntu-latest
+    name: Build (${{ matrix.system }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: depot-ubuntu-24.04-8
+          - system: aarch64-linux
+            runner: depot-ubuntu-22.04-arm-8
+          - system: aarch64-darwin
+            runner: depot-macos-14
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@v14
+      - uses: cachix/cachix-action@v17
+        with:
+          name: moonrepo
+          authToken: ${{ github.event_name != 'pull_request' && secrets.CACHIX_AUTH_TOKEN || '' }}
       - name: Check flake
-        run: nix flake check --no-build --no-write-lock-file
+        run: nix flake check --no-build --no-write-lock-file --accept-flake-config
       - name: Build package
-        run: nix build .#default -L
+        run: nix build .#packages.${{ matrix.system }}.default -L --accept-flake-config

@@ -419,10 +419,16 @@ impl WorkspaceProjectsBuilder {
         ids: Option<Vec<Id>>,
         projects_data: ProjectBuildDataMap,
     ) -> miette::Result<()> {
-        let queue = projects_data
+        let mut queue = projects_data
             .into_iter()
             .filter(|(id, _)| ids.as_ref().is_none_or(|list| list.contains(id)))
-            .collect::<VecDeque<_>>();
+            .collect::<Vec<_>>();
+
+        // Sort by ID so that the graph, and anything derived from it,
+        // is deterministic, as the data map has no defined order
+        queue.sort_by(|a, d| a.0.cmp(&d.0));
+
+        let queue = VecDeque::from(queue);
         let context = self.context();
         let root_id = self.root_id.clone();
         let monorepo = self.repo_type.is_monorepo();

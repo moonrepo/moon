@@ -10,9 +10,3 @@ tasks:
     command: noop
     deps:
       - 'depsC:dependencyOrder'
-
-  # Cycle detection
-  taskCycle:
-    command: unknown
-    deps:
-      - 'depsC:taskCycle'

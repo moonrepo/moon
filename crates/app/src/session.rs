@@ -10,7 +10,7 @@ use moon_cache::{CacheContext, CacheEngine};
 use moon_cache_local::LocalStorage;
 use moon_cache_remote::{GrpcRemoteStorage, HttpRemoteStorage};
 use moon_codegen::CodeGenerator;
-use moon_common::{is_ci_env, is_docker, is_formatted_output, is_test_env};
+use moon_common::{is_docker, is_formatted_output, is_test_env};
 use moon_config::{
     ExtensionsConfig, InheritedTasksManager, RemoteApi, ToolchainsConfig, WorkspaceConfig,
 };
@@ -503,20 +503,6 @@ impl AppSession for MoonSession {
     }
 
     async fn shutdown(&mut self) -> AppResult<Self::Error> {
-        let should_stop_daemon = cfg!(debug_assertions) || is_ci_env();
-
-        // Stop the daemon if it's running. Connect fresh rather than reuse the
-        // cached client — the cache is set on the execute-phase session clone,
-        // not the one running shutdown — using a single attempt so we don't
-        // spawn a daemon just to stop it.
-        if should_stop_daemon
-            && self.is_daemon_allowed()
-            && let Ok(connector) = self.get_daemon_connector()
-            && let Ok(Some(mut daemon)) = connector.connect_once().await
-        {
-            let _ = daemon.stop().await;
-        }
-
         // Ensure all in-flight storage tasks have finished
         self.get_cache_engine()?
             .storage

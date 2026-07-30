@@ -55,10 +55,10 @@ pub fn create_workspace_mocker(root: &Path) -> WorkspaceMocker {
 
 pub async fn build_graph(root: &Path, sync: bool) -> WorkspaceGraph {
     create_workspace_mocker(root)
-        .mock_workspace_graph_with_options(WorkspaceMockOptions {
-            sync,
-            ..Default::default()
+        .update_workspace_config(|config| {
+            config.experiments.async_graph_building = !sync;
         })
+        .mock_workspace_graph()
         .await
 }
 
@@ -74,16 +74,12 @@ pub async fn build_graph_from_fixture_for_builder(
     async_graph: bool,
 ) -> (MoonSandbox, WorkspaceGraph) {
     let sandbox = create_moon_sandbox(fixture);
-    let mut mock = create_workspace_mocker(sandbox.path());
 
-    if async_graph {
-        mock = mock.update_workspace_config(|config| {
-            config.experiments.async_graph_building = true;
-        });
-    }
-
-    let graph = mock
-        .mock_workspace_graph_with_options(WorkspaceMockOptions::default())
+    let graph = create_workspace_mocker(sandbox.path())
+        .update_workspace_config(|config| {
+            config.experiments.async_graph_building = async_graph;
+        })
+        .mock_workspace_graph()
         .await;
 
     (sandbox, graph)
@@ -377,39 +373,31 @@ mod project_graph {
         }
 
         async fn do_generate(root: &Path, async_graph: bool) -> WorkspaceGraph {
-            let mut mock = create_workspace_mocker(root);
-
-            if async_graph {
-                mock = mock.update_workspace_config(|config| {
-                    config.experiments.async_graph_building = true;
-                });
-            }
-
-            mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
-                cache: root.join(".git").exists(),
-                ..Default::default()
-            })
-            .await
+            create_workspace_mocker(root)
+                .update_workspace_config(|config| {
+                    config.experiments.async_graph_building = async_graph;
+                })
+                .mock_workspace_graph_with_options(WorkspaceMockOptions {
+                    cache: root.join(".git").exists(),
+                    ..Default::default()
+                })
+                .await
         }
 
         async fn do_generate_with_plugins(root: &Path, async_graph: bool) -> WorkspaceGraph {
-            let mut mock = WorkspaceMocker::new(root)
+            WorkspaceMocker::new(root)
                 .load_default_configs()
                 .with_default_projects()
                 .with_test_toolchains()
-                .with_inherited_tasks();
-
-            if async_graph {
-                mock = mock.update_workspace_config(|config| {
-                    config.experiments.async_graph_building = true;
-                });
-            }
-
-            mock.mock_workspace_graph_with_options(WorkspaceMockOptions {
-                cache: true,
-                ..Default::default()
-            })
-            .await
+                .with_inherited_tasks()
+                .update_workspace_config(|config| {
+                    config.experiments.async_graph_building = async_graph;
+                })
+                .mock_workspace_graph_with_options(WorkspaceMockOptions {
+                    cache: true,
+                    ..Default::default()
+                })
+                .await
         }
 
         async fn build_cached_graph(
@@ -848,15 +836,10 @@ mod project_graph {
 
             // Prime the cache on the first pass, load from it on the second
             for _ in 0..2 {
-                let mut mock = create_workspace_mocker(sandbox.path());
-
-                if async_graph {
-                    mock = mock.update_workspace_config(|config| {
-                        config.experiments.async_graph_building = true;
-                    });
-                }
-
-                let graph = mock
+                let graph = create_workspace_mocker(sandbox.path())
+                    .update_workspace_config(|config| {
+                        config.experiments.async_graph_building = async_graph;
+                    })
                     .mock_workspace_graph_with_options(WorkspaceMockOptions {
                         cache: true,
                         ..Default::default()
@@ -1579,22 +1562,30 @@ mod project_graph {
         mod isolation {
             use super::*;
 
+            // Partial graph loading only expands dependency (and task
+            // dependency) projects with the sync builder, while the async
+            // builder only builds the requested projects
+            async fn build_isolated_graph_for(ids: &[&str]) -> WorkspaceGraph {
+                let sandbox = create_moon_sandbox("dependency-types");
+
+                create_workspace_mocker(sandbox.path())
+                    .update_workspace_config(|config| {
+                        config.experiments.async_graph_building = false;
+                    })
+                    .mock_workspace_graph_for(ids)
+                    .await
+            }
+
             #[tokio::test(flavor = "multi_thread")]
             async fn no_depends_on() {
-                let sandbox = create_moon_sandbox("dependency-types");
-                let mock = create_workspace_mocker(sandbox.path());
-
-                let graph = mock.mock_workspace_graph_for(&["no-depends-on"]).await;
+                let graph = build_isolated_graph_for(&["no-depends-on"]).await;
 
                 assert_eq!(map_ids(graph.projects.get_node_keys()), ["no-depends-on"]);
             }
 
             #[tokio::test(flavor = "multi_thread")]
             async fn some_depends_on() {
-                let sandbox = create_moon_sandbox("dependency-types");
-                let mock = create_workspace_mocker(sandbox.path());
-
-                let graph = mock.mock_workspace_graph_for(&["some-depends-on"]).await;
+                let graph = build_isolated_graph_for(&["some-depends-on"]).await;
                 let project = graph.get_project("some-depends-on").unwrap();
                 let mut direct_deps = map_ids(graph.projects.dependencies_of(&project));
                 direct_deps.sort();
@@ -1608,10 +1599,7 @@ mod project_graph {
 
             #[tokio::test(flavor = "multi_thread")]
             async fn from_task_deps() {
-                let sandbox = create_moon_sandbox("dependency-types");
-                let mock = create_workspace_mocker(sandbox.path());
-
-                let graph = mock.mock_workspace_graph_for(&["from-task-deps"]).await;
+                let graph = build_isolated_graph_for(&["from-task-deps"]).await;
                 let project = graph.get_project("from-task-deps").unwrap();
                 let build = graph
                     .get_task_from_project("from-task-deps", "build")
@@ -1644,12 +1632,7 @@ mod project_graph {
 
             #[tokio::test(flavor = "multi_thread")]
             async fn from_root_task_deps() {
-                let sandbox = create_moon_sandbox("dependency-types");
-                let mock = create_workspace_mocker(sandbox.path());
-
-                let graph = mock
-                    .mock_workspace_graph_for(&["from-root-task-deps"])
-                    .await;
+                let graph = build_isolated_graph_for(&["from-root-task-deps"]).await;
                 let build = graph
                     .get_task_from_project("from-root-task-deps", "build")
                     .unwrap();
@@ -1673,10 +1656,7 @@ mod project_graph {
 
             #[tokio::test(flavor = "multi_thread")]
             async fn self_task_deps() {
-                let sandbox = create_moon_sandbox("dependency-types");
-                let mock = create_workspace_mocker(sandbox.path());
-
-                let graph = mock.mock_workspace_graph_for(&["self-task-deps"]).await;
+                let graph = build_isolated_graph_for(&["self-task-deps"]).await;
 
                 assert_eq!(map_ids(graph.projects.get_node_keys()), ["self-task-deps"]);
             }
@@ -2308,9 +2288,15 @@ mod project_graph {
         #[tokio::test(flavor = "multi_thread")]
         async fn renders_partial() {
             let sandbox = create_moon_sandbox("dependencies");
-            let mock = create_workspace_mocker(sandbox.path());
 
-            let graph = mock.mock_workspace_graph_for(&["b"]).await;
+            // Only the sync builder expands dependency projects when
+            // partially loading the graph
+            let graph = create_workspace_mocker(sandbox.path())
+                .update_workspace_config(|config| {
+                    config.experiments.async_graph_building = false;
+                })
+                .mock_workspace_graph_for(&["b"])
+                .await;
 
             assert_snapshot!(graph.projects.to_dot());
         }

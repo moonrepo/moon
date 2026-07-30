@@ -31,6 +31,10 @@
     operations will now be offloaded into the background via the daemon. Because of this, you'll
     need to inspect the daemon server logs to understand when something fails during archiving or
     hydrating, as the main process will no longer block on these operations.
+- **Experiments**
+  - The `asyncAffectedTracking`, `asyncGraphBuilding`, and `nativeFileHashing` experiments are now
+    enabled by default. If you run into issues, please report it, and then disable the experiment to
+    continue.
 - **Project graph**
   - Reworked the project graph to validate cycles per dependency scope partition. Production scoped
     dependencies (`production`, `peer`) and development scoped dependencies (`development`, `build`,
@@ -42,6 +46,14 @@
 - Fixed an issue where project and task graph node lookups could resolve the wrong entry, or fail
   entirely, after building a partial graph (a subset of projects), as internal node identifiers were
   not re-synced when placeholder nodes were removed.
+- Fixed an issue where the async graph builder would fail with "unknown target" when a task
+  dependency referenced a project by its alias.
+- Fixed an issue where the async graph builder would produce differently ordered graphs across
+  runs, as projects were inserted in completion order instead of a stable order. This could cause
+  unstable hashes and `--dot`/`--json` output.
+- Fixed an issue where a task with `runDepsInParallel: false` would not be linked to all of its
+  dependencies when a serial ordering edge was skipped to avoid a cycle, allowing the task to run
+  before a dependency had finished.
 
 #### ⚙️ Internal
 

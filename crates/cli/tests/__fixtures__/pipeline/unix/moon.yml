@@ -31,6 +31,30 @@ tasks:
     inputs:
       - '*.sh'
 
+  exitBySignal:
+    command: bash -c 'kill -TERM $$'
+    options:
+      shell: false
+    inputs:
+      - '*.sh'
+
+  # Only defined in this project, so unqualified `:` targets resolve to 1 task
+  exitNonZeroUnixOnly:
+    command: bash -c 'exit 3'
+    options:
+      shell: false
+    inputs:
+      - '*.sh'
+
+  hasFailingDep:
+    command: bash -c 'echo unreachable'
+    deps:
+      - '~:exitNonZeroInline'
+    options:
+      shell: false
+    inputs:
+      - '*.sh'
+
   exitZero:
     command: bash
     args: ./exitZero.sh
@@ -78,6 +102,14 @@ tasks:
     args: ./exitNonZero.sh
     options:
       retryCount: 3
+    inputs:
+      - '*.sh'
+
+  retryNonZeroInline:
+    command: bash -c 'exit 4'
+    options:
+      retryCount: 2
+      shell: false
     inputs:
       - '*.sh'
 

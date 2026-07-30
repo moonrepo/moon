@@ -423,3 +423,29 @@ fn is_all_task_false_when_task_is_tag() {
     assert!(!target.is_all_task("#lint"));
     assert!(!target.is_all_task(":#lint"));
 }
+
+// Fully qualified targets (resolve to exactly 1 task)
+
+#[test]
+fn fully_qualified_for_project_id_scope() {
+    assert!(Target::parse("foo:build").unwrap().is_fully_qualified());
+}
+
+#[test]
+fn fully_qualified_for_self_scope() {
+    assert!(Target::parse("~:build").unwrap().is_fully_qualified());
+}
+
+#[test]
+fn not_fully_qualified_for_ambiguous_project_scopes() {
+    for id in [":build", "^:build", "^build:lint", "#ui:build"] {
+        assert!(!Target::parse(id).unwrap().is_fully_qualified(), "{id}");
+    }
+}
+
+#[test]
+fn not_fully_qualified_for_task_tags() {
+    for id in ["foo:#lint", "~:#lint", ":#lint"] {
+        assert!(!Target::parse(id).unwrap().is_fully_qualified(), "{id}");
+    }
+}

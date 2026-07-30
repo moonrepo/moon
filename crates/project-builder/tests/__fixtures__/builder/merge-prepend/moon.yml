@@ -1,0 +1,9 @@
+language: 'rust'
+
+workspace:
+  mergeStrategies:
+    fileGroups: 'prepend'
+
+fileGroups:
+  other:
+    - 'local'

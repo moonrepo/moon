@@ -1,5 +1,8 @@
 extends: './global-1.yml'
 
+env:
+  SHARED: 'two'
+
 fileGroups:
   sources:
     - 'sources/**/*'

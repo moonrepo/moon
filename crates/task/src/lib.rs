@@ -3,11 +3,11 @@ mod task_arg;
 mod task_options;
 
 pub use moon_config::{
-    TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint, TaskCheckFingerprintConfig,
-    TaskCheckRequirementConfig, TaskCheckType, TaskConfig, TaskMergeStrategy, TaskOperatingSystem,
-    TaskOptionAffectedFilesConfig, TaskOptionAffectedFilesEntry, TaskOptionAffectedFilesPattern,
-    TaskOptionCache, TaskOptionEnvFile, TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle,
-    TaskPriority, TaskType, TaskUnixShell, TaskWindowsShell,
+    MergeStrategy, TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint,
+    TaskCheckFingerprintConfig, TaskCheckRequirementConfig, TaskCheckType, TaskConfig,
+    TaskOperatingSystem, TaskOptionAffectedFilesConfig, TaskOptionAffectedFilesEntry,
+    TaskOptionAffectedFilesPattern, TaskOptionCache, TaskOptionEnvFile, TaskOptionRunInCI,
+    TaskOptionsConfig, TaskOutputStyle, TaskPriority, TaskType, TaskUnixShell, TaskWindowsShell,
 };
 pub use moon_target::*;
 pub use task::*;

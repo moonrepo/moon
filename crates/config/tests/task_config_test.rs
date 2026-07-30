@@ -3,11 +3,10 @@ mod utils;
 use indexmap::IndexMap;
 use moon_common::Id;
 use moon_config::{
-    FileGroupInput, FileGroupInputFormat, FilePath, Input, OneOrMany, Output, ProjectInput,
-    TaskArgs, TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint,
+    FileGroupInput, FileGroupInputFormat, FilePath, Input, MergeStrategy, OneOrMany, Output,
+    ProjectInput, TaskArgs, TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint,
     TaskCheckFingerprintConfig, TaskCheckRequirementConfig, TaskConfig, TaskDependency,
-    TaskDependencyCacheStrategy, TaskDependencyConfig, TaskMergeStrategy, TaskOptionCache,
-    TaskOutputStyle, TaskType,
+    TaskDependencyCacheStrategy, TaskDependencyConfig, TaskOptionCache, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use schematic::{ConfigLoader as BaseLoader, RegexSetting};
@@ -1061,8 +1060,8 @@ options:
 
             assert_eq!(opts.cache, Some(TaskOptionCache::Enabled(false)));
             assert_eq!(opts.run_deps_in_parallel, Some(false));
-            assert_eq!(opts.merge_deps, Some(TaskMergeStrategy::Replace));
-            assert_eq!(opts.merge_tags, Some(TaskMergeStrategy::Replace));
+            assert_eq!(opts.merge_deps, Some(MergeStrategy::Replace));
+            assert_eq!(opts.merge_tags, Some(MergeStrategy::Replace));
             assert_eq!(opts.output_style, Some(TaskOutputStyle::Stream));
         }
 
@@ -1076,10 +1075,10 @@ options:
         #[test]
         fn merge_tags_supports_all_strategies() {
             for (raw, expected) in [
-                ("append", TaskMergeStrategy::Append),
-                ("prepend", TaskMergeStrategy::Prepend),
-                ("replace", TaskMergeStrategy::Replace),
-                ("preserve", TaskMergeStrategy::Preserve),
+                ("append", MergeStrategy::Append),
+                ("prepend", MergeStrategy::Prepend),
+                ("replace", MergeStrategy::Replace),
+                ("preserve", MergeStrategy::Preserve),
             ] {
                 let config = test_parse_config(
                     &format!("options:\n  mergeTags: {raw}"),

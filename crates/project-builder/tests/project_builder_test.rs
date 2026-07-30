@@ -1,7 +1,8 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
-    DependencyScope, DependencySource, LanguageType, ProjectDependencyConfig, TaskArgs, TaskConfig,
+    DependencyScope, DependencySource, EnvMap, LanguageType, ProjectDependencyConfig, TaskArgs,
+    TaskConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -186,6 +187,252 @@ mod project_builder {
                         )
                         .unwrap()
                     )
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn replace_strategy_overrides_globals_per_group() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("merge-replace", sandbox.path()).await;
+
+            assert_eq!(
+                project.file_groups,
+                BTreeMap::from_iter([
+                    (
+                        "sources".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "sources",
+                            // Local replaces the inherited group
+                            [WorkspaceRelativePathBuf::from("merge-replace/replaced")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "tests".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "tests",
+                            // Inherited only groups are kept
+                            [WorkspaceRelativePathBuf::from("merge-replace/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        // An empty local list clears the group
+                        "other".try_into().unwrap(),
+                        FileGroup::new("other").unwrap()
+                    )
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn replace_strategy_applies_across_inherited_layers() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("merge-replace-layers", sandbox.path()).await;
+
+            assert_eq!(
+                project.file_groups,
+                BTreeMap::from_iter([
+                    (
+                        "sources".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "sources",
+                            // The last inherited layer wins
+                            [WorkspaceRelativePathBuf::from("merge-replace-layers/node")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "tests".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "tests",
+                            [WorkspaceRelativePathBuf::from(
+                                "merge-replace-layers/global"
+                            )]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "other".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "other",
+                            [WorkspaceRelativePathBuf::from(
+                                "merge-replace-layers/global"
+                            )]
+                        )
+                        .unwrap()
+                    )
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn prepend_strategy_puts_local_before_globals() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("merge-prepend", sandbox.path()).await;
+
+            assert_eq!(
+                project.file_groups,
+                BTreeMap::from_iter([
+                    (
+                        "sources".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "sources",
+                            [WorkspaceRelativePathBuf::from("merge-prepend/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "tests".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "tests",
+                            [WorkspaceRelativePathBuf::from("merge-prepend/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "other".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "other",
+                            // Local first, then inherited
+                            [
+                                WorkspaceRelativePathBuf::from("merge-prepend/local"),
+                                WorkspaceRelativePathBuf::from("merge-prepend/global")
+                            ]
+                        )
+                        .unwrap()
+                    )
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn preserve_strategy_keeps_first_definition() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("merge-preserve", sandbox.path()).await;
+
+            assert_eq!(
+                project.file_groups,
+                BTreeMap::from_iter([
+                    (
+                        "sources".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "sources",
+                            [WorkspaceRelativePathBuf::from("merge-preserve/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "tests".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "tests",
+                            [WorkspaceRelativePathBuf::from("merge-preserve/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "other".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "other",
+                            // The inherited group was defined first, so wins
+                            [WorkspaceRelativePathBuf::from("merge-preserve/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "extra".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "extra",
+                            // Local is the only definition, so is kept
+                            [WorkspaceRelativePathBuf::from("merge-preserve/fresh")]
+                        )
+                        .unwrap()
+                    )
+                ])
+            );
+        }
+    }
+
+    mod env {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn appends_local_after_global_by_default() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-append", sandbox.path()).await;
+
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([
+                    ("GLOBAL".into(), Some("all".to_owned())),
+                    // Local wins on conflicting keys
+                    ("SHARED".into(), Some("local".to_owned())),
+                    ("LOCAL".into(), Some("yes".to_owned())),
+                ])
+            );
+
+            // And tasks receive the merged env
+            let task = project.tasks.get("global-unknown").unwrap();
+
+            assert_eq!(task.env.get("GLOBAL"), Some(&Some("all".to_owned())));
+            assert_eq!(task.env.get("LOCAL"), Some(&Some("yes".to_owned())));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn merges_across_inherited_layers_when_no_local() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-layers", sandbox.path()).await;
+
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([
+                    ("GLOBAL".into(), Some("all".to_owned())),
+                    // The node layer wins over the all layer
+                    ("SHARED".into(), Some("node".to_owned())),
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn replace_strategy_uses_only_local() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-replace", sandbox.path()).await;
+
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([("ONLY".into(), Some("local".to_owned()))])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn preserve_strategy_keeps_first_definition() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-preserve", sandbox.path()).await;
+
+            // The first inherited map wins entirely, locals are ignored
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([
+                    ("GLOBAL".into(), Some("all".to_owned())),
+                    ("SHARED".into(), Some("all".to_owned())),
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn prepend_strategy_favors_inherited_values() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-prepend", sandbox.path()).await;
+
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([
+                    ("GLOBAL".into(), Some("all".to_owned())),
+                    // Inherited wins on conflicting keys
+                    ("SHARED".into(), Some("all".to_owned())),
+                    // But local only keys are kept
+                    ("LOCAL".into(), Some("yes".to_owned())),
                 ])
             );
         }

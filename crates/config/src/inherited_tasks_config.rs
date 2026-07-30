@@ -2,7 +2,7 @@ use crate::patterns::{merge_iter, merge_tasks_partials};
 use crate::project::LanguageType;
 use crate::project_config::{LayerType, StackType};
 use crate::shapes::{FilePath, Input, OneOrMany};
-use crate::task_config::{TaskConfig, TaskDependency, validate_deps};
+use crate::task_config::{EnvMap, TaskConfig, TaskDependency, validate_deps};
 use crate::task_options_config::{PartialTaskOptionsConfig, TaskOptionsConfig};
 use crate::{config_enum, config_struct};
 use moon_common::{Id, cacheable};
@@ -295,6 +295,13 @@ config_struct!(
         #[setting(extend, validate = validate::extends_from)]
         #[serde(skip_serializing_if = "Option::is_none")]
         pub extends: Option<schematic::ExtendsFrom>,
+
+        /// A map of environment variables that will be inherited by all
+        /// matching projects, and merged into their `env` setting.
+        /// @since 2.5.0
+        #[setting(merge = merge_iter)]
+        #[serde(skip_serializing_if = "EnvMap::is_empty")]
+        pub env: EnvMap,
 
         /// A map of group identifiers to a list of file paths, globs, and
         /// environment variables, that can be referenced from tasks.

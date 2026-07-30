@@ -1,6 +1,6 @@
 use moon_common::cacheable;
 use moon_config::{
-    Input, TaskMergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesPattern, TaskOptionCache,
+    Input, MergeStrategy, TaskOperatingSystem, TaskOptionAffectedFilesPattern, TaskOptionCache,
     TaskOptionRunInCI, TaskOutputStyle, TaskPriority, TaskUnixShell, TaskWindowsShell,
 };
 
@@ -42,21 +42,21 @@ cacheable!(
 
         pub interactive: bool,
 
-        pub merge_args: TaskMergeStrategy,
+        pub merge_args: MergeStrategy,
 
-        pub merge_checks: TaskMergeStrategy,
+        pub merge_checks: MergeStrategy,
 
-        pub merge_deps: TaskMergeStrategy,
+        pub merge_deps: MergeStrategy,
 
-        pub merge_env: TaskMergeStrategy,
+        pub merge_env: MergeStrategy,
 
-        pub merge_inputs: TaskMergeStrategy,
+        pub merge_inputs: MergeStrategy,
 
-        pub merge_outputs: TaskMergeStrategy,
+        pub merge_outputs: MergeStrategy,
 
-        pub merge_tags: TaskMergeStrategy,
+        pub merge_tags: MergeStrategy,
 
-        pub merge_toolchains: TaskMergeStrategy,
+        pub merge_toolchains: MergeStrategy,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub mutex: Option<String>,
@@ -106,14 +106,14 @@ impl Default for TaskOptions {
             infer_inputs: false,
             internal: false,
             interactive: false,
-            merge_args: TaskMergeStrategy::Append,
-            merge_checks: TaskMergeStrategy::Append,
-            merge_deps: TaskMergeStrategy::Append,
-            merge_env: TaskMergeStrategy::Append,
-            merge_inputs: TaskMergeStrategy::Append,
-            merge_outputs: TaskMergeStrategy::Append,
-            merge_tags: TaskMergeStrategy::Append,
-            merge_toolchains: TaskMergeStrategy::Append,
+            merge_args: MergeStrategy::Append,
+            merge_checks: MergeStrategy::Append,
+            merge_deps: MergeStrategy::Append,
+            merge_env: MergeStrategy::Append,
+            merge_inputs: MergeStrategy::Append,
+            merge_outputs: MergeStrategy::Append,
+            merge_tags: MergeStrategy::Append,
+            merge_toolchains: MergeStrategy::Append,
             mutex: None,
             os: None,
             output_style: None,

@@ -42,6 +42,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "Output".into(),
                 "GlobInput".into(),
                 "GlobOutput".into(),
+                "MergeStrategy".into(),
                 "ProjectInput".into(),
                 "PartialDockerFileConfig".into(),
                 "PartialDockerScaffoldConfig".into(),
@@ -58,7 +59,6 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "TaskDependency".into(),
                 "TaskDependencyCacheStrategy".into(),
                 "TaskDependencyConfig".into(),
-                "TaskMergeStrategy".into(),
                 "TaskOperatingSystem".into(),
                 "TaskOptionAffectedFiles".into(),
                 "TaskOptionAffectedFilesConfig".into(),
@@ -85,6 +85,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                     "./tasks-config".into(),
                     vec![
                         "Input".into(),
+                        "MergeStrategy".into(),
                         "PartialTaskConfig".into(),
                         "TaskConfig".into(),
                         "PartialTaskOptionsConfig".into(),

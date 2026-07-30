@@ -1,3 +1,4 @@
+use crate::merging::MergeStrategy;
 use crate::patterns::merge_plugin_partials;
 use crate::shapes::OneOrMany;
 use crate::toolchains_config::ToolchainPluginConfig;
@@ -65,6 +66,25 @@ impl ProjectToolchainsConfig {
 }
 
 config_struct!(
+    /// Controls how project settings are merged with inherited
+    /// workspace-level settings.
+    #[derive(Config)]
+    pub struct ProjectWorkspaceMergeStrategiesConfig {
+        /// The strategy to use when merging `env` with inherited
+        /// environment variables, applied to the entire map.
+        /// @since 2.5.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub env: Option<MergeStrategy>,
+
+        /// The strategy to use when merging `fileGroups` with
+        /// inherited file groups, applied per group.
+        /// @since 2.5.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub file_groups: Option<MergeStrategy>,
+    }
+);
+
+config_struct!(
     /// Controls how workspace-level tasks are inherited.
     #[derive(Config)]
     pub struct ProjectWorkspaceInheritedTasksConfig {
@@ -92,5 +112,11 @@ config_struct!(
         /// Controls how tasks are inherited.
         #[setting(nested)]
         pub inherited_tasks: ProjectWorkspaceInheritedTasksConfig,
+
+        /// Controls how project settings are merged with inherited
+        /// workspace-level settings.
+        /// @since 2.5.0
+        #[setting(nested)]
+        pub merge_strategies: ProjectWorkspaceMergeStrategiesConfig,
     }
 );

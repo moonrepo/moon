@@ -2,10 +2,10 @@ import type { GraphContainer, Id } from './common';
 import type {
 	InheritedTasksConfig,
 	Input,
+	MergeStrategy,
 	Output,
 	TaskDependencyConfig,
 	TaskDependencyType,
-	TaskMergeStrategy,
 	TaskOperatingSystem,
 	TaskOptionAffectedFilesConfig,
 	TaskOutputStyle,
@@ -31,13 +31,13 @@ export interface TaskOptions {
 	inferInputs: boolean;
 	internal: boolean;
 	interactive: boolean;
-	mergeArgs: TaskMergeStrategy;
-	mergeDeps: TaskMergeStrategy;
-	mergeEnv: TaskMergeStrategy;
-	mergeInputs: TaskMergeStrategy;
-	mergeOutputs: TaskMergeStrategy;
-	mergeTags: TaskMergeStrategy;
-	mergeToolchains: TaskMergeStrategy;
+	mergeArgs: MergeStrategy;
+	mergeDeps: MergeStrategy;
+	mergeEnv: MergeStrategy;
+	mergeInputs: MergeStrategy;
+	mergeOutputs: MergeStrategy;
+	mergeTags: MergeStrategy;
+	mergeToolchains: MergeStrategy;
 	mutex?: string | null;
 	os?: TaskOperatingSystem[] | null;
 	outputStyle?: TaskOutputStyle | null;

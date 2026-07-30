@@ -291,6 +291,45 @@ fileGroups:
         }
     }
 
+    mod env {
+        use super::*;
+
+        #[test]
+        fn loads_env_vars() {
+            let config = test_load_config(
+                FILENAME,
+                r"
+env:
+  FOO: 'abc'
+  BAR: null
+",
+                |path| load_config_from_file(&path.join(FILENAME)),
+            );
+
+            assert_eq!(
+                config.env,
+                EnvMap::from_iter([("FOO".into(), Some("abc".to_owned())), ("BAR".into(), None)])
+            );
+        }
+
+        #[test]
+        fn merges_via_extends() {
+            let sandbox = create_sandbox("extends/tasks");
+            let config = test_config(sandbox.path().join("global-2.yml"), |path| {
+                load_config_from_file(path)
+            });
+
+            // The extending file wins on conflicting keys
+            assert_eq!(
+                config.env,
+                EnvMap::from_iter([
+                    ("BASE".into(), Some("one".to_owned())),
+                    ("SHARED".into(), Some("two".to_owned())),
+                ])
+            );
+        }
+    }
+
     mod file_groups {
         use super::*;
 

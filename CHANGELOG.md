@@ -13,6 +13,10 @@
     - The destination and transport are configured with the standard `OTEL_EXPORTER_OTLP_*`
       environment variables.
 - **Config**
+  - Added a `workspace.mergeStrategies` setting to `moon.*` config, which controls how project
+    settings are merged with inherited workspace-level settings. Currently supports `fileGroups`,
+    using the same merge strategies as task merging (`append`, `prepend`, `preserve`, and
+    `replace`), applied per group.
   - Project globs can now be configured with a trailing file, allowing more precise project
     matching. For example, `apps/*/package.json` will only find Node.js projects, and
     `src/**/*.csproj` will only find .NET projects. The path without file name will be used as the
@@ -38,6 +42,8 @@
 
 #### ⚙️ Internal
 
+- Renamed the `TaskMergeStrategy` type to `MergeStrategy` in `@moonrepo/types`, as it's no longer
+  exclusive to tasks.
 - Updated proto to [v0.59.0](https://github.com/moonrepo/proto/releases/tag/v0.59.0) from 0.58.2.
 - Updated Rust to v1.97.0.
 - Updated dependencies.

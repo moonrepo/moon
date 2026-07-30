@@ -483,6 +483,10 @@ _is not required_ for the following reasons:
 - File groups are an optional feature, and are designed for advanced use cases.
 - File groups defined in [`.moon/tasks/**/*`](./tasks) will be inherited by all projects.
 
+When a file group of the same name is defined both locally and [globally](./tasks#filegroups), their
+inputs are merged together, with local inputs appended after inherited inputs. This can be
+customized with the [`workspace.mergeStrategies.fileGroups`](#mergestrategies) setting.
+
 When defined this setting requires a map, where the key is the file group name, and the value is a
 list of [globs or file paths](../concepts/file-pattern), or environment variables. Globs and paths
 are [relative to a project](../concepts/file-pattern#project-relative) (even when defined
@@ -1960,3 +1964,38 @@ workspace:
 ```
 
 > Renaming occurs after inclusion and exclusion.
+
+### `mergeStrategies`<VersionLabel version="2.5.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#mergeStrategies" />
+
+Controls how project settings are merged with settings inherited from the workspace, primarily
+those defined in [`.moon/tasks/**/*`](./tasks). Each field accepts one of the
+[merge strategies](../concepts/task-inheritance#merge-strategies): `append` (the default),
+`prepend`, `preserve`, or `replace`.
+
+#### `fileGroups`
+
+The optional `fileGroups` setting controls how local [`fileGroups`](#filegroups) are merged with
+[inherited file groups](./tasks#filegroups). The chosen strategy is applied _per group_, based on
+where a group of the same name is defined:
+
+- `append` (default) - Local inputs are merged _after_ inherited inputs.
+- `prepend` - Local inputs are merged _before_ inherited inputs.
+- `preserve` - The first definition of the group is preserved (typically the most global), and
+  subsequent definitions are ignored.
+- `replace` - The last definition of the group entirely replaces prior definitions. An empty list
+  can be used to remove all inputs from an inherited group.
+
+Groups that are only defined locally, or only inherited, are always kept as-is.
+
+```yaml title="moon.yml" {2,3}
+workspace:
+  mergeStrategies:
+    fileGroups: 'replace'
+
+fileGroups:
+  # Replaces the inherited `sources` group, instead of appending to it
+  sources:
+    - 'src/**/*'
+```

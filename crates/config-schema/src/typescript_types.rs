@@ -58,7 +58,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                 "TaskDependency".into(),
                 "TaskDependencyCacheStrategy".into(),
                 "TaskDependencyConfig".into(),
-                "TaskMergeStrategy".into(),
+                "MergeStrategy".into(),
                 "TaskOperatingSystem".into(),
                 "TaskOptionAffectedFiles".into(),
                 "TaskOptionAffectedFilesConfig".into(),
@@ -85,6 +85,7 @@ fn generate_project(out_dir: &Path) -> miette::Result<()> {
                     "./tasks-config".into(),
                     vec![
                         "Input".into(),
+                        "MergeStrategy".into(),
                         "PartialTaskConfig".into(),
                         "TaskConfig".into(),
                         "PartialTaskOptionsConfig".into(),

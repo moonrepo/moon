@@ -709,6 +709,11 @@
         "unknown"
       ]
     },
+    "MergeStrategy": {
+      "description": "The strategy in which to merge two configuration values.",
+      "type": "string",
+      "enum": ["append", "prepend", "preserve", "replace"]
+    },
     "Output": {
       "anyOf": [
         {
@@ -1208,11 +1213,6 @@
       },
       "additionalProperties": false
     },
-    "TaskMergeStrategy": {
-      "description": "The strategy in which to merge a specific task option.",
-      "type": "string",
-      "enum": ["append", "prepend", "preserve", "replace"]
-    },
     "TaskOperatingSystem": {
       "description": "The operating system in which to only run this task on.",
       "type": "string",
@@ -1447,7 +1447,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1461,7 +1461,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1475,7 +1475,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1489,7 +1489,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1503,7 +1503,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1517,7 +1517,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1531,7 +1531,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1545,7 +1545,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1559,7 +1559,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"

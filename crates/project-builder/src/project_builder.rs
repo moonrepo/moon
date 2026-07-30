@@ -1,7 +1,8 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
-    DependencySource, InheritFor, InheritedTasks, InheritedTasksManager, LanguageType,
-    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig, ToolchainsConfig,
+    DependencySource, InheritFor, InheritedTasks, InheritedTasksManager, Input, LanguageType,
+    MergeStrategy, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig,
+    ToolchainsConfig, merge_vec,
 };
 use moon_config_loader::ConfigLoader;
 use moon_file_group::FileGroup;
@@ -319,7 +320,7 @@ impl<'app> ProjectBuilder<'app> {
 
     #[instrument(skip_all)]
     fn build_file_groups(&self) -> miette::Result<BTreeMap<Id, FileGroup>> {
-        let mut file_inputs = BTreeMap::default();
+        let mut chains: BTreeMap<Id, Vec<Vec<&Input>>> = BTreeMap::default();
         let project_source = &self.source;
 
         trace!(project_id = self.id.as_str(), "Building file groups");
@@ -331,10 +332,10 @@ impl<'app> ProjectBuilder<'app> {
             for config in global.configs.values() {
                 for (id, inputs) in &config.file_groups {
                     group_names.insert(id.as_str());
-                    file_inputs
+                    chains
                         .entry(id.to_owned())
-                        .or_insert(vec![])
-                        .extend(inputs);
+                        .or_default()
+                        .push(inputs.iter().collect());
                 }
             }
 
@@ -345,26 +346,42 @@ impl<'app> ProjectBuilder<'app> {
             );
         }
 
-        // Override with local second
+        // Then merge with local last, using the configured strategy
+        let mut strategy = MergeStrategy::default();
+
         if let Some(local) = &self.local_config {
+            strategy = local
+                .workspace
+                .merge_strategies
+                .file_groups
+                .unwrap_or_default();
+
             trace!(
                 project_id = self.id.as_str(),
                 groups = ?local.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
-                "Using local file groups",
+                strategy = ?strategy,
+                "Merging local file groups",
             );
 
             for (id, inputs) in &local.file_groups {
-                file_inputs
+                chains
                     .entry(id.to_owned())
-                    .or_insert(vec![])
-                    .extend(inputs);
+                    .or_default()
+                    .push(inputs.iter().collect());
             }
         }
 
-        // And finally convert to a file group instance
+        // And finally merge each group's chain of inputs,
+        // then convert to a file group instance
         let mut file_groups = BTreeMap::default();
 
-        for (id, inputs) in file_inputs {
+        for (id, chain) in chains {
+            let mut inputs = vec![];
+
+            for (index, next_inputs) in chain.into_iter().enumerate() {
+                inputs = merge_vec(inputs, next_inputs, strategy, index, false);
+            }
+
             let mut group = FileGroup::new(&id)?;
             group.add_many(inputs, project_source.as_str())?;
 

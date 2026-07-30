@@ -1,3 +1,4 @@
+use crate::merging::MergeStrategy;
 use crate::shapes::{FilePath, GlobPath, OneOrMany};
 use crate::{config_enum, config_struct, config_unit_enum, config_untagged_enum, generate_switch};
 use schematic::schema::{StringType, UnionType};
@@ -155,18 +156,6 @@ config_enum!(
 generate_switch!(TaskOptionRunInCI, ["always", "affected", "only", "skip"]);
 
 config_unit_enum!(
-    /// The strategy in which to merge a specific task option.
-    #[derive(ConfigEnum)]
-    pub enum TaskMergeStrategy {
-        #[default]
-        Append,
-        Prepend,
-        Preserve,
-        Replace,
-    }
-);
-
-config_unit_enum!(
     /// The style in which task output will be printed to the console.
     #[derive(ConfigEnum)]
     pub enum TaskOutputStyle {
@@ -318,42 +307,42 @@ config_struct!(
         /// `inputs`, or `outputs` with an inherited task. Can be overridden
         /// with the other field-specific merge options.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge: Option<TaskMergeStrategy>,
+        pub merge: Option<MergeStrategy>,
 
         /// The strategy to use when merging `args` with an inherited task.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge_args: Option<TaskMergeStrategy>,
+        pub merge_args: Option<MergeStrategy>,
 
         /// The strategy to use when merging `checks` with an inherited task.
         /// @since 2.4.0
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge_checks: Option<TaskMergeStrategy>,
+        pub merge_checks: Option<MergeStrategy>,
 
         /// The strategy to use when merging `deps` with an inherited task.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge_deps: Option<TaskMergeStrategy>,
+        pub merge_deps: Option<MergeStrategy>,
 
         /// The strategy to use when merging `env` with an inherited task.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge_env: Option<TaskMergeStrategy>,
+        pub merge_env: Option<MergeStrategy>,
 
         /// The strategy to use when merging `inputs` with an inherited task.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge_inputs: Option<TaskMergeStrategy>,
+        pub merge_inputs: Option<MergeStrategy>,
 
         /// The strategy to use when merging `outputs` with an inherited task.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge_outputs: Option<TaskMergeStrategy>,
+        pub merge_outputs: Option<MergeStrategy>,
 
         /// The strategy to use when merging `tags` with an inherited task.
         /// @since 2.3.0
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge_tags: Option<TaskMergeStrategy>,
+        pub merge_tags: Option<MergeStrategy>,
 
         /// The strategy to use when merging `toolchains` with an inherited task.
         /// @since 2.0.0
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub merge_toolchains: Option<TaskMergeStrategy>,
+        pub merge_toolchains: Option<MergeStrategy>,
 
         /// Creates an exclusive lock on a virtual resource, preventing other
         /// tasks using the same resource from running concurrently.

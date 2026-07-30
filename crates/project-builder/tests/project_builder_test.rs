@@ -189,6 +189,168 @@ mod project_builder {
                 ])
             );
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn replace_strategy_overrides_globals_per_group() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("merge-replace", sandbox.path()).await;
+
+            assert_eq!(
+                project.file_groups,
+                BTreeMap::from_iter([
+                    (
+                        "sources".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "sources",
+                            // Local replaces the inherited group
+                            [WorkspaceRelativePathBuf::from("merge-replace/replaced")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "tests".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "tests",
+                            // Inherited only groups are kept
+                            [WorkspaceRelativePathBuf::from("merge-replace/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        // An empty local list clears the group
+                        "other".try_into().unwrap(),
+                        FileGroup::new("other").unwrap()
+                    )
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn replace_strategy_applies_across_inherited_layers() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("merge-replace-layers", sandbox.path()).await;
+
+            assert_eq!(
+                project.file_groups,
+                BTreeMap::from_iter([
+                    (
+                        "sources".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "sources",
+                            // The last inherited layer wins
+                            [WorkspaceRelativePathBuf::from("merge-replace-layers/node")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "tests".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "tests",
+                            [WorkspaceRelativePathBuf::from(
+                                "merge-replace-layers/global"
+                            )]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "other".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "other",
+                            [WorkspaceRelativePathBuf::from(
+                                "merge-replace-layers/global"
+                            )]
+                        )
+                        .unwrap()
+                    )
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn prepend_strategy_puts_local_before_globals() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("merge-prepend", sandbox.path()).await;
+
+            assert_eq!(
+                project.file_groups,
+                BTreeMap::from_iter([
+                    (
+                        "sources".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "sources",
+                            [WorkspaceRelativePathBuf::from("merge-prepend/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "tests".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "tests",
+                            [WorkspaceRelativePathBuf::from("merge-prepend/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "other".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "other",
+                            // Local first, then inherited
+                            [
+                                WorkspaceRelativePathBuf::from("merge-prepend/local"),
+                                WorkspaceRelativePathBuf::from("merge-prepend/global")
+                            ]
+                        )
+                        .unwrap()
+                    )
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn preserve_strategy_keeps_first_definition() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("merge-preserve", sandbox.path()).await;
+
+            assert_eq!(
+                project.file_groups,
+                BTreeMap::from_iter([
+                    (
+                        "sources".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "sources",
+                            [WorkspaceRelativePathBuf::from("merge-preserve/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "tests".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "tests",
+                            [WorkspaceRelativePathBuf::from("merge-preserve/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "other".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "other",
+                            // The inherited group was defined first, so wins
+                            [WorkspaceRelativePathBuf::from("merge-preserve/global")]
+                        )
+                        .unwrap()
+                    ),
+                    (
+                        "extra".try_into().unwrap(),
+                        FileGroup::new_with_source(
+                            "extra",
+                            // Local is the only definition, so is kept
+                            [WorkspaceRelativePathBuf::from("merge-preserve/fresh")]
+                        )
+                        .unwrap()
+                    )
+                ])
+            );
+        }
     }
 
     mod language_detect {

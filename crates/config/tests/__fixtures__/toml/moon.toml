@@ -52,3 +52,6 @@ includeSharedTypes = true
 exclude = ["build"]
 include = ["test"]
 rename = { old = "new" }
+
+[workspace.mergeStrategies]
+fileGroups = "replace"

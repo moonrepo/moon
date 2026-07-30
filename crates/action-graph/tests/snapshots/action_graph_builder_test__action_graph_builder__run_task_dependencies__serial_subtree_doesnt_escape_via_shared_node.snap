@@ -18,9 +18,11 @@ digraph {
     5 -> 1 [ label="required"]
     5 -> 3 [ label="required"]
     2 -> 1 [ label="required"]
+    2 -> 3 [ label="required"]
     2 -> 5 [ label="required"]
     7 -> 1 [ label="required"]
     5 -> 7 [ label="required"]
     6 -> 1 [ label="required"]
+    6 -> 7 [ label="required"]
     6 -> 5 [ label="required"]
 }

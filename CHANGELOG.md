@@ -12,6 +12,9 @@
       service name.
     - The destination and transport are configured with the standard `OTEL_EXPORTER_OTLP_*`
       environment variables.
+  - Updated the `moon setup` action to also setup the toolchain environment, if their dependency
+    root is the same as the workspace root. Nested dependency roots will not be setup, as they are
+    expected to be setup by their parent project.
 - **Config**
   - Added an `env` setting to `.moon/tasks/**/*` configs. These environment variables are inherited
     by all matching projects, and are merged into each project's `env` setting, with project-level
@@ -48,9 +51,9 @@
   not re-synced when placeholder nodes were removed.
 - Fixed an issue where the async graph builder would fail with "unknown target" when a task
   dependency referenced a project by its alias.
-- Fixed an issue where the async graph builder would produce differently ordered graphs across
-  runs, as projects were inserted in completion order instead of a stable order. This could cause
-  unstable hashes and `--dot`/`--json` output.
+- Fixed an issue where the async graph builder would produce differently ordered graphs across runs,
+  as projects were inserted in completion order instead of a stable order. This could cause unstable
+  hashes and `--dot`/`--json` output.
 - Fixed an issue where a task with `runDepsInParallel: false` would not be linked to all of its
   dependencies when a serial ordering edge was skipped to avoid a cycle, allowing the task to run
   before a dependency had finished.

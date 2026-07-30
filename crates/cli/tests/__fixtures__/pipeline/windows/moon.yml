@@ -32,6 +32,42 @@ tasks:
     inputs:
       - '*.ps1'
 
+  exitNonZeroInline:
+    command: pwsh -c 'exit 2'
+    options:
+      windowsShell: pwsh
+      shell: false
+    inputs:
+      - '*.ps1'
+
+  # Windows exit codes are a full DWORD, so this can't fit in a u8
+  exitOutOfRange:
+    command: pwsh -c 'exit 3000'
+    options:
+      windowsShell: pwsh
+      shell: false
+    inputs:
+      - '*.ps1'
+
+  # Only defined in this project, so unqualified `:` targets resolve to 1 task
+  exitNonZeroWindowsOnly:
+    command: pwsh -c 'exit 3'
+    options:
+      windowsShell: pwsh
+      shell: false
+    inputs:
+      - '*.ps1'
+
+  hasFailingDep:
+    command: pwsh -c 'echo unreachable'
+    deps:
+      - '~:exitNonZeroInline'
+    options:
+      windowsShell: pwsh
+      shell: false
+    inputs:
+      - '*.ps1'
+
   exitZero:
     command: pwsh
     args: ./exitZero.ps1
@@ -91,6 +127,15 @@ tasks:
     options:
       windowsShell: pwsh
       retryCount: 3
+    inputs:
+      - '*.ps1'
+
+  retryNonZeroInline:
+    command: pwsh -c 'exit 4'
+    options:
+      windowsShell: pwsh
+      retryCount: 2
+      shell: false
     inputs:
       - '*.ps1'
 

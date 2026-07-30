@@ -155,4 +155,37 @@ mod errors {
 
         assert_eq!(message, "");
     }
+
+    #[test]
+    fn get_exit_code_returns_code_for_exit_errors() {
+        assert_eq!(
+            create_failed_output()
+                .to_error("git", false)
+                .get_exit_code(),
+            Some(1)
+        );
+        assert_eq!(
+            create_failed_output().to_error("git", true).get_exit_code(),
+            Some(1)
+        );
+    }
+
+    #[test]
+    fn get_exit_code_returns_none_otherwise() {
+        // Signals carry no code
+        assert_eq!(
+            create_output(ChildExit::Terminated)
+                .to_error("git", false)
+                .get_exit_code(),
+            None
+        );
+
+        // Non-exit process errors have no code at all
+        let error = ProcessError::Capture {
+            bin: "git".into(),
+            error: Box::new(std::io::Error::other("boom")),
+        };
+
+        assert_eq!(error.get_exit_code(), None);
+    }
 }

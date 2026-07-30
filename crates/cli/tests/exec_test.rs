@@ -172,7 +172,6 @@ mod exec {
         // The script exits with a distinct code (2) so we can verify moon
         // propagates the task's actual exit code, instead of collapsing it to 1.
         #[test]
-        #[cfg(unix)]
         fn propagates_process_exit_code() {
             let sandbox = create_pipeline_sandbox();
 
@@ -181,6 +180,112 @@ mod exec {
             });
 
             assert.failure().code(2);
+        }
+
+        #[test]
+        fn propagates_process_exit_code_with_run_command() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run").arg(target("exitNonZeroInline"));
+            });
+
+            assert.failure().code(2);
+        }
+
+        #[test]
+        fn propagates_process_exit_code_when_continuing_on_failure() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("--on-failure")
+                    .arg("continue")
+                    .arg(target("exitNonZeroInline"));
+            });
+
+            assert.failure().code(2);
+        }
+
+        #[test]
+        fn propagates_last_attempt_exit_code_when_retried() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(target("retryNonZeroInline"));
+            });
+
+            assert.failure().code(4);
+        }
+
+        // When a dependency fails, the requested target never runs, so the
+        // dependency's exit code is what bubbles up
+        #[test]
+        fn propagates_exit_code_of_failing_dependency() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(target("hasFailingDep"));
+            });
+
+            assert.failure().code(2);
+        }
+
+        // Exit codes are only propagated for a single fully-qualified target
+        #[test]
+        fn collapses_exit_code_for_multiple_targets() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg(target("exitNonZeroInline"))
+                    .arg(target("exitZero"));
+            });
+
+            assert.failure().code(1);
+        }
+
+        // Resolves to a single task, but the requested target is ambiguous
+        #[test]
+        fn collapses_exit_code_for_unqualified_targets() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(if cfg!(windows) {
+                    ":exitNonZeroWindowsOnly"
+                } else {
+                    ":exitNonZeroUnixOnly"
+                });
+            });
+
+            assert.failure().code(1);
+        }
+
+        // A signal death has no exit code to propagate
+        #[test]
+        #[cfg(unix)]
+        fn falls_back_to_one_when_killed_by_signal() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(target("exitBySignal"));
+            });
+
+            assert.failure().code(1);
+        }
+
+        // Windows exit codes are a full DWORD; those out of u8 range
+        // can't be propagated
+        #[test]
+        #[cfg(windows)]
+        fn falls_back_to_one_for_out_of_range_exit_code() {
+            let sandbox = create_pipeline_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg(target("exitOutOfRange"));
+            });
+
+            assert.failure().code(1);
         }
 
         #[test]
@@ -2290,6 +2395,19 @@ mod exec {
                 predicate::str::contains("Task outputs:missingOutputGlob defines outputs")
                     .eval(&output)
             );
+        }
+
+        // The task process itself exits 0 and moon fails it afterwards, so
+        // the generic failure code must apply, not the process's 0
+        #[test]
+        fn exits_with_one_when_outputs_missing() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec").arg("outputs:missingOutput");
+            });
+
+            assert.failure().code(1);
         }
 
         #[test]

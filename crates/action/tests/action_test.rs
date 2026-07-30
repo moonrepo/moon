@@ -71,4 +71,25 @@ mod get_exit_code {
 
         assert_eq!(action.get_exit_code(), Some(-1));
     }
+
+    // Signal deaths and timeouts produce an execution operation
+    // without a captured code
+    #[test]
+    fn none_when_execution_has_no_exit_code() {
+        let mut action = Action::default();
+        action.operations.push(task_op(None, ActionStatus::Failed));
+
+        assert_eq!(action.get_exit_code(), None);
+    }
+
+    #[test]
+    fn ignores_operations_after_the_last_execution() {
+        let mut action = Action::default();
+        action
+            .operations
+            .push(task_op(Some(6), ActionStatus::Failed));
+        action.operations.push(Operation::hash_generation());
+
+        assert_eq!(action.get_exit_code(), Some(6));
+    }
 }

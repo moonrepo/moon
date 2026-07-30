@@ -353,6 +353,24 @@ impl MoonReporter {
         Ok(())
     }
 
+    fn print_pipeline_errors(&self, actions: &[Action]) -> miette::Result<()> {
+        for action in actions {
+            if !action.has_failed() || action.allow_failure {
+                continue;
+            }
+
+            if let Some(report) = &action.error_report {
+                self.err.write_newline()?;
+                self.err.write_line(format!("{report:?}"))?;
+            } else if let Some(error) = &action.error {
+                self.err.write_newline()?;
+                self.err.write_line(error)?;
+            }
+        }
+
+        Ok(())
+    }
+
     fn print_pipeline_failures(&self, actions: &[Action]) -> miette::Result<()> {
         for action in actions {
             if !action.has_failed() {
@@ -545,15 +563,21 @@ impl MoonReporter {
         &self,
         actions: &[Action],
         item: &PipelineReportItem,
-        _error: Option<&miette::Report>,
+        error: Option<&miette::Report>,
     ) -> miette::Result<()> {
         if actions.is_empty() {
             return Ok(());
         }
 
-        // A task failed, so instead of showing the stats,
-        // we'll render the error that was bubbled up
+        // A task failed and the pipeline aborted, so instead of showing
+        // the stats, render the errors of every failed action. But if an
+        // error was bubbled up (hard failures), render nothing, as the
+        // application core renders the error itself
         if matches!(item.status, ActionPipelineStatus::Aborted) {
+            if error.is_none() {
+                self.print_pipeline_errors(actions)?;
+            }
+
             return Ok(());
         }
 

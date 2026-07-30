@@ -542,5 +542,4 @@ pub struct WorkspaceMockOptions {
     pub cache: bool,
     pub context: Option<WorkspaceBuilderContext>,
     pub ids: Vec<String>,
-    pub sync: bool,
 }

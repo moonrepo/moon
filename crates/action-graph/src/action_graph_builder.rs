@@ -669,10 +669,6 @@ impl<'query> ActionGraphBuilder<'query> {
                     Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &mut state.clone()))
                         .await?
                 {
-                    // When parallel, parent depends on child
-                    if parallel {
-                        indexes.push(Some(dep_index));
-                    }
                     // When serial, this dependency's entire task subtree must
                     // run after the previous dependency — not just the
                     // dependency node itself. Otherwise its own transitive
@@ -680,17 +676,18 @@ impl<'query> ActionGraphBuilder<'query> {
                     // earlier serial dependencies. Cycle-forming edges are
                     // skipped, which can happen when the same task node appears
                     // in multiple serial dependency chains across parent tasks.
-                    else if let Some(prev) = previous_target_index {
+                    if !parallel && let Some(prev) = previous_target_index {
                         self.link_serial_requirements(dep_index, prev);
                     }
+
+                    // The parent always depends on each child directly, as
+                    // serial chain edges alone can't guarantee this ordering
+                    // when a chain edge is skipped for forming a cycle
+                    indexes.push(Some(dep_index));
 
                     previous_target_index = Some(dep_index);
                 }
             }
-        }
-
-        if !parallel {
-            indexes.push(previous_target_index);
         }
 
         Ok(indexes)

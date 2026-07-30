@@ -23,10 +23,11 @@ digraph {
     5 -> 1 [ label="required"]
     6 -> 5 [ label="required"]
     6 -> 2 [ label="required"]
+    6 -> 4 [ label="required"]
     7 -> 0 [ label="required"]
     7 -> 3 [ label="required"]
     7 -> 5 [ label="required"]
-    6 -> 4 [ label="required"]
     8 -> 7 [ label="required"]
     8 -> 6 [ label="required"]
+    8 -> 4 [ label="required"]
 }

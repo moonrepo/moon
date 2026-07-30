@@ -94,6 +94,12 @@ impl<'a> TasksQuerent for WorkspaceTasksQuerent<'a> {
         let mut list = vec![];
 
         for project_id in project_ids {
+            // May be an alias!
+            let project_id = self
+                .aliases_to_ids
+                .get(project_id.as_str())
+                .unwrap_or(project_id);
+
             if let Some(tasks) = self.ids_to_target_options.get(project_id) {
                 for (target, options) in tasks {
                     match task_scope {

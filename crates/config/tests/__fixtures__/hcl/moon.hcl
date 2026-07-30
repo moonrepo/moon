@@ -73,4 +73,8 @@ workspace {
 			old = "new"
 		}
 	}
+	mergeStrategies {
+		env = "preserve"
+		fileGroups = "replace"
+	}
 }

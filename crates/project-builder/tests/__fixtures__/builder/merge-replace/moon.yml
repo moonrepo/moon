@@ -1,0 +1,10 @@
+language: 'rust'
+
+workspace:
+  mergeStrategies:
+    fileGroups: 'replace'
+
+fileGroups:
+  sources:
+    - 'replaced'
+  other: []

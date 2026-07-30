@@ -5,6 +5,7 @@
 import type { Id } from './common';
 import type {
 	Input,
+	MergeStrategy,
 	PartialTaskConfig,
 	PartialTaskOptionsConfig,
 	TaskConfig,
@@ -196,10 +197,39 @@ export interface ProjectWorkspaceInheritedTasksConfig {
 	rename?: Record<Id, Id>;
 }
 
+/**
+ * Controls how project settings are merged with inherited
+ * workspace-level settings.
+ */
+export interface ProjectWorkspaceMergeStrategiesConfig {
+	/**
+	 * The strategy to use when merging `env` with inherited
+	 * environment variables, applied to the entire map.
+	 * @since 2.5.0
+	 *
+	 * @default 'append'
+	 */
+	env?: MergeStrategy | null;
+	/**
+	 * The strategy to use when merging `fileGroups` with
+	 * inherited file groups, applied per group.
+	 * @since 2.5.0
+	 *
+	 * @default 'append'
+	 */
+	fileGroups?: MergeStrategy | null;
+}
+
 /** Overrides workspace settings, scoped to this project. */
 export interface ProjectWorkspaceConfig {
 	/** Controls how tasks are inherited. */
 	inheritedTasks: ProjectWorkspaceInheritedTasksConfig;
+	/**
+	 * Controls how project settings are merged with inherited
+	 * workspace-level settings.
+	 * @since 2.5.0
+	 */
+	mergeStrategies: ProjectWorkspaceMergeStrategiesConfig;
 }
 
 /**
@@ -420,10 +450,39 @@ export interface PartialProjectWorkspaceInheritedTasksConfig {
 	rename?: Record<Id, Id> | null;
 }
 
+/**
+ * Controls how project settings are merged with inherited
+ * workspace-level settings.
+ */
+export interface PartialProjectWorkspaceMergeStrategiesConfig {
+	/**
+	 * The strategy to use when merging `env` with inherited
+	 * environment variables, applied to the entire map.
+	 * @since 2.5.0
+	 *
+	 * @default 'append'
+	 */
+	env?: MergeStrategy | null;
+	/**
+	 * The strategy to use when merging `fileGroups` with
+	 * inherited file groups, applied per group.
+	 * @since 2.5.0
+	 *
+	 * @default 'append'
+	 */
+	fileGroups?: MergeStrategy | null;
+}
+
 /** Overrides workspace settings, scoped to this project. */
 export interface PartialProjectWorkspaceConfig {
 	/** Controls how tasks are inherited. */
 	inheritedTasks?: PartialProjectWorkspaceInheritedTasksConfig | null;
+	/**
+	 * Controls how project settings are merged with inherited
+	 * workspace-level settings.
+	 * @since 2.5.0
+	 */
+	mergeStrategies?: PartialProjectWorkspaceMergeStrategiesConfig | null;
 }
 
 /**

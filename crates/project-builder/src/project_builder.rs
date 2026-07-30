@@ -1,7 +1,8 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
-    DependencySource, InheritFor, InheritedTasks, InheritedTasksManager, LanguageType,
-    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig, ToolchainsConfig,
+    DependencySource, EnvMap, InheritFor, InheritedTasks, InheritedTasksManager, Input,
+    LanguageType, MergeStrategy, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn,
+    TaskConfig, ToolchainsConfig, merge_index_map, merge_vec,
 };
 use moon_config_loader::ConfigLoader;
 use moon_file_group::FileGroup;
@@ -12,6 +13,7 @@ use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
+use std::mem;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
@@ -109,8 +111,55 @@ impl<'app> ProjectBuilder<'app> {
         );
 
         self.global_configs = Some(global_configs);
+        self.merge_global_env();
 
         Ok(self)
+    }
+
+    /// Merge environment variables inherited from global configs into the
+    /// local config, using the configured strategy, so that downstream
+    /// consumers only need to read from a single source.
+    fn merge_global_env(&mut self) {
+        let Some(global) = &self.global_configs else {
+            return;
+        };
+        let Some(local) = &mut self.local_config else {
+            return;
+        };
+
+        // Only configs that define variables participate in the merge chain,
+        // otherwise a local config could replace values that don't exist
+        let mut chain = global
+            .configs
+            .values()
+            .filter(|config| !config.env.is_empty())
+            .map(|config| config.env.clone())
+            .collect::<Vec<_>>();
+
+        if chain.is_empty() {
+            return;
+        }
+
+        let strategy = local.workspace.merge_strategies.env.unwrap_or_default();
+
+        trace!(
+            project_id = self.id.as_str(),
+            env_vars = ?chain.iter().flat_map(|env| env.keys()).collect::<Vec<_>>(),
+            strategy = ?strategy,
+            "Inheriting global env vars",
+        );
+
+        if !local.env.is_empty() {
+            chain.push(mem::take(&mut local.env));
+        }
+
+        let mut env = EnvMap::default();
+
+        for (index, next_env) in chain.into_iter().enumerate() {
+            env = merge_index_map(env, next_env, strategy, index);
+        }
+
+        local.env = env;
     }
 
     /// Inherit the local config and then detect applicable language and toolchain fields.
@@ -319,7 +368,7 @@ impl<'app> ProjectBuilder<'app> {
 
     #[instrument(skip_all)]
     fn build_file_groups(&self) -> miette::Result<BTreeMap<Id, FileGroup>> {
-        let mut file_inputs = BTreeMap::default();
+        let mut chains: BTreeMap<Id, Vec<Vec<&Input>>> = BTreeMap::default();
         let project_source = &self.source;
 
         trace!(project_id = self.id.as_str(), "Building file groups");
@@ -331,10 +380,10 @@ impl<'app> ProjectBuilder<'app> {
             for config in global.configs.values() {
                 for (id, inputs) in &config.file_groups {
                     group_names.insert(id.as_str());
-                    file_inputs
+                    chains
                         .entry(id.to_owned())
-                        .or_insert(vec![])
-                        .extend(inputs);
+                        .or_default()
+                        .push(inputs.iter().collect());
                 }
             }
 
@@ -345,26 +394,42 @@ impl<'app> ProjectBuilder<'app> {
             );
         }
 
-        // Override with local second
+        // Then merge with local last, using the configured strategy
+        let mut strategy = MergeStrategy::default();
+
         if let Some(local) = &self.local_config {
+            strategy = local
+                .workspace
+                .merge_strategies
+                .file_groups
+                .unwrap_or_default();
+
             trace!(
                 project_id = self.id.as_str(),
                 groups = ?local.file_groups.keys().map(|k| k.as_str()).collect::<Vec<_>>(),
-                "Using local file groups",
+                strategy = ?strategy,
+                "Merging local file groups",
             );
 
             for (id, inputs) in &local.file_groups {
-                file_inputs
+                chains
                     .entry(id.to_owned())
-                    .or_insert(vec![])
-                    .extend(inputs);
+                    .or_default()
+                    .push(inputs.iter().collect());
             }
         }
 
-        // And finally convert to a file group instance
+        // And finally merge each group's chain of inputs,
+        // then convert to a file group instance
         let mut file_groups = BTreeMap::default();
 
-        for (id, inputs) in file_inputs {
+        for (id, chain) in chains {
+            let mut inputs = vec![];
+
+            for (index, next_inputs) in chain.into_iter().enumerate() {
+                inputs = merge_vec(inputs, next_inputs, strategy, index, false);
+            }
+
             let mut group = FileGroup::new(&id)?;
             group.add_many(inputs, project_source.as_str())?;
 

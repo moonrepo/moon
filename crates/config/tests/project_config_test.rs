@@ -2,9 +2,9 @@ mod utils;
 
 use moon_common::Id;
 use moon_config::{
-    DependencyScope, GlobPath, Input, LanguageType, LayerType, OwnersPaths, PortablePath,
-    ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry, TaskArgs,
-    ToolchainPluginConfig,
+    DependencyScope, GlobPath, Input, LanguageType, LayerType, MergeStrategy, OwnersPaths,
+    PortablePath, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, ProjectToolchainEntry,
+    TaskArgs, ToolchainPluginConfig,
 };
 use moon_config_loader::ConfigLoader;
 use proto_core::UnresolvedVersionSpec;
@@ -652,6 +652,58 @@ toolchains:
 
     mod workspace {
         use super::*;
+
+        #[test]
+        fn merge_strategies_default_to_none() {
+            let config =
+                test_load_config("moon.yml", "{}", |path| load_config_from_root(path, "."));
+
+            assert_eq!(config.workspace.merge_strategies.env, None);
+            assert_eq!(config.workspace.merge_strategies.file_groups, None);
+        }
+
+        #[test]
+        fn merge_strategies_support_all_strategies() {
+            for (value, expected) in [
+                ("append", MergeStrategy::Append),
+                ("prepend", MergeStrategy::Prepend),
+                ("preserve", MergeStrategy::Preserve),
+                ("replace", MergeStrategy::Replace),
+            ] {
+                let config = test_load_config(
+                    "moon.yml",
+                    &format!(
+                        r"
+workspace:
+  mergeStrategies:
+    env: '{value}'
+    fileGroups: '{value}'
+"
+                    ),
+                    |path| load_config_from_root(path, "."),
+                );
+
+                assert_eq!(config.workspace.merge_strategies.env, Some(expected));
+                assert_eq!(
+                    config.workspace.merge_strategies.file_groups,
+                    Some(expected)
+                );
+            }
+        }
+
+        #[test]
+        #[should_panic(expected = "unknown variant `invalid`")]
+        fn errors_on_invalid_merge_strategy() {
+            test_load_config(
+                "moon.yml",
+                r"
+workspace:
+  mergeStrategies:
+    fileGroups: 'invalid'
+",
+                |path| load_config_from_root(path, "."),
+            );
+        }
 
         #[test]
         fn can_set_settings() {

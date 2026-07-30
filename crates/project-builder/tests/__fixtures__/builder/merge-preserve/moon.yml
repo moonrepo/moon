@@ -1,0 +1,11 @@
+language: 'rust'
+
+workspace:
+  mergeStrategies:
+    fileGroups: 'preserve'
+
+fileGroups:
+  other:
+    - 'local'
+  extra:
+    - 'fresh'

@@ -9,11 +9,13 @@ use moon_action::{
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_app_context::AppContext;
-use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
+use moon_common::path::{PathExt, RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_common::{Id, color, is_ci};
 use moon_config::{EnvMap, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
-use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
+use moon_pdk_api::{
+    DefineRequirementsInput, LocateDependenciesRootInput, LocateDependenciesRootOutput,
+};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetProjectScope, TargetTaskScope, Task};
@@ -318,10 +320,10 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     #[instrument(skip(self))]
-    pub async fn install_dependencies(
+    async fn internal_install_dependencies(
         &mut self,
         spec: &ToolchainSpec,
-        project: &Project,
+        project: Option<&Project>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
         if spec.is_system()
@@ -336,7 +338,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         let sync_workspace_index = self.sync_workspace().await?;
-        let setup_toolchain_index = self.setup_toolchain(spec, Some(project)).await?;
+        let setup_toolchain_index = self.setup_toolchain(spec, project).await?;
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
 
@@ -345,14 +347,11 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(setup_toolchain_index);
         }
 
-        let output = toolchain
-            .locate_dependencies_root(LocateDependenciesRootInput {
-                context: toolchain_registry.create_context(),
-                starting_dir: toolchain.to_virtual_path(&project.root),
-                toolchain_config: toolchain_registry
-                    .create_merged_config(&toolchain.id, &project.config),
-            })
-            .await?;
+        let output = self.locate_dependencies_root(spec, project).await?;
+        let target_root = match project {
+            Some(project) => &project.root,
+            None => &self.app_context.workspace_root,
+        };
 
         // Only insert this action if a root was located
         if let Some(abs_root) = output.root.as_ref() {
@@ -361,19 +360,21 @@ impl<'query> ActionGraphBuilder<'query> {
                 .into_diagnostic()?;
 
             // Determine if we're in the dependencies workspace
-            let in_workspace = toolchain.in_dependencies_workspace(&output, &project.root)?;
+            let in_workspace = toolchain.in_dependencies_workspace(&output, target_root)?;
 
             // If not in the dependencies workspace (if there is one),
             // or is a stand-alone project with its own lockfile,
             // we must extract the project ID and source (root)
             let (project_id, root) = if in_workspace {
                 (None, rel_root)
-            } else {
+            } else if let Some(project) = project {
                 (Some(project.id.clone()), project.source.clone())
+            } else {
+                (None, RelativePathBuf::new())
             };
 
             let setup_env_index = self
-                .setup_environment(spec, &root, project_id.as_ref().map(|_| project))
+                .internal_setup_environment(spec, &root, project_id.as_ref().and(project))
                 .await?;
 
             // Only create this action if the plugin supports it
@@ -412,6 +413,16 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     #[instrument(skip(self))]
+    pub async fn install_dependencies(
+        &mut self,
+        spec: &ToolchainSpec,
+        project: &Project,
+    ) -> miette::Result<Option<NodeIndex>> {
+        self.internal_install_dependencies(spec, Some(project))
+            .await
+    }
+
+    #[instrument(skip(self))]
     pub async fn install_dependencies_by_project(
         &mut self,
         project: &Project,
@@ -435,6 +446,63 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         Ok(indexes)
+    }
+
+    #[instrument(skip(self))]
+    pub async fn install_dependencies_root(
+        &mut self,
+        spec: &ToolchainSpec,
+    ) -> miette::Result<Option<NodeIndex>> {
+        // Explicitly disabled
+        if spec.is_system()
+            || !self.options.install_dependencies.is_enabled(&spec.id)
+            || self
+                .app_context
+                .toolchains_config
+                .get_plugin_config(&spec.id)
+                .is_some_and(|cfg| !cfg.install_dependencies)
+        {
+            return Ok(None);
+        }
+
+        // Only insert actions if the dependencies root is the workspace root
+        if self
+            .locate_dependencies_root(spec, None)
+            .await?
+            .root
+            .is_none_or(|root| root != self.app_context.workspace_root)
+        {
+            return Ok(None);
+        }
+
+        self.internal_install_dependencies(spec, None).await
+    }
+
+    async fn locate_dependencies_root(
+        &self,
+        spec: &ToolchainSpec,
+        project: Option<&Project>,
+    ) -> miette::Result<LocateDependenciesRootOutput> {
+        let toolchain_registry = &self.app_context.toolchain_registry;
+        let toolchain = toolchain_registry.load(&spec.id).await?;
+
+        let output = toolchain
+            .locate_dependencies_root(match project {
+                Some(project) => LocateDependenciesRootInput {
+                    context: toolchain_registry.create_context(),
+                    starting_dir: toolchain.to_virtual_path(&project.root),
+                    toolchain_config: toolchain_registry
+                        .create_merged_config(&toolchain.id, &project.config),
+                },
+                None => LocateDependenciesRootInput {
+                    context: toolchain_registry.create_context(),
+                    starting_dir: toolchain.to_virtual_path(&self.app_context.workspace_root),
+                    toolchain_config: toolchain_registry.create_config(&toolchain.id),
+                },
+            })
+            .await?;
+
+        Ok(output)
     }
 
     #[instrument(skip(self))]
@@ -1069,7 +1137,7 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     #[instrument(skip(self))]
-    pub async fn setup_environment(
+    async fn internal_setup_environment(
         &mut self,
         spec: &ToolchainSpec,
         root: &WorkspaceRelativePathBuf,
@@ -1102,6 +1170,44 @@ impl<'query> ActionGraphBuilder<'query> {
         self.link_first_requirement(index, vec![setup_toolchain_index, sync_workspace_index])?;
 
         Ok(Some(index))
+    }
+
+    #[instrument(skip(self))]
+    pub async fn setup_environment(
+        &mut self,
+        spec: &ToolchainSpec,
+        root: &WorkspaceRelativePathBuf,
+        project: &Project,
+    ) -> miette::Result<Option<NodeIndex>> {
+        self.internal_setup_environment(spec, root, Some(project))
+            .await
+    }
+
+    /// Setup the environment in the workspace root, without an associated
+    /// project. Unlike the project-based flow, this inserts no actions at
+    /// all unless the located dependencies root is the workspace root.
+    #[instrument(skip(self))]
+    pub async fn setup_environment_root(
+        &mut self,
+        spec: &ToolchainSpec,
+    ) -> miette::Result<Option<NodeIndex>> {
+        // Explicitly disabled
+        if !self.options.setup_environment.is_enabled(&spec.id) || spec.is_system() {
+            return Ok(None);
+        }
+
+        // Only insert actions if the dependencies root is the workspace root
+        if self
+            .locate_dependencies_root(spec, None)
+            .await?
+            .root
+            .is_none_or(|root| root != self.app_context.workspace_root)
+        {
+            return Ok(None);
+        }
+
+        self.internal_setup_environment(spec, &WorkspaceRelativePathBuf::new(), None)
+            .await
     }
 
     #[instrument(skip(self))]

@@ -466,6 +466,10 @@ docker:
 The `env` field is map of strings that are passed as environment variables to _all tasks_ within the
 current project. Project-level variables will not override task-level variables of the same name.
 
+Environment variables can also be [inherited from the workspace](./tasks#env), in which they are
+merged into this setting, with project-level variables taking precedence on conflicting keys. This
+can be customized with the [`workspace.mergeStrategies.env`](#mergestrategies) setting.
+
 ```yaml title="moon.yml"
 env:
   NODE_ENV: 'production'
@@ -1973,6 +1977,29 @@ Controls how project settings are merged with settings inherited from the worksp
 those defined in [`.moon/tasks/**/*`](./tasks). Each field accepts one of the
 [merge strategies](../concepts/task-inheritance#merge-strategies): `append` (the default),
 `prepend`, `preserve`, or `replace`.
+
+#### `env`
+
+The optional `env` setting controls how local [`env`](#env) variables are merged with
+[inherited environment variables](./tasks#env). The chosen strategy is applied to the entire map:
+
+- `append` (default) - Local variables are merged _after_ inherited variables, and win on
+  conflicting keys.
+- `prepend` - Local variables are merged _before_ inherited variables, and inherited variables win
+  on conflicting keys.
+- `preserve` - The first defined map is preserved entirely (typically the most global), and
+  subsequent maps are ignored.
+- `replace` - The last defined map entirely replaces prior maps.
+
+```yaml title="moon.yml" {2,3}
+workspace:
+  mergeStrategies:
+    env: 'replace'
+
+env:
+  # Replaces all inherited variables, instead of merging with them
+  NODE_ENV: 'development'
+```
 
 #### `fileGroups`
 

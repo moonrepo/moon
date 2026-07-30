@@ -154,6 +154,7 @@ pub fn load_project_config_in_format(format: &str) {
                     rename: FxHashMap::from_iter([(Id::raw("old"), Id::raw("new"))])
                 },
                 merge_strategies: ProjectWorkspaceMergeStrategiesConfig {
+                    env: Some(MergeStrategy::Preserve),
                     file_groups: Some(MergeStrategy::Replace)
                 }
             },
@@ -241,6 +242,7 @@ pub fn load_tasks_config_in_format(format: &str) {
     assert_eq!(
         config,
         InheritedTasksConfig {
+            env: IndexMap::from_iter([("KEY".into(), Some("value".to_owned()))]),
             file_groups: FxHashMap::from_iter([
                 (
                     Id::raw("sources"),

@@ -620,6 +620,12 @@ export interface InheritedTasksConfig {
 	/** @default '../cache/schemas/tasks.json' */
 	$schema?: string;
 	/**
+	 * A map of environment variables that will be inherited by all
+	 * matching projects, and merged into their `env` setting.
+	 * @since 2.5.0
+	 */
+	env?: Record<string, string | null>;
+	/**
 	 * Extends one or many tasks configuration files.
 	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
@@ -1084,6 +1090,12 @@ export interface PartialTaskConfig {
 export interface PartialInheritedTasksConfig {
 	/** @default '../cache/schemas/tasks.json' */
 	$schema?: string | null;
+	/**
+	 * A map of environment variables that will be inherited by all
+	 * matching projects, and merged into their `env` setting.
+	 * @since 2.5.0
+	 */
+	env?: Record<string, string | null> | null;
 	/**
 	 * Extends one or many tasks configuration files.
 	 * Supports a relative file path or a secure URL.

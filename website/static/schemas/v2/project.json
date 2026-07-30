@@ -1000,6 +1000,20 @@
       "description": "Controls how project settings are merged with inherited workspace-level settings.",
       "type": "object",
       "properties": {
+        "env": {
+          "title": "env",
+          "description": "The strategy to use when merging env with inherited environment variables, applied to the entire map. @since 2.5.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `env` with inherited environment variables, applied to the entire map. @since 2.5.0"
+        },
         "fileGroups": {
           "title": "fileGroups",
           "description": "The strategy to use when merging fileGroups with inherited file groups, applied per group. @since 2.5.0",

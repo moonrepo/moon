@@ -203,6 +203,14 @@ export interface ProjectWorkspaceInheritedTasksConfig {
  */
 export interface ProjectWorkspaceMergeStrategiesConfig {
 	/**
+	 * The strategy to use when merging `env` with inherited
+	 * environment variables, applied to the entire map.
+	 * @since 2.5.0
+	 *
+	 * @default 'append'
+	 */
+	env?: MergeStrategy | null;
+	/**
 	 * The strategy to use when merging `fileGroups` with
 	 * inherited file groups, applied per group.
 	 * @since 2.5.0
@@ -447,6 +455,14 @@ export interface PartialProjectWorkspaceInheritedTasksConfig {
  * workspace-level settings.
  */
 export interface PartialProjectWorkspaceMergeStrategiesConfig {
+	/**
+	 * The strategy to use when merging `env` with inherited
+	 * environment variables, applied to the entire map.
+	 * @since 2.5.0
+	 *
+	 * @default 'append'
+	 */
+	env?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `fileGroups` with
 	 * inherited file groups, applied per group.

@@ -93,9 +93,10 @@ support one of the following strategy values.
 - `replace` - Values found in the local task entirely _replaces_ the values in the global task. This
   strategy is useful when you need full control.
 
-File groups are also merged using these strategies, applied per group. Unlike tasks, the strategy is
-configured per project with the
-[`workspace.mergeStrategies.fileGroups`](../config/project#mergestrategies)
+Project-level [`env`](../config/project#env) and [`fileGroups`](../config/project#filegroups) are
+also merged with inherited workspace-level values using these strategies. Unlike tasks, the strategy
+is configured per project with the
+[`workspace.mergeStrategies`](../config/project#mergestrategies)
 setting. <VersionLabel version="2.5.0" />
 
 All 3 of these strategies are demonstrated below, with a somewhat contrived example, but you get the

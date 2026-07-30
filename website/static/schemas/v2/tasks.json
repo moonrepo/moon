@@ -8,6 +8,25 @@
       "default": "../cache/schemas/tasks.json",
       "type": "string"
     },
+    "env": {
+      "title": "env",
+      "description": "A map of environment variables that will be inherited by all matching projects, and merged into their env setting. @since 2.5.0",
+      "type": "object",
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "propertyNames": {
+        "type": "string"
+      },
+      "markdownDescription": "A map of environment variables that will be inherited by all matching projects, and merged into their `env` setting. @since 2.5.0"
+    },
     "extends": {
       "title": "extends",
       "description": "Extends one or many tasks configuration files. Supports a relative file path or a secure URL. @since 1.12.0",

@@ -1,7 +1,8 @@
 use moon_common::Id;
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_config::{
-    DependencyScope, DependencySource, LanguageType, ProjectDependencyConfig, TaskArgs, TaskConfig,
+    DependencyScope, DependencySource, EnvMap, LanguageType, ProjectDependencyConfig, TaskArgs,
+    TaskConfig,
 };
 use moon_file_group::FileGroup;
 use moon_project::Project;
@@ -348,6 +349,90 @@ mod project_builder {
                         )
                         .unwrap()
                     )
+                ])
+            );
+        }
+    }
+
+    mod env {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn appends_local_after_global_by_default() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-append", sandbox.path()).await;
+
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([
+                    ("GLOBAL".into(), Some("all".to_owned())),
+                    // Local wins on conflicting keys
+                    ("SHARED".into(), Some("local".to_owned())),
+                    ("LOCAL".into(), Some("yes".to_owned())),
+                ])
+            );
+
+            // And tasks receive the merged env
+            let task = project.tasks.get("global-unknown").unwrap();
+
+            assert_eq!(task.env.get("GLOBAL"), Some(&Some("all".to_owned())));
+            assert_eq!(task.env.get("LOCAL"), Some(&Some("yes".to_owned())));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn merges_across_inherited_layers_when_no_local() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-layers", sandbox.path()).await;
+
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([
+                    ("GLOBAL".into(), Some("all".to_owned())),
+                    // The node layer wins over the all layer
+                    ("SHARED".into(), Some("node".to_owned())),
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn replace_strategy_uses_only_local() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-replace", sandbox.path()).await;
+
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([("ONLY".into(), Some("local".to_owned()))])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn preserve_strategy_keeps_first_definition() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-preserve", sandbox.path()).await;
+
+            // The first inherited map wins entirely, locals are ignored
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([
+                    ("GLOBAL".into(), Some("all".to_owned())),
+                    ("SHARED".into(), Some("all".to_owned())),
+                ])
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn prepend_strategy_favors_inherited_values() {
+            let sandbox = create_sandbox("builder");
+            let project = build_project("env-prepend", sandbox.path()).await;
+
+            assert_eq!(
+                project.config.env,
+                EnvMap::from_iter([
+                    ("GLOBAL".into(), Some("all".to_owned())),
+                    // Inherited wins on conflicting keys
+                    ("SHARED".into(), Some("all".to_owned())),
+                    // But local only keys are kept
+                    ("LOCAL".into(), Some("yes".to_owned())),
                 ])
             );
         }

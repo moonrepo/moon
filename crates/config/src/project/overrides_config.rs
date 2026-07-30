@@ -70,6 +70,12 @@ config_struct!(
     /// workspace-level settings.
     #[derive(Config)]
     pub struct ProjectWorkspaceMergeStrategiesConfig {
+        /// The strategy to use when merging `env` with inherited
+        /// environment variables, applied to the entire map.
+        /// @since 2.5.0
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub env: Option<MergeStrategy>,
+
         /// The strategy to use when merging `fileGroups` with
         /// inherited file groups, applied per group.
         /// @since 2.5.0

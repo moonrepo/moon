@@ -658,6 +658,7 @@ toolchains:
             let config =
                 test_load_config("moon.yml", "{}", |path| load_config_from_root(path, "."));
 
+            assert_eq!(config.workspace.merge_strategies.env, None);
             assert_eq!(config.workspace.merge_strategies.file_groups, None);
         }
 
@@ -675,12 +676,14 @@ toolchains:
                         r"
 workspace:
   mergeStrategies:
+    env: '{value}'
     fileGroups: '{value}'
 "
                     ),
                     |path| load_config_from_root(path, "."),
                 );
 
+                assert_eq!(config.workspace.merge_strategies.env, Some(expected));
                 assert_eq!(
                     config.workspace.merge_strategies.file_groups,
                     Some(expected)

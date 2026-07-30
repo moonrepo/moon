@@ -13,10 +13,13 @@
     - The destination and transport are configured with the standard `OTEL_EXPORTER_OTLP_*`
       environment variables.
 - **Config**
+  - Added an `env` setting to `.moon/tasks/**/*` configs. These environment variables are inherited
+    by all matching projects, and are merged into each project's `env` setting, with project-level
+    variables taking precedence.
   - Added a `workspace.mergeStrategies` setting to `moon.*` config, which controls how project
-    settings are merged with inherited workspace-level settings. Currently supports `fileGroups`,
-    using the same merge strategies as task merging (`append`, `prepend`, `preserve`, and
-    `replace`), applied per group.
+    settings are merged with inherited workspace-level settings. Currently supports `env` and
+    `fileGroups`, using the same merge strategies as task merging (`append`, `prepend`, `preserve`,
+    and `replace`).
   - Project globs can now be configured with a trailing file, allowing more precise project
     matching. For example, `apps/*/package.json` will only find Node.js projects, and
     `src/**/*.csproj` will only find .NET projects. The path without file name will be used as the

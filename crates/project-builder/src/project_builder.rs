@@ -1,8 +1,8 @@
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
-    DependencySource, InheritFor, InheritedTasks, InheritedTasksManager, Input, LanguageType,
-    MergeStrategy, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn, TaskConfig,
-    ToolchainsConfig, merge_vec,
+    DependencySource, EnvMap, InheritFor, InheritedTasks, InheritedTasksManager, Input,
+    LanguageType, MergeStrategy, ProjectConfig, ProjectDependencyConfig, ProjectDependsOn,
+    TaskConfig, ToolchainsConfig, merge_index_map, merge_vec,
 };
 use moon_config_loader::ConfigLoader;
 use moon_file_group::FileGroup;
@@ -13,6 +13,7 @@ use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
+use std::mem;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tracing::{debug, instrument, trace};
@@ -110,8 +111,55 @@ impl<'app> ProjectBuilder<'app> {
         );
 
         self.global_configs = Some(global_configs);
+        self.merge_global_env();
 
         Ok(self)
+    }
+
+    /// Merge environment variables inherited from global configs into the
+    /// local config, using the configured strategy, so that downstream
+    /// consumers only need to read from a single source.
+    fn merge_global_env(&mut self) {
+        let Some(global) = &self.global_configs else {
+            return;
+        };
+        let Some(local) = &mut self.local_config else {
+            return;
+        };
+
+        // Only configs that define variables participate in the merge chain,
+        // otherwise a local config could replace values that don't exist
+        let mut chain = global
+            .configs
+            .values()
+            .filter(|config| !config.env.is_empty())
+            .map(|config| config.env.clone())
+            .collect::<Vec<_>>();
+
+        if chain.is_empty() {
+            return;
+        }
+
+        let strategy = local.workspace.merge_strategies.env.unwrap_or_default();
+
+        trace!(
+            project_id = self.id.as_str(),
+            env_vars = ?chain.iter().flat_map(|env| env.keys()).collect::<Vec<_>>(),
+            strategy = ?strategy,
+            "Inheriting global env vars",
+        );
+
+        if !local.env.is_empty() {
+            chain.push(mem::take(&mut local.env));
+        }
+
+        let mut env = EnvMap::default();
+
+        for (index, next_env) in chain.into_iter().enumerate() {
+            env = merge_index_map(env, next_env, strategy, index);
+        }
+
+        local.env = env;
     }
 
     /// Inherit the local config and then detect applicable language and toolchain fields.

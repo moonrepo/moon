@@ -54,4 +54,5 @@ include = ["test"]
 rename = { old = "new" }
 
 [workspace.mergeStrategies]
+env = "preserve"
 fileGroups = "replace"

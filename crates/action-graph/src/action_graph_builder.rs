@@ -486,6 +486,12 @@ impl<'query> ActionGraphBuilder<'query> {
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
 
+        // Toolchain does not support locating a root, so return
+        // an empty output instead of failing the function call
+        if !toolchain.supports_tier_2().await {
+            return Ok(LocateDependenciesRootOutput::default());
+        }
+
         let output = toolchain
             .locate_dependencies_root(match project {
                 Some(project) => LocateDependenciesRootInput {

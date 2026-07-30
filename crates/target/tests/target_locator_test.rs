@@ -400,4 +400,47 @@ mod target_locator {
             TargetLocator::parse("#lint").unwrap();
         }
     }
+
+    mod is_fully_qualified {
+        use super::*;
+
+        #[test]
+        fn true_for_project_id_and_self_scopes() {
+            assert!(
+                TargetLocator::parse("foo:build")
+                    .unwrap()
+                    .is_fully_qualified()
+            );
+            assert!(
+                TargetLocator::parse("~:build")
+                    .unwrap()
+                    .is_fully_qualified()
+            );
+        }
+
+        #[test]
+        fn false_for_ambiguous_scopes() {
+            for locator in [":build", "^:build", "^build:lint", "#ui:build", "foo:#lint"] {
+                assert!(
+                    !TargetLocator::parse(locator).unwrap().is_fully_qualified(),
+                    "{locator}"
+                );
+            }
+        }
+
+        #[test]
+        fn false_for_default_project_tasks() {
+            assert!(!TargetLocator::parse("build").unwrap().is_fully_qualified());
+        }
+
+        #[test]
+        fn false_for_globs() {
+            for locator in ["foo:build-*", ":build-*", "proj-{a,b}:build"] {
+                assert!(
+                    !TargetLocator::parse(locator).unwrap().is_fully_qualified(),
+                    "{locator}"
+                );
+            }
+        }
+    }
 }

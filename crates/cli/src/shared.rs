@@ -296,7 +296,7 @@ pub async fn run_cli(args: Vec<OsString>) -> MainResult {
         .await;
 
     // Exit quietly instead of rendering an error when our consumer
-    // disappeared mid-output; there's no one left to read the error
+    // disappeared mid-output; there's no one left to read the error.
     if outcome.error.as_ref().is_some_and(is_broken_pipe) {
         return Ok(ExitCode::from(BROKEN_PIPE_EXIT_CODE));
     }

@@ -234,8 +234,8 @@ export type TaskOptionAffectedFilesEntry = boolean | 'args' | 'env' | TaskOption
 
 export type TaskOptionEnvFile = boolean | string | string[];
 
-/** The strategy in which to merge a specific task option. */
-export type TaskMergeStrategy = 'append' | 'prepend' | 'preserve' | 'replace';
+/** The strategy in which to merge two configuration values. */
+export type MergeStrategy = 'append' | 'prepend' | 'preserve' | 'replace';
 
 /** The operating system in which to only run this task on. */
 export type TaskOperatingSystem = 'linux' | 'macos' | 'windows';
@@ -328,58 +328,58 @@ export interface TaskOptionsConfig {
 	 *
 	 * @default 'append'
 	 */
-	merge?: TaskMergeStrategy | null;
+	merge?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `args` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeArgs?: TaskMergeStrategy | null;
+	mergeArgs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `checks` with an inherited task.
 	 * @since 2.4.0
 	 *
 	 * @default 'append'
 	 */
-	mergeChecks?: TaskMergeStrategy | null;
+	mergeChecks?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `deps` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeDeps?: TaskMergeStrategy | null;
+	mergeDeps?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `env` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeEnv?: TaskMergeStrategy | null;
+	mergeEnv?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `inputs` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeInputs?: TaskMergeStrategy | null;
+	mergeInputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `outputs` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeOutputs?: TaskMergeStrategy | null;
+	mergeOutputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `tags` with an inherited task.
 	 * @since 2.3.0
 	 *
 	 * @default 'append'
 	 */
-	mergeTags?: TaskMergeStrategy | null;
+	mergeTags?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 * @since 2.0.0
 	 *
 	 * @default 'append'
 	 */
-	mergeToolchains?: TaskMergeStrategy | null;
+	mergeToolchains?: MergeStrategy | null;
 	/**
 	 * Creates an exclusive lock on a virtual resource, preventing other
 	 * tasks using the same resource from running concurrently.
@@ -620,6 +620,12 @@ export interface InheritedTasksConfig {
 	/** @default '../cache/schemas/tasks.json' */
 	$schema?: string;
 	/**
+	 * A map of environment variables that will be inherited by all
+	 * matching projects, and merged into their `env` setting.
+	 * @since 2.5.0
+	 */
+	env?: Record<string, string | null>;
+	/**
 	 * Extends one or many tasks configuration files.
 	 * Supports a relative file path or a secure URL.
 	 * @since 1.12.0
@@ -853,58 +859,58 @@ export interface PartialTaskOptionsConfig {
 	 *
 	 * @default 'append'
 	 */
-	merge?: TaskMergeStrategy | null;
+	merge?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `args` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeArgs?: TaskMergeStrategy | null;
+	mergeArgs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `checks` with an inherited task.
 	 * @since 2.4.0
 	 *
 	 * @default 'append'
 	 */
-	mergeChecks?: TaskMergeStrategy | null;
+	mergeChecks?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `deps` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeDeps?: TaskMergeStrategy | null;
+	mergeDeps?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `env` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeEnv?: TaskMergeStrategy | null;
+	mergeEnv?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `inputs` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeInputs?: TaskMergeStrategy | null;
+	mergeInputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `outputs` with an inherited task.
 	 *
 	 * @default 'append'
 	 */
-	mergeOutputs?: TaskMergeStrategy | null;
+	mergeOutputs?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `tags` with an inherited task.
 	 * @since 2.3.0
 	 *
 	 * @default 'append'
 	 */
-	mergeTags?: TaskMergeStrategy | null;
+	mergeTags?: MergeStrategy | null;
 	/**
 	 * The strategy to use when merging `toolchains` with an inherited task.
 	 * @since 2.0.0
 	 *
 	 * @default 'append'
 	 */
-	mergeToolchains?: TaskMergeStrategy | null;
+	mergeToolchains?: MergeStrategy | null;
 	/**
 	 * Creates an exclusive lock on a virtual resource, preventing other
 	 * tasks using the same resource from running concurrently.
@@ -1084,6 +1090,12 @@ export interface PartialTaskConfig {
 export interface PartialInheritedTasksConfig {
 	/** @default '../cache/schemas/tasks.json' */
 	$schema?: string | null;
+	/**
+	 * A map of environment variables that will be inherited by all
+	 * matching projects, and merged into their `env` setting.
+	 * @since 2.5.0
+	 */
+	env?: Record<string, string | null> | null;
 	/**
 	 * Extends one or many tasks configuration files.
 	 * Supports a relative file path or a secure URL.

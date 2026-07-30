@@ -1,5 +1,9 @@
 extends: './global-0.yml'
 
+env:
+  BASE: 'one'
+  SHARED: 'one'
+
 fileGroups:
   sources:
     - 'src/**/*'

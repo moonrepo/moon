@@ -7,11 +7,11 @@ use moon_common::{
     path::{WorkspaceRelativePath, encode_component, is_root_level_source},
 };
 use moon_config::{
-    EnvMap, InheritedTasksConfig, Input, ProjectConfig, ProjectDependencyConfig, ProjectInput,
-    ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskMergeStrategy, TaskOptionAffectedFilesEntry, TaskOptionCache,
-    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
-    ToolchainsConfig, is_glob_like,
+    EnvMap, InheritedTasksConfig, Input, MergeStrategy, ProjectConfig, ProjectDependencyConfig,
+    ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
+    TaskDependencyConfig, TaskOptionAffectedFilesEntry, TaskOptionCache, TaskOptionRunInCI,
+    TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig,
+    is_glob_like, merge_index_map, merge_vec,
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
@@ -24,7 +24,6 @@ use moon_toolchain::filter_and_resolve_toolchain_ids;
 use moon_toolchain_plugin::{ToolchainRegistry, api::DefineRequirementsInput};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
-use std::hash::Hash;
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
 use system_env::is_command_on_path;
@@ -348,11 +347,11 @@ impl<'proj> TasksBuilder<'proj> {
         // Aggregate all values that that are inherited from the project,
         // and should be set on the task first, so that merge strategies can be applied.
         for (index, args) in args_sets.into_iter().enumerate() {
-            task.args = self.merge_vec(task.args, args, task.options.merge_args, index, false);
+            task.args = merge_vec(task.args, args, task.options.merge_args, index, false);
         }
 
         for (index, env) in env_sets.into_iter().enumerate() {
-            task.env = self.merge_index_map(task.env, env, task.options.merge_env, index);
+            task.env = merge_index_map(task.env, env, task.options.merge_env, index);
         }
 
         // Finally build the task itself, while applying our complex merge logic!
@@ -368,7 +367,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(checks) = &config.checks {
-                task.checks = self.merge_vec(
+                task.checks = merge_vec(
                     task.checks,
                     checks.to_owned(),
                     task.options.merge_checks,
@@ -384,7 +383,7 @@ impl<'proj> TasksBuilder<'proj> {
                     .map(|dep| dep.into_config())
                     .collect::<Vec<_>>();
 
-                task.deps = self.merge_vec(
+                task.deps = merge_vec(
                     task.deps,
                     if link.inherited {
                         self.apply_filters_to_deps(deps)
@@ -398,8 +397,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(env) = &config.env {
-                task.env =
-                    self.merge_index_map(task.env, env.to_owned(), task.options.merge_env, index);
+                task.env = merge_index_map(task.env, env.to_owned(), task.options.merge_env, index);
             }
 
             // Inherit global inputs as normal inputs, but do not consider them a configured input
@@ -411,15 +409,14 @@ impl<'proj> TasksBuilder<'proj> {
             if let Some(inputs) = &config.inputs {
                 has_configured_inputs = true;
 
-                if inputs.is_empty()
-                    && matches!(task.options.merge_inputs, TaskMergeStrategy::Replace)
+                if inputs.is_empty() && matches!(task.options.merge_inputs, MergeStrategy::Replace)
                 {
                     configured_inputs = 0;
                 } else {
                     configured_inputs += inputs.len();
                 }
 
-                task.inputs = self.merge_vec(
+                task.inputs = merge_vec(
                     task.inputs,
                     inputs.to_owned(),
                     task.options.merge_inputs,
@@ -429,7 +426,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(outputs) = &config.outputs {
-                task.outputs = self.merge_vec(
+                task.outputs = merge_vec(
                     task.outputs,
                     outputs.to_owned(),
                     task.options.merge_outputs,
@@ -439,7 +436,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(tags) = &config.tags {
-                task.tags = self.merge_vec(
+                task.tags = merge_vec(
                     task.tags,
                     tags.to_owned(),
                     task.options.merge_tags,
@@ -449,7 +446,7 @@ impl<'proj> TasksBuilder<'proj> {
             }
 
             if let Some(toolchains) = &config.toolchains {
-                task.toolchains = self.merge_vec(
+                task.toolchains = merge_vec(
                     task.toolchains,
                     toolchains.to_owned_list(),
                     task.options.merge_toolchains,
@@ -528,20 +525,14 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if !global_deps.is_empty() {
-            task.deps = self.merge_vec(
-                task.deps,
-                global_deps,
-                TaskMergeStrategy::Append,
-                1000,
-                true,
-            );
+            task.deps = merge_vec(task.deps, global_deps, MergeStrategy::Append, 1000, true);
         }
 
         if !global_inputs.is_empty() {
-            task.inputs = self.merge_vec(
+            task.inputs = merge_vec(
                 task.inputs,
                 global_inputs,
-                TaskMergeStrategy::Append,
+                MergeStrategy::Append,
                 1000,
                 true,
             );
@@ -1283,143 +1274,6 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         next_deps
-    }
-
-    fn merge_map<K, V>(
-        &self,
-        base: FxHashMap<K, V>,
-        next: FxHashMap<K, V>,
-        strategy: TaskMergeStrategy,
-        index: usize,
-    ) -> FxHashMap<K, V>
-    where
-        K: Eq + Hash,
-    {
-        match strategy {
-            TaskMergeStrategy::Append => {
-                if next.is_empty() {
-                    return base;
-                }
-
-                let mut map = FxHashMap::default();
-                map.extend(base);
-                map.extend(next);
-                map
-            }
-            TaskMergeStrategy::Prepend => {
-                if next.is_empty() {
-                    return base;
-                }
-
-                let mut map = FxHashMap::default();
-                map.extend(next);
-                map.extend(base);
-                map
-            }
-            TaskMergeStrategy::Preserve => {
-                if index == 0 {
-                    next
-                } else {
-                    base
-                }
-            }
-            TaskMergeStrategy::Replace => next,
-        }
-    }
-
-    fn merge_index_map<K, V>(
-        &self,
-        base: IndexMap<K, V>,
-        next: IndexMap<K, V>,
-        strategy: TaskMergeStrategy,
-        index: usize,
-    ) -> IndexMap<K, V>
-    where
-        K: Eq + Hash,
-    {
-        match strategy {
-            TaskMergeStrategy::Append => {
-                if next.is_empty() {
-                    return base;
-                }
-
-                let mut map = IndexMap::default();
-                map.extend(base);
-                map.extend(next);
-                map
-            }
-            TaskMergeStrategy::Prepend => {
-                if next.is_empty() {
-                    return base;
-                }
-
-                let mut map = IndexMap::default();
-                map.extend(next);
-                map.extend(base);
-                map
-            }
-            TaskMergeStrategy::Preserve => {
-                if index == 0 {
-                    next
-                } else {
-                    base
-                }
-            }
-            TaskMergeStrategy::Replace => next,
-        }
-    }
-
-    fn merge_vec<T: Eq + std::fmt::Debug>(
-        &self,
-        base: Vec<T>,
-        next: Vec<T>,
-        strategy: TaskMergeStrategy,
-        index: usize,
-        dedupe: bool,
-    ) -> Vec<T> {
-        let mut list: Vec<T> = vec![];
-
-        // Dedupe while merging vectors. We can't use a set here because
-        // we need to preserve the insertion order. Revisit if this is costly!
-        let mut append = |items: Vec<T>, force: bool| {
-            for item in items {
-                #[allow(clippy::nonminimal_bool)]
-                if force || !dedupe || (dedupe && !list.contains(&item)) {
-                    list.push(item);
-                }
-            }
-        };
-
-        match strategy {
-            TaskMergeStrategy::Append => {
-                if next.is_empty() {
-                    return base;
-                }
-
-                append(base, true);
-                append(next, false);
-            }
-            TaskMergeStrategy::Prepend => {
-                if next.is_empty() {
-                    return base;
-                }
-
-                append(next, true);
-                append(base, false);
-            }
-            TaskMergeStrategy::Preserve => {
-                if index == 0 {
-                    list.extend(next);
-                } else {
-                    list.extend(base);
-                }
-            }
-            TaskMergeStrategy::Replace => {
-                list.extend(next);
-            }
-        }
-
-        list
     }
 }
 

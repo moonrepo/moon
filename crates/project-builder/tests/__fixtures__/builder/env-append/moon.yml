@@ -1,0 +1,5 @@
+language: 'rust'
+
+env:
+  SHARED: 'local'
+  LOCAL: 'yes'

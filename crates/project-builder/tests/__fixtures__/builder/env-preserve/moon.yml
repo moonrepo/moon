@@ -1,0 +1,9 @@
+language: 'rust'
+
+workspace:
+  mergeStrategies:
+    env: 'preserve'
+
+env:
+  SHARED: 'local'
+  LOCAL: 'yes'

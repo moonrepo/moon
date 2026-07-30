@@ -28,12 +28,6 @@ tasks:
     deps: ['chain5']
   chain5: {}
 
-  # Cycle detection
-  cycle1:
-    deps: ['cycle2']
-  cycle2:
-    deps: ['cycle1']
-
   # Dependents
   parent1:
     deps: ['base']

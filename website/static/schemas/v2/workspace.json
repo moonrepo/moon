@@ -479,11 +479,13 @@
         "asyncAffectedTracking": {
           "title": "asyncAffectedTracking",
           "description": "Track and determine affected projects and tasks asynchronously. @since 2.2.0",
+          "default": true,
           "type": "boolean"
         },
         "asyncGraphBuilding": {
           "title": "asyncGraphBuilding",
           "description": "Build the project and task graphs asynchronously. @since 2.2.0",
+          "default": true,
           "type": "boolean"
         },
         "casOutputsCache": {
@@ -495,6 +497,7 @@
         "nativeFileHashing": {
           "title": "nativeFileHashing",
           "description": "Use native file hashing instead of using the VCS. @since 2.3.0",
+          "default": true,
           "type": "boolean"
         }
       },

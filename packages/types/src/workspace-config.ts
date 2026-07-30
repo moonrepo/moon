@@ -177,16 +177,18 @@ export interface ExperimentsConfig {
 	 * Track and determine affected projects and tasks asynchronously.
 	 * @since 2.2.0
 	 *
+	 * @default true
 	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
 	 */
-	asyncAffectedTracking: boolean;
+	asyncAffectedTracking?: boolean;
 	/**
 	 * Build the project and task graphs asynchronously.
 	 * @since 2.2.0
 	 *
+	 * @default true
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
-	asyncGraphBuilding: boolean;
+	asyncGraphBuilding?: boolean;
 	/**
 	 * Store task outputs in a local CAS (content-addressable storage) cache.
 	 * @since 2.3.0
@@ -198,9 +200,10 @@ export interface ExperimentsConfig {
 	 * Use native file hashing instead of using the VCS.
 	 * @since 2.3.0
 	 *
+	 * @default true
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
-	nativeFileHashing: boolean;
+	nativeFileHashing?: boolean;
 }
 
 /** Configures the generator for scaffolding from templates. */
@@ -868,6 +871,7 @@ export interface PartialExperimentsConfig {
 	 * Track and determine affected projects and tasks asynchronously.
 	 * @since 2.2.0
 	 *
+	 * @default true
 	 * @env MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING
 	 */
 	asyncAffectedTracking?: boolean | null;
@@ -875,6 +879,7 @@ export interface PartialExperimentsConfig {
 	 * Build the project and task graphs asynchronously.
 	 * @since 2.2.0
 	 *
+	 * @default true
 	 * @env MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING
 	 */
 	asyncGraphBuilding?: boolean | null;
@@ -889,6 +894,7 @@ export interface PartialExperimentsConfig {
 	 * Use native file hashing instead of using the VCS.
 	 * @since 2.3.0
 	 *
+	 * @default true
 	 * @env MOON_EXPERIMENT_NATIVE_FILE_HASHING
 	 */
 	nativeFileHashing?: boolean | null;

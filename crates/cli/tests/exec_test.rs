@@ -4,7 +4,7 @@ use moon_cache::{CacheContext, CacheEngine};
 use moon_common::is_ci;
 use moon_config::{CacheConfig, HasherWalkStrategy, PartialHasherConfig, RemoteConfig};
 use moon_task_runner::TaskRunCacheState;
-use moon_test_utils::predicates::prelude::*;
+use moon_test_utils::{create_moon_sandbox, predicates::prelude::*};
 use starbase_utils::{fs, json};
 use std::path::{MAIN_SEPARATOR_STR, Path};
 use std::sync::Arc;
@@ -342,17 +342,17 @@ mod exec {
 
         #[test]
         fn errors_for_cycle_in_task_deps() {
-            let sandbox = create_cases_sandbox();
+            let sandbox = create_moon_sandbox("tasks-cycle");
+            sandbox.with_default_projects();
 
             let assert = sandbox.run_bin(|cmd| {
-                cmd.arg("exec").arg("depsA:taskCycle");
+                cmd.arg("exec").arg("cycle:a");
             });
 
             let output = assert.output();
 
-            assert!(predicate::str::contains("RunTask(depsA:taskCycle)").eval(&output));
-            assert!(predicate::str::contains("RunTask(depsB:taskCycle)").eval(&output));
-            assert!(predicate::str::contains("would introduce a").eval(&output));
+            assert!(predicate::str::contains("Unable to create task graph").eval(&output));
+            assert!(predicate::str::contains("would introduce a cycle").eval(&output));
 
             assert.failure();
         }

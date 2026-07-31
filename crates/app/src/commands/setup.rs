@@ -1,7 +1,6 @@
 use crate::helpers::run_action_pipeline;
 use crate::session::{MoonSession, SessionResult};
 use iocraft::prelude::element;
-use moon_action::ActionStatus;
 use moon_action_graph::ActionGraphBuilderOptions;
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use tracing::instrument;
@@ -12,7 +11,7 @@ pub async fn setup(session: MoonSession) -> SessionResult {
         .build_action_graph_with_options(ActionGraphBuilderOptions {
             // Only enable toolchain setup for this command
             install_dependencies: false.into(),
-            setup_environment: false.into(),
+            setup_environment: true.into(),
             setup_toolchains: true.into(),
             sync_projects: false.into(),
             sync_project_dependencies: false,
@@ -28,11 +27,15 @@ pub async fn setup(session: MoonSession) -> SessionResult {
 
     for toolchain_id in session.toolchains_config.plugins.keys() {
         if let Some(spec) = action_graph_builder.get_workspace_spec(toolchain_id) {
-            action_graph_builder.setup_toolchain(&spec, None).await?;
+            let index = action_graph_builder.setup_toolchain(&spec, None).await?;
 
-            if !spec.is_system() {
+            if index.is_none() {
+                continue;
+            } else if !spec.is_system() {
                 toolchain_count += 1;
             }
+
+            action_graph_builder.setup_environment_root(&spec).await?;
         }
     }
 
@@ -68,31 +71,12 @@ pub async fn setup(session: MoonSession) -> SessionResult {
     let results = run_action_pipeline(&session, action_context, action_graph).await?;
 
     // Analyze results and provide feedback
-    let passed_count = results
-        .iter()
-        .filter(|action| matches!(action.status, ActionStatus::Passed))
-        .count();
-    let skipped_count = results
-        .iter()
-        .filter(|action| {
-            matches!(
-                action.status,
-                ActionStatus::Skipped | ActionStatus::Cached | ActionStatus::CachedFromRemote
-            )
-        })
-        .count();
     let failed_count = results.iter().filter(|action| action.has_failed()).count();
 
     let message = if failed_count > 0 {
-        format!(
-            "Setup toolchains with {passed_count} passed, {skipped_count} skipped, and {failed_count} failed"
-        )
-    } else if passed_count == 1 {
-        format!("Setup {passed_count} toolchain successfully!")
-    } else if passed_count > 0 {
-        format!("Setup {passed_count} toolchains successfully!")
+        "Failed to setup toolchains!".to_string()
     } else {
-        "All toolchains are already up to date!".to_string()
+        "Setup toolchains successfully!".to_string()
     };
 
     // Return error code if any setup failed

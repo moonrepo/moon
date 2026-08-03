@@ -15,7 +15,6 @@
 use crate::{Id, MoonContext, VirtualPath};
 use bitflags::bitflags;
 use std::collections::BTreeMap;
-use std::fmt;
 use std::path::PathBuf;
 use warpgate_api::{api_enum, api_struct, api_unit_enum};
 
@@ -27,98 +26,6 @@ use warpgate_api::{api_enum, api_struct, api_unit_enum};
 pub const VCS_PLUGIN_PROTOCOL_VERSION: u16 = 6;
 
 api_struct!(
-    /// Opaque provider-defined identity for an exact repository state.
-    #[serde(transparent)]
-    pub struct VcsStateId(pub String);
-);
-
-impl VcsStateId {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    pub fn into_inner(self) -> String {
-        self.0
-    }
-}
-
-impl AsRef<str> for VcsStateId {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl fmt::Display for VcsStateId {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.as_str())
-    }
-}
-
-impl From<String> for VcsStateId {
-    fn from(value: String) -> Self {
-        Self(value)
-    }
-}
-
-impl From<&str> for VcsStateId {
-    fn from(value: &str) -> Self {
-        Self(value.to_owned())
-    }
-}
-
-api_struct!(
-    /// Opaque provider expression that resolves to a repository state.
-    #[serde(transparent)]
-    pub struct VcsReference(pub String);
-);
-
-impl VcsReference {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    pub fn into_inner(self) -> String {
-        self.0
-    }
-}
-
-impl AsRef<str> for VcsReference {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl fmt::Display for VcsReference {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.as_str())
-    }
-}
-
-impl From<String> for VcsReference {
-    fn from(value: String) -> Self {
-        Self(value)
-    }
-}
-
-impl From<&str> for VcsReference {
-    fn from(value: &str) -> Self {
-        Self(value.to_owned())
-    }
-}
-
-impl From<VcsStateId> for VcsReference {
-    fn from(value: VcsStateId) -> Self {
-        Self(value.into_inner())
-    }
-}
-
-impl From<&VcsStateId> for VcsReference {
-    fn from(value: &VcsStateId) -> Self {
-        Self(value.as_str().to_owned())
-    }
-}
-
-api_struct!(
     /// Input passed to `register_vcs` before any other provider operation.
     pub struct RegisterVcsInput {
         /// ID under which the host loaded this plugin instance.
@@ -127,16 +34,6 @@ api_struct!(
         pub host_protocol_version: u16,
     }
 );
-
-impl VcsState {
-    pub fn id_str(&self) -> Option<&str> {
-        self.id.as_ref().map(VcsStateId::as_str)
-    }
-
-    pub fn id_reference(&self) -> Option<VcsReference> {
-        self.id.as_ref().map(VcsReference::from)
-    }
-}
 
 api_struct!(
     /// Provider metadata returned by `register_vcs`.
@@ -188,7 +85,7 @@ api_struct!(
     /// Input passed to `initialize_vcs` exactly once per plugin instance.
     pub struct InitializeVcsInput {
         /// Movable provider expression to resolve and pin as the baseline.
-        pub baseline: Option<VcsReference>,
+        pub baseline: Option<String>,
         /// Preferred remote names, in priority order, for repository metadata.
         #[serde(default)]
         pub remote_candidates: Vec<String>,
@@ -205,7 +102,7 @@ api_struct!(
         /// The ID must remain stable and round-trippable to the provider for the
         /// lifetime of this initialization. It need not survive rewritten history
         /// or a later plugin instance.
-        pub id: Option<VcsStateId>,
+        pub id: Option<String>,
         /// Human-readable bookmark, branch, channel, change, or equivalent.
         /// Labels may move and must not be used as exact state identities.
         pub label: Option<String>,
@@ -263,8 +160,8 @@ api_enum!(
         /// predecessor. When `head` is absent, use the initialized recorded state.
         /// Movable expressions must be resolved from the initialized state.
         Submission {
-            base: Option<VcsReference>,
-            head: Option<VcsReference>,
+            base: Option<String>,
+            head: Option<String>,
             /// Include working changes captured during initialization.
             include_working: bool,
         },
@@ -417,7 +314,7 @@ mod tests {
                 working_root: VirtualPath::new("/repo"),
             },
             current: VcsState {
-                id: Some(VcsStateId::from("abc123")),
+                id: Some("abc123".into()),
                 label: Some("main".into()),
             },
             recorded: VcsState {
@@ -435,7 +332,7 @@ mod tests {
         assert_eq!(value["current"]["id"], serde_json::json!("abc123"));
         assert_eq!(value["recorded"]["id"], serde_json::Value::Null);
         assert_eq!(
-            serde_json::to_value(VcsReference::from("main")).unwrap(),
+            serde_json::to_value("main").unwrap(),
             serde_json::json!("main")
         );
     }

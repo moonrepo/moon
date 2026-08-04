@@ -2,10 +2,11 @@
 //!
 //! # Lifecycle
 //!
-//! A host registers a provider and can detect whether it applies to the
-//! workspace. moon then calls `initialize_vcs` once when it creates the VCS
-//! client for a command. Initialization occurs before any impact or hook query.
-//! A new initialization requires a new plugin instance.
+//! A host registers a provider, then moon calls `initialize_vcs` once when it
+//! creates the VCS client for a command. Initialization reports whether the
+//! provider applies to the workspace and, when it does, pins the repository
+//! state before any impact or hook query. A new initialization requires a new
+//! plugin instance.
 //!
 //! The provider retains any opaque state needed to pin the initialized state.
 //! Every later operation must answer from that state, including after a cache miss;
@@ -51,33 +52,12 @@ api_struct!(
 );
 
 api_struct!(
-    /// Repository roots found by `detect_vcs` and fixed by `initialize_vcs`.
+    /// Repository roots fixed by `initialize_vcs`.
     pub struct VcsRoots {
         /// Root of the repository metadata.
         pub repository_root: VirtualPath,
         /// Root of the active worktree or working copy.
         pub working_root: VirtualPath,
-    }
-);
-
-api_struct!(
-    /// Input passed to `detect_vcs` before the VCS client is initialized.
-    pub struct DetectVcsInput {
-        pub context: MoonContext,
-    }
-);
-
-api_struct!(
-    /// Applicability reported by `detect_vcs`.
-    ///
-    /// `roots` are present when this VCS client applies to the workspace. User
-    /// configuration controls whether a plugin is selected at all.
-    #[serde(default)]
-    pub struct DetectVcsOutput {
-        /// Roots are present when this client applies to the workspace.
-        pub roots: Option<VcsRoots>,
-        /// Human-readable explanation of the detection result.
-        pub reason: String,
     }
 );
 
@@ -124,7 +104,7 @@ api_unit_enum!(
 
 api_struct!(
     /// Provider metadata and exact states pinned by `initialize_vcs`.
-    pub struct InitializeVcsOutput {
+    pub struct VcsInitialization {
         /// Stable VCS client kind, such as `git` or `jj`.
         pub client: Id,
         /// Version of the source-control client used by the provider.
@@ -143,6 +123,22 @@ api_struct!(
         pub baseline: Option<VcsState>,
         pub repository_slug: Option<String>,
         pub history: VcsHistoryCompleteness,
+    }
+);
+
+api_enum!(
+    /// Applicability and initialized state returned by `initialize_vcs`.
+    #[serde(tag = "status", rename_all = "kebab-case")]
+    pub enum InitializeVcsOutput {
+        /// The provider does not apply to this workspace.
+        NotDetected {
+            /// Human-readable explanation of the detection result.
+            reason: String,
+        },
+        /// The provider applies and has pinned its state for this command.
+        Initialized {
+            initialization: Box<VcsInitialization>,
+        },
     }
 );
 
@@ -306,7 +302,7 @@ mod tests {
 
     #[test]
     fn serializes_vcs_identifiers_as_strings() {
-        let output = InitializeVcsOutput {
+        let initialization = VcsInitialization {
             client: Id::raw("git"),
             client_version: Some("2.0.0".into()),
             roots: VcsRoots {
@@ -325,12 +321,22 @@ mod tests {
             repository_slug: None,
             history: VcsHistoryCompleteness::Complete,
         };
+        let output = InitializeVcsOutput::Initialized {
+            initialization: Box::new(initialization),
+        };
 
         let value = serde_json::to_value(output).unwrap();
 
-        assert_eq!(value["client"], serde_json::json!("git"));
-        assert_eq!(value["current"]["id"], serde_json::json!("abc123"));
-        assert_eq!(value["recorded"]["id"], serde_json::Value::Null);
+        assert_eq!(value["status"], serde_json::json!("initialized"));
+        assert_eq!(value["initialization"]["client"], serde_json::json!("git"));
+        assert_eq!(
+            value["initialization"]["current"]["id"],
+            serde_json::json!("abc123")
+        );
+        assert_eq!(
+            value["initialization"]["recorded"]["id"],
+            serde_json::Value::Null
+        );
         assert_eq!(
             serde_json::to_value("main").unwrap(),
             serde_json::json!("main")

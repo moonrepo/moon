@@ -11,6 +11,9 @@ The `proto debug config` command will list all `.prototools` configuration files
 that have been loaded, in order of precedence, with the final merged configuration printed at the
 end.
 
+If [lockfiles](../../lockfile) are in use, `.protolock` files will be rendered
+alongside their sibling configuration files. <VersionLabel version="0.60.0" />
+
 ```
 $ proto debug config
 

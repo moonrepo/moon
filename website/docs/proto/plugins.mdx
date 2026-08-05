@@ -2,6 +2,8 @@
 title: Plugins
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 proto supports a pluggable architecture as a means for consumers to integrate and manage custom
 tools (languages, CLIs, etc) within proto's toolchain. It's not possible for proto to support
 _everything_ in core directly, so plugins are a way for the community to extend the toolchain to
@@ -18,6 +20,15 @@ protocol and source location.
 ```toml title=".prototools"
 [plugins.tools]
 <id> = "<protocol>://<location>"
+```
+
+Alternatively, the locator can be defined directly within the [`[tools.*]`](./config#tools) or
+[`[backends.*]`](./config#backends) sections using the `plugin` field, allowing the plugin and its
+settings to be defined side-by-side. <VersionLabel version="0.60.0" />
+
+```toml title=".prototools"
+[tools.<id>]
+plugin = "<protocol>://<location>"
 ```
 
 ## Creating plugins

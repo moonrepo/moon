@@ -50,7 +50,7 @@ let id = get_plugin_id();
 
 WASM by default does not have access to the host file system, but through [WASI](https://wasi.dev/),
 we can provide sandboxed access to a pre-defined list of allowed directories. We call these
-[virtual paths](https://docs.rs/warpgate_api/latest/warpgate_api/enum.VirtualPath.html), and all
+[virtual paths](https://docs.rs/warpgate_api/latest/warpgate_api/struct.VirtualPath.html), and all
 paths provided via function input or context use them.
 
 Virtual paths are implemented by mapping a real path (host machine) to a virtual path (guest
@@ -67,14 +67,29 @@ For example, from the context of WASM, you may have a virtual path of `/proto/to
 which simply maps back to `~/.proto/tools/node/1.2.3` on the host machine. However, this should
 almost always be transparent to you, the developer, and to end users.
 
+The `VirtualPath` type is a newtype wrapper around Rust's `PathBuf`, with a sibling
+[`RealPath`](https://docs.rs/warpgate_api/latest/warpgate_api/struct.RealPath.html) type that
+represents a real path on the host machine. Both types dereference to `PathBuf`, so all `Path` and
+`PathBuf` methods are available.
+
 However, there may be a few cases where you need access to the real path from WASM, for example,
 logging or executing commands. For this, the real path can be accessed with the
-[`real_path`](https://docs.rs/warpgate_api/latest/warpgate_api/enum.VirtualPath.html#method.real_path)
-function on the `VirtualPath` enum (this is a Rust only feature).
+[`to_real_path`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/trait.VirtualPathExt.html)
+extension trait method (this is a Rust only feature). Jump to [converting paths](#converting-paths)
+for more information.
 
 ```rust
-virtual_path.real_path();
+let real_path = virtual_path.to_real_path()?; // `Option<RealPath>`
 ```
+
+:::caution
+
+The path types were reworked in proto v0.60. Previously, `VirtualPath` was an enum that carried both
+the virtual and real path variants, and the real path was accessed with its `real_path()` method.
+moon has not yet adopted the reworked API, so moon plugins should continue to use the previous APIs
+until moon updates its warpgate dependencies.
+
+:::
 
 #### File system caveats
 
@@ -129,8 +144,6 @@ provide a mechanism known as host functions, which are functions that are implem
 - [`exec_command`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.exec_command.html) -
   Execute a system command on the host machine, with a provided list of arguments or environment
   variables.
-- [`from_virtual_path`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.real_path.html) -
-  Converts a virtual path into a real path.
 - [`get_env_var`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_env.html) - Get an
   environment variable value from the host environment.
 - [`host_log`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_log.html) - Log an
@@ -139,8 +152,11 @@ provide a mechanism known as host functions, which are functions that are implem
   Requests a URL on the host machine using a Rust-based HTTP client (not WASM).
 - [`set_env_var`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.host_env.html) - Set an
   environment variable to the host environment.
-- [`to_virtual_path`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.virtual_path.html) -
-  Converts a real path into a virtual path.
+
+> Before proto v0.60, `from_virtual_path` and `to_virtual_path` host functions were also available
+> for converting between virtual and real paths. These have been removed (but are still available
+> in moon), as conversions now happen directly in the guest. Jump to
+> [converting paths](#converting-paths) for more information.
 
 To use host functions, you'll need to make them available by registering them at the top of your
 Rust file (only add the functions you want to use) using the
@@ -152,12 +168,10 @@ use extism_pdk::*;
 #[host_fn]
 extern "ExtismHost" {
     fn exec_command(input: Json<ExecCommandInput>) -> Json<ExecCommandOutput>;
-    fn from_virtual_path(path: String) -> String;
     fn get_env_var(key: String) -> String;
     fn host_log(input: Json<HostLogInput>);
     fn send_request(input: Json<SendRequestInput>) -> Json<SendRequestOutput>;
     fn set_env_var(key: String, value: String);
-    fn to_virtual_path(path: String) -> Json<VirtualPath>;
 }
 ```
 
@@ -171,16 +185,30 @@ Continue reading for more information on these macros.
 #### Converting paths
 
 When working with virtual paths, you may need to convert them to real paths, and vice versa. The
-[`into_virtual_path`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.into_virtual_path.html)
-and [`into_real_path`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.into_real_path.html)
-functions can be used for such situations, which use the `to_virtual_path` and `from_virtual_path`
-host functions respectively.
+[`VirtualPathExt`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/trait.VirtualPathExt.html) and
+[`RealPathExt`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/trait.RealPathExt.html) extension
+traits provide `create` constructors and conversion methods for such situations. Unlike the rest of
+this section, these are not host functions — conversions are performed directly in the guest, using
+the list of host-to-guest path mappings provided by the host.
 
 ```rust
-// Supports strings or paths
-let virt = into_virtual_path("/some/real/path")?;
-let real = into_real_path(PathBuf::from("/some/virtual/path"))?;
+// Create a virtual path from a real path
+let virt = VirtualPath::create("/some/real/path")?;
+
+// Convert a virtual path into a real path (returns an `Option`)
+let real = virt.to_real_path()?;
 ```
+
+For lower-level control, the
+[`convert_to_virtual_path`](https://docs.rs/warpgate_api/latest/warpgate_api/fn.convert_to_virtual_path.html)
+and
+[`convert_to_real_path`](https://docs.rs/warpgate_api/latest/warpgate_api/fn.convert_to_real_path.html)
+functions can be used instead, paired with
+[`get_host_to_guest_paths`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.get_host_to_guest_paths.html).
+
+> Before proto v0.60, paths were converted with the `into_virtual_path` and `into_real_path`
+> functions, which were powered by the `to_virtual_path` and `from_virtual_path` host functions
+> respectively. These are still available in moon.
 
 #### Environment variables
 

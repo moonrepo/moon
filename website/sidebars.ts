@@ -330,6 +330,7 @@ const sidebars: SidebarsConfig = {
 		'proto/config',
 		'proto/tool-spec',
 		'proto/detection',
+		'proto/lockfile',
 		'proto/reporting',
 		'proto/tools',
 		{

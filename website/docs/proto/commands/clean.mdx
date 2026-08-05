@@ -17,6 +17,9 @@ Furthermore, the command can be used to target a specific artifact type.
 $ proto clean plugins
 ```
 
+> Cleaning stale tools does _not_ remove records from [lockfiles](../lockfile), as
+> the version may still be required by a configuration, or in use on other machines.
+
 ### Arguments
 
 - `[target]` - Type of target. Accepts `cache`, `plugins`, `temp`, or `tools`.

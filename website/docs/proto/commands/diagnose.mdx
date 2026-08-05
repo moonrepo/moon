@@ -28,6 +28,10 @@ name collisions — multiple configured tools that resolve to the same shim and 
 the same identifier provided by two different backends). Since only one can be linked, the others
 are silently shadowed, so these are reported as warnings. <VersionLabel version="0.58.0" />
 
+If [lockfiles](../lockfile) are in use, proto will also audit their health, and
+report warnings for records that are missing a resolved version, duplicate records for the same
+specification, and stale records that no longer match a configured version. <VersionLabel version="0.60.0" />
+
 ### Options
 
 - `--shell` - The shell to diagnose (will detect automatically).

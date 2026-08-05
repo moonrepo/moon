@@ -33,6 +33,9 @@ $ proto status
 > By default, this command _does not_ check tools for versions pinned in the global
 > `~/.proto/.prototools` file. Pass `--config-mode all` to include them.
 
+When a [lockfile](../config#unstable-lockfile) is in use, a "Locked" column will also be displayed,
+showing the version locked for each configured specification. <VersionLabel version="0.60.0" />
+
 ### Options
 
 - `--json` - Print the list in JSON format.

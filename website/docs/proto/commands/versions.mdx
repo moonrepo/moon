@@ -8,7 +8,8 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `proto versions <tool>` command will list available versions by resolving versions from the
 tool's remote release manifest. Furthermore, if a version has been installed locally, it will be
-denoted with a timestamp.
+denoted with a timestamp, and if a version has a record in a
+[lockfile](../config#unstable-lockfile), it will be denoted with a "locked" label.
 
 ```shell
 $ proto versions node

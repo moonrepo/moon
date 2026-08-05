@@ -19,6 +19,9 @@ $ proto pin npm latest --resolve --tool-native
 By default this will update the local [`./.prototools`](../config) file. Pass `--to` to customize
 the location, or use the `--tool-native` option to use a location unique to the tool.
 
+When a [lockfile](../config#unstable-lockfile) is in use, matching records will be migrated to the
+newly pinned specification. <VersionLabel version="0.60.0" />
+
 ### Arguments
 
 - `<tool>` - Type of tool.

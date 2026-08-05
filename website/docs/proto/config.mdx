@@ -208,19 +208,35 @@ tools and outdated plugins. Defaults to `false` or `PROTO_AUTO_CLEAN`.
 auto-clean = true
 ```
 
-#### `builtin-plugins`<VersionLabel version="0.39.0" />
+#### `builtin-backends`<VersionLabel version="0.60.0" />
 
-Can be used to customize the [built-in plugins](./tools#built-in) within proto. Can disable all
+Can be used to customize the [built-in backends](./tool-spec#backends) within proto. Can disable all built-ins by passing `false`, or enabling a select few by name.
+Defaults to `true`, which enables all.
+
+```toml title=".prototools"
+[settings]
+# Disable all
+builtin-backends = false
+# Enable some
+builtin-backends = ["asdf"]
+```
+
+#### `builtin-tools`<VersionLabel version="0.60.0" />
+
+Can be used to customize the [built-in tools](./tools#built-in) within proto. Can disable all
 built-ins by passing `false`, or enabling a select few by name. Defaults to `true`, which enables
 all.
 
 ```toml title=".prototools"
 [settings]
 # Disable all
-builtin-plugins = false
+builtin-tools = false
 # Enable some
-builtin-plugins = ["node", "bun"]
+builtin-tools = ["node", "bun"]
 ```
+
+> Before v0.60, both of these settings were a single `builtin-plugins` setting, which can still be
+> used as an alias for `builtin-tools`.
 
 #### `cache-duration`<VersionLabel version="0.50.1" />
 
@@ -286,6 +302,13 @@ consistency across machines, and reliability.
 [settings]
 unstable-lockfile = true
 ```
+
+Since v0.60, a lockfile is scoped to the configuration file in which this setting was enabled:
+
+- The lockfile only tracks tools with versions defined in its sibling `.prototools` file. Tools
+  installed ad-hoc (without a configured version) are tracked by the closest configuration file.
+- Versions defined in nested configuration files are not included in a parent's lockfile. To lock a
+  nested configuration, enable this setting in that file as well.
 
 #### `unstable-registries`<VersionLabel version="0.51.0" />
 
@@ -511,6 +534,19 @@ control the behavior for _all_ tools managed by the backend. Please refer to the
 setting = true
 ```
 
+#### `plugin`<VersionLabel version="0.60.0" />
+
+The `plugin` field can be used to configure a
+[plugin locator](../guides/wasm-plugins#configuring-plugin-locations) for the backend, as an
+alternative to the [`[plugins.backends]`](#pluginsbackends) table. This allows the plugin and its
+settings to be defined side-by-side.
+
+```toml title=".prototools"
+[backends.example]
+plugin = "github://your-org/example"
+setting = true
+```
+
 ### `[backends.*.env]`<VersionLabel version="0.53.0" />
 
 This setting is a map of environment variables for a specific backend, and will be applied when that
@@ -568,6 +604,18 @@ bundled-npm = true
 
 [tools.npm]
 shared-globals-dir = true
+```
+
+#### `plugin`<VersionLabel version="0.60.0" />
+
+The `plugin` field can be used to configure a
+[plugin locator](../guides/wasm-plugins#configuring-plugin-locations) for the tool, as an
+alternative to the [`[plugins.tools]`](#pluginstools) table. This allows the plugin and its
+settings to be defined side-by-side.
+
+```toml title=".prototools"
+[tools.my-tool]
+plugin = "https://raw.githubusercontent.com/my/tool/master/proto-plugin.toml"
 ```
 
 ### `[tools.*.aliases]`

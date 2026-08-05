@@ -502,10 +502,9 @@ impl AppSession for MoonSession {
         }
 
         // Ensure all in-flight storage tasks have finished
-        self.get_cache_engine()?
-            .storage
-            .wait_for_background_tasks()
-            .await?;
+        if let Some(engine) = self.cache_engine.get() {
+            engine.storage.wait_for_background_tasks().await?;
+        }
 
         // Ensure all child processes have finished
         ProcessRegistry::instance()

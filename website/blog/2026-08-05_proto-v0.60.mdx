@@ -1,6 +1,6 @@
 ---
 slug: proto-v0.60
-title: proto v0.60 - Scoped lockfiles, safe concurrent installs, and a new WASM path APIs
+title: proto v0.60 - Scoped lockfiles, safe concurrent installs, and new WASM path APIs
 authors: [milesj]
 tags: [lockfile, outdated, pin, status, install, concurrency, plugins, wasm, paths, ruby]
 # image: ./img/proto/v0.60.png
@@ -9,7 +9,13 @@ tags: [lockfile, outdated, pin, status, install, concurrency, plugins, wasm, pat
 Our lockfile implementation gets a major overhaul in this release, alongside concurrency-safe
 installs, simpler plugin configuration, and a friendlier path API for plugin authors.
 
+proto has been steadily marching towards an official v1 release, and we're almost there! As part of
+this journey, we're making some breaking changes now — like the configuration and WASM API changes
+in this release — so that plugins, and their authors, have ample time to migrate before v1 lands.
+
 <!--truncate-->
+
+> If you're using a community WASM plugin, they will most likely need to update to the latest APIs and release a v0.60 compatible version. If you're a plugin author, please read the breaking changes below for the full migration list.
 
 ## Scoped lockfiles
 

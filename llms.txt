@@ -163,8 +163,9 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [FAQ](https://moonrepo.dev/docs/proto/faq): We wanted to keep with the space theme, and spent quite some time digging through Wikipedia and
 - [What is proto?](https://moonrepo.dev/docs/proto): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 - [Install proto](https://moonrepo.dev/docs/proto/install): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
+- [Lockfiles](https://moonrepo.dev/docs/proto/lockfile): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Non-WASM plugin](https://moonrepo.dev/docs/proto/non-wasm-plugin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [Plugins](https://moonrepo.dev/docs/proto/plugins): proto supports a pluggable architecture as a means for consumers to integrate and manage custom
+- [Plugins](https://moonrepo.dev/docs/proto/plugins): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [Reporting](https://moonrepo.dev/docs/proto/reporting): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 - [Tool specification](https://moonrepo.dev/docs/proto/tool-spec): import HeaderLabel from '@site/src/components/Docs/HeaderLabel';
 - [Supported tools](https://moonrepo.dev/docs/proto/tools): import Button from '@site/src/ui/Button';
@@ -290,3 +291,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [proto v0.58 - OpenTelemetry and agent-friendly output](https://moonrepo.dev/blog/2026-06-18_proto-v0.58): In this release, we're focusing on observability, and making proto easier to consume from automated
 - [moon v2.4 - Task checks, Ruby toolchain, storage APIs, and much more](https://moonrepo.dev/blog/2026-07-05-moon-v2.4): This release is all about control and trust. We're giving tasks a way to gate, skip, and
 - [proto v0.59 - Java support, a new version parser, improved OpenTelemetry, and more](https://moonrepo.dev/blog/2026-07-23_proto-v0.59): In this release, we're shipping one of our most requested tools to date, Java, alongside a
+- [proto v0.60 - Scoped lockfiles, safe concurrent installs, and new WASM path APIs](https://moonrepo.dev/blog/2026-08-05_proto-v0.60): Our lockfile implementation gets a major overhaul in this release, alongside concurrency-safe

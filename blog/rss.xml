@@ -4,10 +4,158 @@
         <title>moonrepo Blog</title>
         <link>https://moonrepo.dev/blog</link>
         <description>moonrepo Blog</description>
-        <lastBuildDate>Thu, 23 Jul 2026 00:00:00 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 05 Aug 2026 00:00:00 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
+        <item>
+            <title><![CDATA[proto v0.60 - Scoped lockfiles, safe concurrent installs, and new WASM path APIs]]></title>
+            <link>https://moonrepo.dev/blog/proto-v0.60</link>
+            <guid>https://moonrepo.dev/blog/proto-v0.60</guid>
+            <pubDate>Wed, 05 Aug 2026 00:00:00 GMT</pubDate>
+            <description><![CDATA[Our lockfile implementation gets a major overhaul in this release, alongside concurrency-safe]]></description>
+            <content:encoded><![CDATA[<p>Our lockfile implementation gets a major overhaul in this release, alongside concurrency-safe
+installs, simpler plugin configuration, and a friendlier path API for plugin authors.</p>
+<p>proto has been steadily marching towards an official v1 release, and we're almost there! As part of
+this journey, we're making some breaking changes now — like the configuration and WASM API changes
+in this release — so that plugins, and their authors, have ample time to migrate before v1 lands.</p>
+<blockquote>
+<p>If you're using a community WASM plugin, they will most likely need to update to the latest APIs and release a v0.60 compatible version. If you're a plugin author, please read the breaking changes below for the full migration list.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="scoped-lockfiles">Scoped lockfiles<a href="https://moonrepo.dev/blog/proto-v0.60#scoped-lockfiles" class="hash-link" aria-label="Direct link to Scoped lockfiles" title="Direct link to Scoped lockfiles" translate="no">​</a></h2>
+<p>When we introduced <a class="" href="https://moonrepo.dev/blog/proto-v0.51#unstable-lockfile-support">lockfiles</a> in v0.51, enabling the
+<a class="" href="https://moonrepo.dev/docs/proto/config#unstable-lockfile"><code>settings.unstable-lockfile</code></a> setting would lock that
+directory <em>and all of its subdirectories</em>, similar to how package manager workspaces function.
+Versions defined in nested <code>.prototools</code> configs were absorbed into the top-most <code>.protolock</code> file,
+and defining another lockfile deeper in the tree was a hard error.</p>
+<p>This model sounded nice on paper, but in practice it caused more friction than it solved —
+especially in monorepos, where nested projects define their own <code>.prototools</code>, but a lockfile at
+the root would claim them all. In this release, we've reworked the model entirely: a lockfile is
+now scoped to the config in which it was enabled, and only that config.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">unstable-lockfile</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><br></div></code></pre></div></div>
+<p>In practice, this means the following:</p>
+<ul>
+<li class="">A <code>.protolock</code> file only tracks tools with versions defined in its sibling <code>.prototools</code> config.
+Tools installed ad-hoc (without a configured version) are tracked by the closest config.</li>
+<li class="">Versions defined in nested configs are no longer included in a parent's lockfile. To lock a
+nested config, enable the setting in that config as well.</li>
+<li class="">Nested lockfiles no longer trigger an error, as each lockfile operates independently.</li>
+</ul>
+<blockquote>
+<p>Lockfiles are still unstable, so if you run into any issues, please report them!</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="lockfile-aware-commands">Lockfile-aware commands<a href="https://moonrepo.dev/blog/proto-v0.60#lockfile-aware-commands" class="hash-link" aria-label="Direct link to Lockfile-aware commands" title="Direct link to Lockfile-aware commands" translate="no">​</a></h2>
+<p>The scoping rework is only half of the lockfile story. Until now, lockfiles were primarily the
+concern of <a class="" href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install</code></a> — created and updated during installs,
+but invisible everywhere else. With this release, lockfiles are now deeply integrated across the
+command line.</p>
+<ul>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/commands/outdated"><code>proto outdated</code></a> and <a class="" href="https://moonrepo.dev/docs/proto/commands/status"><code>proto status</code></a>
+now display a "Locked" column (when applicable), showing the version locked for each configured
+spec. Both commands also include a new <code>locked_version</code> field in their <code>--json</code> output.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/commands/outdated"><code>proto outdated --update</code></a> now updates matching lockfile records when writing new versions to
+their respective configs. Since these versions haven't been installed yet, checksums are removed
+from migrated records, and will be re-populated on the next install.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/commands/pin"><code>proto pin</code></a> (and <a class="" href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install --pin</code></a>) now migrates matching
+lockfile records to the newly pinned spec, while <a class="" href="https://moonrepo.dev/docs/proto/commands/unpin"><code>proto unpin</code></a>
+removes them entirely.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/commands/versions"><code>proto versions</code></a> now labels versions that have a lockfile record
+with "locked", and includes a <code>locked</code> field in its <code>--json</code> output.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/commands/debug/config"><code>proto debug config</code></a> now renders <code>.protolock</code> files
+alongside their sibling configs, and includes them in a <code>locks</code> field in its <code>--json</code> output.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/proto/commands/clean"><code>proto clean</code></a> no longer removes records when cleaning stale
+versions, as the version may still be required by a config, or in use on other machines.</li>
+</ul>
+<p>And to round it out, <a class="" href="https://moonrepo.dev/docs/proto/commands/diagnose"><code>proto diagnose</code></a> now audits the health of
+your lockfiles, reporting warnings for records that are missing a resolved version, duplicate
+records for the same spec, and stale records that no longer match any configured version.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="safe-concurrent-installs">Safe concurrent installs<a href="https://moonrepo.dev/blog/proto-v0.60#safe-concurrent-installs" class="hash-link" aria-label="Direct link to Safe concurrent installs" title="Direct link to Safe concurrent installs" translate="no">​</a></h2>
+<p>proto is increasingly being executed concurrently — task runners fan out processes that hit shims
+simultaneously, CI pipelines install tools in parallel jobs, and AI agents run many commands at
+once. If multiple of these processes tried to install the same tool and version at the same time,
+they would all download and unpack into the same directory, clobbering each other and sometimes
+leaving a corrupt install behind.</p>
+<p>In this release, installs of the same tool and version are now serialized through a file lock. The
+first process acquires the lock and performs the actual install, while the remaining processes wait
+for it to finish, detect that the version was installed concurrently, and reuse the result. This
+works across any number of processes, no matter how they were spawned.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="inlined-plugin-locators">Inlined plugin locators<a href="https://moonrepo.dev/blog/proto-v0.60#inlined-plugin-locators" class="hash-link" aria-label="Direct link to Inlined plugin locators" title="Direct link to Inlined plugin locators" translate="no">​</a></h2>
+<p>Third-party plugins have always been configured through the <a class="" href="https://moonrepo.dev/docs/proto/config#pluginstools"><code>[plugins.tools]</code></a> and
+<a class="" href="https://moonrepo.dev/docs/proto/config#pluginsbackends"><code>[plugins.backends]</code></a> tables, which keeps plugin locators separate from the settings of the tool
+itself. This separation works, but it always felt a bit disconnected.</p>
+<p>In this release, we've added new <code>plugin</code> fields to the <a class="" href="https://moonrepo.dev/docs/proto/config#tools"><code>[tools.*]</code></a>
+and <a class="" href="https://moonrepo.dev/docs/proto/config#backends"><code>[backends.*]</code></a> tables, allowing the locator and its settings to
+be defined side-by-side. Instead of this:</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">plugins.tools</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">example</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"github://your-org/example"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.example</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">custom-setting</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><br></div></code></pre></div></div>
+<p>You can now write this:</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.example</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">plugin</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"github://your-org/example"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">custom-setting</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><br></div></code></pre></div></div>
+<p>Both styles are supported, so use whichever layout you prefer.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="pre-built-ruby-binaries">Pre-built Ruby binaries<a href="https://moonrepo.dev/blog/proto-v0.60#pre-built-ruby-binaries" class="hash-link" aria-label="Direct link to Pre-built Ruby binaries" title="Direct link to Pre-built Ruby binaries" translate="no">​</a></h2>
+<p>Installing Ruby with proto has always meant building it from source — a slow process that requires
+a compiler toolchain and a handful of system dependencies. Starting with this release, the Ruby
+plugin will install pre-built binaries from the <a href="https://github.com/jdx/ruby" target="_blank" rel="noopener noreferrer" class=""><code>jdx/ruby</code></a> project
+when one is available for your platform, and only fall back to building from source when one
+isn't. Installs that previously took minutes now finish in seconds.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="breaking-changes">Breaking changes<a href="https://moonrepo.dev/blog/proto-v0.60#breaking-changes" class="hash-link" aria-label="Direct link to Breaking changes" title="Direct link to Breaking changes" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="a-new-path-api-for-wasm-plugins">A new path API for WASM plugins<a href="https://moonrepo.dev/blog/proto-v0.60#a-new-path-api-for-wasm-plugins" class="hash-link" aria-label="Direct link to A new path API for WASM plugins" title="Direct link to A new path API for WASM plugins" translate="no">​</a></h3>
+<p>WASM plugins run in a sandboxed environment, where directories on the host file system (real
+paths) are mounted into the guest under fixed virtual paths. Until now, our <code>VirtualPath</code> type was
+modeled as an enum that tried to capture both worlds at once — it worked, but it was clunky to use,
+and didn't compose with the wider Rust ecosystem.</p>
+<p>In this release, we've rebuilt this layer from the ground up:</p>
+<ul>
+<li class=""><code>VirtualPath</code> is now a simple newtype wrapper around <code>PathBuf</code>, giving it access to all <code>PathBuf</code>
+methods, something that wasn't possible before.</li>
+<li class="">A new <code>RealPath</code> type — also a newtype wrapper around <code>PathBuf</code> — represents real paths on the
+host file system, making it explicit in function signatures which side of the sandbox a path
+belongs to.</li>
+<li class="">Converting between the two no longer requires calling a host function across the WASM boundary.
+The new <code>convert_to_virtual_path</code> and <code>convert_to_real_path</code> functions (and the <code>VirtualPathExt</code>
+and <code>RealPathExt</code> extension traits) perform the conversion directly in the guest, using the
+host-to-guest path mappings.</li>
+</ul>
+<p>If you maintain a WASM plugin, refer to the breaking changes below for the full migration list.</p>
+<div class="language-rust codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-rust codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic">// Before</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token keyword" style="color:#b7a9f9">use</span><span class="token plain"> </span><span class="token namespace" style="color:#b7a9f9">extism_pdk</span><span class="token namespace punctuation" style="color:#cad4e2">::</span><span class="token operator" style="color:#b7a9f9">*</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token keyword" style="color:#b7a9f9">use</span><span class="token plain"> </span><span class="token namespace" style="color:#b7a9f9">warpgate_pdk</span><span class="token namespace punctuation" style="color:#cad4e2">::</span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">VirtualPath</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> into_virtual_path</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> virtual_path</span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token attribute attr-name" style="color:#fde047">#[host_fn]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token keyword" style="color:#b7a9f9">extern</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"ExtismHost"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token keyword" style="color:#b7a9f9">fn</span><span class="token plain"> </span><span class="token function-definition function" style="color:#ff94ff;font-weight:bold">from_virtual_path</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">path</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">String</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">-&gt;</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">String</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token keyword" style="color:#b7a9f9">fn</span><span class="token plain"> </span><span class="token function-definition function" style="color:#ff94ff;font-weight:bold">to_virtual_path</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">path</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">String</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">-&gt;</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">Json</span><span class="token operator" style="color:#b7a9f9">&lt;</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">VirtualPath</span><span class="token operator" style="color:#b7a9f9">&gt;</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token keyword" style="color:#b7a9f9">let</span><span class="token plain"> path </span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain"> </span><span class="token function" style="color:#ff94ff;font-weight:bold">into_virtual_path</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">value</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic">// with func</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token keyword" style="color:#b7a9f9">let</span><span class="token plain"> path </span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain"> </span><span class="token macro property" style="color:#b7a9f9">virtual_path!</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">buf</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> value</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"> </span><span class="token comment" style="color:#97a1af;font-style:italic">// or with macro</span><br></div></code></pre></div></div>
+<div class="language-rust codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-rust codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic">// After</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token keyword" style="color:#b7a9f9">use</span><span class="token plain"> </span><span class="token namespace" style="color:#b7a9f9">warpgate_pdk</span><span class="token namespace punctuation" style="color:#cad4e2">::</span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token class-name" style="color:#ff94ff;font-weight:bold">VirtualPath</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">VirtualPathExt</span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token punctuation" style="color:#cad4e2">;</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token keyword" style="color:#b7a9f9">let</span><span class="token plain"> path </span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain"> </span><span class="token class-name" style="color:#ff94ff;font-weight:bold">VirtualPath</span><span class="token punctuation" style="color:#cad4e2">::</span><span class="token function" style="color:#ff94ff;font-weight:bold">create</span><span class="token punctuation" style="color:#cad4e2">(</span><span class="token plain">value</span><span class="token punctuation" style="color:#cad4e2">)</span><span class="token operator" style="color:#b7a9f9">?</span><span class="token punctuation" style="color:#cad4e2">;</span><br></div></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="split-built-in-plugin-settings">Split built-in plugin settings<a href="https://moonrepo.dev/blog/proto-v0.60#split-built-in-plugin-settings" class="hash-link" aria-label="Direct link to Split built-in plugin settings" title="Direct link to Split built-in plugin settings" translate="no">​</a></h3>
+<p>The <code>settings.builtin-plugins</code> setting has been split into two new settings, <a class="" href="https://moonrepo.dev/docs/proto/config#builtin-tools"><code>builtin-tools</code></a> and
+<a class="" href="https://moonrepo.dev/docs/proto/config#builtin-backends"><code>builtin-backends</code></a>, allowing built-in tools and built-in backends to be toggled independently. Both
+accept the same values as before: <code>true</code> to enable all (the default), <code>false</code> to disable all, or a
+list of names to enable a select few.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">builtin-tools</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"node"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"bun"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">builtin-backends</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">false</span><br></div></code></pre></div></div>
+<p>The <code>builtin-plugins</code> setting is now deprecated, but will remain as an alias for <code>builtin-tools</code>
+for backwards compatibility.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="removed-wasm-path-apis">Removed WASM path APIs<a href="https://moonrepo.dev/blog/proto-v0.60#removed-wasm-path-apis" class="hash-link" aria-label="Direct link to Removed WASM path APIs" title="Direct link to Removed WASM path APIs" translate="no">​</a></h3>
+<p>As part of the path rework above, the following breaking changes were made to the WASM API:</p>
+<ul>
+<li class="">Removed the <code>from_virtual_path</code> and <code>to_virtual_path</code> host functions, the <code>into_real_path</code> and
+<code>into_virtual_path</code> wrapper functions, and the <code>real_path!</code> and <code>virtual_path!</code> macros. Use the
+new conversion utilities instead.</li>
+<li class="">Removed the <code>PluginUnresolvedContext.tool_dir</code> and <code>version</code> fields.</li>
+<li class="">Removed the <code>LocateExecutablesOutput.exes_dir</code> field, use <code>exes_dirs</code> instead.</li>
+<li class="">Updated <code>CommandInstruction.cwd</code> to be a <code>VirtualPath</code>.</li>
+<li class="">Updated <code>ExecCommandInput.paths</code> to be <code>PathBuf</code>s.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.60#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.60.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full
+list of changes.</p>
+<ul>
+<li class="">Updated plugin function calls to run on a separate blocking thread, instead of blocking the main
+thread.</li>
+<li class="">Checksums are now only removed from migrated lockfile records when the resolved version changes,
+instead of always.</li>
+</ul>]]></content:encoded>
+            <category>lockfile</category>
+            <category>outdated</category>
+            <category>pin</category>
+            <category>status</category>
+            <category>install</category>
+            <category>concurrency</category>
+            <category>plugins</category>
+            <category>wasm</category>
+            <category>paths</category>
+            <category>ruby</category>
+        </item>
         <item>
             <title><![CDATA[proto v0.59 - Java support, a new version parser, improved OpenTelemetry, and more]]></title>
             <link>https://moonrepo.dev/blog/proto-v0.59</link>
@@ -1981,96 +2129,6 @@ instead of the latest version.</li>
             <category>config</category>
             <category>plugin</category>
             <category>shell</category>
-        </item>
-        <item>
-            <title><![CDATA[moon v1.37 - Rust WASM toolchain and MCP support]]></title>
-            <link>https://moonrepo.dev/blog/moon-v1.37</link>
-            <guid>https://moonrepo.dev/blog/moon-v1.37</guid>
-            <pubDate>Tue, 03 Jun 2025 00:00:00 GMT</pubDate>
-            <description><![CDATA[In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI]]></description>
-            <content:encoded><![CDATA[<p>In this release, we're stoked to release another WASM toolchain plugin, and experimental MCP/AI
-support!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="rfc-task-input-additions-and-enhancements">RFC: Task input additions and enhancements<a href="https://moonrepo.dev/blog/moon-v1.37#rfc-task-input-additions-and-enhancements" class="hash-link" aria-label="Direct link to RFC: Task input additions and enhancements" title="Direct link to RFC: Task input additions and enhancements" translate="no">​</a></h2>
-<p>We're planning to improve task inputs and have written up an
-<a href="https://github.com/moonrepo/moon/issues/1985" target="_blank" rel="noopener noreferrer" class="">RFC to discuss these changes</a>. We'd appreciate any
-and all feedback!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="new-rust-toolchain-powered-by-wasm">New Rust toolchain powered by WASM<a href="https://moonrepo.dev/blog/moon-v1.37#new-rust-toolchain-powered-by-wasm" class="hash-link" aria-label="Direct link to New Rust toolchain powered by WASM" title="Direct link to New Rust toolchain powered by WASM" translate="no">​</a></h2>
-<p>With <a class="" href="https://moonrepo.dev/blog/moon-v1.36">toolchain plugins</a> entering beta last release, it's only natural that we start
-migrating the legacy toolchains into plugins. And with this release, the next one we've migrated is
-the Rust toolchain! However, unlike the TypeScript toolchain, the new Rust toolchain is opt-in and
-must be enabled. Simply rename <code>rust</code> to <code>unstable_rust</code> in <code>.moon/toolchain.yml</code>.</p>
-<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchain.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">unstable_rust</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">version</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'1.87.0'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">components</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'clippy'</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'rustfmt'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">targets</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">'wasm32-wasip1'</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">syncToolchainConfig</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="new-functionality">New functionality<a href="https://moonrepo.dev/blog/moon-v1.37#new-functionality" class="hash-link" aria-label="Direct link to New functionality" title="Direct link to New functionality" translate="no">​</a></h3>
-<p>Although the new Rust toolchain is a one-to-one port, the WASM APIs provide far more flexibility and
-functionality than before. For example, the follow improvements and enhancements have been made:</p>
-<ul>
-<li class="">The Cargo workspace can now exist at any folder depth and does not need to exist at the moon
-workspace root. Additionally, because of this, we can now support multiple Cargo workspaces in the
-same moon workspace.</li>
-<li class="">Added a new <code>addMsrvConstraint</code> setting, which will sync the version as a constraint to
-<code>Cargo.toml</code> under the <code>workspace.package.rust-version</code> or <code>package.rust-version</code> fields.</li>
-<li class="">Improved the accuracy of implicit project dependencies (inferred from <code>Cargo.toml</code>).</li>
-<li class="">Improved the parsing of manifest (<code>Cargo.toml</code>) and lock (<code>Cargo.lock</code>) files. This information is
-then fed into the task hashing process.</li>
-<li class="">Improved the Docker prune implementation by preserving all binaries (inferred from
-<code>cargo metadata</code>) while deleting the <code>target</code> directory.</li>
-<li class="">Any <code>cargo</code> or <code>rustup</code> commands are now hashed and cached, and will only re-run when parameters
-change. Unlike the current toolchain, which always runs these commands.</li>
-</ul>
-<p>Quite a list of improvements, and this doesn't even include all the WASM / plugin improvements that
-have been slowly introduced! Give this new toolchain a try, and let us know what you think!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="mcp-editor-integration">MCP editor integration<a href="https://moonrepo.dev/blog/moon-v1.37#mcp-editor-integration" class="hash-link" aria-label="Direct link to MCP editor integration" title="Direct link to MCP editor integration" translate="no">​</a></h2>
-<p>AI is all the rage these days, and even more so lately with the introduction of
-<a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener noreferrer" class="">MCP</a> (model context protocol) and agentic workflows. MCP is a new
-way for AI assistants to "understand" what's going on in your project without you having to explain
-everything. It works by feeding structured information, like in the context of moon, projects,
-tasks, and relationships, directly into AI models like GitHub Copilot or Cursor.</p>
-<p>No more tedious explanations required! The AI can jump straight to helpful suggestions that actually
-work in your codebase, saving you time, and making the whole experience much smoother, especially in
-complex monorepos with lots of moving parts.</p>
-<p>To support agentic workflows, we're introducing an experimental <a class="" href="https://moonrepo.dev/docs/commands/mcp"><code>moon mcp</code></a>
-command, that starts an MCP server, and can be <a class="" href="https://moonrepo.dev/docs/guides/mcp">integrated into your editor</a>. For
-example, VS Code:</p>
-<div class="language-json codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.vscode/mcp.json</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-json codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token property" style="color:#b7a9f9">"servers"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token property" style="color:#b7a9f9">"moon"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token property" style="color:#b7a9f9">"type"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"stdio"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token property" style="color:#b7a9f9">"command"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"moon"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token property" style="color:#b7a9f9">"args"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token string" style="color:#c9e166">"mcp"</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token property" style="color:#b7a9f9">"env"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">        </span><span class="token property" style="color:#b7a9f9">"MOON_WORKSPACE_ROOT"</span><span class="token operator" style="color:#b7a9f9">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"${workspaceFolder}"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">      </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">}</span><br></div></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="supported-tools">Supported tools<a href="https://moonrepo.dev/blog/moon-v1.37#supported-tools" class="hash-link" aria-label="Direct link to Supported tools" title="Direct link to Supported tools" translate="no">​</a></h3>
-<p>Our MCP server currently supports the following tools. We'll be adding more tools in the future, so
-if you have any suggestions, please let us know!</p>
-<ul>
-<li class=""><code>get_project</code> - Get a project and its tasks by <code>id</code>.</li>
-<li class=""><code>get_projects</code> - Get all projects.</li>
-<li class=""><code>get_task</code> - Get a task by <code>target</code>.</li>
-<li class=""><code>get_tasks</code> - Get all tasks.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v1.37#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v1.37.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added <code>environment.initializing</code> and <code>environment.initialized</code> webhook events.</li>
-<li class="">Added <code>root</code> and <code>toolchain</code> fields to <code>dependencies.installing</code> and <code>dependencies.installed</code>
-webhook events.</li>
-<li class="">Updated proto to <a href="https://github.com/moonrepo/proto/releases/tag/v0.49.4" target="_blank" rel="noopener noreferrer" class="">v0.49.4</a> (from 0.49.1).</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="whats-next">What's next?<a href="https://moonrepo.dev/blog/moon-v1.37#whats-next" class="hash-link" aria-label="Direct link to What's next?" title="Direct link to What's next?" translate="no">​</a></h2>
-<p>With toolchains plugins being stabilized more, we'd like to focus on some other areas.</p>
-<ul>
-<li class="">Better command line argument parsing/joining (especially for task <code>args</code>)</li>
-<li class="">Better child process I/O piping</li>
-<li class="">Terminal notifications</li>
-<li class="">WASM toolchain documentation</li>
-</ul>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="looking-for-toolchain-contributors">Looking for toolchain contributors!<a href="https://moonrepo.dev/blog/moon-v1.37#looking-for-toolchain-contributors" class="hash-link" aria-label="Direct link to Looking for toolchain contributors!" title="Direct link to Looking for toolchain contributors!" translate="no">​</a></h3>
-<p>Now that the Rust toolchain has been ported to WASM, we'd like to start porting the other
-toolchains, starting with Go and JavaScript (not Bun or Node.js), and also investigate supporting
-toolchains for entirely new languages, like PHP and Ruby! If you're interested in contributing these
-toolchains, please ping us in Discord!</p>
-<p>The only requirements is that these toolchains must be written in Rust and must exist in the
-<a href="https://github.com/moonrepo/plugins" target="_blank" rel="noopener noreferrer" class="">moonrepo/plugins</a> repository!</p>]]></content:encoded>
-            <category>toolchain</category>
-            <category>wasm</category>
-            <category>plugin</category>
-            <category>rust</category>
-            <category>mcp</category>
-            <category>ai</category>
         </item>
     </channel>
 </rss>

@@ -126,9 +126,10 @@ pub async fn extend_project_build_data_with_plugins(
     }
 
     // From extensions
-    for result in context
-        .extension_registry
-        .extend_project_graph_all(|registry, extension| ExtendProjectGraphInput {
+    let registry = &context.extension_registry;
+
+    for result in registry
+        .extend_project_graph_all(|extension| ExtendProjectGraphInput {
             context: registry.create_context(),
             project_sources: sources.clone(),
             extension_config: registry.create_config(&extension.id),

@@ -30,7 +30,7 @@ impl Plugin for TestPlugin {
         PluginType::Extension
     }
 
-    async fn has_func(&self, name: &str) -> bool {
+    async fn has_func(&self, _name: &str) -> bool {
         true
     }
 }

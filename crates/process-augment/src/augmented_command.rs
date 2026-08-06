@@ -219,10 +219,11 @@ impl<'app> AugmentedCommand<'app> {
                 .await?,
         );
 
+        let registry = &self.context.extension_registry;
+
         self.apply_command_outputs(
-            self.context
-                .extension_registry
-                .extend_command_all(|registry, extension| ExtendCommandInput {
+            registry
+                .extend_command_all(|extension| ExtendCommandInput {
                     context: registry.create_context(),
                     command: self.get_bin_name(),
                     args: self.get_args_list(),
@@ -258,10 +259,11 @@ impl<'app> AugmentedCommand<'app> {
                         .await?,
                 );
 
+                let registry = &self.context.extension_registry;
+
                 self.apply_script_outputs(
-                    self.context
-                        .extension_registry
-                        .extend_task_script_all(|registry, extension| ExtendTaskScriptInput {
+                    registry
+                        .extend_task_script_all(|extension| ExtendTaskScriptInput {
                             context: registry.create_context(),
                             script: self.get_script(),
                             project: project.to_fragment(),
@@ -290,10 +292,11 @@ impl<'app> AugmentedCommand<'app> {
                         .await?,
                 );
 
+                let registry = &self.context.extension_registry;
+
                 self.apply_command_outputs(
-                    self.context
-                        .extension_registry
-                        .extend_task_command_all(|registry, extension| ExtendTaskCommandInput {
+                    registry
+                        .extend_task_command_all(|extension| ExtendTaskCommandInput {
                             context: registry.create_context(),
                             command: self.get_bin_name(),
                             args: self.get_args_list(),

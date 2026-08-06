@@ -2,7 +2,6 @@ mod host;
 mod plugin;
 mod plugin_error;
 mod plugin_registry;
-pub mod plugin_registry_new;
 mod registry_caller;
 mod registry_loader;
 
@@ -11,8 +10,8 @@ pub use moon_env::MoonEnvironment;
 pub use plugin::*;
 pub use plugin_error::*;
 pub use plugin_registry::*;
-pub use plugin_registry_new::PluginsConfig;
 pub use proto_core::ProtoEnvironment;
+pub use registry_caller::*;
 pub use warpgate::{PluginContainer, PluginLoader, PluginLocator, PluginManifest, Wasm};
 
 use convert_case::{Case, Casing};

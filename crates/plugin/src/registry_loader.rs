@@ -1,7 +1,7 @@
 use crate::host::*;
 use crate::plugin::{Plugin, PluginRegistration};
 use crate::plugin_error::PluginError;
-use crate::plugin_registry_new::*;
+use crate::plugin_registry::*;
 use miette::IntoDiagnostic;
 use moon_common::{Id, IdExt};
 use scc::hash_map::Entry;
@@ -9,8 +9,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::{debug, instrument};
-use warpgate::host::HostData;
-use warpgate::{PluginContainer, PluginLocator};
+use warpgate::{PluginContainer, PluginLocator, host::HostData};
 
 impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
     pub async fn load<I>(&self, id: I) -> miette::Result<Arc<Inst>>

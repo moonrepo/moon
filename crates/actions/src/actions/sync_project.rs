@@ -85,9 +85,10 @@ pub async fn sync_project(
             .push(finalize_sync_operation(sync_result)?);
     }
 
-    for sync_result in app_context
-        .extension_registry
-        .sync_project_all(|registry, extension| SyncProjectInput {
+    let registry = &app_context.extension_registry;
+
+    for sync_result in registry
+        .sync_project_all(|extension| SyncProjectInput {
             context: registry.create_context(),
             project_dependencies: dependency_fragments.clone(),
             project: project.to_fragment(),

@@ -1,35 +1,58 @@
 use crate::host::*;
 use crate::plugin::*;
 use crate::plugin_error::PluginError;
-use moon_common::{Id, IdExt};
-use moon_pdk_api::{MoonContext, Operation};
+use moon_common::Id;
+use moon_pdk_api::MoonContext;
 use proto_core::is_offline;
-use scc::hash_map::Entry;
-use starbase_utils::fs;
+use starbase_utils::{fs, json::JsonValue};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
-use tracing::{debug, instrument};
+use tracing::debug;
 use warpgate::sort_virtual_paths;
 use warpgate::{
-    PluginContainer, PluginLoader, PluginLocator, PluginManifest, VirtualPath, Wasm,
-    from_virtual_path, host::HostData, inject_default_manifest_config, to_virtual_path,
+    PluginLoader, PluginLocator, PluginManifest, VirtualPath, Wasm, from_virtual_path,
+    inject_default_manifest_config, to_virtual_path,
 };
 
-pub struct PluginRegistry<T: Plugin> {
-    pub host_data: MoonHostData,
+pub trait PluginsConfig: Debug + Send + Sync + 'static {
+    fn configure_manifest(
+        &self,
+        _id: &Id,
+        _host_data: &MoonHostData,
+        _manifest: &mut PluginManifest,
+    ) -> miette::Result<()> {
+        Ok(())
+    }
 
-    loader: PluginLoader,
-    plugins: Arc<scc::HashMap<Id, Arc<T>>>,
-    type_of: PluginType,
-    virtual_paths: Vec<(PathBuf, PathBuf)>,
+    fn get_ids(&self) -> Vec<&Id>;
+
+    fn get_json_config(&self, _id: &Id) -> Option<JsonValue> {
+        None
+    }
+
+    fn get_locator(&self, id: &Id) -> Option<&PluginLocator>;
 }
 
-impl<T: Plugin> PluginRegistry<T> {
-    pub fn new(type_of: PluginType, host_data: MoonHostData) -> miette::Result<Self> {
+pub struct PluginRegistry<Cfg: PluginsConfig, Inst: Plugin> {
+    pub config_data: Arc<Cfg>,
+    pub host_data: MoonHostData,
+
+    pub(crate) loader: Arc<PluginLoader>,
+    pub(crate) plugins: Arc<scc::HashMap<Id, Arc<Inst>>>,
+    pub(crate) type_of: PluginType,
+    pub(crate) virtual_paths: Vec<(PathBuf, PathBuf)>,
+}
+
+impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
+    pub fn new(
+        type_of: PluginType,
+        host_data: MoonHostData,
+        config_data: Cfg,
+    ) -> miette::Result<Self> {
         debug!(
             plugin_type = type_of.get_label(),
             "Creating plugin registry"
@@ -60,7 +83,8 @@ impl<T: Plugin> PluginRegistry<T> {
         sort_virtual_paths(&mut paths);
 
         Ok(Self {
-            loader,
+            loader: Arc::new(loader),
+            config_data: Arc::new(config_data),
             plugins: Arc::new(scc::HashMap::default()),
             host_data,
             type_of,
@@ -113,15 +137,11 @@ impl<T: Plugin> PluginRegistry<T> {
         Ok(manifest)
     }
 
-    pub fn get_cache(&self) -> Arc<scc::HashMap<Id, Arc<T>>> {
+    pub fn get_cache(&self) -> Arc<scc::HashMap<Id, Arc<Inst>>> {
         Arc::clone(&self.plugins)
     }
 
-    pub fn get_virtual_paths(&self) -> &Vec<(PathBuf, PathBuf)> {
-        &self.virtual_paths
-    }
-
-    pub async fn get_instance(&self, id: &Id) -> miette::Result<Arc<T>> {
+    pub async fn get_instance(&self, id: &Id) -> miette::Result<Arc<Inst>> {
         Ok(self
             .plugins
             .get_async(id)
@@ -133,112 +153,19 @@ impl<T: Plugin> PluginRegistry<T> {
             })?)
     }
 
+    pub fn get_plugin_ids(&self) -> Vec<&Id> {
+        self.config_data.get_ids()
+    }
+
+    pub fn get_virtual_paths(&self) -> &Vec<(PathBuf, PathBuf)> {
+        &self.virtual_paths
+    }
+
     pub async fn is_registered(&self, id: &Id) -> bool {
         self.plugins.contains_async(id).await
     }
 
-    #[instrument(skip(self, op))]
-    pub async fn load_with_config<I, L, F>(
-        &self,
-        id: I,
-        locator: L,
-        mut op: F,
-    ) -> miette::Result<Arc<T>>
-    where
-        I: AsRef<str> + fmt::Debug,
-        L: AsRef<PluginLocator> + fmt::Debug,
-        F: FnMut(&mut PluginManifest) -> miette::Result<()>,
-    {
-        let id = Id::raw(id.as_ref());
-        let locator = locator.as_ref();
-
-        // Return early if already registered. We must NOT hold a map lock (an
-        // scc entry guard) across the expensive, multi-second WASM load below:
-        // doing so serializes loads that collide on a bucket and can deadlock
-        // under concurrent loads (e.g. `load_many`), since a guard held across
-        // an `.await` blocks other tasks (and map resizes) from making progress.
-        if let Some(existing) = self.plugins.get_async(&id).await {
-            return Ok(Arc::clone(existing.get()));
-        }
-
-        debug!(
-            plugin_type = self.type_of.get_label(),
-            id = id.as_str(),
-            "Attempting to load and register plugin",
-        );
-
-        // Load the WASM file (this must happen first because of async)
-        let plugin_file = self.loader.load_plugin(&id, locator).await?;
-
-        // Create host functions (provided by warpgate)
-        let functions = create_host_functions(
-            self.host_data.clone(),
-            HostData {
-                cache_dir: self.host_data.moon_env.cache_dir.clone(),
-                http_client: self.loader.get_http_client()?.clone(),
-                virtual_paths: self.virtual_paths.clone(),
-                working_dir: self.host_data.moon_env.working_dir.clone(),
-            },
-        );
-
-        // Create the manifest and let the consumer configure it
-        let mut manifest = self.create_manifest(&id, plugin_file.clone())?;
-
-        op(&mut manifest)?;
-
-        debug!(
-            plugin_type = self.type_of.get_label(),
-            id = id.as_str(),
-            "Updated plugin manifest, attempting to register plugin",
-        );
-
-        // Create a new ID for the WASM manifest if it's prefixed with
-        // "unstable_". The reason for this is that proto's built-in tools
-        // expect a specific ID, for example "rust", and if we provide
-        // "unstable_rust", it breaks in weird ways.
-        let stable_id = Id::stable(id.as_str());
-
-        // Combine everything into the container and register
-        let plugin = T::new(PluginRegistration {
-            container: PluginContainer::new(stable_id.clone(), manifest, functions)?,
-            locator: locator.to_owned(),
-            id: id.clone(),
-            id_stable: stable_id,
-            moon_env: Arc::clone(&self.host_data.moon_env),
-            proto_env: Arc::clone(&self.host_data.proto_env),
-            wasm_file: plugin_file,
-        })
-        .await?;
-
-        debug!(
-            plugin_type = self.type_of.get_label(),
-            id = id.as_str(),
-            "Registered plugin",
-        );
-
-        let instance = Arc::new(plugin);
-
-        // Insert into the registry, holding the bucket lock only around the
-        // synchronous insert (never across an `.await`). If another task loaded
-        // the same plugin concurrently, discard ours and use the race winner.
-        Ok(match self.plugins.entry_async(id).await {
-            Entry::Occupied(entry) => Arc::clone(entry.get()),
-            Entry::Vacant(entry) => {
-                entry.insert_entry(Arc::clone(&instance));
-                instance
-            }
-        })
-    }
-
-    pub async fn load_without_config<I, L>(&self, id: I, locator: L) -> miette::Result<Arc<T>>
-    where
-        I: AsRef<str> + fmt::Debug,
-        L: AsRef<PluginLocator> + fmt::Debug,
-    {
-        self.load_with_config(id, locator, |_| Ok(())).await
-    }
-
-    pub async fn register(&self, id: Id, plugin: T) -> miette::Result<()> {
+    pub async fn register(&self, id: Id, plugin: Inst) -> miette::Result<()> {
         if self.is_registered(&id).await {
             return Err(PluginError::ExistingId {
                 id: id.to_string(),
@@ -267,21 +194,29 @@ impl<T: Plugin> PluginRegistry<T> {
     }
 }
 
-impl<T: Plugin> fmt::Debug for PluginRegistry<T> {
+// Implemented manually as `derive(Clone)` requires `Cfg` and `Inst` to
+// also be `Clone`, even though they are wrapped in `Arc`s.
+impl<Cfg: PluginsConfig, Inst: Plugin> Clone for PluginRegistry<Cfg, Inst> {
+    fn clone(&self) -> Self {
+        Self {
+            config_data: Arc::clone(&self.config_data),
+            host_data: self.host_data.clone(),
+            loader: Arc::clone(&self.loader),
+            plugins: Arc::clone(&self.plugins),
+            type_of: self.type_of,
+            virtual_paths: self.virtual_paths.clone(),
+        }
+    }
+}
+
+impl<Cfg: PluginsConfig, Inst: Plugin> fmt::Debug for PluginRegistry<Cfg, Inst> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PluginRegistry")
+            .field("config_data", &self.config_data)
             .field("host_data", &self.host_data)
             .field("plugins", &self.plugins)
             .field("type_of", &self.type_of)
             .field("virtual_paths", &self.virtual_paths)
             .finish()
     }
-}
-
-#[derive(Debug)]
-pub struct CallResult<P: Plugin, T: Debug> {
-    pub id: Id,
-    pub operation: Operation,
-    pub output: T,
-    pub plugin: Arc<P>,
 }

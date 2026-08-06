@@ -1,5 +1,5 @@
 use crate::plugin::Plugin;
-use crate::plugin_registry_new::*;
+use crate::plugin_registry::*;
 use futures::StreamExt;
 use futures::stream::FuturesOrdered;
 use miette::IntoDiagnostic;
@@ -23,7 +23,7 @@ pub struct CallResult<Inst: Plugin, Out: Debug> {
 }
 
 impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
-    pub async fn call_func_all<It, I, InFn, In, OutFn, OutFut, Out>(
+    pub async fn call_func<It, I, InFn, In, OutFn, OutFut, Out>(
         &self,
         func_name: &str,
         ids: It,
@@ -38,7 +38,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
         Out: Debug + Send + 'static,
     {
-        self.call_func_all_with_options(
+        self.call_func_with_options(
             func_name,
             ids,
             input_factory,
@@ -48,7 +48,71 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         .await
     }
 
-    pub async fn call_func_all_with_options<It, I, InFn, In, OutFn, OutFut, Out>(
+    pub async fn call_func_with_options<It, I, InFn, In, OutFn, OutFut, Out>(
+        &self,
+        func_name: &str,
+        ids: It,
+        input_factory: InFn,
+        output_factory: OutFn,
+        options: CallOptions,
+    ) -> miette::Result<Vec<CallResult<Inst, Out>>>
+    where
+        It: IntoIterator<Item = I>,
+        I: AsRef<str> + Clone,
+        InFn: Fn(&Inst) -> In,
+        OutFn: Fn(Arc<Inst>, In) -> OutFut,
+        OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
+        Out: Debug + Send + 'static,
+    {
+        self.internal_call_func(func_name, ids, input_factory, output_factory, options)
+            .await
+    }
+
+    pub async fn call_func_all<InFn, In, OutFn, OutFut, Out>(
+        &self,
+        func_name: &str,
+        input_factory: InFn,
+        output_factory: OutFn,
+    ) -> miette::Result<Vec<CallResult<Inst, Out>>>
+    where
+        InFn: Fn(&Inst) -> In,
+        OutFn: Fn(Arc<Inst>, In) -> OutFut,
+        OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
+        Out: Debug + Send + 'static,
+    {
+        self.call_func_all_with_options(
+            func_name,
+            input_factory,
+            output_factory,
+            CallOptions::default(),
+        )
+        .await
+    }
+
+    pub async fn call_func_all_with_options<InFn, In, OutFn, OutFut, Out>(
+        &self,
+        func_name: &str,
+        input_factory: InFn,
+        output_factory: OutFn,
+        options: CallOptions,
+    ) -> miette::Result<Vec<CallResult<Inst, Out>>>
+    where
+        InFn: Fn(&Inst) -> In,
+        OutFn: Fn(Arc<Inst>, In) -> OutFut,
+        OutFut: Future<Output = miette::Result<Out>> + Send + 'static,
+        Out: Debug + Send + 'static,
+    {
+        self.internal_call_func(
+            func_name,
+            self.get_plugin_ids(),
+            input_factory,
+            output_factory,
+            options,
+        )
+        .await
+    }
+
+    async fn internal_call_func<It, I, InFn, In, OutFn, OutFut, Out>(
         &self,
         func_name: &str,
         ids: It,

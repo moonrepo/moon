@@ -123,10 +123,10 @@ pub async fn sync_workspace(
 
         set.spawn(async move {
             let mut ops = vec![];
+            let registry = &app_context.extension_registry;
 
-            for sync_result in app_context
-                .extension_registry
-                .sync_workspace_all(|registry, extension| SyncWorkspaceInput {
+            for sync_result in registry
+                .sync_workspace_all(|extension| SyncWorkspaceInput {
                     context: registry.create_context(),
                     extension_config: registry.create_config(&extension.id),
                     ..Default::default()

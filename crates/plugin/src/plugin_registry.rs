@@ -79,7 +79,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
 
         let mut paths = paths.into_iter().collect::<Vec<_>>();
 
-        sort_virtual_paths(&mut paths);
+        sort_paths_list(&mut paths);
 
         Ok(Self {
             loader: Arc::new(loader),

@@ -56,7 +56,7 @@ impl Plugin for ExtensionPlugin {
 
 impl ExtensionPlugin {
     fn handle_output_file(&self, file: &mut PathBuf) {
-        *file = self.plugin.from_virtual_path(&file);
+        *file = self.plugin.to_real_path(&file).to_path_buf();
     }
 
     fn handle_output_files(&self, files: &mut [PathBuf]) {

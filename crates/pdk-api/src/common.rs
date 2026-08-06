@@ -78,7 +78,7 @@ api_struct!(
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub extended_projects: BTreeMap<Id, ExtendProjectOutput>,
 
-        /// List of virtual files in which information was extracted from and
+        /// List of real or virtual files in which information was extracted from and
         /// should invalidate the project graph cache.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub input_files: Vec<VirtualPath>,

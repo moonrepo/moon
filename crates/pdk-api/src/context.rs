@@ -22,7 +22,7 @@ impl MoonContext {
         let path = path.as_ref();
 
         if path.is_absolute() {
-            return VirtualPath::Real(path.to_owned());
+            return VirtualPath::new(path);
         }
 
         self.working_dir.join(path)

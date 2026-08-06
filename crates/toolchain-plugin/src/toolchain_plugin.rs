@@ -188,6 +188,8 @@ impl ToolchainPlugin {
             return Ok(false);
         }
 
+        let root = self.to_real_path(root).to_path_buf();
+
         Ok(
             // Root always in the workspace
             if path == workspace.root {
@@ -609,6 +611,10 @@ impl ToolchainPlugin {
             self.handle_exec_command(command);
         }
 
+        for command in &mut output.commands {
+            self.handle_output_file(&mut command.script);
+        }
+
         Ok(output)
     }
 
@@ -677,7 +683,7 @@ impl ToolchainPlugin {
             // avoid network race conditions and collisions
             if let Ok(loader) = tool.proto.get_plugin_loader()
                 && let Some(locator) = tool.locator.clone().or_else(|| {
-                    locate_plugin(&tool.context.id, &tool.proto, ProtoPluginType::Tool).ok()
+                    locate_plugin(&tool.context, &tool.proto, ProtoPluginType::Tool).ok()
                 })
             {
                 let _ = loader.load_plugin(&tool.context.id, &locator).await;

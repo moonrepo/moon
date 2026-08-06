@@ -19,7 +19,12 @@ use warpgate::{
 };
 
 pub trait PluginsConfig: Debug + Send + Sync + 'static {
-    fn configure_manifest(&self, _id: &Id, _manifest: &mut PluginManifest) -> miette::Result<()> {
+    fn configure_manifest(
+        &self,
+        _id: &Id,
+        _host_data: &MoonHostData,
+        _manifest: &mut PluginManifest,
+    ) -> miette::Result<()> {
         Ok(())
     }
 

@@ -41,6 +41,11 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
             return Ok(vec![]);
         }
 
+        debug!(
+            plugin_type = self.type_of.get_label(),
+            "Loading all plugins"
+        );
+
         self.load_many(ids).await
     }
 
@@ -134,7 +139,8 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         // Create the manifest and let the consumer configure it
         let mut manifest = self.create_manifest(&id, plugin_file.clone())?;
 
-        self.config_data.configure_manifest(&id, &mut manifest)?;
+        self.config_data
+            .configure_manifest(&id, &self.host_data, &mut manifest)?;
 
         debug!(
             plugin_type = self.type_of.get_label(),

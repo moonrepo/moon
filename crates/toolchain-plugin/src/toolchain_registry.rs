@@ -5,9 +5,10 @@ use moon_common::Id;
 use moon_config::{ProjectConfig, ProjectToolchainEntry, ToolchainsConfig};
 use moon_pdk_api::Operation;
 use moon_plugin::{
-    CallResult, MoonHostData, PluginError, PluginRegistry, PluginType, serialize_config,
+    CallResult, MoonHostData, PluginError, PluginManifest, PluginRegistry, PluginType,
+    PluginsConfig, serialize_config,
 };
-use proto_core::{ToolContext, inject_proto_manifest_config};
+use proto_core::{PluginLocator, ToolContext, inject_proto_manifest_config};
 use starbase_utils::json::{self, JsonValue};
 use std::fmt::Debug;
 use std::future::Future;
@@ -15,6 +16,50 @@ use std::ops::Deref;
 use std::sync::Arc;
 use tokio::task::JoinSet;
 use tracing::debug;
+
+#[derive(Debug)]
+pub struct ToolchainRegistryConfig(Arc<ToolchainsConfig>);
+
+impl PluginsConfig for ToolchainRegistryConfig {
+    fn configure_manifest(
+        &self,
+        id: &Id,
+        host_data: &MoonHostData,
+        manifest: &mut PluginManifest,
+    ) -> miette::Result<()> {
+        if let Some(cfg) = self.0.get_plugin_config(id) {
+            let value = serialize_config(cfg.config.iter())?;
+
+            debug!(
+                toolchain_id = id.as_str(),
+                config = %value,
+                "Storing moon toolchain configuration",
+            );
+
+            manifest
+                .config
+                .insert("moon_toolchain_config".to_owned(), value);
+
+            inject_proto_manifest_config(
+                &ToolContext::new(id.clone()),
+                &host_data.proto_env,
+                manifest,
+            )?;
+        }
+
+        Ok(())
+    }
+
+    fn get_ids(&self) -> Vec<&Id> {
+        self.0.plugins.keys().collect()
+    }
+
+    fn get_locator(&self, id: &Id) -> Option<&PluginLocator> {
+        self.0
+            .get_plugin_config(id)
+            .and_then(|cfg| cfg.plugin.as_ref())
+    }
+}
 
 #[derive(Debug)]
 pub struct ToolchainRegistry {

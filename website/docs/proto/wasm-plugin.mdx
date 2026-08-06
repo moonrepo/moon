@@ -37,7 +37,7 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
 ```
 
 The following fields are available on the
-[context object](https://docs.rs/proto_pdk/latest/proto_pdk/struct.ToolContext.html):
+[context object](https://docs.rs/proto_pdk/latest/proto_pdk/struct.PluginContext.html):
 
 - `proto_version` - The version of proto executing the plugin. Note that this version may be for the
   [`proto_core` crate](https://crates.io/crates/proto_core), and not the CLI. Patch numbers will
@@ -46,6 +46,8 @@ The following fields are available on the
   <VersionLabel version="0.45.0" />
 - `tool_dir` - A virtual path to the tool's directory for the current version.
 - `version` - The current version or alias. If not resolved, will be "latest".
+- `working_dir` - A virtual path to the current working directory.
+  <VersionLabel version="0.56.0" />
 
 :::caution
 
@@ -53,6 +55,11 @@ The `version` field is either a fully-qualified version (1.2.3), an alias ("late
 canary ("canary"). Be sure to account for all these variations when implementing plugin functions!
 
 :::
+
+Functions that run _before_ a version has been resolved receive an
+[unresolved context](https://docs.rs/proto_pdk/latest/proto_pdk/struct.PluginUnresolvedContext.html)
+instead, which only provides the `proto_version`, `temp_dir`, and `working_dir` fields. Since v0.60,
+the `tool_dir` and `version` fields are no longer available in this context.
 
 ### Tool configuration
 

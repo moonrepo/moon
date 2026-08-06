@@ -1,0 +1,205 @@
+---
+slug: proto-v0.60
+title: proto v0.60 - Scoped lockfiles, safe concurrent installs, and new WASM path APIs
+authors: [milesj]
+tags: [lockfile, outdated, pin, status, install, concurrency, plugins, wasm, paths, ruby]
+image: ./img/proto/v0.60.png
+---
+
+Our lockfile implementation gets a major overhaul in this release, alongside concurrency-safe
+installs, simpler plugin configuration, and a friendlier path API for plugin authors.
+
+proto has been steadily marching towards an official v1 release, and we're almost there! As part of
+this journey, we're making some breaking changes now — like the configuration and WASM API changes
+in this release — so that plugins, and their authors, have ample time to migrate before v1 lands.
+
+<!--truncate-->
+
+> If you're using a community WASM plugin, they will most likely need to update to the latest APIs and release a v0.60 compatible version. If you're a plugin author, please read the breaking changes below for the full migration list.
+
+## Scoped lockfiles
+
+When we introduced [lockfiles](./proto-v0.51#unstable-lockfile-support) in v0.51, enabling the
+[`settings.unstable-lockfile`](/docs/proto/config#unstable-lockfile) setting would lock that
+directory _and all of its subdirectories_, similar to how package manager workspaces function.
+Versions defined in nested `.prototools` configs were absorbed into the top-most `.protolock` file,
+and defining another lockfile deeper in the tree was a hard error.
+
+This model sounded nice on paper, but in practice it caused more friction than it solved —
+especially in monorepos, where nested projects define their own `.prototools`, but a lockfile at
+the root would claim them all. In this release, we've reworked the model entirely: a lockfile is
+now scoped to the config in which it was enabled, and only that config.
+
+```toml title=".prototools"
+[settings]
+unstable-lockfile = true
+```
+
+In practice, this means the following:
+
+- A `.protolock` file only tracks tools with versions defined in its sibling `.prototools` config.
+  Tools installed ad-hoc (without a configured version) are tracked by the closest config.
+- Versions defined in nested configs are no longer included in a parent's lockfile. To lock a
+  nested config, enable the setting in that config as well.
+- Nested lockfiles no longer trigger an error, as each lockfile operates independently.
+
+> Lockfiles are still unstable, so if you run into any issues, please report them!
+
+## Lockfile-aware commands
+
+The scoping rework is only half of the lockfile story. Until now, lockfiles were primarily the
+concern of [`proto install`](/docs/proto/commands/install) — created and updated during installs,
+but invisible everywhere else. With this release, lockfiles are now deeply integrated across the
+command line.
+
+- [`proto outdated`](/docs/proto/commands/outdated) and [`proto status`](/docs/proto/commands/status)
+  now display a "Locked" column (when applicable), showing the version locked for each configured
+  spec. Both commands also include a new `locked_version` field in their `--json` output.
+- [`proto outdated --update`](/docs/proto/commands/outdated) now updates matching lockfile records when writing new versions to
+  their respective configs. Since these versions haven't been installed yet, checksums are removed
+  from migrated records, and will be re-populated on the next install.
+- [`proto pin`](/docs/proto/commands/pin) (and [`proto install --pin`](/docs/proto/commands/install)) now migrates matching
+  lockfile records to the newly pinned spec, while [`proto unpin`](/docs/proto/commands/unpin)
+  removes them entirely.
+- [`proto versions`](/docs/proto/commands/versions) now labels versions that have a lockfile record
+  with "locked", and includes a `locked` field in its `--json` output.
+- [`proto debug config`](/docs/proto/commands/debug/config) now renders `.protolock` files
+  alongside their sibling configs, and includes them in a `locks` field in its `--json` output.
+- [`proto clean`](/docs/proto/commands/clean) no longer removes records when cleaning stale
+  versions, as the version may still be required by a config, or in use on other machines.
+
+And to round it out, [`proto diagnose`](/docs/proto/commands/diagnose) now audits the health of
+your lockfiles, reporting warnings for records that are missing a resolved version, duplicate
+records for the same spec, and stale records that no longer match any configured version.
+
+## Safe concurrent installs
+
+proto is increasingly being executed concurrently — task runners fan out processes that hit shims
+simultaneously, CI pipelines install tools in parallel jobs, and AI agents run many commands at
+once. If multiple of these processes tried to install the same tool and version at the same time,
+they would all download and unpack into the same directory, clobbering each other and sometimes
+leaving a corrupt install behind.
+
+In this release, installs of the same tool and version are now serialized through a file lock. The
+first process acquires the lock and performs the actual install, while the remaining processes wait
+for it to finish, detect that the version was installed concurrently, and reuse the result. This
+works across any number of processes, no matter how they were spawned.
+
+## Inlined plugin locators
+
+Third-party plugins have always been configured through the [`[plugins.tools]`](/docs/proto/config#pluginstools) and
+[`[plugins.backends]`](/docs/proto/config#pluginsbackends) tables, which keeps plugin locators separate from the settings of the tool
+itself. This separation works, but it always felt a bit disconnected.
+
+In this release, we've added new `plugin` fields to the [`[tools.*]`](/docs/proto/config#tools)
+and [`[backends.*]`](/docs/proto/config#backends) tables, allowing the locator and its settings to
+be defined side-by-side. Instead of this:
+
+```toml title=".prototools"
+[plugins.tools]
+example = "github://your-org/example"
+
+[tools.example]
+custom-setting = true
+```
+
+You can now write this:
+
+```toml title=".prototools"
+[tools.example]
+plugin = "github://your-org/example"
+custom-setting = true
+```
+
+Both styles are supported, so use whichever layout you prefer.
+
+## Pre-built Ruby binaries
+
+Installing Ruby with proto has always meant building it from source — a slow process that requires
+a compiler toolchain and a handful of system dependencies. Starting with this release, the Ruby
+plugin will install pre-built binaries from the [`jdx/ruby`](https://github.com/jdx/ruby) project
+when one is available for your platform, and only fall back to building from source when one
+isn't. Installs that previously took minutes now finish in seconds.
+
+## Breaking changes
+
+### A new path API for WASM plugins
+
+WASM plugins run in a sandboxed environment, where directories on the host file system (real
+paths) are mounted into the guest under fixed virtual paths. Until now, our `VirtualPath` type was
+modeled as an enum that tried to capture both worlds at once — it worked, but it was clunky to use,
+and didn't compose with the wider Rust ecosystem.
+
+In this release, we've rebuilt this layer from the ground up:
+
+- `VirtualPath` is now a simple newtype wrapper around `PathBuf`, giving it access to all `PathBuf`
+  methods, something that wasn't possible before.
+- A new `RealPath` type — also a newtype wrapper around `PathBuf` — represents real paths on the
+  host file system, making it explicit in function signatures which side of the sandbox a path
+  belongs to.
+- Converting between the two no longer requires calling a host function across the WASM boundary.
+  The new `convert_to_virtual_path` and `convert_to_real_path` functions (and the `VirtualPathExt`
+  and `RealPathExt` extension traits) perform the conversion directly in the guest, using the
+  host-to-guest path mappings.
+
+If you maintain a WASM plugin, refer to the breaking changes below for the full migration list.
+
+```rust
+// Before
+use extism_pdk::*;
+use warpgate_pdk::{VirtualPath, into_virtual_path, virtual_path};
+
+#[host_fn]
+extern "ExtismHost" {
+    fn from_virtual_path(path: String) -> String;
+    fn to_virtual_path(path: String) -> Json<VirtualPath>;
+}
+
+let path = into_virtual_path(value); // with func
+let path = virtual_path!(buf, value); // or with macro
+```
+
+```rust
+// After
+use warpgate_pdk::{VirtualPath, VirtualPathExt};
+
+let path = VirtualPath::create(value)?;
+```
+
+### Split built-in plugin settings
+
+The `settings.builtin-plugins` setting has been split into two new settings, [`builtin-tools`](/docs/proto/config#builtin-tools) and
+[`builtin-backends`](/docs/proto/config#builtin-backends), allowing built-in tools and built-in backends to be toggled independently. Both
+accept the same values as before: `true` to enable all (the default), `false` to disable all, or a
+list of names to enable a select few.
+
+```toml title=".prototools"
+[settings]
+builtin-tools = ["node", "bun"]
+builtin-backends = false
+```
+
+The `builtin-plugins` setting is now deprecated, but will remain as an alias for `builtin-tools`
+for backwards compatibility.
+
+### Removed WASM path APIs
+
+As part of the path rework above, the following breaking changes were made to the WASM API:
+
+- Removed the `from_virtual_path` and `to_virtual_path` host functions, the `into_real_path` and
+  `into_virtual_path` wrapper functions, and the `real_path!` and `virtual_path!` macros. Use the
+  new conversion utilities instead.
+- Removed the `PluginUnresolvedContext.tool_dir` and `version` fields.
+- Removed the `LocateExecutablesOutput.exes_dir` field, use `exes_dirs` instead.
+- Updated `CommandInstruction.cwd` to be a `VirtualPath`.
+- Updated `ExecCommandInput.paths` to be `PathBuf`s.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.60.0) for a full
+list of changes.
+
+- Updated plugin function calls to run on a separate blocking thread, instead of blocking the main
+  thread.
+- Checksums are now only removed from migrated lockfile records when the resolved version changes,
+  instead of always.

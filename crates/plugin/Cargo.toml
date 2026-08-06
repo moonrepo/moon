@@ -18,6 +18,7 @@ moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 convert_case = { workspace = true }
 extism = { workspace = true }
+futures = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }

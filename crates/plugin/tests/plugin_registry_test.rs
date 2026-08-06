@@ -29,6 +29,10 @@ impl Plugin for TestPlugin {
     fn get_type(&self) -> PluginType {
         PluginType::Extension
     }
+
+    async fn has_func(&self, name: &str) -> bool {
+        true
+    }
 }
 
 fn create_registry(sandbox: &Path) -> PluginRegistry<TestPlugin> {

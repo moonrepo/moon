@@ -2,7 +2,7 @@ use crate::host::*;
 use crate::plugin::*;
 use crate::plugin_error::PluginError;
 use moon_common::Id;
-use moon_pdk_api::{MoonContext, Operation};
+use moon_pdk_api::MoonContext;
 use proto_core::is_offline;
 use starbase_utils::fs;
 use std::collections::BTreeMap;
@@ -29,6 +29,7 @@ pub trait PluginsConfig: Debug + Send + Sync + 'static {
     }
 
     fn get_ids(&self) -> Vec<&Id>;
+
     fn get_locator(&self, id: &Id) -> Option<&PluginLocator>;
 }
 
@@ -203,19 +204,11 @@ impl<Cfg: PluginsConfig, Inst: Plugin> Clone for PluginRegistry<Cfg, Inst> {
 impl<Cfg: PluginsConfig, Inst: Plugin> fmt::Debug for PluginRegistry<Cfg, Inst> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PluginRegistry")
-            .field("configs", &self.config_data)
+            .field("config_data", &self.config_data)
             .field("host_data", &self.host_data)
             .field("plugins", &self.plugins)
             .field("type_of", &self.type_of)
             .field("virtual_paths", &self.virtual_paths)
             .finish()
     }
-}
-
-#[derive(Debug)]
-pub struct CallResult<P: Plugin, T: Debug> {
-    pub id: Id,
-    pub operation: Operation,
-    pub output: T,
-    pub plugin: Arc<P>,
 }

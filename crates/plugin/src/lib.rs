@@ -3,6 +3,7 @@ mod plugin;
 mod plugin_error;
 mod plugin_registry;
 pub mod plugin_registry_new;
+mod registry_caller;
 mod registry_loader;
 
 pub use host::*;

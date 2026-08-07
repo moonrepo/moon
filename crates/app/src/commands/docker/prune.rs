@@ -52,14 +52,14 @@ pub async fn prune_toolchains(
         let project = workspace_graph.get_project(project_id)?;
 
         for locate_result in toolchain_registry
-            .locate_dependencies_root_many(
-                project.get_enabled_toolchains(),
-                |registry, toolchain| LocateDependenciesRootInput {
-                    context: registry.create_context(),
+            .locate_dependencies_root_many(project.get_enabled_toolchains(), |toolchain| {
+                LocateDependenciesRootInput {
+                    context: toolchain_registry.create_context(),
                     starting_dir: toolchain.to_virtual_path(&project.root),
-                    toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
-                },
-            )
+                    toolchain_config: toolchain_registry
+                        .create_merged_config(&toolchain.id, &project.config),
+                }
+            })
             .await?
         {
             if let Some(root) = locate_result.output.root.as_ref() {

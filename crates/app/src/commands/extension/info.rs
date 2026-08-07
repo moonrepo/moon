@@ -31,7 +31,7 @@ pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> SessionResul
     let extension = session
         .get_extension_registry()
         .await?
-        .load_without_config(&args.id, &locator)
+        .do_load(&args.id, &locator)
         .await?;
 
     let apis = collect_apis(

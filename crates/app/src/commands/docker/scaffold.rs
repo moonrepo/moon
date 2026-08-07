@@ -26,11 +26,10 @@ async fn gather_globs(
 ) -> miette::Result<FxHashSet<String>> {
     let workspace_scaffold = &session.workspace_config.docker.scaffold;
     let project_scaffold = project.map(|p| &p.config.docker.scaffold);
+    let registry = session.get_toolchain_registry().await?;
 
-    let outputs = session
-        .get_toolchain_registry()
-        .await?
-        .define_docker_metadata_all(|registry, toolchain| DefineDockerMetadataInput {
+    let outputs = registry
+        .define_docker_metadata_all(|toolchain| DefineDockerMetadataInput {
             context: registry.create_context(),
             toolchain_config: match project {
                 Some(proj) => registry.create_merged_config(&toolchain.id, &proj.config),
@@ -105,18 +104,17 @@ async fn scaffold_root(
     let toolchain_registry = session.get_toolchain_registry().await?;
 
     toolchain_registry
-        .scaffold_docker_many(
-            toolchain_registry.get_plugin_ids(),
-            |registry, toolchain| ScaffoldDockerInput {
-                context: registry.create_context(),
+        .scaffold_docker_many(toolchain_registry.get_plugin_ids(), |toolchain| {
+            ScaffoldDockerInput {
+                context: toolchain_registry.create_context(),
                 docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&session.workspace_root),
                 output_dir: toolchain.to_virtual_path(docker_root),
                 phase,
                 project: None,
-                toolchain_config: registry.create_config(&toolchain.id),
-            },
-        )
+                toolchain_config: toolchain_registry.create_config(&toolchain.id),
+            }
+        })
         .await?;
 
     copy_files(
@@ -140,17 +138,18 @@ async fn scaffold_configs_project(
     if !toolchains.is_empty() {
         fs::create_dir_all(&docker_project_root)?;
 
-        session
-            .get_toolchain_registry()
-            .await?
-            .scaffold_docker_many(toolchains, |registry, toolchain| ScaffoldDockerInput {
-                context: registry.create_context(),
+        let toolchain_registry = session.get_toolchain_registry().await?;
+
+        toolchain_registry
+            .scaffold_docker_many(toolchains, |toolchain| ScaffoldDockerInput {
+                context: toolchain_registry.create_context(),
                 docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&project.root),
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Configs,
                 project: Some(project.to_fragment()),
-                toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
+                toolchain_config: toolchain_registry
+                    .create_merged_config(&toolchain.id, &project.config),
             })
             .await?;
     }
@@ -245,17 +244,18 @@ async fn scaffold_sources_project(
     )?;
 
     if !toolchains.is_empty() {
-        session
-            .get_toolchain_registry()
-            .await?
-            .scaffold_docker_many(toolchains, |registry, toolchain| ScaffoldDockerInput {
-                context: registry.create_context(),
+        let toolchain_registry = session.get_toolchain_registry().await?;
+
+        toolchain_registry
+            .scaffold_docker_many(toolchains, |toolchain| ScaffoldDockerInput {
+                context: toolchain_registry.create_context(),
                 docker_config: session.workspace_config.docker.scaffold.clone(),
                 input_dir: toolchain.to_virtual_path(&project.root),
                 output_dir: toolchain.to_virtual_path(&docker_project_root),
                 phase: ScaffoldDockerPhase::Sources,
                 project: Some(project.to_fragment()),
-                toolchain_config: registry.create_merged_config(&toolchain.id, &project.config),
+                toolchain_config: toolchain_registry
+                    .create_merged_config(&toolchain.id, &project.config),
             })
             .await?;
     }

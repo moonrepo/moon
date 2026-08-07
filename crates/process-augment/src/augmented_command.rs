@@ -200,29 +200,29 @@ impl<'app> AugmentedCommand<'app> {
             .unwrap_or(&self.context.working_dir);
 
         // Inherit for shared
+        let registry = &self.context.toolchain_registry;
+
         self.apply_command_outputs(
-            self.context
-                .toolchain_registry
-                .extend_command_many(toolchain_ids.clone(), |registry, toolchain| {
-                    ExtendCommandInput {
-                        context: registry.create_context(),
-                        command: self.get_bin_name(),
-                        args: self.get_args_list(),
-                        current_dir: registry.to_virtual_path(current_dir),
-                        toolchain_config: match project {
-                            Some(p) => registry.create_merged_config(&toolchain.id, &p.config),
-                            None => registry.create_config(&toolchain.id),
-                        },
-                        ..Default::default()
-                    }
+            registry
+                .extend_command_many(toolchain_ids.clone(), |toolchain| ExtendCommandInput {
+                    context: registry.create_context(),
+                    command: self.get_bin_name(),
+                    args: self.get_args_list(),
+                    current_dir: registry.to_virtual_path(current_dir),
+                    toolchain_config: match project {
+                        Some(p) => registry.create_merged_config(&toolchain.id, &p.config),
+                        None => registry.create_config(&toolchain.id),
+                    },
+                    ..Default::default()
                 })
                 .await?,
         );
 
+        let registry = &self.context.extension_registry;
+
         self.apply_command_outputs(
-            self.context
-                .extension_registry
-                .extend_command_all(|registry, extension| ExtendCommandInput {
+            registry
+                .extend_command_all(|extension| ExtendCommandInput {
                     context: registry.create_context(),
                     command: self.get_bin_name(),
                     args: self.get_args_list(),
@@ -241,10 +241,11 @@ impl<'app> AugmentedCommand<'app> {
                 // Scripts don't use arguments
                 self.args.clear();
 
+                let registry = &self.context.toolchain_registry;
+
                 self.apply_script_outputs(
-                    self.context
-                        .toolchain_registry
-                        .extend_task_script_many(toolchain_ids.clone(), |registry, toolchain| {
+                    registry
+                        .extend_task_script_many(toolchain_ids.clone(), |toolchain| {
                             ExtendTaskScriptInput {
                                 context: registry.create_context(),
                                 script: self.get_script(),
@@ -258,10 +259,11 @@ impl<'app> AugmentedCommand<'app> {
                         .await?,
                 );
 
+                let registry = &self.context.extension_registry;
+
                 self.apply_script_outputs(
-                    self.context
-                        .extension_registry
-                        .extend_task_script_all(|registry, extension| ExtendTaskScriptInput {
+                    registry
+                        .extend_task_script_all(|extension| ExtendTaskScriptInput {
                             context: registry.create_context(),
                             script: self.get_script(),
                             project: project.to_fragment(),
@@ -272,10 +274,11 @@ impl<'app> AugmentedCommand<'app> {
                         .await?,
                 );
             } else {
+                let registry = &self.context.toolchain_registry;
+
                 self.apply_command_outputs(
-                    self.context
-                        .toolchain_registry
-                        .extend_task_command_many(toolchain_ids.clone(), |registry, toolchain| {
+                    registry
+                        .extend_task_command_many(toolchain_ids.clone(), |toolchain| {
                             ExtendTaskCommandInput {
                                 context: registry.create_context(),
                                 command: self.get_bin_name(),
@@ -290,10 +293,11 @@ impl<'app> AugmentedCommand<'app> {
                         .await?,
                 );
 
+                let registry = &self.context.extension_registry;
+
                 self.apply_command_outputs(
-                    self.context
-                        .extension_registry
-                        .extend_task_command_all(|registry, extension| ExtendTaskCommandInput {
+                    registry
+                        .extend_task_command_all(|extension| ExtendTaskCommandInput {
                             context: registry.create_context(),
                             command: self.get_bin_name(),
                             args: self.get_args_list(),
@@ -366,7 +370,7 @@ impl<'app> AugmentedCommand<'app> {
             let paths = self
                 .context
                 .toolchain_registry
-                .get_command_paths(map.keys().copied().collect(), |_, toolchain| {
+                .get_command_paths(map.keys().copied().collect(), |toolchain| {
                     map.get(&toolchain.id).map(|version| (*version).to_owned())
                 })
                 .await?;

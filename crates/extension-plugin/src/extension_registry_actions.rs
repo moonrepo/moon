@@ -13,12 +13,11 @@ impl ExtensionRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<ExtendCommandOutput>>
     where
-        InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> ExtendCommandInput,
+        InFn: Fn(&ExtensionPlugin) -> ExtendCommandInput,
     {
         let results = self
             .call_func_all(
                 "extend_command",
-                self.get_plugin_ids(),
                 input_factory,
                 |extension, input| async move { extension.extend_command(input).await },
             )
@@ -32,12 +31,11 @@ impl ExtensionRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ExtensionPlugin, ExtendProjectGraphOutput>>>
     where
-        InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> ExtendProjectGraphInput,
+        InFn: Fn(&ExtensionPlugin) -> ExtendProjectGraphInput,
     {
         let results = self
             .call_func_all(
                 "extend_project_graph",
-                self.get_plugin_ids(),
                 input_factory,
                 |extension, input| async move { extension.extend_project_graph(input).await },
             )
@@ -51,12 +49,11 @@ impl ExtensionRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<ExtendCommandOutput>>
     where
-        InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> ExtendTaskCommandInput,
+        InFn: Fn(&ExtensionPlugin) -> ExtendTaskCommandInput,
     {
         let results = self
             .call_func_all(
                 "extend_task_command",
-                self.get_plugin_ids(),
                 input_factory,
                 |extension, input| async move { extension.extend_task_command(input).await },
             )
@@ -70,12 +67,11 @@ impl ExtensionRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<ExtendTaskScriptOutput>>
     where
-        InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> ExtendTaskScriptInput,
+        InFn: Fn(&ExtensionPlugin) -> ExtendTaskScriptInput,
     {
         let results = self
             .call_func_all(
                 "extend_task_script",
-                self.get_plugin_ids(),
                 input_factory,
                 |extension, input| async move { extension.extend_task_script(input).await },
             )
@@ -89,11 +85,10 @@ impl ExtensionRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ExtensionPlugin, SyncOutput>>>
     where
-        InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> SyncProjectInput,
+        InFn: Fn(&ExtensionPlugin) -> SyncProjectInput,
     {
         self.call_func_all(
             "sync_project",
-            self.get_plugin_ids(),
             input_factory,
             |extension, input| async move { extension.sync_project(input).await },
         )
@@ -105,11 +100,10 @@ impl ExtensionRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ExtensionPlugin, SyncOutput>>>
     where
-        InFn: Fn(&ExtensionRegistry, &ExtensionPlugin) -> SyncWorkspaceInput,
+        InFn: Fn(&ExtensionPlugin) -> SyncWorkspaceInput,
     {
         self.call_func_all(
             "sync_workspace",
-            self.get_plugin_ids(),
             input_factory,
             |extension, input| async move { extension.sync_workspace(input).await },
         )

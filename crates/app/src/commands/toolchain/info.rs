@@ -31,7 +31,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> SessionResul
     let toolchain = session
         .get_toolchain_registry()
         .await?
-        .load_without_config(&args.id, &locator)
+        .do_load(&args.id, &locator)
         .await?;
     let metadata = &toolchain.metadata;
 

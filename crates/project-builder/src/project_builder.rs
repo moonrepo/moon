@@ -206,10 +206,11 @@ impl<'app> ProjectBuilder<'app> {
         }
 
         // 2 - Detected from plugins
+        let registry = &self.context.toolchain_registry;
+
         toolchains.extend(
-            self.context
-                .toolchain_registry
-                .detect_project_toolchain_from_usage(&self.root, |registry, toolchain| {
+            registry
+                .detect_project_toolchain_from_usage(&self.root, |toolchain| {
                     DefineRequirementsInput {
                         context: registry.create_context(),
                         toolchain_config: registry.create_config(&toolchain.id),

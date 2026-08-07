@@ -995,9 +995,10 @@ impl WorkspaceBuilder {
 
         debug!("Extending project graph from extension plugins");
 
-        for result in context
-            .extension_registry
-            .extend_project_graph_all(|registry, extension| ExtendProjectGraphInput {
+        let registry = &context.extension_registry;
+
+        for result in registry
+            .extend_project_graph_all(|extension| ExtendProjectGraphInput {
                 context: registry.create_context(),
                 project_sources: project_sources.clone(),
                 extension_config: registry.create_config(&extension.id),
@@ -1014,13 +1015,19 @@ impl WorkspaceBuilder {
     #[instrument(skip_all)]
     async fn extend_projects_from_toolchains(&mut self) -> miette::Result<()> {
         let context = self.context();
+
+        if !context.toolchain_registry.has_plugin_configs() {
+            return Ok(());
+        }
+
         let project_sources = self.map_project_sources();
 
         debug!("Extending project graph from toolchain plugins");
 
-        for result in context
-            .toolchain_registry
-            .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
+        let registry = &context.toolchain_registry;
+
+        for result in registry
+            .extend_project_graph_all(|toolchain| ExtendProjectGraphInput {
                 context: registry.create_context(),
                 project_sources: project_sources.clone(),
                 toolchain_config: registry.create_config(&toolchain.id),

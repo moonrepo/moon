@@ -40,9 +40,7 @@ pub async fn add(session: MoonSession, args: ToolchainAddArgs) -> SessionResult 
 
     // Load toolchain
     let toolchain_registry = session.get_toolchain_registry().await?;
-    let toolchain = toolchain_registry
-        .load_without_config(&args.id, &locator)
-        .await?;
+    let toolchain = toolchain_registry.do_load(&args.id, &locator).await?;
 
     // Generate config
     let config =

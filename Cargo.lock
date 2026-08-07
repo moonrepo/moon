@@ -5734,6 +5734,7 @@ dependencies = [
  "async-trait",
  "convert_case 0.11.0",
  "extism",
+ "futures",
  "miette 7.6.0",
  "moon_common",
  "moon_config",

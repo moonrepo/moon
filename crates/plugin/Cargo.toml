@@ -18,6 +18,7 @@ moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 convert_case = { workspace = true }
 extism = { workspace = true }
+futures = { workspace = true }
 miette = { workspace = true }
 proto_core = { workspace = true }
 rustc-hash = { workspace = true }
@@ -27,6 +28,7 @@ serde_json = { workspace = true }
 starbase_styles = { workspace = true }
 starbase_utils = { workspace = true, features = ["json"] }
 thiserror = { workspace = true }
+tokio = { workspace = true }
 tracing = { workspace = true }
 warpgate = { workspace = true }
 

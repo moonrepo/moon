@@ -10,7 +10,7 @@ use moon_pdk_api::{
     LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput,
     SetupToolchainOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
-use moon_plugin::CallResult;
+use moon_plugin::{CallOptions, CallResult};
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::json::JsonValue;
@@ -27,15 +27,17 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<PathBuf>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> Option<UnresolvedVersionSpec>,
+        InFn: Fn(&ToolchainPlugin) -> Option<UnresolvedVersionSpec>,
     {
         let results = self
-            .call_func_all_with_check(
+            .call_func_with_options(
                 "get_command_paths",
                 ids,
                 input_factory,
                 |toolchain, input| async move { toolchain.get_command_paths(input).await },
-                true,
+                CallOptions {
+                    check_func_exists: false,
+                },
             )
             .await?;
 
@@ -96,7 +98,7 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<Id>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
+        InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
         let mut detected = FxHashSet::default();
 
@@ -140,10 +142,10 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ToolchainPlugin, DefineRequirementsOutput>>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
+        InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
         let results = self
-            .call_func_all(
+            .call_func(
                 "define_requirements",
                 ids,
                 input_factory,
@@ -160,8 +162,7 @@ impl ToolchainRegistry {
         let results = self
             .call_func_all(
                 "define_toolchain_config",
-                self.get_plugin_ids(),
-                |_, _| (),
+                |_| (),
                 |toolchain, _| async move { toolchain.define_toolchain_config().await },
             )
             .await?;
@@ -177,15 +178,16 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<DefineDockerMetadataOutput>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineDockerMetadataInput,
+        InFn: Fn(&ToolchainPlugin) -> DefineDockerMetadataInput,
     {
         let results = self
-            .call_func_all_with_check(
+            .call_func_all_with_options(
                 "define_docker_metadata",
-                self.get_plugin_ids(),
                 input_factory,
                 |toolchain, input| async move { toolchain.define_docker_metadata(input).await },
-                true,
+                CallOptions {
+                    check_func_exists: false,
+                },
             )
             .await?;
 
@@ -198,7 +200,7 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<Id>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> DefineRequirementsInput,
+        InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
         let mut expanded = FxHashSet::from_iter(ids);
 
@@ -230,10 +232,10 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<ExtendCommandOutput>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendCommandInput,
+        InFn: Fn(&ToolchainPlugin) -> ExtendCommandInput,
     {
         let results = self
-            .call_func_all(
+            .call_func(
                 "extend_command",
                 ids,
                 input_factory,
@@ -249,12 +251,11 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ToolchainPlugin, ExtendProjectGraphOutput>>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendProjectGraphInput,
+        InFn: Fn(&ToolchainPlugin) -> ExtendProjectGraphInput,
     {
         let results = self
             .call_func_all(
                 "extend_project_graph",
-                self.get_plugin_ids(),
                 input_factory,
                 |toolchain, input| async move { toolchain.extend_project_graph(input).await },
             )
@@ -269,10 +270,10 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<ExtendCommandOutput>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendTaskCommandInput,
+        InFn: Fn(&ToolchainPlugin) -> ExtendTaskCommandInput,
     {
         let results = self
-            .call_func_all(
+            .call_func(
                 "extend_task_command",
                 ids,
                 input_factory,
@@ -289,10 +290,10 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<ExtendTaskScriptOutput>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ExtendTaskScriptInput,
+        InFn: Fn(&ToolchainPlugin) -> ExtendTaskScriptInput,
     {
         let results = self
-            .call_func_all(
+            .call_func(
                 "extend_task_script",
                 ids,
                 input_factory,
@@ -309,10 +310,10 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<JsonValue>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> HashTaskContentsInput,
+        InFn: Fn(&ToolchainPlugin) -> HashTaskContentsInput,
     {
         let results = self
-            .call_func_all(
+            .call_func(
                 "hash_task_contents",
                 ids,
                 input_factory,
@@ -332,10 +333,10 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ToolchainPlugin, LocateDependenciesRootOutput>>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> LocateDependenciesRootInput,
+        InFn: Fn(&ToolchainPlugin) -> LocateDependenciesRootInput,
     {
         let results = self
-            .call_func_all(
+            .call_func(
                 "locate_dependencies_root",
                 ids,
                 input_factory,
@@ -352,10 +353,10 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<ScaffoldDockerOutput>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> ScaffoldDockerInput,
+        InFn: Fn(&ToolchainPlugin) -> ScaffoldDockerInput,
     {
         let results = self
-            .call_func_all(
+            .call_func(
                 "scaffold_docker",
                 ids,
                 input_factory,
@@ -371,14 +372,15 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SetupToolchainOutput>>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SetupToolchainInput,
+        InFn: Fn(&ToolchainPlugin) -> SetupToolchainInput,
     {
-        self.call_func_all_with_check(
+        self.call_func_all_with_options(
             "setup_toolchain",
-            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.setup_toolchain(input, None, || Ok(())).await },
-            true,
+            CallOptions {
+                check_func_exists: false,
+            },
         )
         .await
     }
@@ -389,9 +391,9 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SyncOutput>>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SyncProjectInput,
+        InFn: Fn(&ToolchainPlugin) -> SyncProjectInput,
     {
-        self.call_func_all(
+        self.call_func(
             "sync_project",
             ids,
             input_factory,
@@ -405,11 +407,10 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SyncOutput>>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> SyncWorkspaceInput,
+        InFn: Fn(&ToolchainPlugin) -> SyncWorkspaceInput,
     {
         self.call_func_all(
             "sync_workspace",
-            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.sync_workspace(input).await },
         )
@@ -421,14 +422,15 @@ impl ToolchainRegistry {
         input_factory: InFn,
     ) -> miette::Result<Vec<CallResult<ToolchainPlugin, ()>>>
     where
-        InFn: Fn(&ToolchainRegistry, &ToolchainPlugin) -> TeardownToolchainInput,
+        InFn: Fn(&ToolchainPlugin) -> TeardownToolchainInput,
     {
-        self.call_func_all_with_check(
+        self.call_func_all_with_options(
             "teardown_toolchain",
-            self.get_plugin_ids(),
             input_factory,
             |toolchain, input| async move { toolchain.teardown_toolchain(input).await },
-            true,
+            CallOptions {
+                check_func_exists: false,
+            },
         )
         .await
     }

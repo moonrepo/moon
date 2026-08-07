@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use moon_common::Id;
+use moon_config::schematic::Schema;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
 use std::fmt;
@@ -64,19 +65,37 @@ impl ExtensionPlugin {
         }
     }
 
-    #[instrument(skip(self))]
-    pub async fn define_extension_config(&self) -> miette::Result<DefineExtensionConfigOutput> {
-        let output: DefineExtensionConfigOutput =
-            self.plugin.cache_func("define_extension_config").await?;
+    fn handle_virtual_file(&self, file: &mut VirtualPath) {
+        *file = VirtualPath::Real(self.plugin.from_virtual_path(&file));
+    }
 
-        Ok(output)
+    fn handle_virtual_files(&self, files: &mut [VirtualPath]) {
+        for file in files {
+            self.handle_virtual_file(file);
+        }
+    }
+
+    #[instrument(skip(self))]
+    pub async fn define_extension_config(&self) -> miette::Result<Option<Schema>> {
+        if self.has_func("define_extension_config").await {
+            let output: DefineExtensionConfigOutput =
+                self.cache_func("define_extension_config").await?;
+
+            return Ok(Some(output.schema));
+        }
+
+        Ok(None)
     }
 
     #[instrument(skip(self, context))]
     pub async fn execute(&self, args: Vec<String>, context: MoonContext) -> miette::Result<()> {
-        self.plugin
-            .call_func_without_output("execute_extension", ExecuteExtensionInput { args, context })
+        if self.has_func("execute_extension").await {
+            self.call_func_without_output(
+                "execute_extension",
+                ExecuteExtensionInput { args, context },
+            )
             .await?;
+        }
 
         Ok(())
     }
@@ -86,8 +105,13 @@ impl ExtensionPlugin {
         &self,
         input: ExtendCommandInput,
     ) -> miette::Result<ExtendCommandOutput> {
-        let output: ExtendCommandOutput =
-            self.plugin.cache_func_with("extend_command", input).await?;
+        let mut output = ExtendCommandOutput::default();
+
+        if self.has_func("extend_command").await {
+            output = self.cache_func_with("extend_command", input).await?;
+
+            self.handle_output_files(&mut output.paths);
+        }
 
         Ok(output)
     }
@@ -97,12 +121,13 @@ impl ExtensionPlugin {
         &self,
         input: ExtendProjectGraphInput,
     ) -> miette::Result<ExtendProjectGraphOutput> {
-        let mut output: ExtendProjectGraphOutput = self
-            .plugin
-            .cache_func_with("extend_project_graph", input)
-            .await?;
+        let mut output = ExtendProjectGraphOutput::default();
 
-        self.handle_output_files(&mut output.input_files);
+        if self.has_func("extend_project_graph").await {
+            output = self.cache_func_with("extend_project_graph", input).await?;
+
+            self.handle_output_files(&mut output.input_files);
+        }
 
         Ok(output)
     }
@@ -112,10 +137,13 @@ impl ExtensionPlugin {
         &self,
         input: ExtendTaskCommandInput,
     ) -> miette::Result<ExtendCommandOutput> {
-        let output: ExtendCommandOutput = self
-            .plugin
-            .cache_func_with("extend_task_command", input)
-            .await?;
+        let mut output = ExtendCommandOutput::default();
+
+        if self.has_func("extend_task_command").await {
+            output = self.cache_func_with("extend_task_command", input).await?;
+
+            self.handle_output_files(&mut output.paths);
+        }
 
         Ok(output)
     }
@@ -125,10 +153,13 @@ impl ExtensionPlugin {
         &self,
         input: ExtendTaskScriptInput,
     ) -> miette::Result<ExtendTaskScriptOutput> {
-        let output: ExtendTaskScriptOutput = self
-            .plugin
-            .cache_func_with("extend_task_script", input)
-            .await?;
+        let mut output = ExtendTaskScriptOutput::default();
+
+        if self.has_func("extend_task_script").await {
+            output = self.cache_func_with("extend_task_script", input).await?;
+
+            self.handle_output_files(&mut output.paths);
+        }
 
         Ok(output)
     }
@@ -138,28 +169,35 @@ impl ExtensionPlugin {
         &self,
         input: InitializeExtensionInput,
     ) -> miette::Result<InitializeExtensionOutput> {
-        let output: InitializeExtensionOutput = self
-            .plugin
-            .cache_func_with("initialize_extension", input)
-            .await?;
+        // Function check happens during extension registration
+        let output: InitializeExtensionOutput =
+            self.cache_func_with("initialize_extension", input).await?;
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn sync_project(&self, input: SyncProjectInput) -> miette::Result<SyncOutput> {
-        let mut output: SyncOutput = self.plugin.call_func_with("sync_project", input).await?;
+        let mut output = SyncOutput::default();
 
-        self.handle_output_files(&mut output.changed_files);
+        if self.has_func("sync_project").await {
+            output = self.call_func_with("sync_project", input).await?;
+
+            self.handle_virtual_files(&mut output.changed_files);
+        }
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn sync_workspace(&self, input: SyncWorkspaceInput) -> miette::Result<SyncOutput> {
-        let mut output: SyncOutput = self.plugin.call_func_with("sync_workspace", input).await?;
+        let mut output = SyncOutput::default();
 
-        self.handle_output_files(&mut output.changed_files);
+        if self.has_func("sync_workspace").await {
+            output = self.call_func_with("sync_workspace", input).await?;
+
+            self.handle_virtual_files(&mut output.changed_files);
+        }
 
         Ok(output)
     }

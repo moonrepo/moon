@@ -138,7 +138,6 @@ impl ToolchainPlugin {
 
         Ok(None)
     }
-
     fn handle_output_file(&self, file: &mut PathBuf) {
         *file = self.plugin.from_virtual_path(&file);
     }
@@ -146,6 +145,16 @@ impl ToolchainPlugin {
     fn handle_output_files(&self, files: &mut [PathBuf]) {
         for file in files {
             self.handle_output_file(file);
+        }
+    }
+
+    fn handle_virtual_file(&self, file: &mut VirtualPath) {
+        *file = VirtualPath::Real(self.plugin.from_virtual_path(&file));
+    }
+
+    fn handle_virtual_files(&self, files: &mut [VirtualPath]) {
+        for file in files {
+            self.handle_virtual_file(file);
         }
     }
 
@@ -624,18 +633,26 @@ impl ToolchainPlugin {
 
     #[instrument(skip(self))]
     pub async fn sync_project(&self, input: SyncProjectInput) -> miette::Result<SyncOutput> {
-        let mut output: SyncOutput = self.plugin.call_func_with("sync_project", input).await?;
+        let mut output = SyncOutput::default();
 
-        self.handle_output_files(&mut output.changed_files);
+        if self.plugin.has_func("sync_project").await {
+            output = self.plugin.call_func_with("sync_project", input).await?;
+
+            self.handle_virtual_files(&mut output.changed_files);
+        }
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn sync_workspace(&self, input: SyncWorkspaceInput) -> miette::Result<SyncOutput> {
-        let mut output: SyncOutput = self.plugin.call_func_with("sync_workspace", input).await?;
+        let mut output = SyncOutput::default();
 
-        self.handle_output_files(&mut output.changed_files);
+        if self.plugin.has_func("sync_workspace").await {
+            output = self.plugin.call_func_with("sync_workspace", input).await?;
+
+            self.handle_virtual_files(&mut output.changed_files);
+        }
 
         Ok(output)
     }

@@ -92,7 +92,15 @@ pub fn finalize_sync_operation<P: Plugin>(
     )?);
 
     // Inherit changed files
-    inherit_changed_files(&mut op, sync_result.output.changed_files);
+    inherit_changed_files(
+        &mut op,
+        sync_result
+            .output
+            .changed_files
+            .into_iter()
+            .map(|file| file.to_path_buf())
+            .collect(),
+    );
 
     Ok(op)
 }

@@ -35,16 +35,13 @@ pub struct CallResult<Inst: Plugin, Out: Debug> {
 }
 
 impl<Inst: Plugin, Out: Debug> CallResult<Inst, Out> {
-    pub fn map_output<O: Debug>(
-        self,
-        op: impl FnOnce(Out) -> miette::Result<O>,
-    ) -> miette::Result<CallResult<Inst, O>> {
-        Ok(CallResult {
+    pub fn map_output<O: Debug>(self, op: impl FnOnce(Out) -> O) -> CallResult<Inst, O> {
+        CallResult {
             id: self.id,
             operation: self.operation,
-            output: op(self.output)?,
+            output: op(self.output),
             plugin: self.plugin,
-        })
+        }
     }
 }
 

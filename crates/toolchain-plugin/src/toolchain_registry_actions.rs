@@ -6,14 +6,13 @@ use moon_pdk_api::{
     ConfigSchema, DefineDockerMetadataInput, DefineDockerMetadataOutput, DefineRequirementsInput,
     DefineRequirementsOutput, ExtendCommandInput, ExtendCommandOutput, ExtendProjectGraphInput,
     ExtendProjectGraphOutput, ExtendTaskCommandInput, ExtendTaskScriptInput,
-    ExtendTaskScriptOutput, HashTaskContentsInput, LocateDependenciesRootInput,
-    LocateDependenciesRootOutput, ScaffoldDockerInput, ScaffoldDockerOutput, SetupToolchainInput,
-    SetupToolchainOutput, SyncOutput, SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
+    ExtendTaskScriptOutput, LocateDependenciesRootInput, ScaffoldDockerInput, SyncOutput,
+    SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
 use moon_plugin::{CallOptions, CallResult};
+use moon_toolchain::DependenciesWorkspace;
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::{FxHashMap, FxHashSet};
-use starbase_utils::json::JsonValue;
 use std::path::{Path, PathBuf};
 
 // These implementations aggregate the call results from all toolchains
@@ -144,16 +143,13 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainPlugin) -> DefineRequirementsInput,
     {
-        let results = self
-            .call_func(
-                "define_requirements",
-                ids,
-                input_factory,
-                |toolchain, input| async move { toolchain.define_requirements(input).await },
-            )
-            .await?;
-
-        Ok(results)
+        self.call_func(
+            "define_requirements",
+            ids,
+            input_factory,
+            |toolchain, input| async move { toolchain.define_requirements(input).await },
+        )
+        .await
     }
 
     pub async fn define_toolchain_config_all(
@@ -169,7 +165,7 @@ impl ToolchainRegistry {
 
         Ok(results
             .into_iter()
-            .map(|result| (result.id.to_string(), result.output.schema))
+            .flat_map(|result| result.output.map(|schema| (result.id.to_string(), schema)))
             .collect())
     }
 
@@ -253,15 +249,12 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainPlugin) -> ExtendProjectGraphInput,
     {
-        let results = self
-            .call_func_all(
-                "extend_project_graph",
-                input_factory,
-                |toolchain, input| async move { toolchain.extend_project_graph(input).await },
-            )
-            .await?;
-
-        Ok(results)
+        self.call_func_all(
+            "extend_project_graph",
+            input_factory,
+            |toolchain, input| async move { toolchain.extend_project_graph(input).await },
+        )
+        .await
     }
 
     pub async fn extend_task_command_many<InFn>(
@@ -304,34 +297,11 @@ impl ToolchainRegistry {
         Ok(results.into_iter().map(|result| result.output).collect())
     }
 
-    pub async fn hash_task_contents_many<InFn>(
-        &self,
-        ids: Vec<&Id>,
-        input_factory: InFn,
-    ) -> miette::Result<Vec<JsonValue>>
-    where
-        InFn: Fn(&ToolchainPlugin) -> HashTaskContentsInput,
-    {
-        let results = self
-            .call_func(
-                "hash_task_contents",
-                ids,
-                input_factory,
-                |toolchain, input| async move { toolchain.hash_task_contents(input).await },
-            )
-            .await?;
-
-        Ok(results
-            .into_iter()
-            .flat_map(|result| result.output.contents)
-            .collect())
-    }
-
     pub async fn locate_dependencies_root_many<InFn>(
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, LocateDependenciesRootOutput>>>
+    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, DependenciesWorkspace>>>
     where
         InFn: Fn(&ToolchainPlugin) -> LocateDependenciesRootInput,
     {
@@ -344,45 +314,35 @@ impl ToolchainRegistry {
             )
             .await?;
 
-        Ok(results.into_iter().collect())
+        Ok(results
+            .into_iter()
+            .filter_map(|result| {
+                if result.output.is_some() {
+                    Some(result.map_output(|out| out.unwrap()))
+                } else {
+                    None
+                }
+            })
+            .collect())
     }
 
     pub async fn scaffold_docker_many<InFn>(
         &self,
         ids: Vec<&Id>,
         input_factory: InFn,
-    ) -> miette::Result<Vec<ScaffoldDockerOutput>>
+    ) -> miette::Result<()>
     where
         InFn: Fn(&ToolchainPlugin) -> ScaffoldDockerInput,
     {
-        let results = self
-            .call_func(
-                "scaffold_docker",
-                ids,
-                input_factory,
-                |toolchain, input| async move { toolchain.scaffold_docker(input).await },
-            )
-            .await?;
-
-        Ok(results.into_iter().map(|result| result.output).collect())
-    }
-
-    pub async fn setup_toolchain_all<InFn>(
-        &self,
-        input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, SetupToolchainOutput>>>
-    where
-        InFn: Fn(&ToolchainPlugin) -> SetupToolchainInput,
-    {
-        self.call_func_all_with_options(
-            "setup_toolchain",
+        self.call_func(
+            "scaffold_docker",
+            ids,
             input_factory,
-            |toolchain, input| async move { toolchain.setup_toolchain(input, None, || Ok(())).await },
-            CallOptions {
-                check_func_exists: false,
-            },
+            |toolchain, input| async move { toolchain.scaffold_docker(input).await },
         )
-        .await
+        .await?;
+
+        Ok(())
     }
 
     pub async fn sync_project_many<InFn>(
@@ -417,10 +377,7 @@ impl ToolchainRegistry {
         .await
     }
 
-    pub async fn teardown_toolchain_all<InFn>(
-        &self,
-        input_factory: InFn,
-    ) -> miette::Result<Vec<CallResult<ToolchainPlugin, ()>>>
+    pub async fn teardown_toolchain_all<InFn>(&self, input_factory: InFn) -> miette::Result<()>
     where
         InFn: Fn(&ToolchainPlugin) -> TeardownToolchainInput,
     {
@@ -432,6 +389,8 @@ impl ToolchainRegistry {
                 check_func_exists: false,
             },
         )
-        .await
+        .await?;
+
+        Ok(())
     }
 }

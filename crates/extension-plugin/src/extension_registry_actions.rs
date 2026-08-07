@@ -33,15 +33,12 @@ impl ExtensionRegistry {
     where
         InFn: Fn(&ExtensionPlugin) -> ExtendProjectGraphInput,
     {
-        let results = self
-            .call_func_all(
-                "extend_project_graph",
-                input_factory,
-                |extension, input| async move { extension.extend_project_graph(input).await },
-            )
-            .await?;
-
-        Ok(results)
+        self.call_func_all(
+            "extend_project_graph",
+            input_factory,
+            |extension, input| async move { extension.extend_project_graph(input).await },
+        )
+        .await
     }
 
     pub async fn extend_task_command_all<InFn>(

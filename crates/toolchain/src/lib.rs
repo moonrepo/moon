@@ -1,3 +1,4 @@
+mod shapes;
 mod spec;
 
 use indexmap::IndexSet;
@@ -6,6 +7,7 @@ use moon_config::ToolchainsConfig;
 use moon_env_var::{GlobalEnvBag, as_bool};
 
 pub use moon_config::{UnresolvedVersionSpec, VersionSpec};
+pub use shapes::*;
 pub use spec::*;
 
 pub fn requires_proto(bag: &GlobalEnvBag, config: &ToolchainsConfig) -> bool {

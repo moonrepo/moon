@@ -288,18 +288,16 @@ async fn get_base_image(session: &MoonSession, project: &Project) -> miette::Res
     let toolchain_registry = session.get_toolchain_registry().await?;
 
     for toolchain in toolchain_registry.load_many(&project.toolchains).await? {
-        if toolchain.has_func("define_docker_metadata").await {
-            let metadata = toolchain
-                .define_docker_metadata(DefineDockerMetadataInput {
-                    context: toolchain_registry.create_context(),
-                    toolchain_config: toolchain_registry
-                        .create_merged_config(&toolchain.id, &project.config),
-                })
-                .await?;
+        let metadata = toolchain
+            .define_docker_metadata(DefineDockerMetadataInput {
+                context: toolchain_registry.create_context(),
+                toolchain_config: toolchain_registry
+                    .create_merged_config(&toolchain.id, &project.config),
+            })
+            .await?;
 
-            if let Some(image) = metadata.default_image {
-                return Ok(image);
-            }
+        if let Some(image) = metadata.default_image {
+            return Ok(image);
         }
     }
 

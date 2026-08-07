@@ -215,6 +215,7 @@ impl fmt::Debug for ExtensionPlugin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ExtensionPlugin")
             .field("id", &self.id)
+            .field("locator", &self.locator)
             .field("metadata", &self.metadata)
             .finish()
     }

@@ -13,13 +13,11 @@ use moon_common::path::{PathExt, RelativePathBuf, WorkspaceRelativePathBuf};
 use moon_common::{Id, color, is_ci};
 use moon_config::{EnvMap, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
-use moon_pdk_api::{
-    DefineRequirementsInput, LocateDependenciesRootInput, LocateDependenciesRootOutput,
-};
+use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetProjectScope, TargetTaskScope, Task};
-use moon_toolchain::ToolchainSpec;
+use moon_toolchain::{DependenciesWorkspace, ToolchainSpec};
 use moon_workspace_graph::projects::ProjectGraphError;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use petgraph::prelude::*;
@@ -347,20 +345,20 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(setup_toolchain_index);
         }
 
-        let output = self.locate_dependencies_root(spec, project).await?;
         let target_root = match project {
             Some(project) => &project.root,
             None => &self.app_context.workspace_root,
         };
 
         // Only insert this action if a root was located
-        if let Some(abs_root) = output.root.as_ref() {
-            let rel_root = abs_root
+        if let Some(deps_workspace) = self.locate_dependencies_root(spec, project).await? {
+            let rel_root = deps_workspace
+                .root
                 .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
             // Determine if we're in the dependencies workspace
-            let in_workspace = toolchain.in_dependencies_workspace(&output, target_root)?;
+            let in_workspace = toolchain.in_dependencies_workspace(&deps_workspace, target_root)?;
 
             // If not in the dependencies workspace (if there is one),
             // or is a stand-alone project with its own lockfile,
@@ -382,7 +380,11 @@ impl<'query> ActionGraphBuilder<'query> {
                 let index = insert_node_if_missing!(
                     self,
                     ActionNode::install_dependencies(InstallDependenciesNode {
-                        members: if in_workspace { output.members } else { None },
+                        members: if in_workspace {
+                            Some(deps_workspace.members)
+                        } else {
+                            None
+                        },
                         project_id,
                         root,
                         toolchain_id: spec.id.clone(),
@@ -469,8 +471,7 @@ impl<'query> ActionGraphBuilder<'query> {
         if self
             .locate_dependencies_root(spec, None)
             .await?
-            .root
-            .is_none_or(|root| root != self.app_context.workspace_root)
+            .is_none_or(|deps_workspace| deps_workspace.root != self.app_context.workspace_root)
         {
             return Ok(None);
         }
@@ -482,17 +483,17 @@ impl<'query> ActionGraphBuilder<'query> {
         &self,
         spec: &ToolchainSpec,
         project: Option<&Project>,
-    ) -> miette::Result<LocateDependenciesRootOutput> {
+    ) -> miette::Result<Option<DependenciesWorkspace>> {
         let toolchain_registry = &self.app_context.toolchain_registry;
         let toolchain = toolchain_registry.load(&spec.id).await?;
 
         // Toolchain does not support locating a root, so return
         // an empty output instead of failing the function call
         if !toolchain.supports_tier_2().await {
-            return Ok(LocateDependenciesRootOutput::default());
+            return Ok(None);
         }
 
-        let output = toolchain
+        toolchain
             .locate_dependencies_root(match project {
                 Some(project) => LocateDependenciesRootInput {
                     context: toolchain_registry.create_context(),
@@ -506,9 +507,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     toolchain_config: toolchain_registry.create_config(&toolchain.id),
                 },
             })
-            .await?;
-
-        Ok(output)
+            .await
     }
 
     #[instrument(skip(self))]
@@ -1206,8 +1205,7 @@ impl<'query> ActionGraphBuilder<'query> {
         if self
             .locate_dependencies_root(spec, None)
             .await?
-            .root
-            .is_none_or(|root| root != self.app_context.workspace_root)
+            .is_none_or(|deps_workspace| deps_workspace.root != self.app_context.workspace_root)
         {
             return Ok(None);
         }
@@ -1256,40 +1254,38 @@ impl<'query> ActionGraphBuilder<'query> {
         cycle.insert(&spec.id);
 
         // Toolchain may depend on others
-        if toolchain.has_func("define_requirements").await {
-            let output = toolchain
-                .define_requirements(DefineRequirementsInput {
-                    context: toolchain_registry.create_context(),
-                    toolchain_config: toolchain_registry.create_config(&toolchain.id),
-                })
-                .await?;
+        let output = toolchain
+            .define_requirements(DefineRequirementsInput {
+                context: toolchain_registry.create_context(),
+                toolchain_config: toolchain_registry.create_config(&toolchain.id),
+            })
+            .await?;
 
-            if !output.requires.is_empty() {
-                for require_id in output.requires {
-                    let require_id = Id::new(require_id)?;
+        if !output.requires.is_empty() {
+            for require_id in output.requires {
+                let require_id = Id::new(require_id)?;
 
-                    if require_id != spec.id {
-                        // Skip if already in cycle
-                        if cycle.contains(&require_id) {
-                            continue;
+                if require_id != spec.id {
+                    // Skip if already in cycle
+                    if cycle.contains(&require_id) {
+                        continue;
+                    }
+
+                    if let Some(require_spec) = self.get_spec(&require_id, project) {
+                        edges.push(
+                            Box::pin(self.internal_setup_toolchain(
+                                &require_spec,
+                                project,
+                                cycle.clone(),
+                            ))
+                            .await?,
+                        );
+                    } else {
+                        return Err(ActionGraphError::MissingToolchainRequirement {
+                            id: spec.id.to_string(),
+                            dep_id: require_id.to_string(),
                         }
-
-                        if let Some(require_spec) = self.get_spec(&require_id, project) {
-                            edges.push(
-                                Box::pin(self.internal_setup_toolchain(
-                                    &require_spec,
-                                    project,
-                                    cycle.clone(),
-                                ))
-                                .await?,
-                            );
-                        } else {
-                            return Err(ActionGraphError::MissingToolchainRequirement {
-                                id: spec.id.to_string(),
-                                dep_id: require_id.to_string(),
-                            }
-                            .into());
-                        }
+                        .into());
                     }
                 }
             }

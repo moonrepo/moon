@@ -99,10 +99,10 @@ pub async fn sync_workspace(
 
         set.spawn(async move {
             let mut ops = vec![];
+            let registry = &app_context.toolchain_registry;
 
-            for sync_result in app_context
-                .toolchain_registry
-                .sync_workspace_all(|registry, toolchain| SyncWorkspaceInput {
+            for sync_result in registry
+                .sync_workspace_all(|toolchain| SyncWorkspaceInput {
                     context: registry.create_context(),
                     toolchain_config: registry.create_config(&toolchain.id),
                     ..Default::default()

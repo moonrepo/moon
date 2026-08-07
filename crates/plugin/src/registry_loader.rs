@@ -85,9 +85,9 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
             let registry = self.to_owned();
             let locator = locator.to_owned();
 
-            set.spawn(Box::pin(async move {
-                registry.internal_load(&id, locator).await
-            }));
+            set.spawn(Box::pin(
+                async move { registry.do_load(&id, locator).await },
+            ));
         }
 
         while let Some(result) = set.join_next().await {
@@ -98,7 +98,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
     }
 
     #[instrument(skip(self))]
-    async fn internal_load<I, L>(&self, id: I, locator: L) -> miette::Result<Arc<Inst>>
+    pub async fn do_load<I, L>(&self, id: I, locator: L) -> miette::Result<Arc<Inst>>
     where
         I: AsRef<str> + Debug,
         L: AsRef<PluginLocator> + Debug,

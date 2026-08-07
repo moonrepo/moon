@@ -66,9 +66,10 @@ pub async fn sync_project(
     }
 
     // Sync the projects and return true if any files have been mutated
-    for sync_result in app_context
-        .toolchain_registry
-        .sync_project_many(project.get_enabled_toolchains(), |registry, toolchain| {
+    let registry = &app_context.toolchain_registry;
+
+    for sync_result in registry
+        .sync_project_many(project.get_enabled_toolchains(), |toolchain| {
             SyncProjectInput {
                 context: registry.create_context(),
                 project_dependencies: dependency_fragments.clone(),

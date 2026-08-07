@@ -60,6 +60,7 @@ impl Deref for ExtensionRegistryConfig {
     }
 }
 
+#[derive(Debug)]
 pub struct ExtensionRegistry(PluginRegistry<ExtensionRegistryConfig, ExtensionPlugin>);
 
 impl Default for ExtensionRegistry {

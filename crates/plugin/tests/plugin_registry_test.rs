@@ -90,7 +90,7 @@ mod plugin_registry {
         let registry = create_registry(sandbox.path());
 
         registry
-            .load_without_config(
+            .do_load(
                 Id::raw("id"),
                 PluginLocator::File(Box::new(FileLocator {
                     file: "".into(),

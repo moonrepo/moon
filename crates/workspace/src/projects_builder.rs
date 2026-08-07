@@ -112,9 +112,10 @@ pub async fn extend_project_build_data_with_plugins(
     let mut outputs = vec![];
 
     // From toolchains
-    for result in context
-        .toolchain_registry
-        .extend_project_graph_all(|registry, toolchain| ExtendProjectGraphInput {
+    let registry = &context.toolchain_registry;
+
+    for result in registry
+        .extend_project_graph_all(|toolchain| ExtendProjectGraphInput {
             context: registry.create_context(),
             project_sources: sources.clone(),
             toolchain_config: registry.create_config(&toolchain.id),

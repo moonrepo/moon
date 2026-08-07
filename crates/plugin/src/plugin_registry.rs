@@ -161,6 +161,10 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         &self.virtual_paths
     }
 
+    pub fn has_plugin_configs(&self) -> bool {
+        !self.config_data.get_ids().is_empty()
+    }
+
     pub async fn is_registered(&self, id: &Id) -> bool {
         self.plugins.contains_async(id).await
     }

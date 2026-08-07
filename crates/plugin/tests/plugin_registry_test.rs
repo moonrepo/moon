@@ -472,7 +472,24 @@ mod registry_caller {
     }
 
     #[tokio::test]
-    async fn skips_plugins_without_the_func_when_checking_existence() {
+    async fn skips_plugins_without_the_func_by_default() {
+        let sandbox = create_sandbox("wasm");
+        let registry = create_registry(sandbox.path(), TestConfig::new(&["a"], sandbox.path()));
+
+        let results = registry
+            .call_func_all(
+                "missing_func",
+                |plugin| plugin.get_id().to_string(),
+                |_plugin, input| async move { Ok::<_, miette::Report>(input) },
+            )
+            .await
+            .unwrap();
+
+        assert!(results.is_empty());
+    }
+
+    #[tokio::test]
+    async fn calls_a_missing_func_when_the_check_is_disabled() {
         let sandbox = create_sandbox("wasm");
         let registry = create_registry(sandbox.path(), TestConfig::new(&["a"], sandbox.path()));
 
@@ -482,25 +499,8 @@ mod registry_caller {
                 |plugin| plugin.get_id().to_string(),
                 |_plugin, input| async move { Ok::<_, miette::Report>(input) },
                 CallOptions {
-                    check_func_exists: true,
+                    check_func_exists: false,
                 },
-            )
-            .await
-            .unwrap();
-
-        assert!(results.is_empty());
-    }
-
-    #[tokio::test]
-    async fn calls_a_missing_func_when_not_checking_existence() {
-        let sandbox = create_sandbox("wasm");
-        let registry = create_registry(sandbox.path(), TestConfig::new(&["a"], sandbox.path()));
-
-        let results = registry
-            .call_func_all(
-                "missing_func",
-                |plugin| plugin.get_id().to_string(),
-                |_plugin, input| async move { Ok::<_, miette::Report>(input) },
             )
             .await
             .unwrap();

@@ -9,9 +9,21 @@ use std::fmt::Debug;
 use std::future::Future;
 use std::sync::Arc;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct CallOptions {
     pub check_func_exists: bool,
+}
+
+// Most plugin functions are optional, so by default we must verify
+// they exist before calling them, otherwise we fail with a
+// "Function not found" error. This can be disabled for functions
+// that are required, or are guarded by the caller.
+impl Default for CallOptions {
+    fn default() -> Self {
+        Self {
+            check_func_exists: true,
+        }
+    }
 }
 
 #[derive(Debug)]

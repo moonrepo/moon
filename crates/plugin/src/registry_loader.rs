@@ -2,12 +2,13 @@ use crate::host::*;
 use crate::plugin::{Plugin, PluginRegistration};
 use crate::plugin_error::PluginError;
 use crate::plugin_registry::*;
+use futures::StreamExt;
+use futures::stream::FuturesOrdered;
 use miette::IntoDiagnostic;
 use moon_common::{Id, IdExt};
 use scc::hash_map::Entry;
 use std::fmt::Debug;
 use std::sync::Arc;
-use tokio::task::JoinSet;
 use tracing::{debug, instrument};
 use warpgate::{PluginContainer, PluginLocator, host::HostData};
 
@@ -73,9 +74,11 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
             list.clear();
         }
 
-        // Otherwise load all the plugins in parallel, and return them in the
-        // order they were requested
-        let mut set = JoinSet::<miette::Result<Arc<Inst>>>::new();
+        // Otherwise load all the plugins in parallel. Use ordered futures
+        // (over spawned tasks) so that results are returned in the order
+        // they were requested, which downstream operations rely on for
+        // determinism, like hashing
+        let mut futures = FuturesOrdered::new();
 
         for id in ids {
             let Some(locator) = self.config_data.get_locator(&id) else {
@@ -85,12 +88,12 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
             let registry = self.to_owned();
             let locator = locator.to_owned();
 
-            set.spawn(Box::pin(
-                async move { registry.do_load(&id, locator).await },
-            ));
+            futures.push_back(tokio::spawn(Box::pin(async move {
+                registry.do_load(&id, locator).await
+            })));
         }
 
-        while let Some(result) = set.join_next().await {
+        while let Some(result) = futures.next().await {
             list.push(result.into_diagnostic()??);
         }
 

@@ -160,7 +160,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
                     id: plugin.get_id().to_owned(),
                     operation,
                     output: result?,
-                    plugin: plugin,
+                    plugin,
                 })
             })));
         }

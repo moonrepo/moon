@@ -12,10 +12,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::debug;
-use warpgate::to_virtual_path;
 use warpgate::{
     PluginLoader, PluginLocator, PluginManifest, Wasm, inject_default_manifest_config,
-    sort_virtual_paths,
+    sort_virtual_paths, to_virtual_path,
 };
 
 pub trait PluginsConfig: Debug + Send + Sync + 'static {

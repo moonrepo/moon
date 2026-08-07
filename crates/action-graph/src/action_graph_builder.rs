@@ -380,7 +380,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 let index = insert_node_if_missing!(
                     self,
                     ActionNode::install_dependencies(InstallDependenciesNode {
-                        members: if in_workspace {
+                        members: if in_workspace && !deps_workspace.members.is_empty() {
                             Some(deps_workspace.members)
                         } else {
                             None

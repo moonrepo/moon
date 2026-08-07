@@ -113,6 +113,22 @@ impl ToolchainPlugin {
         }
     }
 
+    fn handle_exec_command(&self, command: &mut ExecCommand) {
+        if let Some(cwd) = &mut command.command.cwd {
+            self.handle_virtual_file(cwd);
+        }
+
+        for path in &mut command.command.paths {
+            self.handle_virtual_file(path);
+        }
+
+        for input in &mut command.inputs {
+            if let Some(path) = input.get_virtual_path() {
+                input.set_virtual_path(VirtualPath::Real(self.from_virtual_path(path)));
+            }
+        }
+    }
+
     async fn cache_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
         if let Some(tool) = &self.tool {
             return match self
@@ -222,7 +238,10 @@ impl ToolchainPlugin {
     #[instrument(skip(self))]
     pub async fn define_toolchain_config(&self) -> miette::Result<Option<Schema>> {
         if self.has_func("define_toolchain_config").await {
-            return Ok(Some(self.cache_func("define_toolchain_config").await?));
+            let output: DefineToolchainConfigOutput =
+                self.cache_func("define_toolchain_config").await?;
+
+            return Ok(Some(output.schema));
         }
 
         Ok(None)
@@ -460,16 +479,12 @@ impl ToolchainPlugin {
         if self.has_func("install_dependencies").await {
             output = self.call_func_with("install_dependencies", input).await?;
 
-            if let Some(command) = &mut output.install_command
-                && let Some(cwd) = &mut command.command.cwd
-            {
-                self.handle_virtual_file(cwd);
+            if let Some(command) = &mut output.install_command {
+                self.handle_exec_command(command);
             }
 
-            if let Some(command) = &mut output.dedupe_command
-                && let Some(cwd) = &mut command.command.cwd
-            {
-                self.handle_virtual_file(cwd);
+            if let Some(command) = &mut output.dedupe_command {
+                self.handle_exec_command(command);
             }
         }
 
@@ -583,6 +598,10 @@ impl ToolchainPlugin {
             self.cache_func_with("setup_environment", input).await?;
 
         self.handle_virtual_files(&mut output.changed_files);
+
+        for command in &mut output.commands {
+            self.handle_exec_command(command);
+        }
 
         Ok(output)
     }

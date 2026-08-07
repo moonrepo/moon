@@ -84,6 +84,10 @@ impl Plugin for ToolchainPlugin {
     fn get_type(&self) -> PluginType {
         PluginType::Toolchain
     }
+
+    async fn has_func(&self, name: &str) -> bool {
+        self.plugin.has_func(name).await
+    }
 }
 
 impl ToolchainPlugin {

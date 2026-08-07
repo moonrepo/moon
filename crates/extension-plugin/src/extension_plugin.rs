@@ -47,6 +47,10 @@ impl Plugin for ExtensionPlugin {
     fn get_type(&self) -> PluginType {
         PluginType::Extension
     }
+
+    async fn has_func(&self, name: &str) -> bool {
+        self.plugin.has_func(name).await
+    }
 }
 
 impl ExtensionPlugin {

@@ -40,9 +40,7 @@ pub async fn add(session: MoonSession, args: ExtensionAddArgs) -> SessionResult 
 
     // Load extension
     let extension_registry = session.get_extension_registry().await?;
-    let extension = extension_registry
-        .load_without_config(&args.id, &locator)
-        .await?;
+    let extension = extension_registry.do_load(&args.id, &locator).await?;
 
     // Generate config
     let config =

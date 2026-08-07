@@ -13,10 +13,10 @@ pub async fn teardown(session: MoonSession) -> SessionResult {
     )
     .await;
 
-    session
-        .get_toolchain_registry()
-        .await?
-        .teardown_toolchain_all(|registry, toolchain| TeardownToolchainInput {
+    let registry = session.get_toolchain_registry().await?;
+
+    registry
+        .teardown_toolchain_all(|toolchain| TeardownToolchainInput {
             configured_version: session
                 .toolchains_config
                 .get_plugin_config(toolchain.id.as_str())

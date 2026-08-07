@@ -376,7 +376,7 @@ impl ToolchainPlugin {
         if self.has_func("extend_project_graph").await {
             output = self.cache_func_with("extend_project_graph", input).await?;
 
-            self.handle_output_files(&mut output.input_files);
+            self.handle_virtual_files(&mut output.input_files);
         }
 
         Ok(output)
@@ -546,7 +546,7 @@ impl ToolchainPlugin {
         if self.has_func("prune_docker").await {
             output = self.call_func_with("prune_docker", input).await?;
 
-            self.handle_output_files(&mut output.changed_files);
+            self.handle_virtual_files(&mut output.changed_files);
         }
 
         Ok(output)
@@ -562,7 +562,7 @@ impl ToolchainPlugin {
         if self.has_func("scaffold_docker").await {
             output = self.call_func_with("scaffold_docker", input).await?;
 
-            self.handle_output_files(&mut output.copied_files);
+            self.handle_virtual_files(&mut output.copied_files);
         }
 
         Ok(output)
@@ -582,7 +582,7 @@ impl ToolchainPlugin {
         let mut output: SetupEnvironmentOutput =
             self.cache_func_with("setup_environment", input).await?;
 
-        self.handle_output_files(&mut output.changed_files);
+        self.handle_virtual_files(&mut output.changed_files);
 
         Ok(output)
     }
@@ -664,7 +664,7 @@ impl ToolchainPlugin {
             let mut post_output: SetupToolchainOutput =
                 self.call_func_with("setup_toolchain", input).await?;
 
-            self.handle_output_files(&mut post_output.changed_files);
+            self.handle_virtual_files(&mut post_output.changed_files);
 
             output.operations.extend(post_output.operations);
             output.changed_files.extend(post_output.changed_files);

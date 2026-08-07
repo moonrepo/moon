@@ -118,7 +118,11 @@ pub async fn setup_toolchain(
         &toolchain,
         setup_op,
         output.operations,
-        output.changed_files,
+        output
+            .changed_files
+            .into_iter()
+            .map(|path| path.to_path_buf())
+            .collect(),
     )?;
 
     lock.persist_hash_manifest();

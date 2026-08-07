@@ -4,7 +4,6 @@ use moon_common::Id;
 use moon_config::{DockerPruneConfig, DockerScaffoldConfig, LanguageType};
 use moon_project::ProjectFragment;
 use schematic::Schema;
-use std::path::PathBuf;
 use warpgate_api::{VirtualPath, api_struct, api_unit_enum};
 
 pub use proto_pdk_api::{
@@ -155,9 +154,9 @@ api_struct!(
     /// Output returned from the `scaffold_docker` function.
     #[serde(default)]
     pub struct ScaffoldDockerOutput {
-        /// List of files that were copied into the scaffold.
+        /// List of virtual files that were copied into the scaffold.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub copied_files: Vec<PathBuf>,
+        pub copied_files: Vec<VirtualPath>,
     }
 );
 
@@ -188,8 +187,8 @@ api_struct!(
     /// Output returned from the `prune_docker` function.
     #[serde(default)]
     pub struct PruneDockerOutput {
-        /// List of files that were changed during prune.
+        /// List of virtual files that were changed during prune.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<PathBuf>,
+        pub changed_files: Vec<VirtualPath>,
     }
 );

@@ -45,11 +45,11 @@ pub fn locate_dependencies_root(
         },
         // We need a root for the `InstallDependencies`
         // action to work, otherwise it aborts early
-        root: if is_deps_workspace {
-            input.context.workspace_root.virtual_path()
+        root: Some(if is_deps_workspace {
+            input.context.workspace_root
         } else {
-            cwd.virtual_path()
-        },
+            cwd
+        }),
     }))
 }
 

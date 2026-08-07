@@ -81,7 +81,7 @@ api_struct!(
         /// List of virtual files in which information was extracted from and
         /// should invalidate the project graph cache.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub input_files: Vec<PathBuf>,
+        pub input_files: Vec<VirtualPath>,
     }
 );
 

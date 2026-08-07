@@ -126,7 +126,7 @@ impl ExtensionPlugin {
         if self.has_func("extend_project_graph").await {
             output = self.cache_func_with("extend_project_graph", input).await?;
 
-            self.handle_output_files(&mut output.input_files);
+            self.handle_virtual_files(&mut output.input_files);
         }
 
         Ok(output)

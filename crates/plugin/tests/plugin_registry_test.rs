@@ -147,20 +147,19 @@ mod plugin_registry {
     }
 
     #[test]
-    fn converts_paths_to_and_from_virtual() {
+    fn creates_context_with_virtual_paths() {
         let sandbox = create_empty_sandbox();
         let registry = create_registry(sandbox.path(), TestConfig::default());
 
-        let real = registry.host_data.moon_env.workspace_root.join("file.txt");
-        let virt = registry.to_virtual_path(&real);
+        let context = registry.create_context();
 
         assert_eq!(
-            virt.virtual_path().unwrap(),
-            PathBuf::from("/workspace/file.txt")
+            context.workspace_root.virtual_path().unwrap(),
+            PathBuf::from("/workspace")
         );
         assert_eq!(
-            registry.from_virtual_path(virt.virtual_path().unwrap()),
-            real
+            context.workspace_root.real_path().unwrap(),
+            registry.host_data.moon_env.workspace_root
         );
     }
 
@@ -506,6 +505,29 @@ mod registry_caller {
             .unwrap();
 
         assert_eq!(results.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn maps_call_result_outputs() {
+        let sandbox = create_sandbox("wasm");
+        let registry = create_registry(sandbox.path(), TestConfig::new(&["a"], sandbox.path()));
+
+        let results = registry
+            .call_func_all(
+                "do_thing",
+                |plugin| plugin.get_id().to_string(),
+                |_plugin, input| async move { Ok::<_, miette::Report>(input) },
+            )
+            .await
+            .unwrap();
+
+        let result = results.into_iter().next().unwrap();
+        let mapped = result.map_output(|output| output.len());
+
+        assert_eq!(mapped.id, Id::raw("a"));
+        assert_eq!(mapped.output, 1);
+        assert_eq!(mapped.plugin.get_id(), &Id::raw("a"));
+        assert!(mapped.operation.finished_at.is_some());
     }
 
     #[tokio::test]

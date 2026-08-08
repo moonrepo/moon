@@ -64,12 +64,13 @@ pub async fn setup_environment(
     }
 
     // Build the input and output
+    let toolchain_registry = &app_context.toolchain_registry;
     let mut input = SetupEnvironmentInput {
-        context: app_context.toolchain_registry.create_context(),
+        context: toolchain_registry.create_context(),
         project: None,
         globals_dir: None, // Get's set in the plugin
         root: toolchain.to_virtual_path(node.root.to_logical_path(&app_context.workspace_root)),
-        toolchain_config: app_context.toolchain_registry.create_config(&toolchain.id),
+        toolchain_config: toolchain_registry.create_config(&toolchain.id),
     };
 
     let project = match &node.project_id {
@@ -77,9 +78,8 @@ pub async fn setup_environment(
             let project = workspace_graph.get_project(project_id)?;
 
             input.project = Some(project.to_fragment());
-            input.toolchain_config = app_context
-                .toolchain_registry
-                .create_merged_config(&toolchain.id, &project.config);
+            input.toolchain_config =
+                toolchain_registry.create_merged_config(&toolchain.id, &project.config);
 
             Some(project)
         }
@@ -147,7 +147,11 @@ pub async fn setup_environment(
         &toolchain,
         setup_op,
         output.operations,
-        output.changed_files,
+        output
+            .changed_files
+            .into_iter()
+            .map(|path| path.to_path_buf())
+            .collect(),
     )?;
 
     lock.persist_hash_manifest();

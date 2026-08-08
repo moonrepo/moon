@@ -81,7 +81,7 @@ api_struct!(
         /// List of virtual files in which information was extracted from and
         /// should invalidate the project graph cache.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub input_files: Vec<PathBuf>,
+        pub input_files: Vec<VirtualPath>,
     }
 );
 
@@ -188,9 +188,8 @@ api_struct!(
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub env_remove: Vec<String>,
 
-        /// List of absolute paths to prepend into the `PATH` environment
-        /// variable, but after the proto prepended paths. These *must*
-        /// be real paths, not virtual!
+        /// List of real or virtual absolute paths to prepend into the
+        /// `PATH` environment variable, but after the proto prepended paths.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub paths: Vec<PathBuf>,
     }
@@ -274,8 +273,8 @@ api_struct!(
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub env_remove: Vec<String>,
 
-        /// List of absolute paths to prepend into the `PATH` environment
-        /// variable, but after the proto prepended paths.
+        /// List of real or virtual absolute paths to prepend into the
+        /// `PATH` environment variable, but after the proto prepended paths.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub paths: Vec<PathBuf>,
 
@@ -333,9 +332,9 @@ api_struct!(
     /// Output returned from the `sync_workspace` and `sync_project` functions.
     #[serde(default)]
     pub struct SyncOutput {
-        /// List of files that have been changed because of the sync.
+        /// List of virtual files that have been changed because of the sync.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<PathBuf>,
+        pub changed_files: Vec<VirtualPath>,
 
         /// Operations that were performed. This can be used to track
         /// metadata like time taken, result status, and more.

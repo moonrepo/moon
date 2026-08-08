@@ -59,9 +59,7 @@ pub fn extend_project_graph(
                 );
             }
 
-            if let Some(file) = manifest.virtual_path() {
-                output.input_files.push(file);
-            }
+            output.input_files.push(manifest);
         }
     }
 
@@ -74,9 +72,9 @@ pub fn sync_project(Json(input): Json<SyncProjectInput>) -> FnResult<Json<SyncOu
     let mut op = Operation::new("sync-project-test")?;
 
     if input.project.id == "b" {
-        if let Some(file) = input.context.workspace_root.join("file.txt").virtual_path() {
-            output.changed_files.push(file);
-        }
+        output
+            .changed_files
+            .push(input.context.workspace_root.join("file.txt"));
     }
 
     op.finish(OperationStatus::Failed);
@@ -91,9 +89,9 @@ pub fn sync_workspace(Json(input): Json<SyncWorkspaceInput>) -> FnResult<Json<Sy
     let mut output = SyncOutput::default();
     let mut op = Operation::new("sync-workspace-test")?;
 
-    if let Some(file) = input.context.workspace_root.join("file.txt").virtual_path() {
-        output.changed_files.push(file);
-    }
+    output
+        .changed_files
+        .push(input.context.workspace_root.join("file.txt"));
 
     op.finish(OperationStatus::Failed);
 
@@ -112,12 +110,12 @@ pub fn scaffold_docker(
         ScaffoldDockerPhase::Configs => {
             let path = input.output_dir.join("from-configs-phase");
             fs::write(&path, "")?;
-            output.copied_files.push(path.virtual_path().unwrap());
+            output.copied_files.push(path);
         }
         ScaffoldDockerPhase::Sources => {
             let path = input.output_dir.join("from-sources-phase");
             fs::write(&path, "")?;
-            output.copied_files.push(path.virtual_path().unwrap());
+            output.copied_files.push(path);
         }
     };
 
@@ -134,9 +132,7 @@ pub fn prune_docker(Json(input): Json<PruneDockerInput>) -> FnResult<Json<PruneD
         if vendor_dir.exists() && input.docker_config.delete_vendor_directories {
             fs::remove_dir_all(&vendor_dir)?;
 
-            if let Some(file) = vendor_dir.virtual_path() {
-                output.changed_files.push(file);
-            }
+            output.changed_files.push(vendor_dir);
         }
     }
 

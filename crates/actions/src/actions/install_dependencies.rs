@@ -375,6 +375,10 @@ async fn hash_manifest_contents<'action>(
 
     // Inject the manifest deps into the hash
     let mut inject_deps = |deps: BTreeMap<String, ManifestDependency>| {
+        if deps.is_empty() {
+            return;
+        }
+
         for (name, dep) in deps {
             if let Some(version) = dep.get_version() {
                 fingerprint

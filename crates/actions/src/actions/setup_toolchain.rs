@@ -91,9 +91,6 @@ pub async fn setup_toolchain(
     );
 
     let setup_op = Operation::setup_operation(action.get_prefix())?;
-    let proto_console = app_context
-        .console
-        .with_reporter(ProtoReporter::new(ReporterFormat::Text));
     let output = toolchain
         .setup_toolchain(
             SetupToolchainInput {
@@ -102,7 +99,11 @@ pub async fn setup_toolchain(
                 toolchain_config: app_context.toolchain_registry.create_config(&toolchain.id),
                 version: None,
             },
-            Some(proto_console),
+            Some(
+                app_context
+                    .console
+                    .with_reporter(ProtoReporter::new(ReporterFormat::Text)),
+            ),
             || {
                 app_context.console.print_checkpoint(
                     Checkpoint::Setup,
@@ -117,7 +118,11 @@ pub async fn setup_toolchain(
         &toolchain,
         setup_op,
         output.operations,
-        output.changed_files,
+        output
+            .changed_files
+            .into_iter()
+            .map(|path| path.to_path_buf())
+            .collect(),
     )?;
 
     lock.persist_hash_manifest();

@@ -17,14 +17,9 @@ pub fn sync_project(Json(input): Json<SyncProjectInput>) -> FnResult<Json<SyncOu
     let mut op = Operation::new("sync-project-test")?;
 
     if input.project.id == "b" {
-        if let Some(file) = input
-            .context
-            .workspace_root
-            .join("file-ext.txt")
-            .virtual_path()
-        {
-            output.changed_files.push(file);
-        }
+        output
+            .changed_files
+            .push(input.context.workspace_root.join("file-ext.txt"));
     }
 
     op.finish(OperationStatus::Passed);
@@ -39,14 +34,9 @@ pub fn sync_workspace(Json(input): Json<SyncWorkspaceInput>) -> FnResult<Json<Sy
     let mut output = SyncOutput::default();
     let mut op = Operation::new("sync-workspace-test")?;
 
-    if let Some(file) = input
-        .context
-        .workspace_root
-        .join("file-ext.txt")
-        .virtual_path()
-    {
-        output.changed_files.push(file);
-    }
+    output
+        .changed_files
+        .push(input.context.workspace_root.join("file-ext.txt"));
 
     op.finish(OperationStatus::Passed);
 

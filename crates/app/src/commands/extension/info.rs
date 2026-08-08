@@ -52,11 +52,7 @@ pub async fn info(session: MoonSession, args: ExtensionInfoArgs) -> SessionResul
     )
     .await;
 
-    let config_schema = if extension.has_func("define_extension_config").await {
-        Some(extension.define_extension_config().await?.schema)
-    } else {
-        None
-    };
+    let config_schema = extension.define_extension_config().await?;
 
     session.console.render(element! {
         Container {

@@ -1,8 +1,7 @@
 use crate::context::*;
 use crate::is_false;
 use moon_config::{UnresolvedVersionSpec, VersionSpec};
-use std::path::PathBuf;
-use warpgate_api::api_struct;
+use warpgate_api::{VirtualPath, api_struct};
 
 pub use proto_pdk_api::{
     DownloadPrebuiltInput, DownloadPrebuiltOutput, LoadVersionsInput, LoadVersionsOutput,
@@ -33,9 +32,9 @@ api_struct!(
     /// Output returned from the `setup_toolchain` function.
     #[serde(default)]
     pub struct SetupToolchainOutput {
-        /// List of files that have been changed because of this action.
+        /// List of virtual files that have been changed because of this action.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<PathBuf>,
+        pub changed_files: Vec<VirtualPath>,
 
         /// Operations that were performed. This can be used to track
         /// metadata like time taken, result status, and more.

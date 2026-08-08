@@ -182,6 +182,12 @@ impl ToolchainPlugin {
         workspace: &DependenciesWorkspace,
         path: &Path,
     ) -> miette::Result<bool> {
+        // No members means there's no workspace at all, and each
+        // project is stand-alone with its own lockfile
+        if workspace.members.is_empty() {
+            return Ok(false);
+        }
+
         Ok(
             // Root always in the workspace
             if path == workspace.root {

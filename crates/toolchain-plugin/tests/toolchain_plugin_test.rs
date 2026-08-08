@@ -202,5 +202,25 @@ mod toolchain_plugin {
                     .unwrap()
             );
         }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn no_members_means_no_workspace() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier1").await.unwrap();
+
+            let workspace = DependenciesWorkspace {
+                root: ws.workspace_root.clone(),
+                members: vec![],
+            };
+
+            // Even the root is excluded, as each project is
+            // stand-alone with its own lockfile
+            assert!(
+                !toolchain
+                    .in_dependencies_workspace(&workspace, &ws.workspace_root)
+                    .unwrap()
+            );
+        }
     }
 }

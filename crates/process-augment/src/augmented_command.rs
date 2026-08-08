@@ -208,7 +208,7 @@ impl<'app> AugmentedCommand<'app> {
                     context: registry.create_context(),
                     command: self.get_bin_name(),
                     args: self.get_args_list(),
-                    current_dir: registry.to_virtual_path(current_dir),
+                    current_dir: toolchain.to_virtual_path(current_dir),
                     toolchain_config: match project {
                         Some(p) => registry.create_merged_config(&toolchain.id, &p.config),
                         None => registry.create_config(&toolchain.id),
@@ -226,7 +226,7 @@ impl<'app> AugmentedCommand<'app> {
                     context: registry.create_context(),
                     command: self.get_bin_name(),
                     args: self.get_args_list(),
-                    current_dir: registry.to_virtual_path(current_dir),
+                    current_dir: extension.to_virtual_path(current_dir),
                     extension_config: registry.create_config(&extension.id),
                     ..Default::default()
                 })

@@ -34,6 +34,17 @@ pub struct CallResult<Inst: Plugin, Out: Debug> {
     pub plugin: Arc<Inst>,
 }
 
+impl<Inst: Plugin, Out: Debug> CallResult<Inst, Out> {
+    pub fn map_output<O: Debug>(self, op: impl FnOnce(Out) -> O) -> CallResult<Inst, O> {
+        CallResult {
+            id: self.id,
+            operation: self.operation,
+            output: op(self.output),
+            plugin: self.plugin,
+        }
+    }
+}
+
 impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
     pub async fn call_func<It, I, InFn, In, OutFn, OutFut, Out>(
         &self,

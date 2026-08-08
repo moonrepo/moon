@@ -88,11 +88,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> SessionResul
     )
     .await;
 
-    let config_schema = if toolchain.has_func("define_toolchain_config").await {
-        Some(toolchain.define_toolchain_config().await?.schema)
-    } else {
-        None
-    };
+    let config_schema = toolchain.define_toolchain_config().await?;
 
     session.console.render(element! {
         Container {

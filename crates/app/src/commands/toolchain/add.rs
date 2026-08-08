@@ -85,11 +85,7 @@ pub async fn create_config_from_prompts(
     }
 
     if toolchain.supports_tier_3().await {
-        if toolchain.has_func("detect_version_files").await
-            && let Some(version) = toolchain.detect_version(&session.working_dir).await?
-        {
-            config.version = Some(version);
-        }
+        config.version = toolchain.detect_version(&session.working_dir).await?;
 
         if config.version.is_none()
             && let Some(version) = render_version_prompt(

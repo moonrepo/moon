@@ -21,5 +21,9 @@ starbase_utils = { workspace = true, features = ["json"] }
 tokio = { workspace = true }
 tracing = { workspace = true }
 
+[dev-dependencies]
+moon_test_utils = { path = "../test-utils" }
+starbase_sandbox = { workspace = true }
+
 [lints]
 workspace = true

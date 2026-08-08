@@ -62,48 +62,41 @@ pub async fn prune_toolchains(
             })
             .await?
         {
-            if let Some(root) = locate_result.output.root.as_ref() {
-                let toolchain = locate_result.plugin;
+            let toolchain = locate_result.plugin;
+            let deps_workspace = locate_result.output;
 
-                if !toolchain.in_dependencies_workspace(&locate_result.output, &project.root)? {
-                    debug!(
-                        project_id = project.id.as_str(),
-                        project_root = ?project.root,
-                        deps_root = ?root,
-                        "Not in a dependency workspace, skipping!",
-                    );
-
-                    continue;
-                }
-
+            if !toolchain.in_dependencies_workspace(&deps_workspace, &project.root)? {
                 debug!(
                     project_id = project.id.as_str(),
                     project_root = ?project.root,
-                    deps_root = ?root,
-                    "Adding to dependency workspace",
+                    deps_root = ?deps_workspace.root,
+                    "Not in a dependency workspace, skipping!",
                 );
 
-                match deps_roots.iter_mut().find(|instance| {
-                    &instance.deps_root == root && instance.toolchain.id == toolchain.id
-                }) {
-                    Some(entry) => {
-                        entry.projects.push(project.clone());
-                    }
-                    None => {
-                        deps_roots.push(PruneToolchainInstance {
-                            deps_root: root.into(),
-                            projects: vec![project.clone()],
-                            toolchain,
-                        });
-                    }
-                };
-            } else {
-                debug!(
-                    project_id = project.id.as_str(),
-                    project_root = ?project.root,
-                    "No dependency workspace found, skipping!",
-                );
+                continue;
             }
+
+            debug!(
+                project_id = project.id.as_str(),
+                project_root = ?project.root,
+                deps_root = ?deps_workspace.root,
+                "Adding to dependency workspace",
+            );
+
+            match deps_roots.iter_mut().find(|instance| {
+                instance.deps_root == deps_workspace.root && instance.toolchain.id == toolchain.id
+            }) {
+                Some(entry) => {
+                    entry.projects.push(project.clone());
+                }
+                None => {
+                    deps_roots.push(PruneToolchainInstance {
+                        deps_root: deps_workspace.root,
+                        projects: vec![project.clone()],
+                        toolchain,
+                    });
+                }
+            };
         }
     }
 
@@ -124,26 +117,22 @@ pub async fn prune_toolchains(
 
         set.spawn(Box::pin(async move {
             // Run prune first, so this can remove all development artifacts
-            if toolchain.has_func("prune_docker").await {
-                toolchain
-                    .prune_docker(PruneDockerInput {
-                        context: toolchain_registry.create_context(),
-                        docker_config: docker_config.clone(),
-                        projects: instance
-                            .projects
-                            .iter()
-                            .map(|project| project.to_fragment())
-                            .collect(),
-                        root: toolchain.to_virtual_path(&instance.deps_root),
-                        toolchain_config: toolchain_registry.create_config(&toolchain.id),
-                    })
-                    .await?;
-            }
+            toolchain
+                .prune_docker(PruneDockerInput {
+                    context: toolchain_registry.create_context(),
+                    docker_config: docker_config.clone(),
+                    projects: instance
+                        .projects
+                        .iter()
+                        .map(|project| project.to_fragment())
+                        .collect(),
+                    root: toolchain.to_virtual_path(&instance.deps_root),
+                    toolchain_config: toolchain_registry.create_config(&toolchain.id),
+                })
+                .await?;
 
             // Then run install, so this can only install production dependencies
-            if toolchain.has_func("install_dependencies").await
-                && docker_config.install_toolchain_dependencies
-            {
+            if docker_config.install_toolchain_dependencies {
                 let in_project = if instance.projects.len() == 1
                     && instance
                         .projects

@@ -1,9 +1,11 @@
 use async_trait::async_trait;
 use moon_common::Id;
 use moon_config::is_glob_like;
+use moon_config::schematic::Schema;
 use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
+use moon_toolchain::DependenciesWorkspace;
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
 use proto_core::flow::locate::{Locator, LocatorResponse};
@@ -91,6 +93,42 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
+    fn handle_output_file(&self, file: &mut PathBuf) {
+        *file = self.plugin.from_virtual_path(&file);
+    }
+
+    fn handle_output_files(&self, files: &mut [PathBuf]) {
+        for file in files {
+            self.handle_output_file(file);
+        }
+    }
+
+    fn handle_virtual_file(&self, file: &mut VirtualPath) {
+        *file = VirtualPath::Real(self.plugin.from_virtual_path(&file));
+    }
+
+    fn handle_virtual_files(&self, files: &mut [VirtualPath]) {
+        for file in files {
+            self.handle_virtual_file(file);
+        }
+    }
+
+    fn handle_exec_command(&self, command: &mut ExecCommand) {
+        if let Some(cwd) = &mut command.command.cwd {
+            self.handle_virtual_file(cwd);
+        }
+
+        for path in &mut command.command.paths {
+            self.handle_virtual_file(path);
+        }
+
+        for input in &mut command.inputs {
+            if let Some(path) = input.get_virtual_path() {
+                input.set_virtual_path(VirtualPath::Real(self.from_virtual_path(path)));
+            }
+        }
+    }
+
     async fn cache_globals_dir(&self) -> miette::Result<Option<PathBuf>> {
         if let Some(tool) = &self.tool {
             return match self
@@ -139,33 +177,26 @@ impl ToolchainPlugin {
         Ok(None)
     }
 
-    fn handle_output_file(&self, file: &mut PathBuf) {
-        *file = self.plugin.from_virtual_path(&file);
-    }
-
-    fn handle_output_files(&self, files: &mut [PathBuf]) {
-        for file in files {
-            self.handle_output_file(file);
-        }
-    }
-
     pub fn in_dependencies_workspace(
         &self,
-        output: &LocateDependenciesRootOutput,
+        workspace: &DependenciesWorkspace,
         path: &Path,
     ) -> miette::Result<bool> {
-        let (Some(root), Some(members)) = (&output.root, &output.members) else {
+        // No members means there's no workspace at all, and each
+        // project is stand-alone with its own lockfile
+        if workspace.members.is_empty() {
             return Ok(false);
-        };
+        }
 
         Ok(
             // Root always in the workspace
-            if path == root {
+            if path == workspace.root {
                 true
             }
             // Match against the provided member globs
             else {
-                GlobSet::new(members)?.matches(path.strip_prefix(root).unwrap_or(path))
+                GlobSet::new(&workspace.members)?
+                    .matches(path.strip_prefix(&workspace.root).unwrap_or(path))
             },
         )
     }
@@ -211,11 +242,15 @@ impl ToolchainPlugin {
     }
 
     #[instrument(skip(self))]
-    pub async fn define_toolchain_config(&self) -> miette::Result<DefineToolchainConfigOutput> {
-        let output: DefineToolchainConfigOutput =
-            self.plugin.cache_func("define_toolchain_config").await?;
+    pub async fn define_toolchain_config(&self) -> miette::Result<Option<Schema>> {
+        if self.has_func("define_toolchain_config").await {
+            let output: DefineToolchainConfigOutput =
+                self.cache_func("define_toolchain_config").await?;
 
-        Ok(output)
+            return Ok(Some(output.schema));
+        }
+
+        Ok(None)
     }
 
     #[instrument(skip(self))]
@@ -223,16 +258,13 @@ impl ToolchainPlugin {
         &self,
         input: DefineDockerMetadataInput,
     ) -> miette::Result<DefineDockerMetadataOutput> {
-        let mut output: DefineDockerMetadataOutput =
-            // Do this check within this function so that we can
-            // inherit the other globs below!
-            if self.plugin.has_func("define_docker_metadata").await {
-                self.plugin
-                    .cache_func_with("define_docker_metadata", input)
-                    .await?
-            } else {
-                Default::default()
-            };
+        let mut output = DefineDockerMetadataOutput::default();
+
+        if self.has_func("define_docker_metadata").await {
+            output = self
+                .cache_func_with("define_docker_metadata", input)
+                .await?
+        };
 
         // Include toolchain metadata in docker
         let mut add_globs = |globs: &[String]| {
@@ -259,10 +291,11 @@ impl ToolchainPlugin {
         &self,
         input: DefineRequirementsInput,
     ) -> miette::Result<DefineRequirementsOutput> {
-        let output: DefineRequirementsOutput = self
-            .plugin
-            .cache_func_with("define_requirements", input)
-            .await?;
+        let mut output = DefineRequirementsOutput::default();
+
+        if self.has_func("define_requirements").await {
+            output = self.cache_func_with("define_requirements", input).await?;
+        }
 
         Ok(output)
     }
@@ -331,10 +364,12 @@ impl ToolchainPlugin {
             return Ok(None);
         };
 
-        let tool = tool.read().await;
+        if self.has_func("detect_version_files").await {
+            let tool = tool.read().await;
 
-        if let Some((version, _)) = Detector::new(&tool).detect_version_from(dir).await? {
-            return Ok(Some(version));
+            if let Some((version, _)) = Detector::new(&tool).detect_version_from(dir).await? {
+                return Ok(Some(version));
+            }
         }
 
         Ok(None)
@@ -345,8 +380,13 @@ impl ToolchainPlugin {
         &self,
         input: ExtendCommandInput,
     ) -> miette::Result<ExtendCommandOutput> {
-        let output: ExtendCommandOutput =
-            self.plugin.cache_func_with("extend_command", input).await?;
+        let mut output = ExtendCommandOutput::default();
+
+        if self.has_func("extend_command").await {
+            output = self.cache_func_with("extend_command", input).await?;
+
+            self.handle_output_files(&mut output.paths);
+        }
 
         Ok(output)
     }
@@ -356,12 +396,13 @@ impl ToolchainPlugin {
         &self,
         input: ExtendProjectGraphInput,
     ) -> miette::Result<ExtendProjectGraphOutput> {
-        let mut output: ExtendProjectGraphOutput = self
-            .plugin
-            .cache_func_with("extend_project_graph", input)
-            .await?;
+        let mut output = ExtendProjectGraphOutput::default();
 
-        self.handle_output_files(&mut output.input_files);
+        if self.has_func("extend_project_graph").await {
+            output = self.cache_func_with("extend_project_graph", input).await?;
+
+            self.handle_virtual_files(&mut output.input_files);
+        }
 
         Ok(output)
     }
@@ -376,10 +417,13 @@ impl ToolchainPlugin {
             .await?
             .map(|dir| self.to_virtual_path(dir));
 
-        let output: ExtendCommandOutput = self
-            .plugin
-            .cache_func_with("extend_task_command", input)
-            .await?;
+        let mut output = ExtendCommandOutput::default();
+
+        if self.has_func("extend_task_command").await {
+            output = self.cache_func_with("extend_task_command", input).await?;
+
+            self.handle_output_files(&mut output.paths);
+        }
 
         Ok(output)
     }
@@ -394,10 +438,13 @@ impl ToolchainPlugin {
             .await?
             .map(|dir| self.to_virtual_path(dir));
 
-        let output: ExtendTaskScriptOutput = self
-            .plugin
-            .cache_func_with("extend_task_script", input)
-            .await?;
+        let mut output = ExtendTaskScriptOutput::default();
+
+        if self.has_func("extend_task_script").await {
+            output = self.cache_func_with("extend_task_script", input).await?;
+
+            self.handle_output_files(&mut output.paths);
+        }
 
         Ok(output)
     }
@@ -407,10 +454,11 @@ impl ToolchainPlugin {
         &self,
         input: HashTaskContentsInput,
     ) -> miette::Result<HashTaskContentsOutput> {
-        let output: HashTaskContentsOutput = self
-            .plugin
-            .cache_func_with("hash_task_contents", input)
-            .await?;
+        let mut output = HashTaskContentsOutput::default();
+
+        if self.has_func("hash_task_contents").await {
+            output = self.cache_func_with("hash_task_contents", input).await?;
+        }
 
         Ok(output)
     }
@@ -420,10 +468,9 @@ impl ToolchainPlugin {
         &self,
         input: InitializeToolchainInput,
     ) -> miette::Result<InitializeToolchainOutput> {
-        let output: InitializeToolchainOutput = self
-            .plugin
-            .cache_func_with("initialize_toolchain", input)
-            .await?;
+        // Function exists check happens in the CLI!
+        let output: InitializeToolchainOutput =
+            self.cache_func_with("initialize_toolchain", input).await?;
 
         Ok(output)
     }
@@ -433,10 +480,19 @@ impl ToolchainPlugin {
         &self,
         input: InstallDependenciesInput,
     ) -> miette::Result<InstallDependenciesOutput> {
-        let output: InstallDependenciesOutput = self
-            .plugin
-            .call_func_with("install_dependencies", input)
-            .await?;
+        let mut output = InstallDependenciesOutput::default();
+
+        if self.has_func("install_dependencies").await {
+            output = self.call_func_with("install_dependencies", input).await?;
+
+            if let Some(command) = &mut output.install_command {
+                self.handle_exec_command(command);
+            }
+
+            if let Some(command) = &mut output.dedupe_command {
+                self.handle_exec_command(command);
+            }
+        }
 
         Ok(output)
     }
@@ -462,22 +518,30 @@ impl ToolchainPlugin {
     pub async fn locate_dependencies_root(
         &self,
         input: LocateDependenciesRootInput,
-    ) -> miette::Result<LocateDependenciesRootOutput> {
-        let mut output: LocateDependenciesRootOutput = self
-            .plugin
-            .cache_func_with("locate_dependencies_root", input)
-            .await?;
+    ) -> miette::Result<Option<DependenciesWorkspace>> {
+        if self.has_func("locate_dependencies_root").await {
+            let output: LocateDependenciesRootOutput = self
+                .cache_func_with("locate_dependencies_root", input)
+                .await?;
 
-        if let Some(root) = &mut output.root {
-            self.handle_output_file(root);
+            if let Some(root) = output.root {
+                return Ok(Some(DependenciesWorkspace {
+                    root: self.from_virtual_path(root),
+                    members: output.members.unwrap_or_default(),
+                }));
+            }
         }
 
-        Ok(output)
+        Ok(None)
     }
 
     #[instrument(skip(self))]
     pub async fn parse_lock(&self, input: ParseLockInput) -> miette::Result<ParseLockOutput> {
-        let output: ParseLockOutput = self.plugin.cache_func_with("parse_lock", input).await?;
+        let mut output = ParseLockOutput::default();
+
+        if self.has_func("parse_lock").await {
+            output = self.cache_func_with("parse_lock", input).await?;
+        }
 
         Ok(output)
     }
@@ -487,18 +551,24 @@ impl ToolchainPlugin {
         &self,
         input: ParseManifestInput,
     ) -> miette::Result<ParseManifestOutput> {
-        let output: ParseManifestOutput =
-            self.plugin.cache_func_with("parse_manifest", input).await?;
+        let mut output = ParseManifestOutput::default();
+
+        if self.has_func("parse_manifest").await {
+            output = self.cache_func_with("parse_manifest", input).await?;
+        }
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn prune_docker(&self, input: PruneDockerInput) -> miette::Result<PruneDockerOutput> {
-        let mut output: PruneDockerOutput =
-            self.plugin.call_func_with("prune_docker", input).await?;
+        let mut output = PruneDockerOutput::default();
 
-        self.handle_output_files(&mut output.changed_files);
+        if self.has_func("prune_docker").await {
+            output = self.call_func_with("prune_docker", input).await?;
+
+            self.handle_virtual_files(&mut output.changed_files);
+        }
 
         Ok(output)
     }
@@ -508,10 +578,13 @@ impl ToolchainPlugin {
         &self,
         input: ScaffoldDockerInput,
     ) -> miette::Result<ScaffoldDockerOutput> {
-        let mut output: ScaffoldDockerOutput =
-            self.plugin.call_func_with("scaffold_docker", input).await?;
+        let mut output = ScaffoldDockerOutput::default();
 
-        self.handle_output_files(&mut output.copied_files);
+        if self.has_func("scaffold_docker").await {
+            output = self.call_func_with("scaffold_docker", input).await?;
+
+            self.handle_virtual_files(&mut output.copied_files);
+        }
 
         Ok(output)
     }
@@ -526,17 +599,20 @@ impl ToolchainPlugin {
             .await?
             .map(|dir| self.to_virtual_path(dir));
 
-        let mut output: SetupEnvironmentOutput = self
-            .plugin
-            .cache_func_with("setup_environment", input)
-            .await?;
+        // Function exists check happens in the action!
+        let mut output: SetupEnvironmentOutput =
+            self.cache_func_with("setup_environment", input).await?;
 
-        self.handle_output_files(&mut output.changed_files);
+        self.handle_virtual_files(&mut output.changed_files);
+
+        for command in &mut output.commands {
+            self.handle_exec_command(command);
+        }
 
         Ok(output)
     }
 
-    #[instrument(skip(self, on_setup))]
+    #[instrument(skip(self, console, on_setup))]
     pub async fn setup_toolchain(
         &self,
         mut input: SetupToolchainInput,
@@ -611,9 +687,9 @@ impl ToolchainPlugin {
         // This should always run, regardless of the install outcome
         if self.has_func("setup_toolchain").await {
             let mut post_output: SetupToolchainOutput =
-                self.plugin.call_func_with("setup_toolchain", input).await?;
+                self.call_func_with("setup_toolchain", input).await?;
 
-            self.handle_output_files(&mut post_output.changed_files);
+            self.handle_virtual_files(&mut post_output.changed_files);
 
             output.operations.extend(post_output.operations);
             output.changed_files.extend(post_output.changed_files);
@@ -624,18 +700,26 @@ impl ToolchainPlugin {
 
     #[instrument(skip(self))]
     pub async fn sync_project(&self, input: SyncProjectInput) -> miette::Result<SyncOutput> {
-        let mut output: SyncOutput = self.plugin.call_func_with("sync_project", input).await?;
+        let mut output = SyncOutput::default();
 
-        self.handle_output_files(&mut output.changed_files);
+        if self.has_func("sync_project").await {
+            output = self.call_func_with("sync_project", input).await?;
+
+            self.handle_virtual_files(&mut output.changed_files);
+        }
 
         Ok(output)
     }
 
     #[instrument(skip(self))]
     pub async fn sync_workspace(&self, input: SyncWorkspaceInput) -> miette::Result<SyncOutput> {
-        let mut output: SyncOutput = self.plugin.call_func_with("sync_workspace", input).await?;
+        let mut output = SyncOutput::default();
 
-        self.handle_output_files(&mut output.changed_files);
+        if self.has_func("sync_workspace").await {
+            output = self.call_func_with("sync_workspace", input).await?;
+
+            self.handle_virtual_files(&mut output.changed_files);
+        }
 
         Ok(output)
     }
@@ -654,9 +738,8 @@ impl ToolchainPlugin {
             Manager::new(&mut tool).uninstall(&mut spec).await?;
         }
 
-        if self.plugin.has_func("teardown_toolchain").await {
-            self.plugin
-                .call_func_without_output("teardown_toolchain", input)
+        if self.has_func("teardown_toolchain").await {
+            self.call_func_without_output("teardown_toolchain", input)
                 .await?;
         }
 
@@ -676,6 +759,7 @@ impl fmt::Debug for ToolchainPlugin {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ToolchainPlugin")
             .field("id", &self.id)
+            .field("locator", &self.locator)
             .field("metadata", &self.metadata)
             .finish()
     }

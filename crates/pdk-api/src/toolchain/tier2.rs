@@ -59,9 +59,9 @@ api_struct!(
     /// Output returned from the `setup_environment` function.
     #[serde(default)]
     pub struct SetupEnvironmentOutput {
-        /// List of files that have been changed because of this action.
+        /// List of virtual files that have been changed because of this action.
         #[serde(skip_serializing_if = "Vec::is_empty")]
-        pub changed_files: Vec<PathBuf>,
+        pub changed_files: Vec<VirtualPath>,
 
         /// List of commands to execute during setup.
         #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -103,7 +103,7 @@ api_struct!(
         /// Virtual path to the located root. If no root was found,
         /// return `None` to abort any relevant operations.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub root: Option<PathBuf>,
+        pub root: Option<VirtualPath>,
     }
 );
 

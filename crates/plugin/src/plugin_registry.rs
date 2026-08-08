@@ -8,14 +8,13 @@ use starbase_utils::{fs, json::JsonValue};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fmt::Debug;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 use tracing::debug;
-use warpgate::sort_virtual_paths;
 use warpgate::{
-    PluginLoader, PluginLocator, PluginManifest, VirtualPath, Wasm, from_virtual_path,
-    inject_default_manifest_config, to_virtual_path,
+    PluginLoader, PluginLocator, PluginManifest, Wasm, inject_default_manifest_config,
+    sort_virtual_paths, to_virtual_path,
 };
 
 pub trait PluginsConfig: Debug + Send + Sync + 'static {
@@ -94,8 +93,11 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
 
     pub fn create_context(&self) -> MoonContext {
         MoonContext {
-            working_dir: self.to_virtual_path(&self.host_data.moon_env.working_dir),
-            workspace_root: self.to_virtual_path(&self.host_data.moon_env.workspace_root),
+            working_dir: to_virtual_path(&self.virtual_paths, &self.host_data.moon_env.working_dir),
+            workspace_root: to_virtual_path(
+                &self.virtual_paths,
+                &self.host_data.moon_env.workspace_root,
+            ),
         }
     }
 
@@ -187,14 +189,6 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         let _ = self.plugins.insert_async(id, Arc::new(plugin)).await;
 
         Ok(())
-    }
-
-    pub fn from_virtual_path(&self, path: impl AsRef<Path>) -> PathBuf {
-        from_virtual_path(&self.virtual_paths, path.as_ref())
-    }
-
-    pub fn to_virtual_path(&self, path: impl AsRef<Path>) -> VirtualPath {
-        to_virtual_path(&self.virtual_paths, path.as_ref())
     }
 }
 

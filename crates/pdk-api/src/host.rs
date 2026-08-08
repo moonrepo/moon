@@ -107,3 +107,25 @@ api_enum!(
         FileTimestamp(VirtualPath),
     }
 );
+
+impl CacheInput {
+    /// Return the virtual path of the cache input, if applicable.
+    pub fn get_virtual_path(&self) -> Option<&VirtualPath> {
+        match self {
+            CacheInput::FileHash(path)
+            | CacheInput::FileSize(path)
+            | CacheInput::FileTimestamp(path) => Some(path),
+            _ => None,
+        }
+    }
+
+    /// Set the virtual path of the cache input, if applicable.
+    pub fn set_virtual_path(&mut self, new_path: VirtualPath) {
+        match self {
+            CacheInput::FileHash(path)
+            | CacheInput::FileSize(path)
+            | CacheInput::FileTimestamp(path) => *path = new_path,
+            _ => {}
+        }
+    }
+}

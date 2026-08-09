@@ -1,24 +1,11 @@
 use extism_pdk::*;
-use moon_pdk::get_plugin_id;
+use moon_pdk::{get_plugin_id, VirtualPathExt};
 use moon_pdk_api::*;
 
 pub use tc_tier1::*;
 
 fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
-    let outer = match path {
-        VirtualPath::Real(inner) => inner,
-        // Don't use `path` since it gets replaced with the virtual
-        // path, which masks the folder we're actually in on the host
-        VirtualPath::Virtual {
-            real_prefix: inner, ..
-        } => inner,
-    };
-
-    // // `ends_with` or `file_name` didn't work on Windows...
-    // let value = outer.to_string_lossy();
-    // let res = value.ends_with("in") || value.ends_with("in-root") || value.ends_with("out");
-
-    // res
+    let outer = path.to_real_path().unwrap().unwrap();
 
     outer
         .file_name()

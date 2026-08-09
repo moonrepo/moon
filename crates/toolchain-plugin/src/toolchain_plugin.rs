@@ -104,7 +104,7 @@ impl ToolchainPlugin {
 
         for input in &mut command.inputs {
             if let Some(path) = input.get_virtual_path() {
-                input.set_virtual_path(VirtualPath::new(self.plugin.to_real_path(&path)));
+                input.set_virtual_path(VirtualPath::new(self.plugin.to_real_path(path)));
             }
         }
     }

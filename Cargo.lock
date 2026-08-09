@@ -955,9 +955,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.6.4"
+version = "4.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d91e0c145792ef73a6ad36d27c75ac09f1832222a3c209689d90f534685ee5b7"
+checksum = "473c7e07f409a8d772161724aa8db6a765a2532a70f9667eeb7b49d3d02fbdca"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -965,9 +965,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.6.2"
+version = "4.6.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f09628afdcc538b57f3c6341e9c8e9970f18e4a481690a64974d7023bd33548b"
+checksum = "7b48fea5a88e9ae728a2dcbedbfc0e730f7d60da42e1cb049a83c9fb8b789889"
 dependencies = [
  "anstream",
  "anstyle",
@@ -8763,9 +8763,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starbase"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14bc744bc0cf18b3833e443ac555dd699a7b2137065c5f55ca8156745547f6e9"
+checksum = "3af1e170d9c74392689d6350e4a2973d1f493a9156e269bc469581ebba71e2ee"
 dependencies = [
  "async-trait",
  "chrono",
@@ -8806,9 +8806,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_args"
-version = "0.1.12"
+version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9357babb8f76a7aa4ef834835099e0c0583cfdc010a469620cda8e85bf0c4953"
+checksum = "d1a5c360df360ae85c50f4159996369738d605172d603ada26179837c5c0822d"
 dependencies = [
  "pest",
  "pest_derive",

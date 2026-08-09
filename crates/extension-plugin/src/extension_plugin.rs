@@ -66,7 +66,7 @@ impl ExtensionPlugin {
     }
 
     fn handle_virtual_file(&self, file: &mut VirtualPath) {
-        *file = VirtualPath::Real(self.plugin.from_virtual_path(&file));
+        *file = VirtualPath::new(self.plugin.to_real_path(&file).to_path_buf());
     }
 
     fn handle_virtual_files(&self, files: &mut [VirtualPath]) {

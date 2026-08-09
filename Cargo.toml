@@ -103,14 +103,14 @@ windows-sys = { version = "0.61.2", default-features = false }
 # proto/plugin related
 extism = "=1.30.0"
 extism-pdk = "1.4.1"
-proto_core = "0.60.1"
+proto_core = "0.60.3"
 proto_pdk_api = "0.33.0"
 proto_pdk_test_utils = "0.48.0"
 proto_shim = "0.8.3"
 system_env = "0.10.1"
 version_spec = "0.11.2"
-warpgate = "0.35.0"
-warpgate_api = "0.18.0"
+warpgate = "0.35.1"
+warpgate_api = "0.18.1"
 warpgate_pdk = "0.17.0"
 
 # proto_core = { path = "../proto/crates/core" }

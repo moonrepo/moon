@@ -94,7 +94,7 @@ impl Plugin for ToolchainPlugin {
 
 impl ToolchainPlugin {
     fn handle_output_file(&self, file: &mut PathBuf) {
-        *file = self.plugin.from_virtual_path(&file);
+        *file = self.plugin.to_real_path(&file).to_path_buf();
     }
 
     fn handle_output_files(&self, files: &mut [PathBuf]) {
@@ -104,7 +104,7 @@ impl ToolchainPlugin {
     }
 
     fn handle_virtual_file(&self, file: &mut VirtualPath) {
-        *file = VirtualPath::Real(self.plugin.from_virtual_path(&file));
+        *file = VirtualPath::new(self.plugin.to_real_path(&file));
     }
 
     fn handle_virtual_files(&self, files: &mut [VirtualPath]) {
@@ -118,13 +118,11 @@ impl ToolchainPlugin {
             self.handle_virtual_file(cwd);
         }
 
-        for path in &mut command.command.paths {
-            self.handle_virtual_file(path);
-        }
+        self.handle_output_files(&mut command.command.paths);
 
         for input in &mut command.inputs {
             if let Some(path) = input.get_virtual_path() {
-                input.set_virtual_path(VirtualPath::Real(self.from_virtual_path(path)));
+                input.set_virtual_path(VirtualPath::new(self.plugin.to_real_path(&path)));
             }
         }
     }
@@ -187,8 +185,6 @@ impl ToolchainPlugin {
         if workspace.members.is_empty() {
             return Ok(false);
         }
-
-        let root = self.to_real_path(root).to_path_buf();
 
         Ok(
             // Root always in the workspace
@@ -528,7 +524,7 @@ impl ToolchainPlugin {
 
             if let Some(root) = output.root {
                 return Ok(Some(DependenciesWorkspace {
-                    root: self.from_virtual_path(root),
+                    root: self.to_real_path(&root).to_path_buf(),
                     members: output.members.unwrap_or_default(),
                 }));
             }
@@ -609,10 +605,6 @@ impl ToolchainPlugin {
 
         for command in &mut output.commands {
             self.handle_exec_command(command);
-        }
-
-        for command in &mut output.commands {
-            self.handle_output_file(&mut command.script);
         }
 
         Ok(output)

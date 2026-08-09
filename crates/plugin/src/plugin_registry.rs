@@ -3,6 +3,7 @@ use crate::plugin::*;
 use crate::plugin_error::PluginError;
 use moon_common::Id;
 use moon_pdk_api::MoonContext;
+use moon_pdk_api::convert_to_virtual_path;
 use proto_core::is_offline;
 use starbase_utils::{fs, json::JsonValue};
 use std::collections::BTreeMap;
@@ -13,8 +14,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::debug;
 use warpgate::{
-    PluginLoader, PluginLocator, PluginManifest, Wasm, inject_default_manifest_config,
-    sort_virtual_paths, to_virtual_path,
+    PluginLoader, PluginLocator, PluginManifest, Wasm, api::sort_paths_list,
+    inject_default_manifest_config,
 };
 
 pub trait PluginsConfig: Debug + Send + Sync + 'static {
@@ -93,11 +94,16 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
 
     pub fn create_context(&self) -> MoonContext {
         MoonContext {
-            working_dir: to_virtual_path(&self.virtual_paths, &self.host_data.moon_env.working_dir),
-            workspace_root: to_virtual_path(
+            working_dir: convert_to_virtual_path(
+                &self.host_data.moon_env.working_dir,
                 &self.virtual_paths,
+            )
+            .unwrap(),
+            workspace_root: convert_to_virtual_path(
                 &self.host_data.moon_env.workspace_root,
-            ),
+                &self.virtual_paths,
+            )
+            .unwrap(),
         }
     }
 

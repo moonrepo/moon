@@ -62,7 +62,7 @@
 
 - Renamed the `TaskMergeStrategy` type to `MergeStrategy` in `@moonrepo/types`, as it's no longer
   exclusive to tasks.
-- Updated proto to [v0.60.0](https://github.com/moonrepo/proto/releases/tag/v0.60.0) from 0.58.2.
+- Updated proto to [v0.60.1](https://github.com/moonrepo/proto/releases/tag/v0.60.1) from 0.58.2.
 - Updated Rust to v1.97.0.
 - Updated dependencies.
 

@@ -110,7 +110,7 @@ proto_shim = "0.8.3"
 system_env = "0.10.1"
 version_spec = "0.11.2"
 warpgate = "0.35.1"
-warpgate_api = "0.18.1"
+warpgate_api = "0.18.2"
 warpgate_pdk = "0.17.0"
 
 # proto_core = { path = "../proto/crates/core" }

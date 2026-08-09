@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use moon_common::Id;
 use moon_config::schematic::Schema;
 use moon_pdk_api::*;
-use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
+use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType, inherit_path_methods};
 use std::fmt;
 use std::ops::Deref;
 use std::path::PathBuf;
@@ -55,25 +55,7 @@ impl Plugin for ExtensionPlugin {
 }
 
 impl ExtensionPlugin {
-    fn handle_output_file(&self, file: &mut PathBuf) {
-        *file = self.plugin.to_real_path(&file).to_path_buf();
-    }
-
-    fn handle_output_files(&self, files: &mut [PathBuf]) {
-        for file in files {
-            self.handle_output_file(file);
-        }
-    }
-
-    fn handle_virtual_file(&self, file: &mut VirtualPath) {
-        *file = VirtualPath::new(self.plugin.to_real_path(&file).to_path_buf());
-    }
-
-    fn handle_virtual_files(&self, files: &mut [VirtualPath]) {
-        for file in files {
-            self.handle_virtual_file(file);
-        }
-    }
+    inherit_path_methods!(plugin);
 
     #[instrument(skip(self))]
     pub async fn define_extension_config(&self) -> miette::Result<Option<Schema>> {
@@ -110,7 +92,7 @@ impl ExtensionPlugin {
         if self.has_func("extend_command").await {
             output = self.cache_func_with("extend_command", input).await?;
 
-            self.handle_output_files(&mut output.paths);
+            self.convert_output_files(&mut output.paths);
         }
 
         Ok(output)
@@ -126,7 +108,7 @@ impl ExtensionPlugin {
         if self.has_func("extend_project_graph").await {
             output = self.cache_func_with("extend_project_graph", input).await?;
 
-            self.handle_virtual_files(&mut output.input_files);
+            self.convert_virtual_files(&mut output.input_files);
         }
 
         Ok(output)
@@ -142,7 +124,7 @@ impl ExtensionPlugin {
         if self.has_func("extend_task_command").await {
             output = self.cache_func_with("extend_task_command", input).await?;
 
-            self.handle_output_files(&mut output.paths);
+            self.convert_output_files(&mut output.paths);
         }
 
         Ok(output)
@@ -158,7 +140,7 @@ impl ExtensionPlugin {
         if self.has_func("extend_task_script").await {
             output = self.cache_func_with("extend_task_script", input).await?;
 
-            self.handle_output_files(&mut output.paths);
+            self.convert_output_files(&mut output.paths);
         }
 
         Ok(output)
@@ -183,7 +165,7 @@ impl ExtensionPlugin {
         if self.has_func("sync_project").await {
             output = self.call_func_with("sync_project", input).await?;
 
-            self.handle_virtual_files(&mut output.changed_files);
+            self.convert_virtual_files(&mut output.changed_files);
         }
 
         Ok(output)
@@ -196,7 +178,7 @@ impl ExtensionPlugin {
         if self.has_func("sync_workspace").await {
             output = self.call_func_with("sync_workspace", input).await?;
 
-            self.handle_virtual_files(&mut output.changed_files);
+            self.convert_virtual_files(&mut output.changed_files);
         }
 
         Ok(output)

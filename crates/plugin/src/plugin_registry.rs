@@ -3,7 +3,6 @@ use crate::plugin::*;
 use crate::plugin_error::PluginError;
 use moon_common::Id;
 use moon_pdk_api::MoonContext;
-use moon_pdk_api::convert_to_virtual_path;
 use proto_core::is_offline;
 use starbase_utils::{fs, json::JsonValue};
 use std::collections::BTreeMap;
@@ -14,7 +13,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use tracing::debug;
 use warpgate::{
-    PluginLoader, PluginLocator, PluginManifest, Wasm, api::sort_paths_list,
+    PluginLoader, PluginLocator, PluginManifest, Wasm,
+    api::{convert_to_virtual_path, sort_paths_list},
     inject_default_manifest_config,
 };
 

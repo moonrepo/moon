@@ -5,9 +5,12 @@ gives contributors on NixOS a dev shell with the right toolchain. It is independ
 [nixpkgs `moon` package](https://search.nixos.org/packages?query=moon), which is maintained by
 nixpkgs contributors on their own schedule.
 
-Outputs, for `x86_64-linux` and `aarch64-linux`:
+Outputs, for `x86_64-linux`, `aarch64-linux`, and `aarch64-darwin`:
 
-- `packages.default` builds the `moon` and `moonx` binaries with shell completions.
+- `packages.default` and `packages.moon` build the `moon` and `moonx` binaries with shell
+  completions.
+- `packages.moon-deps` exposes the compiled Cargo dependencies for cache warming.
+- `apps.default` runs the `moon` binary.
 - `devShells.default` provides the Rust toolchain, `just`, and `cargo-nextest`.
 
 ## Releases
@@ -17,7 +20,7 @@ package and the `meta.changelog` link without touching `flake.nix`.
 
 ## Updating inputs
 
-The flake pins nixpkgs, flake-utils, and rust-overlay in `flake.lock`. To move them forward:
+The flake pins nixpkgs, flake-utils, rust-overlay, and Crane in `flake.lock`. To move them forward:
 
 ```shell
 nix flake update
@@ -42,21 +45,30 @@ gigabytes to the closure.
 time. `openssl` plus `OPENSSL_NO_VENDOR` make reqwest link against the system library rather than
 compiling a vendored copy, which the `native-tls-vendored` feature would otherwise do.
 
-Cargo dependencies are vendored from `Cargo.lock` through `cargoLock.lockFile`. If moon ever takes a
-dependency from a git source, that will need a `cargoLock.outputHashes` entry for it.
+Crane vendors Cargo dependencies from `Cargo.lock`. If moon ever takes a dependency from a git
+source, Crane will vendor it from the locked revision.
+
+Crane compiles dependencies separately from the final package so application changes can reuse them.
+The package source is restricted to Cargo sources and compile-time assets, preventing unrelated files
+and version control metadata from invalidating the build.
 
 Tests run with `doCheck = false`. They download Node.js, Bun, Deno, and other toolchains at runtime,
 which the Nix sandbox blocks.
 
 ## CI
 
-`.github/workflows/nix.yml` runs `nix flake check` and `nix build .#default` when `flake.nix`,
-`flake.lock`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, or anything under `crates/`
-changes. There is no binary cache wired up, so the job compiles moon from source every time.
+`.github/workflows/nix.yml` runs `nix flake check` and builds the package for every supported Linux
+and macOS system when `flake.nix`, `flake.lock`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, or
+anything under `crates/` changes. All jobs pull from the public `moonrepo` Cachix cache. Trusted push
+and manual runs publish new paths when the repository has a `CACHIX_AUTH_TOKEN` secret; pull requests
+remain read-only.
+
+The flake advertises the cache through `nixConfig`. Pass `--accept-flake-config` when running Nix
+non-interactively, or configure the cache with `cachix use moonrepo`.
 
 Before pushing a change to the flake, run the same two commands locally:
 
 ```shell
-nix flake check
-nix build .#default
+nix flake check --accept-flake-config
+nix build .#default --accept-flake-config
 ```

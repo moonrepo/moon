@@ -1,6 +1,6 @@
 [package]
 name = "moon_pdk_api"
-version = "2.0.4"
+version = "2.1.0"
 edition = "2024"
 license = "MIT"
 description = "Core APIs for creating moon WASM plugins."

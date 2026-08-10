@@ -65,6 +65,11 @@
     - Can also use `VirtualPathExt::to_real_path` and `RealPathExt::to_virtual_path` extension
       traits for the same functionality.
 
+#### 🧰 Toolchains
+
+- **Rust**
+  - Fixed an issue where Docker scaffolding would leave behind empty `lib.rs` or `main.rs` files.
+
 #### 🐞 Fixes
 
 - Fixed an issue where project and task graph node lookups could resolve the wrong entry, or fail
@@ -83,7 +88,7 @@
 
 - Renamed the `TaskMergeStrategy` type to `MergeStrategy` in `@moonrepo/types`, as it's no longer
   exclusive to tasks.
-- Updated proto to [v0.60.1](https://github.com/moonrepo/proto/releases/tag/v0.60.1) from 0.58.2.
+- Updated proto to [v0.60.2](https://github.com/moonrepo/proto/releases/tag/v0.60.1) from 0.58.2.
 - Updated Rust to v1.97.0.
 - Updated dependencies.
 

@@ -3583,9 +3583,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache"
-version = "1.0.0-alpha.6"
+version = "1.0.0-alpha.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d01e0b5d3afe17eadd68dad863adc0715b7ccfa887effbb9ea4de3c7c78c6c44"
+checksum = "e5578f9c6c2ad8403802d209d1ffe8a2a15d3f89bfaabca9deaa977947dba241"
 dependencies = [
  "bytes",
  "cacache",
@@ -3598,6 +3598,7 @@ dependencies = [
  "log",
  "pin-project-lite",
  "postcard",
+ "redb",
  "serde",
  "tokio",
  "url",
@@ -3605,9 +3606,9 @@ dependencies = [
 
 [[package]]
 name = "http-cache-reqwest"
-version = "1.0.0-alpha.6"
+version = "1.0.0-alpha.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ff1fa00fd5b0d38c26d5f24f1cf513e286a988b57880c2bf357304669268fa3"
+checksum = "8b8eff2dd41dcc485744bd8ce476cf0fe2df289ba8b49c1750b7c887ef7a07b5"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -7345,9 +7346,9 @@ dependencies = [
 
 [[package]]
 name = "proto_core"
-version = "0.60.3"
+version = "0.60.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69a33f00c01ec2a7cb6cb33a31976213e095750db566fc7ee3ba001acb8aad4d"
+checksum = "4260e481e2c209eb20f59a061753a19977b6d4bd4ddd93d8e80313db1f1c44e6"
 dependencies = [
  "ai_env",
  "convert_case 0.11.0",
@@ -7660,6 +7661,15 @@ checksum = "22e18b0f0062d30d4230b2e85ff77fdfe4326feb054b9783a3460d8435c8ab91"
 dependencies = [
  "crossbeam-deque",
  "crossbeam-utils",
+]
+
+[[package]]
+name = "redb"
+version = "4.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e925444704b5f17d32bf42f5b6e2df050bceebc3dcd6e71cc73dafe8092e839"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -10003,9 +10013,9 @@ dependencies = [
 
 [[package]]
 name = "warpgate"
-version = "0.35.1"
+version = "0.35.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42e431d2cb9077b3db89462904dbe61cabd246770fd8dde5e7e2cdbbaacdfba0"
+checksum = "74202844da125c6687881df024044bdb715b39bcd656b82b0a9851f093abd4c0"
 dependencies = [
  "async-trait",
  "compact_str 0.10.0",

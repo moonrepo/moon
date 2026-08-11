@@ -4979,7 +4979,6 @@ dependencies = [
 name = "moon_app"
 version = "0.0.1"
 dependencies = [
- "async-recursion",
  "async-trait",
  "bytes",
  "ci_env",

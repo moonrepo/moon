@@ -9,7 +9,7 @@ use moon_pdk_api::{
     ExtendTaskScriptOutput, LocateDependenciesRootInput, ScaffoldDockerInput, SyncOutput,
     SyncProjectInput, SyncWorkspaceInput, TeardownToolchainInput,
 };
-use moon_plugin::{CallOptions, CallResult};
+use moon_plugin::CallResult;
 use moon_toolchain::DependenciesWorkspace;
 use proto_core::UnresolvedVersionSpec;
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -29,14 +29,11 @@ impl ToolchainRegistry {
         InFn: Fn(&ToolchainPlugin) -> Option<UnresolvedVersionSpec>,
     {
         let results = self
-            .call_func_with_options(
+            .call_func(
                 "get_command_paths",
                 ids,
                 input_factory,
                 |toolchain, input| async move { toolchain.get_command_paths(input).await },
-                CallOptions {
-                    check_func_exists: false,
-                },
             )
             .await?;
 
@@ -177,13 +174,10 @@ impl ToolchainRegistry {
         InFn: Fn(&ToolchainPlugin) -> DefineDockerMetadataInput,
     {
         let results = self
-            .call_func_all_with_options(
+            .call_func_all(
                 "define_docker_metadata",
                 input_factory,
                 |toolchain, input| async move { toolchain.define_docker_metadata(input).await },
-                CallOptions {
-                    check_func_exists: false,
-                },
             )
             .await?;
 
@@ -381,13 +375,10 @@ impl ToolchainRegistry {
     where
         InFn: Fn(&ToolchainPlugin) -> TeardownToolchainInput,
     {
-        self.call_func_all_with_options(
+        self.call_func_all(
             "teardown_toolchain",
             input_factory,
             |toolchain, input| async move { toolchain.teardown_toolchain(input).await },
-            CallOptions {
-                check_func_exists: false,
-            },
         )
         .await?;
 

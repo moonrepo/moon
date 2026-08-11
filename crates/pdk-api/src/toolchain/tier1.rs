@@ -129,7 +129,9 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Docker scaffold configuration.
+        /// Docker scaffold configuration. When scaffolding a project, this
+        /// will be the project-level config, otherwise it will be the
+        /// workspace-level config.
         pub docker_config: DockerScaffoldConfig,
 
         /// The directory in which to copy files from.

@@ -9,22 +9,8 @@ use std::fmt::Debug;
 use std::future::Future;
 use std::sync::Arc;
 
-#[derive(Debug)]
-pub struct CallOptions {
-    pub check_func_exists: bool,
-}
-
-// Most plugin functions are optional, so by default we must verify
-// they exist before calling them, otherwise we fail with a
-// "Function not found" error. This can be disabled for functions
-// that are required, or are guarded by the caller.
-impl Default for CallOptions {
-    fn default() -> Self {
-        Self {
-            check_func_exists: true,
-        }
-    }
-}
+#[derive(Debug, Default)]
+pub struct CallOptions {}
 
 #[derive(Debug)]
 pub struct CallResult<Inst: Plugin, Out: Debug> {
@@ -141,7 +127,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         ids: It,
         input_factory: InFn,
         output_factory: OutFn,
-        options: CallOptions,
+        _options: CallOptions,
     ) -> miette::Result<Vec<CallResult<Inst, Out>>>
     where
         It: IntoIterator<Item = I>,
@@ -166,10 +152,6 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         let mut futures = FuturesOrdered::new();
 
         for plugin in plugins {
-            if options.check_func_exists && !plugin.has_func(func_name).await {
-                continue;
-            }
-
             let mut operation = Operation::new(func_name).unwrap();
             let input = input_factory(&plugin);
             let future = output_factory(Arc::clone(&plugin), input);

@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use moon_common::Id;
 use moon_env::MoonEnvironment;
 use moon_plugin::{
-    CallOptions, MoonHostData, Plugin, PluginLocator, PluginManifest, PluginRegistration,
-    PluginRegistry, PluginType, PluginsConfig,
+    MoonHostData, Plugin, PluginLocator, PluginManifest, PluginRegistration, PluginRegistry,
+    PluginType, PluginsConfig,
 };
 use proto_core::{ProtoEnvironment, warpgate::FileLocator};
 use rustc_hash::FxHashMap;
@@ -478,26 +478,6 @@ mod registry_caller {
             .unwrap();
 
         assert!(results.is_empty());
-    }
-
-    #[tokio::test]
-    async fn calls_a_missing_func_when_the_check_is_disabled() {
-        let sandbox = create_sandbox("wasm");
-        let registry = create_registry(sandbox.path(), TestConfig::new(&["a"], sandbox.path()));
-
-        let results = registry
-            .call_func_all_with_options(
-                "missing_func",
-                |plugin| plugin.get_id().to_string(),
-                |_plugin, input| async move { Ok::<_, miette::Report>(input) },
-                CallOptions {
-                    check_func_exists: false,
-                },
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(results.len(), 1);
     }
 
     #[tokio::test]

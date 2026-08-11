@@ -802,7 +802,7 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "moon_common"
-version = "2.0.7"
+version = "2.0.8"
 dependencies = [
  "dirs",
  "miette",
@@ -817,7 +817,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "deserialize_untagged_verbose_error",
  "indexmap",
@@ -854,7 +854,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "2.0.4"
+version = "2.1.0"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -869,7 +869,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "2.0.4"
+version = "2.1.0"
 dependencies = [
  "derive_setters",
  "moon_common",
@@ -886,7 +886,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "2.0.6"
+version = "2.0.7"
 dependencies = [
  "miette",
  "moon_common",
@@ -899,7 +899,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "compact_str 0.10.0",
  "miette",
@@ -913,7 +913,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "miette",
  "moon_common",

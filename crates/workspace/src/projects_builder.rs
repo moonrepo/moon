@@ -3,6 +3,7 @@ use crate::repo_type::RepoType;
 use crate::tasks_querent::WorkspaceTasksQuerent;
 use crate::workspace_builder::WorkspaceBuilderContext;
 use crate::workspace_builder_error::WorkspaceBuilderError;
+use crate::workspace_cache::map_plugin_input_paths;
 use miette::IntoDiagnostic;
 use moon_async_utils::run_pooled_tasks;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf, is_root_level_source};
@@ -24,7 +25,7 @@ use petgraph::visit::IntoNodeReferences;
 use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::mem;
 use std::sync::Arc;
 use tokio::task::JoinSet;
@@ -223,6 +224,11 @@ pub struct WorkspaceProjectsBuilder {
     /// These are used for invalidation.
     pub config_paths: FxHashSet<WorkspaceRelativePathBuf>,
 
+    /// Input files discovered by plugins while extending the graph.
+    /// These are used for invalidation.
+    #[serde(skip)]
+    pub plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
+
     /// Map of project IDs to their graph index.
     pub ids_to_indexes: FxHashMap<Id, NodeIndex>,
 
@@ -299,6 +305,7 @@ impl WorkspaceProjectsBuilder {
             aliases_to_ids: FxHashMap::default(),
             build_data: ProjectBuildDataMap::default(),
             config_paths: FxHashSet::default(),
+            plugin_input_paths: BTreeSet::default(),
             ids_to_indexes: FxHashMap::default(),
             ids_to_target_options: FxHashMap::default(),
             target_to_has_outputs: FxHashMap::default(),
@@ -789,6 +796,12 @@ impl WorkspaceProjectsBuilder {
         let context = self.context();
 
         for (plugin_id, output, is_toolchain) in outputs {
+            map_plugin_input_paths(
+                &context.workspace_root,
+                output.input_files,
+                &mut self.plugin_input_paths,
+            );
+
             let inherit_aliases = if is_toolchain {
                 context
                     .toolchains_config

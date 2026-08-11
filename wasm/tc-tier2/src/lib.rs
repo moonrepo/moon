@@ -1,28 +1,19 @@
 use extism_pdk::*;
-use moon_pdk::get_plugin_id;
+use moon_pdk::{get_plugin_id, VirtualPathExt};
 use moon_pdk_api::*;
 
 pub use tc_tier1::*;
 
 fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
-    let outer = match path {
-        VirtualPath::Real(inner) => inner,
-        // Don't use `path` since it gets replaced with the virtual
-        // path, which masks the folder we're actually in on the host
-        VirtualPath::Virtual {
-            real_prefix: inner, ..
-        } => inner,
-    };
+    let outer = path.to_real_path().unwrap().unwrap();
 
-    // // `ends_with` or `file_name` didn't work on Windows...
-    // let value = outer.to_string_lossy();
-    // let res = value.ends_with("in") || value.ends_with("in-root") || value.ends_with("out");
-
-    // res
-
+    // The guest resolves paths with Unix semantics, while real paths from
+    // a Windows host contain backslashes, so `file_name` cannot split on
+    // them. Extract the last component by handling both separators.
     outer
-        .file_name()
-        .and_then(|file| file.to_str())
+        .to_string_lossy()
+        .rsplit(['/', '\\'])
+        .find(|value| !value.is_empty())
         .is_some_and(|value| value == "in" || value == "in-root" || value == "out")
 }
 

@@ -61,6 +61,15 @@ pub fn extend_project_graph(
 
             output.input_files.push(manifest);
         }
+
+        // Lock files are not registered as manifests, so they're excluded
+        // from the graph cache's invalidation heuristic. Report them as
+        // input files so that tests can verify the discovered-files flow
+        let lockfile = input.context.workspace_root.join(source).join("tc.lock");
+
+        if lockfile.exists() {
+            output.input_files.push(lockfile);
+        }
     }
 
     Ok(Json(output))

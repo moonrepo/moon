@@ -37,7 +37,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use serde::{Deserialize, Serialize};
 use starbase_utils::glob::{self, GlobWalkOptions};
 use starbase_utils::json;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::mem;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -88,6 +88,11 @@ pub struct WorkspaceBuilder {
     /// These are used for invalidation.
     config_paths: Vec<WorkspaceRelativePathBuf>,
 
+    /// Input files discovered by plugins while extending the graph.
+    /// These are used for invalidation.
+    #[serde(skip)]
+    plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
+
     /// Aliases to their associated project.
     aliases: FxHashMap<String, Id>,
 
@@ -134,6 +139,7 @@ impl WorkspaceBuilder {
             config_paths: vec![],
             context: Some(Arc::new(context)),
             deferred_project_edges: vec![],
+            plugin_input_paths: BTreeSet::default(),
             project_data: FxHashMap::default(),
             project_graph: DiGraph::new(),
             projects_by_tag: FxHashMap::default(),
@@ -174,15 +180,8 @@ impl WorkspaceBuilder {
         let context = graph.context();
         let _lock = context.cache_engine.create_lock(LOCK_FILE_NAME)?;
 
-        // Hash the project graph based on the preloaded state
-        let digest = graph.generate_cache_digest().await?;
-
-        debug!(
-            hash = digest.hash.as_str(),
-            "Generated hash for workspace graph"
-        );
-
-        // Check the current state and cache
+        // Load the previous state, as input files discovered by plugins
+        // during the last build must contribute to the hash
         let mut state = context
             .cache_engine
             .state
@@ -191,6 +190,16 @@ impl WorkspaceBuilder {
             .cache_engine
             .state
             .resolve_path(STATE_GRAPH_FILE_NAME);
+
+        // Hash the project graph based on the preloaded state
+        let mut digest = graph
+            .generate_cache_digest(state.data.plugin_input_paths.clone())
+            .await?;
+
+        debug!(
+            hash = digest.hash.as_str(),
+            "Generated hash for workspace graph"
+        );
 
         if digest.hash == state.data.last_hash && cache_path.exists() {
             let mut cache: WorkspaceBuilder = json::read_file(&cache_path)?;
@@ -228,6 +237,17 @@ impl WorkspaceBuilder {
         graph.extend_projects_from_plugins().await?;
         graph.load_projects().await?;
         graph.load_tasks().await?;
+
+        // If plugins discovered a different set of input files, regenerate
+        // the digest with them included, otherwise the next run would be
+        // a guaranteed cache miss
+        if graph.plugin_input_paths != state.data.plugin_input_paths {
+            state.data.plugin_input_paths = graph.plugin_input_paths.clone();
+
+            digest = graph
+                .generate_cache_digest(state.data.plugin_input_paths.clone())
+                .await?;
+        }
 
         state.data.last_hash = digest.hash;
         state.save()?;
@@ -791,11 +811,21 @@ impl WorkspaceBuilder {
         Ok(())
     }
 
-    async fn generate_cache_digest(&self) -> miette::Result<Digest> {
+    async fn generate_cache_digest(
+        &self,
+        plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
+    ) -> miette::Result<Digest> {
+        let projects = self
+            .project_data
+            .iter()
+            .map(|(id, build_data)| (id.clone(), build_data.source.clone()))
+            .collect::<BTreeMap<_, _>>();
+
         generate_graph_cache_digest(
             self.context(),
-            &self.project_data,
+            &projects,
             self.config_paths.iter().cloned().collect(),
+            plugin_input_paths,
             false,
         )
         .await
@@ -1049,6 +1079,12 @@ impl WorkspaceBuilder {
     ) -> miette::Result<()> {
         let context = self.context();
 
+        map_plugin_input_paths(
+            &context.workspace_root,
+            output.input_files,
+            &mut self.plugin_input_paths,
+        );
+
         let inherit_aliases = if is_toolchain {
             context
                 .toolchains_config
@@ -1209,6 +1245,7 @@ mod tests {
             config_paths: vec![],
             aliases: FxHashMap::default(),
             deferred_project_edges: vec![],
+            plugin_input_paths: BTreeSet::default(),
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph,
@@ -1288,6 +1325,7 @@ mod tests {
             config_paths: vec![],
             aliases: FxHashMap::default(),
             deferred_project_edges: vec![],
+            plugin_input_paths: BTreeSet::default(),
             projects_by_tag: FxHashMap::default(),
             project_data: FxHashMap::default(),
             project_graph,

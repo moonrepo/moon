@@ -3,12 +3,14 @@ use crate::tasks_builder::*;
 use crate::workspace_builder::*;
 use crate::workspace_cache::*;
 use moon_common::Id;
+use moon_common::path::WorkspaceRelativePathBuf;
 use moon_graph_utils::GraphExpanderContext;
 use moon_hash::Digest;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
 use starbase_utils::json;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 use tracing::{debug, instrument};
 
@@ -57,17 +59,8 @@ impl WorkspaceBuilderAsync {
         let context = graph.context();
         let _lock = context.cache_engine.create_lock(LOCK_FILE_NAME)?;
 
-        // Preload sources and configs, and hash the graph based on that state
-        graph.preload().await?;
-
-        let digest = graph.generate_cache_digest().await?;
-
-        debug!(
-            hash = digest.hash.as_str(),
-            "Generated hash for workspace graph"
-        );
-
-        // Check the current state and cache
+        // Load the previous state, as input files discovered by plugins
+        // during the last build must contribute to the hash
         let mut state = context
             .cache_engine
             .state
@@ -76,6 +69,27 @@ impl WorkspaceBuilderAsync {
             .cache_engine
             .state
             .resolve_path(STATE_GRAPH_FILE_NAME);
+
+        // Preload sources and configs, and hash the graph based on that state
+        graph.preload().await?;
+
+        // Capture the project sources now, as `load_graphs` consumes the
+        // build data, and they're needed if the digest is regenerated after
+        let projects = graph
+            .projects
+            .build_data
+            .iter()
+            .map(|(id, build_data)| (id.clone(), build_data.source.clone()))
+            .collect::<BTreeMap<_, _>>();
+
+        let mut digest = graph
+            .generate_cache_digest(&projects, state.data.plugin_input_paths.clone())
+            .await?;
+
+        debug!(
+            hash = digest.hash.as_str(),
+            "Generated hash for workspace graph"
+        );
 
         if digest.hash == state.data.last_hash && cache_path.exists() {
             let mut cache: WorkspaceBuilderAsync = json::read_file(&cache_path)?;
@@ -112,6 +126,17 @@ impl WorkspaceBuilderAsync {
         );
 
         graph.load_graphs().await?;
+
+        // If plugins discovered a different set of input files, regenerate
+        // the digest with them included, otherwise the next run would be
+        // a guaranteed cache miss
+        if graph.projects.plugin_input_paths != state.data.plugin_input_paths {
+            state.data.plugin_input_paths = graph.projects.plugin_input_paths.clone();
+
+            digest = graph
+                .generate_cache_digest(&projects, state.data.plugin_input_paths.clone())
+                .await?;
+        }
 
         state.data.last_hash = digest.hash;
         state.save()?;
@@ -153,11 +178,16 @@ impl WorkspaceBuilderAsync {
         self.projects.graph.node_count() > 0
     }
 
-    async fn generate_cache_digest(&self) -> miette::Result<Digest> {
+    async fn generate_cache_digest(
+        &self,
+        projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
+        plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
+    ) -> miette::Result<Digest> {
         generate_graph_cache_digest(
             self.context(),
-            &self.projects.build_data,
+            projects,
             self.projects.config_paths.iter().cloned().collect(),
+            plugin_input_paths,
             true,
         )
         .await

@@ -16,8 +16,8 @@ pub use moon_task::TaskFragment;
 pub use prompts::*;
 pub use proto_pdk_api::{
     ExecCommandInput, ExecCommandOutput, HostArch, HostLibc, HostLogInput, HostLogTarget, HostOS,
-    Range, Requirement, SendRequestInput, SendRequestOutput, UnresolvedVersionSpec, Version,
-    VersionSpec,
+    MatchesVersion, Range, Requirement, SendRequestInput, SendRequestOutput, SpecError,
+    UnresolvedVersionSpec, Version, VersionSpec,
 };
 pub use toolchain::*;
 pub use warpgate_api::*;

@@ -153,14 +153,7 @@ mod plugin_registry {
 
         let context = registry.create_context();
 
-        assert_eq!(
-            context.workspace_root.virtual_path().unwrap(),
-            PathBuf::from("/workspace")
-        );
-        assert_eq!(
-            context.workspace_root.real_path().unwrap(),
-            registry.host_data.moon_env.workspace_root
-        );
+        assert_eq!(*context.workspace_root, PathBuf::from("/workspace"));
     }
 
     #[tokio::test]

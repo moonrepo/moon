@@ -98,7 +98,7 @@ mod plugin_commands {
 
             // Current dir
             let mut input = ExecCommandInput::pipe("echo", ["$PWD"]);
-            input.cwd = Some(VirtualPath::Real(sandbox.path().into()));
+            input.cwd = Some(VirtualPath::new(sandbox.path()));
 
             let ops = exec_plugin_command(
                 ctx.clone(),
@@ -123,7 +123,7 @@ mod plugin_commands {
             sandbox.create_file("subdir/file", "");
 
             let mut input = ExecCommandInput::pipe("echo", ["$PWD"]);
-            input.cwd = Some(VirtualPath::Real(sandbox.path().join("subdir")));
+            input.cwd = Some(VirtualPath::new(sandbox.path().join("subdir")));
 
             let ops = exec_plugin_command(
                 ctx.clone(),
@@ -466,8 +466,8 @@ mod plugin_commands {
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
                     .cache(CacheStrategy::Hash)
                     .inputs(vec![
-                        CacheInput::FileSize(VirtualPath::Real(sandbox.path().join("input.txt"))),
-                        CacheInput::FileSize(VirtualPath::Real(sandbox.path().join("missing.txt"))),
+                        CacheInput::FileSize(VirtualPath::new(sandbox.path().join("input.txt"))),
+                        CacheInput::FileSize(VirtualPath::new(sandbox.path().join("missing.txt"))),
                     ]),
                 &ExecCommandOptions::default(),
             )
@@ -490,8 +490,8 @@ mod plugin_commands {
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
                     .cache(CacheStrategy::Hash)
                     .inputs(vec![
-                        CacheInput::FileHash(VirtualPath::Real(sandbox.path().join("input.txt"))),
-                        CacheInput::FileHash(VirtualPath::Real(sandbox.path().join("missing.txt"))),
+                        CacheInput::FileHash(VirtualPath::new(sandbox.path().join("input.txt"))),
+                        CacheInput::FileHash(VirtualPath::new(sandbox.path().join("missing.txt"))),
                     ]),
                 &ExecCommandOptions::default(),
             )
@@ -515,8 +515,8 @@ mod plugin_commands {
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
                     .cache(CacheStrategy::Hash)
                     .inputs(vec![
-                        CacheInput::FileHash(VirtualPath::Real(sandbox.path().join("input.txt"))),
-                        CacheInput::FileHash(VirtualPath::Real(sandbox.path().join("missing.txt"))),
+                        CacheInput::FileHash(VirtualPath::new(sandbox.path().join("input.txt"))),
+                        CacheInput::FileHash(VirtualPath::new(sandbox.path().join("missing.txt"))),
                     ]),
                 &ExecCommandOptions::default(),
             )
@@ -539,10 +539,10 @@ mod plugin_commands {
                 &ExecCommand::new(ExecCommandInput::pipe("echo", ["cache"]))
                     .cache(CacheStrategy::Hash)
                     .inputs(vec![
-                        CacheInput::FileTimestamp(VirtualPath::Real(
+                        CacheInput::FileTimestamp(VirtualPath::new(
                             sandbox.path().join("input.txt"),
                         )),
-                        CacheInput::FileTimestamp(VirtualPath::Real(
+                        CacheInput::FileTimestamp(VirtualPath::new(
                             sandbox.path().join("missing.txt"),
                         )),
                     ]),

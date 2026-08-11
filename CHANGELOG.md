@@ -67,6 +67,9 @@
   - Added `DefineRequirementsOutput.for_setup_environment` and `for_setup_toolchain` fields, which
     allow toolchains to specify requirements for the setup environment and setup toolchain actions,
     respectively.
+  - Added `PruneDockerInput.project_dependencies` field, which allows the toolchain to know about
+    other projects that the focused project(s) depends on, so it can prune their dependencies as
+    well.
   - Updated `DefineRequirementsInput.toolchain_config` to inherit the project-level settings when
     applicable.
 

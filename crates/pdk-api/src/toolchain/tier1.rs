@@ -172,8 +172,10 @@ api_struct!(
         /// Docker prune configuration.
         pub docker_config: DockerPruneConfig,
 
-        /// The focused projects within the current
-        /// dependencies root.
+        /// Other projects that the focused project(s) depends on.
+        pub project_dependencies: Vec<ProjectFragment>,
+
+        /// The focused projects within the current dependencies root.
         pub projects: Vec<ProjectFragment>,
 
         /// Virtual path to the dependencies root. This is where

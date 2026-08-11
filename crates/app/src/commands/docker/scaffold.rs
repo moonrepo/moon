@@ -254,8 +254,13 @@ impl ScaffoldWorkflow {
                 }
             }
 
-            visited.insert(project_id);
             self.scaffold_project(&project).await?;
+
+            if !self.manifest.focused_projects.contains(&project_id) {
+                self.manifest.unfocused_projects.insert(project_id.clone());
+            }
+
+            visited.insert(project_id);
         }
 
         self.scaffold_root().await?;

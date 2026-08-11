@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+#### 💥 Breaking
+
+- **WASM API**
+  - Reworked the `VirtualPath` type from the ground up. Is no longer an enum, but instead a newtype
+    wrapper around `PathBuf`.
+    - This allows for better interoperability with the Rust ecosystem, and makes it easier to work
+      with virtual paths in general.
+    - Additionally, because of this change, `VirtualPath` now has access to all `PathBuf` methods,
+      which was not possible before.
+  - Removed the `from_virtual_path` and `to_virtual_path` extism host functions, `into_real_path`
+    and `into_virtual_path` wrapper functions, and `real_path!` and `virtual_path!` macros. Use the
+    conversion utils instead (below).
+
 #### 🚀 Updates
 
 - **CLI**
@@ -43,6 +56,19 @@
     dependencies (`production`, `peer`) and development scoped dependencies (`development`, `build`,
     `root`) are now tracked as separate internal graphs, so relationships that cross the boundary no
     longer fail with a cycle error, or silently drop dependency edges.
+- **WASM API**
+  - Added a `RealPath` type, which is a newtype wrapper around `PathBuf` that represents a real path
+    on the host file system. This is a sibling to the `VirtualPath` type, which represents a virtual
+    path in the guest WASM environment.
+  - Added `convert_to_virtual_path` and `convert_to_real_path` helper functions for converting
+    between real and virtual paths, using a list of host-to-guest path mappings.
+    - Can also use `VirtualPathExt::to_real_path` and `RealPathExt::to_virtual_path` extension
+      traits for the same functionality.
+
+#### 🧰 Toolchains
+
+- **Rust**
+  - Fixed an issue where Docker scaffolding would leave behind empty `lib.rs` or `main.rs` files.
 
 #### 🐞 Fixes
 
@@ -62,7 +88,7 @@
 
 - Renamed the `TaskMergeStrategy` type to `MergeStrategy` in `@moonrepo/types`, as it's no longer
   exclusive to tasks.
-- Updated proto to [v0.59.0](https://github.com/moonrepo/proto/releases/tag/v0.59.0) from 0.58.2.
+- Updated proto to [v0.60.2](https://github.com/moonrepo/proto/releases/tag/v0.60.1) from 0.58.2.
 - Updated Rust to v1.97.0.
 - Updated dependencies.
 

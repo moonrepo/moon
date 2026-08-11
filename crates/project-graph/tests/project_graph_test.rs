@@ -674,6 +674,75 @@ mod project_graph {
                         )
                         .await;
                     }
+
+                    // Lock files are not part of the manifest invalidation
+                    // heuristic, and are only tracked because the `tc-tier1`
+                    // plugin returns them as `input_files`
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn tracks_plugin_input_files_in_state() {
+                        let sandbox = build_plugins_cached_graph($async_graph, |sandbox| {
+                            sandbox.create_file("a/tc.lock", "");
+                        })
+                        .await;
+
+                        let state = load_state(&sandbox);
+
+                        assert!(
+                            state
+                                .plugin_input_paths
+                                .contains(&WorkspaceRelativePathBuf::from("a/tc.lock"))
+                        );
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn caches_after_discovering_plugin_input_files() {
+                        let sandbox = build_plugins_cached_graph($async_graph, |sandbox| {
+                            sandbox.create_file("a/tc.lock", "");
+                        })
+                        .await;
+
+                        let marker = sandbox.path().join(MARKER_PATH);
+
+                        // Called on the initial build, which discovered new
+                        // input files and regenerated the digest with them
+                        assert!(marker.exists());
+
+                        fs::remove_file(&marker).unwrap();
+
+                        // So this run must be a cache hit
+                        do_generate_with_plugins(sandbox.path(), $async_graph).await;
+
+                        assert!(!marker.exists());
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn invalidates_with_changed_plugin_input_file() {
+                        test_plugins_invalidate(
+                            $async_graph,
+                            |sandbox| {
+                                sandbox.create_file("a/tc.lock", "");
+                            },
+                            |sandbox| {
+                                sandbox.create_file("a/tc.lock", "changed");
+                            },
+                        )
+                        .await;
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn invalidates_with_removed_plugin_input_file() {
+                        test_plugins_invalidate(
+                            $async_graph,
+                            |sandbox| {
+                                sandbox.create_file("a/tc.lock", "");
+                            },
+                            |sandbox| {
+                                fs::remove_file(sandbox.path().join("a/tc.lock")).unwrap();
+                            },
+                        )
+                        .await;
+                    }
                 }
             };
         }

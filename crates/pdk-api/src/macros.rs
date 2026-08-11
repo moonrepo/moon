@@ -58,7 +58,7 @@ macro_rules! json_config {
             pub fn load(path: moon_pdk_api::VirtualPath) -> AnyResult<Self> {
                 if path.exists() {
                     Ok(Self {
-                        data: starbase_utils::json::read_file(path.any_path())?,
+                        data: starbase_utils::json::read_file(&path)?,
                         dirty: vec![],
                         path,
                     })
@@ -74,7 +74,7 @@ macro_rules! json_config {
 
                 use starbase_utils::json;
 
-                let mut data: json::JsonValue = json::read_file(self.path.any_path())?;
+                let mut data: json::JsonValue = json::read_file(&self.path)?;
 
                 for field in &self.dirty {
                     self.save_field(field, &mut data)?;
@@ -123,7 +123,7 @@ macro_rules! toml_config {
             pub fn load(path: moon_pdk_api::VirtualPath) -> AnyResult<Self> {
                 if path.exists() {
                     Ok(Self {
-                        data: starbase_utils::toml::read_file(path.any_path())?,
+                        data: starbase_utils::toml::read_file(&path)?,
                         dirty: vec![],
                         path,
                     })
@@ -139,7 +139,7 @@ macro_rules! toml_config {
 
                 use starbase_utils::toml;
 
-                let mut data: toml::TomlValue = toml::read_file(self.path.any_path())?;
+                let mut data: toml::TomlValue = toml::read_file(&self.path)?;
 
                 for field in &self.dirty {
                     self.save_field(field, &mut data)?;

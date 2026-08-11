@@ -73,7 +73,7 @@ async fn internal_exec_plugin_command(
     cmd.inherit_from_plugins(options.project.as_deref(), None)
         .await?;
 
-    if let Some(cwd) = input.cwd.as_ref().and_then(|dir| dir.real_path()) {
+    if let Some(cwd) = input.cwd.as_deref() {
         cmd.cwd(cwd);
     } else if let Some(cwd) = &options.working_dir {
         cmd.cwd(cwd);
@@ -287,11 +287,11 @@ async fn gather_cache_inputs(
     let get_file = |virtual_path: &VirtualPath,
                     workspace_root: &Path|
      -> Option<(PathBuf, WorkspaceRelativePathBuf)> {
-        if let Some(abs_path) = virtual_path.real_path()
-            && let Ok(rel_path) = abs_path.relative_to(workspace_root)
-        {
+        let abs_path = virtual_path.as_path();
+
+        if let Ok(rel_path) = abs_path.relative_to(workspace_root) {
             if abs_path.exists() {
-                return Some((abs_path, rel_path));
+                return Some((abs_path.into(), rel_path));
             } else {
                 // Don't warn for missing files
                 return None;

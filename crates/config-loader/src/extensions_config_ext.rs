@@ -9,10 +9,10 @@ pub struct ExtensionsConfigExt;
 impl ExtensionsConfigExt {
     pub fn get_plugin_locator(id: &Id) -> Option<PluginLocator> {
         match id.as_str() {
-            "download" => Some(locate("download_extension", "1.0.2")),
-            "migrate-nx" => Some(locate("migrate_nx_extension", "1.0.3")),
-            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "1.0.3")),
-            "unpack" => Some(locate("unpack_extension", "1.0.2")),
+            "download" => Some(locate("download_extension", "1.0.3")),
+            "migrate-nx" => Some(locate("migrate_nx_extension", "1.0.4")),
+            "migrate-turborepo" => Some(locate("migrate_turborepo_extension", "1.0.4")),
+            "unpack" => Some(locate("unpack_extension", "1.0.3")),
             _ => None,
         }
     }

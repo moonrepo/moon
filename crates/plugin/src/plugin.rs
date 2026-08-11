@@ -48,3 +48,24 @@ pub trait Plugin: Debug + Send + Sync + Sized + 'static {
 
     async fn has_func(&self, name: &str) -> bool;
 }
+
+#[macro_export]
+macro_rules! inherit_path_methods {
+    ($prop:ident) => {
+        fn convert_to_absolute_real_path(&self, file: &mut PathBuf) {
+            *file = self.$prop.to_real_path(&file).to_path_buf();
+        }
+
+        fn convert_output_files(&self, files: &mut [PathBuf]) {
+            for file in files {
+                self.convert_to_absolute_real_path(file);
+            }
+        }
+
+        fn convert_virtual_files(&self, files: &mut [VirtualPath]) {
+            for file in files {
+                self.convert_to_absolute_real_path(file);
+            }
+        }
+    };
+}

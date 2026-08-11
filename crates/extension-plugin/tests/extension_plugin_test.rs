@@ -1,4 +1,4 @@
-use moon_pdk_api::{ExtendTaskCommandInput, SyncWorkspaceInput, VirtualPath};
+use moon_pdk_api::{ExtendTaskCommandInput, SyncWorkspaceInput};
 use moon_test_utils::WorkspaceMocker;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 
@@ -79,11 +79,7 @@ mod extension_plugin {
             // The virtual `/workspace` path is converted back to a real path
             let file = &output.changed_files[0];
 
-            assert!(matches!(file, VirtualPath::Real(_)));
-            assert_eq!(
-                file.real_path().unwrap(),
-                ws.workspace_root.join("file-ext.txt")
-            );
+            assert_eq!(file.as_path(), ws.workspace_root.join("file-ext.txt"));
         }
     }
 }

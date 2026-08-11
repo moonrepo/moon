@@ -690,7 +690,7 @@ mod project_graph {
 
                         assert!(
                             state
-                                .plugin_input_files
+                                .plugin_input_paths
                                 .contains(&WorkspaceRelativePathBuf::from("a/tc.lock"))
                         );
                     }

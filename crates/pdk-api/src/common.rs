@@ -78,7 +78,7 @@ api_struct!(
         #[serde(skip_serializing_if = "BTreeMap::is_empty")]
         pub extended_projects: BTreeMap<Id, ExtendProjectOutput>,
 
-        /// List of virtual files in which information was extracted from and
+        /// List of virtual paths in which information was extracted from and
         /// should invalidate the project graph cache.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub input_files: Vec<VirtualPath>,
@@ -332,7 +332,7 @@ api_struct!(
     /// Output returned from the `sync_workspace` and `sync_project` functions.
     #[serde(default)]
     pub struct SyncOutput {
-        /// List of virtual files that have been changed because of the sync.
+        /// List of virtual paths that have been changed because of the sync.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
 

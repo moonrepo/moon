@@ -59,7 +59,7 @@ api_struct!(
     /// Output returned from the `setup_environment` function.
     #[serde(default)]
     pub struct SetupEnvironmentOutput {
-        /// List of virtual files that have been changed because of this action.
+        /// List of virtual paths that have been changed because of this action.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
 

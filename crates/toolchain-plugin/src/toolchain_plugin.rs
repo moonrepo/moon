@@ -4,7 +4,7 @@ use moon_config::is_glob_like;
 use moon_config::schematic::Schema;
 use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_pdk_api::*;
-use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType};
+use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType, inherit_path_methods};
 use moon_toolchain::DependenciesWorkspace;
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
@@ -93,38 +93,18 @@ impl Plugin for ToolchainPlugin {
 }
 
 impl ToolchainPlugin {
-    fn handle_output_file(&self, file: &mut PathBuf) {
-        *file = self.plugin.from_virtual_path(&file);
-    }
-
-    fn handle_output_files(&self, files: &mut [PathBuf]) {
-        for file in files {
-            self.handle_output_file(file);
-        }
-    }
-
-    fn handle_virtual_file(&self, file: &mut VirtualPath) {
-        *file = VirtualPath::Real(self.plugin.from_virtual_path(&file));
-    }
-
-    fn handle_virtual_files(&self, files: &mut [VirtualPath]) {
-        for file in files {
-            self.handle_virtual_file(file);
-        }
-    }
+    inherit_path_methods!(plugin);
 
     fn handle_exec_command(&self, command: &mut ExecCommand) {
         if let Some(cwd) = &mut command.command.cwd {
-            self.handle_virtual_file(cwd);
+            self.convert_to_absolute_real_path(cwd);
         }
 
-        for path in &mut command.command.paths {
-            self.handle_virtual_file(path);
-        }
+        self.convert_output_files(&mut command.command.paths);
 
         for input in &mut command.inputs {
             if let Some(path) = input.get_virtual_path() {
-                input.set_virtual_path(VirtualPath::Real(self.from_virtual_path(path)));
+                input.set_virtual_path(VirtualPath::new(self.plugin.to_real_path(path)));
             }
         }
     }
@@ -385,7 +365,7 @@ impl ToolchainPlugin {
         if self.has_func("extend_command").await {
             output = self.cache_func_with("extend_command", input).await?;
 
-            self.handle_output_files(&mut output.paths);
+            self.convert_output_files(&mut output.paths);
         }
 
         Ok(output)
@@ -401,7 +381,7 @@ impl ToolchainPlugin {
         if self.has_func("extend_project_graph").await {
             output = self.cache_func_with("extend_project_graph", input).await?;
 
-            self.handle_virtual_files(&mut output.input_files);
+            self.convert_virtual_files(&mut output.input_files);
         }
 
         Ok(output)
@@ -422,7 +402,7 @@ impl ToolchainPlugin {
         if self.has_func("extend_task_command").await {
             output = self.cache_func_with("extend_task_command", input).await?;
 
-            self.handle_output_files(&mut output.paths);
+            self.convert_output_files(&mut output.paths);
         }
 
         Ok(output)
@@ -443,7 +423,7 @@ impl ToolchainPlugin {
         if self.has_func("extend_task_script").await {
             output = self.cache_func_with("extend_task_script", input).await?;
 
-            self.handle_output_files(&mut output.paths);
+            self.convert_output_files(&mut output.paths);
         }
 
         Ok(output)
@@ -526,7 +506,7 @@ impl ToolchainPlugin {
 
             if let Some(root) = output.root {
                 return Ok(Some(DependenciesWorkspace {
-                    root: self.from_virtual_path(root),
+                    root: self.to_real_path(&root).to_path_buf(),
                     members: output.members.unwrap_or_default(),
                 }));
             }
@@ -567,7 +547,7 @@ impl ToolchainPlugin {
         if self.has_func("prune_docker").await {
             output = self.call_func_with("prune_docker", input).await?;
 
-            self.handle_virtual_files(&mut output.changed_files);
+            self.convert_virtual_files(&mut output.changed_files);
         }
 
         Ok(output)
@@ -583,7 +563,7 @@ impl ToolchainPlugin {
         if self.has_func("scaffold_docker").await {
             output = self.call_func_with("scaffold_docker", input).await?;
 
-            self.handle_virtual_files(&mut output.copied_files);
+            self.convert_virtual_files(&mut output.copied_files);
         }
 
         Ok(output)
@@ -603,7 +583,7 @@ impl ToolchainPlugin {
         let mut output: SetupEnvironmentOutput =
             self.cache_func_with("setup_environment", input).await?;
 
-        self.handle_virtual_files(&mut output.changed_files);
+        self.convert_virtual_files(&mut output.changed_files);
 
         for command in &mut output.commands {
             self.handle_exec_command(command);
@@ -677,7 +657,7 @@ impl ToolchainPlugin {
             // avoid network race conditions and collisions
             if let Ok(loader) = tool.proto.get_plugin_loader()
                 && let Some(locator) = tool.locator.clone().or_else(|| {
-                    locate_plugin(&tool.context.id, &tool.proto, ProtoPluginType::Tool).ok()
+                    locate_plugin(&tool.context, &tool.proto, ProtoPluginType::Tool).ok()
                 })
             {
                 let _ = loader.load_plugin(&tool.context.id, &locator).await;
@@ -689,7 +669,7 @@ impl ToolchainPlugin {
             let mut post_output: SetupToolchainOutput =
                 self.call_func_with("setup_toolchain", input).await?;
 
-            self.handle_virtual_files(&mut post_output.changed_files);
+            self.convert_virtual_files(&mut post_output.changed_files);
 
             output.operations.extend(post_output.operations);
             output.changed_files.extend(post_output.changed_files);
@@ -705,7 +685,7 @@ impl ToolchainPlugin {
         if self.has_func("sync_project").await {
             output = self.call_func_with("sync_project", input).await?;
 
-            self.handle_virtual_files(&mut output.changed_files);
+            self.convert_virtual_files(&mut output.changed_files);
         }
 
         Ok(output)
@@ -718,7 +698,7 @@ impl ToolchainPlugin {
         if self.has_func("sync_workspace").await {
             output = self.call_func_with("sync_workspace", input).await?;
 
-            self.handle_virtual_files(&mut output.changed_files);
+            self.convert_virtual_files(&mut output.changed_files);
         }
 
         Ok(output)

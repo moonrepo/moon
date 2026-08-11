@@ -1,18 +1,24 @@
-use crate::projects_builder::{ProjectBuildData, ProjectBuildDataMap};
 use crate::workspace_builder::WorkspaceBuilderContext;
 use miette::IntoDiagnostic;
 use moon_cache::{ContentHash, cache_item};
-use moon_common::path::WorkspaceRelativePathBuf;
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, is_docker};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::{Digest, fingerprint};
-use rustc_hash::FxHashMap;
+use moon_pdk_api::VirtualPath;
 use std::collections::{BTreeMap, BTreeSet};
+use std::path::Path;
 use std::sync::Arc;
+use tracing::trace;
 
 cache_item!(
     pub struct WorkspaceGraphCacheState {
         pub last_hash: ContentHash,
+
+        /// Input files discovered by plugins while extending the graph
+        /// during the last build. Since plugins only run on a cache miss,
+        /// these must contribute to the next run's fingerprint.
+        pub plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
     }
 );
 
@@ -74,12 +80,8 @@ impl<'graph> WorkspaceGraphFingerprint<'graph> {
         self.async_graph_building = value;
     }
 
-    pub fn add_projects(&mut self, projects: &'graph FxHashMap<Id, ProjectBuildData>) {
-        self.projects.extend(
-            projects
-                .iter()
-                .map(|(id, build_data)| (id, &build_data.source)),
-        );
+    pub fn add_projects(&mut self, projects: &'graph BTreeMap<Id, WorkspaceRelativePathBuf>) {
+        self.projects.extend(projects.iter());
     }
 
     pub fn add_inputs(&mut self, inputs: BTreeMap<WorkspaceRelativePathBuf, String>) {
@@ -104,6 +106,28 @@ impl<'graph> WorkspaceGraphFingerprint<'graph> {
         ] {
             self.env
                 .insert(key.to_owned(), bag.get(key).unwrap_or_default());
+        }
+    }
+}
+
+/// Map plugin provided input files (absolute paths on the host machine)
+/// into workspace relative paths for use within the graph fingerprint.
+/// Files outside of the workspace root cannot be hashed, so are skipped.
+pub fn map_plugin_input_paths(
+    workspace_root: &Path,
+    input_files: Vec<VirtualPath>,
+    paths: &mut BTreeSet<WorkspaceRelativePathBuf>,
+) {
+    for file in input_files {
+        if file.starts_with(workspace_root)
+            && let Ok(rel_file) = file.as_path().relative_to(workspace_root)
+        {
+            paths.insert(rel_file);
+        } else {
+            trace!(
+                file = ?file,
+                "Skipping plugin input file outside of the workspace root",
+            );
         }
     }
 }
@@ -134,13 +158,15 @@ async fn hash_input_paths(
 }
 
 /// Generate a digest for the current workspace, derived from project
-/// sources, config file contents, plugin input files, plugin versions,
+/// sources, config file contents, plugin input files (discovered while
+/// extending the graph during the previous build), plugin versions,
 /// and environment variables. This digest is used to invalidate the
 /// cached workspace graph.
 pub async fn generate_graph_cache_digest(
     context: Arc<WorkspaceBuilderContext>,
-    project_data: &ProjectBuildDataMap,
+    projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
     config_paths: BTreeSet<WorkspaceRelativePathBuf>,
+    plugin_input_paths: BTreeSet<WorkspaceRelativePathBuf>,
     async_graph_building: bool,
 ) -> miette::Result<Digest> {
     let extension_context = Arc::clone(&context);
@@ -160,9 +186,9 @@ pub async fn generate_graph_cache_digest(
     });
 
     let toolchain_context = Arc::clone(&context);
-    let project_sources = project_data
+    let project_sources = projects
         .values()
-        .map(|build_data| build_data.source.to_string())
+        .map(|source| source.to_string())
         .collect::<Vec<_>>();
     let toolchain_handle = tokio::spawn(async move {
         let mut paths = BTreeSet::default();
@@ -195,10 +221,11 @@ pub async fn generate_graph_cache_digest(
 
     let mut all_paths = config_paths;
     all_paths.extend(toolchain_paths);
+    all_paths.extend(plugin_input_paths);
 
     let mut fingerprint = WorkspaceGraphFingerprint::default();
     fingerprint.set_async_graph_building(async_graph_building);
-    fingerprint.add_projects(project_data);
+    fingerprint.add_projects(projects);
     fingerprint.add_inputs(hash_input_paths(&context, all_paths).await?);
     fingerprint.add_extension_versions(&extension_versions);
     fingerprint.add_toolchain_versions(&toolchain_versions);

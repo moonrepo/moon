@@ -154,7 +154,7 @@ api_struct!(
     /// Output returned from the `scaffold_docker` function.
     #[serde(default)]
     pub struct ScaffoldDockerOutput {
-        /// List of virtual files that were copied into the scaffold.
+        /// List of virtual paths that were copied into the scaffold.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub copied_files: Vec<VirtualPath>,
     }
@@ -187,7 +187,7 @@ api_struct!(
     /// Output returned from the `prune_docker` function.
     #[serde(default)]
     pub struct PruneDockerOutput {
-        /// List of virtual files that were changed during prune.
+        /// List of virtual paths that were changed during prune.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub changed_files: Vec<VirtualPath>,
     }

@@ -7,9 +7,13 @@ pub use tc_tier1::*;
 fn is_testing_deps_workspace(path: &VirtualPath) -> bool {
     let outer = path.to_real_path().unwrap().unwrap();
 
+    // The guest resolves paths with Unix semantics, while real paths from
+    // a Windows host contain backslashes, so `file_name` cannot split on
+    // them. Extract the last component by handling both separators.
     outer
-        .file_name()
-        .and_then(|file| file.to_str())
+        .to_string_lossy()
+        .rsplit(['/', '\\'])
+        .find(|value| !value.is_empty())
         .is_some_and(|value| value == "in" || value == "in-root" || value == "out")
 }
 

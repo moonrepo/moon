@@ -64,6 +64,11 @@
     between real and virtual paths, using a list of host-to-guest path mappings.
     - Can also use `VirtualPathExt::to_real_path` and `RealPathExt::to_virtual_path` extension
       traits for the same functionality.
+  - Added `DefineRequirementsOutput.for_setup_environment` and `for_setup_toolchain` fields, which
+    allow toolchains to specify requirements for the setup environment and setup toolchain actions,
+    respectively.
+  - Updated `DefineRequirementsInput.toolchain_config` to inherit the project-level settings when
+    applicable.
 
 #### 🧰 Toolchains
 

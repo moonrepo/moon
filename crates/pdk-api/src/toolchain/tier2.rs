@@ -14,7 +14,8 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Workspace toolchain configuration.
+        /// Workspace and project merged toolchain configuration,
+        /// with the latter taking precedence.
         pub toolchain_config: serde_json::Value,
     }
 );
@@ -28,6 +29,16 @@ api_struct!(
         /// When the toolchain is stable, both identifiers will continue to work.
         #[serde(skip_serializing_if = "Vec::is_empty")]
         pub requires: Vec<String>,
+
+        /// Apply requirements to the setup environment action. This will ensure that the
+        /// required toolchains are setup and installed before this toolchain's environment
+        /// is setup (after toolchain setup).
+        pub for_setup_environment: bool,
+
+        /// Apply requirements to the setup toolchain action. This will ensure that the
+        /// required toolchains are setup and installed before this toolchain is setup
+        /// (before environment setup).
+        pub for_setup_toolchain: bool,
     }
 );
 

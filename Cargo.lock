@@ -4841,6 +4841,7 @@ dependencies = [
  "moon_workspace_graph",
  "petgraph 0.8.3",
  "rustc-hash",
+ "serde_json",
  "starbase_sandbox",
  "starbase_utils",
  "thiserror 2.0.20",

@@ -18,7 +18,7 @@ gix = { version = "0.85.0", default-features = false, features = [
 	"sha256",
 ] }
 git-url-parse = "0.6.0"
-ignore = "0.4.26"
+ignore = "0.4.33"
 miette = { workspace = true }
 regex = { workspace = true }
 rustc-hash = { workspace = true }

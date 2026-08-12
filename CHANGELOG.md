@@ -86,6 +86,7 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where toolchain executable paths were not properly applied to all child processes.
 - Fixed an issue where project and task graph node lookups could resolve the wrong entry, or fail
   entirely, after building a partial graph (a subset of projects), as internal node identifiers were
   not re-synced when placeholder nodes were removed.

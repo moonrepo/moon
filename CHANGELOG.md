@@ -119,6 +119,10 @@
 - Fixed an issue where a task with `runDepsInParallel: false` would not be linked to all of its
   dependencies when a serial ordering edge was skipped to avoid a cycle, allowing the task to run
   before a dependency had finished.
+- Fixed an issue where moon would abort on startup with "Failed to load Git submodules" in
+  repositories without a `.gitmodules` file, when the git object database was incomplete or
+  unreachable (e.g. partial clones, or `--reference` clones whose alternates are inaccessible).
+  Submodule detection is now skipped entirely when no `.gitmodules` file exists.
 
 #### ⚙️ Internal
 

@@ -124,11 +124,17 @@ impl Git {
                     }
                 };
 
-                if let Some(subs) =
-                    repo.submodules()
-                        .map_err(|error| GitError::SubmodulesLoadFailed {
-                            error: Box::new(error),
-                        })?
+                // Only enumerate submodules when a `.gitmodules` file exists
+                // in the working tree. Without one, gix falls back to resolving
+                // it through the index or HEAD tree, which requires object
+                // database access that fails hard in partial or reference
+                // clones whose borrowed objects are unreachable.
+                if worktree.work_dir.join(".gitmodules").exists()
+                    && let Some(subs) =
+                        repo.submodules()
+                            .map_err(|error| GitError::SubmodulesLoadFailed {
+                                error: Box::new(error),
+                            })?
                 {
                     debug!(
                         modules_file = ?worktree.work_dir.join(".gitmodules"),

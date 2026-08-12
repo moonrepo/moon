@@ -9,7 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
-moon_pdk_api = { version = "2.1.0", path = "../pdk-api" }
+moon_pdk_api = { version = "2.1.2", path = "../pdk-api" }
 moon_target = { version = "3.0.1", path = "../target" }
 extism = { workspace = true }
 proto_core = { workspace = true }

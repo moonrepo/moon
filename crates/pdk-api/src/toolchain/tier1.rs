@@ -129,7 +129,9 @@ api_struct!(
         /// Current moon context.
         pub context: MoonContext,
 
-        /// Docker scaffold configuration.
+        /// Docker scaffold configuration. When scaffolding a project, this
+        /// will be the project-level config, otherwise it will be the
+        /// workspace-level config.
         pub docker_config: DockerScaffoldConfig,
 
         /// The directory in which to copy files from.
@@ -170,8 +172,10 @@ api_struct!(
         /// Docker prune configuration.
         pub docker_config: DockerPruneConfig,
 
-        /// The focused projects within the current
-        /// dependencies root.
+        /// Other projects that the focused project(s) depends on.
+        pub project_dependencies: Vec<ProjectFragment>,
+
+        /// The focused projects within the current dependencies root.
         pub projects: Vec<ProjectFragment>,
 
         /// Virtual path to the dependencies root. This is where

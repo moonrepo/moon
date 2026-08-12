@@ -36,6 +36,7 @@ tracing = { workspace = true }
 [dev-dependencies]
 moon_config = { path = "../config" }
 moon_test_utils = { path = "../test-utils" }
+serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
 
 [lints]

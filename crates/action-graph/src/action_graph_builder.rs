@@ -372,7 +372,12 @@ impl<'query> ActionGraphBuilder<'query> {
             };
 
             let setup_env_index = self
-                .internal_setup_environment(spec, &root, project_id.as_ref().and(project))
+                .internal_setup_environment(
+                    spec,
+                    &root,
+                    project_id.as_ref().and(project),
+                    FxHashSet::default(),
+                )
                 .await?;
 
             // Only create this action if the plugin supports it
@@ -1147,21 +1152,66 @@ impl<'query> ActionGraphBuilder<'query> {
         spec: &ToolchainSpec,
         root: &WorkspaceRelativePathBuf,
         project: Option<&Project>,
+        mut cycle: FxHashSet<&Id>,
     ) -> miette::Result<Option<NodeIndex>> {
         // Explicitly disabled
-        if !self.options.setup_environment.is_enabled(&spec.id) || spec.is_system() {
+        if !self.options.setup_environment.is_enabled(&spec.id)
+            || spec.is_system()
+            || cycle.contains(&spec.id)
+        {
             return Ok(None);
         }
 
-        let toolchain = self.app_context.toolchain_registry.load(&spec.id).await?;
+        let toolchain_registry = &self.app_context.toolchain_registry;
+        let toolchain = toolchain_registry.load(&spec.id).await?;
+        let mut edges = vec![];
+
+        cycle.insert(&spec.id);
+
+        // Toolchain may depend on others
+        let output = toolchain
+            .define_requirements(DefineRequirementsInput {
+                context: toolchain_registry.create_context(),
+                toolchain_config: match project {
+                    Some(project) => {
+                        toolchain_registry.create_merged_config(&toolchain.id, &project.config)
+                    }
+                    None => toolchain_registry.create_config(&toolchain.id),
+                },
+            })
+            .await?;
+
+        if !output.requires.is_empty() && output.for_setup_environment {
+            for require_id in output.requires {
+                let require_id = Id::new(require_id)?;
+
+                if require_id != spec.id {
+                    // Skip if already in cycle
+                    if cycle.contains(&require_id) {
+                        continue;
+                    }
+
+                    if let Some(require_spec) = self.get_spec(&require_id, project) {
+                        // Requires the toolchain to be setup, not the environment!
+                        edges.push(Box::pin(self.setup_toolchain(&require_spec, project)).await?);
+                    } else {
+                        return Err(ActionGraphError::MissingToolchainRequirement {
+                            id: spec.id.to_string(),
+                            dep_id: require_id.to_string(),
+                        }
+                        .into());
+                    }
+                }
+            }
+        }
 
         // Toolchain does not support it
-        if !toolchain.has_func("setup_environment").await {
+        if !toolchain.has_func("setup_environment").await && edges.is_empty() {
             return Ok(None);
         }
 
-        let sync_workspace_index = self.sync_workspace().await?;
-        let setup_toolchain_index = self.setup_toolchain(spec, project).await?;
+        edges.push(self.sync_workspace().await?);
+        edges.push(self.setup_toolchain(spec, project).await?);
 
         let index = insert_node_or_exit!(
             self,
@@ -1172,7 +1222,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_first_requirement(index, vec![setup_toolchain_index, sync_workspace_index])?;
+        self.link_optional_requirements(index, edges)?;
 
         Ok(Some(index))
     }
@@ -1184,7 +1234,7 @@ impl<'query> ActionGraphBuilder<'query> {
         root: &WorkspaceRelativePathBuf,
         project: &Project,
     ) -> miette::Result<Option<NodeIndex>> {
-        self.internal_setup_environment(spec, root, Some(project))
+        self.internal_setup_environment(spec, root, Some(project), FxHashSet::default())
             .await
     }
 
@@ -1210,8 +1260,13 @@ impl<'query> ActionGraphBuilder<'query> {
             return Ok(None);
         }
 
-        self.internal_setup_environment(spec, &WorkspaceRelativePathBuf::new(), None)
-            .await
+        self.internal_setup_environment(
+            spec,
+            &WorkspaceRelativePathBuf::new(),
+            None,
+            FxHashSet::default(),
+        )
+        .await
     }
 
     #[instrument(skip(self))]
@@ -1257,11 +1312,16 @@ impl<'query> ActionGraphBuilder<'query> {
         let output = toolchain
             .define_requirements(DefineRequirementsInput {
                 context: toolchain_registry.create_context(),
-                toolchain_config: toolchain_registry.create_config(&toolchain.id),
+                toolchain_config: match project {
+                    Some(project) => {
+                        toolchain_registry.create_merged_config(&toolchain.id, &project.config)
+                    }
+                    None => toolchain_registry.create_config(&toolchain.id),
+                },
             })
             .await?;
 
-        if !output.requires.is_empty() {
+        if !output.requires.is_empty() && output.for_setup_toolchain {
             for require_id in output.requires {
                 let require_id = Id::new(require_id)?;
 

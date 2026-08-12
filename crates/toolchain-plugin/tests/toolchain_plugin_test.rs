@@ -95,6 +95,72 @@ mod toolchain_plugin {
         }
     }
 
+    mod define_requirements {
+        use super::*;
+        use starbase_utils::json::json;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_requirements_for_setup_toolchain() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier2-reqs").await.unwrap();
+
+            let output = toolchain
+                .define_requirements(DefineRequirementsInput {
+                    context: registry.create_context(),
+                    ..Default::default()
+                })
+                .await
+                .unwrap();
+
+            assert_eq!(output.requires, vec!["tc-tier3".to_string()]);
+            assert!(output.for_setup_toolchain);
+            assert!(!output.for_setup_environment);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn flags_requirements_for_setup_environment_when_opted_in() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier2-reqs").await.unwrap();
+
+            let output = toolchain
+                .define_requirements(DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: json!({
+                        "testRequiresForEnvironment": true,
+                    }),
+                })
+                .await
+                .unwrap();
+
+            assert_eq!(output.requires, vec!["tc-tier3".to_string()]);
+            assert!(output.for_setup_toolchain);
+            assert!(output.for_setup_environment);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_requirements_for_setup_environment_from_config() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier2-setup-env").await.unwrap();
+
+            let output = toolchain
+                .define_requirements(DefineRequirementsInput {
+                    context: registry.create_context(),
+                    toolchain_config: json!({
+                        "testEnvRequirements": ["tc-tier3"],
+                    }),
+                })
+                .await
+                .unwrap();
+
+            assert_eq!(output.requires, vec!["tc-tier3".to_string()]);
+            assert!(!output.for_setup_toolchain);
+            assert!(output.for_setup_environment);
+        }
+    }
+
     mod locate_dependencies_root {
         use super::*;
 

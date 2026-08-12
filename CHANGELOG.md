@@ -17,6 +17,9 @@
 
 #### 🚀 Updates
 
+- **Action graph**
+  - Added a new mechanism where toolchains can specify requirements (other toolchains to be setup)
+    for the setup environment action.
 - **CLI**
   - Added OpenTelemetry (OTEL) support, for exporting traces, metrics, and logs over OTLP.
     - Added a `--otel` global option (`MOON_OTEL`), for exporting traces and metrics.
@@ -47,6 +50,9 @@
     operations will now be offloaded into the background via the daemon. Because of this, you'll
     need to inspect the daemon server logs to understand when something fails during archiving or
     hydrating, as the main process will no longer block on these operations.
+- **Docker**
+  - Improved the scaffolding and pruning workflows, by better handling edge cases, and ensuring its
+    more reliable.
 - **Experiments**
   - The `asyncAffectedTracking`, `asyncGraphBuilding`, and `nativeFileHashing` experiments are now
     enabled by default. If you run into issues, please report it, and then disable the experiment to
@@ -64,14 +70,44 @@
     between real and virtual paths, using a list of host-to-guest path mappings.
     - Can also use `VirtualPathExt::to_real_path` and `RealPathExt::to_virtual_path` extension
       traits for the same functionality.
+  - Added `DefineRequirementsOutput.for_setup_environment` and `for_setup_toolchain` fields, which
+    allow toolchains to specify requirements for the setup environment and setup toolchain actions,
+    respectively.
+  - Added `PruneDockerInput.project_dependencies` field, which allows the toolchain to know about
+    other projects that the focused project(s) depends on, so it can prune their dependencies as
+    well.
+  - Updated `DefineRequirementsInput.toolchain_config` to inherit the project-level settings when
+    applicable.
 
 #### 🧰 Toolchains
 
+- **Go**
+  - Fixed configured `bins` not being reinstalled when their binaries were uninstalled or deleted
+    outside of moon.
+  - The `force` option for `bins` entries is now respected, and will always install the binary.
+- **JavaScript**
+  - Added unstable support for [Nub](https://nubjs.com/) as a package manager:
+    - Natively uses `nub.lock` (pnpm lockfile format), but will locate dependency roots using other
+      package manager lockfiles that nub can operate on.
+    - Reads workspace members and catalogs from `pnpm-workspace.yaml` when present, otherwise from
+      `package.json`.
+    - Does not require the Node.js toolchain, as nub is a standalone binary.
+  - Fixed `bun.lock` parsing failing on Git/GitHub dependencies that include both package metadata
+    (`dependencies`, `bin`, etc) and an integrity hash.
+- **Node**
+  - Deprecated the `syncVersionManagerConfig` setting (it never worked correctly).
+- **Python**
+  - Ensures that package manager toolchains are installed before setting up the environment.
+  - Added support to the Docker pruning workflow where we remove `.venv` directories for non-focused
+    projects (those that were not explicitly scaffolded).
 - **Rust**
   - Fixed an issue where Docker scaffolding would leave behind empty `lib.rs` or `main.rs` files.
+  - Fixed configured `bins` not being reinstalled when their binaries were uninstalled or deleted
+    outside of moon. Only missing binaries are now installed.
 
 #### 🐞 Fixes
 
+- Fixed an issue where toolchain executable paths were not properly applied to all child processes.
 - Fixed an issue where project and task graph node lookups could resolve the wrong entry, or fail
   entirely, after building a partial graph (a subset of projects), as internal node identifiers were
   not re-synced when placeholder nodes were removed.

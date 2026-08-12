@@ -5706,7 +5706,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "derive_setters",
  "moon_common",

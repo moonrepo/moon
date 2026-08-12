@@ -381,7 +381,9 @@ mod git {
             );
             assert_eq!(git.worktree.work_dir, sandbox.path().join("trees/one"));
             assert_eq!(git.worktree.path.as_str(), "");
-            assert_eq!(git.worktree.type_of, GitTreeType::Root);
+            // gix 0.86+ detects worktrees of natively bare repositories
+            // (git_dir != common_dir), which older versions reported as root
+            assert_eq!(git.worktree.type_of, GitTreeType::Worktree);
             assert_eq!(
                 git.submodules,
                 vec![

@@ -331,7 +331,7 @@ impl<'app> AugmentedCommand<'app> {
         // First pass, gather workspace-level
         for (id, config) in &self.context.toolchains_config.plugins {
             if let Some(version) = &config.version
-                && toolchain_ids.contains(&id)
+                && toolchain_ids.contains(id)
                 && !is_using_global_toolchain(self.bag, id)
             {
                 map.insert(id, version);
@@ -347,7 +347,7 @@ impl<'app> AugmentedCommand<'app> {
                 }
 
                 if let Some(version) = config.get_version()
-                    && toolchain_ids.contains(&id)
+                    && toolchain_ids.contains(id)
                     && !is_using_global_toolchain(self.bag, id)
                 {
                     map.insert(id, version);

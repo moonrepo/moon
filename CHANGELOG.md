@@ -17,6 +17,9 @@
 
 #### 🚀 Updates
 
+- **Action graph**
+  - Added a new mechanism where toolchains can specify requirements (other toolchains to be setup)
+    for the setup environment action.
 - **CLI**
   - Added OpenTelemetry (OTEL) support, for exporting traces, metrics, and logs over OTLP.
     - Added a `--otel` global option (`MOON_OTEL`), for exporting traces and metrics.
@@ -47,6 +50,9 @@
     operations will now be offloaded into the background via the daemon. Because of this, you'll
     need to inspect the daemon server logs to understand when something fails during archiving or
     hydrating, as the main process will no longer block on these operations.
+- **Docker**
+  - Improved the scaffolding and pruning workflows, by better handling edge cases, and ensuring its
+    more reliable.
 - **Experiments**
   - The `asyncAffectedTracking`, `asyncGraphBuilding`, and `nativeFileHashing` experiments are now
     enabled by default. If you run into issues, please report it, and then disable the experiment to

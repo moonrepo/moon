@@ -81,8 +81,29 @@
 
 #### 🧰 Toolchains
 
+- **Go**
+  - Fixed configured `bins` not being reinstalled when their binaries were uninstalled or deleted
+    outside of moon.
+  - The `force` option for `bins` entries is now respected, and will always install the binary.
+- **JavaScript**
+  - Added unstable support for [Nub](https://nubjs.com/) as a package manager:
+    - Natively uses `nub.lock` (pnpm lockfile format), but will locate dependency roots using other
+      package manager lockfiles that nub can operate on.
+    - Reads workspace members and catalogs from `pnpm-workspace.yaml` when present, otherwise from
+      `package.json`.
+    - Does not require the Node.js toolchain, as nub is a standalone binary.
+  - Fixed `bun.lock` parsing failing on Git/GitHub dependencies that include both package metadata
+    (`dependencies`, `bin`, etc) and an integrity hash.
+- **Node**
+  - Deprecated the `syncVersionManagerConfig` setting (it never worked correctly).
+- **Python**
+  - Ensures that package manager toolchains are installed before setting up the environment.
+  - Added support to the Docker pruning workflow where we remove `.venv` directories for non-focused
+    projects (those that were not explicitly scaffolded).
 - **Rust**
   - Fixed an issue where Docker scaffolding would leave behind empty `lib.rs` or `main.rs` files.
+  - Fixed configured `bins` not being reinstalled when their binaries were uninstalled or deleted
+    outside of moon. Only missing binaries are now installed.
 
 #### 🐞 Fixes
 

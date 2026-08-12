@@ -304,6 +304,12 @@ impl<'query> ActionGraphBuilder<'query> {
             affected.set_ci_check(ci_check);
             affected.set_scopes(upstream, downstream);
 
+            // Projects must be tracked up front so that all marks exist
+            // before tasks are inserted into the graph. Tracking lazily
+            // during insertion makes the result dependent on insertion
+            // order, as a project or task marked through another one's
+            // relationship walk never runs its own checks and walks,
+            // starving transitive dependents of marks.
             if self
                 .app_context
                 .workspace_config
@@ -311,6 +317,8 @@ impl<'query> ActionGraphBuilder<'query> {
                 .async_affected_tracking
             {
                 affected.track_projects_async().await?;
+            } else {
+                affected.track_projects()?;
             }
         }
 
@@ -603,16 +611,24 @@ impl<'query> ActionGraphBuilder<'query> {
             );
         }
 
-        // Determine affected status of each task
-        if self
-            .app_context
-            .workspace_config
-            .experiments
-            .async_affected_tracking
-            && !reqs.skip_affected
+        // Determine affected status of each task up front, as marking
+        // lazily during insertion makes the result dependent on target
+        // order: a task marked through another task's relationship walk
+        // never runs its own checks and walks, starving its transitive
+        // dependents of marks and dropping them from the graph
+        if !reqs.skip_affected
             && let Some(affected) = &mut self.affected
         {
-            affected.track_tasks_by_instance_async(&tasks).await?;
+            if self
+                .app_context
+                .workspace_config
+                .experiments
+                .async_affected_tracking
+            {
+                affected.track_tasks_by_instance_async(&tasks).await?;
+            } else {
+                affected.track_tasks_by_instance(&tasks)?;
+            }
         }
 
         // Now partition the tasks list based on the job information

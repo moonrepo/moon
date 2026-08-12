@@ -123,6 +123,11 @@
   repositories without a `.gitmodules` file, when the git object database was incomplete or
   unreachable (e.g. partial clones, or `--reference` clones whose alternates are inaccessible).
   Submodule detection is now skipped entirely when no `.gitmodules` file exists.
+- Fixed an issue where the synchronous affected tracker (`experiments.asyncAffectedTracking`
+  disabled) would silently skip transitive dependent tasks when running with `--downstream` and
+  `--include-relations`, and could even schedule fewer tasks when the change set grew, as affected
+  marks were accumulated lazily in target iteration order. Affected status is now tracked up front,
+  mirroring the asynchronous tracker.
 
 #### ⚙️ Internal
 

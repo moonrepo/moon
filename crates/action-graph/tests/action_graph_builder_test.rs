@@ -1555,6 +1555,187 @@ mod action_graph_builder {
                     ]
                 );
             }
+
+            fn extract_run_task_targets(graph: ActionGraph) -> Vec<String> {
+                let mut targets = topo(graph)
+                    .into_iter()
+                    .filter_map(|node| match node {
+                        ActionNode::RunTask(inner) => Some(inner.target.to_string()),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+                targets.sort();
+                targets
+            }
+
+            fn create_adverse_order_locators(targets: [&str; 6]) -> Vec<TargetLocator> {
+                targets
+                    .into_iter()
+                    .map(|target| TargetLocator::Qualified(Target::parse(target).unwrap()))
+                    .collect()
+            }
+
+            // The `affected-starve` fixture pins `asyncAffectedTracking: false`
+            // to cover the synchronous tracker, whose marks would otherwise
+            // depend on target insertion order: a task marked through another
+            // task's relationship walk before its own visit never ran its own
+            // checks and walks, starving transitive dependents of marks.
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sync_includes_deep_dependents_regardless_of_target_order() {
+                let sandbox = create_sandbox("affected-starve");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("base/src.txt")]),
+                    |affected| {
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                    },
+                );
+
+                // base:test first, so its walk marks base:build before its visit
+                builder
+                    .run_tasks(
+                        create_adverse_order_locators([
+                            "base:test",
+                            "base:build",
+                            "mid:build",
+                            "mid:test",
+                            "top:build",
+                            "top:test",
+                        ]),
+                        RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            include_relations: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    [
+                        "base:build",
+                        "base:test",
+                        "mid:build",
+                        "mid:test",
+                        "top:build",
+                        "top:test"
+                    ]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sync_includes_deep_dependents_when_base_task_ordered_last() {
+                let sandbox = create_sandbox("affected-starve");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("base/src.txt")]),
+                    |affected| {
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                    },
+                );
+
+                builder
+                    .run_tasks(
+                        create_adverse_order_locators([
+                            "mid:test",
+                            "mid:build",
+                            "top:test",
+                            "top:build",
+                            "base:test",
+                            "base:build",
+                        ]),
+                        RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            include_relations: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    [
+                        "base:build",
+                        "base:test",
+                        "mid:build",
+                        "mid:test",
+                        "top:build",
+                        "top:test"
+                    ]
+                );
+            }
+
+            // A superset change set must never schedule fewer tasks: the extra
+            // changed file used to relation-mark the middle project's build
+            // before its visit, dropping its test task entirely
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sync_stays_monotonic_when_change_set_grows() {
+                let sandbox = create_sandbox("affected-starve");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([
+                        WorkspaceRelativePathBuf::from("base/src.txt"),
+                        WorkspaceRelativePathBuf::from("top/src.txt"),
+                    ]),
+                    |affected| {
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                    },
+                );
+
+                builder
+                    .run_tasks(
+                        create_adverse_order_locators([
+                            "top:test",
+                            "top:build",
+                            "mid:test",
+                            "mid:build",
+                            "base:test",
+                            "base:build",
+                        ]),
+                        RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            include_relations: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    [
+                        "base:build",
+                        "base:test",
+                        "mid:build",
+                        "mid:test",
+                        "top:build",
+                        "top:test"
+                    ]
+                );
+            }
         }
 
         mod run_in_ci {

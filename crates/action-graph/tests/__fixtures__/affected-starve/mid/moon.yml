@@ -1,0 +1,11 @@
+dependsOn: ['base']
+
+tasks:
+  build:
+    command: 'build'
+    deps: ['^:build']
+    inputs: ['src.txt']
+  test:
+    command: 'test'
+    deps: ['~:build']
+    inputs: ['src.txt']

@@ -128,6 +128,10 @@
   `--include-relations`, and could even schedule fewer tasks when the change set grew, as affected
   marks were accumulated lazily in target iteration order. Affected status is now tracked up front,
   mirroring the asynchronous tracker.
+- Fixed an issue on Windows where path variables (`$workspaceRoot`, `$workingDir`, `$projectRoot`)
+  expanded using the Windows path format (`C:\path`) based on the shell moon was executed from,
+  instead of the shell the task runs in. When the `windowsShell` task option is `bash`, they now
+  expand using the Unix path format (`/c/path`) that bash expects.
 
 #### ⚙️ Internal
 

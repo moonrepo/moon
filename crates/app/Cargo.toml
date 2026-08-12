@@ -47,7 +47,6 @@ moon_toolchain_plugin = { path = "../toolchain-plugin" }
 moon_vcs = { path = "../vcs" }
 moon_workspace = { path = "../workspace" }
 moon_workspace_graph = { path = "../workspace-graph" }
-async-recursion = { workspace = true }
 async-trait = { workspace = true }
 bytes = { workspace = true }
 ci_env = { workspace = true }
@@ -61,7 +60,7 @@ clap = { workspace = true, features = [
   "wrap_help",
 ] }
 clap_complete = { workspace = true }
-clap_complete_nushell = "4.6.1"
+clap_complete_nushell = "4.6.2"
 convert_case = { workspace = true }
 diff = "0.1.13"
 indexmap = { workspace = true }
@@ -93,7 +92,7 @@ tracing = { workspace = true }
 version_spec = { workspace = true }
 
 # Visualizer
-open = "5.4.0"
+open = "5.4.1"
 petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"

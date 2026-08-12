@@ -1,5 +1,6 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
 use crate::session::{MoonSession, SessionResult};
+use miette::IntoDiagnostic;
 use moon_actions::plugins::{ExecCommandOptions, exec_plugin_command};
 use moon_pdk_api::{InstallDependenciesInput, LocateDependenciesRootInput, PruneDockerInput};
 use moon_project::Project;
@@ -106,9 +107,10 @@ impl PruneWorkflow {
         // Also include dependencies (unfocused) in the workspace so we can prune them too
         for project_id in &self.manifest.unfocused_projects {
             let project = self.project_graph.get(project_id)?;
+            let toolchains = project.get_enabled_toolchains();
 
             for workspace in &mut self.workspaces {
-                if project.toolchains.contains(&workspace.toolchain.id)
+                if toolchains.iter().any(|id| *id == &workspace.toolchain.id)
                     && workspace
                         .toolchain
                         .in_dependencies_workspace(&workspace.output, &project.root)?
@@ -208,8 +210,8 @@ impl PruneWorkflow {
             }));
         }
 
-        while set.join_next().await.is_some() {
-            continue;
+        while let Some(result) = set.join_next().await {
+            result.into_diagnostic()??;
         }
 
         Ok(())

@@ -136,6 +136,9 @@ impl ScaffoldWorkflow {
             );
         }
 
+        self.copy_files_from_plugins(&project.root, &docker_project_root, Some(project))
+            .await?;
+
         if !toolchains.is_empty() {
             self.registry
                 .scaffold_docker_many(toolchains, |toolchain| ScaffoldDockerInput {
@@ -152,14 +155,14 @@ impl ScaffoldWorkflow {
                 .await?;
         }
 
-        self.copy_files_from_plugins(&project.root, &docker_project_root, Some(project))
-            .await?;
-
         Ok(())
     }
 
     #[instrument(skip(self))]
     async fn scaffold_root(&mut self) -> miette::Result<()> {
+        self.copy_files_from_plugins(&self.session.workspace_root, self.get_skeleton_root(), None)
+            .await?;
+
         self.registry
             .scaffold_docker_many(self.registry.get_plugin_ids(), |toolchain| {
                 ScaffoldDockerInput {
@@ -172,9 +175,6 @@ impl ScaffoldWorkflow {
                     toolchain_config: self.registry.create_config(&toolchain.id),
                 }
             })
-            .await?;
-
-        self.copy_files_from_plugins(&self.session.workspace_root, self.get_skeleton_root(), None)
             .await?;
 
         Ok(())

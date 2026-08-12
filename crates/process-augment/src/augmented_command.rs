@@ -108,16 +108,16 @@ impl<'app> AugmentedCommand<'app> {
         self.command
     }
 
-    pub fn get_toolchain_ids<'a>(
-        &self,
-        project: Option<&'a Project>,
-        task: Option<&'a Task>,
-    ) -> Vec<&'a Id> {
+    pub fn get_toolchain_ids(&self, project: Option<&Project>, task: Option<&Task>) -> Vec<Id> {
         match (project, task) {
             (Some(p), Some(t)) => p.get_enabled_toolchains_for_task(t),
             (Some(p), None) => p.get_enabled_toolchains(),
-            _ => vec![],
+            (None, Some(t)) => t.toolchains.iter().collect(),
+            (None, None) => self.context.toolchains_config.plugins.keys().collect(),
         }
+        .into_iter()
+        .map(|id| id.to_owned())
+        .collect()
     }
 
     pub fn apply_command_outputs(&mut self, outputs: Vec<ExtendCommandOutput>) {
@@ -204,16 +204,18 @@ impl<'app> AugmentedCommand<'app> {
 
         self.apply_command_outputs(
             registry
-                .extend_command_many(toolchain_ids.clone(), |toolchain| ExtendCommandInput {
-                    context: registry.create_context(),
-                    command: self.get_bin_name(),
-                    args: self.get_args_list(),
-                    current_dir: toolchain.to_virtual_path(current_dir),
-                    toolchain_config: match project {
-                        Some(p) => registry.create_merged_config(&toolchain.id, &p.config),
-                        None => registry.create_config(&toolchain.id),
-                    },
-                    ..Default::default()
+                .extend_command_many(toolchain_ids.clone().iter().collect(), |toolchain| {
+                    ExtendCommandInput {
+                        context: registry.create_context(),
+                        command: self.get_bin_name(),
+                        args: self.get_args_list(),
+                        current_dir: toolchain.to_virtual_path(current_dir),
+                        toolchain_config: match project {
+                            Some(p) => registry.create_merged_config(&toolchain.id, &p.config),
+                            None => registry.create_config(&toolchain.id),
+                        },
+                        ..Default::default()
+                    }
                 })
                 .await?,
         );
@@ -245,8 +247,9 @@ impl<'app> AugmentedCommand<'app> {
 
                 self.apply_script_outputs(
                     registry
-                        .extend_task_script_many(toolchain_ids.clone(), |toolchain| {
-                            ExtendTaskScriptInput {
+                        .extend_task_script_many(
+                            toolchain_ids.clone().iter().collect(),
+                            |toolchain| ExtendTaskScriptInput {
                                 context: registry.create_context(),
                                 script: self.get_script(),
                                 project: project.to_fragment(),
@@ -254,8 +257,8 @@ impl<'app> AugmentedCommand<'app> {
                                 toolchain_config: registry
                                     .create_merged_config(&toolchain.id, &project.config),
                                 ..Default::default()
-                            }
-                        })
+                            },
+                        )
                         .await?,
                 );
 
@@ -278,8 +281,9 @@ impl<'app> AugmentedCommand<'app> {
 
                 self.apply_command_outputs(
                     registry
-                        .extend_task_command_many(toolchain_ids.clone(), |toolchain| {
-                            ExtendTaskCommandInput {
+                        .extend_task_command_many(
+                            toolchain_ids.clone().iter().collect(),
+                            |toolchain| ExtendTaskCommandInput {
                                 context: registry.create_context(),
                                 command: self.get_bin_name(),
                                 args: self.get_args_list(),
@@ -288,8 +292,8 @@ impl<'app> AugmentedCommand<'app> {
                                 toolchain_config: registry
                                     .create_merged_config(&toolchain.id, &project.config),
                                 ..Default::default()
-                            }
-                        })
+                            },
+                        )
                         .await?,
                 );
 

@@ -237,10 +237,7 @@ pub async fn run_action(
         );
 
         // If these actions failed, we should abort instead of trying to continue
-        if matches!(
-            *node,
-            ActionNode::SetupToolchain { .. } | ActionNode::InstallDependencies { .. }
-        ) {
+        if should_abort_on_failure(&node) {
             action.abort();
         }
     } else {
@@ -256,9 +253,78 @@ pub async fn run_action(
     Ok(())
 }
 
+// Provisioning failures poison everything downstream: dependents are
+// dispatched on completion (not success), so they would run in a broken
+// environment and fail with errors that mask the root cause
+fn should_abort_on_failure(node: &ActionNode) -> bool {
+    matches!(
+        node,
+        ActionNode::SetupProto { .. }
+            | ActionNode::SetupToolchain { .. }
+            | ActionNode::SetupEnvironment { .. }
+            | ActionNode::InstallDependencies { .. }
+    )
+}
+
 fn extract_error<T>(result: &miette::Result<T>) -> Option<String> {
     match result {
         Ok(_) => None,
         Err(error) => Some(error.to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_action::{
+        InstallDependenciesNode, RunTaskNode, SetupEnvironmentNode, SetupToolchainNode,
+        SyncProjectNode,
+    };
+    use moon_common::Id;
+    use moon_config::UnresolvedVersionSpec;
+    use moon_task::Target;
+    use moon_toolchain::{ToolchainSpec, VersionSpec};
+
+    #[test]
+    fn aborts_for_provisioning_failures() {
+        assert!(should_abort_on_failure(&ActionNode::setup_proto(
+            VersionSpec::parse("1.0.0").unwrap()
+        )));
+        assert!(should_abort_on_failure(&ActionNode::setup_toolchain(
+            SetupToolchainNode {
+                toolchain: ToolchainSpec::new(
+                    Id::raw("tc"),
+                    UnresolvedVersionSpec::parse("1.0.0").unwrap()
+                ),
+            }
+        )));
+        assert!(should_abort_on_failure(&ActionNode::setup_environment(
+            SetupEnvironmentNode {
+                project_id: None,
+                root: "".into(),
+                toolchain_id: Id::raw("tc"),
+            }
+        )));
+        assert!(should_abort_on_failure(&ActionNode::install_dependencies(
+            InstallDependenciesNode {
+                members: None,
+                project_id: None,
+                root: "".into(),
+                toolchain_id: Id::raw("tc"),
+            }
+        )));
+    }
+
+    #[test]
+    fn doesnt_abort_for_other_failures() {
+        assert!(!should_abort_on_failure(&ActionNode::sync_workspace()));
+        assert!(!should_abort_on_failure(&ActionNode::sync_project(
+            SyncProjectNode {
+                project_id: Id::raw("project"),
+            }
+        )));
+        assert!(!should_abort_on_failure(&ActionNode::run_task(
+            RunTaskNode::new(Target::parse("project:task").unwrap())
+        )));
     }
 }

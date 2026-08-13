@@ -88,6 +88,18 @@ fn create_nested_git_sandbox() -> (Sandbox, Git) {
     (sandbox, git)
 }
 
+// Simulate a clone whose object database is unreachable: refs still point
+// at commits, but no objects can be read. This happens with partial or
+// reference clones whose borrowed objects (via alternates or promisor
+// packs) are no longer accessible.
+fn make_objects_unreachable(sandbox: &Sandbox) {
+    let git_dir = sandbox.path().join(".git");
+
+    fs::rename(git_dir.join("objects"), git_dir.join("objects-unreachable")).unwrap();
+    fs::create_dir_all(git_dir.join("objects/info")).unwrap();
+    fs::create_dir_all(git_dir.join("objects/pack")).unwrap();
+}
+
 fn create_changed_map<
     S: IntoIterator<Item = ChangedStatus>,
     I: IntoIterator<Item = V>,
@@ -177,6 +189,44 @@ mod git {
             // Bare clones don't materialize submodule worktrees on disk,
             // so they're filtered out (otherwise spawning git in a missing
             // dir fails with ENOENT).
+            assert!(git.submodules.is_empty());
+        }
+
+        #[test]
+        fn loads_without_gitmodules_when_objects_unreachable() {
+            let sandbox = create_sandbox("vcs");
+            sandbox.enable_git();
+
+            make_objects_unreachable(&sandbox);
+
+            // Without a `.gitmodules` file, submodule enumeration must be
+            // skipped entirely, since resolving it through the index or
+            // HEAD tree requires reading the missing objects.
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+
+            assert!(git.submodules.is_empty());
+        }
+
+        #[test]
+        fn loads_with_gitmodules_when_objects_unreachable() {
+            let sandbox = create_sandbox("vcs");
+            sandbox.create_file(
+                ".gitmodules",
+                r#"
+[submodule "vendored"]
+	path = vendored
+	url = https://example.com/vendored.git
+"#,
+            );
+            sandbox.enable_git();
+
+            make_objects_unreachable(&sandbox);
+
+            // A `.gitmodules` file in the worktree is parsed directly,
+            // without touching the object database. The declared submodule
+            // is never checked out, so it's filtered out.
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
+
             assert!(git.submodules.is_empty());
         }
 
@@ -381,7 +431,9 @@ mod git {
             );
             assert_eq!(git.worktree.work_dir, sandbox.path().join("trees/one"));
             assert_eq!(git.worktree.path.as_str(), "");
-            assert_eq!(git.worktree.type_of, GitTreeType::Root);
+            // gix 0.86+ detects worktrees of natively bare repositories
+            // (git_dir != common_dir), which older versions reported as root
+            assert_eq!(git.worktree.type_of, GitTreeType::Worktree);
             assert_eq!(
                 git.submodules,
                 vec![

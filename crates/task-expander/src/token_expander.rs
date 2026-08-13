@@ -611,8 +611,10 @@ impl<'graph> TokenExpander<'graph> {
             "arch" => Cow::Borrowed(env::consts::ARCH),
             "os" => Cow::Borrowed(env::consts::OS),
             "osFamily" => Cow::Borrowed(env::consts::FAMILY),
-            "workingDir" => Cow::Owned(self.stringify_path(&self.context.working_dir)?),
-            "workspaceRoot" => Cow::Owned(self.stringify_path(&self.context.workspace_root)?),
+            "workingDir" => Cow::Owned(self.stringify_path(&self.context.working_dir, Some(task))?),
+            "workspaceRoot" => {
+                Cow::Owned(self.stringify_path(&self.context.workspace_root, Some(task))?)
+            }
             // Project
             "language" => Cow::Owned(project.language.to_string()),
             "project" | "projectId" => Cow::Borrowed(project.id.as_str()),
@@ -632,7 +634,7 @@ impl<'graph> TokenExpander<'graph> {
             "projectLayer" => Cow::Owned(project.layer.to_string()),
             "projectName" | "projectTitle" => get_metadata(|md| md.title.as_deref()),
             "projectOwner" => get_metadata(|md| md.owner.as_deref()),
-            "projectRoot" => Cow::Owned(self.stringify_path(&project.root)?),
+            "projectRoot" => Cow::Owned(self.stringify_path(&project.root, Some(task))?),
             "projectSource" => Cow::Borrowed(project.source.as_str()),
             "projectStack" => Cow::Owned(project.stack.to_string()),
             // Task
@@ -795,35 +797,51 @@ impl<'graph> TokenExpander<'graph> {
             Ok(format!(
                 "{negated}{}",
                 self.stringify_path(
-                    &diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path)
+                    &diff_paths(&abs_path, &self.project.root).unwrap_or(abs_path),
+                    None
                 )?
             ))
         }
     }
 
-    fn stringify_path(&self, orig_value: &Path) -> miette::Result<String> {
+    #[cfg(unix)]
+    fn stringify_path(&self, orig_value: &Path, _task: Option<&Task>) -> miette::Result<String> {
+        path::to_string(orig_value)
+    }
+
+    #[cfg(windows)]
+    fn stringify_path(&self, orig_value: &Path, task: Option<&Task>) -> miette::Result<String> {
         let value = path::to_string(orig_value)?;
 
         // https://cygwin.com/cygwin-ug-net/cygpath.html
-        #[cfg(windows)]
-        {
-            if GlobalEnvBag::instance()
-                .get("MSYSTEM")
-                .is_some_and(|value| value == "MINGW32" || value == "MINGW64")
-            {
-                let mut value = moon_common::path::standardize_separators(value);
+        let should_use_cyg_path = match task {
+            // When a task is provided, we should format the string as if it was scoped
+            // to the shell it will be executed in
+            Some(task) => matches!(
+                task.options.windows_shell,
+                moon_task::TaskWindowsShell::Bash
+            ),
 
-                if orig_value.is_absolute() {
-                    for drive in 'A'..='Z' {
-                        if let Some(suffix) = value.strip_prefix(&format!("{drive}:/")) {
-                            value = format!("/{}/{suffix}", drive.to_ascii_lowercase());
-                            break;
-                        }
+            // Otherwise, we can just check if the current shell is bash,
+            // since this path will most likely be used as a CLI argument
+            None => GlobalEnvBag::instance()
+                .get("MSYSTEM")
+                .is_some_and(|value| value == "MINGW32" || value == "MINGW64"),
+        };
+
+        if should_use_cyg_path {
+            let mut value = moon_common::path::standardize_separators(value);
+
+            if orig_value.is_absolute() {
+                for drive in 'A'..='Z' {
+                    if let Some(suffix) = value.strip_prefix(&format!("{drive}:/")) {
+                        value = format!("/{}/{suffix}", drive.to_ascii_lowercase());
+                        break;
                     }
                 }
-
-                return Ok(value);
             }
+
+            return Ok(value);
         }
 
         Ok(value)

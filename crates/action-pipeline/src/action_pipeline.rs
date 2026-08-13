@@ -186,8 +186,10 @@ impl ActionPipeline {
             }
 
             // Only bubble up an error on a hard failure, otherwise we can
-            // continue to run and collect other actions
-            if action.should_abort() {
+            // continue to run and collect other actions. Keep the first
+            // error, as it's the closest to the root cause — later failures
+            // are typically fallout from running in the already-broken state
+            if action.should_abort() && error.is_none() {
                 error = Some(action.get_error());
             }
 

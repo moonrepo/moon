@@ -515,6 +515,104 @@ mod token_expander {
                 "$unknown"
             );
         }
+
+        // What a path like `C:\dir` looks like once bash receives it: `/c/dir`
+        #[cfg(windows)]
+        fn to_bash_path(path: &std::path::Path) -> String {
+            let value = path.to_string_lossy().replace('\\', "/");
+            let mut chars = value.chars();
+
+            match (chars.next(), chars.next(), chars.next()) {
+                (Some(drive), Some(':'), Some('/')) if drive.is_ascii_uppercase() => {
+                    format!("/{}{}", drive.to_ascii_lowercase(), &value[2..])
+                }
+                _ => value,
+            }
+        }
+
+        #[cfg(windows)]
+        #[test]
+        fn converts_path_vars_when_windows_shell_is_bash() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.options.windows_shell = moon_task::TaskWindowsShell::Bash;
+
+            let context = create_context(sandbox.path());
+            let expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$workspaceRoot"))
+                    .unwrap(),
+                to_bash_path(sandbox.path())
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$workingDir"))
+                    .unwrap(),
+                to_bash_path(sandbox.path())
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$projectRoot"))
+                    .unwrap(),
+                to_bash_path(&project.root)
+            );
+        }
+
+        #[cfg(windows)]
+        #[test]
+        fn keeps_native_path_vars_for_other_windows_shells() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+            // Defaults to pwsh
+            let task = create_task();
+
+            let context = create_context(sandbox.path());
+            let expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$workspaceRoot"))
+                    .unwrap(),
+                path::to_string(sandbox.path()).unwrap()
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$projectRoot"))
+                    .unwrap(),
+                path::to_string(&project.root).unwrap()
+            );
+        }
+
+        #[cfg(not(windows))]
+        #[test]
+        fn ignores_windows_shell_for_path_vars_on_unix() {
+            let sandbox = create_empty_sandbox();
+            let project_graph = create_project_graph([]);
+            let project = create_project(sandbox.path());
+            let mut task = create_task();
+            task.options.windows_shell = moon_task::TaskWindowsShell::Bash;
+
+            let context = create_context(sandbox.path());
+            let expander = TokenExpander::new(&project_graph, &project, &context);
+
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$workspaceRoot"))
+                    .unwrap(),
+                path::to_string(sandbox.path()).unwrap()
+            );
+            assert_eq!(
+                expander
+                    .replace_variable(&task, Cow::Borrowed("$projectRoot"))
+                    .unwrap(),
+                path::to_string(&project.root).unwrap()
+            );
+        }
     }
 
     mod command {

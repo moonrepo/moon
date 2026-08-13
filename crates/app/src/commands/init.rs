@@ -86,7 +86,7 @@ pub async fn init(session: MoonSession, args: InitArgs) -> SessionResult {
 
     // Load VCS information
     let git = Git::load(&dest_dir, "master", &[])?;
-    let git_root = git.get_repository_root().await?;
+    let git_root = git.get_repository_root()?;
 
     let git_provider = if git_root.join(".gitlab").exists() {
         VcsProvider::GitLab

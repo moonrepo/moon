@@ -7,7 +7,7 @@ use moon_hash::Digest;
 use moon_manifest::Manifest;
 use rustc_hash::FxHashMap;
 use std::collections::VecDeque;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::Mutex;
@@ -29,11 +29,26 @@ pub struct ManifestSource {
 #[derive(Clone, Debug)]
 pub struct CacheContext {
     pub cache_dir: PathBuf,
+    pub cache_shared_dir: Option<PathBuf>,
     pub cache_config: Arc<CacheConfig>,
     pub config_dir: PathBuf,
     pub remote_config: Arc<RemoteConfig>,
     pub remote_debug: bool,
     pub workspace_root: PathBuf,
+}
+
+impl CacheContext {
+    pub fn new(root: &Path) -> Self {
+        Self {
+            cache_dir: root.join(".moon/cache"),
+            cache_shared_dir: None,
+            cache_config: Arc::new(CacheConfig::default()),
+            config_dir: root.join(".moon"),
+            remote_config: Arc::new(RemoteConfig::default()),
+            remote_debug: false,
+            workspace_root: root.to_path_buf(),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

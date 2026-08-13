@@ -1,0 +1,3 @@
+# Disable EOL conversion so `git worktree add` checkouts are byte-identical
+# to the harness-written base checkout, keeping task hashes stable on Windows.
+* -text

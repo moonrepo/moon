@@ -1,7 +1,7 @@
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_local::LocalStorage;
 use moon_cache_storage::{CacheContext, Manifest, ManifestFile, StorageBackend};
-use moon_config::{CacheConfig, RemoteConfig};
+use moon_config::CacheConfig;
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::path::{Path, PathBuf};
@@ -19,17 +19,12 @@ fn create_backend_with_max_size(sandbox: &Sandbox, max_size: &str) -> Arc<LocalS
 }
 
 fn create_backend_with(sandbox: &Sandbox, cache_config: CacheConfig) -> Arc<LocalStorage> {
-    let cache_dir = sandbox.path().join(".moon/cache");
-    let context = CacheContext {
-        cache_dir: cache_dir.clone(),
-        cache_config: Arc::new(cache_config),
-        config_dir: sandbox.path().join(".moon"),
-        remote_config: Arc::new(RemoteConfig::default()),
-        remote_debug: false,
-        workspace_root: sandbox.path().to_path_buf(),
-    };
+    let mut context = CacheContext::new(sandbox.path());
+    context.cache_config = Arc::new(cache_config);
 
-    Arc::new(LocalStorage::new(context, cache_dir, false).unwrap())
+    let cache_dir = context.cache_dir.clone();
+
+    Arc::new(LocalStorage::new(context, cache_dir).unwrap())
 }
 
 fn inline_source(content: &'static [u8]) -> BlobInput {
@@ -490,5 +485,66 @@ mod local_storage {
                 .is_empty(),
             "blobs of surviving manifests should be kept",
         );
+    }
+
+    mod id {
+        use super::*;
+
+        fn create_backend_with_context(context: CacheContext) -> Arc<LocalStorage> {
+            let cache_dir = context
+                .cache_shared_dir
+                .clone()
+                .unwrap_or_else(|| context.cache_dir.clone());
+
+            Arc::new(LocalStorage::new(context, cache_dir).unwrap())
+        }
+
+        #[test]
+        fn is_local_by_default() {
+            let sandbox = create_empty_sandbox();
+            let backend = create_backend(&sandbox);
+
+            assert_eq!(backend.get_id().as_str(), "local-cache");
+        }
+
+        #[test]
+        fn is_local_when_setting_enabled_without_a_shared_dir() {
+            let sandbox = create_empty_sandbox();
+            let mut context = CacheContext::new(sandbox.path());
+            context.cache_config = Arc::new(CacheConfig {
+                shared_worktree_cache: true,
+                ..Default::default()
+            });
+
+            let backend = create_backend_with_context(context);
+
+            assert_eq!(backend.get_id().as_str(), "local-cache");
+        }
+
+        #[test]
+        fn is_shared_when_setting_enabled_with_a_shared_dir() {
+            let sandbox = create_empty_sandbox();
+            let mut context = CacheContext::new(sandbox.path());
+            context.cache_config = Arc::new(CacheConfig {
+                shared_worktree_cache: true,
+                ..Default::default()
+            });
+            context.cache_shared_dir = Some(sandbox.path().join(".moon/cache/shared"));
+
+            let backend = create_backend_with_context(context);
+
+            assert_eq!(backend.get_id().as_str(), "shared-local-cache");
+        }
+
+        #[test]
+        fn is_local_when_setting_disabled_with_a_shared_dir() {
+            let sandbox = create_empty_sandbox();
+            let mut context = CacheContext::new(sandbox.path());
+            context.cache_shared_dir = Some(sandbox.path().join(".moon/cache/shared"));
+
+            let backend = create_backend_with_context(context);
+
+            assert_eq!(backend.get_id().as_str(), "local-cache");
+        }
     }
 }

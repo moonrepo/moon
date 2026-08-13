@@ -1,0 +1,7 @@
+tasks:
+  build:
+    script: 'echo built > out.txt'
+    inputs:
+      - 'input.txt'
+    outputs:
+      - 'out.txt'

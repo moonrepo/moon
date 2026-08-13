@@ -34,6 +34,13 @@
   - Updated the `moon exec` (and related pipeline commands) to display action failures in the
     summary at the bottom, instead of interleaved within all actions.
 - **Config**
+  - Added an unstable `cache.unstable_sharedWorktreeCache` setting to `.moon/workspace.*`, which
+    shares the CAS cache between all VCS worktrees on the same machine. Only blobs and manifests are
+    shared, as they are portable, while hashes, locks, and states remain worktree-specific. The
+    cache is stored in the base checkout's `.moon/cache` directory, or `~/.moon/cache/shared` when
+    the repository root has no checkout (bare clones). Requires the `casOutputsCache` experiment.
+  - Added environment variable support for cache settings: `MOON_CACHE_CAS_MAX_SIZE`,
+    `MOON_CACHE_CAS_VERIFY_INTEGRITY`, and `MOON_CACHE_SHARED_WORKTREE_CACHE`.
   - Added an `env` setting to `.moon/tasks/**/*` configs. These environment variables are inherited
     by all matching projects, and are merged into each project's `env` setting, with project-level
     variables taking precedence.

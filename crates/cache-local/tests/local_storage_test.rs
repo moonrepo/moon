@@ -486,4 +486,65 @@ mod local_storage {
             "blobs of surviving manifests should be kept",
         );
     }
+
+    mod id {
+        use super::*;
+
+        fn create_backend_with_context(context: CacheContext) -> Arc<LocalStorage> {
+            let cache_dir = context
+                .cache_shared_dir
+                .clone()
+                .unwrap_or_else(|| context.cache_dir.clone());
+
+            Arc::new(LocalStorage::new(context, cache_dir).unwrap())
+        }
+
+        #[test]
+        fn is_local_by_default() {
+            let sandbox = create_empty_sandbox();
+            let backend = create_backend(&sandbox);
+
+            assert_eq!(backend.get_id().as_str(), "local-cache");
+        }
+
+        #[test]
+        fn is_local_when_setting_enabled_without_a_shared_dir() {
+            let sandbox = create_empty_sandbox();
+            let mut context = CacheContext::new(sandbox.path());
+            context.cache_config = Arc::new(CacheConfig {
+                shared_worktree_cache: true,
+                ..Default::default()
+            });
+
+            let backend = create_backend_with_context(context);
+
+            assert_eq!(backend.get_id().as_str(), "local-cache");
+        }
+
+        #[test]
+        fn is_shared_when_setting_enabled_with_a_shared_dir() {
+            let sandbox = create_empty_sandbox();
+            let mut context = CacheContext::new(sandbox.path());
+            context.cache_config = Arc::new(CacheConfig {
+                shared_worktree_cache: true,
+                ..Default::default()
+            });
+            context.cache_shared_dir = Some(sandbox.path().join(".moon/cache/shared"));
+
+            let backend = create_backend_with_context(context);
+
+            assert_eq!(backend.get_id().as_str(), "shared-local-cache");
+        }
+
+        #[test]
+        fn is_local_when_setting_disabled_with_a_shared_dir() {
+            let sandbox = create_empty_sandbox();
+            let mut context = CacheContext::new(sandbox.path());
+            context.cache_shared_dir = Some(sandbox.path().join(".moon/cache/shared"));
+
+            let backend = create_backend_with_context(context);
+
+            assert_eq!(backend.get_id().as_str(), "local-cache");
+        }
+    }
 }

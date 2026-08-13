@@ -250,6 +250,7 @@ mod git {
             );
             assert_eq!(git.get_repository_root().unwrap(), sandbox.path());
             assert_eq!(git.get_working_root().unwrap(), sandbox.path());
+            assert!(!git.is_worktree());
 
             // Change branches
             sandbox.run_git(|cmd| {
@@ -265,6 +266,7 @@ mod git {
 
             assert_eq!(git.get_repository_root().unwrap(), sandbox.path());
             assert_eq!(git.get_working_root().unwrap(), sandbox.path());
+            assert!(!git.is_worktree());
         }
 
         #[tokio::test]
@@ -483,6 +485,7 @@ mod git {
                 git.get_working_root().unwrap(),
                 sandbox.path().join("trees/one")
             );
+            assert!(git.is_worktree());
 
             // Change branches
             sandbox.run_git(|cmd| {

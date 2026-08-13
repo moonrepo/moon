@@ -12,8 +12,8 @@ publish = false
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 miette = { workspace = true }
-pest = "2.8.6"
-pest_derive = "2.8.6"
+pest = { workspace = true }
+pest_derive = { workspace = true }
 starbase_utils = { workspace = true, features = ["glob"] }
 thiserror = { workspace = true }
 tracing = { workspace = true }

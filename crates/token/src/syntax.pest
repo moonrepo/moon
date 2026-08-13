@@ -1,0 +1,33 @@
+WHITESPACE = _{ " " | "\t" }
+COMMENT    = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+
+identifier = { ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+// PRIMITIVES
+
+boolean   = { "true" | "false" }
+string    = { "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
+number    = { "-"? ~ ASCII_DIGIT+ ~ ("." ~ ASCII_DIGIT+)? }
+primitive = { boolean | string | number }
+
+// STRUCTURES
+
+array    = { "[]" | "[" ~ primitive ~ ("," ~ primitive)* ~ "]" }
+object   = { "{}" | "{" ~ (identifier ~ ":" ~ primitive) ~ ("," ~ identifier ~ ":" ~ primitive)* ~ "}" }
+function = { identifier ~ "(" ~ (primitive ~ ("," ~ primitive)*)? ~ ")" }
+
+// OPERATORS
+
+cmp_op    = { "==" | "!=" | "<=" | ">=" | "<" | ">" }
+math_op   = { "+" | "-" | "*" | "/" | "%" }
+logic_op  = { "&&" | "||" | "!" }
+nested_op = { "?." | "." }
+access_op = { nested_op | "[" ~ (string | number) ~ "]" }
+
+// EXPRESSIONS
+
+access_expr = { identifier ~ (nested_op ~ identifier)* }
+
+// TEMPLATE
+
+template = { SOI ~ access_expr ~ EOI }

@@ -14,6 +14,7 @@ use std::borrow::Cow;
 use std::env;
 use std::mem;
 use std::path::Path;
+use std::sync::Arc;
 use tracing::{instrument, warn};
 
 #[derive(Debug, Default, PartialEq)]
@@ -57,12 +58,12 @@ pub struct TokenExpander<'graph> {
     pub scope: TokenScope,
     pub context: &'graph GraphExpanderContext,
     pub project: &'graph Project,
-    pub project_graph: &'graph ProjectGraph,
+    pub project_graph: &'graph Arc<ProjectGraph>,
 }
 
 impl<'graph> TokenExpander<'graph> {
     pub fn new(
-        project_graph: &'graph ProjectGraph,
+        project_graph: &'graph Arc<ProjectGraph>,
         project: &'graph Project,
         context: &'graph GraphExpanderContext,
     ) -> Self {

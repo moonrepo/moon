@@ -265,7 +265,11 @@ impl WorkspaceBuilder {
         let context = self.context.take().unwrap();
 
         let mut graph_context = GraphExpanderContext {
+            config_dir: context.config_loader.dir.clone(),
+            extensions_config: context.extensions_config.clone(),
+            toolchains_config: context.toolchains_config.clone(),
             working_dir: context.working_dir.to_owned(),
+            workspace_config: context.workspace_config.clone(),
             workspace_root: context.workspace_root.to_owned(),
             ..Default::default()
         };

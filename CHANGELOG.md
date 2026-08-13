@@ -132,6 +132,10 @@
   expanded using the Windows path format (`C:\path`) based on the shell moon was executed from,
   instead of the shell the task runs in. When the `windowsShell` task option is `bash`, they now
   expand using the Unix path format (`/c/path`) that bash expects.
+- Fixed an issue where `--downstream deep` would also expand the dependents of upstream
+  dependencies, running tasks that are not dependents of the requested targets (with a deep enough
+  graph, the entire connected component). Downstream expansion now only flows from the requested
+  targets through their dependent chains, matching how `--downstream direct` already behaved.
 
 #### ⚙️ Internal
 

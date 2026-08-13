@@ -1,0 +1,4 @@
+tasks:
+  task:
+    command: 'b'
+    deps: ['c:task']

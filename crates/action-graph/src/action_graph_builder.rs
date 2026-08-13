@@ -89,6 +89,11 @@ pub struct RunPartition {
 #[derive(Clone, Debug, Default)]
 pub struct RunTaskState {
     pub depth: u8,
+    // Whether this task was reached by traversing a dependency (upstream)
+    // edge. Dependents must not be expanded from such tasks, otherwise
+    // downstream expansion restarts from inside dependency subtrees and
+    // runs tasks that aren't dependents of the requested targets.
+    pub via_dependency: bool,
 }
 
 pub struct ActionGraphBuilderOptions {
@@ -759,8 +764,11 @@ impl<'query> ActionGraphBuilder<'query> {
                 .internal_resolve_tasks_from_target(&dep.target, true)
                 .await?
             {
+                let mut dep_state = state.clone();
+                dep_state.via_dependency = true;
+
                 if let Some(dep_index) =
-                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &mut state.clone()))
+                    Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &mut dep_state))
                         .await?
                 {
                     // When serial, this dependency's entire task subtree must
@@ -801,9 +809,13 @@ impl<'query> ActionGraphBuilder<'query> {
                 .internal_resolve_tasks_from_target(&dep_target, true)
                 .await?
             {
+                // Dependent chains reset the marker, so that deep scopes
+                // keep cascading through transitive dependents
+                let mut dep_state = state.clone();
+                dep_state.via_dependency = false;
+
                 indexes.push(
-                    Box::pin(self.internal_run_task(&dep_task, reqs, None, &mut state.clone()))
-                        .await?,
+                    Box::pin(self.internal_run_task(&dep_task, reqs, None, &mut dep_state)).await?,
                 );
             }
         }
@@ -1045,7 +1057,8 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // Track depth information before proceeding
         let should_run_dependencies = reqs.dependencies.is_in_scope(state.depth);
-        let should_run_dependents = reqs.dependents.is_in_scope(state.depth);
+        let should_run_dependents =
+            !state.via_dependency && reqs.dependents.is_in_scope(state.depth);
         state.depth += 1;
 
         // Only apply CI checks when requested

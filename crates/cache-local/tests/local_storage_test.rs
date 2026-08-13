@@ -1,7 +1,7 @@
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_local::LocalStorage;
 use moon_cache_storage::{CacheContext, Manifest, ManifestFile, StorageBackend};
-use moon_config::{CacheConfig, RemoteConfig};
+use moon_config::CacheConfig;
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::path::{Path, PathBuf};
@@ -19,15 +19,10 @@ fn create_backend_with_max_size(sandbox: &Sandbox, max_size: &str) -> Arc<LocalS
 }
 
 fn create_backend_with(sandbox: &Sandbox, cache_config: CacheConfig) -> Arc<LocalStorage> {
-    let cache_dir = sandbox.path().join(".moon/cache");
-    let context = CacheContext {
-        cache_dir: cache_dir.clone(),
-        cache_config: Arc::new(cache_config),
-        config_dir: sandbox.path().join(".moon"),
-        remote_config: Arc::new(RemoteConfig::default()),
-        remote_debug: false,
-        workspace_root: sandbox.path().to_path_buf(),
-    };
+    let mut context = CacheContext::new(sandbox.path());
+    context.cache_config = Arc::new(cache_config);
+
+    let cache_dir = context.cache_dir.clone();
 
     Arc::new(LocalStorage::new(context, cache_dir).unwrap())
 }

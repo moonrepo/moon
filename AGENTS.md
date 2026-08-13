@@ -48,6 +48,8 @@ Use `just` for all Rust tasks. **Always run format, lint, and test before finish
 
 ### Conventions:
 
+- **Shared target cache.** When running Cargo, the `$CARGO_TARGET_DIR` environment variable must be
+  defined. If it's not provided by the shell, it should default to `~/.cargo/shared-target`.
 - **No warnings.** Clippy runs with `-D warnings`; treat every warning as an error.
 - **No `std` hash collections.** `std::collections::HashMap`/`HashSet` are disallowed via
   `clippy.toml`. Use `rustc_hash::{FxHashMap, FxHashSet}` instead.

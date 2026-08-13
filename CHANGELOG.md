@@ -149,8 +149,8 @@
 - Fixed an issue where a failed proto installation would not abort the pipeline nor surface its
   error. Dependent toolchain actions would run in the broken environment and fail with misleading
   errors (like a missing `proto-shim` binary) that masked the root cause. Setup proto and setup
-  environment failures now abort the pipeline immediately, and when multiple actions fail, the
-  first failure is reported instead of the last.
+  environment failures now abort the pipeline immediately, and when multiple actions fail, the first
+  failure is reported instead of the last.
 
 #### ⚙️ Internal
 

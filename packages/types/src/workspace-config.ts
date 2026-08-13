@@ -28,6 +28,19 @@ export interface CacheConfig {
 	 * @since 2.3.0
 	 */
 	cas: CacheCasConfig;
+	/**
+	 * Whether to use a shared worktree cache. When enabled, the cache is
+	 * shared between all VCS worktrees on the same machine. When disabled,
+	 * each worktree has its own cache.
+	 *
+	 * Only blobs and manifests will be shared, as they are portable.
+	 * Hashes, locks, states, and more will not be, as they are worktree-specific.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @default true
+	 */
+	sharedWorktreeCache?: boolean;
 }
 
 /** How to order ownership rules within the generated file. */
@@ -726,6 +739,19 @@ export interface PartialCacheConfig {
 	 * @since 2.3.0
 	 */
 	cas?: PartialCacheCasConfig | null;
+	/**
+	 * Whether to use a shared worktree cache. When enabled, the cache is
+	 * shared between all VCS worktrees on the same machine. When disabled,
+	 * each worktree has its own cache.
+	 *
+	 * Only blobs and manifests will be shared, as they are portable.
+	 * Hashes, locks, states, and more will not be, as they are worktree-specific.
+	 *
+	 * @since 2.5.0
+	 *
+	 * @default true
+	 */
+	sharedWorktreeCache?: boolean | null;
 }
 
 /** Configures code ownership rules for generating a `CODEOWNERS` file. */

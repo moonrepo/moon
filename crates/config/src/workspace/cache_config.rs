@@ -32,8 +32,12 @@ config_struct!(
         pub cas: CacheCasConfig,
 
         /// Whether to use a shared worktree cache. When enabled, the cache is
-        /// shared between all VCS worktrees on the same machine. When disabled, each
-        /// worktree has its own cache.
+        /// shared between all VCS worktrees on the same machine. When disabled,
+        /// each worktree has its own cache.
+        ///
+        /// Only blobs and manifests will be shared, as they are portable.
+        /// Hashes, locks, states, and more will not be, as they are worktree-specific.
+        ///
         /// @since 2.5.0
         #[setting(default = true)]
         pub shared_worktree_cache: bool,

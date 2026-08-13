@@ -53,11 +53,14 @@ impl LocalStorage {
 
         Ok(Self {
             capabilities: OnceLock::new(),
-            id: Id::raw(if context.cache_config.shared_worktree_cache {
-                "shared-local-cache"
-            } else {
-                "local-cache"
-            }),
+            id: Id::raw(
+                if context.cache_config.shared_worktree_cache && context.cache_shared_dir.is_some()
+                {
+                    "shared-local-cache"
+                } else {
+                    "local-cache"
+                },
+            ),
             manifests: Arc::new(CasStore::new(manifests_dir, {
                 let mut config = cas_config.clone();
                 // Our manifest hashes do not align with their contents,

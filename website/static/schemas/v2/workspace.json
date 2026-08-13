@@ -221,6 +221,13 @@
             }
           ],
           "markdownDescription": "Configures aspects of the content-addressable storage (CAS) cache. @since 2.3.0"
+        },
+        "sharedWorktreeCache": {
+          "title": "sharedWorktreeCache",
+          "description": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0",
+          "default": true,
+          "type": "boolean",
+          "markdownDescription": "Whether to use a shared worktree cache. When enabled, the cache is shared between all VCS worktrees on the same machine. When disabled, each worktree has its own cache.  Only blobs and manifests will be shared, as they are portable. Hashes, locks, states, and more will not be, as they are worktree-specific.  @since 2.5.0"
         }
       },
       "additionalProperties": false

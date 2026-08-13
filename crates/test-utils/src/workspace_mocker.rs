@@ -359,6 +359,7 @@ impl WorkspaceMocker {
     pub fn mock_cache_engine(&self) -> CacheEngine {
         let context = CacheContext {
             cache_dir: self.config_dir.join("cache"),
+            cache_shared_dir: None,
             cache_config: Arc::new(self.workspace_config.cache.clone()),
             config_dir: self.config_dir.clone(),
             remote_config: Arc::new(self.workspace_config.remote.clone()),

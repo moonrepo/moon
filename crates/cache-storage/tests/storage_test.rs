@@ -4,22 +4,14 @@ use moon_cache_storage::{
     CacheCapabilities, CacheContext, Storage, StorageBackend, StorageOptions,
 };
 use moon_common::Id;
-use moon_config::{CacheConfig, RemoteConfig};
 use moon_hash::{ContentHash, Digest};
 use moon_manifest::{Manifest, ManifestFile};
 use rustc_hash::FxHashMap;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 fn create_storage() -> Storage {
-    Storage::new(CacheContext {
-        cache_dir: PathBuf::from("/moon-test/.moon/cache"),
-        cache_config: Arc::new(CacheConfig::default()),
-        config_dir: PathBuf::from("/moon-test/.moon"),
-        remote_config: Arc::new(RemoteConfig::default()),
-        remote_debug: false,
-        workspace_root: PathBuf::from("/moon-test"),
-    })
+    Storage::new(CacheContext::new(Path::new("/moon-test")))
 }
 
 /// In-memory backend with externally inspectable maps, so tests can both seed

@@ -1191,22 +1191,13 @@ impl WorkspaceBuilder {
 mod tests {
     use super::*;
     use moon_cache::CacheContext;
-    use moon_config::{CacheConfig, RemoteConfig};
     use moon_extension_plugin::ExtensionRegistry;
     use moon_graph_utils::GraphConnections;
     use moon_test_utils::create_empty_moon_sandbox;
     use moon_toolchain_plugin::ToolchainRegistry;
 
     fn create_cache_engine(root: &std::path::Path) -> CacheEngine {
-        CacheEngine::new(CacheContext {
-            cache_dir: root.join(".moon/cache"),
-            cache_config: Arc::new(CacheConfig::default()),
-            config_dir: root.join(".moon"),
-            remote_config: Arc::new(RemoteConfig::default()),
-            remote_debug: false,
-            workspace_root: root.to_path_buf(),
-        })
-        .unwrap()
+        CacheEngine::new(CacheContext::new(root)).unwrap()
     }
 
     #[tokio::test(flavor = "multi_thread")]

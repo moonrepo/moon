@@ -1,22 +1,10 @@
 use moon_cache::*;
 use moon_common::path::WorkspaceRelativePathBuf;
-use moon_config::{CacheConfig, RemoteConfig};
 use moon_env_var::GlobalEnvBag;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
-use std::sync::Arc;
 
 fn create_engine(sandbox: &Sandbox) -> CacheEngine {
-    let config_dir = sandbox.path().join(".moon");
-
-    CacheEngine::new(CacheContext {
-        cache_dir: config_dir.join("cache"),
-        cache_config: Arc::new(CacheConfig::default()),
-        config_dir,
-        remote_config: Arc::new(RemoteConfig::default()),
-        remote_debug: false,
-        workspace_root: sandbox.path().to_path_buf(),
-    })
-    .unwrap()
+    CacheEngine::new(CacheContext::new(sandbox.path())).unwrap()
 }
 
 mod cache_engine {

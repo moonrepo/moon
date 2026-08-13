@@ -1,0 +1,6 @@
+projects:
+  app: 'app'
+cache:
+  sharedWorktreeCache: true
+experiments:
+  casOutputsCache: true

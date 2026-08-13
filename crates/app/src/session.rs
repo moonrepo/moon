@@ -197,8 +197,9 @@ impl MoonSession {
 
     pub fn get_cache_engine(&self) -> miette::Result<Arc<CacheEngine>> {
         if self.cache_engine.get().is_none() {
-            let context = CacheContext {
+            let mut context = CacheContext {
                 cache_dir: self.config_dir.join("cache"),
+                cache_shared_dir: None,
                 cache_config: Arc::new(self.workspace_config.cache.clone()),
                 config_dir: self.config_dir.clone(),
                 remote_config: Arc::new(self.workspace_config.remote.clone()),
@@ -206,13 +207,36 @@ impl MoonSession {
                 workspace_root: self.workspace_root.clone(),
             };
 
+            if context.cache_config.shared_worktree_cache {
+                let vcs = self.get_vcs_adapter()?;
+
+                if vcs.is_worktree() {
+                    let repo_root = vcs.get_repository_root()?;
+                    let worktree_root = vcs.get_working_root()?;
+                    let common_moon_dir = repo_root.join(&self.config_loader.dir_prefix);
+
+                    if common_moon_dir.exists() && repo_root != worktree_root {
+                        context.cache_shared_dir = Some(common_moon_dir.join("cache"));
+                    } else {
+                        context.cache_shared_dir = Some(self.moon_env.cache_dir.join("shared"));
+                    }
+
+                    debug!(
+                        dir = ?context.cache_shared_dir,
+                        "In a VCS worktree, using a shared cache directory for blobs and manifests",
+                    );
+                }
+            }
+
             let mut engine = CacheEngine::new(context.clone())?;
 
             if self.workspace_config.experiments.cas_outputs_cache {
                 engine.storage.add_local_backend(LocalStorage::new(
                     context.clone(),
-                    &context.cache_dir,
-                    false,
+                    context
+                        .cache_shared_dir
+                        .as_deref()
+                        .unwrap_or(&context.cache_dir),
                 )?);
             }
 

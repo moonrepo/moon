@@ -182,6 +182,41 @@ tasks:
       mergeArgs: 'replace' # Don't append to inherited args
 ```
 
+### Workspace-inherited env and file groups <sup>v2.5+</sup>
+
+Beyond tasks, `.moon/tasks/**/*` files can define a top-level `env` that is inherited by every
+matching project and merged into the project's own `env` — with project-level variables winning on
+conflicting keys by default.
+
+```yaml
+# .moon/tasks/node.yml — every matching project inherits this
+env:
+  NODE_ENV: 'production'
+```
+
+The project controls how this merge happens (for both `env` and `fileGroups`) via
+`workspace.mergeStrategies` in its `moon.*` config, using the same strategies as task merging:
+
+```yaml
+# moon.yml
+workspace:
+  mergeStrategies:
+    env: 'replace' # project env fully replaces inherited env
+    fileGroups: 'preserve' # first (most global) definition of a group wins
+```
+
+**Debugging implications:**
+
+- A task env var with a value that appears nowhere in the project's config may come from a
+  workspace-level `env`. Inspect the resolved values with `moon task <target> --json`, then search
+  `.moon/tasks/**/*` for the variable.
+- `mergeStrategies.env` applies to the **entire map**: `preserve` keeps the first-defined map
+  (typically the most global) and ignores the rest, while `replace` keeps only the last. Both can
+  make an entire block of variables silently vanish.
+- `mergeStrategies.fileGroups` applies **per group name** — a project redefining a group with
+  `replace` (or an empty list) drops the inherited inputs, which changes any task inputs that
+  reference the group via tokens (`@files(...)`, `@globs(...)`), and therefore the task's hash.
+
 ### Diagnosis
 
 ```bash

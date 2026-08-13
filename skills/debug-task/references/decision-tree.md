@@ -84,6 +84,16 @@ accurately — with a depth-1 clone it can't resolve the merge base, and logs a 
 Use a full clone, or a blobless partial clone (`git clone --filter=blob:none`, or
 `filter: 'blob:none'` with `actions/checkout`) which keeps history while deferring file downloads.
 
+<sup>v2.5+</sup> Affected tracking now runs on an **async implementation by default**
+(`experiments.asyncAffectedTracking`). If the affected set changed after upgrading and the clone
+depth is fine, bisect by disabling the experiment and comparing the two trackers:
+
+```bash
+MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING=false moon run <project>:<task> --affected
+```
+
+If the results differ, report it upstream — and keep the experiment disabled as a workaround.
+
 **Check 2: Is `runInCI` blocking execution?**
 
 ```bash
@@ -195,6 +205,24 @@ moon task <project>:<task> --json          # inspect the `checks` array
 ```
 
 See `config-mistakes.md` § Task checks.
+
+**Check 8: Is it a dependency cycle error at graph-build time?** <sup>v2.5+</sup>
+
+Two v2.5 changes intersect here. Graph building now runs on the **async implementation by default**
+(`experiments.asyncGraphBuilding`), which rejects project cycles strictly, where the older sync
+builder could disconnect the offending nodes with only a warning — so a cycle that was silently
+tolerated before the upgrade can become a hard error. At the same time, cycles are now validated
+**per dependency-scope partition**: production scopes (`production`, `peer`) and development scopes
+(`development`, `build`, `root`) are separate graphs, so a cycle that crosses the boundary (common
+in Go: prod dependency one way, test-only dependency back) is valid and no longer errors.
+
+```bash
+# Confirm the async builder is the trigger (does NOT fix the underlying cycle)
+MOON_EXPERIMENT_ASYNC_GRAPH_BUILDING=false moon run <project>:<task>
+```
+
+If the error names two projects, inspect their `dependsOn` scopes — breaking the cycle, or moving
+one edge to a different scope so the cycle crosses the partition boundary, are the real fixes.
 
 **Fix:** Switch `command` to `script` for shell syntax. Fix the binary path or toolchain. Correct
 the working directory. If a check is failing, fix (or remove) the offending check script. See

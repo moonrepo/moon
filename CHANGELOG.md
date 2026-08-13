@@ -31,6 +31,8 @@
   - Updated the `moon setup` action to also setup the toolchain environment, if their dependency
     root is the same as the workspace root. Nested dependency roots will not be setup, as they are
     expected to be setup by their parent project.
+  - Updated the `moon exec` (and related pipeline commands) to display action failures in the
+    summary at the bottom, instead of interleaved within all actions.
 - **Config**
   - Added an `env` setting to `.moon/tasks/**/*` configs. These environment variables are inherited
     by all matching projects, and are merged into each project's `env` setting, with project-level

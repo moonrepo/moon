@@ -62,6 +62,18 @@ fn topo(graph: ActionGraph) -> Vec<ActionNode> {
     nodes
 }
 
+fn extract_run_task_targets(graph: ActionGraph) -> Vec<String> {
+    let mut targets = topo(graph)
+        .into_iter()
+        .filter_map(|node| match node {
+            ActionNode::RunTask(inner) => Some(inner.target.to_string()),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    targets.sort();
+    targets
+}
+
 mod action_graph_builder {
     use super::*;
 
@@ -1555,6 +1567,175 @@ mod action_graph_builder {
                     ]
                 );
             }
+
+            fn create_adverse_order_locators(targets: [&str; 6]) -> Vec<TargetLocator> {
+                targets
+                    .into_iter()
+                    .map(|target| TargetLocator::Qualified(Target::parse(target).unwrap()))
+                    .collect()
+            }
+
+            // The `affected-starve` fixture pins `asyncAffectedTracking: false`
+            // to cover the synchronous tracker, whose marks would otherwise
+            // depend on target insertion order: a task marked through another
+            // task's relationship walk before its own visit never ran its own
+            // checks and walks, starving transitive dependents of marks.
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sync_includes_deep_dependents_regardless_of_target_order() {
+                let sandbox = create_sandbox("affected-starve");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("base/src.txt")]),
+                    |affected| {
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                    },
+                );
+
+                // base:test first, so its walk marks base:build before its visit
+                builder
+                    .run_tasks(
+                        create_adverse_order_locators([
+                            "base:test",
+                            "base:build",
+                            "mid:build",
+                            "mid:test",
+                            "top:build",
+                            "top:test",
+                        ]),
+                        RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            include_relations: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    [
+                        "base:build",
+                        "base:test",
+                        "mid:build",
+                        "mid:test",
+                        "top:build",
+                        "top:test"
+                    ]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sync_includes_deep_dependents_when_base_task_ordered_last() {
+                let sandbox = create_sandbox("affected-starve");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("base/src.txt")]),
+                    |affected| {
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                    },
+                );
+
+                builder
+                    .run_tasks(
+                        create_adverse_order_locators([
+                            "mid:test",
+                            "mid:build",
+                            "top:test",
+                            "top:build",
+                            "base:test",
+                            "base:build",
+                        ]),
+                        RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            include_relations: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    [
+                        "base:build",
+                        "base:test",
+                        "mid:build",
+                        "mid:test",
+                        "top:build",
+                        "top:test"
+                    ]
+                );
+            }
+
+            // A superset change set must never schedule fewer tasks: the extra
+            // changed file used to relation-mark the middle project's build
+            // before its visit, dropping its test task entirely
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sync_stays_monotonic_when_change_set_grows() {
+                let sandbox = create_sandbox("affected-starve");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                builder.mock_affected(
+                    FxHashSet::from_iter([
+                        WorkspaceRelativePathBuf::from("base/src.txt"),
+                        WorkspaceRelativePathBuf::from("top/src.txt"),
+                    ]),
+                    |affected| {
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                    },
+                );
+
+                builder
+                    .run_tasks(
+                        create_adverse_order_locators([
+                            "top:test",
+                            "top:build",
+                            "mid:test",
+                            "mid:build",
+                            "base:test",
+                            "base:build",
+                        ]),
+                        RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            include_relations: true,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    [
+                        "base:build",
+                        "base:test",
+                        "mid:build",
+                        "mid:test",
+                        "top:build",
+                        "top:test"
+                    ]
+                );
+            }
         }
 
         mod run_in_ci {
@@ -2404,6 +2585,135 @@ mod action_graph_builder {
                     node,
                     ActionNode::RunTask(inner) if inner.target == Target::parse("deps:parent2").unwrap()
                 )));
+            }
+
+            // The `dependent-scopes` fixture forms the following dependency
+            // graph, where dependents of `c` exist outside of `a`'s upstream:
+            //   a -> b -> c
+            //   d -> e -> c
+            #[tokio::test(flavor = "multi_thread")]
+            async fn deep_doesnt_expand_dependents_of_dependencies() {
+                let sandbox = create_sandbox("dependent-scopes");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("a", "task").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                // `a` has no dependents, so only its dependency chain runs;
+                // `d` and `e` are dependents of the upstream `c`, not of `a`
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    ["a:task", "b:task", "c:task"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn deep_expands_transitive_dependents_of_target() {
+                let sandbox = create_sandbox("dependent-scopes");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("c", "task").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                // Everything is downstream of `c`
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    ["a:task", "b:task", "c:task", "d:task", "e:task"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn direct_expands_only_target_dependents() {
+                let sandbox = create_sandbox("dependent-scopes");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let task = wg.get_task_from_project("c", "task").unwrap();
+
+                builder
+                    .run_task(
+                        &task,
+                        &RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Direct,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    ["b:task", "c:task", "e:task"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn deep_expands_dependents_when_dependency_is_also_a_target() {
+                let sandbox = create_sandbox("dependent-scopes");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let reqs = RunRequirements {
+                    dependencies: UpstreamScope::Deep,
+                    dependents: DownstreamScope::Deep,
+                    ..RunRequirements::default()
+                };
+
+                // Inserts `c` as a dependency only, with no dependents expanded
+                let task_b = wg.get_task_from_project("b", "task").unwrap();
+
+                builder.run_task(&task_b, &reqs).await.unwrap();
+
+                // Then runs `c` as an explicit target, which must expand them
+                let task_c = wg.get_task_from_project("c", "task").unwrap();
+
+                builder.run_task(&task_c, &reqs).await.unwrap();
+
+                let (_, graph) = builder.build();
+
+                assert_eq!(
+                    extract_run_task_targets(graph),
+                    ["a:task", "b:task", "c:task", "d:task", "e:task"]
+                );
             }
         }
     }

@@ -362,12 +362,18 @@ impl AffectedTracker {
     }
 
     pub fn track_tasks(&mut self) -> miette::Result<()> {
+        // Include internal since they can trigger affected for any dependents!
+        let tasks = self.workspace_graph.get_tasks_with_internal()?;
+
+        self.track_tasks_by_instance(&tasks)
+    }
+
+    pub fn track_tasks_by_instance(&mut self, tasks: &[Arc<Task>]) -> miette::Result<()> {
         debug!("Tracking tasks and marking any affected");
 
-        // Include internal since they can trigger affected for any dependents!
-        for task in self.workspace_graph.get_tasks_with_internal()? {
-            if let Some(affected) = self.is_task_affected(&task)? {
-                self.mark_task_affected(&task, affected)?;
+        for task in tasks {
+            if let Some(affected) = self.is_task_affected(task)? {
+                self.mark_task_affected(task, affected)?;
             }
         }
 

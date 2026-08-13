@@ -84,9 +84,17 @@
 #### 🧰 Toolchains
 
 - **Go**
+  - The `force` option for `bins` entries is now respected, and will always install the binary.
   - Fixed configured `bins` not being reinstalled when their binaries were uninstalled or deleted
     outside of moon.
-  - The `force` option for `bins` entries is now respected, and will always install the binary.
+  - Fixed project relationships not linking when a `go.mod` is located in a major version folder
+    (`v2`+) but its `module` directive omits the version suffix. The suffix is now inferred from the
+    folder name, for both the project's alias and dependency matching.
+  - `replace` directives are now honored when linking project relationships. A replacement pointing
+    to a local directory links to the project at that location (regardless of module names), while a
+    replacement pointing to another module no longer creates a relationship.
+  - Project relationships now reference the dependency's project identifier instead of its module
+    path alias, aligning with other toolchains.
 - **JavaScript**
   - Added unstable support for [Nub](https://nubjs.com/) as a package manager:
     - Natively uses `nub.lock` (pnpm lockfile format), but will locate dependency roots using other
@@ -138,6 +146,11 @@
   dependencies, running tasks that are not dependents of the requested targets (with a deep enough
   graph, the entire connected component). Downstream expansion now only flows from the requested
   targets through their dependent chains, matching how `--downstream direct` already behaved.
+- Fixed an issue where a failed proto installation would not abort the pipeline nor surface its
+  error. Dependent toolchain actions would run in the broken environment and fail with misleading
+  errors (like a missing `proto-shim` binary) that masked the root cause. Setup proto and setup
+  environment failures now abort the pipeline immediately, and when multiple actions fail, the
+  first failure is reported instead of the last.
 
 #### ⚙️ Internal
 

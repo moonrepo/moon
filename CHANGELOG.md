@@ -31,6 +31,8 @@
   - Updated the `moon setup` action to also setup the toolchain environment, if their dependency
     root is the same as the workspace root. Nested dependency roots will not be setup, as they are
     expected to be setup by their parent project.
+  - Updated the `moon exec` (and related pipeline commands) to display action failures in the
+    summary at the bottom, instead of interleaved within all actions.
 - **Config**
   - Added an `env` setting to `.moon/tasks/**/*` configs. These environment variables are inherited
     by all matching projects, and are merged into each project's `env` setting, with project-level
@@ -82,9 +84,17 @@
 #### 🧰 Toolchains
 
 - **Go**
+  - The `force` option for `bins` entries is now respected, and will always install the binary.
   - Fixed configured `bins` not being reinstalled when their binaries were uninstalled or deleted
     outside of moon.
-  - The `force` option for `bins` entries is now respected, and will always install the binary.
+  - Fixed project relationships not linking when a `go.mod` is located in a major version folder
+    (`v2`+) but its `module` directive omits the version suffix. The suffix is now inferred from the
+    folder name, for both the project's alias and dependency matching.
+  - `replace` directives are now honored when linking project relationships. A replacement pointing
+    to a local directory links to the project at that location (regardless of module names), while a
+    replacement pointing to another module no longer creates a relationship.
+  - Project relationships now reference the dependency's project identifier instead of its module
+    path alias, aligning with other toolchains.
 - **JavaScript**
   - Added unstable support for [Nub](https://nubjs.com/) as a package manager:
     - Natively uses `nub.lock` (pnpm lockfile format), but will locate dependency roots using other
@@ -119,6 +129,28 @@
 - Fixed an issue where a task with `runDepsInParallel: false` would not be linked to all of its
   dependencies when a serial ordering edge was skipped to avoid a cycle, allowing the task to run
   before a dependency had finished.
+- Fixed an issue where moon would abort on startup with "Failed to load Git submodules" in
+  repositories without a `.gitmodules` file, when the git object database was incomplete or
+  unreachable (e.g. partial clones, or `--reference` clones whose alternates are inaccessible).
+  Submodule detection is now skipped entirely when no `.gitmodules` file exists.
+- Fixed an issue where the synchronous affected tracker (`experiments.asyncAffectedTracking`
+  disabled) would silently skip transitive dependent tasks when running with `--downstream` and
+  `--include-relations`, and could even schedule fewer tasks when the change set grew, as affected
+  marks were accumulated lazily in target iteration order. Affected status is now tracked up front,
+  mirroring the asynchronous tracker.
+- Fixed an issue on Windows where path variables (`$workspaceRoot`, `$workingDir`, `$projectRoot`)
+  expanded using the Windows path format (`C:\path`) based on the shell moon was executed from,
+  instead of the shell the task runs in. When the `windowsShell` task option is `bash`, they now
+  expand using the Unix path format (`/c/path`) that bash expects.
+- Fixed an issue where `--downstream deep` would also expand the dependents of upstream
+  dependencies, running tasks that are not dependents of the requested targets (with a deep enough
+  graph, the entire connected component). Downstream expansion now only flows from the requested
+  targets through their dependent chains, matching how `--downstream direct` already behaved.
+- Fixed an issue where a failed proto installation would not abort the pipeline nor surface its
+  error. Dependent toolchain actions would run in the broken environment and fail with misleading
+  errors (like a missing `proto-shim` binary) that masked the root cause. Setup proto and setup
+  environment failures now abort the pipeline immediately, and when multiple actions fail, the
+  first failure is reported instead of the last.
 
 #### ⚙️ Internal
 

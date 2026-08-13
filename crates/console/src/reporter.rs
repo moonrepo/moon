@@ -500,10 +500,14 @@ impl MoonReporter {
     }
 
     fn print_pipeline_summary(&self, actions: &[Action]) -> miette::Result<()> {
+        let mut items = vec![];
+        let mut failed_items = vec![];
+
         for action in actions {
             let status = match action.status {
-                ActionStatus::Passed => color::success("pass"),
-                ActionStatus::Cached | ActionStatus::CachedFromRemote => color::label("pass"),
+                ActionStatus::Passed | ActionStatus::Cached | ActionStatus::CachedFromRemote => {
+                    color::label("pass")
+                }
                 ActionStatus::Aborted | ActionStatus::Failed | ActionStatus::TimedOut => {
                     color::failure("fail")
                 }
@@ -528,12 +532,22 @@ impl MoonReporter {
                 comments.push(self.get_short_hash(hash));
             }
 
-            self.out.write_line(format!(
+            let message = format!(
                 "{} {} {}",
                 status,
                 action.label,
                 self.format_comments(comments),
-            ))?;
+            );
+
+            if action.has_failed() {
+                failed_items.push(message);
+            } else {
+                items.push(message);
+            }
+        }
+
+        for item in items.into_iter().chain(failed_items) {
+            self.out.write_line(item)?;
         }
 
         Ok(())

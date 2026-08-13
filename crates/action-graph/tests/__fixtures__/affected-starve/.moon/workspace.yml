@@ -1,0 +1,7 @@
+projects:
+  - 'base'
+  - 'mid'
+  - 'top'
+
+experiments:
+  asyncAffectedTracking: false

@@ -61,9 +61,19 @@ terminal, you'll see a message for "cached".
 > cache. Enable it via the [`experiments.casOutputsCache`](../config/workspace#casoutputscache)
 > setting.
 
+> As of v2.5, when the [daemon](../guides/daemon) is enabled, archiving and hydration are offloaded
+> to it and processed in the background, so these heavy file system operations no longer block the
+> pipeline. Failures are recorded in the daemon's server logs.
+
 ## File structure
 
 The following diagram outlines our cache folder structure and why each piece exists.
+
+> As of v2.5, the `blobs/` and `manifests/` folders can be shared between all VCS worktrees on the
+> same machine, via the
+> [`cache.unstable_sharedWorktreeCache`](../config/workspace#unstable_sharedworktreecache) setting.
+> When enabled, these folders live in the base checkout's `.moon/cache` directory, while everything
+> else remains worktree-specific.
 
 ```shell
 .moon/cache/

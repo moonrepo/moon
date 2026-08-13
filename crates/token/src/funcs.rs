@@ -1,8 +1,6 @@
 use crate::contexts::ProjectContext;
 use moon_common::{is_ci, is_docker};
-use moon_config::Input;
 use moon_env_var::GlobalEnvBag;
-use moon_project::Project;
 use moon_project_graph::ProjectGraph;
 use std::sync::Arc;
 use tera::{Error, Function, Kwargs, State, TeraResult, Value};

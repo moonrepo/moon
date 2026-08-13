@@ -1,5 +1,5 @@
 use crate::config_struct;
-use schematic::Config;
+use schematic::{Config, env};
 
 config_struct!(
     /// Configures aspects of the content-addressable storage (CAS) cache.
@@ -9,6 +9,7 @@ config_struct!(
         /// "512mib". When exceeded, the least recently used cached task outputs
         /// are evicted. Unlimited when unset.
         /// @since 2.4.0
+        #[setting(env = "MOON_CACHE_CAS_MAX_SIZE")]
         pub max_size: Option<String>,
 
         // /// Byte threshold above which to use memory-mapped I/O for hashing.
@@ -18,6 +19,7 @@ config_struct!(
         /// Verify hash on every read. When enabled, reads are slower
         /// but detect on-disk corruption.
         /// @since 2.3.0
+        #[setting(env = "MOON_CACHE_CAS_VERIFY_INTEGRITY", parse_env = env::parse_bool)]
         pub verify_integrity: bool,
     }
 );
@@ -39,7 +41,11 @@ config_struct!(
         /// Hashes, locks, states, and more will not be, as they are worktree-specific.
         ///
         /// @since 2.5.0
-        #[setting(default = true)]
+        #[setting(
+            alias = "unstable_sharedWorktreeCache",
+            env = "MOON_CACHE_SHARED_WORKTREE_CACHE",
+            parse_env = env::parse_bool,
+        )]
         pub shared_worktree_cache: bool,
     }
 );

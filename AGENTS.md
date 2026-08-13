@@ -38,6 +38,7 @@ vp install    # installs node modules
 Use `just` for all Rust tasks. **Always run format, lint, and test before finishing a change.**
 
 - `just build` - Builds all Rust crates.
+- `just build-wasm` - Builds test related WASM plugins (required for tests).
 - `just check` - Checks all Rust crates without producing binaries.
 - `just format` - Formats all Rust code with `rustfmt`.
 - `just lint` - Lints all Rust code with `clippy` (treats warnings as errors).
@@ -48,13 +49,14 @@ Use `just` for all Rust tasks. **Always run format, lint, and test before finish
 
 ### Conventions:
 
-- **Shared target cache.** When running Cargo, the `$CARGO_TARGET_DIR` environment variable must be
-  defined. If it's not provided by the shell, it should default to `~/.cargo/shared-target`.
+- **Shared target cache.** When running Cargo or any Just commands, the `$CARGO_TARGET_DIR`
+  environment variable MUST be defined. If it's not provided by the shell, it should default to
+  `~/.cargo/shared-target`.
 - **No warnings.** Clippy runs with `-D warnings`; treat every warning as an error.
 - **No `std` hash collections.** `std::collections::HashMap`/`HashSet` are disallowed via
   `clippy.toml`. Use `rustc_hash::{FxHashMap, FxHashSet}` instead.
 - **Snapshots** use [`insta`](https://insta.rs/); review changes with `cargo insta review`.
-- **Tests** run under [nextest](https://nexte.st/). Tests must pass with `MOON_TEST=true` and
+- **Tests** run under [`nextest`](https://nexte.st/). Tests must pass with `MOON_TEST=true` and
   `STARBASE_TEST=true` (the `just test` recipe sets these for you).
 - Applicable crates are published independently using `cargo release`. Never automate this!
 

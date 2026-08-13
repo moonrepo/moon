@@ -38,6 +38,8 @@ md5 = "0.8.1"
 miette = "7.6.0"
 num_cpus = "1.17.0"
 pathdiff = "0.2.3"
+pest = "2.8.6"
+pest_derive = "2.8.6"
 petgraph = { version = "0.8.3", default-features = false, features = [
   "serde-1",
 ] }

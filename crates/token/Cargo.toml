@@ -1,9 +1,9 @@
 [package]
-name = "moon_task_expander"
+name = "moon_token"
 version = "0.0.1"
 edition = "2024"
 license = "MIT"
-description = "Expands tasks with runtime information."
+description = "Token resolving."
 homepage = "https://moonrepo.dev/moon"
 repository = "https://github.com/moonrepo/moon"
 publish = false
@@ -12,25 +12,22 @@ publish = false
 moon_common = { path = "../common" }
 moon_config = { path = "../config" }
 moon_env_var = { path = "../env-var" }
+moon_file_group = { path = "../file-group" }
 moon_graph_utils = { path = "../graph-utils" }
 moon_project = { path = "../project" }
 moon_project_graph = { path = "../project-graph" }
-moon_task = { path = "../task" }
+moon_task = {  path = "../task" }
 moon_time = { path = "../time" }
-moon_token = { path = "../token" }
-cd_env = { workspace = true }
-ci_env = { workspace = true }
-miette = { workspace = true }
-pathdiff = { workspace = true }
-regex = { workspace = true }
+convert_case = { workspace = true }
 rustc-hash = { workspace = true }
-thiserror = { workspace = true }
-tracing = { workspace = true }
+pest = { workspace = true }
+pest_derive = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tera = { version = "2.1.0", features = ["fast"] }
 
 [dev-dependencies]
-petgraph = { workspace = true }
 starbase_sandbox = { workspace = true }
-starbase_utils = { workspace = true, features = ["json"] }
 
 [lints]
 workspace = true

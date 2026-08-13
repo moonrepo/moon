@@ -6,6 +6,7 @@ publish = false
 
 [dependencies]
 moon_common = { path = "../common" }
+moon_config = { path = "../config" }
 miette = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }

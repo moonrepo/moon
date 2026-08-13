@@ -75,7 +75,7 @@ where
     /// digests from all batches.
     async fn find_missing_blobs_batched(
         self: Arc<Self>,
-        digest: Digest,
+        manifest_digest: Digest,
         blob_digests: Vec<Digest>,
     ) -> miette::Result<Vec<Digest>> {
         let cap = self.get_capabilities();
@@ -83,7 +83,7 @@ where
 
         trace!(
             storage = self.get_id().as_str(),
-            hash = digest.hash.as_str(),
+            hash = manifest_digest.hash.as_str(),
             digests = blob_digests.len(),
             "Finding missing blobs",
         );
@@ -112,13 +112,13 @@ where
         if missing_digests.is_empty() {
             trace!(
                 storage = self.get_id().as_str(),
-                hash = digest.hash.as_str(),
+                hash = manifest_digest.hash.as_str(),
                 "No missing blobs, all exist in storage backend!",
             );
         } else {
             trace!(
                 storage = self.get_id().as_str(),
-                hash = digest.hash.as_str(),
+                hash = manifest_digest.hash.as_str(),
                 missing = missing_digests.len(),
                 "Found missing blobs",
             );
@@ -141,7 +141,7 @@ where
     /// and the caller should handle the error accordingly.
     async fn store_blobs_batched(
         self: Arc<Self>,
-        digest: Digest,
+        manifest_digest: Digest,
         mut blob_inputs: Vec<BlobInput>,
     ) -> miette::Result<StoreResult> {
         // Outputs can share identical content, so the inputs may carry the same
@@ -161,14 +161,17 @@ where
 
         // Before we store blobs, we should ensure that they don't already exists in the backend
         let missing_digests = match Arc::clone(&self)
-            .find_missing_blobs_batched(digest.clone(), get_digests_from_inputs(&blob_inputs))
+            .find_missing_blobs_batched(
+                manifest_digest.clone(),
+                get_digests_from_inputs(&blob_inputs),
+            )
             .await
         {
             Ok(digests) => digests,
             Err(error) => {
                 warn!(
                     storage = self.get_id().as_str(),
-                    hash = digest.hash.as_str(),
+                    hash = manifest_digest.hash.as_str(),
                     error = format_error_chain(&error),
                     "Failed to find missing blobs, aborting store operation",
                 );
@@ -200,7 +203,7 @@ where
         }) {
             set.spawn(Box::pin(store_blobs_batch(
                 Arc::clone(&self),
-                digest.clone(),
+                manifest_digest.clone(),
                 batch,
             )));
         }
@@ -244,7 +247,7 @@ where
         } else {
             warn!(
                 storage = self.get_id().as_str(),
-                hash = digest.hash.as_str(),
+                hash = manifest_digest.hash.as_str(),
                 expected_count = result.missing_count,
                 actual_count = result.stored_count,
                 errors = ?upload_errors,
@@ -271,7 +274,7 @@ where
     /// the error accordingly.
     async fn retrieve_blobs_batched(
         self: Arc<Self>,
-        digest: Digest,
+        manifest_digest: Digest,
         blob_digests: Vec<Digest>,
     ) -> miette::Result<RetrieveResult> {
         let mut result = RetrieveResult {
@@ -289,7 +292,7 @@ where
         }) {
             set.spawn(Box::pin(retrieve_blobs_batch(
                 Arc::clone(&self),
-                digest.clone(),
+                manifest_digest.clone(),
                 batch,
             )));
         }
@@ -336,7 +339,7 @@ where
         } else {
             warn!(
                 storage = self.get_id().as_str(),
-                hash = digest.hash.as_str(),
+                hash = manifest_digest.hash.as_str(),
                 expected_count = result.retrieve_count,
                 actual_count = result.retrieved_count,
                 errors = ?download_errors,
@@ -364,14 +367,14 @@ fn get_digests_from_inputs(blob_inputs: &[BlobInput]) -> Vec<Digest> {
 
 async fn store_blobs_batch<T: StorageBackend + ?Sized>(
     backend: Arc<T>,
-    digest: Digest,
+    manifest_digest: Digest,
     batch: Batch<BlobInput>,
 ) -> miette::Result<Vec<Digest>> {
     let blob_count = batch.items.len();
 
     trace!(
         storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
+        hash = manifest_digest.hash.as_str(),
         blobs = blob_count,
         size = batch.size,
         "Storing blobs (batch {}:{})",
@@ -383,7 +386,7 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
         Ok(digests) => {
             trace!(
                 storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
+                hash = manifest_digest.hash.as_str(),
                 blobs = digests.len(),
                 missing = blob_count - digests.len(),
                 "Stored blobs (batch {}:{})",
@@ -396,7 +399,7 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
         Err(error) => {
             trace!(
                 storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
+                hash = manifest_digest.hash.as_str(),
                 error = format_error_chain(&error),
                 "Failed to store blobs (batch {}:{})",
                 batch.index,
@@ -410,14 +413,14 @@ async fn store_blobs_batch<T: StorageBackend + ?Sized>(
 
 async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
     backend: Arc<T>,
-    digest: Digest,
+    manifest_digest: Digest,
     batch: Batch<Digest>,
 ) -> miette::Result<Vec<BlobOutput>> {
     let blob_count = batch.items.len();
 
     trace!(
         storage = backend.get_id().as_str(),
-        hash = digest.hash.as_str(),
+        hash = manifest_digest.hash.as_str(),
         blobs = blob_count,
         size = batch.size,
         "Retrieving blobs (batch {}:{})",
@@ -429,7 +432,7 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
         Ok(blobs) => {
             trace!(
                 storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
+                hash = manifest_digest.hash.as_str(),
                 blobs = blobs.len(),
                 missing = blob_count - blobs.len(),
                 "Retrieved blobs (batch {}:{})",
@@ -442,7 +445,7 @@ async fn retrieve_blobs_batch<T: StorageBackend + ?Sized>(
         Err(error) => {
             trace!(
                 storage = backend.get_id().as_str(),
-                hash = digest.hash.as_str(),
+                hash = manifest_digest.hash.as_str(),
                 error = format_error_chain(&error),
                 "Failed to retrieve blobs (batch {}:{})",
                 batch.index,

@@ -1,5 +1,6 @@
 use super::{DockerManifest, MANIFEST_NAME, docker_error::AppDockerError};
 use crate::session::{MoonSession, SessionResult};
+use miette::IntoDiagnostic;
 use moon_actions::plugins::{ExecCommandOptions, exec_plugin_command};
 use moon_pdk_api::{InstallDependenciesInput, LocateDependenciesRootInput, PruneDockerInput};
 use moon_project::Project;
@@ -198,8 +199,8 @@ pub async fn prune_toolchains(
         }));
     }
 
-    while set.join_next().await.is_some() {
-        continue;
+    while let Some(result) = set.join_next().await {
+        result.into_diagnostic()??;
     }
 
     Ok(())

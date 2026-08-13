@@ -2,7 +2,7 @@ use httpmock::prelude::*;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::HttpRemoteStorage;
 use moon_cache_storage::{CacheContext, Manifest, ManifestFile, ManifestSymlink, StorageBackend};
-use moon_config::{CacheConfig, RemoteConfig};
+use moon_config::RemoteConfig;
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::sync::Arc;
@@ -16,14 +16,8 @@ fn create_storage(sandbox: &Sandbox, host: String) -> HttpRemoteStorage {
     };
     remote.cache.instance_name = INSTANCE.to_owned();
 
-    let context = CacheContext {
-        cache_dir: sandbox.path().join(".moon/cache"),
-        cache_config: Arc::new(CacheConfig::default()),
-        config_dir: sandbox.path().join(".moon"),
-        remote_config: Arc::new(remote),
-        remote_debug: false,
-        workspace_root: sandbox.path().to_path_buf(),
-    };
+    let mut context = CacheContext::new(sandbox.path());
+    context.remote_config = Arc::new(remote);
 
     HttpRemoteStorage::new(context).unwrap()
 }

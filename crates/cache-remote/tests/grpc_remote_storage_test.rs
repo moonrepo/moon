@@ -22,7 +22,7 @@ use bazel_remote_apis::google::rpc::Status as RpcStatus;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::{GrpcRemoteStorage, RemoteError};
 use moon_cache_storage::{CacheContext, Manifest, StorageBackend};
-use moon_config::{CacheConfig, RemoteCompression, RemoteConfig};
+use moon_config::{RemoteCompression, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
@@ -411,14 +411,8 @@ fn create_storage(
     remote.cache.instance_name = "moon-test".to_owned();
     remote.cache.compression = compression;
 
-    let context = CacheContext {
-        cache_dir: sandbox.path().join(".moon/cache"),
-        cache_config: Arc::new(CacheConfig::default()),
-        config_dir: sandbox.path().join(".moon"),
-        remote_config: Arc::new(remote),
-        remote_debug: false,
-        workspace_root: sandbox.path().to_path_buf(),
-    };
+    let mut context = CacheContext::new(sandbox.path());
+    context.remote_config = Arc::new(remote);
 
     GrpcRemoteStorage::new(context).unwrap()
 }

@@ -43,7 +43,7 @@ pub trait Vcs: Debug {
     ) -> miette::Result<Vec<WorkspaceRelativePathBuf>>;
 
     /// Return an absolute path to the repository root.
-    async fn get_repository_root(&self) -> miette::Result<PathBuf>;
+    fn get_repository_root(&self) -> miette::Result<PathBuf>;
 
     /// Return the repository slug ("moonrepo/moon") of the current checkout.
     async fn get_repository_slug(&self) -> miette::Result<String>;
@@ -70,7 +70,7 @@ pub trait Vcs: Debug {
 
     /// Return an absolute path to the working directory. This may be different
     /// than the repository root or moon workspace root (e.g., git worktrees).
-    async fn get_working_root(&self) -> miette::Result<PathBuf>;
+    fn get_working_root(&self) -> miette::Result<PathBuf>;
 
     /// Return true if the provided branch matches the default branch.
     fn is_default_branch(&self, branch: &str) -> bool;
@@ -83,6 +83,11 @@ pub trait Vcs: Debug {
 
     /// Return true if the current repository is a shallow checkout.
     async fn is_shallow_checkout(&self) -> miette::Result<bool>;
+
+    /// Return true if the current working directory is a VCS worktree.
+    fn is_worktree(&self) -> bool {
+        false
+    }
 
     /// Return true if the current binary version matches the provided requirement.
     async fn is_version_supported(&self, req: &str) -> miette::Result<bool> {

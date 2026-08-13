@@ -31,11 +31,7 @@ pub struct LocalStorage {
 }
 
 impl LocalStorage {
-    pub fn new(
-        context: CacheContext,
-        cache_dir: impl AsRef<Path>,
-        shared: bool,
-    ) -> miette::Result<Self> {
+    pub fn new(context: CacheContext, cache_dir: impl AsRef<Path>) -> miette::Result<Self> {
         let cache_dir = cache_dir.as_ref();
 
         // Support for legacy cache directory structure
@@ -57,11 +53,14 @@ impl LocalStorage {
 
         Ok(Self {
             capabilities: OnceLock::new(),
-            id: Id::raw(if shared {
-                "shared-local-cache"
-            } else {
-                "local-cache"
-            }),
+            id: Id::raw(
+                if context.cache_config.shared_worktree_cache && context.cache_shared_dir.is_some()
+                {
+                    "shared-local-cache"
+                } else {
+                    "local-cache"
+                },
+            ),
             manifests: Arc::new(CasStore::new(manifests_dir, {
                 let mut config = cas_config.clone();
                 // Our manifest hashes do not align with their contents,

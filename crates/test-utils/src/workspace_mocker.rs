@@ -359,6 +359,7 @@ impl WorkspaceMocker {
     pub fn mock_cache_engine(&self) -> CacheEngine {
         let context = CacheContext {
             cache_dir: self.config_dir.join("cache"),
+            cache_shared_dir: None,
             cache_config: Arc::new(self.workspace_config.cache.clone()),
             config_dir: self.config_dir.clone(),
             remote_config: Arc::new(self.workspace_config.remote.clone()),
@@ -368,9 +369,9 @@ impl WorkspaceMocker {
 
         let mut engine = CacheEngine::new(context.clone()).unwrap();
 
-        engine.storage.add_local_backend(
-            LocalStorage::new(context.clone(), &context.cache_dir, false).unwrap(),
-        );
+        engine
+            .storage
+            .add_local_backend(LocalStorage::new(context.clone(), &context.cache_dir).unwrap());
 
         engine
     }

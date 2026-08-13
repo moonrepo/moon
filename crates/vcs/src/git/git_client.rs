@@ -470,7 +470,7 @@ impl Vcs for Git {
         Ok(new_paths)
     }
 
-    async fn get_repository_root(&self) -> miette::Result<PathBuf> {
+    fn get_repository_root(&self) -> miette::Result<PathBuf> {
         Ok(self.repository_root.clone())
     }
 
@@ -668,7 +668,7 @@ impl Vcs for Git {
         )
     }
 
-    async fn get_working_root(&self) -> miette::Result<PathBuf> {
+    fn get_working_root(&self) -> miette::Result<PathBuf> {
         Ok(self.worktree.work_dir.clone())
     }
 
@@ -731,6 +731,10 @@ impl Vcs for Git {
         };
 
         Ok(result)
+    }
+
+    fn is_worktree(&self) -> bool {
+        self.worktree.type_of == GitTreeType::Worktree
     }
 
     async fn setup_hooks(&self) -> miette::Result<Option<VcsHookEnvironment>> {

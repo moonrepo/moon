@@ -1,6 +1,6 @@
 use moon_blob::Bytes;
 use moon_hash::Digest;
-use moon_manifest::{Manifest, ManifestFile, ManifestSymlink, ManifestUnpacker};
+use moon_manifest::{ManifestFile, ManifestSymlink, ManifestUnpacker, TaskManifest};
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::path::PathBuf;
 use std::time::{Duration, UNIX_EPOCH};
@@ -9,12 +9,12 @@ fn digest(bytes: &[u8]) -> Option<Digest> {
     Some(Digest::from_bytes(bytes).unwrap())
 }
 
-fn unpack(sandbox: &Sandbox, manifest: &Manifest) -> miette::Result<()> {
+fn unpack(sandbox: &Sandbox, manifest: &TaskManifest) -> miette::Result<()> {
     ManifestUnpacker::new(manifest, sandbox.path().to_path_buf()).unpack()
 }
 
-fn manifest_with(file: ManifestFile) -> Manifest {
-    Manifest {
+fn manifest_with(file: ManifestFile) -> TaskManifest {
+    TaskManifest {
         files: vec![file],
         ..Default::default()
     }
@@ -232,7 +232,7 @@ mod symlinks {
     fn links_to_the_target() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             files: vec![ManifestFile {
                 bytes: Some(Bytes::from_static(b"contents")),
                 digest: digest(b"contents"),
@@ -263,7 +263,7 @@ mod symlinks {
     fn links_into_nested_directories() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             symlinks: vec![ManifestSymlink {
                 path: "out/nested/link.txt".into(),
                 target: "out/a.txt".into(),
@@ -292,7 +292,7 @@ mod path_containment {
         );
     }
 
-    fn manifest_at(path: &str) -> Manifest {
+    fn manifest_at(path: &str) -> TaskManifest {
         manifest_with(ManifestFile {
             bytes: Some(Bytes::from_static(b"pwned")),
             digest: digest(b"pwned"),
@@ -363,7 +363,7 @@ mod path_containment {
     fn rejects_a_symlink_path_that_traverses_out_of_the_workspace() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             symlinks: vec![ManifestSymlink {
                 path: "../moon-escape.txt".into(),
                 target: "out/a.txt".into(),
@@ -389,7 +389,7 @@ mod path_containment {
         // would otherwise plant a link pointing at an arbitrary file.
         let sandbox = create_empty_sandbox();
 
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             symlinks: vec![ManifestSymlink {
                 path: "out/link.txt".into(),
                 target: "../../etc/passwd".into(),

@@ -2,7 +2,7 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{Manifest, ManifestSource, ManifestUnpacker, StorageOptions};
+use moon_cache::{ManifestSource, ManifestUnpacker, StorageOptions, TaskManifest};
 use moon_common::{color, path::WorkspaceRelativePath};
 use moon_daemon_client::DaemonClient;
 use moon_task::Task;
@@ -35,7 +35,7 @@ pub enum HydrateOutcome {
     Hit,
     // Boxed to keep the enum small: `Manifest` dwarfs the unit variants, so
     // every `HydrateOutcome` would otherwise be sized for this one case.
-    HitFromStorage(Box<Manifest>, bool),
+    HitFromStorage(Box<TaskManifest>, bool),
 }
 
 pub struct OutputHydrater<'task> {
@@ -127,7 +127,7 @@ impl OutputHydrater<'_> {
                     if res.hydrated
                         && let Some(action_result) = res.manifest
                     {
-                        manifest = Some(Manifest::from_bazel_action_result(action_result)?);
+                        manifest = Some(TaskManifest::from_bazel_action_result(action_result)?);
                     }
                 } else {
                     manifest = self
@@ -139,7 +139,7 @@ impl OutputHydrater<'_> {
                             include_remote: use_remote,
                             ..Default::default()
                         })
-                        .hydrate_manifest(&state.digest, *source)
+                        .hydrate_task_manifest(&state.digest, *source)
                         .await?;
 
                     if let Some(manifest) = &manifest {
@@ -241,7 +241,7 @@ impl OutputHydrater<'_> {
         Ok(())
     }
 
-    fn validate_output_paths(&self, manifest: &Manifest) -> miette::Result<()> {
+    fn validate_output_paths(&self, manifest: &TaskManifest) -> miette::Result<()> {
         for file in &manifest.files {
             if file.digest.is_some() {
                 self.validate_output_path(&file.path)?;

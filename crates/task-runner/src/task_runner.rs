@@ -320,7 +320,7 @@ impl<'task> TaskRunner<'task> {
                     include_remote: self.state.remote_cache_readable,
                     ..Default::default()
                 })
-                .load_manifest(&self.state.digest)
+                .load_task_manifest(&self.state.digest)
                 .await
         {
             return Ok(Some(HydrateFrom::Storage(Box::new(source))));

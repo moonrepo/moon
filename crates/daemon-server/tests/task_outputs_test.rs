@@ -121,7 +121,7 @@ impl TestDaemon {
         self.app_context
             .cache_engine
             .storage
-            .archive_manifest(digest, manifest)
+            .archive_task_manifest(digest, manifest)
             .await
             .unwrap();
 

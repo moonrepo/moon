@@ -1,5 +1,5 @@
-use crate::ManifestError;
-use crate::manifest::{Manifest, ManifestFile};
+use crate::manifest::{ManifestFile, TaskManifest};
+use crate::manifest_error::ManifestError;
 use moon_blob::grant_owner_write_access;
 use moon_common::path::{WorkspaceRelativePath, clean_components};
 use starbase_utils::fs::{self, FsError};
@@ -8,12 +8,12 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct ManifestUnpacker<'owner> {
-    manifest: &'owner Manifest,
+    manifest: &'owner TaskManifest,
     workspace_root: PathBuf,
 }
 
 impl<'owner> ManifestUnpacker<'owner> {
-    pub fn new(manifest: &'owner Manifest, workspace_root: PathBuf) -> Self {
+    pub fn new(manifest: &'owner TaskManifest, workspace_root: PathBuf) -> Self {
         Self {
             manifest,
             workspace_root,

@@ -254,9 +254,11 @@ fn evict_manifests(
         let Ok(metadata) = fs::metadata(&path) else {
             continue;
         };
+
         let Ok(bytes) = fs::read(&path) else {
             continue;
         };
+
         let Ok(manifest) = serde_json::from_slice::<Manifest>(&bytes) else {
             continue;
         };
@@ -264,7 +266,9 @@ fn evict_manifests(
         entries.push(Entry {
             mtime: metadata.modified().unwrap_or(now),
             file_size: metadata.len(),
-            digests: manifest.collect_blob_digests(),
+            digests: match manifest {
+                Manifest::Task(inner) => inner.collect_blob_digests(),
+            },
             path,
         });
     }

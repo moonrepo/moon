@@ -11,8 +11,26 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum Manifest {
+    Task(TaskManifest),
+}
+
+impl Manifest {
+    pub fn from_bazel_action_result(result: ActionResult) -> miette::Result<Self> {
+        Ok(Self::Task(TaskManifest::from_bazel_action_result(result)?))
+    }
+
+    pub fn into_bazel_action_result(self, persist_stdio: bool) -> ActionResult {
+        match self {
+            Self::Task(manifest) => manifest.into_bazel_action_result(persist_stdio),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct Manifest {
+pub struct TaskManifest {
     // Outputs
     pub files: Vec<ManifestFile>,
     pub symlinks: Vec<ManifestSymlink>,
@@ -40,7 +58,7 @@ pub struct Manifest {
     pub digest_source: Option<ManifestFile>,
 }
 
-impl Manifest {
+impl TaskManifest {
     pub fn from_bazel_action_result(result: ActionResult) -> miette::Result<Self> {
         let metadata = result.execution_metadata.unwrap_or_default();
         let mut files = vec![];

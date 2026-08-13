@@ -1,5 +1,5 @@
 use crate::helpers::*;
-use crate::manifest::{Manifest, ManifestFile, ManifestSymlink};
+use crate::manifest::{ManifestFile, ManifestSymlink, TaskManifest};
 use crate::manifest_error::ManifestError;
 use moon_action::Operation;
 use moon_blob::Blob;
@@ -11,19 +11,19 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct ManifestPacker {
-    manifest: Manifest,
+    manifest: TaskManifest,
     workspace_root: PathBuf,
 }
 
 impl ManifestPacker {
     pub fn new(workspace_root: PathBuf) -> Self {
         Self {
-            manifest: Manifest::default(),
+            manifest: TaskManifest::default(),
             workspace_root,
         }
     }
 
-    pub fn pack(self) -> Manifest {
+    pub fn pack(self) -> TaskManifest {
         self.manifest
     }
 

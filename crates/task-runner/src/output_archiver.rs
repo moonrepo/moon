@@ -2,7 +2,7 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{Manifest, StorageOptions};
+use moon_cache::{StorageOptions, TaskManifest};
 use moon_common::color;
 use moon_daemon_client::DaemonClient;
 use moon_manifest::ManifestPacker;
@@ -99,7 +99,7 @@ impl OutputArchiver<'_> {
                         include_remote: use_remote,
                         ..Default::default()
                     })
-                    .archive_manifest(&state.digest, manifest)
+                    .archive_task_manifest(&state.digest, manifest)
                     .await?;
             }
         }
@@ -157,7 +157,7 @@ impl OutputArchiver<'_> {
     }
 
     #[instrument(skip(self, state))]
-    async fn create_cache_manifest(&self, state: &TaskRunState) -> miette::Result<Manifest> {
+    async fn create_cache_manifest(&self, state: &TaskRunState) -> miette::Result<TaskManifest> {
         let task = Arc::clone(self.task);
         let workspace_root = self.app_context.workspace_root.clone();
 

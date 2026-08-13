@@ -368,9 +368,9 @@ impl WorkspaceMocker {
 
         let mut engine = CacheEngine::new(context.clone()).unwrap();
 
-        engine.storage.add_local_backend(
-            LocalStorage::new(context.clone(), &context.cache_dir, false).unwrap(),
-        );
+        engine
+            .storage
+            .add_local_backend(LocalStorage::new(context.clone(), &context.cache_dir).unwrap());
 
         engine
     }

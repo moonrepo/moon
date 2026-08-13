@@ -31,11 +31,7 @@ pub struct LocalStorage {
 }
 
 impl LocalStorage {
-    pub fn new(
-        context: CacheContext,
-        cache_dir: impl AsRef<Path>,
-        shared: bool,
-    ) -> miette::Result<Self> {
+    pub fn new(context: CacheContext, cache_dir: impl AsRef<Path>) -> miette::Result<Self> {
         let cache_dir = cache_dir.as_ref();
 
         // Support for legacy cache directory structure
@@ -57,7 +53,7 @@ impl LocalStorage {
 
         Ok(Self {
             capabilities: OnceLock::new(),
-            id: Id::raw(if shared {
+            id: Id::raw(if context.cache_config.shared_worktree_cache {
                 "shared-local-cache"
             } else {
                 "local-cache"

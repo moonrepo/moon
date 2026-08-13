@@ -248,8 +248,8 @@ mod git {
                 git.get_repository_slug().await.unwrap().as_str(),
                 "moonrepo/git-test"
             );
-            assert_eq!(git.get_repository_root().await.unwrap(), sandbox.path());
-            assert_eq!(git.get_working_root().await.unwrap(), sandbox.path());
+            assert_eq!(git.get_repository_root().unwrap(), sandbox.path());
+            assert_eq!(git.get_working_root().unwrap(), sandbox.path());
 
             // Change branches
             sandbox.run_git(|cmd| {
@@ -263,8 +263,8 @@ mod git {
         async fn returns_correct_values_when_bare() {
             let (sandbox, git) = create_root_sandbox(true);
 
-            assert_eq!(git.get_repository_root().await.unwrap(), sandbox.path());
-            assert_eq!(git.get_working_root().await.unwrap(), sandbox.path());
+            assert_eq!(git.get_repository_root().unwrap(), sandbox.path());
+            assert_eq!(git.get_working_root().unwrap(), sandbox.path());
         }
 
         #[tokio::test]
@@ -476,11 +476,11 @@ mod git {
                 "moonrepo/git-test"
             );
             assert_eq!(
-                git.get_repository_root().await.unwrap(),
+                git.get_repository_root().unwrap(),
                 soft_canonicalize(sandbox.path()).unwrap()
             );
             assert_eq!(
-                git.get_working_root().await.unwrap(),
+                git.get_working_root().unwrap(),
                 sandbox.path().join("trees/one")
             );
 

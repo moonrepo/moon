@@ -30,5 +30,12 @@ config_struct!(
         /// @since 2.3.0
         #[setting(nested)]
         pub cas: CacheCasConfig,
+
+        /// Whether to use a shared worktree cache. When enabled, the cache is
+        /// shared between all VCS worktrees on the same machine. When disabled, each
+        /// worktree has its own cache.
+        /// @since 2.5.0
+        #[setting(default = true)]
+        pub shared_worktree_cache: bool,
     }
 );

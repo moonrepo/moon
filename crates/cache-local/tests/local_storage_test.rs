@@ -29,7 +29,7 @@ fn create_backend_with(sandbox: &Sandbox, cache_config: CacheConfig) -> Arc<Loca
         workspace_root: sandbox.path().to_path_buf(),
     };
 
-    Arc::new(LocalStorage::new(context, cache_dir, false).unwrap())
+    Arc::new(LocalStorage::new(context, cache_dir).unwrap())
 }
 
 fn inline_source(content: &'static [u8]) -> BlobInput {

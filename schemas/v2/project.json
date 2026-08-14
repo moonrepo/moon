@@ -555,6 +555,11 @@
         "unknown"
       ]
     },
+    "MergeStrategy": {
+      "description": "The strategy in which to merge two configuration values.",
+      "type": "string",
+      "enum": ["append", "prepend", "preserve", "replace"]
+    },
     "Output": {
       "anyOf": [
         {
@@ -574,7 +579,7 @@
       "properties": {
         "customGroups": {
           "title": "customGroups",
-          "description": "Bitbucket only. A map of custom groups (prefixed with @@@), to a list of user and normal groups.",
+          "description": "bitbucket-legacy only. A map of custom groups (prefixed with @@@), to a list of user and normal groups.",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -585,7 +590,7 @@
           "propertyNames": {
             "type": "string"
           },
-          "markdownDescription": "Bitbucket only. A map of custom groups (prefixed with `@@@`), to a list of user and normal groups."
+          "markdownDescription": "`bitbucket-legacy` only. A map of custom groups (prefixed with `@@@`), to a list of user and normal groups."
         },
         "defaultOwner": {
           "title": "defaultOwner",
@@ -617,7 +622,7 @@
         },
         "requiredApprovals": {
           "title": "requiredApprovals",
-          "description": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the Check() condition. For GitLab, marks the code owners section as required.",
+          "description": "bitbucket-legacy and GitLab only. The number of approvals required for the request to be satisfied. For bitbucket-legacy, utilizes the Check() condition. For GitLab, marks the code owners section as required.",
           "anyOf": [
             {
               "type": "number"
@@ -626,7 +631,7 @@
               "type": "null"
             }
           ],
-          "markdownDescription": "Bitbucket and GitLab only. The number of approvals required for the request to be satisfied. For Bitbucket, utilizes the `Check()` condition. For GitLab, marks the code owners section as required."
+          "markdownDescription": "`bitbucket-legacy` and GitLab only. The number of approvals required for the request to be satisfied. For `bitbucket-legacy`, utilizes the `Check()` condition. For GitLab, marks the code owners section as required."
         }
       },
       "additionalProperties": false
@@ -935,6 +940,16 @@
               "$ref": "#/definitions/ProjectWorkspaceInheritedTasksConfig"
             }
           ]
+        },
+        "mergeStrategies": {
+          "title": "mergeStrategies",
+          "description": "Controls how project settings are merged with inherited workspace-level settings. @since 2.5.0",
+          "allOf": [
+            {
+              "$ref": "#/definitions/ProjectWorkspaceMergeStrategiesConfig"
+            }
+          ],
+          "markdownDescription": "Controls how project settings are merged with inherited workspace-level settings. @since 2.5.0"
         }
       },
       "additionalProperties": false
@@ -980,6 +995,42 @@
       },
       "additionalProperties": false,
       "markdownDescription": "Controls how workspace-level tasks are inherited."
+    },
+    "ProjectWorkspaceMergeStrategiesConfig": {
+      "description": "Controls how project settings are merged with inherited workspace-level settings.",
+      "type": "object",
+      "properties": {
+        "env": {
+          "title": "env",
+          "description": "The strategy to use when merging env with inherited environment variables, applied to the entire map. @since 2.5.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `env` with inherited environment variables, applied to the entire map. @since 2.5.0"
+        },
+        "fileGroups": {
+          "title": "fileGroups",
+          "description": "The strategy to use when merging fileGroups with inherited file groups, applied per group. @since 2.5.0",
+          "default": "append",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/MergeStrategy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "markdownDescription": "The strategy to use when merging `fileGroups` with inherited file groups, applied per group. @since 2.5.0"
+        }
+      },
+      "additionalProperties": false,
+      "markdownDescription": "Controls how project settings are merged with inherited workspace-level settings."
     },
     "StackType": {
       "description": "The technology stack of the project, for categorizing.",
@@ -1423,11 +1474,6 @@
       },
       "additionalProperties": false
     },
-    "TaskMergeStrategy": {
-      "description": "The strategy in which to merge a specific task option.",
-      "type": "string",
-      "enum": ["append", "prepend", "preserve", "replace"]
-    },
     "TaskOperatingSystem": {
       "description": "The operating system in which to only run this task on.",
       "type": "string",
@@ -1662,7 +1708,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1676,7 +1722,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1690,7 +1736,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1704,7 +1750,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1718,7 +1764,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1732,7 +1778,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1746,7 +1792,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1760,7 +1806,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"
@@ -1774,7 +1820,7 @@
           "default": "append",
           "anyOf": [
             {
-              "$ref": "#/definitions/TaskMergeStrategy"
+              "$ref": "#/definitions/MergeStrategy"
             },
             {
               "type": "null"

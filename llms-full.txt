@@ -1240,6 +1240,9 @@ The following options are available for _all_ moon commands.
 - `--help` - Display the help menu for the current command.
 - `--log <level>` - The lowest [log level to output](#logging).
 - `--log-file <file>` - Write logs to the defined file.
+- `--otel` - Export [traces and metrics](#opentelemetry) over OTLP. <VersionLabel version="2.5.0" />
+- `--otel-logs` - Also export log events as OTLP logs. <VersionLabel version="2.5.0" />
+- `--otel-service-name <name>` - The service name to report. <VersionLabel version="2.5.0" />
 - `--quiet`, `-q` - Hide all non-important moon specific terminal output.
 - `--theme` - Terminal theme to write output in. <VersionLabel version="1.35.0" />
 - `--version` - Display the version of the CLI.
@@ -1382,6 +1385,66 @@ $ moon run app:build --logFile=output.log
 # Or
 $ MOON_LOG_FILE=output.log moon run app:build
 ```
+
+## OpenTelemetry<VersionLabel version="2.5.0" />
+
+moon can export [OpenTelemetry](https://opentelemetry.io/) (OTEL) traces, metrics, and logs over
+[OTLP](https://opentelemetry.io/docs/specs/otlp/), for integration with observability backends like
+Grafana, Honeycomb, or Datadog. Traces are derived from the same spans that power `--dump` and
+`--log verbose`, so the entire pipeline — action graph, task execution, plugin calls, and so on — is
+reported as a span tree.
+
+This is opt-in, and enabled with the following global options (or environment variables):
+
+- `--otel` (`MOON_OTEL`) - Export traces and metrics over OTLP.
+- `--otel-logs` (`MOON_OTEL_LOGS`) - Also export log events as OTLP logs. Respects `--log`, so a
+  lower log level exports fewer events.
+- `--otel-service-name <name>` (`MOON_OTEL_SERVICE_NAME`) - The service name to report. If not
+  provided, the standard `OTEL_SERVICE_NAME` environment variable is used.
+
+The OTLP destination and transport are configured using the standard `OTEL_EXPORTER_OTLP_*`
+environment variables, like `OTEL_EXPORTER_OTLP_ENDPOINT`.
+
+```shell
+$ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+$ moon --otel run app:build
+```
+
+### Transports
+
+OTLP payloads can be delivered over HTTP (`http/protobuf`) or gRPC (`grpc`). The transport is
+selected with the standard environment variables, where the per-signal variable takes precedence
+over the generic one:
+
+- `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`, `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL` - The transport for an
+  individual signal.
+- `OTEL_EXPORTER_OTLP_PROTOCOL` - The transport for all signals. When not set, defaults to
+  `http/protobuf`.
+
+The same precedence applies to endpoints, using `OTEL_EXPORTER_OTLP_ENDPOINT` and the per-signal
+`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (and friends) variables. When an endpoint starts with
+`https://`, TLS is enabled, and the collector's certificate is verified against the operating
+system's trust store.
+
+```shell
+# OTLP over gRPC
+$ export OTEL_EXPORTER_OTLP_PROTOCOL="grpc"
+$ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
+$ moon --otel run app:build
+```
+
+### Disabling signals
+
+The standard environment variables can also force signals off, even when the options above have
+enabled them. `OTEL_SDK_DISABLED=true` disables all signals, while `OTEL_TRACES_EXPORTER=none` and
+`OTEL_LOGS_EXPORTER=none` disable an individual signal. These variables can only disable a signal,
+never enable one.
+
+:::info
+
+moon does not record OTEL metrics at this time, only traces and logs.
+
+:::
 
 ## Profiling<VersionLabel version="1.26.0" />
 
@@ -1835,6 +1898,10 @@ Inherits all options from [`moon exec`](./exec) and pre-fills with: `--on-failur
 
 The `moon setup` command can be used to setup the developer and pipeline environments. It achieves
 this by downloading and installing all configured toolchains.
+
+As of v2.5, this command also sets up each toolchain's environment when their dependency root is
+the workspace root itself. Nested dependency roots will not be setup, as they are expected to be
+setup by their parent project.
 
 ```shell
 $ moon setup
@@ -2737,9 +2804,19 @@ terminal, you'll see a message for "cached".
 > cache. Enable it via the [`experiments.casOutputsCache`](../config/workspace#casoutputscache)
 > setting.
 
+> As of v2.5, when the [daemon](../guides/daemon) is enabled, archiving and hydration are offloaded
+> to it and processed in the background, so these heavy file system operations no longer block the
+> pipeline. Failures are recorded in the daemon's server logs.
+
 ## File structure
 
 The following diagram outlines our cache folder structure and why each piece exists.
+
+> As of v2.5, the `blobs/` and `manifests/` folders can be shared between all VCS worktrees on the
+> same machine, via the
+> [`cache.unstable_sharedWorktreeCache`](../config/workspace#unstable_sharedworktreecache) setting.
+> When enabled, these folders live in the base checkout's `.moon/cache` directory, while everything
+> else remains worktree-specific.
 
 ```shell
 .moon/cache/
@@ -3401,6 +3478,12 @@ support one of the following strategy values.
   values. <VersionLabel version="1.29.0" />
 - `replace` - Values found in the local task entirely _replaces_ the values in the global task. This
   strategy is useful when you need full control.
+
+Project-level [`env`](../config/project#env) and [`fileGroups`](../config/project#filegroups) are
+also merged with inherited workspace-level values using these strategies. Unlike tasks, the strategy
+is configured per project with the
+[`workspace.mergeStrategies`](../config/project#mergestrategies)
+setting. <VersionLabel version="2.5.0" />
 
 All 3 of these strategies are demonstrated below, with a somewhat contrived example, but you get the
 point.
@@ -4917,6 +5000,10 @@ docker:
 The `env` field is map of strings that are passed as environment variables to _all tasks_ within the
 current project. Project-level variables will not override task-level variables of the same name.
 
+Environment variables can also be [inherited from the workspace](./tasks#env), in which they are
+merged into this setting, with project-level variables taking precedence on conflicting keys. This
+can be customized with the [`workspace.mergeStrategies.env`](#mergestrategies) setting.
+
 ```yaml title="moon.yml"
 env:
   NODE_ENV: 'production'
@@ -4933,6 +5020,10 @@ _is not required_ for the following reasons:
 
 - File groups are an optional feature, and are designed for advanced use cases.
 - File groups defined in [`.moon/tasks/**/*`](./tasks) will be inherited by all projects.
+
+When a file group of the same name is defined both locally and [globally](./tasks#filegroups), their
+inputs are merged together, with local inputs appended after inherited inputs. This can be
+customized with the [`workspace.mergeStrategies.fileGroups`](#mergestrategies) setting.
 
 When defined this setting requires a map, where the key is the file group name, and the value is a
 list of [globs or file paths](../concepts/file-pattern), or environment variables. Globs and paths
@@ -6412,6 +6503,64 @@ workspace:
 
 > Renaming occurs after inclusion and exclusion.
 
+### `mergeStrategies`<VersionLabel version="2.5.0" />
+
+<HeadingApiLink to="/api/types/interface/ProjectWorkspaceConfig#mergeStrategies" />
+
+Controls how project settings are merged with settings inherited from the workspace, primarily
+those defined in [`.moon/tasks/**/*`](./tasks). Each field accepts one of the
+[merge strategies](../concepts/task-inheritance#merge-strategies): `append` (the default),
+`prepend`, `preserve`, or `replace`.
+
+#### `env`
+
+The optional `env` setting controls how local [`env`](#env) variables are merged with
+[inherited environment variables](./tasks#env). The chosen strategy is applied to the entire map:
+
+- `append` (default) - Local variables are merged _after_ inherited variables, and win on
+  conflicting keys.
+- `prepend` - Local variables are merged _before_ inherited variables, and inherited variables win
+  on conflicting keys.
+- `preserve` - The first defined map is preserved entirely (typically the most global), and
+  subsequent maps are ignored.
+- `replace` - The last defined map entirely replaces prior maps.
+
+```yaml title="moon.yml" {2,3}
+workspace:
+  mergeStrategies:
+    env: 'replace'
+
+env:
+  # Replaces all inherited variables, instead of merging with them
+  NODE_ENV: 'development'
+```
+
+#### `fileGroups`
+
+The optional `fileGroups` setting controls how local [`fileGroups`](#filegroups) are merged with
+[inherited file groups](./tasks#filegroups). The chosen strategy is applied _per group_, based on
+where a group of the same name is defined:
+
+- `append` (default) - Local inputs are merged _after_ inherited inputs.
+- `prepend` - Local inputs are merged _before_ inherited inputs.
+- `preserve` - The first definition of the group is preserved (typically the most global), and
+  subsequent definitions are ignored.
+- `replace` - The last definition of the group entirely replaces prior definitions. An empty list
+  can be used to remove all inputs from an inherited group.
+
+Groups that are only defined locally, or only inherited, are always kept as-is.
+
+```yaml title="moon.yml" {2,3}
+workspace:
+  mergeStrategies:
+    fileGroups: 'replace'
+
+fileGroups:
+  # Replaces the inherited `sources` group, instead of appending to it
+  sources:
+    - 'src/**/*'
+```
+
 ---
 
 ## .moon/tasks
@@ -6436,11 +6585,25 @@ extends: 'https://raw.githubusercontent.com/organization/repository/master/.moon
 
 :::caution
 
-For map-based settings, `fileGroups` and `tasks`, entries from both the extended configuration and
-local configuration are merged into a new map, with the values of the local taking precedence. Map
-values _are not_ deep merged!
+For map-based settings, `env`, `fileGroups`, and `tasks`, entries from both the extended
+configuration and local configuration are merged into a new map, with the values of the local taking
+precedence. Map values _are not_ deep merged!
 
 :::
+
+## `env`<VersionLabel version="2.5.0" />
+
+<HeadingApiLink to="/api/types/interface/InheritedTasksConfig#env" />
+
+Defines a map of environment variables that will be inherited by all matching projects, and are
+merged into each project's [`env`](./project#env) setting, with project-level variables taking
+precedence on conflicting keys. The merge behavior can be customized per project with the
+[`workspace.mergeStrategies.env`](./project#mergestrategies) setting.
+
+```yaml title=".moon/tasks/node.yml"
+env:
+  NODE_ENV: 'production'
+```
 
 ## `fileGroups`
 
@@ -7146,6 +7309,18 @@ This toolchain requires the [`node`](#node) toolchain to also be enabled.
 
 :::
 
+## `unstable_nub`<VersionLabel version="2.5.0" />
+
+Run `moon toolchain info unstable_nub` for all available settings.
+
+:::info
+
+This toolchain requires the [`javascript`](#javascript) toolchain to also be enabled. Unlike other
+package managers, it does _not_ require the [`node`](#node) toolchain, as
+[nub](https://nubjs.com) is a standalone binary.
+
+:::
+
 ## `pnpm`
 
 Run `moon toolchain info pnpm` for all available settings.
@@ -7283,6 +7458,11 @@ If manually mapping projects is too tedious or cumbersome, you may provide a lis
 [globs](../concepts/file-pattern#globs) to automatically locate all project folders, relative from
 the workspace root.
 
+Globs can match both folders and files. When a folder is matched, it's used as the project root
+as-is, while a matched file will use its parent folder as the project root. Matching files is
+useful for only including folders that contain a specific file, like a moon configuration file, or
+a toolchain specific manifest.
+
 When using this approach, the project name is derived from the project folder name, and is cleaned
 to our [supported characters](../concepts/project#names), but can be customized with the
 [`id`](./project#id) setting in [`moon.*`](./project). Furthermore, globbing **does risk the chance
@@ -7295,7 +7475,18 @@ projects:
   - 'packages/*'
   # Only shared folders with a moon configuration
   - 'shared/*/moon.yml'
+  # Only crates with a Cargo manifest
+  - 'crates/*/Cargo.toml'
 ```
+
+:::info
+
+Matching any kind of file is a new feature in moon v2.5. In previous versions, only moon
+configuration files (`moon.*`) could be matched, while all other files were skipped. Additionally,
+for the workspace root itself, only a matched moon configuration file will create a
+[root-level project](../guides/root-project), all other root files are ignored.
+
+:::
 
 ### Using a map _and_ globs
 
@@ -7312,7 +7503,7 @@ projects:
 ```
 
 Additionally, you can customize the format of project IDs for glob discovered projects. By default
-it inherits the fodler name, but this has a high chance of collision. Instead you can configure
+it inherits the folder name, but this has a high chance of collision. Instead you can configure
 `globFormat` to use a different format, for example, using the full workspace relative path as the
 project ID.
 
@@ -7347,6 +7538,21 @@ content-addressable storage (CAS) cache and the native file hasher.
 
 Configures aspects of the content-addressable storage (CAS) cache.
 
+#### `maxSize`<VersionLabel version="2.4.0" />
+
+<HeadingApiLink to="/api/types/interface/CacheCasConfig#maxSize" />
+
+Maximum total size of the local CAS cache, for example `10gb` or `512mib`. When the limit is
+exceeded, the least recently used task outputs are evicted. Unlimited when not set.
+
+```yaml title=".moon/workspace.yml" {2,3}
+cache:
+  cas:
+    maxSize: '10gb'
+```
+
+Can also be set with the `MOON_CACHE_CAS_MAX_SIZE` environment variable.
+
 #### `verifyIntegrity`
 
 <HeadingApiLink to="/api/types/interface/CacheCasConfig#verifyIntegrity" />
@@ -7359,6 +7565,32 @@ cache:
   cas:
     verifyIntegrity: true
 ```
+
+Can also be enabled with the `MOON_CACHE_CAS_VERIFY_INTEGRITY` environment variable.
+
+### `unstable_sharedWorktreeCache`<VersionLabel version="2.5.0" />
+
+<HeadingApiLink to="/api/types/interface/CacheConfig#sharedWorktreeCache" />
+
+Shares the content-addressable storage (CAS) cache between all VCS worktrees on the same machine,
+instead of each worktree maintaining its own isolated cache. Only blobs and manifests are shared,
+as they are portable, while hashes, locks, states, and more remain worktree-specific.
+
+The shared cache is stored in the base checkout's `.moon/cache` directory, or in
+`~/.moon/cache/shared` when the repository root has no checkout (bare clones).
+
+```yaml title=".moon/workspace.yml" {2}
+cache:
+  unstable_sharedWorktreeCache: true
+```
+
+Can also be enabled with the `MOON_CACHE_SHARED_WORKTREE_CACHE` environment variable.
+
+:::info
+
+This setting requires the [`casOutputsCache`](#casoutputscache) experiment to be enabled.
+
+:::
 
 ## `codeowners`<VersionLabel version="1.8.0" />
 
@@ -7478,6 +7710,27 @@ dependsOn: ['components']
 tags: ['react']
 ```
 
+## `unstable_daemon`<VersionLabel version="2.2.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#daemon" />
+
+Enables the background [daemon](../guides/daemon), a server process that keeps the workspace graph
+hot in memory, watches for file changes, and processes heavy operations (like task output archiving
+and hydration) in the background. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml"
+unstable_daemon: true
+```
+
+Can also be enabled with the `MOON_DAEMON` environment variable.
+
+:::caution
+
+The daemon is currently **unstable**, and its behavior and configuration may change in future
+releases. Learn more about it in the [official guide](../guides/daemon).
+
+:::
+
 ## `docker`<VersionLabel version="1.27.0" />
 
 <HeadingApiLink to="/api/types/interface/ProjectConfig#docker" />
@@ -7560,7 +7813,7 @@ Experiments are a work in progress and may be buggy. Please report any issues yo
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncAffectedTracking" />
 
 Utilizes a new asynchronous implementation of the affected tracker that can improve performance by
-100-150%. Defaults to `false`.
+100-150%. Defaults to `true` in v2.5+, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
@@ -7574,7 +7827,7 @@ Can also be enabled with the `MOON_EXPERIMENT_ASYNC_AFFECTED_TRACKING` environme
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#asyncGraphBuilding" />
 
 Utilizes an asynchronous graph building implementation that can improve performance by 100-170% in
-large workspaces. Defaults to `false`.
+large workspaces. Defaults to `true` in v2.5+, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
@@ -7606,7 +7859,7 @@ Can also be enabled with the `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment var
 
 Replaces the VCS-based file hashing mechanism with a custom native implementation that runs within
 moon's task pool. In our benchmarks this improves performance by 10-50% depending on workspace size
-and file count. Defaults to `false`.
+and file count. Defaults to `true` in v2.5+, otherwise `false`.
 
 ```yaml title=".moon/workspace.yml" {2}
 experiments:
@@ -9271,16 +9524,19 @@ Set by moon for its own processes and integrations.
 Each of these has an equivalent [global command line option](./commands/overview). The command line
 option takes precedence over the environment variable.
 
-| Variable           | Option          | Description                                                                                        |
-| :----------------- | :-------------- | :------------------------------------------------------------------------------------------------- |
-| `MOON_CACHE`       | `--cache`       | Mode for [cache](./concepts/cache) operations: `read`, `read-write` (default), `write`, or `off`.  |
-| `MOON_COLOR`       | `--color`       | Force colored output.                                                                              |
-| `MOON_CONCURRENCY` | `--concurrency` | Maximum number of threads to utilize. Defaults to the number of CPU cores.                         |
-| `MOON_DUMP`        | `--dump`        | Dump a trace profile to the working directory.                                                     |
-| `MOON_LOG`         | `--log`         | Lowest log level to output: `off`, `error`, `warn`, `info` (default), `debug`, `trace`, `verbose`. |
-| `MOON_LOG_FILE`    | `--log-file`    | Path to a file to write logs to.                                                                   |
-| `MOON_QUIET`       | `--quiet`       | Hide all moon console output.                                                                      |
-| `MOON_THEME`       | `--theme`       | Terminal theme to print with.                                                                      |
+| Variable                 | Option                | Description                                                                                        |
+| :----------------------- | :-------------------- | :------------------------------------------------------------------------------------------------- |
+| `MOON_CACHE`             | `--cache`             | Mode for [cache](./concepts/cache) operations: `read`, `read-write` (default), `write`, or `off`.  |
+| `MOON_COLOR`             | `--color`             | Force colored output.                                                                              |
+| `MOON_CONCURRENCY`       | `--concurrency`       | Maximum number of threads to utilize. Defaults to the number of CPU cores.                         |
+| `MOON_DUMP`              | `--dump`              | Dump a trace profile to the working directory.                                                     |
+| `MOON_LOG`               | `--log`               | Lowest log level to output: `off`, `error`, `warn`, `info` (default), `debug`, `trace`, `verbose`. |
+| `MOON_LOG_FILE`          | `--log-file`          | Path to a file to write logs to.                                                                   |
+| `MOON_OTEL`              | `--otel`              | Export [OpenTelemetry](./commands/overview#opentelemetry) traces over OTLP.                        |
+| `MOON_OTEL_LOGS`         | `--otel-logs`         | Export tracing events as OTLP logs.                                                                |
+| `MOON_OTEL_SERVICE_NAME` | `--otel-service-name` | Service name to report when OTLP tracing is enabled.                                               |
+| `MOON_QUIET`             | `--quiet`             | Hide all moon console output.                                                                      |
+| `MOON_THEME`             | `--theme`             | Terminal theme to print with.                                                                      |
 
 ### Running tasks & the pipeline
 
@@ -9336,13 +9592,23 @@ Override [`.moon/workspace.yml`](./config/workspace) settings without editing th
 
 | Variable                               | Setting                                                                    |
 | :------------------------------------- | :------------------------------------------------------------------------- |
-| `MOON_DAEMON`                          | [`daemon`](./guides/daemon)                                                |
+| `MOON_DAEMON`                          | [`unstable_daemon`](./config/workspace#unstable_daemon)                    |
 | `MOON_TELEMETRY`                       | [`telemetry`](./config/workspace#telemetry)                                |
 | `MOON_WEBHOOK_URL`                     | [`notifier.webhookUrl`](./config/workspace#webhookurl)                     |
 | `MOON_WEBHOOK_ACKNOWLEDGE`             | [`notifier.webhookAcknowledge`](./config/workspace#webhookacknowledge)     |
 | `MOON_PIPELINE_AUTO_CLEAN_CACHE`       | [`pipeline.autoCleanCache`](./config/workspace#autocleancache)             |
 | `MOON_PIPELINE_CACHE_LIFETIME`         | [`pipeline.cacheLifetime`](./config/workspace#cachelifetime)               |
 | `MOON_PIPELINE_KILL_PROCESS_THRESHOLD` | [`pipeline.killProcessThreshold`](./config/workspace#killprocessthreshold) |
+
+#### Cache <VersionLabel version="2.5.0" />
+
+Override [`cache`](./config/workspace#cache) settings for the CAS cache and native hasher.
+
+| Variable                           | Setting                                                                                 |
+| :--------------------------------- | :-------------------------------------------------------------------------------------- |
+| `MOON_CACHE_CAS_MAX_SIZE`          | [`cache.cas.maxSize`](./config/workspace#maxsize)                                       |
+| `MOON_CACHE_CAS_VERIFY_INTEGRITY`  | [`cache.cas.verifyIntegrity`](./config/workspace#verifyintegrity)                       |
+| `MOON_CACHE_SHARED_WORKTREE_CACHE` | [`cache.unstable_sharedWorktreeCache`](./config/workspace#unstable_sharedworktreecache) |
 
 #### Remote caching <VersionLabel version="1.30.0" />
 
@@ -9426,6 +9692,7 @@ These are read, never written.
 | `SSH_CLIENT`, `SSH_TTY`                                                                   | Detect a remote SSH session.                                                          |
 | `CODESPACES`, `GITHUB_CODESPACES`, `GITPOD_INSTANCE_ID`, `DEVPOD`, `REPL_ID`, and similar | Detect a cloud development environment ("devbox").                                    |
 | `PATH`                                                                                    | Resolve binaries, and the base that toolchains prepend their bin directories to.      |
+| `OTEL_EXPORTER_OTLP_*`, `OTEL_SERVICE_NAME`, `OTEL_SDK_DISABLED`, and similar             | Standard [OpenTelemetry](./commands/overview#opentelemetry) export settings.          |
 
 ---
 
@@ -10563,9 +10830,10 @@ As workspaces grow in size, the time spent building
 [project and task graphs](../how-it-works/project-graph) becomes a noticeable bottleneck. Every
 `moon` CLI invocation rebuilds these graphs from scratch, even when nothing has changed since the
 last run. The daemon solves this by running a background server process that keeps the workspace
-graph hot in memory, watches for file changes, and rebuilds only when necessary. This eliminates
-redundant work and significantly improves CLI response times, especially in larger workspaces with
-hundreds or thousands of projects/tasks.
+graph hot in memory, watches for file changes, and rebuilds only when necessary. As of v2.5, it
+also processes heavy cache operations (task output archiving and hydration) in the background.
+This eliminates redundant work and significantly improves CLI response times, especially in larger
+workspaces with hundreds or thousands of projects/tasks.
 
 :::caution
 
@@ -10576,7 +10844,7 @@ configuration may change in future releases.
 
 ## Enabling the daemon
 
-To enable the daemon, set the [`unstable_daemon`](../config/workspace#daemon) setting in
+To enable the daemon, set the [`unstable_daemon`](../config/workspace#unstable_daemon) setting in
 [`.moon/workspace.yml`](../config/workspace).
 
 ```yaml title=".moon/workspace.yml"
@@ -10638,6 +10906,17 @@ Changes to the following files and directories trigger an asynchronous graph reb
 
 Because rebuilds happen asynchronously in the background, the daemon remains responsive to new CLI
 connections while a rebuild is in progress.
+
+### Task output archiving & hydration<VersionLabel version="2.5.0" />
+
+When the daemon is running, task output [archiving and hydration](../concepts/cache#archiving--hydration)
+are offloaded to it, and processed in the background. The pipeline no longer blocks on these heavy
+file system operations, freeing it up to run more tasks. When the daemon is not enabled (or
+unavailable), these operations run in-process as before.
+
+Since this work now happens in the background, failures during archiving or hydrating are recorded
+in the daemon's server logs, instead of being surfaced by the main process. If task outputs seem
+missing or stale, inspect the logs with [`moon daemon logs`](../commands/daemon/logs).
 
 ## Managing the daemon
 
@@ -18171,6 +18450,20 @@ integration.
 - **Build** - Dependency is required for building only, and will sync as a build dependency.
 - **Peer** - Dependency is a peer requirement, with language specific semantics. Will sync as a peer
   dependency when applicable.
+- **Root** - Special scope applied when depending on the root-level project. Treated as a
+  development dependency.
+
+### Scope partitions<VersionLabel version="2.5.0" />
+
+Internally, relationships are partitioned into 2 graphs based on their scope: production
+(`production`, `peer`) and development (`development`, `build`, `root`). Each partition enforces
+its own acyclicity, so a dependency cycle is only an error when it exists entirely within a single
+partition.
+
+Relationships that cross the production/development boundary are valid, and no longer fail with a
+cycle error (nor silently drop dependency edges). A common example from the Go ecosystem: a package
+is depended on in production, while its tests depend on a test-utility package that imports the
+original package right back.
 
 ## What is the graph used for?
 
@@ -37335,3 +37628,235 @@ list of changes.
   thread.
 - Checksums are now only removed from migrated lockfile records when the resolved version changes,
   instead of always.
+
+---
+
+## moon v2.5 - OpenTelemetry, shared worktree caching, async engine by default, and more
+
+This release is about speed you can feel and visibility you can graph. The async engine we've been
+iterating on over the last few releases is now the default, heavy cache operations have moved into
+the daemon's background, Git worktrees can finally share a cache, and the entire pipeline can now be
+exported to your observability stack through OpenTelemetry.
+
+<!--truncate-->
+
+## OpenTelemetry support
+
+moon's pipeline has been internally instrumented for a while — it's the same span data that powers
+`--dump` and verbose logging — but until now, that data never left your machine. In v2.5, moon can
+export [OpenTelemetry](https://opentelemetry.io/) (OTEL) traces, metrics (we don't emit any yet), and logs over OTLP, for
+integration with observability backends like Grafana, Honeycomb, or Datadog. The entire pipeline —
+action graph construction, task execution, plugin calls, and more — is reported as a span tree, so
+you can finally answer questions like "what is CI actually spending its time on?" with a flame
+graph instead of a hunch.
+
+This is opt-in, and enabled with a handful of new global options (or their environment variable
+counterparts):
+
+- `--otel` (`MOON_OTEL`) - Export traces and metrics over OTLP.
+- `--otel-logs` (`MOON_OTEL_LOGS`) - Also export log events as OTLP logs. Respects `--log`, so a
+  lower log level exports fewer events.
+- `--otel-service-name` (`MOON_OTEL_SERVICE_NAME`) - The service name to report.
+
+The destination and transport are configured with the standard `OTEL_EXPORTER_OTLP_*` environment
+variables, and both HTTP (`http/protobuf`) and gRPC (`grpc`) transports are supported.
+
+```shell
+$ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+$ moon --otel run app:build
+```
+
+Jump over to the [official documentation](/docs/commands/overview#opentelemetry) for the full list
+of supported environment variables and transports.
+
+## Async engine enabled by default
+
+Over the past few releases, we've been rebuilding moon's hottest code paths as asynchronous,
+task-pool driven implementations, and shipping them behind experiment flags. They've now been
+battle-tested enough that in v2.5, the following [experiments](/docs/config/workspace#experiments)
+are **enabled by default**:
+
+- [`asyncGraphBuilding`](/docs/config/workspace#asyncgraphbuilding) (added in v2.2) - Builds the
+  project and task graphs asynchronously, improving performance by 100-170% in large workspaces.
+- [`asyncAffectedTracking`](/docs/config/workspace#asyncaffectedtracking) (added in v2.2) - Tracks
+  affected projects and tasks asynchronously, improving performance by 100-150%.
+- [`nativeFileHashing`](/docs/config/workspace#nativefilehashing) (added in v2.3) - Hashes files
+  natively within moon's task pool instead of shelling out to the VCS, improving performance by
+  10-50% depending on workspace size and file count.
+
+If you've been running with the defaults, this release should simply feel faster. If you run into
+an issue, please [report it](https://github.com/moonrepo/moon/issues), and disable the offending
+experiment to keep working while we investigate.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  asyncGraphBuilding: false
+```
+
+## Unstable shared worktree caching
+
+Git worktrees have become a staple of modern workflows — a worktree per branch, per review, or per
+AI agent grinding away in parallel. But each worktree has its own `.moon/cache`, which means every
+new worktree starts with a stone-cold cache and re-builds artifacts that already exist on the same
+machine.
+
+In v2.5, the new `cache.unstable_sharedWorktreeCache` setting shares the content-addressable
+storage (CAS) cache between _all_ worktrees of a repository on the same machine. Only blobs and
+manifests are shared, as they're portable, while hashes, locks, and states remain
+worktree-specific. The shared cache lives in the base checkout's `.moon/cache` directory, or in
+`~/.moon/cache/shared` when the repository has no base checkout (bare clones).
+
+This builds on the local CAS layer, so the
+[`casOutputsCache`](/docs/config/workspace#casoutputscache) experiment is required.
+
+```yaml title=".moon/workspace.yml"
+experiments:
+  casOutputsCache: true
+
+cache:
+  unstable_sharedWorktreeCache: true
+```
+
+With this enabled, a task that was cached in one worktree hydrates instantly in every other — spin
+up a fresh worktree, run your build, and watch it complete in seconds.
+
+Additionally, [`cache`](/docs/config/workspace#cache) settings can now be controlled with
+environment variables: `MOON_CACHE_CAS_MAX_SIZE`, `MOON_CACHE_CAS_VERIFY_INTEGRITY`, and
+`MOON_CACHE_SHARED_WORKTREE_CACHE`.
+
+## Daemon-powered archiving and hydration
+
+When we introduced the local CAS in v2.3, we warned that archiving and hydration ran on the main
+thread, and promised to fix it. Promise kept! In v2.5, task output archiving (after a task runs)
+and hydration (on a cache hit) are offloaded to the [background daemon](/docs/guides/daemon), so
+these heavy file system operations no longer block the pipeline.
+
+One caveat with this change: since the work now happens in the background, you'll need to inspect
+the daemon server logs to understand when something fails during archiving or hydrating, as the
+main process no longer surfaces these errors directly.
+
+## Dependency-scope aware project graph
+
+Until now, the project graph was a single directed acyclic graph, and _any_ dependency cycle
+between projects was an error — even when the relationship was perfectly valid. The classic example
+comes from Go: a package is depended on in production, while its tests depend on a test-utility
+package that imports it right back. Not actually a problem at build time, but moon would either
+fail with a cycle error, or silently drop dependency edges.
+
+In v2.5, the project graph validates cycles per dependency scope partition. Production scoped
+dependencies (`production`, `peer`) and development scoped dependencies (`development`, `build`,
+`root`) are now tracked as separate internal graphs, so relationships that cross the boundary no
+longer fail, while cycles _within_ a partition are still rejected as before.
+
+## Find projects by file globs
+
+The [`projects`](/docs/config/workspace#projects) setting has always supported globs for locating
+project folders, but folder names alone can't answer questions like "is this a Node.js project?".
+In v2.5, project globs can now match _files_, where the parent folder of a matched file becomes the
+project root. This allows for far more precise project discovery.
+
+```yaml title=".moon/workspace.yml"
+projects:
+  # Only folders with a package.json
+  - 'apps/*/package.json'
+  # Only crates with a Cargo manifest
+  - 'crates/*/Cargo.toml'
+  # .NET projects, wherever they live
+  - 'src/**/*.csproj'
+```
+
+> This does not apply to the workspace root itself. For a
+> [root-level project](/docs/guides/root-project), only a matched moon configuration file counts.
+
+## Workspace-inherited environment variables and merge strategies
+
+Task inheritance via [`.moon/tasks/**/*`](/docs/config/tasks) is one of moon's most powerful
+features, and in v2.5, it learns a new trick: an [`env`](/docs/config/tasks#env) setting. These
+environment variables are inherited by all matching projects, and are merged into each project's
+[`env`](/docs/config/project#env), with project-level variables taking precedence.
+
+```yaml title=".moon/tasks/node.yml"
+env:
+  NODE_ENV: 'production'
+```
+
+And since inheritance always raises the question of "how do these merge?", we've also added a
+[`workspace.mergeStrategies`](/docs/config/project#mergestrategies) setting to
+[`moon.*`](/docs/config/project), which controls how a project's settings are merged with inherited
+workspace-level settings. It currently supports `env` and `fileGroups`, using the same merge
+strategies as task merging: `append`, `prepend`, `preserve`, and `replace`.
+
+```yaml title="moon.yml"
+workspace:
+  mergeStrategies:
+    env: 'replace'
+    fileGroups: 'preserve'
+```
+
+## Unstable Nub support for JavaScript
+
+The JavaScript ecosystem never sleeps, and the latest package manager on the block is
+[Nub](https://nubjs.com/), a fast standalone binary. In v2.5, the JavaScript toolchain gains
+unstable support for it:
+
+- Natively uses `nub.lock` (pnpm lockfile format), but will locate dependency roots using other
+  package manager lockfiles that nub can operate on.
+- Reads workspace members and catalogs from `pnpm-workspace.yaml` when present, otherwise from
+  `package.json`.
+- Does not require the Node.js toolchain, as nub is a standalone binary.
+
+```yaml title=".moon/toolchains.yml"
+javascript:
+  packageManager: 'nub'
+
+unstable_nub: {}
+```
+
+Run `moon toolchain info unstable_nub` for the full list of available settings.
+
+## Toolchain improvements
+
+Nub isn't the only toolchain news — the rest of the lineup received a batch of quality-of-life
+improvements as well.
+
+### Go
+
+Project relationships got much smarter this release:
+
+- Reworked relationship inference to match package import paths instead of module paths. Each project now resolves a canonical import path (nearest `go.mod` module path plus the project's relative directory), and `go list -deps` results are matched against those by longest prefix. This makes relationships resolvable in repositories that share a single `go.mod` across all projects.
+- Sibling modules required by version without a `go.work` no longer create project relationships, since those builds consume the published module rather than the local source. When the `go` binary is unavailable, projects with their own `go.mod` under a workspace `go.work` fall back to resolving relationships from their direct requires.
+- `replace` directives keep their meaning in the new model: a require replaced by a local directory always links to the project at that location (it consumes local source even without a `go.work`), while a require replaced by another module never links.
+- Imports within a project's own import path are treated as ownership rather than dependencies. `go list -deps ./...` enumerates packages belonging to projects nested inside the scanned project, which previously inferred an edge from the parent to every nested child — forming a cycle whenever a child declared `dependsOn` on its parent.
+- The `force` option for `bins` entries is now respected, and binaries deleted outside of moon are
+  now reinstalled.
+
+### Python
+
+- Package manager toolchains are now installed before the environment is set up, avoiding a
+  chicken-and-egg problem during first runs.
+- The Docker pruning workflow now removes `.venv` directories for non-focused projects (those that
+  were not explicitly scaffolded).
+
+### Rust
+
+- Configured `bins` whose binaries were uninstalled or deleted outside of moon are now reinstalled.
+  Only missing binaries are installed.
+- Docker scaffolding no longer leaves behind empty `lib.rs` or `main.rs` files.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/moon/releases/tag/v2.5.0) for a full list
+of changes, but here's a few more worth calling out:
+
+- Reworked the Docker scaffolding and pruning workflows to better handle edge cases.
+- Updated [`moon setup`](/docs/commands/setup) to also setup toolchain environments when their
+  dependency root is the workspace root itself.
+- Updated [`moon exec`](/docs/commands/exec) (and related pipeline commands) to display action
+  failures in a summary at the bottom, instead of interleaved within all actions.
+- Added an in-memory cache for child processes, deduplicating identical executions (like repeated
+  Git commands) within a single run.
+- For WASM plugin authors: the `VirtualPath` type was reworked from the ground up into a newtype
+  wrapper around `PathBuf` (a breaking change), alongside a new `RealPath` sibling and
+  `convert_to_virtual_path` / `convert_to_real_path` helpers. Toolchains can also now declare
+  requirements for the setup environment and setup toolchain actions.
+- Updated proto to [v0.60.2](https://github.com/moonrepo/proto/releases/tag/v0.60.2).

@@ -2,11 +2,192 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-08-05T00:00:00.000Z</updated>
+    <updated>2026-08-14T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[moon v2.5 - OpenTelemetry, shared worktree caching, async engine by default, and more]]></title>
+        <id>https://moonrepo.dev/blog/moon-v2.5</id>
+        <link href="https://moonrepo.dev/blog/moon-v2.5"/>
+        <updated>2026-08-14T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[This release is about speed you can feel and visibility you can graph. The async engine we've been]]></summary>
+        <content type="html"><![CDATA[<p>This release is about speed you can feel and visibility you can graph. The async engine we've been
+iterating on over the last few releases is now the default, heavy cache operations have moved into
+the daemon's background, Git worktrees can finally share a cache, and the entire pipeline can now be
+exported to your observability stack through OpenTelemetry.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="opentelemetry-support">OpenTelemetry support<a href="https://moonrepo.dev/blog/moon-v2.5#opentelemetry-support" class="hash-link" aria-label="Direct link to OpenTelemetry support" title="Direct link to OpenTelemetry support" translate="no">​</a></h2>
+<p>moon's pipeline has been internally instrumented for a while — it's the same span data that powers
+<code>--dump</code> and verbose logging — but until now, that data never left your machine. In v2.5, moon can
+export <a href="https://opentelemetry.io/" target="_blank" rel="noopener noreferrer" class="">OpenTelemetry</a> (OTEL) traces, metrics (we don't emit any yet), and logs over OTLP, for
+integration with observability backends like Grafana, Honeycomb, or Datadog. The entire pipeline —
+action graph construction, task execution, plugin calls, and more — is reported as a span tree, so
+you can finally answer questions like "what is CI actually spending its time on?" with a flame
+graph instead of a hunch.</p>
+<p>This is opt-in, and enabled with a handful of new global options (or their environment variable
+counterparts):</p>
+<ul>
+<li class=""><code>--otel</code> (<code>MOON_OTEL</code>) - Export traces and metrics over OTLP.</li>
+<li class=""><code>--otel-logs</code> (<code>MOON_OTEL_LOGS</code>) - Also export log events as OTLP logs. Respects <code>--log</code>, so a
+lower log level exports fewer events.</li>
+<li class=""><code>--otel-service-name</code> (<code>MOON_OTEL_SERVICE_NAME</code>) - The service name to report.</li>
+</ul>
+<p>The destination and transport are configured with the standard <code>OTEL_EXPORTER_OTLP_*</code> environment
+variables, and both HTTP (<code>http/protobuf</code>) and gRPC (<code>grpc</code>) transports are supported.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ </span><span class="token builtin class-name" style="color:#ff94ff;font-weight:bold">export</span><span class="token plain"> </span><span class="token assign-left variable" style="color:#fef9c3">OTEL_EXPORTER_OTLP_ENDPOINT</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token string" style="color:#c9e166">"http://localhost:4318"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ moon </span><span class="token parameter variable" style="color:#fef9c3">--otel</span><span class="token plain"> run app:build</span><br></div></code></pre></div></div>
+<p>Jump over to the <a class="" href="https://moonrepo.dev/docs/commands/overview#opentelemetry">official documentation</a> for the full list
+of supported environment variables and transports.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="async-engine-enabled-by-default">Async engine enabled by default<a href="https://moonrepo.dev/blog/moon-v2.5#async-engine-enabled-by-default" class="hash-link" aria-label="Direct link to Async engine enabled by default" title="Direct link to Async engine enabled by default" translate="no">​</a></h2>
+<p>Over the past few releases, we've been rebuilding moon's hottest code paths as asynchronous,
+task-pool driven implementations, and shipping them behind experiment flags. They've now been
+battle-tested enough that in v2.5, the following <a class="" href="https://moonrepo.dev/docs/config/workspace#experiments">experiments</a>
+are <strong>enabled by default</strong>:</p>
+<ul>
+<li class=""><a class="" href="https://moonrepo.dev/docs/config/workspace#asyncgraphbuilding"><code>asyncGraphBuilding</code></a> (added in v2.2) - Builds the
+project and task graphs asynchronously, improving performance by 100-170% in large workspaces.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/config/workspace#asyncaffectedtracking"><code>asyncAffectedTracking</code></a> (added in v2.2) - Tracks
+affected projects and tasks asynchronously, improving performance by 100-150%.</li>
+<li class=""><a class="" href="https://moonrepo.dev/docs/config/workspace#nativefilehashing"><code>nativeFileHashing</code></a> (added in v2.3) - Hashes files
+natively within moon's task pool instead of shelling out to the VCS, improving performance by
+10-50% depending on workspace size and file count.</li>
+</ul>
+<p>If you've been running with the defaults, this release should simply feel faster. If you run into
+an issue, please <a href="https://github.com/moonrepo/moon/issues" target="_blank" rel="noopener noreferrer" class="">report it</a>, and disable the offending
+experiment to keep working while we investigate.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">asyncGraphBuilding</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">false</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="unstable-shared-worktree-caching">Unstable shared worktree caching<a href="https://moonrepo.dev/blog/moon-v2.5#unstable-shared-worktree-caching" class="hash-link" aria-label="Direct link to Unstable shared worktree caching" title="Direct link to Unstable shared worktree caching" translate="no">​</a></h2>
+<p>Git worktrees have become a staple of modern workflows — a worktree per branch, per review, or per
+AI agent grinding away in parallel. But each worktree has its own <code>.moon/cache</code>, which means every
+new worktree starts with a stone-cold cache and re-builds artifacts that already exist on the same
+machine.</p>
+<p>In v2.5, the new <code>cache.unstable_sharedWorktreeCache</code> setting shares the content-addressable
+storage (CAS) cache between <em>all</em> worktrees of a repository on the same machine. Only blobs and
+manifests are shared, as they're portable, while hashes, locks, and states remain
+worktree-specific. The shared cache lives in the base checkout's <code>.moon/cache</code> directory, or in
+<code>~/.moon/cache/shared</code> when the repository has no base checkout (bare clones).</p>
+<p>This builds on the local CAS layer, so the
+<a class="" href="https://moonrepo.dev/docs/config/workspace#casoutputscache"><code>casOutputsCache</code></a> experiment is required.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">experiments</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">casOutputsCache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">cache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">unstable_sharedWorktreeCache</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token boolean important" style="color:#94dded">true</span><br></div></code></pre></div></div>
+<p>With this enabled, a task that was cached in one worktree hydrates instantly in every other — spin
+up a fresh worktree, run your build, and watch it complete in seconds.</p>
+<p>Additionally, <a class="" href="https://moonrepo.dev/docs/config/workspace#cache"><code>cache</code></a> settings can now be controlled with
+environment variables: <code>MOON_CACHE_CAS_MAX_SIZE</code>, <code>MOON_CACHE_CAS_VERIFY_INTEGRITY</code>, and
+<code>MOON_CACHE_SHARED_WORKTREE_CACHE</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="daemon-powered-archiving-and-hydration">Daemon-powered archiving and hydration<a href="https://moonrepo.dev/blog/moon-v2.5#daemon-powered-archiving-and-hydration" class="hash-link" aria-label="Direct link to Daemon-powered archiving and hydration" title="Direct link to Daemon-powered archiving and hydration" translate="no">​</a></h2>
+<p>When we introduced the local CAS in v2.3, we warned that archiving and hydration ran on the main
+thread, and promised to fix it. Promise kept! In v2.5, task output archiving (after a task runs)
+and hydration (on a cache hit) are offloaded to the <a class="" href="https://moonrepo.dev/docs/guides/daemon">background daemon</a>, so
+these heavy file system operations no longer block the pipeline.</p>
+<p>One caveat with this change: since the work now happens in the background, you'll need to inspect
+the daemon server logs to understand when something fails during archiving or hydrating, as the
+main process no longer surfaces these errors directly.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="dependency-scope-aware-project-graph">Dependency-scope aware project graph<a href="https://moonrepo.dev/blog/moon-v2.5#dependency-scope-aware-project-graph" class="hash-link" aria-label="Direct link to Dependency-scope aware project graph" title="Direct link to Dependency-scope aware project graph" translate="no">​</a></h2>
+<p>Until now, the project graph was a single directed acyclic graph, and <em>any</em> dependency cycle
+between projects was an error — even when the relationship was perfectly valid. The classic example
+comes from Go: a package is depended on in production, while its tests depend on a test-utility
+package that imports it right back. Not actually a problem at build time, but moon would either
+fail with a cycle error, or silently drop dependency edges.</p>
+<p>In v2.5, the project graph validates cycles per dependency scope partition. Production scoped
+dependencies (<code>production</code>, <code>peer</code>) and development scoped dependencies (<code>development</code>, <code>build</code>,
+<code>root</code>) are now tracked as separate internal graphs, so relationships that cross the boundary no
+longer fail, while cycles <em>within</em> a partition are still rejected as before.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="find-projects-by-file-globs">Find projects by file globs<a href="https://moonrepo.dev/blog/moon-v2.5#find-projects-by-file-globs" class="hash-link" aria-label="Direct link to Find projects by file globs" title="Direct link to Find projects by file globs" translate="no">​</a></h2>
+<p>The <a class="" href="https://moonrepo.dev/docs/config/workspace#projects"><code>projects</code></a> setting has always supported globs for locating
+project folders, but folder names alone can't answer questions like "is this a Node.js project?".
+In v2.5, project globs can now match <em>files</em>, where the parent folder of a matched file becomes the
+project root. This allows for far more precise project discovery.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/workspace.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">projects</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token comment" style="color:#97a1af;font-style:italic"># Only folders with a package.json</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'apps/*/package.json'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token comment" style="color:#97a1af;font-style:italic"># Only crates with a Cargo manifest</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'crates/*/Cargo.toml'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token comment" style="color:#97a1af;font-style:italic"># .NET projects, wherever they live</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">-</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'src/**/*.csproj'</span><br></div></code></pre></div></div>
+<blockquote>
+<p>This does not apply to the workspace root itself. For a
+<a class="" href="https://moonrepo.dev/docs/guides/root-project">root-level project</a>, only a matched moon configuration file counts.</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="workspace-inherited-environment-variables-and-merge-strategies">Workspace-inherited environment variables and merge strategies<a href="https://moonrepo.dev/blog/moon-v2.5#workspace-inherited-environment-variables-and-merge-strategies" class="hash-link" aria-label="Direct link to Workspace-inherited environment variables and merge strategies" title="Direct link to Workspace-inherited environment variables and merge strategies" translate="no">​</a></h2>
+<p>Task inheritance via <a class="" href="https://moonrepo.dev/docs/config/tasks"><code>.moon/tasks/**/*</code></a> is one of moon's most powerful
+features, and in v2.5, it learns a new trick: an <a class="" href="https://moonrepo.dev/docs/config/tasks#env"><code>env</code></a> setting. These
+environment variables are inherited by all matching projects, and are merged into each project's
+<a class="" href="https://moonrepo.dev/docs/config/project#env"><code>env</code></a>, with project-level variables taking precedence.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/tasks/node.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">env</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">NODE_ENV</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'production'</span><br></div></code></pre></div></div>
+<p>And since inheritance always raises the question of "how do these merge?", we've also added a
+<a class="" href="https://moonrepo.dev/docs/config/project#mergestrategies"><code>workspace.mergeStrategies</code></a> setting to
+<a class="" href="https://moonrepo.dev/docs/config/project"><code>moon.*</code></a>, which controls how a project's settings are merged with inherited
+workspace-level settings. It currently supports <code>env</code> and <code>fileGroups</code>, using the same merge
+strategies as task merging: <code>append</code>, <code>prepend</code>, <code>preserve</code>, and <code>replace</code>.</p>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">moon.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">workspace</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">mergeStrategies</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">env</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'replace'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">    </span><span class="token key atrule">fileGroups</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'preserve'</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="unstable-nub-support-for-javascript">Unstable Nub support for JavaScript<a href="https://moonrepo.dev/blog/moon-v2.5#unstable-nub-support-for-javascript" class="hash-link" aria-label="Direct link to Unstable Nub support for JavaScript" title="Direct link to Unstable Nub support for JavaScript" translate="no">​</a></h2>
+<p>The JavaScript ecosystem never sleeps, and the latest package manager on the block is
+<a href="https://nubjs.com/" target="_blank" rel="noopener noreferrer" class="">Nub</a>, a fast standalone binary. In v2.5, the JavaScript toolchain gains
+unstable support for it:</p>
+<ul>
+<li class="">Natively uses <code>nub.lock</code> (pnpm lockfile format), but will locate dependency roots using other
+package manager lockfiles that nub can operate on.</li>
+<li class="">Reads workspace members and catalogs from <code>pnpm-workspace.yaml</code> when present, otherwise from
+<code>package.json</code>.</li>
+<li class="">Does not require the Node.js toolchain, as nub is a standalone binary.</li>
+</ul>
+<div class="language-yaml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.moon/toolchains.yml</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-yaml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key atrule">javascript</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token key atrule">packageManager</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">'nub'</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key atrule">unstable_nub</span><span class="token punctuation" style="color:#cad4e2">:</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token punctuation" style="color:#cad4e2">}</span><br></div></code></pre></div></div>
+<p>Run <code>moon toolchain info unstable_nub</code> for the full list of available settings.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="toolchain-improvements">Toolchain improvements<a href="https://moonrepo.dev/blog/moon-v2.5#toolchain-improvements" class="hash-link" aria-label="Direct link to Toolchain improvements" title="Direct link to Toolchain improvements" translate="no">​</a></h2>
+<p>Nub isn't the only toolchain news — the rest of the lineup received a batch of quality-of-life
+improvements as well.</p>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="go">Go<a href="https://moonrepo.dev/blog/moon-v2.5#go" class="hash-link" aria-label="Direct link to Go" title="Direct link to Go" translate="no">​</a></h3>
+<p>Project relationships got much smarter this release:</p>
+<ul>
+<li class="">Reworked relationship inference to match package import paths instead of module paths. Each project now resolves a canonical import path (nearest <code>go.mod</code> module path plus the project's relative directory), and <code>go list -deps</code> results are matched against those by longest prefix. This makes relationships resolvable in repositories that share a single <code>go.mod</code> across all projects.</li>
+<li class="">Sibling modules required by version without a <code>go.work</code> no longer create project relationships, since those builds consume the published module rather than the local source. When the <code>go</code> binary is unavailable, projects with their own <code>go.mod</code> under a workspace <code>go.work</code> fall back to resolving relationships from their direct requires.</li>
+<li class=""><code>replace</code> directives keep their meaning in the new model: a require replaced by a local directory always links to the project at that location (it consumes local source even without a <code>go.work</code>), while a require replaced by another module never links.</li>
+<li class="">Imports within a project's own import path are treated as ownership rather than dependencies. <code>go list -deps ./...</code> enumerates packages belonging to projects nested inside the scanned project, which previously inferred an edge from the parent to every nested child — forming a cycle whenever a child declared <code>dependsOn</code> on its parent.</li>
+<li class="">The <code>force</code> option for <code>bins</code> entries is now respected, and binaries deleted outside of moon are
+now reinstalled.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="python">Python<a href="https://moonrepo.dev/blog/moon-v2.5#python" class="hash-link" aria-label="Direct link to Python" title="Direct link to Python" translate="no">​</a></h3>
+<ul>
+<li class="">Package manager toolchains are now installed before the environment is set up, avoiding a
+chicken-and-egg problem during first runs.</li>
+<li class="">The Docker pruning workflow now removes <code>.venv</code> directories for non-focused projects (those that
+were not explicitly scaffolded).</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_tleR" id="rust">Rust<a href="https://moonrepo.dev/blog/moon-v2.5#rust" class="hash-link" aria-label="Direct link to Rust" title="Direct link to Rust" translate="no">​</a></h3>
+<ul>
+<li class="">Configured <code>bins</code> whose binaries were uninstalled or deleted outside of moon are now reinstalled.
+Only missing binaries are installed.</li>
+<li class="">Docker scaffolding no longer leaves behind empty <code>lib.rs</code> or <code>main.rs</code> files.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/moon-v2.5#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/moon/releases/tag/v2.5.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
+of changes, but here's a few more worth calling out:</p>
+<ul>
+<li class="">Reworked the Docker scaffolding and pruning workflows to better handle edge cases.</li>
+<li class="">Updated <a class="" href="https://moonrepo.dev/docs/commands/setup"><code>moon setup</code></a> to also setup toolchain environments when their
+dependency root is the workspace root itself.</li>
+<li class="">Updated <a class="" href="https://moonrepo.dev/docs/commands/exec"><code>moon exec</code></a> (and related pipeline commands) to display action
+failures in a summary at the bottom, instead of interleaved within all actions.</li>
+<li class="">Added an in-memory cache for child processes, deduplicating identical executions (like repeated
+Git commands) within a single run.</li>
+<li class="">For WASM plugin authors: the <code>VirtualPath</code> type was reworked from the ground up into a newtype
+wrapper around <code>PathBuf</code> (a breaking change), alongside a new <code>RealPath</code> sibling and
+<code>convert_to_virtual_path</code> / <code>convert_to_real_path</code> helpers. Toolchains can also now declare
+requirements for the setup environment and setup toolchain actions.</li>
+<li class="">Updated proto to <a href="https://github.com/moonrepo/proto/releases/tag/v0.60.2" target="_blank" rel="noopener noreferrer" class="">v0.60.2</a>.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="otel" term="otel"/>
+        <category label="telemetry" term="telemetry"/>
+        <category label="observability" term="observability"/>
+        <category label="cache" term="cache"/>
+        <category label="worktree" term="worktree"/>
+        <category label="experiments" term="experiments"/>
+        <category label="performance" term="performance"/>
+        <category label="daemon" term="daemon"/>
+        <category label="javascript" term="javascript"/>
+        <category label="nub" term="nub"/>
+        <category label="toolchains" term="toolchains"/>
+        <category label="go" term="go"/>
+        <category label="wasm" term="wasm"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.60 - Scoped lockfiles, safe concurrent installs, and new WASM path APIs]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.60</id>
@@ -2138,75 +2319,5 @@ code.</li>
         <category label="webhooks" term="webhooks"/>
         <category label="terminal" term="terminal"/>
         <category label="notifications" term="notifications"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.50 - URL rewrites, on-init activation, preserved comments, and more]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.50</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.50"/>
-        <updated>2025-06-11T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[In this release, we're landing a handful of quality of life improvements that have been requested by]]></summary>
-        <content type="html"><![CDATA[<p>In this release, we're landing a handful of quality of life improvements that have been requested by
-the community.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="rewrite-urls-for-better-interoperability">Rewrite URLs for better interoperability<a href="https://moonrepo.dev/blog/proto-v0.50#rewrite-urls-for-better-interoperability" class="hash-link" aria-label="Direct link to Rewrite URLs for better interoperability" title="Direct link to Rewrite URLs for better interoperability" translate="no">​</a></h2>
-<p>proto is heavily reliant on URLs, as they power everything from tool and plugin downloading to
-version resolving. Many URLs are hard-coded into proto but most of them come from plugins. For the
-most part this is fine, but if you work within a corporate environment, or have a firewall, you may
-have to deal with proxy servers, mirrors, or other factors.</p>
-<p>Until now, this was very difficult to circumvent, so we wanted to provide a built-in solution to
-this problem, and as such, we're introducing the new
-<a class="" href="https://moonrepo.dev/docs/proto/config#url-rewrites"><code>url-rewrites</code></a> configuration setting. This setting accepts a map
-of regex patterns to replacements, and will rewrite URLs that match the pattern.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings.url-rewrites</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">"github.com/(\\w+)/(\\w+)"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"gh-mirror.corp.com/$1/$2"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">"mo+n"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"lunar"</span><br></div></code></pre></div></div>
-<p>For example, in the configuration above, any URL that contains <code>github.com</code> will be replaced with
-<code>gh-mirror.corp.com</code>, and any URL that contains the word "moon" (with different length o's) will be
-replaced with "lunar". Learn more about URL rewriting in the settings documentation!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="activation-flow-now-triggers-immediately">Activation flow now triggers immediately<a href="https://moonrepo.dev/blog/proto-v0.50#activation-flow-now-triggers-immediately" class="hash-link" aria-label="Direct link to Activation flow now triggers immediately" title="Direct link to Activation flow now triggers immediately" translate="no">​</a></h2>
-<p>Our <a class="" href="https://moonrepo.dev/docs/proto/workflows#shell-activation">activation flow</a> (shell hooks) is seeing more and more
-usage, with improved stability, but based on feedback we've received, there was still some pain
-points. One of these pain points was that activation would not trigger immediately (new terminal
-window/tab), and would only trigger after changing directories.</p>
-<p>There was a way around this using the <code>--on-init</code> flag, but that was not easily discoverable, and
-the setup as a whole was not very intuitive. With this release, that flag has been deprecated and
-the activation flow now triggers immediately, so you can start using your tools right away.</p>
-<p>Historically we've been hesitent to do this, as we were worried about potential performance hits
-when having to download WASM plugins, or refetch caches. However in practice this has not been an
-issue.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="comments-are-now-preserved-in-prototools">Comments are now preserved in <code>.prototools</code><a href="https://moonrepo.dev/blog/proto-v0.50#comments-are-now-preserved-in-prototools" class="hash-link" aria-label="Direct link to comments-are-now-preserved-in-prototools" title="Direct link to comments-are-now-preserved-in-prototools" translate="no">​</a></h2>
-<p>This has been a long standing issue and a long requested feature, and it's finally here! Comments
-are now preserved in <code>.prototools</code> files, and they'll no longer be removed when running <code>proto</code>
-commands that modify these files (like <a class="" href="https://moonrepo.dev/docs/proto/commands/alias"><code>proto alias</code></a> or
-<a class="" href="https://moonrepo.dev/docs/proto/commands/pin"><code>proto pin</code></a>).</p>
-<p>Historically this has been a hard problem to solve, as Rust serde (serialization/deserialization
-library) strips comments when deserializing (reading) the file. To solve this problem, we had to
-avoid serde, and operate on an AST-like structure instead. Because of this, we lose type-safety and
-there may be some edge cases not accounted for.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="plugin-commands-are-now-executed-within-a-shell">Plugin commands are now executed within a shell<a href="https://moonrepo.dev/blog/proto-v0.50#plugin-commands-are-now-executed-within-a-shell" class="hash-link" aria-label="Direct link to Plugin commands are now executed within a shell" title="Direct link to Plugin commands are now executed within a shell" translate="no">​</a></h2>
-<p>When a plugin executes a command (child process) on the host system (your computer), it now executes
-it within a shell, e.g. <code>bash -c "command"</code>. This change was made to ensure environment variables
-(like <code>PATH</code>), aliases, and other shell features that you have configured are available to the
-plugin.</p>
-<p>By default the shell to use is detected from the parent host process, but you can override it with
-the <code>PROTO_SHELL</code> environment variable. For example, to use <code>zsh</code> you can set:</p>
-<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token assign-left variable" style="color:#fef9c3">PROTO_SHELL</span><span class="token operator" style="color:#b7a9f9">=</span><span class="token plain">zsh</span><br></div></code></pre></div></div>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.50#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.50.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Added <code>--dir</code> and <code>--all</code> options to the <a class="" href="https://moonrepo.dev/docs/proto/commands/bin"><code>proto bin</code></a> command.</li>
-<li class="">Added environment variable support to many non-tool related <code>.prototools</code> settings.</li>
-<li class="">Updated <code>proto install &lt;tool&gt;</code> (without version) to install a version pinned in <code>.prototools</code>,
-instead of the latest version.</li>
-</ul>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="rewrite" term="rewrite"/>
-        <category label="url" term="url"/>
-        <category label="activation" term="activation"/>
-        <category label="comments" term="comments"/>
-        <category label="config" term="config"/>
-        <category label="plugin" term="plugin"/>
-        <category label="shell" term="shell"/>
     </entry>
 </feed>

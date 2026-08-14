@@ -55,10 +55,10 @@ pub struct QueryProjectsArgs {
     #[arg(long, help = "Filter projects of this layer", help_heading = HEADING_FILTERS)]
     layer: Option<String>,
 
-    #[arg(long, help = "Filter projects that match this source path", help_heading = HEADING_FILTERS)]
+    #[arg(long, help = "Filter projects of this tech stack", help_heading = HEADING_FILTERS)]
     stack: Option<String>,
 
-    #[arg(long, help = "Filter projects of this tech stack", help_heading = HEADING_FILTERS)]
+    #[arg(long, help = "Filter projects that match this source path", help_heading = HEADING_FILTERS)]
     source: Option<String>,
 
     #[arg(long, help = "Filter projects that have the following tags", help_heading = HEADING_FILTERS)]

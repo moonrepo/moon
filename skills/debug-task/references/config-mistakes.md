@@ -116,8 +116,12 @@ inheritedBy:
   stack: 'frontend'
 ```
 
-Both conditions must be met. If the project has `toolchain: 'node'` but `stack: 'backend'`, it won't
-inherit this task.
+Every defined field must match (an implicit AND across fields). If the project has
+`toolchain: 'node'` but `stack: 'backend'`, it won't inherit this task. The canonical field names
+are plural (`languages`, `layers`, `stacks`, `tags`, `toolchains` — the singular forms above are
+aliases), and `files` (workspace-relative file existence) and `order` conditions also exist. A list
+of values within `languages`/`layers`/`stacks` matches with OR semantics; explicit `and`/`or`/`not`
+clause objects are only supported by `tags` and `toolchains`.
 
 ```bash
 # See the project's metadata
@@ -162,7 +166,8 @@ are:
 
 The corresponding merge-strategy options are `mergeArgs`, `mergeChecks` <sup>v2.4+</sup>,
 `mergeDeps`, `mergeEnv`, `mergeInputs`, `mergeOutputs`, `mergeTags` <sup>v2.3+</sup>, and
-`mergeToolchains`.
+`mergeToolchains` — plus an umbrella `merge` option that sets all eight at once (the specific
+options override it).
 
 ```yaml
 # Global: args = ['--check']
@@ -224,7 +229,8 @@ workspace:
 cat .moon/cache/states/<project>/snapshot.json
 ```
 
-The snapshot's `inherited.layers` shows which global config files were loaded and in what order.
+The snapshot's `inherited.layers` maps each task ID to the ordered list of global config files that
+contributed to it, and `inherited.configs` maps each config file path to its parsed contents.
 
 ---
 
@@ -443,8 +449,10 @@ tasks:
 **Base task doesn't exist:** The task being extended must exist in the same project (either defined
 locally or inherited). If it's not found, it will error.
 
-**Circular extension:** Task A extends B, B extends A. moon should catch this, but it's worth
-checking if you see strange behavior.
+**Circular extension:** Task A extends B, B extends A. moon does **not** detect this — the chain is
+resolved recursively with no cycle guard, so a circular (or self-referencing) `extends` hangs or
+crashes graph building rather than producing a diagnostic. If moon dies while building tasks,
+inspect `extends` chains by hand.
 
 ### How to verify
 
@@ -512,15 +520,17 @@ downstream tasks that depend on a `'skip'` task won't break in CI.
 ```bash
 moon task <project>:<task> --json | grep -i runci
 # Also check state.setRunInCi — true means runInCI was set explicitly OR by a
-# preset; false means it defaulted from the task type (build/test → run in CI)
+# preset; the key is omitted entirely when it defaulted from the task type
+# (build/test → run in CI)
 ```
 
 ---
 
 ## `allowFailure` hiding errors
 
-When `options.allowFailure` is `true`, the task reports success even when the underlying command
-exits with a non-zero code. The pipeline continues as if nothing went wrong.
+When `options.allowFailure` is `true`, a failing command no longer fails the pipeline: the failure
+is still recorded and displayed for the task itself, but downstream work continues and moon exits
+successfully, so the failure is easy to overlook.
 
 ```yaml
 tasks:
@@ -593,7 +603,10 @@ tasks:
 ```
 
 If a task is timing out, check whether the timeout is too aggressive for the workload. On CI with
-slower machines, you may need a longer timeout.
+slower machines, you may need a longer timeout. The same timeout also applies to each `checks`
+script individually — with surprising outcomes: a timed-out `requirement` counts as **passing**, a
+timed-out `condition` counts as not-passed (the task runs), and a timed-out `fingerprint`
+contributes nothing to the hash. None of them error.
 
 ### Retry count
 
@@ -609,14 +622,16 @@ tasks:
 ```
 
 If a task "sometimes passes," check if `retryCount` is set — the task might be flaky but passing on
-retries.
+retries. Note `retryCount: 2` means up to 3 total attempts.
 
 ---
 
 ## `os` platform filtering
 
-The `os` option restricts a task to specific operating systems. If the current platform doesn't
-match, the task is silently skipped.
+The `os` option restricts a task to specific operating systems. On a non-matching platform the task
+isn't removed — its command is rewritten to `noop` at build time (args, script, and outputs
+cleared), so it runs as a passing no-op. `moon task <target> --json` showing `command: noop` when
+you configured something else is the giveaway.
 
 ```yaml
 tasks:
@@ -711,15 +726,19 @@ tasks:
 # Run every task with the `quality` tag, in every project
 moon run ':#quality'
 
-# Run quality-tagged tasks in upstream projects
-moon run '^:#quality'
-
 # Run quality-tagged tasks in a specific project
 moon run 'app:#quality'
+
+# Run quality-tagged tasks in projects tagged `frontend`
+moon run '#frontend:#quality'
 ```
 
 > The `#` is a shell comment marker, so `#tag` targets must be quoted (or escaped with `\#`) on the
-> command line.
+> command line. A bare `#tag` with no colon is rejected — the task scope must always be present.
+
+Dependency-relative scopes (`^:#tag`, `~:#tag`) parse, but error with "no deps in run context" / "no
+self in run context" when run from the command line — they're only valid inside a task's `deps`
+list.
 
 ### Common mistakes
 
@@ -742,15 +761,21 @@ can silently drop tags you expected to inherit. Check `options.mergeTags` in
 **Tag vs project tag confusion** <sup>MQL</sup>
 
 MQL has two tag fields: `projectTag` (with `tag` as a legacy alias) matches **project** tags, while
-`taskTag` <sup>v2.3+</sup> matches **task** tags. The trap: `tag=...` still works, but it filters by
-project tag — so `moon query tasks --query "tag=quality"` returns tasks whose _project_ has the
-`quality` tag, not tasks tagged `quality`. Use `taskTag` for task tags.
+`taskTag` <sup>v2.3+</sup> matches **task** tags. On task queries, `taskTag` matches the task's own
+tags, and `projectTag`/`tag` match the task's **parent project's** tags — so
+`moon query tasks --query "tag=quality"` returns tasks whose _project_ is tagged `quality`, not
+tasks tagged `quality`.
 
 ```bash
-moon query tasks --query "projectTag=quality"  # project tag (alias: tag)
-moon query tasks --query "taskTag=quality"     # task tag
-moon query tasks --tags quality                # convenience flag (task tags)
+moon query tasks --tags quality                    # task tags (regex flag)
+moon query tasks --query "taskTag=quality"         # task tags (MQL)
+moon query tasks --query "tag=quality"             # parent project tag (alias of projectTag)
+moon query projects --query "taskTag=quality"      # projects containing a task tagged quality
 ```
+
+> In v2.3–v2.4, **no** tag field worked on task queries — the task matcher silently dropped them
+> all, matching nothing (this also broke task tag glob targets like `:#tag-*`). Fixed in v2.5. On
+> older versions, use the `--tags` flag.
 
 ---
 
@@ -829,6 +854,11 @@ tasks:
 | `condition`   | Counts toward skipping (see below) | Task runs as normal                                      |
 | `fingerprint` | Output mixed into hash             | Task **fails** — `FingerprintCheckFailed` during hashing |
 
+A script that fails to _spawn_ is also fatal for requirements and fingerprints, but the process
+error propagates as-is rather than as the variants above. A script that hits the task's
+`options.timeout` never errors: a timed-out `requirement` counts as **passing**, a timed-out
+`condition` as not-passed, and a timed-out `fingerprint` contributes nothing to the hash.
+
 **Conditions skip, they don't gate.** The task is skipped **only when _all_ `condition` checks
 pass**. If any condition fails, the task runs as normal. This is the inverse of a requirement, and a
 common source of "my task never runs" confusion.
@@ -858,8 +888,9 @@ manually to see why it fails.
 
 **"My task is skipped even though inputs changed and it's not a cache hit"**
 
-All `condition` checks passed, so moon skipped the task on purpose. The target ends in a `Skipped` /
-`SkippedConditional` state. Confirm with debug logs:
+All `condition` checks passed, so moon skipped the task on purpose. The target ends in a
+`SkippedConditional` state (plain `Skipped` is a different state, used when a dependency failed).
+Confirm with debug logs:
 
 ```bash
 moon run <project>:<task> --log debug --force 2>&1 | grep -i "condition\|check"

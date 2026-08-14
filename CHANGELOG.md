@@ -124,6 +124,13 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where the `--stack` and `--source` options of `moon query projects` displayed each
+  other's help text. The filtering behavior itself was correct.
+- Fixed an issue where MQL tag fields (`taskTag`, `projectTag`, and its `tag` alias) were silently
+  ignored when querying tasks, causing `moon query tasks` with those fields, and task tag glob
+  targets like `:#tag-*`, to always match nothing. Task queries now also support the remaining
+  project-scoped fields (`language`, `projectLayer`, `projectStack`, and so on) by matching against
+  the task's parent project.
 - Fixed an issue where toolchain executable paths were not properly applied to all child processes.
 - Fixed an issue where project and task graph node lookups could resolve the wrong entry, or fail
   entirely, after building a partial graph (a subset of projects), as internal node identifiers were

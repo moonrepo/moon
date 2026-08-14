@@ -11,6 +11,7 @@ blake3 = { version = "1.8.6", features = ["mmap"] }
 bazel-remote-apis = { version = "0.27.0", features = ["serde"] }
 bytes = "1.12.1"
 async-trait = "0.1.91"
+bitflags = "2.13.1"
 chrono = { version = "0.4.44", features = ["serde"] }
 cd_env = "0.4.2"
 ci_env = "0.5.3"

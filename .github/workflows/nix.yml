@@ -37,10 +37,10 @@ jobs:
           - system: aarch64-linux
             runner: depot-ubuntu-22.04-arm-8
           - system: aarch64-darwin
-            runner: depot-macos-14
-            # Limit concurrent derivations on macOS, otherwise the storm of
-            # short-lived crate-fetch builders trips a pty race in the nix
-            # daemon (NixOS/nix#7242) and aborts with "unexpected EOF".
+            # macOS builders intermittently die at startup on depot-macos-14
+            # images ("unexpected EOF reading a line", NixOS/nix#7242), so stay
+            # on 15 and keep parallelism low to limit the crate-fetch storm.
+            runner: depot-macos-15
             build-args: --max-jobs 4
     runs-on: ${{ matrix.runner }}
     steps:

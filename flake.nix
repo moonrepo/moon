@@ -73,6 +73,7 @@
             fileset = pkgs.lib.fileset.unions [
               cargoFiles
               ./crates/daemon-proto/proto
+              ./crates/daemon-proto/vendor
               ./crates/config-loader/res
               ./crates/docker/templates/Dockerfile.tera
               ./crates/app/src/commands/graph/html.tera

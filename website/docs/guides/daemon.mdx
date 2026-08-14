@@ -12,9 +12,10 @@ As workspaces grow in size, the time spent building
 [project and task graphs](../how-it-works/project-graph) becomes a noticeable bottleneck. Every
 `moon` CLI invocation rebuilds these graphs from scratch, even when nothing has changed since the
 last run. The daemon solves this by running a background server process that keeps the workspace
-graph hot in memory, watches for file changes, and rebuilds only when necessary. This eliminates
-redundant work and significantly improves CLI response times, especially in larger workspaces with
-hundreds or thousands of projects/tasks.
+graph hot in memory, watches for file changes, and rebuilds only when necessary. As of v2.5, it
+also processes heavy cache operations (task output archiving and hydration) in the background.
+This eliminates redundant work and significantly improves CLI response times, especially in larger
+workspaces with hundreds or thousands of projects/tasks.
 
 :::caution
 
@@ -25,7 +26,7 @@ configuration may change in future releases.
 
 ## Enabling the daemon
 
-To enable the daemon, set the [`unstable_daemon`](../config/workspace#daemon) setting in
+To enable the daemon, set the [`unstable_daemon`](../config/workspace#unstable_daemon) setting in
 [`.moon/workspace.yml`](../config/workspace).
 
 ```yaml title=".moon/workspace.yml"
@@ -87,6 +88,17 @@ Changes to the following files and directories trigger an asynchronous graph reb
 
 Because rebuilds happen asynchronously in the background, the daemon remains responsive to new CLI
 connections while a rebuild is in progress.
+
+### Task output archiving & hydration<VersionLabel version="2.5.0" />
+
+When the daemon is running, task output [archiving and hydration](../concepts/cache#archiving--hydration)
+are offloaded to it, and processed in the background. The pipeline no longer blocks on these heavy
+file system operations, freeing it up to run more tasks. When the daemon is not enabled (or
+unavailable), these operations run in-process as before.
+
+Since this work now happens in the background, failures during archiving or hydrating are recorded
+in the daemon's server logs, instead of being surfaced by the main process. If task outputs seem
+missing or stale, inspect the logs with [`moon daemon logs`](../commands/daemon/logs).
 
 ## Managing the daemon
 

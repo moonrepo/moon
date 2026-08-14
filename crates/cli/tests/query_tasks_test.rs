@@ -282,5 +282,33 @@ mod query_tasks {
             assert_eq!(targets, ["metadata:test"]);
             assert_eq!(json.options.query.unwrap(), "task=test".to_string());
         }
+
+        #[test]
+        fn can_filter_by_task_tag_with_query() {
+            let sandbox = create_query_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("query").arg("tasks").arg("taskTag=quality");
+            });
+
+            let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+            let targets = extract_targets(&json);
+
+            assert_eq!(targets, ["metadata:test", "tasks:lint", "tasks:test"]);
+        }
+
+        #[test]
+        fn can_filter_by_task_tag_glob_with_query() {
+            let sandbox = create_query_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("query").arg("tasks").arg("taskTag~li*");
+            });
+
+            let json: QueryTasksResult = serde_json::from_str(assert.stdout().trim()).unwrap();
+            let targets = extract_targets(&json);
+
+            assert_eq!(targets, ["tasks:lint"]);
+        }
     }
 }

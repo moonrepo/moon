@@ -19,8 +19,10 @@ what you think they should.
 5. [Fingerprint checks in the hash](#fingerprint-checks-in-the-hash) — checks that fold script
    output into the hash (v2.4+)
 6. [Experimental caching layers](#experimental-caching-layers) — native file hashing, local CAS
-   (v2.3+)
-7. [Debugging tools](#debugging-tools) — commands for any cache issue
+   (v2.3+), shared worktree cache (v2.5+)
+7. [Daemon-offloaded archiving & hydration](#daemon-offloaded-archiving--hydration) — background
+   cache work and where its errors go (v2.5+)
+8. [Debugging tools](#debugging-tools) — commands for any cache issue
 
 ---
 
@@ -155,7 +157,8 @@ cache miss.
 
 **Inputs too broad:**
 
-Common folders like `node_modules` and `.git` are globally ignored, but everything else matches.
+The glob layer always excludes `.git` and a project-root `node_modules`, but everything else
+matches.
 
 ```yaml
 # PROBLEM: **/* matches too many irrelevant files in the project directory
@@ -186,11 +189,14 @@ that output changes each time (a timestamp, PID, random value, or a rapidly-chan
 hash changes and the cache always misses. See
 [Fingerprint checks in the hash](#fingerprint-checks-in-the-hash).
 
-**Git-ignored files leaking in:**
+**Unexpected files in the hash manifest:**
 
-moon filters VCS-ignored files from `inputs` (including `node_modules` and `.git` which are globally
-ignored), but edge cases exist. If you see unexpected files in the hash manifest, check `.gitignore`
-coverage.
+moon does **not** filter hash inputs against `.gitignore` — adding a volatile file to `.gitignore`
+will not remove it from the hash. Exclusion is glob-based: the glob layer always negates `.git`/
+`.svn` at any depth and a project-root-anchored `node_modules/**` (nested `node_modules` deeper in a
+project are NOT excluded), task outputs are excluded from their own inputs, and everything else must
+be handled by narrowing `inputs` or adding patterns to the workspace `hasher.ignorePatterns`
+setting.
 
 ### Quick fix
 
@@ -258,6 +264,19 @@ This happens when:
 - The task was previously run with `--cache off`
 - The task errored on the run that generated this hash
 - The cache was cleaned (`moon clean`)
+- <sup>v2.4+</sup> `cache.cas.maxSize` evicted it — least-recently-used, when the CAS experiment is
+  enabled. Eviction only runs during garbage collection (`moon clean`, or the post-pipeline cleanup
+  when a daemon is connected), never at write time.
+- <sup>v2.5+</sup> A daemon-side archive failure — archiving through the daemon is fire-and-forget,
+  so a failed archive stores nothing and the only evidence is in the daemon's server logs.
+
+**Daemon errors are swallowed** <sup>v2.5+</sup>:
+
+When the daemon is enabled, archiving and hydration go through it, and the main process **never
+surfaces their errors**. A daemon-side hydrate failure is reported back as "nothing cached", so the
+task silently re-runs (an unexpected cache miss) instead of erroring — the real cause only exists in
+the daemon's server logs. See
+[Daemon-offloaded archiving & hydration](#daemon-offloaded-archiving--hydration).
 
 ### Quick fix
 
@@ -311,6 +330,11 @@ moon task <project>:<task> --json
 
 Each entry under `deps` shows its resolved `cacheStrategy`. If you didn't set it, the field reflects
 the default chosen for you.
+
+Mechanism note for `'outputs'`: the dep's output files and globs are injected into the consuming
+task's **inputs** by the expander (the hash itself only records a marker for the strategy). So in
+`moon hash` output, an upstream's `dist/` files showing up as this task's inputs is expected, not a
+config bug.
 
 ### Common surprises
 
@@ -388,10 +412,14 @@ If the differing field corresponds to a check, the fingerprint output is the cau
 
 ### Symptom: a fingerprint check aborts the task
 
-If the fingerprint script exits **non-zero** (or fails to spawn at all), moon raises
-`FingerprintCheckFailed` (`task_runner::hash_check_failed`) during hash generation and the task does
-not run. Unlike a `condition`, a failing fingerprint is always fatal. Run the script manually to
-debug it.
+If the fingerprint script exits **non-zero**, moon raises `FingerprintCheckFailed`
+(`task_runner::hash_check_failed`) during hash generation and the task does not run. A script that
+fails to spawn at all is also fatal, but the underlying process error propagates as-is instead of
+that variant. Run the script manually to debug it.
+
+One exception: a fingerprint script that hits the task's `options.timeout` is **silently non-fatal**
+— the attempt is marked timed-out and contributes _nothing_ to the hash, so the hash quietly loses
+that content instead of erroring.
 
 > Fingerprint checks run during hash generation, which happens on **every** run — even on cache
 > hits, and even when the task's cache is disabled. Setting `hash: false` still runs the script but
@@ -404,14 +432,19 @@ debug it.
 
 Available in v2.3+.
 
-Two opt-in experiments can change how the local cache stores and verifies content. If a user reports
-unexpected cache behavior, check whether either of these is enabled in `.moon/workspace.yml`:
+Two experiments change how the local cache stores and verifies content. If a user reports unexpected
+cache behavior, check the state of both in `.moon/workspace.yml` — and note that their **defaults
+changed in v2.5**:
 
 ```yaml
 experiments:
-  casOutputsCache: true # local content-addressable store for task outputs
-  nativeFileHashing: true # bypass VCS for input hashing
+  casOutputsCache: true # local content-addressable store for task outputs (opt-in)
+  nativeFileHashing: true # bypass VCS for input hashing (DEFAULT in v2.5+)
 ```
+
+Both can also be toggled from the environment (`MOON_EXPERIMENT_CAS_OUTPUTS_CACHE`,
+`MOON_EXPERIMENT_NATIVE_FILE_HASHING`) — check the shell and CI environment for overrides the config
+doesn't show.
 
 ### `casOutputsCache`
 
@@ -427,7 +460,9 @@ per-hash `.tar.gz` archives under `.moon/cache/outputs/`. The CAS lives in **sib
   `blobs/` instead.
 - `tar tzf` won't work on individual blobs; they're raw content-addressed files.
 - <sup>v2.4+</sup> If `cache.cas.maxSize` is set (e.g. `'10gb'`), least-recently-used outputs are
-  **evicted** when the limit is exceeded — a missing archive may simply have been evicted.
+  **evicted** when the limit is exceeded — a missing archive may simply have been evicted. Eviction
+  only happens during garbage collection (`moon clean`, or the post-pipeline cleanup when a daemon
+  is connected) — never at write time, so the cache can temporarily exceed the limit.
 
 **Quick toggle for diagnosis:**
 
@@ -437,18 +472,21 @@ experiments:
   casOutputsCache: false
 ```
 
-The optional `cache.cas.verifyIntegrity` setting forces re-verification of every read. If hydration
-fails with a corruption error, this is the first thing to flip on.
+The optional `cache.cas.verifyIntegrity` setting forces re-verification of every blob read (it does
+not apply to manifests). If hydration fails with a corruption error, this is the first thing to flip
+on.
 
 ### `nativeFileHashing`
 
 When enabled, input hashing runs inside moon's task pool instead of shelling out to Git. This is
 generally faster (10–50% in benchmarks) but produces hashes from a different code path than the VCS
-default.
+implementation. <sup>v2.5+</sup> This experiment is **enabled by default** — a workspace upgrading
+from v2.4 switches hashing code paths without any config change.
 
 **Symptoms that suggest this experiment is involved:**
 
-- Hashes don't match what they were before enabling the experiment — expected, but worth confirming.
+- Hashes don't match what they were before enabling the experiment (or before upgrading to v2.5) —
+  expected, but worth confirming.
 - Hash diff (`moon hash <a> <b>`) attributes the change to file content even though Git reports the
   file as identical.
 
@@ -458,6 +496,64 @@ default.
 experiments:
   nativeFileHashing: false
 ```
+
+### Shared worktree cache <sup>v2.5+</sup>
+
+The `cache.unstable_sharedWorktreeCache` setting (or the `MOON_CACHE_SHARED_WORKTREE_CACHE`
+environment variable) shares the CAS between all git worktrees of a repository on the same machine.
+It requires the `casOutputsCache` experiment.
+
+**What changes when it's on:**
+
+- `blobs/` and `manifests/` live in the **base checkout's** `.moon/cache` directory (or
+  `~/.moon/cache/shared` for bare clones) — a worktree's own `.moon/cache/blobs/` being empty or
+  absent is normal, not a corruption sign.
+- Hashes, locks, and states remain worktree-specific, so `lastRun.json`, `stdout.log`, and hash
+  manifests are still local to each worktree.
+- A cache hit in a fresh worktree may hydrate from a task that ran in a _different_ worktree. If the
+  restored outputs look wrong, diff the hash manifests from both worktrees before blaming the
+  restore itself.
+
+**Quick toggle for diagnosis:**
+
+```bash
+MOON_CACHE_SHARED_WORKTREE_CACHE=false moon run <project>:<task>
+```
+
+---
+
+## Daemon-offloaded archiving & hydration
+
+Available in v2.5+.
+
+When the [daemon](https://moonrepo.dev/docs/guides/daemon) is enabled, task output archiving (after
+a run) and hydration (on a cache hit) are routed through it, and the main process **never surfaces
+their failures** — the daemon logs a warning and the pipeline carries on. The two paths behave
+differently:
+
+- **Archiving is fire-and-forget.** The daemon acknowledges the request, then does the storage work
+  in the background. A failure means nothing was stored — silently — and archives can appear
+  slightly _after_ the run completes, so an immediately-after `ls` of the cache can race the daemon.
+- **Hydration is awaited**, but a daemon-side failure is reported back as "nothing cached", which
+  the runner treats as a plain cache miss — the task re-runs instead of erroring. An unexpected
+  re-run (or a cache that never seems to hit) can therefore be a hydrate failure in disguise.
+
+**Debugging implications:**
+
+- For either symptom, the only evidence lives in the daemon's server logs:
+
+  ```bash
+  moon daemon logs
+  # or read directly:
+  cat .moon/cache/daemon/server.log
+  ```
+
+- To take the daemon out of the equation entirely, re-run with the daemon disabled — archiving and
+  hydration then run in-process and surface errors directly:
+
+  ```bash
+  MOON_DAEMON=false moon run <project>:<task> --force
+  ```
 
 ---
 
@@ -487,6 +583,12 @@ ls .moon/cache/outputs/
 
 # Inspect archive contents
 tar tzf .moon/cache/outputs/<hash>.tar.gz
+
+# Tail the daemon's server log — archive/hydrate failures land here (v2.5+)
+moon daemon logs
+
+# Run with the daemon disabled, so cache errors surface in-process (v2.5+)
+MOON_DAEMON=false moon run <project>:<task> --force
 
 # Force a fresh run (bypasses cache, writes new cache)
 moon run <project>:<task> --force

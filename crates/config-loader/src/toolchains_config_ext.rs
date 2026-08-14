@@ -15,7 +15,7 @@ impl ToolchainsConfigExt {
         match id.as_str() {
             "bun" => Some(locate("bun_toolchain", "1.0.3")),
             "deno" => Some(locate("deno_toolchain", "1.1.1")),
-            "go" => Some(locate("go_toolchain", "1.4.7")),
+            "go" => Some(locate("go_toolchain", "1.5.0")),
             "javascript" => Some(locate("javascript_toolchain", "1.3.0")),
             "node" => Some(locate("node_toolchain", "1.0.4")),
             "npm" => Some(locate("node_depman_toolchain", node_depman_version)),

@@ -3,6 +3,7 @@ title: Project graph
 ---
 
 import ProjectGraph from '@site/src/components/Docs/ProjectGraph';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The project graph is a representation of all configured
 [projects in the workspace](../config/workspace#projects) and their relationships between each
@@ -76,6 +77,20 @@ integration.
 - **Build** - Dependency is required for building only, and will sync as a build dependency.
 - **Peer** - Dependency is a peer requirement, with language specific semantics. Will sync as a peer
   dependency when applicable.
+- **Root** - Special scope applied when depending on the root-level project. Treated as a
+  development dependency.
+
+### Scope partitions<VersionLabel version="2.5.0" />
+
+Internally, relationships are partitioned into 2 graphs based on their scope: production
+(`production`, `peer`) and development (`development`, `build`, `root`). Each partition enforces
+its own acyclicity, so a dependency cycle is only an error when it exists entirely within a single
+partition.
+
+Relationships that cross the production/development boundary are valid, and no longer fail with a
+cycle error (nor silently drop dependency edges). A common example from the Go ecosystem: a package
+is depended on in production, while its tests depend on a test-utility package that imports the
+original package right back.
 
 ## What is the graph used for?
 

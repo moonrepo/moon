@@ -5,6 +5,10 @@ title: setup
 The `moon setup` command can be used to setup the developer and pipeline environments. It achieves
 this by downloading and installing all configured toolchains.
 
+As of v2.5, this command also sets up each toolchain's environment when their dependency root is
+the workspace root itself. Nested dependency roots will not be setup, as they are expected to be
+setup by their parent project.
+
 ```shell
 $ moon setup
 ```

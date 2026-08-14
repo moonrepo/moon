@@ -178,13 +178,23 @@ Override [`.moon/workspace.yml`](./config/workspace) settings without editing th
 
 | Variable                               | Setting                                                                    |
 | :------------------------------------- | :------------------------------------------------------------------------- |
-| `MOON_DAEMON`                          | [`daemon`](./guides/daemon)                                                |
+| `MOON_DAEMON`                          | [`unstable_daemon`](./config/workspace#unstable_daemon)                    |
 | `MOON_TELEMETRY`                       | [`telemetry`](./config/workspace#telemetry)                                |
 | `MOON_WEBHOOK_URL`                     | [`notifier.webhookUrl`](./config/workspace#webhookurl)                     |
 | `MOON_WEBHOOK_ACKNOWLEDGE`             | [`notifier.webhookAcknowledge`](./config/workspace#webhookacknowledge)     |
 | `MOON_PIPELINE_AUTO_CLEAN_CACHE`       | [`pipeline.autoCleanCache`](./config/workspace#autocleancache)             |
 | `MOON_PIPELINE_CACHE_LIFETIME`         | [`pipeline.cacheLifetime`](./config/workspace#cachelifetime)               |
 | `MOON_PIPELINE_KILL_PROCESS_THRESHOLD` | [`pipeline.killProcessThreshold`](./config/workspace#killprocessthreshold) |
+
+#### Cache <VersionLabel version="2.5.0" />
+
+Override [`cache`](./config/workspace#cache) settings for the CAS cache and native hasher.
+
+| Variable                           | Setting                                                                                 |
+| :--------------------------------- | :-------------------------------------------------------------------------------------- |
+| `MOON_CACHE_CAS_MAX_SIZE`          | [`cache.cas.maxSize`](./config/workspace#maxsize)                                       |
+| `MOON_CACHE_CAS_VERIFY_INTEGRITY`  | [`cache.cas.verifyIntegrity`](./config/workspace#verifyintegrity)                       |
+| `MOON_CACHE_SHARED_WORKTREE_CACHE` | [`cache.unstable_sharedWorktreeCache`](./config/workspace#unstable_sharedworktreecache) |
 
 #### Remote caching <VersionLabel version="1.30.0" />
 

@@ -1,5 +1,6 @@
 use crate::WorkspaceGraph;
 use moon_common::color;
+use moon_project_graph::Project;
 use moon_query::*;
 use moon_task_graph::{Target, Task};
 use std::{fmt::Debug, sync::Arc};
@@ -46,7 +47,7 @@ impl WorkspaceGraph {
         // Don't use `get_all` as it recursively calls `query`,
         // which runs into a deadlock! This should be faster also...
         for task in self.tasks.get_all_unexpanded()? {
-            if does_task_match_criteria(task, query)? {
+            if self.does_task_match_criteria(task, query)? {
                 targets.push(task.target.clone());
             }
         }
@@ -70,51 +71,72 @@ impl WorkspaceGraph {
 
         Ok(targets)
     }
-}
 
-fn does_task_match_criteria(task: &Task, query: &Criteria) -> miette::Result<bool> {
-    let match_all = matches!(query.op, LogicalOperator::And);
-    let mut matched_any = false;
+    // Use the unexpanded project, as expanding may recursively call
+    // `query`, which runs into a deadlock!
+    fn get_task_parent_project(&self, task: &Task) -> miette::Result<Option<&Project>> {
+        Ok(match task.target.get_project_id() {
+            Ok(project_id) => Some(self.projects.get_unexpanded(project_id)?),
+            Err(_) => None,
+        })
+    }
 
-    for condition in &query.conditions {
-        let matches = match condition {
-            Condition::Field { field, .. } => {
-                let result = match field {
-                    Field::Project(ids) => {
-                        if let Ok(project_id) = task.target.get_project_id() {
-                            condition.matches(ids, project_id)
-                        } else {
-                            Ok(false)
+    fn does_task_match_criteria(&self, task: &Task, query: &Criteria) -> miette::Result<bool> {
+        let match_all = matches!(query.op, LogicalOperator::And);
+        let mut matched_any = false;
+
+        for condition in &query.conditions {
+            let matches = match condition {
+                Condition::Field { field, .. } => {
+                    let result = match field {
+                        Field::Project(ids) => {
+                            if let Ok(project_id) = task.target.get_project_id() {
+                                if condition.matches(ids, project_id)? {
+                                    Ok(true)
+                                } else if let Some(project) = self.get_task_parent_project(task)?
+                                    && !project.aliases.is_empty()
+                                {
+                                    condition.matches_list(ids, &project.aliases)
+                                } else {
+                                    Ok(false)
+                                }
+                            } else {
+                                Ok(false)
+                            }
                         }
-                    }
-                    Field::Task(ids) => condition.matches(ids, &task.id),
-                    Field::TaskToolchain(ids) => condition.matches_list(ids, &task.toolchains),
-                    Field::TaskType(types) => condition.matches_enum(types, &task.type_of),
-                    _ => Ok(false),
-                };
+                        Field::Task(ids) => condition.matches(ids, &task.id),
+                        Field::TaskTag(tags) => condition.matches_list(tags, &task.tags),
+                        Field::TaskToolchain(ids) => condition.matches_list(ids, &task.toolchains),
+                        Field::TaskType(types) => condition.matches_enum(types, &task.type_of),
+                        // These fields match against the task's parent project
+                        _ => Ok(false),
+                    };
 
-                result?
+                    result?
+                }
+                Condition::Criteria { criteria } => {
+                    self.does_task_match_criteria(task, criteria)?
+                }
+            };
+
+            if matches {
+                matched_any = true;
+
+                if match_all {
+                    continue;
+                } else {
+                    break;
+                }
+            } else if match_all {
+                return Ok(false);
             }
-            Condition::Criteria { criteria } => does_task_match_criteria(task, criteria)?,
-        };
+        }
 
-        if matches {
-            matched_any = true;
-
-            if match_all {
-                continue;
-            } else {
-                break;
-            }
-        } else if match_all {
+        // No matches using the OR condition
+        if !matched_any {
             return Ok(false);
         }
-    }
 
-    // No matches using the OR condition
-    if !matched_any {
-        return Ok(false);
+        Ok(true)
     }
-
-    Ok(true)
 }

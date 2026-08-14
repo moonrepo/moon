@@ -150,6 +150,21 @@ content-addressable storage (CAS) cache and the native file hasher.
 
 Configures aspects of the content-addressable storage (CAS) cache.
 
+#### `maxSize`<VersionLabel version="2.4.0" />
+
+<HeadingApiLink to="/api/types/interface/CacheCasConfig#maxSize" />
+
+Maximum total size of the local CAS cache, for example `10gb` or `512mib`. When the limit is
+exceeded, the least recently used task outputs are evicted. Unlimited when not set.
+
+```yaml title=".moon/workspace.yml" {2,3}
+cache:
+  cas:
+    maxSize: '10gb'
+```
+
+Can also be set with the `MOON_CACHE_CAS_MAX_SIZE` environment variable.
+
 #### `verifyIntegrity`
 
 <HeadingApiLink to="/api/types/interface/CacheCasConfig#verifyIntegrity" />
@@ -162,6 +177,32 @@ cache:
   cas:
     verifyIntegrity: true
 ```
+
+Can also be enabled with the `MOON_CACHE_CAS_VERIFY_INTEGRITY` environment variable.
+
+### `unstable_sharedWorktreeCache`<VersionLabel version="2.5.0" />
+
+<HeadingApiLink to="/api/types/interface/CacheConfig#sharedWorktreeCache" />
+
+Shares the content-addressable storage (CAS) cache between all VCS worktrees on the same machine,
+instead of each worktree maintaining its own isolated cache. Only blobs and manifests are shared,
+as they are portable, while hashes, locks, states, and more remain worktree-specific.
+
+The shared cache is stored in the base checkout's `.moon/cache` directory, or in
+`~/.moon/cache/shared` when the repository root has no checkout (bare clones).
+
+```yaml title=".moon/workspace.yml" {2}
+cache:
+  unstable_sharedWorktreeCache: true
+```
+
+Can also be enabled with the `MOON_CACHE_SHARED_WORKTREE_CACHE` environment variable.
+
+:::info
+
+This setting requires the [`casOutputsCache`](#casoutputscache) experiment to be enabled.
+
+:::
 
 ## `codeowners`<VersionLabel version="1.8.0" />
 
@@ -280,6 +321,27 @@ dependsOn: ['components']
 ```yaml title="packages/components/moon.yml"
 tags: ['react']
 ```
+
+## `unstable_daemon`<VersionLabel version="2.2.0" />
+
+<HeadingApiLink to="/api/types/interface/WorkspaceConfig#daemon" />
+
+Enables the background [daemon](../guides/daemon), a server process that keeps the workspace graph
+hot in memory, watches for file changes, and processes heavy operations (like task output archiving
+and hydration) in the background. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml"
+unstable_daemon: true
+```
+
+Can also be enabled with the `MOON_DAEMON` environment variable.
+
+:::caution
+
+The daemon is currently **unstable**, and its behavior and configuration may change in future
+releases. Learn more about it in the [official guide](../guides/daemon).
+
+:::
 
 ## `docker`<VersionLabel version="1.27.0" />
 

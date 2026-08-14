@@ -21,14 +21,14 @@ for deep debugging of moon tasks.
 moon provides several environment variables that reveal internal state during task execution. Set
 them before running `moon run`:
 
-| Variable                   | What it reveals                                                                                              |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `MOON_DEBUG_DAEMON`        | Debug output from the daemon server.                                                                         |
-| `MOON_DEBUG_MCP`           | Debug output from MCP server interactions.                                                                   |
-| `MOON_DEBUG_PROCESS_ENV`   | All environment variables passed to the child process. By default moon hides these to avoid leaking secrets. |
-| `MOON_DEBUG_PROCESS_INPUT` | Full stdin passed to the child process. By default moon truncates this.                                      |
-| `MOON_DEBUG_REMOTE`        | Debug output from remote caching — connection errors, sync status.                                           |
-| `MOON_DEBUG_WASM`          | Debug output from WASM plugins — loading, execution, memory profiles.                                        |
+| Variable                   | What it reveals                                                                                                                    |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `MOON_DEBUG_DAEMON`        | Debug output from the daemon server.                                                                                               |
+| `MOON_DEBUG_MCP`           | Debug output from MCP server interactions.                                                                                         |
+| `MOON_DEBUG_PROCESS_ENV`   | All environment variables passed to the child process (by default only `MOON_*` keys are logged). Requires `--log debug` or lower. |
+| `MOON_DEBUG_PROCESS_INPUT` | Full stdin passed to the child process. By default moon truncates this.                                                            |
+| `MOON_DEBUG_REMOTE`        | Debug output from remote caching — connection errors, sync status.                                                                 |
+| `MOON_DEBUG_WASM`          | Debug output from WASM plugins — loading, execution, memory profiles.                                                              |
 
 ### Usage
 
@@ -46,6 +46,26 @@ MOON_DEBUG_REMOTE=true moon run <project>:<task> --log debug
 # Debug toolchain installation (use --log debug; no dedicated env var exists)
 moon run <project>:<task> --log debug --force
 ```
+
+### Behavior-changing env vars (check for overrides!)
+
+Separate from the debug vars above, moon reads env vars that **override configuration** — a shell
+profile or CI environment exporting one of these can make behavior diverge from what the config
+says. When "the config says X but moon does Y", check for these first:
+
+```bash
+env | grep '^MOON_'
+```
+
+| Variable                                            | Overrides                                                     |
+| --------------------------------------------------- | ------------------------------------------------------------- |
+| `MOON_DAEMON`                                       | `unstable_daemon` — enables/disables the background daemon    |
+| `MOON_EXPERIMENT_*`                                 | Any `experiments.*` flag (async graph/affected, hashing, CAS) |
+| `MOON_CACHE`                                        | The `--cache` mode (`read`, `read-write`, `write`, `off`)     |
+| `MOON_CACHE_CAS_MAX_SIZE` <sup>v2.5+</sup>          | `cache.cas.maxSize` — CAS eviction limit                      |
+| `MOON_CACHE_CAS_VERIFY_INTEGRITY` <sup>v2.5+</sup>  | `cache.cas.verifyIntegrity`                                   |
+| `MOON_CACHE_SHARED_WORKTREE_CACHE` <sup>v2.5+</sup> | `cache.unstable_sharedWorktreeCache`                          |
+| `MOON_BASE` / `MOON_HEAD`                           | Base/head revisions for affected detection                    |
 
 ### Environment variables in task config
 
@@ -65,6 +85,12 @@ Env vars declared in `env` are included in the hash. If you change `NODE_ENV` fr
 Env vars **not** declared in `env` (but present in the shell) are still passed to the process, but
 they don't affect the hash. This means a different `NODE_ENV` in your shell won't trigger a cache
 miss unless it's in the config.
+
+<sup>v2.5+</sup> A task's resolved `env` can also include variables inherited from a
+**workspace-level `env`** in `.moon/tasks/**/*` files, merged beneath the project's own `env`
+(project wins on conflict, unless `workspace.mergeStrategies.env` changes the strategy). If a
+variable has a value that appears nowhere in the project config, check the global task files. See
+`config-mistakes.md` § Workspace-inherited env.
 
 ---
 
@@ -208,15 +234,19 @@ moon query tasks --project <project>
 moon query tasks --tags quality
 ```
 
-**MQL `tag` vs `taskTag`** (v2.3+): MQL's `tag` field is a legacy alias for `projectTag` — it
-matches **project** tags, not task tags. Old `tag=...` queries still run, but on task queries they
-filter by the parent project's tags, which is usually not what you want. Use `taskTag` for task
-tags.
+**MQL `tag` vs `taskTag`** (v2.3+): MQL's `tag` field is a legacy alias for `projectTag` (project
+tags), while `taskTag` matches task tags. On task queries, `taskTag` matches the task's own tags,
+and `projectTag`/`tag` match the task's parent project's tags.
 
 ```bash
-moon query tasks --query "projectTag=quality"  # by project tag (alias: tag)
-moon query tasks --query "taskTag=quality"     # by task tag
+moon query tasks --tags quality                    # by task tag (regex flag)
+moon query tasks --query "taskTag=quality"         # by task tag (MQL)
+moon query tasks --query "tag=quality"             # by parent project tag (alias of projectTag)
+moon query projects --query "taskTag=quality"      # projects containing a task tagged quality
 ```
+
+> In v2.3–v2.4, no tag field worked on task queries — they silently matched nothing. Fixed in v2.5;
+> use the `--tags` flag on older versions.
 
 ---
 
@@ -245,6 +275,23 @@ The trace shows:
 This is the most granular debugging tool. Use it when you know something is slow but can't tell what
 from the logs alone.
 
+### OpenTelemetry export <sup>v2.5+</sup>
+
+The same span data can be exported over OTLP to an observability backend (Grafana, Honeycomb,
+Jaeger, etc), which is useful for comparing runs over time or debugging CI performance where you
+can't open a local trace file:
+
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+moon --otel run <project>:<task>
+
+# Also export log events as OTLP logs (respects --log level)
+moon --otel --otel-logs run <project>:<task> --log debug
+```
+
+See the [OpenTelemetry docs](https://moonrepo.dev/docs/commands/overview#opentelemetry) for
+transports and the full env var list.
+
 ---
 
 ## Cache file locations
@@ -270,6 +317,13 @@ All paths are relative to the workspace root. The `.moon/cache/` directory shoul
 > content-addressable store at `.moon/cache/manifests/` and `.moon/cache/blobs/` (prefix-sharded by
 > hash; renamed in v2.4 from `ac/` and `cas/`) — per-hash `.tar.gz` files stop being created in
 > `outputs/`. See `cache-issues.md` § Experimental caching layers.
+
+> <sup>v2.5+</sup> Two additions change where to look. With `cache.unstable_sharedWorktreeCache`
+> enabled, `blobs/` and `manifests/` move to the **base checkout's** `.moon/cache` (or
+> `~/.moon/cache/shared` for bare clones) — the worktree's own copies may be empty. And with the
+> daemon enabled, archive/hydrate errors are recorded only in `.moon/cache/daemon/server.log`
+> (`moon daemon logs`), not in the main process output — a failed hydrate surfaces as a plain cache
+> miss (the task re-runs).
 
 ---
 
@@ -303,6 +357,9 @@ moon run <project>:<task> --log debug --force 2>&1 | grep -i "check\|condition\|
 #   "Checking requirement" (+ non-zero exit_code)              → requirement failed → task fails
 #   "Skipping task as all conditional checks have passed"      → condition skip
 #   "Will continue to run the task as not all conditional…"    → conditions didn't all pass → ran
+#   "Checking condition"                                       → a condition check executed
+#   "Task check timed out"                                     → check hit options.timeout
+#     (silently non-fatal: requirement counts as passing, fingerprint hashes nothing)
 ```
 
 See `config-mistakes.md` § Task checks and `cache-issues.md` § Fingerprint checks in the hash.

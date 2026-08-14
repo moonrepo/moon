@@ -5,6 +5,7 @@ mod host;
 mod macros;
 mod prompts;
 mod toolchain;
+mod vcs;
 
 pub use common::*;
 pub use context::*;
@@ -20,6 +21,7 @@ pub use proto_pdk_api::{
     UnresolvedVersionSpec, Version, VersionSpec,
 };
 pub use toolchain::*;
+pub use vcs::*;
 pub use warpgate_api::*;
 
 pub(crate) fn is_false(value: &bool) -> bool {

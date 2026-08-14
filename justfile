@@ -17,6 +17,9 @@ build-wasm:
 check:
 	cargo check --workspace
 
+check-debug $CARGO_LOG="cargo::core::compiler::fingerprint=info" $RUST_LOG="info":
+	cargo check --workspace
+
 check-wasm:
 	cd wasm && cargo check --workspace
 

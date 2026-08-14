@@ -49,8 +49,8 @@ Crane vendors Cargo dependencies from `Cargo.lock`. If moon ever takes a depende
 source, Crane will vendor it from the locked revision.
 
 Crane compiles dependencies separately from the final package so application changes can reuse them.
-The package source is restricted to Cargo sources and compile-time assets, preventing unrelated files
-and version control metadata from invalidating the build.
+The package source is restricted to Cargo sources and compile-time assets, preventing unrelated
+files and version control metadata from invalidating the build.
 
 Tests run with `doCheck = false`. They download Node.js, Bun, Deno, and other toolchains at runtime,
 which the Nix sandbox blocks.
@@ -58,10 +58,10 @@ which the Nix sandbox blocks.
 ## CI
 
 `.github/workflows/nix.yml` runs `nix flake check` and builds the package for every supported Linux
-and macOS system when `flake.nix`, `flake.lock`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, or
-anything under `crates/` changes. All jobs pull from the public `moonrepo` Cachix cache. Trusted push
-and manual runs publish new paths when the repository has a `CACHIX_AUTH_TOKEN` secret; pull requests
-remain read-only.
+and macOS system when `flake.nix`, `flake.lock`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`,
+or anything under `crates/` changes. All jobs pull from the public `moonrepo` Cachix cache. Trusted
+push and manual runs publish new paths when the repository has a `CACHIX_AUTH_TOKEN` secret; pull
+requests remain read-only.
 
 The flake advertises the cache through `nixConfig`. Pass `--accept-flake-config` when running Nix
 non-interactively, or configure the cache with `cachix use moonrepo`.

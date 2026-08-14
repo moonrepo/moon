@@ -32,7 +32,7 @@ exported to your observability stack through OpenTelemetry.
 
 moon's pipeline has been internally instrumented for a while — it's the same span data that powers
 `--dump` and verbose logging — but until now, that data never left your machine. In v2.5, moon can
-export [OpenTelemetry](https://opentelemetry.io/) (OTEL) traces, metrics, and logs over OTLP, for
+export [OpenTelemetry](https://opentelemetry.io/) (OTEL) traces, metrics (we don't emit any yet), and logs over OTLP, for
 integration with observability backends like Grafana, Honeycomb, or Datadog. The entire pipeline —
 action graph construction, task execution, plugin calls, and more — is reported as a span tree, so
 you can finally answer questions like "what is CI actually spending its time on?" with a flame

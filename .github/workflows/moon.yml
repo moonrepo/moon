@@ -22,6 +22,7 @@ on:
 env:
   # For setup-rust
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  CARGO_INCREMENTAL: 0
 
 jobs:
   ci:

@@ -27,6 +27,7 @@ env:
   MOON_PLUGINS_USE_URL_DIST: true
   PROTO_PLUGINS_USE_URL_DIST: true
   # RUST_LOG: trace
+  CARGO_INCREMENTAL: 0
   # setup-rust
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   # sccache

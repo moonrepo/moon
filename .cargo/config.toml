@@ -6,12 +6,17 @@
 # [build]
 # rustflags = ["--cfg", "tokio_unstable"]
 
+# [build]
+# rustflags = ["-Z", "threads=8"]
+
 [profile.dev]
 split-debuginfo = "unpacked"
 opt-level = 1
-# Uncomment these 2 if using the debugger!
-# debug = 0
-# strip = "debuginfo"
+debug = 0
+strip = "debuginfo"
+
+[profile.dev.build-override]
+opt-level = 3
 
 [profile.release]
 codegen-units = 1
@@ -45,3 +50,4 @@ codegen-units = 16
 GIT_CONFIG_COUNT = "1"
 GIT_CONFIG_KEY_0 = "core.fsmonitor"
 GIT_CONFIG_VALUE_0 = "false"
+AWS_LC_SYS_PREBUILT_NASM = "1"

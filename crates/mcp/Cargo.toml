@@ -17,8 +17,8 @@ moon_codegen = { path = "../codegen" }
 moon_common = { version = "2.0.8", path = "../common" }
 moon_config = { path = "../config" }
 moon_process = { path = "../process" }
-moon_project = { version = "2.0.7", path = "../project" }
-moon_task = { version = "2.1.1", path = "../task" }
+moon_project = { version = "2.0.8", path = "../project" }
+moon_task = { version = "2.1.2", path = "../task" }
 moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }

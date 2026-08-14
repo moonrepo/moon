@@ -1,6 +1,6 @@
 [package]
 name = "moon_file_group"
-version = "2.0.4"
+version = "2.0.5"
 edition = "2024"
 license = "MIT"
 description = "File groups and collections."
@@ -10,7 +10,7 @@ publish = true
 
 [dependencies]
 moon_common = { version = "2.0.8", path = "../common" }
-moon_config = { version = "2.1.1", path = "../config" }
+moon_config = { version = "2.1.2", path = "../config" }
 moon_feature_flags = { version = "2.0.2", path = "../feature-flags" }
 common-path = "1.0.0"
 miette = { workspace = true }

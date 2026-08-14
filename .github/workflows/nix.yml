@@ -37,15 +37,11 @@ jobs:
           - system: aarch64-linux
             runner: depot-ubuntu-22.04-arm-8
           - system: aarch64-darwin
-            # macOS builders intermittently die at startup on depot-macos-14
-            # images ("unexpected EOF reading a line", NixOS/nix#7242), so stay
-            # on 15 and keep parallelism low to limit the crate-fetch storm.
             runner: depot-macos-15
-            build-args: --max-jobs 4
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v14
+      - uses: DeterminateSystems/nix-installer-action@v22
       - uses: cachix/cachix-action@v17
         with:
           name: moonrepo

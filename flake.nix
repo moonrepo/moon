@@ -16,6 +16,7 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    proto.url = "github:moonrepo/proto/fe6534feddb1aec1695b4d6843dbdd0ae74a92b7";
   };
 
   outputs =
@@ -25,6 +26,7 @@
       flake-utils,
       crane,
       rust-overlay,
+      proto,
     }:
     flake-utils.lib.eachSystem
       [
@@ -43,10 +45,15 @@
           rustToolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
 
           devRustToolchain = rustToolchain.override {
-            extensions = [ "rust-src" ];
+            extensions = [
+              "llvm-tools-preview"
+              "rust-src"
+            ];
+            targets = [ "wasm32-wasip1" ];
           };
 
           craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchain;
+          protoPackage = proto.packages.${system}.default;
 
           moonVersion = (builtins.fromTOML (builtins.readFile ./crates/cli/Cargo.toml)).package.version;
 
@@ -161,12 +168,17 @@
             nativeBuildInputs = nativeDeps ++ [
               devRustToolchain
               pkgs.just
+              pkgs.cargo-insta
+              pkgs.cargo-llvm-cov
               pkgs.cargo-nextest
+              pkgs.pkl
+              protoPackage
             ];
             buildInputs = buildDeps;
 
             env = {
               OPENSSL_NO_VENDOR = "1";
+              PROTO_LOOKUP_DIR = "${protoPackage}/bin";
               RUST_SRC_PATH = "${devRustToolchain}/lib/rustlib/src/rust/library";
             };
           };

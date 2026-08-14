@@ -37,7 +37,7 @@ jobs:
           - system: aarch64-linux
             runner: depot-ubuntu-22.04-arm-8
           - system: aarch64-darwin
-            runner: depot-macos-15
+            runner: macos-15
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4

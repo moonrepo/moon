@@ -38,6 +38,10 @@ jobs:
             runner: depot-ubuntu-22.04-arm-8
           - system: aarch64-darwin
             runner: depot-macos-14
+            # Limit concurrent derivations on macOS, otherwise the storm of
+            # short-lived crate-fetch builders trips a pty race in the nix
+            # daemon (NixOS/nix#7242) and aborts with "unexpected EOF".
+            build-args: --max-jobs 4
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -49,4 +53,4 @@ jobs:
       - name: Check flake
         run: nix flake check --no-build --no-write-lock-file --accept-flake-config
       - name: Build package
-        run: nix build .#packages.${{ matrix.system }}.default -L --accept-flake-config
+        run: nix build .#packages.${{ matrix.system }}.default -L --accept-flake-config ${{ matrix.build-args }}

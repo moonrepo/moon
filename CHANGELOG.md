@@ -94,14 +94,22 @@
   - The `force` option for `bins` entries is now respected, and will always install the binary.
   - Fixed configured `bins` not being reinstalled when their binaries were uninstalled or deleted
     outside of moon.
-  - Fixed project relationships not linking when a `go.mod` is located in a major version folder
-    (`v2`+) but its `module` directive omits the version suffix. The suffix is now inferred from the
-    folder name, for both the project's alias and dependency matching.
-  - `replace` directives are now honored when linking project relationships. A replacement pointing
-    to a local directory links to the project at that location (regardless of module names), while a
-    replacement pointing to another module no longer creates a relationship.
-  - Project relationships now reference the dependency's project identifier instead of its module
-    path alias, aligning with other toolchains.
+  - Reworked relationship inference to match package import paths instead of module paths. Each
+    project now resolves a canonical import path (nearest `go.mod` module path plus the project's
+    relative directory), and `go list -deps` results are matched against those by longest prefix.
+    This makes relationships resolvable in repositories that share a single `go.mod` across all
+    projects.
+  - Sibling modules required by version without a `go.work` no longer create project relationships,
+    since those builds consume the published module rather than the local source. When the `go`
+    binary is unavailable, projects with their own `go.mod` under a workspace `go.work` fall back to
+    resolving relationships from their direct requires.
+  - `replace` directives keep their meaning in the new model: a require replaced by a local
+    directory always links to the project at that location (it consumes local source even without a
+    `go.work`), while a require replaced by another module never links.
+  - Imports within a project's own import path are treated as ownership rather than dependencies.
+    `go list -deps ./...` enumerates packages belonging to projects nested inside the scanned
+    project, which previously inferred an edge from the parent to every nested child — forming a
+    cycle whenever a child declared `dependsOn` on its parent.
 - **JavaScript**
   - Added unstable support for [Nub](https://nubjs.com/) as a package manager:
     - Natively uses `nub.lock` (pnpm lockfile format), but will locate dependency roots using other

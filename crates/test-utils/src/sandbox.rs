@@ -1,5 +1,6 @@
 #![allow(clippy::disallowed_types)]
 
+use moon_common::path::exe_name;
 use moon_config::{
     PartialExtensionsConfig, PartialToolchainsConfig, PartialWorkspaceConfig,
     PartialWorkspaceProjects, PartialWorkspaceProjectsConfig,
@@ -7,7 +8,9 @@ use moon_config::{
 pub use starbase_sandbox::{Sandbox, SandboxAssert, SandboxSettings, create_temp_dir};
 use starbase_utils::yaml;
 use std::collections::HashMap;
+use std::env;
 use std::ops::Deref;
+use std::path::PathBuf;
 
 pub struct MoonSandbox {
     pub sandbox: Sandbox,
@@ -142,6 +145,22 @@ fn apply_settings(sandbox: &mut Sandbox) {
         .settings
         .env
         .extend(env.into_iter().map(|(k, v)| (k.to_owned(), v.to_owned())));
+
+    if let Ok(proto_lookup_dir) = env::var("PROTO_LOOKUP_DIR") {
+        sandbox
+            .settings
+            .env
+            .insert("PROTO_LOOKUP_DIR".into(), proto_lookup_dir.clone());
+
+        let shim_name = exe_name("proto-shim");
+        let shim_source = PathBuf::from(proto_lookup_dir).join(&shim_name);
+
+        if shim_source.is_file() {
+            let bin_dir = proto_dir.join("bin");
+            std::fs::create_dir_all(&bin_dir).unwrap();
+            std::fs::copy(shim_source, bin_dir.join(shim_name)).unwrap();
+        }
+    }
 }
 
 fn create_workspace_files(sandbox: &Sandbox) {

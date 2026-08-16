@@ -5,7 +5,7 @@ use moon_config::schematic::Schema;
 use moon_config::schematic::schema::indexmap::IndexSet;
 use moon_pdk_api::*;
 use moon_plugin::{Plugin, PluginContainer, PluginRegistration, PluginType, inherit_path_methods};
-use moon_toolchain::DependenciesWorkspace;
+use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole};
 use proto_core::flow::detect::Detector;
 use proto_core::flow::install::InstallOptions;
 use proto_core::flow::locate::{Locator, LocatorResponse};
@@ -161,22 +161,26 @@ impl ToolchainPlugin {
         &self,
         workspace: &DependenciesWorkspace,
         path: &Path,
-    ) -> miette::Result<bool> {
-        // No members means there's no workspace at all, and each
-        // project is stand-alone with its own lockfile
-        if workspace.members.is_empty() {
-            return Ok(false);
-        }
-
+    ) -> miette::Result<Option<DependenciesWorkspaceRole>> {
         Ok(
             // Root always in the workspace
             if path == workspace.root {
-                true
+                if workspace.members.is_some() {
+                    Some(DependenciesWorkspaceRole::WorkspaceRoot)
+                } else {
+                    Some(DependenciesWorkspaceRole::PackageRoot)
+                }
             }
             // Match against the provided member globs
-            else {
-                GlobSet::new(&workspace.members)?
+            else if let Some(members) = &workspace.members {
+                GlobSet::new(members)?
                     .matches(path.strip_prefix(&workspace.root).unwrap_or(path))
+                    .then_some(DependenciesWorkspaceRole::WorkspaceMember)
+            }
+            // No members means there's no workspace at all, only the root
+            // package, and the path is not it
+            else {
+                None
             },
         )
     }
@@ -507,7 +511,7 @@ impl ToolchainPlugin {
             if let Some(root) = output.root {
                 return Ok(Some(DependenciesWorkspace {
                     root: self.to_real_path(&root).to_path_buf(),
-                    members: output.members.unwrap_or_default(),
+                    members: output.members,
                 }));
             }
         }

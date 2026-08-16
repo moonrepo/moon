@@ -102,7 +102,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_if_tier2() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -132,7 +134,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_setup_toolchain_if_tier3() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -166,7 +170,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_multiple_toolchain_versions() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -267,7 +273,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_setup_env_chain_if_defined() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container.create_builder(wg.clone()).await;
@@ -302,7 +310,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn graphs_setup_env_chain_with_toolchain_requirements() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             container.mocker = container.mocker.update_toolchains_config(|cfg| {
                 if let Some(inner) = cfg.plugins.get_mut(&Id::raw("tc-tier2-setup-env")) {
@@ -353,7 +363,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -380,7 +392,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_disabled_in_config() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             let spec = create_tier_spec(2);
 
@@ -405,7 +419,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn doesnt_add_if_not_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -432,7 +448,9 @@ mod action_graph_builder {
         #[tokio::test(flavor = "multi_thread")]
         async fn adds_if_listed() {
             let sandbox = create_sandbox("projects");
-            let mut container = ActionGraphContainer::new(sandbox.path());
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd, so the project owns the root package
+                .set_working_dir(sandbox.path().join("bar"));
 
             let wg = container.create_workspace_graph().await;
             let mut builder = container
@@ -499,7 +517,7 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn supports_not_in_deps_workspace() {
+        async fn doesnt_graph_if_not_in_deps_workspace() {
             let sandbox = create_sandbox("dep-workspace");
             let mut container = ActionGraphContainer::new(sandbox.path())
                 // Plugin matches based on cwd
@@ -510,8 +528,60 @@ mod action_graph_builder {
 
             let spec = create_tier_spec(2);
 
+            // The project is not a member of the dependencies workspace, so it
+            // owns no environment. It only wants the toolchain binaries on `PATH`,
+            // and provisioning one here would clobber the workspace's environment,
+            // since the package manager resolves upwards to the same root
             let project = wg.get_project("out").unwrap();
-            builder.install_dependencies(&spec, &project).await.unwrap();
+            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+
+            assert!(index.is_none());
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_graph_if_not_the_root_package() {
+            let sandbox = create_sandbox("projects");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let spec = create_tier_spec(2);
+
+            // There's no workspace, so the located root is the only package,
+            // and this project isn't it
+            let project = wg.get_project("bar").unwrap();
+            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+
+            assert!(index.is_none());
+
+            let (_, graph) = builder.build();
+
+            assert_eq!(topo(graph), vec![ActionNode::sync_workspace()]);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_setup_toolchain_only_if_not_in_deps_workspace() {
+            let sandbox = create_sandbox("dep-workspace");
+            let mut container = ActionGraphContainer::new(sandbox.path())
+                // Plugin matches based on cwd
+                .set_working_dir(sandbox.path().join("out"));
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // Unlike tier 2, tier 3 can still setup the toolchain itself,
+            // so that its binaries are available to the project's tasks
+            let spec = create_tier_spec(3);
+
+            let project = wg.get_project("out").unwrap();
+            let index = builder.install_dependencies(&spec, &project).await.unwrap();
+
+            assert!(index.is_some());
 
             let (_, graph) = builder.build();
 
@@ -519,12 +589,8 @@ mod action_graph_builder {
                 topo(graph),
                 vec![
                     ActionNode::sync_workspace(),
-                    ActionNode::install_dependencies(InstallDependenciesNode {
-                        members: None,
-                        project_id: Some(Id::raw("out")),
-                        root: WorkspaceRelativePathBuf::from("out"),
-                        toolchain_id: spec.id,
-                    })
+                    ActionNode::setup_proto(create_proto_version()),
+                    ActionNode::setup_toolchain(SetupToolchainNode { toolchain: spec }),
                 ]
             );
         }

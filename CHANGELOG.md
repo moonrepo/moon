@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a project that isn't part of a toolchain's dependencies workspace (not the
+  root, and not a member) would provision its own environment. Since the package manager resolves
+  upwards to the same root, this would clobber the workspace's environment, and could fail the
+  pipeline when both ran at the same time. Such projects now only setup the toolchain, so that its
+  binaries are available on `PATH`.
+
 ## 2.5.0
 
 #### 💥 Breaking

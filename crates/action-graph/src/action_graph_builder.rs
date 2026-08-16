@@ -9,7 +9,7 @@ use moon_action::{
 use moon_action_context::{ActionContext, TargetState};
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
 use moon_app_context::AppContext;
-use moon_common::path::{PathExt, RelativePathBuf, WorkspaceRelativePathBuf};
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, color, is_ci};
 use moon_config::{EnvMap, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType};
 use moon_exec_plan::{ExecutionPlan, TargetsBlock};
@@ -17,7 +17,7 @@ use moon_pdk_api::{DefineRequirementsInput, LocateDependenciesRootInput};
 use moon_project::{Project, ProjectError};
 use moon_query::{Criteria, build_query};
 use moon_task::{Target, TargetError, TargetLocator, TargetProjectScope, TargetTaskScope, Task};
-use moon_toolchain::{DependenciesWorkspace, ToolchainSpec};
+use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole, ToolchainSpec};
 use moon_workspace_graph::projects::ProjectGraphError;
 use moon_workspace_graph::{GraphConnections, WorkspaceGraph};
 use petgraph::prelude::*;
@@ -364,24 +364,24 @@ impl<'query> ActionGraphBuilder<'query> {
         };
 
         // Only insert this action if a root was located
-        if let Some(deps_workspace) = self.locate_dependencies_root(spec, project).await? {
-            let rel_root = deps_workspace
+        if let Some(deps_workspace) = self.locate_dependencies_root(spec, project).await?
+            && let Some(deps_role) =
+                toolchain.in_dependencies_workspace(&deps_workspace, target_root)?
+        {
+            // The action is scoped to the located root, so that every project
+            // resolving to it collapses into the same action
+            let root = deps_workspace
                 .root
                 .relative_to(&self.app_context.workspace_root)
                 .into_diagnostic()?;
 
-            // Determine if we're in the dependencies workspace
-            let in_workspace = toolchain.in_dependencies_workspace(&deps_workspace, target_root)?;
-
-            // If not in the dependencies workspace (if there is one),
-            // or is a stand-alone project with its own lockfile,
-            // we must extract the project ID and source (root)
-            let (project_id, root) = if in_workspace {
-                (None, rel_root)
-            } else if let Some(project) = project {
-                (Some(project.id.clone()), project.source.clone())
-            } else {
-                (None, RelativePathBuf::new())
+            // Unless there's no workspace, in which case the root is the only
+            // package, and the project that owns it is associated, so that
+            // project-level toolchain config is passed to the plugin. The
+            // root may also not be owned by a project at all
+            let project_id = match deps_role {
+                DependenciesWorkspaceRole::PackageRoot => project.map(|project| project.id.clone()),
+                _ => None,
             };
 
             let setup_env_index = self
@@ -398,11 +398,7 @@ impl<'query> ActionGraphBuilder<'query> {
                 let index = insert_node_if_missing!(
                     self,
                     ActionNode::install_dependencies(InstallDependenciesNode {
-                        members: if in_workspace && !deps_workspace.members.is_empty() {
-                            Some(deps_workspace.members)
-                        } else {
-                            None
-                        },
+                        members: deps_workspace.members,
                         project_id,
                         root,
                         toolchain_id: spec.id.clone(),

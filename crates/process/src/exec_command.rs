@@ -432,7 +432,7 @@ impl Command {
         Ok(output)
     }
 
-    fn create_sync_command(&self) -> miette::Result<StdCommand> {
+    pub(crate) fn create_sync_command(&self) -> miette::Result<StdCommand> {
         // When the command is wrapped in a shell, we need to create a single
         // string of the full command line with args quoted correctly, as
         // it's passed as a single argument to the shell: `bash -c "command line"`
@@ -526,7 +526,11 @@ impl Command {
         Ok(TokioCommand::from(self.create_sync_command()?))
     }
 
-    fn handle_nonzero_status(&mut self, output: &Output, with_message: bool) -> miette::Result<()> {
+    pub(crate) fn handle_nonzero_status(
+        &mut self,
+        output: &Output,
+        with_message: bool,
+    ) -> miette::Result<()> {
         if self.should_error_nonzero() && !output.success() {
             return Err(output.to_error(self.get_bin_name(), with_message).into());
         }

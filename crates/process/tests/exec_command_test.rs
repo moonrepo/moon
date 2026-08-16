@@ -1,8 +1,9 @@
 #![cfg(unix)]
 
 use moon_console::Console;
-use moon_process::{ChildExit, Command, ProcessError};
+use moon_process::{CaptureOptions, ChildExit, Command, ProcessError};
 use std::sync::Arc;
+use std::time::Duration;
 
 fn create_command(script: &str) -> Command {
     let mut command = Command::new("bash");
@@ -86,6 +87,194 @@ mod exec_capture_output {
 
         assert!(!output.success());
         assert_eq!(output.exit, ChildExit::Killed);
+    }
+}
+
+mod exec_capture_output_blocking {
+    use super::*;
+    use std::fs::File;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    fn create_output_files() -> (std::path::PathBuf, File, std::path::PathBuf, File) {
+        static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
+
+        let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+        let prefix = format!("moon-process-{}-{id}", std::process::id());
+        let stdout_path = std::env::temp_dir().join(format!("{prefix}-stdout"));
+        let stderr_path = std::env::temp_dir().join(format!("{prefix}-stderr"));
+        let stdout = File::create(&stdout_path).unwrap();
+        let stderr = File::create(&stderr_path).unwrap();
+
+        (stdout_path, stdout, stderr_path, stderr)
+    }
+
+    #[test]
+    fn captures_stdout_and_stderr() {
+        let output = create_command("printf 'out'; printf 'err' 1>&2")
+            .exec_capture_output_blocking(&CaptureOptions::default())
+            .unwrap();
+
+        assert!(output.success());
+        assert_eq!(output.stdout.as_ref(), b"out");
+        assert_eq!(output.stderr.as_ref(), b"err");
+    }
+
+    #[test]
+    fn passes_input_to_stdin() {
+        let mut command = create_command("cat");
+        command.input(["hello", "world"]);
+
+        let output = command
+            .exec_capture_output_blocking(&CaptureOptions::default())
+            .unwrap();
+
+        assert_eq!(output.stdout.as_ref(), b"hello world");
+    }
+
+    #[test]
+    fn can_allow_nonzero_exit() {
+        let mut command = create_command("exit 3");
+        command.set_error_on_nonzero(false);
+
+        let output = command
+            .exec_capture_output_blocking(&CaptureOptions::default())
+            .unwrap();
+
+        assert!(!output.success());
+        assert_eq!(output.code(), Some(3));
+    }
+
+    #[test]
+    fn enforces_timeout() {
+        let error = create_command("sleep 30")
+            .exec_capture_output_blocking(&CaptureOptions {
+                timeout: Some(Duration::from_millis(50)),
+                ..CaptureOptions::default()
+            })
+            .unwrap_err();
+
+        assert!(matches!(
+            error.downcast_ref::<ProcessError>(),
+            Some(ProcessError::Timeout { .. })
+        ));
+    }
+
+    #[test]
+    fn enforces_combined_output_limit() {
+        let error = create_command("printf '12345'; printf '67890' 1>&2")
+            .exec_capture_output_blocking(&CaptureOptions {
+                output_limit: Some(8),
+                ..CaptureOptions::default()
+            })
+            .unwrap_err();
+
+        assert!(matches!(
+            error.downcast_ref::<ProcessError>(),
+            Some(ProcessError::OutputLimitExceeded { limit: 8, .. })
+        ));
+    }
+
+    #[test]
+    fn never_returns_truncated_output_at_the_limit() {
+        for _ in 0..100 {
+            let result = create_command("printf '123456789'").exec_capture_output_blocking(
+                &CaptureOptions {
+                    output_limit: Some(8),
+                    ..CaptureOptions::default()
+                },
+            );
+
+            assert!(matches!(
+                result.unwrap_err().downcast_ref::<ProcessError>(),
+                Some(ProcessError::OutputLimitExceeded { limit: 8, .. })
+            ));
+        }
+    }
+
+    #[test]
+    fn timeout_terminates_descendants_holding_output_pipes() {
+        let error = create_command("sleep 30 & printf 'ready'")
+            .exec_capture_output_blocking(&CaptureOptions {
+                timeout: Some(Duration::from_millis(50)),
+                ..CaptureOptions::default()
+            })
+            .unwrap_err();
+
+        assert!(matches!(
+            error.downcast_ref::<ProcessError>(),
+            Some(ProcessError::Timeout { .. })
+        ));
+    }
+
+    #[test]
+    fn completion_terminates_detached_descendants() {
+        let output = create_command("sleep 30 >/dev/null 2>&1 & printf $!")
+            .exec_capture_output_blocking(&CaptureOptions::default())
+            .unwrap();
+        let pid = std::str::from_utf8(&output.stdout)
+            .unwrap()
+            .parse::<i32>()
+            .unwrap();
+
+        for _ in 0..20 {
+            if unsafe { libc::kill(pid, 0) } == -1
+                && std::io::Error::last_os_error().raw_os_error() == Some(libc::ESRCH)
+            {
+                return;
+            }
+
+            std::thread::sleep(Duration::from_millis(10));
+        }
+
+        panic!("descendant process {pid} survived capture completion");
+    }
+
+    #[test]
+    fn preserves_non_utf8_bytes() {
+        let output = create_command(r"printf 'a\xffb'")
+            .exec_capture_output_blocking(&CaptureOptions::default())
+            .unwrap();
+
+        assert_eq!(output.stdout.as_ref(), b"a\xffb");
+    }
+
+    #[test]
+    fn captures_output_to_files() {
+        let (stdout_path, stdout, stderr_path, stderr) = create_output_files();
+        let output = create_command("printf 'out'; printf 'err' 1>&2")
+            .exec_capture_output_to_files_blocking(&CaptureOptions::default(), stdout, stderr)
+            .unwrap();
+
+        assert_eq!(output.stdout_len, 3);
+        assert_eq!(output.stderr_len, 3);
+        assert_eq!(std::fs::read(&stdout_path).unwrap(), b"out");
+        assert_eq!(std::fs::read(&stderr_path).unwrap(), b"err");
+
+        std::fs::remove_file(stdout_path).unwrap();
+        std::fs::remove_file(stderr_path).unwrap();
+    }
+
+    #[test]
+    fn enforces_output_limit_when_capturing_to_files() {
+        let (stdout_path, stdout, stderr_path, stderr) = create_output_files();
+        let error = create_command("printf '123456789'")
+            .exec_capture_output_to_files_blocking(
+                &CaptureOptions {
+                    output_limit: Some(8),
+                    ..CaptureOptions::default()
+                },
+                stdout,
+                stderr,
+            )
+            .unwrap_err();
+
+        assert!(matches!(
+            error.downcast_ref::<ProcessError>(),
+            Some(ProcessError::OutputLimitExceeded { limit: 8, .. })
+        ));
+
+        std::fs::remove_file(stdout_path).unwrap();
+        std::fs::remove_file(stderr_path).unwrap();
     }
 }
 

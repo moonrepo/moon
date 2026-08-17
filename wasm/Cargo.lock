@@ -817,7 +817,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "deserialize_untagged_verbose_error",
  "indexmap",
@@ -840,7 +840,7 @@ version = "2.0.2"
 
 [[package]]
 name = "moon_file_group"
-version = "2.0.4"
+version = "2.0.5"
 dependencies = [
  "common-path",
  "miette",
@@ -854,7 +854,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "2.1.0"
+version = "2.1.1"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -869,7 +869,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "2.1.2"
+version = "2.1.3"
 dependencies = [
  "bitflags",
  "derive_setters",
@@ -887,7 +887,7 @@ dependencies = [
 
 [[package]]
 name = "moon_project"
-version = "2.0.7"
+version = "2.0.8"
 dependencies = [
  "miette",
  "moon_common",
@@ -914,7 +914,7 @@ dependencies = [
 
 [[package]]
 name = "moon_task"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "miette",
  "moon_common",

@@ -68,7 +68,10 @@ impl PruneWorkflow {
                 let toolchain = locate_result.plugin;
                 let output = locate_result.output;
 
-                if !toolchain.in_dependencies_workspace(&output, &project.root)? {
+                if toolchain
+                    .in_dependencies_workspace(&output, &project.root)?
+                    .is_none()
+                {
                     debug!(
                         project_id = project.id.as_str(),
                         project_root = ?project.root,
@@ -114,6 +117,7 @@ impl PruneWorkflow {
                     && workspace
                         .toolchain
                         .in_dependencies_workspace(&workspace.output, &project.root)?
+                        .is_some()
                     && !workspace.dependencies.contains(&project)
                 {
                     workspace.dependencies.push(project.clone());

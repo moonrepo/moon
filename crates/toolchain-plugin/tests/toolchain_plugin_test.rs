@@ -1,7 +1,7 @@
 use moon_common::Id;
 use moon_pdk_api::{DefineRequirementsInput, ExtendTaskCommandInput, LocateDependenciesRootInput};
 use moon_test_utils::WorkspaceMocker;
-use moon_toolchain::DependenciesWorkspace;
+use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole};
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::fs;
 
@@ -183,11 +183,11 @@ mod toolchain_plugin {
 
             // The virtual `/workspace` root is converted back to a real path
             assert_eq!(workspace.root, ws.workspace_root);
-            assert_eq!(workspace.members, vec!["in".to_string()]);
+            assert_eq!(workspace.members, Some(vec!["in".to_string()]));
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn defaults_members_when_no_workspace_detected() {
+        async fn unsets_members_when_no_workspace_detected() {
             let (_sandbox, ws) = create_workspace();
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier2").await.unwrap();
@@ -206,7 +206,7 @@ mod toolchain_plugin {
             // Outside a dependencies workspace, `tc-tier2` returns the
             // working directory as the root, and no members
             assert_eq!(workspace.root, ws.working_dir);
-            assert!(workspace.members.is_empty());
+            assert_eq!(workspace.members, None);
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -229,7 +229,7 @@ mod toolchain_plugin {
             // tier1 doesn't support the func, so only tier2 remains
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].id, Id::raw("tc-tier2"));
-            assert_eq!(results[0].output.members, vec!["in".to_string()]);
+            assert_eq!(results[0].output.members, Some(vec!["in".to_string()]));
         }
     }
 
@@ -244,48 +244,86 @@ mod toolchain_plugin {
 
             let workspace = DependenciesWorkspace {
                 root: ws.workspace_root.clone(),
-                members: vec!["packages/*".into()],
+                members: Some(vec!["packages/*".into()]),
             };
 
             // Root is always within the workspace
-            assert!(
+            assert_eq!(
                 toolchain
                     .in_dependencies_workspace(&workspace, &ws.workspace_root)
-                    .unwrap()
+                    .unwrap(),
+                Some(DependenciesWorkspaceRole::WorkspaceRoot)
             );
 
             // Matches a member glob
-            assert!(
+            assert_eq!(
                 toolchain
                     .in_dependencies_workspace(&workspace, &ws.workspace_root.join("packages/foo"))
-                    .unwrap()
+                    .unwrap(),
+                Some(DependenciesWorkspaceRole::WorkspaceMember)
             );
 
             // Doesn't match a member glob
-            assert!(
-                !toolchain
+            assert_eq!(
+                toolchain
                     .in_dependencies_workspace(&workspace, &ws.workspace_root.join("apps/foo"))
-                    .unwrap()
+                    .unwrap(),
+                None
             );
         }
 
         #[tokio::test(flavor = "multi_thread")]
-        async fn no_members_means_no_workspace() {
+        async fn empty_members_only_matches_the_root() {
             let (_sandbox, ws) = create_workspace();
             let registry = ws.mock_toolchain_registry();
             let toolchain = registry.load("tc-tier1").await.unwrap();
 
             let workspace = DependenciesWorkspace {
                 root: ws.workspace_root.clone(),
-                members: vec![],
+                members: Some(vec![]),
             };
 
-            // Even the root is excluded, as each project is
-            // stand-alone with its own lockfile
-            assert!(
-                !toolchain
+            assert_eq!(
+                toolchain
                     .in_dependencies_workspace(&workspace, &ws.workspace_root)
-                    .unwrap()
+                    .unwrap(),
+                Some(DependenciesWorkspaceRole::WorkspaceRoot)
+            );
+
+            // A workspace with no members has nothing to match against
+            assert_eq!(
+                toolchain
+                    .in_dependencies_workspace(&workspace, &ws.workspace_root.join("packages/foo"))
+                    .unwrap(),
+                None
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn no_members_means_a_single_root_package() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier1").await.unwrap();
+
+            let workspace = DependenciesWorkspace {
+                root: ws.workspace_root.clone(),
+                members: None,
+            };
+
+            // The root is the package
+            assert_eq!(
+                toolchain
+                    .in_dependencies_workspace(&workspace, &ws.workspace_root)
+                    .unwrap(),
+                Some(DependenciesWorkspaceRole::PackageRoot)
+            );
+
+            // And is the only package, so there's nothing else to match
+            assert_eq!(
+                toolchain
+                    .in_dependencies_workspace(&workspace, &ws.workspace_root.join("apps/foo"))
+                    .unwrap(),
+                None
             );
         }
     }

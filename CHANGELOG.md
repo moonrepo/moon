@@ -4,6 +4,10 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where `--affected` with `--include-relations` (`-g`) would not select a target
+  whose dependency (or dependent) was the task actually affected by the changed files. Only the
+  requested targets were being tracked, but a target is marked through a relation when the task on
+  the other side of it is marked, and that task is quite often not one that was requested.
 - Fixed an issue where a project that isn't part of a toolchain's dependencies workspace (not the
   root, and not a member) would provision its own environment. Since the package manager resolves
   upwards to the same root, this would clobber the workspace's environment, and could fail the

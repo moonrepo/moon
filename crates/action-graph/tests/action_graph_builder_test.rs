@@ -1802,6 +1802,88 @@ mod action_graph_builder {
                     ]
                 );
             }
+
+            // A target is marked through a relation only when the task on the
+            // other side of that relation has been marked itself. When the only
+            // affected task isn't one that was requested, tracking just the
+            // requested targets leaves the relation unmarked, and the target is
+            // dropped even though its dependency changed
+            async fn run_only_downstream_target(
+                async_tracking: bool,
+                include_relations: bool,
+            ) -> Vec<String> {
+                let sandbox = create_sandbox("affected-starve");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                container.mocker = container.mocker.update_workspace_config(|config| {
+                    config.experiments.async_affected_tracking = async_tracking;
+                });
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                // Only `base:build` is affected by this file
+                builder.mock_affected(
+                    FxHashSet::from_iter([WorkspaceRelativePathBuf::from("base/src.txt")]),
+                    |affected| {
+                        affected.set_scopes(UpstreamScope::Deep, DownstreamScope::Deep);
+                    },
+                );
+
+                // While `top:build` is the only requested target
+                builder
+                    .run_tasks(
+                        vec![TargetLocator::Qualified(
+                            Target::parse("top:build").unwrap(),
+                        )],
+                        RunRequirements {
+                            dependencies: UpstreamScope::Deep,
+                            dependents: DownstreamScope::Deep,
+                            include_relations,
+                            ..Default::default()
+                        },
+                    )
+                    .await
+                    .unwrap();
+
+                let (_, graph) = builder.build();
+
+                extract_run_task_targets(graph)
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sync_marks_target_through_upstream_relations() {
+                assert_eq!(
+                    run_only_downstream_target(false, true).await,
+                    // `top:test` depends on `top:build`, so deep dependents
+                    // pulls it in, while the dependencies reached through
+                    // `top:build` do not expand their own dependents
+                    ["base:build", "mid:build", "top:build", "top:test"]
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn async_marks_target_through_upstream_relations() {
+                assert_eq!(
+                    run_only_downstream_target(true, true).await,
+                    // `top:test` depends on `top:build`, so deep dependents
+                    // pulls it in, while the dependencies reached through
+                    // `top:build` do not expand their own dependents
+                    ["base:build", "mid:build", "top:build", "top:test"]
+                );
+            }
+
+            // But without relations, only the changed files themselves can mark
+            // a task, so an unaffected target must stay out of the graph
+            #[tokio::test(flavor = "multi_thread")]
+            async fn sync_doesnt_mark_target_without_relations() {
+                assert!(run_only_downstream_target(false, false).await.is_empty());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn async_doesnt_mark_target_without_relations() {
+                assert!(run_only_downstream_target(true, false).await.is_empty());
+            }
         }
 
         mod run_in_ci {

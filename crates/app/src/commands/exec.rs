@@ -210,9 +210,12 @@ impl ExecWorkflow {
     }
 
     pub async fn execute(mut self) -> miette::Result<Option<u8>> {
-        // Force cache to update using write-only mode
+        // Force cache to update using write-only mode. We don't disable
+        // affected tracking here, otherwise `affectedFiles` would receive no
+        // files when combined with `--affected --force`. Instead, forcing only
+        // bypasses the affected *selection* filter (see `skip_affected` below),
+        // so unaffected tasks still run while affected files are still passed.
         if self.args.force {
-            self.affected = false;
             self.session
                 .get_cache_engine()?
                 .force_mode(CacheMode::Write);
@@ -490,7 +493,9 @@ impl ExecWorkflow {
                     interactive: self.args.interactive,
                     job,
                     job_total,
-                    skip_affected: !self.affected,
+                    // Forcing runs tasks even when not affected, but still
+                    // tracks affected files for the `affectedFiles` option.
+                    skip_affected: !self.affected || self.args.force,
                 },
             )
             .await?;

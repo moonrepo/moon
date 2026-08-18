@@ -7,6 +7,10 @@
 - Fixed an issue where commands executed by toolchain plugins at the workspace root would receive a
   `PWD` environment variable with a trailing slash (an artifact of virtual path conversion). Shells
   that validate `PWD` on startup, like nushell, refused to run, failing the command (#2676).
+- Fixed an issue where combining `--force` with `--affected` would not pass affected files to the
+  `affectedFiles` task option, as arguments or the `MOON_AFFECTED_FILES` environment variable.
+  Forcing now only bypasses the affected selection filter (so unaffected tasks still run), while
+  affected files continue to be tracked and passed to the command.
 
 ## 2.5.1
 

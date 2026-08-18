@@ -139,6 +139,30 @@ mod paths {
     }
 }
 
+mod cwd {
+    use super::*;
+
+    // Trailing separators must be stripped, as the value is exported
+    // as `PWD`, which nushell refuses to inherit with them present
+    #[cfg(unix)]
+    #[test]
+    fn strips_trailing_separators() {
+        let mut command = Command::new("git");
+        command.cwd("/tmp/dir/");
+
+        assert_eq!(command.cwd.as_deref(), Some(OsStr::new("/tmp/dir")));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn strips_trailing_separators() {
+        let mut command = Command::new("git");
+        command.cwd("C:\\tmp\\dir\\");
+
+        assert_eq!(command.cwd.as_deref(), Some(OsStr::new("C:\\tmp\\dir")));
+    }
+}
+
 mod bin_name {
     use super::*;
 

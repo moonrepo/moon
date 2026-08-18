@@ -202,6 +202,20 @@ mod child_env {
     }
 
     #[tokio::test]
+    async fn strips_trailing_separators_from_pwd() {
+        let dir = std::env::temp_dir().canonicalize().unwrap();
+        let mut dir_with_sep = dir.clone().into_os_string();
+        dir_with_sep.push("/");
+
+        let mut command = create_command(r#"printf "$PWD""#);
+        command.cwd(dir_with_sep);
+
+        let output = command.exec_capture_output().await.unwrap();
+
+        assert_eq!(output.stdout, dir.as_os_str().as_encoded_bytes());
+    }
+
+    #[tokio::test]
     async fn prepends_lookup_paths() {
         let mut command = create_command(r#"printf "$PATH""#);
         command.prepend_paths(["/moon-test-fake-path"]);

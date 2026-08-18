@@ -16,6 +16,11 @@
   `affectedFiles` task option, as arguments or the `MOON_AFFECTED_FILES` environment variable.
   Forcing now only bypasses the affected selection filter (so unaffected tasks still run), while
   affected files continue to be tracked and passed to the command.
+- Fixed an issue where a dependent action could be dispatched (and run to completion) after one of
+  its required dependencies had failed and aborted the pipeline. For example, `InstallDependencies`
+  could still run its install command after `SetupEnvironment` failed. The pipeline now aborts
+  before the failed action is marked as completed, and queued actions no longer start once the
+  pipeline has been aborted or cancelled.
 
 ## 2.5.1
 

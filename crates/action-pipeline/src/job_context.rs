@@ -13,6 +13,9 @@ pub struct JobContext {
     /// Force aborts running jobs
     pub abort_token: CancellationToken,
 
+    /// Abort the pipeline when any job fails, not just hard failures
+    pub bail: bool,
+
     /// Receives cancel/shutdown signals
     pub cancel_token: CancellationToken,
 
@@ -48,7 +51,21 @@ impl JobContext {
         self.completed_jobs.write().await.insert(index);
     }
 
+    /// Whether the action should abort the entire pipeline.
+    pub fn should_abort(&self, action: &Action) -> bool {
+        action.should_abort() || self.bail && action.should_bail()
+    }
+
     pub async fn send_result(&self, action: Action) {
+        // Abort *before* marking the job as completed. The dispatcher releases
+        // dependents the moment their dependencies are in the completed set,
+        // and the pipeline only cancels the token once it receives this result,
+        // so a dependent could otherwise be dispatched (and run to completion
+        // in a broken environment) in between.
+        if self.should_abort(&action) {
+            self.abort_token.cancel();
+        }
+
         self.mark_completed(NodeIndex::new(action.node_index)).await;
 
         let _ = self.result_sender.send(action).await;

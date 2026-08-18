@@ -15,6 +15,8 @@
 
 - Increased the storage upload timeout from 60 seconds to 300 seconds (5 minutes) to allow more time
   for background operations to complete.
+- Updated CI task runs to respect the `outputStyle` task option. Locally, we'll still stream the
+  output for primary targets, ignoring that option. We will be revisiting this in v2.6.
 
 #### 🐞 Fixes
 

@@ -21,6 +21,9 @@
   could still run its install command after `SetupEnvironment` failed. The pipeline now aborts
   before the failed action is marked as completed, and queued actions no longer start once the
   pipeline has been aborted or cancelled.
+- Fixed an issue where setting a task's `env` variable to `null` would also prevent that variable
+  from being inherited from an env file (`envFile`). A `null` value now only ignores the variable
+  from the system/shell environment, while still allowing an env file to provide a value.
 
 ## 2.5.1
 

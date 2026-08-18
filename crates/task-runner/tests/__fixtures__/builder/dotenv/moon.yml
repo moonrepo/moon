@@ -40,5 +40,7 @@ tasks:
   unset-system:
     env:
       UNSET_SYSTEM_LOCAL: null
+      # Ignore the system var, but still inherit from the env file
+      INHERIT_FROM_FILE: null
     options:
       envFile: '.env.unset'

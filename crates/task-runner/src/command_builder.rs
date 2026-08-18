@@ -267,11 +267,19 @@ impl<'task> CommandBuilder<'task> {
             }
 
             for (key, value) in dot_env {
-                if
-                // Don't override task-level variables
-                !self.command.contains_env(&key)
-                    // Don't override system variables
-                    && !self.env_bag.has(&key)
+                // When a task sets an env var to `null`, it only opts out of
+                // inheriting the value from the system/shell -- the variable
+                // should still be populated from an env file. A `null` registers
+                // an "unset" entry on the command (to skip system inheritance),
+                // so explicitly allow env file values to apply on top of it.
+                let allow_from_env_file =
+                    self.task.env.get(&key).is_some_and(|value| value.is_none());
+
+                if allow_from_env_file
+                    // Don't override task-level variables (non-null)
+                    || (!self.command.contains_env(&key)
+                        // Don't override system variables
+                        && !self.env_bag.has(&key))
                 {
                     self.command.env_opt(key, value);
                 }

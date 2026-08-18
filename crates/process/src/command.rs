@@ -251,7 +251,16 @@ impl Command {
     }
 
     pub fn cwd<P: AsRef<OsStr>>(&mut self, dir: P) -> &mut Self {
-        self.cwd = Some(dir.as_ref().to_os_string());
+        // Normalize away trailing separators (a `Path::join("")` artifact
+        // of virtual path conversion), as the value is passed to the child
+        // process as `PWD`, which shells like nushell refuse to inherit
+        // when it contains trailing slashes
+        self.cwd = Some(
+            Path::new(dir.as_ref())
+                .components()
+                .collect::<PathBuf>()
+                .into_os_string(),
+        );
         self
     }
 

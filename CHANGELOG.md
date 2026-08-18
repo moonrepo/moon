@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where commands executed by toolchain plugins at the workspace root would receive a
+  `PWD` environment variable with a trailing slash (an artifact of virtual path conversion). Shells
+  that validate `PWD` on startup, like nushell, refused to run, failing the command (#2676).
+
 ## 2.5.1
 
 #### 🐞 Fixes

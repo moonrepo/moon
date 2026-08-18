@@ -18,7 +18,7 @@ use tracing::{debug, warn};
 /// (remote uploads, etc.) to drain. A hung backend must never make exiting
 /// slower than just running the task would have been; stragglers past this are
 /// aborted and reported, and simply get re-uploaded on the next run.
-const BACKGROUND_FLUSH_TIMEOUT: Duration = Duration::from_secs(60);
+const BACKGROUND_FLUSH_TIMEOUT: Duration = Duration::from_secs(300);
 
 pub struct ManifestSource {
     pub backend: BoxedStorageBackend,

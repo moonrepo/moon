@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Increased the storage upload timeout from 60 seconds to 300 seconds (5 minutes) to allow more time
+  for background operations to complete.
+
 #### 🐞 Fixes
 
 - Fixed an issue where commands executed by toolchain plugins at the workspace root would receive a

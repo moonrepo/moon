@@ -26,6 +26,7 @@
 - Fixed an issue where setting a task's `env` variable to `null` would also prevent that variable
   from being inherited from an env file (`envFile`). A `null` value now only ignores the variable
   from the system/shell environment, while still allowing an env file to provide a value.
+- Fixed an issue where default `--summary` for `moon ci` was not being respected.
 
 ## 2.5.1
 

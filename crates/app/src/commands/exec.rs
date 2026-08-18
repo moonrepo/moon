@@ -150,7 +150,7 @@ pub struct ExecWorkflow {
     session: MoonSession,
 
     last_title: String,
-    summary: Level,
+    summary: Option<Level>,
     ui: CiOutput,
 
     /// Whether we should run affected logic or not
@@ -186,9 +186,7 @@ impl ExecWorkflow {
             summary: args
                 .summary
                 .clone()
-                .map(|sum| sum.unwrap_or_default())
-                .unwrap_or_default()
-                .to_level(),
+                .map(|sum| sum.unwrap_or_default().to_level()),
             ci_check: !plan
                 .pipeline
                 .ignore_ci_checks
@@ -606,13 +604,16 @@ impl ExecWorkflow {
 
         action_context.passthrough_args = self.args.passthrough.clone();
 
-        let results = run_action_pipeline(&self.session, action_context, action_graph).await?;
+        let results =
+            run_action_pipeline(&self.session, action_context, action_graph, self.summary).await?;
 
         Ok(results)
     }
 
     fn should_print(&self) -> bool {
-        !self.console.out.is_quiet() && self.summary.is(Level::Three) && !self.test_env
+        !self.test_env
+            && !self.console.out.is_quiet()
+            && self.summary.is_some_and(|level| level.is(Level::Three))
     }
 
     fn print_header(&mut self, title: &str) -> miette::Result<()> {

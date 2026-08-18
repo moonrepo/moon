@@ -68,7 +68,7 @@ pub async fn setup(session: MoonSession) -> SessionResult {
     }
 
     // Run the action pipeline to set up all toolchains
-    let results = run_action_pipeline(&session, action_context, action_graph).await?;
+    let results = run_action_pipeline(&session, action_context, action_graph, None).await?;
 
     // Analyze results and provide feedback
     let failed_count = results.iter().filter(|action| action.has_failed()).count();

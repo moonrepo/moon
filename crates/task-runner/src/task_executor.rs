@@ -301,12 +301,12 @@ impl<'task> TaskExecutor<'task> {
 
         // When the primary target, always stream the output for a better developer experience.
         // However, transitive targets can opt into streaming as well.
-        self.stream = if is_primary {
+        self.stream = if is_primary && !is_ci {
             true
         } else if let Some(output_style) = &self.task.options.output_style {
             matches!(output_style, TaskOutputStyle::Stream)
         } else {
-            is_ci
+            false
         };
 
         // If only a single persistent task is being ran, we should not prefix the output.
@@ -321,6 +321,7 @@ impl<'task> TaskExecutor<'task> {
         report_item.attempt_current = self.attempt_index;
         report_item.attempt_total = self.attempt_total;
         report_item.output_streamed = self.stream;
+        report_item.output_style = self.task.options.output_style;
         report_item.primary = is_primary;
     }
 

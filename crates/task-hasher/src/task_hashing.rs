@@ -5,12 +5,12 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_config::{
     DependencyScope, HasherOptimization, ProjectConfig, TaskDependencyCacheStrategy,
-    UnresolvedVersionSpec,
+    UnresolvedVersionSpec, VersionSpec,
 };
 use moon_hash::{ContentHasher, fingerprint};
 use moon_pdk_api::{
     HashTaskContentsInput, LocateDependenciesRootInput, LockDependency, ManifestDependency,
-    ParseLockInput, ParseLockOutput, ParseManifestInput, ParseManifestOutput,
+    MatchesVersion, ParseLockInput, ParseLockOutput, ParseManifestInput, ParseManifestOutput,
 };
 use moon_project::{Project, ProjectFragment};
 use moon_task::{Task, TaskFragment};
@@ -389,6 +389,22 @@ fn apply_toolchain_dependencies_by_manifest(
     inject
 }
 
+/// Returns true if `resolved`, a version taken from a lock file, satisfies the
+/// manifest requirement `req`.
+///
+/// `UnresolvedVersionSpec`'s `PartialEq<VersionSpec>` compares only fully-qualified
+/// versions and aliases, so every range and requirement silently fails to match a
+/// resolved version. Equality alone therefore matches exact pins only, and the
+/// caller falls back to recording the requirement string rather than the resolved
+/// version.
+fn satisfies_locked_version(req: &UnresolvedVersionSpec, resolved: &VersionSpec) -> bool {
+    match (req, resolved.as_version()) {
+        (UnresolvedVersionSpec::Range(range), Some(version)) => range.matches(version),
+        (UnresolvedVersionSpec::Requirement(req), Some(version)) => req.matches(version),
+        _ => req == resolved,
+    }
+}
+
 fn apply_toolchain_dependencies_by_scope(
     scope: DependencyScope,
     project_deps: &BTreeMap<String, ManifestDependency>,
@@ -415,10 +431,14 @@ fn apply_toolchain_dependencies_by_scope(
         // Try and find a resolved version from the lock file
         if let Some(lock_deps) = locked_deps.get(name)
             && let Some(lock_dep) =
-                // By exact version first
+                // By satisfying resolved version first
                 lock_deps
                     .iter()
-                    .find(|ld| ld.version.as_ref().is_some_and(|v| req == v))
+                    .find(|ld| {
+                        ld.version
+                            .as_ref()
+                            .is_some_and(|v| satisfies_locked_version(req, v))
+                    })
                     .or_else(|| {
                         // Then by matching requirement second
                         lock_deps
@@ -462,6 +482,171 @@ mod tests {
 
     fn passed(hash: &str) -> TargetState {
         TargetState::Passed(hash.into())
+    }
+
+    mod satisfies_locked_version {
+        use super::*;
+
+        fn req(value: &str) -> UnresolvedVersionSpec {
+            UnresolvedVersionSpec::parse(value).unwrap()
+        }
+
+        fn resolved(value: &str) -> VersionSpec {
+            VersionSpec::parse(value).unwrap()
+        }
+
+        #[test]
+        fn tilde_requirement_matches_patch_within_range() {
+            assert!(satisfies_locked_version(
+                &req("~2.16.9"),
+                &resolved("2.16.11")
+            ));
+        }
+
+        #[test]
+        fn tilde_requirement_rejects_version_outside_range() {
+            assert!(!satisfies_locked_version(
+                &req("~2.16.9"),
+                &resolved("2.17.0")
+            ));
+            assert!(!satisfies_locked_version(
+                &req("~2.16.9"),
+                &resolved("2.16.8")
+            ));
+        }
+
+        #[test]
+        fn caret_requirement_matches_minor_within_range() {
+            assert!(satisfies_locked_version(&req("^1.2.3"), &resolved("1.9.0")));
+            assert!(!satisfies_locked_version(
+                &req("^1.2.3"),
+                &resolved("2.0.0")
+            ));
+        }
+
+        #[test]
+        fn multi_comparator_range_is_bounded_on_both_ends() {
+            assert!(matches!(
+                req(">=1.2.0 <2.0.0"),
+                UnresolvedVersionSpec::Range(_)
+            ));
+            assert!(satisfies_locked_version(
+                &req(">=1.2.0 <2.0.0"),
+                &resolved("1.5.0")
+            ));
+            assert!(!satisfies_locked_version(
+                &req(">=1.2.0 <2.0.0"),
+                &resolved("2.0.0")
+            ));
+            assert!(!satisfies_locked_version(
+                &req(">=1.2.0 <2.0.0"),
+                &resolved("1.1.0")
+            ));
+        }
+
+        #[test]
+        fn exact_version_matches_only_itself() {
+            assert!(satisfies_locked_version(
+                &req("2.16.9"),
+                &resolved("2.16.9")
+            ));
+            assert!(!satisfies_locked_version(
+                &req("2.16.9"),
+                &resolved("2.16.11")
+            ));
+        }
+
+        #[test]
+        fn alias_falls_back_to_equality() {
+            assert!(satisfies_locked_version(
+                &req("latest"),
+                &VersionSpec::Alias("latest".into())
+            ));
+            assert!(!satisfies_locked_version(
+                &req("latest"),
+                &resolved("1.0.0")
+            ));
+        }
+    }
+
+    mod apply_toolchain_dependencies_by_scope {
+        use super::*;
+
+        fn lock_entry(version: &str, hash: &str) -> LockDependency {
+            LockDependency {
+                hash: Some(hash.into()),
+                version: Some(VersionSpec::parse(version).unwrap()),
+                ..Default::default()
+            }
+        }
+
+        // Returns the value recorded for a single production dependency named
+        // "dep", declared as `declared` and locked to `lock_entries`.
+        fn recorded(declared: &str, lock_entries: Vec<LockDependency>) -> Option<String> {
+            let name = "dep".to_owned();
+            let mut project_deps = BTreeMap::new();
+
+            project_deps.insert(
+                name.clone(),
+                ManifestDependency::new(UnresolvedVersionSpec::parse(declared).unwrap()),
+            );
+
+            let mut locked_deps = BTreeMap::new();
+            locked_deps.insert(&name, &lock_entries);
+
+            let mut fingerprint = TaskToolchainFingerprint {
+                toolchain: "test".into(),
+                version: None,
+                contents: vec![],
+                dependencies: BTreeMap::new(),
+            };
+
+            apply_toolchain_dependencies_by_scope(
+                DependencyScope::Production,
+                &project_deps,
+                &BTreeMap::new(),
+                &locked_deps,
+                &mut fingerprint,
+            );
+
+            fingerprint
+                .dependencies
+                .get(&DependencyScope::Production)
+                .and_then(|deps| deps.get("dep"))
+                .cloned()
+        }
+
+        #[test]
+        fn records_lock_hash_for_a_ranged_dependency() {
+            assert_eq!(
+                recorded("~2.16.9", vec![lock_entry("2.16.11", "sha512-newer")]),
+                Some("sha512-newer".into())
+            );
+        }
+
+        #[test]
+        fn ranged_dependency_tracks_the_resolved_version() {
+            assert_ne!(
+                recorded("~2.16.9", vec![lock_entry("2.16.9", "sha512-older")]),
+                recorded("~2.16.9", vec![lock_entry("2.16.11", "sha512-newer")])
+            );
+        }
+
+        #[test]
+        fn records_requirement_when_no_locked_version_satisfies_it() {
+            assert_eq!(
+                recorded("~2.16.9", vec![lock_entry("3.0.0", "sha512-major")]),
+                Some("~2.16.9".into())
+            );
+        }
+
+        #[test]
+        fn records_lock_hash_for_an_exact_dependency() {
+            assert_eq!(
+                recorded("2.16.9", vec![lock_entry("2.16.9", "sha512-exact")]),
+                Some("sha512-exact".into())
+            );
+        }
     }
 
     mod dep_hash_input {

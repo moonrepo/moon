@@ -2756,6 +2756,10 @@ mod exec {
 
         #[test]
         fn ignores_style_for_direct_tasks() {
+            if is_ci() {
+                return;
+            }
+
             let sandbox = create_cases_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {

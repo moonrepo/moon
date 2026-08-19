@@ -35,6 +35,9 @@ lint:
 lint-fix:
 	cargo clippy --workspace --all-targets --fix --allow-dirty --allow-staged
 
+lint-wasm:
+	cd wasm && cargo clippy --workspace --all-targets
+
 # TESTING
 
 test $MOON_TEST="true" $STARBASE_TEST="true" filter="":

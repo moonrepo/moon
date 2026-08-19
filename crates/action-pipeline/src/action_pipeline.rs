@@ -408,7 +408,7 @@ impl ActionPipeline {
             self.emitter
                 .subscribe(ConsoleSubscriber::new(
                     Arc::clone(&self.app_context.console),
-                    self.summary.clone(),
+                    self.summary,
                 ))
                 .await;
         }

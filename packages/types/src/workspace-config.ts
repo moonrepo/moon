@@ -641,7 +641,7 @@ export interface VcsConfig {
 	sync?: boolean;
 }
 
-export type Requirement = string;
+export type Range = string;
 
 /**
  * Configures all aspects of the moon workspace.
@@ -729,7 +729,7 @@ export interface WorkspaceConfig {
 	 */
 	vcs: VcsConfig;
 	/** Requires a specific version of the `moon` binary. */
-	versionConstraint?: Requirement | null;
+	versionConstraint?: Range | null;
 }
 
 /** Configures aspects of the content-addressable storage (CAS) cache. */
@@ -1407,5 +1407,5 @@ export interface PartialWorkspaceConfig {
 	 */
 	vcs?: PartialVcsConfig | null;
 	/** Requires a specific version of the `moon` binary. */
-	versionConstraint?: Requirement | null;
+	versionConstraint?: Range | null;
 }

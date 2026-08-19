@@ -17,7 +17,7 @@ use starbase_utils::{fs, net};
 use std::env::{self, consts};
 use std::path::{Path, PathBuf};
 use tracing::{debug, instrument};
-use version_spec::{Requirement, Version};
+use version_spec::{Range, Version};
 
 pub fn is_musl() -> bool {
     match std::process::Command::new("ldd").arg("--version").output() {
@@ -287,7 +287,7 @@ fn update_constraint(session: &MoonSession, version: &Version) -> miette::Result
 
         let mut config: PartialWorkspaceConfig = read_config_based_on_extension(&file)?;
 
-        if let Ok(req) = Requirement::parse(format!("^{version}")) {
+        if let Ok(req) = Range::parse(format!("^{version}")) {
             config.version_constraint = Some(req);
 
             write_config_based_on_extension(&file, config)?;

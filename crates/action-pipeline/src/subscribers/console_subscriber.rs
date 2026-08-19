@@ -30,7 +30,7 @@ impl Subscriber for ConsoleSubscriber {
             } => {
                 let item = PipelineReportItem {
                     duration: *duration,
-                    summary: self.summary.clone(),
+                    summary: self.summary,
                     status: **status,
                 };
 

@@ -22,6 +22,28 @@ impl Job {
         let mut action = Action::new(self.node);
         action.node_index = self.node_index;
 
+        // The pipeline may have been aborted (a sibling failed) or cancelled
+        // (a signal) while this job was queued or waiting for a permit. Don't
+        // start it, as it would run against a broken environment.
+        if self.context.abort_token.is_cancelled() {
+            debug!(index = self.node_index, "Job aborted before it was started");
+
+            action.finish(ActionStatus::Aborted);
+            self.context.send_result(action).await;
+
+            return;
+        } else if self.context.cancel_token.is_cancelled() {
+            debug!(
+                index = self.node_index,
+                "Job cancelled before it was started (because a signal)"
+            );
+
+            action.finish(ActionStatus::Skipped);
+            self.context.send_result(action).await;
+
+            return;
+        }
+
         // Don't use `tokio::select!` here because if the abort or cancel tokens
         // are triggered, then the async task running the task child process
         // is cancelled, immediately terminating the process, and ignoring

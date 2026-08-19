@@ -10,7 +10,7 @@ use starbase_styles::color::owo::{OwoColorize, XtermColors};
 use starbase_styles::color::{Color, OwoStyle, no_color};
 use std::time::Duration;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Level {
     Zero,
     One,

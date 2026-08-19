@@ -4869,6 +4869,7 @@ dependencies = [
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",
+ "serde_json",
  "starbase_sandbox",
  "tokio",
  "tokio-util",

@@ -391,6 +391,40 @@ mod command_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn null_task_env_still_inherits_from_env_file() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "unset-system").await;
+            let command = container.create_command(ActionContext::default()).await;
+
+            // `null` only skips the system var, the env file value still applies
+            assert_eq!(
+                command
+                    .env
+                    .get(&OsString::from("INHERIT_FROM_FILE"))
+                    .unwrap(),
+                &Env::Set(OsString::from("from-file"))
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn null_task_env_inherits_env_file_over_system() {
+            let container =
+                TaskRunnerContainer::new_for_project("builder", "dotenv", "unset-system").await;
+            container.env_bag.set("INHERIT_FROM_FILE", "system");
+
+            let command = container.create_command(ActionContext::default()).await;
+
+            // The env file wins over the ignored system var
+            assert_eq!(
+                command
+                    .env
+                    .get(&OsString::from("INHERIT_FROM_FILE"))
+                    .unwrap(),
+                &Env::Set(OsString::from("from-file"))
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn cannot_overwrite_task_env_from_env_file() {
             let container =
                 TaskRunnerContainer::new_for_project("builder", "dotenv", "project").await;

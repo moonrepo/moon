@@ -1,6 +1,7 @@
 use extism_pdk::*;
 use moon_pdk::{get_plugin_id, VirtualPathExt};
 use moon_pdk_api::*;
+use std::fs;
 
 pub use tc_tier1::*;
 
@@ -49,6 +50,26 @@ pub fn install_dependencies(
     Json(input): Json<InstallDependenciesInput>,
 ) -> FnResult<Json<InstallDependenciesOutput>> {
     let mut output = InstallDependenciesOutput::default();
+
+    // Write a marker file so that tests can detect if/when this function
+    // was called, primarily for pipeline abort/dispatch scenarios
+    if input
+        .toolchain_config
+        .get("testInstallMarker")
+        .and_then(|value| value.as_bool())
+        .unwrap_or_default()
+    {
+        let marker = input
+            .context
+            .workspace_root
+            .join(".moon/cache/tcInstallDependencies");
+
+        if let Some(parent) = marker.parent() {
+            fs::create_dir_all(&parent)?;
+        }
+
+        fs::write(&marker, "")?;
+    }
 
     // Only return commands when a test opts in via toolchain config,
     // otherwise unrelated tests would execute real processes

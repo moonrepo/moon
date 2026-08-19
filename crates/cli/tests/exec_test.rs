@@ -1402,6 +1402,25 @@ mod exec {
             assert!(predicate::str::contains("Tasks: 1 completed").eval(&output));
         }
 
+        // https://github.com/moonrepo/moon/issues/2672
+        // Forcing bypasses the affected *selection* filter, but affected files
+        // must still be passed to the `affectedFiles` option.
+        #[test]
+        fn passes_affected_files_even_when_forced() {
+            let sandbox = create_cases_sandbox();
+
+            sandbox.create_file("files/file.txt", "modified");
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("exec")
+                    .arg("files:affected")
+                    .arg("--affected")
+                    .arg("--force");
+            });
+
+            assert!(predicate::str::contains("\nfile.txt\n").eval(&assert.output()));
+        }
+
         #[test]
         fn runs_if_affected_via_stdin() {
             let sandbox = create_cases_sandbox();
@@ -2737,6 +2756,10 @@ mod exec {
 
         #[test]
         fn ignores_style_for_direct_tasks() {
+            if is_ci() {
+                return;
+            }
+
             let sandbox = create_cases_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {

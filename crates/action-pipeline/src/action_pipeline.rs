@@ -156,6 +156,7 @@ impl ActionPipeline {
 
         let job_context = JobContext {
             abort_token: abort_token.clone(),
+            bail: self.bail,
             cancel_token: cancel_token.clone(),
             completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
             daemon_client: self.daemon_client.clone(),
@@ -180,7 +181,7 @@ impl ActionPipeline {
         let mut error = None;
 
         while let Some(mut action) = receiver.recv().await {
-            if self.bail && action.should_bail() || action.should_abort() {
+            if job_context.should_abort(&action) {
                 process_registry.terminate_running();
                 abort_token.cancel();
             }
@@ -188,8 +189,10 @@ impl ActionPipeline {
             // Only bubble up an error on a hard failure, otherwise we can
             // continue to run and collect other actions. Keep the first
             // error, as it's the closest to the root cause — later failures
-            // are typically fallout from running in the already-broken state
-            if action.should_abort() && error.is_none() {
+            // are typically fallout from running in the already-broken state.
+            // Jobs that were aborted because a sibling failed carry no error
+            // of their own, and may arrive before the failing sibling
+            if action.should_abort() && action.has_error() && error.is_none() {
                 error = Some(action.get_error());
             }
 
@@ -405,7 +408,7 @@ impl ActionPipeline {
             self.emitter
                 .subscribe(ConsoleSubscriber::new(
                     Arc::clone(&self.app_context.console),
-                    self.summary.clone(),
+                    self.summary,
                 ))
                 .await;
         }

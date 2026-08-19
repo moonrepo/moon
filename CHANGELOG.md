@@ -2,11 +2,35 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Increased the storage upload timeout from 60 seconds to 300 seconds (5 minutes) to allow more time
+  for background operations to complete.
+- Updated CI task runs to respect the `outputStyle` task option. Locally, we'll still stream the
+  output for primary targets, ignoring that option. We will be revisiting this in v2.6.
+- Updated `versionConstraint` in `.moon/workspace.*` to use a range instead of a requirement, which
+  allows for more flexible version constraints.
+
 #### 🐞 Fixes
 
 - Fixed an issue where commands executed by toolchain plugins at the workspace root would receive a
   `PWD` environment variable with a trailing slash (an artifact of virtual path conversion). Shells
   that validate `PWD` on startup, like nushell, refused to run, failing the command (#2676).
+- Fixed an issue where combining `--force` with `--affected` would not pass affected files to the
+  `affectedFiles` task option, as arguments or the `MOON_AFFECTED_FILES` environment variable.
+  Forcing now only bypasses the affected selection filter (so unaffected tasks still run), while
+  affected files continue to be tracked and passed to the command.
+- Fixed an issue where a dependent action could be dispatched (and run to completion) after one of
+  its required dependencies had failed and aborted the pipeline. For example, `InstallDependencies`
+  could still run its install command after `SetupEnvironment` failed. The pipeline now aborts
+  before the failed action is marked as completed, and queued actions no longer start once the
+  pipeline has been aborted or cancelled.
+- Fixed an issue where setting a task's `env` variable to `null` would also prevent that variable
+  from being inherited from an env file (`envFile`). A `null` value now only ignores the variable
+  from the system/shell environment, while still allowing an env file to provide a value.
+- Fixed an issue where default `--summary` for `moon ci` was not being respected.
+- Fixed an issue where resolved lockfile versions were not extracted for a toolchain when a
+  range/requirement was defined for the toolchain `version`.
 
 ## 2.5.1
 

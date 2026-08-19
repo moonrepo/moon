@@ -172,6 +172,7 @@ mod tests {
 
         JobContext {
             abort_token: CancellationToken::new(),
+            bail: false,
             cancel_token: CancellationToken::new(),
             completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
             daemon_client: None,

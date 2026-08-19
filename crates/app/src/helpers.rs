@@ -74,6 +74,7 @@ pub async fn run_action_pipeline(
     session: &MoonSession,
     action_context: ActionContext,
     action_graph: ActionGraph,
+    summary: Option<Level>,
 ) -> miette::Result<Vec<Action>> {
     let mut pipeline = ActionPipeline::new(
         session.get_app_context().await?,
@@ -85,34 +86,20 @@ pub async fn run_action_pipeline(
         pipeline.concurrency = *concurrency;
     }
 
+    pipeline.summary = summary;
+
     match &session.cli.command {
-        Commands::Check(cmd) => {
+        Commands::Check(_) => {
             pipeline.bail = true;
-            pipeline.summary = cmd
-                .summary
-                .clone()
-                .map(|sum| sum.unwrap_or_default().to_level());
         }
-        Commands::Ci(cmd) => {
+        Commands::Ci(_) => {
             pipeline.report_name = "ciReport.json".into();
-            pipeline.summary = cmd
-                .summary
-                .clone()
-                .map(|sum| sum.unwrap_or_default().to_level());
         }
         Commands::Exec(cmd) => {
             pipeline.bail = cmd.on_failure == OnFailure::Bail;
-            pipeline.summary = cmd
-                .summary
-                .clone()
-                .map(|sum| sum.unwrap_or_default().to_level());
         }
-        Commands::Run(cmd) => {
+        Commands::Run(_) => {
             pipeline.bail = true;
-            pipeline.summary = cmd
-                .summary
-                .clone()
-                .map(|sum| sum.unwrap_or_default().to_level());
         }
         Commands::Setup | Commands::Sync { .. } => {
             pipeline.summary = Some(Level::Two);

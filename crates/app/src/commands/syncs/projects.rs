@@ -29,7 +29,7 @@ pub async fn sync(session: MoonSession) -> SessionResult {
 
     let (action_context, action_graph) = action_graph_builder.build();
 
-    run_action_pipeline(&session, action_context, action_graph).await?;
+    run_action_pipeline(&session, action_context, action_graph, None).await?;
 
     session.console.render(element! {
         Container {

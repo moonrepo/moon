@@ -1,4 +1,5 @@
 use extism_pdk::*;
+use moon_pdk::plugin_err;
 use moon_pdk_api::*;
 
 pub use tc_tier2::*;
@@ -28,7 +29,18 @@ pub fn define_requirements(
 
 #[plugin_fn]
 pub fn setup_environment(
-    Json(_): Json<SetupEnvironmentInput>,
+    Json(input): Json<SetupEnvironmentInput>,
 ) -> FnResult<Json<SetupEnvironmentOutput>> {
+    // Only fail when a test opts in via toolchain config, so that
+    // pipeline tests can assert what happens downstream of a hard failure
+    if input
+        .toolchain_config
+        .get("testSetupEnvironmentFailure")
+        .and_then(|value| value.as_bool())
+        .unwrap_or_default()
+    {
+        return Err(plugin_err!("Failed to setup environment (test)"));
+    }
+
     Ok(Json(SetupEnvironmentOutput::default()))
 }

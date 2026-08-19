@@ -116,6 +116,10 @@ impl Action {
         self.error_report = Some(error);
     }
 
+    pub fn has_error(&self) -> bool {
+        self.error.is_some() || self.error_report.is_some()
+    }
+
     pub fn has_failed(&self) -> bool {
         matches!(
             &self.status,

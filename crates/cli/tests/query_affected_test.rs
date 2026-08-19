@@ -47,6 +47,29 @@ mod query_affected {
     }
 
     #[test]
+    fn includes_project_via_stdin() {
+        let sandbox = create_query_sandbox();
+
+        let assert = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("affected")
+                .write_stdin("basic/file.txt");
+        });
+
+        let mut affected: Affected = serde_json::from_str(assert.stdout().trim()).unwrap();
+
+        assert!(!affected.projects.contains_key("advanced"));
+        assert_eq!(
+            affected.projects.remove("basic").unwrap(),
+            AffectedProjectState {
+                files: FxHashSet::from_iter(["basic/file.txt".into()]),
+                tasks: FxHashSet::from_iter([Target::parse("basic:dev").unwrap()]),
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
     fn includes_task_for_input() {
         let sandbox = create_query_sandbox();
 

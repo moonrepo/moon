@@ -12,7 +12,7 @@ use schematic::ConfigLoader as BaseLoader;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
 use std::path::Path;
 use utils::*;
-use version_spec::Version;
+use version_spec::{MatchesVersion, Version};
 
 const FILENAME: &str = ".moon/workspace.yml";
 
@@ -821,11 +821,66 @@ vcs:
         use super::*;
 
         #[test]
-        #[should_panic(expected = "Failed to parse a version requirement")]
+        #[should_panic(expected = "Failed to parse a version range")]
         fn errors_on_invalid_req() {
             test_load_config(FILENAME, "versionConstraint: '@1.0.0'", |path| {
                 load_config_from_root(path)
             });
+        }
+
+        #[test]
+        fn supports_multiple_comparators() {
+            let config = test_load_config(FILENAME, "versionConstraint: '>=2.4.6, <3'", |path| {
+                load_config_from_root(path)
+            });
+
+            let constraint = config.version_constraint.unwrap();
+
+            assert!(constraint.matches(&Version::parse("2.5.0").unwrap()));
+            assert!(!constraint.matches(&Version::parse("2.4.5").unwrap()));
+            assert!(!constraint.matches(&Version::parse("3.0.0").unwrap()));
+        }
+
+        #[test]
+        fn supports_range_syntax() {
+            for value in [
+                "1.2.3",
+                "=1.2.3",
+                ">=1.2.3",
+                "^1.2",
+                "~1",
+                "*",
+                ">=2.4.6, <3",
+                ">=2.4.6 <3",
+                ">=2.4.6 && <3",
+                "^1 || ^2",
+                "1.2.3 - 2.3.4",
+            ] {
+                let config = test_load_config(
+                    FILENAME,
+                    &format!("versionConstraint: '{value}'"),
+                    load_config_from_root,
+                );
+
+                assert!(
+                    config.version_constraint.is_some(),
+                    "expected `{value}` to be accepted"
+                );
+            }
+        }
+
+        #[test]
+        fn errors_on_invalid_range_syntax() {
+            for value in ["@1.0.0", ">=1.2.3, ", "1.2.3 ||", "><1.2.3"] {
+                let sandbox = create_empty_sandbox();
+
+                sandbox.create_file(FILENAME, format!("versionConstraint: '{value}'"));
+
+                assert!(
+                    load_config_from_root(sandbox.path()).is_err(),
+                    "expected `{value}` to be rejected"
+                );
+            }
         }
     }
 

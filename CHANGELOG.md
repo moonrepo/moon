@@ -17,6 +17,8 @@
   for background operations to complete.
 - Updated CI task runs to respect the `outputStyle` task option. Locally, we'll still stream the
   output for primary targets, ignoring that option. We will be revisiting this in v2.6.
+- Updated `versionConstraint` in `.moon/workspace.*` to use a range instead of a requirement, which
+  allows for more flexible version constraints.
 
 #### 🐞 Fixes
 

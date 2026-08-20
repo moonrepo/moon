@@ -130,7 +130,7 @@ impl SharedChild {
     }
 }
 
-fn convert_exit_status(status: ExitStatus, raw_signal: Option<SignalType>) -> ChildExit {
+pub(crate) fn convert_exit_status(status: ExitStatus, raw_signal: Option<SignalType>) -> ChildExit {
     #[cfg(unix)]
     {
         use std::os::unix::process::ExitStatusExt;

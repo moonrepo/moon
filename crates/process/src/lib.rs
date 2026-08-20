@@ -1,3 +1,4 @@
+mod blocking;
 mod command;
 mod exec_command;
 mod helpers;
@@ -7,6 +8,7 @@ mod process_registry;
 mod shared_child;
 mod signal;
 
+pub use blocking::*;
 pub use command::*;
 pub use helpers::*;
 pub use output::*;

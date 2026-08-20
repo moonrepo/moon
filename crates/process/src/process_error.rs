@@ -1,5 +1,6 @@
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
+use std::time::Duration;
 use thiserror::Error;
 
 impl ProcessError {
@@ -26,6 +27,20 @@ pub enum ProcessError {
         #[source]
         error: Box<std::io::Error>,
     },
+
+    #[diagnostic(code(process::output_limit))]
+    #[error(
+        "Process {} output exceeded the {limit}-byte limit.",
+        .bin.style(Style::Shell),
+    )]
+    OutputLimitExceeded { bin: String, limit: usize },
+
+    #[diagnostic(code(process::timeout))]
+    #[error(
+        "Process {} exceeded its {timeout:?} timeout.",
+        .bin.style(Style::Shell),
+    )]
+    Timeout { bin: String, timeout: Duration },
 
     #[diagnostic(code(process::failed))]
     #[error(

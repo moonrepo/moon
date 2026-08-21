@@ -1,0 +1,6 @@
+tasks:
+  tag-dep:
+    command: 'build'
+    deps:
+      - '~:#prebuild'
+      - '~:local-build'

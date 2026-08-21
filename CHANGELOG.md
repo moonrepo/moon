@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a task dependency using the task-tag scope (`~:#tag`) was silently dropped
+  when the depending task was defined in an inherited `.moon/tasks/*` config. Tag scoped
+  dependencies are now preserved, since `workspace.inheritedTasks` exclude/rename filters can only
+  match tasks by ID (#2687).
+
 ## 2.5.2
 
 #### 🚀 Updates

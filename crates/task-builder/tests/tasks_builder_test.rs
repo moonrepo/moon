@@ -2247,13 +2247,33 @@ tasks:
                     TaskDependencyConfig::new(Target::parse("~:compile").unwrap()),
                     // Doesn't exclude/rename tasks in other projects
                     TaskDependencyConfig::new(Target::parse("^:test").unwrap()),
-                    TaskDependencyConfig::new(Target::parse("^:build").unwrap())
+                    TaskDependencyConfig::new(Target::parse("^:build").unwrap()),
+                    // Doesn't exclude/rename tag scoped tasks
+                    TaskDependencyConfig::new(Target::parse("~:#tagged").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("override-global:#tagged").unwrap())
                 ]
             );
 
             assert_eq!(tasks.get("build").unwrap().command, "build-local");
             assert_eq!(tasks.get("compile").unwrap().command, "build-global");
             assert_eq!(tasks.get("test").unwrap().command, "test-local");
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn keeps_tag_deps_in_global_tasks_without_overrides() {
+            let sandbox = create_sandbox("builder");
+            let container =
+                TasksBuilderContainer::new(sandbox.path()).with_global_tasks("global-tag-deps");
+
+            let tasks = container.build_tasks("local").await;
+
+            assert_eq!(
+                tasks.get("tag-dep").unwrap().deps,
+                vec![
+                    TaskDependencyConfig::new(Target::parse("~:#prebuild").unwrap()),
+                    TaskDependencyConfig::new(Target::parse("~:local-build").unwrap()),
+                ]
+            );
         }
     }
 

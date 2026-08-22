@@ -37,3 +37,18 @@ Model: Fable
 ```
 Audit and verify that the skills at `skills` are documented accurately and are referencing the correct information based on the source code at `crates`. Do NOT compare against the documentation in `website`, as that may be outdated or incorrect. Instead, ensure that the skills are accurate and up-to-date based on the source code.
 ```
+
+## proto docs
+
+```
+We have released a new version of proto, vX.X, and would like to update the website to reflect the changes in this release. This includes updating any relevant guides, configuration references, and API documentation to ensure that users have accurate and up-to-date information.
+
+Make the following changes:
+
+- Add a new blog post to `website/blog` highlighting the new features, improvements, and any important changes in this version. The blog post should be engaging and informative, and should not reference bug fixes unless they are critical.
+- Update the documentation at `website/docs/proto` to reflect the changes in the new release. Include version labels for anything new.
+
+The proto repository can be found at `../proto` (`git@github.com:moonrepo/proto.git`). Compare the `develop-X.X` branch with the `master` branch to identify the differences and provide a clear overview of what users can expect from this release. If that branch no longer exists, compare against these commits: `<base hash>` and `<branch hash>`.
+
+Make sure to keep the tone engaging and informative, and consider other blog posts for its casual writing style.
+```

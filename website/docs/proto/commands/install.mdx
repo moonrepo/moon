@@ -37,6 +37,12 @@ $ proto install deno 1.31
 $ proto install deno canary
 ```
 
+When a version is _not_ provided, it is [detected](../detection) using the same rules as
+[`proto run`](./run) and shims. This honors the
+[`detect-strategy`](../config#detect-strategy) setting, the `PROTO_<TOOL>_VERSION` environment
+variable, and traverses the configuration file chain, instead of only scanning the current working
+directory. <VersionLabel version="0.61.0" />
+
 #### Pinning the version
 
 By default this command will only install the tool into `~/.proto/tools` but will not make the
@@ -54,6 +60,27 @@ $ proto install bun --pin global
 # ~/.prototools
 $ proto install bun --pin user
 ```
+
+#### Immutable lockfiles<VersionLabel version="0.61.0" />
+
+When a [lockfile](../lockfile) is in use, the `--immutable-lockfile` option (or the
+`PROTO_IMMUTABLE_LOCKFILE` environment variable) treats it as read-only. Versions are resolved from
+existing records only, and the lockfile is never created, updated, or pruned. If a tool being
+installed has no matching record, the install fails, which is ideal for reproducible installs in
+CI.
+
+```shell
+$ proto install --immutable-lockfile
+```
+
+> This option cannot be combined with `--update-lockfile` or `--pin`.
+
+#### Pruning orphaned records<VersionLabel version="0.61.0" />
+
+After a successful install, proto will remove
+[orphaned records](../lockfile#orphaned-records) from the lockfiles it loaded — records whose tool
+is still configured, but whose requirement no longer matches the configuration. Records for ad-hoc
+installs are never pruned.
 
 ### Handling plugin hooks
 
@@ -74,6 +101,9 @@ $ proto install go -- --no-gobin
 ### Options
 
 - `--force` - Force install, even if already installed.
+- `--immutable-lockfile` - Error if the [lockfile](../lockfile) is missing a record or would be
+  modified. Also supports the `PROTO_IMMUTABLE_LOCKFILE` environment variable.
+  <VersionLabel version="0.61.0" />
 - `--update-lockfile` - Don't inherit a version from the [lockfile](../lockfile) and update the
   existing record. <VersionLabel version="0.51.0" />
 - One tool

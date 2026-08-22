@@ -22,6 +22,10 @@ the location, or use the `--tool-native` option to use a location unique to the 
 When a [lockfile](../lockfile) is in use, matching records will be migrated to the
 newly pinned specification. <VersionLabel version="0.60.0" />
 
+The lockfile of the configuration
+file being modified is always kept in sync, even when another configuration file (like an
+[environment configuration](../config#environment-mode)) takes precedence for that tool. <VersionLabel version="0.61.0" />
+
 ### Arguments
 
 - `<tool>` - Type of tool.

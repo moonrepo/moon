@@ -55,6 +55,31 @@ A lockfile is scoped to the `.prototools` configuration file in which the settin
 > Before v0.60, a lockfile locked its directory _and all of its subdirectories_, similar to how
 > package manager workspaces function, and defining nested lockfiles would trigger an error.
 
+#### Environment scopes<VersionLabel version="0.61.0" />
+
+When an [environment mode](./config#environment-mode) is active (the `PROTO_ENV` environment
+variable is set), every configuration file owns its own lockfile. A `.prototools` file is locked to
+`.protolock`, while a `.prototools.production` file is locked to a sibling `.protolock.production`
+file, instead of the 2 configurations sharing the directory's `.protolock`.
+
+- Each lockfile only tracks tools with versions defined in its own configuration file. A version
+  overridden by an environment configuration is tracked in `.protolock.<env>`, while versions
+  inherited from `.prototools` remain in `.protolock`.
+- Tools installed ad-hoc (without a configured version) are tracked by the base `.prototools`
+  configuration.
+- Environment configurations inherit the
+  [`settings.unstable-lockfile`](./config#unstable-lockfile) setting from the `.prototools` file in
+  the same directory, but can override it.
+- Lockfiles for environments that are not currently active are never loaded or modified.
+
+```text title="PROTO_ENV=production"
+.prototools            -> .protolock
+.prototools.production -> .protolock.production
+```
+
+> Records for environment specific versions that were previously written to `.protolock` are no
+> longer used, and will be re-created in `.protolock.<env>` on the next install.
+
 ### Records
 
 For each tool, the lockfile stores a list of records, with each record representing an installation
@@ -89,6 +114,8 @@ Each record supports the following fields:
 - `os` / `arch` - The operating system and architecture the record applies to. Since pre-built
   artifacts differ per platform, a record exists for each combination.
 - `backend` - The [backend](./tool-spec#backends) the tool was installed with, if applicable.
+- `metadata` - Additional key-value information about the installation, provided by the tool's
+  plugin. <VersionLabel version="0.61.0" />
 
 Records are created and updated when a tool is explicitly installed with
 [`proto install`](./commands/install), and removed when uninstalled with
@@ -122,6 +149,55 @@ locked.
 When a record is migrated to a new version (through the commands below), its checksum is removed,
 and will be re-populated on the next install.
 
+For tools that distribute [GPG detached signatures](./wasm-plugin#verifying-with-gpg) instead of a
+hash, the record stores the fingerprint of the signer that was trusted, and a SHA-256 hash of the
+verified artifact, in the form `gpg:<fingerprint>:sha256:<hash>`. <VersionLabel version="0.61.0" inline />
+
+### Orphaned records<VersionLabel version="0.61.0" />
+
+[`proto install`](./commands/install) and [`proto uninstall`](./commands/uninstall) will prune
+orphaned records from the lockfiles they touch. A record is orphaned when its tool _has_ a version
+defined in the configuration file that owns the lockfile, but the record's requirement no longer
+matches any of that configuration's requirements. This typically happens when a `.prototools` file
+is edited by hand, instead of through proto.
+
+```toml title=".prototools"
+# Was "22", is now "24", so the "22" record is orphaned
+node = "24"
+```
+
+- Records for tools that the owning configuration does _not_ define are ad-hoc installs, and are
+  never pruned.
+- Only lockfiles that have been loaded are pruned, so lockfiles for
+  [inactive environments](#environment-scopes) are left untouched.
+- Pruning runs _after_ the install or uninstall, against configuration files as they stand at that
+  point. Installing an explicit version of a tool that is configured with a different version will
+  not leave a record behind, unless the version is pinned with `--pin`.
+
+> This is the same staleness that [`proto diagnose`](./commands/diagnose) reports, so records it
+> warns about are now removed by the next install or uninstall.
+
+## Immutable lockfiles<VersionLabel version="0.61.0" />
+
+For reproducible installs — think CI, containers, or any environment that should never drift —
+[`proto install`](./commands/install) supports an `--immutable-lockfile` flag (and a
+`PROTO_IMMUTABLE_LOCKFILE` environment variable), which treats the lockfile as read-only.
+
+```shell
+$ proto install --immutable-lockfile
+```
+
+- Versions are resolved _only_ from existing lockfile records, never from the remote registry.
+- The lockfile is never created, updated, or [pruned](#orphaned-records).
+- If a tool being installed has no matching record, the install fails with an error, instead of
+  resolving a fresh version.
+
+This turns "the lockfile is out of date" into a build failure instead of a silent update. To
+populate the missing records, run the install again without the flag, then commit the changes.
+
+> This flag cannot be combined with `--update-lockfile` or `--pin`, as both would modify the
+> lockfile.
+
 ## Lockfile-aware commands<VersionLabel version="0.60.0" />
 
 Beyond installation, lockfiles are integrated across the command line.
@@ -130,9 +206,17 @@ Beyond installation, lockfiles are integrated across the command line.
   "Locked" column, showing the version locked for each configured requirement, and include a
   `locked_version` field in their `--json` output.
 - [`proto outdated --update`](./commands/outdated) updates matching records when writing new
-  versions to their respective configuration files.
+  versions to their respective configuration files, including versions defined in
+  [environment scoped configurations](#environment-scopes). <VersionLabel version="0.61.0" inline />
 - [`proto pin`](./commands/pin) (and [`proto install --pin`](./commands/install)) migrates matching records to the newly
-  pinned requirement, while [`proto unpin`](./commands/unpin) removes them entirely.
+  pinned requirement, while [`proto unpin`](./commands/unpin) removes them entirely. Both always
+  keep the lockfile of the modified configuration in sync, even when another configuration (like an
+  environment configuration) takes precedence for that tool.
+  <VersionLabel version="0.61.0" inline />
+- [`proto uninstall`](./commands/uninstall) removes records for the uninstalled version from _all_
+  applicable lockfiles, as the version may be pinned in multiple configurations. When uninstalling
+  all versions, the tool is removed from all applicable lockfiles.
+  <VersionLabel version="0.61.0" inline />
 - [`proto versions`](./commands/versions) labels versions that have a record with "locked", and
   includes a `locked` field in its `--json` output.
 - [`proto debug config`](./commands/debug/config) renders `.protolock` files alongside their

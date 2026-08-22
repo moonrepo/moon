@@ -32,6 +32,11 @@ showing the version locked for each configured specification. Additionally, the 
 will update matching records in the lockfile when writing versions to their respective
 configuration. <VersionLabel version="0.60.0" />
 
+Versions defined in [environment specific configurations](../config#environment-mode)
+(`.prototools.<env>`) are also updated by `--update`, including the records in their
+[sibling lockfiles](../lockfile#environment-scopes). Previously these versions were skipped with a
+warning. <VersionLabel version="0.61.0" />
+
 ### Options
 
 - `--json` - Print the list in JSON format.

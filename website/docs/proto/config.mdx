@@ -110,6 +110,10 @@ the lookup order would be the following when `PROTO_ENV=production`:
 
 > The global `~/.proto/.prototools` file does not support environment modes.
 
+Each configuration file also owns its own [lockfile](./lockfile#environment-scopes), so
+`.prototools.production` is locked to `.protolock.production`, while `.prototools` remains locked
+to `.protolock`. <VersionLabel version="0.61.0" />
+
 ## Pinning versions
 
 proto supports pinning versions of tools on a per-directory basis through our `.prototools`
@@ -240,12 +244,15 @@ builtin-tools = ["node", "bun"]
 
 #### `cache-duration`<VersionLabel version="0.50.1" />
 
-The duration in seconds in which to cache downloaded plugins. Defaults to 30 days.
+The duration in seconds in which to cache downloaded plugins. Defaults to 180 days (6 months).
 
 ```toml title=".prototools"
 [settings]
 cache-duration = 3600
 ```
+
+> Before v0.61, this defaulted to 30 days. It was increased because of GitHub's unreliability, as
+> re-downloading a plugin that hasn't changed is a common source of transient install failures.
 
 #### `detect-strategy`
 
@@ -309,6 +316,11 @@ Since v0.60, a lockfile is scoped to the configuration file in which this settin
   installed ad-hoc (without a configured version) are tracked by the closest configuration file.
 - Versions defined in nested configuration files are not included in a parent's lockfile. To lock a
   nested configuration, enable this setting in that file as well.
+
+Since v0.61, [environment specific configurations](#environment-mode) own their own lockfile. When
+`PROTO_ENV` is set, a `.prototools.<env>` file is locked to a sibling `.protolock.<env>` file,
+instead of sharing the directory's `.protolock`. Environment configurations inherit this setting
+from the `.prototools` file in the same directory, but can override it.
 
 > Refer to the [lockfiles documentation](./lockfile) for more information on how lockfiles work.
 

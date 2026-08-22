@@ -153,7 +153,7 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [shell](https://moonrepo.dev/docs/proto/commands/shell): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [status](https://moonrepo.dev/docs/proto/commands/status): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [unalias](https://moonrepo.dev/docs/proto/commands/unalias): import VersionLabel from '@site/src/components/Docs/VersionLabel';
-- [uninstall](https://moonrepo.dev/docs/proto/commands/uninstall): The `proto uninstall <tool> [version]` (or `proto ui`) command will uninstall and remove a tool from
+- [uninstall](https://moonrepo.dev/docs/proto/commands/uninstall): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [unpin](https://moonrepo.dev/docs/proto/commands/unpin): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [upgrade](https://moonrepo.dev/docs/proto/commands/upgrade): import VersionLabel from '@site/src/components/Docs/VersionLabel';
 - [use](https://moonrepo.dev/docs/proto/commands/use): :::danger
@@ -293,3 +293,4 @@ This file contains links to documentation sections following the llmstxt.org sta
 - [proto v0.59 - Java support, a new version parser, improved OpenTelemetry, and more](https://moonrepo.dev/blog/2026-07-23_proto-v0.59): In this release, we're shipping one of our most requested tools to date, Java, alongside a
 - [proto v0.60 - Scoped lockfiles, safe concurrent installs, and new WASM path APIs](https://moonrepo.dev/blog/2026-08-05_proto-v0.60): Our lockfile implementation gets a major overhaul in this release, alongside concurrency-safe
 - [moon v2.5 - OpenTelemetry, shared worktree caching, async engine by default, and more](https://moonrepo.dev/blog/2026-08-14_moon-v2.5): This release is about speed you can feel and visibility you can graph. The async engine we've been
+- [proto v0.61 - Swift support, GPG verification, and immutable lockfiles](https://moonrepo.dev/blog/2026-08-22_proto-v0.61): A new language joins the toolchain, downloads can now be verified with GPG signatures, and

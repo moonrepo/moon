@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.2705d609.js" defer="defer"></script>
-<script src="/assets/js/main.700fdb4f.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.a99e9825.js" defer="defer"></script>
+<script src="/assets/js/main.81e792ab.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -89,6 +89,9 @@ the lookup order would be the following when <code>PROTO_ENV=production</code>:<
 <blockquote>
 <p>The global <code>~/.proto/.prototools</code> file does not support environment modes.</p>
 </blockquote>
+<p>Each configuration file also owns its own <a class="" href="/docs/proto/lockfile#environment-scopes">lockfile</a>, so
+<code>.prototools.production</code> is locked to <code>.protolock.production</code>, while <code>.prototools</code> remains locked
+to <code>.protolock</code>. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.61.0</span></p>
 <h2 class="anchor anchorTargetStickyNavbar_tleR" id="pinning-versions">Pinning versions<a href="#pinning-versions" class="hash-link" aria-label="Direct link to Pinning versions" title="Direct link to Pinning versions" translate="no">​</a></h2>
 <p>proto supports pinning versions of tools on a per-directory basis through our <code>.prototools</code>
 configuration file. This file takes precedence during <a class="" href="/docs/proto/detection">version detection</a> and can be
@@ -150,8 +153,12 @@ all.</p>
 used as an alias for <code>builtin-tools</code>.</p>
 </blockquote>
 <h4 class="anchor anchorTargetStickyNavbar_tleR" id="cache-duration"><code>cache-duration</code><span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.50.1</span><a href="#cache-duration" class="hash-link" aria-label="Direct link to cache-duration" title="Direct link to cache-duration" translate="no">​</a></h4>
-<p>The duration in seconds in which to cache downloaded plugins. Defaults to 30 days.</p>
+<p>The duration in seconds in which to cache downloaded plugins. Defaults to 180 days (6 months).</p>
 <div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">cache-duration</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token number" style="color:#94dded">3600</span><br></div></code></pre></div></div>
+<blockquote>
+<p>Before v0.61, this defaulted to 30 days. It was increased because of GitHub&#x27;s unreliability, as
+re-downloading a plugin that hasn&#x27;t changed is a common source of transient install failures.</p>
+</blockquote>
 <h4 class="anchor anchorTargetStickyNavbar_tleR" id="detect-strategy"><code>detect-strategy</code><a href="#detect-strategy" class="hash-link" aria-label="Direct link to detect-strategy" title="Direct link to detect-strategy" translate="no">​</a></h4>
 <p>The strategy to use when <a class="" href="/docs/proto/detection">detecting versions</a>. Defaults to <code>first-available</code> or
 <code>PROTO_DETECT_STRATEGY</code>.</p>
@@ -195,6 +202,10 @@ installed ad-hoc (without a configured version) are tracked by the closest confi
 <li class="">Versions defined in nested configuration files are not included in a parent&#x27;s lockfile. To lock a
 nested configuration, enable this setting in that file as well.</li>
 </ul>
+<p>Since v0.61, <a href="#environment-mode" class="">environment specific configurations</a> own their own lockfile. When
+<code>PROTO_ENV</code> is set, a <code>.prototools.&lt;env&gt;</code> file is locked to a sibling <code>.protolock.&lt;env&gt;</code> file,
+instead of sharing the directory&#x27;s <code>.protolock</code>. Environment configurations inherit this setting
+from the <code>.prototools</code> file in the same directory, but can override it.</p>
 <blockquote>
 <p>Refer to the <a class="" href="/docs/proto/lockfile">lockfiles documentation</a> for more information on how lockfiles work.</p>
 </blockquote>

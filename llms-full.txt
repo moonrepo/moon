@@ -17197,6 +17197,9 @@ WASM is pretty powerful but it can't do everything since it's sandboxed. To work
 provide a mechanism known as host functions, which are functions that are implemented on the host
 (in Rust), and can be executed from WASM. The following host functions are currently available:
 
+- [`download_file`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.download_file.html) -
+  Download a file from a URL directly to a file on the host machine, without loading the contents
+  into WASM memory. <sup>proto v0.61+</sup>
 - [`exec_command`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.exec_command.html) -
   Execute a system command on the host machine, with a provided list of arguments or environment
   variables.
@@ -17223,6 +17226,7 @@ use extism_pdk::*;
 
 #[host_fn]
 extern "ExtismHost" {
+    fn download_file(input: Json<DownloadFileInput>) -> Json<DownloadFileOutput>;
     fn exec_command(input: Json<ExecCommandInput>) -> Json<ExecCommandOutput>;
     fn get_env_var(key: String) -> String;
     fn host_log(input: Json<HostLogInput>);
@@ -17322,6 +17326,31 @@ exec(ExecCommandInput {
 })?;
 ```
 
+#### Downloading files
+
+The [`download_file!`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.download_file.html)
+macro can be used to download a file from a URL straight to a destination file on the host, using
+the `download_file` host function. Unlike [sending a request](#sending-requests), the response body
+is streamed to disk and never passes through WASM memory, which avoids allocating the entire file
+in the guest. This is ideal for large artifacts, like archives and installers.
+
+```rust
+let output = download_file!("https://some.com/url/to/file.tar.xz", temp_dir.join("file.tar.xz"));
+
+output.file; // Virtual path written to
+output.size; // Size in bytes
+```
+
+For a simpler API, the
+[`download_from_url`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.download_from_url.html)
+and [`download`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.download.html) functions can
+be used instead, the latter accepting a `DownloadFileInput` for full control (like custom headers).
+
+Requests are made with proto's own HTTP client, so they respect
+[`[settings.http]`](/docs/proto/config#settingshttp) and `.netrc` configuration.
+
+> This host function is only available in proto v0.61 and above.
+
 #### Sending requests
 
 The [`send_request`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.send_request.html) macro
@@ -17349,7 +17378,16 @@ To simplify the handling of requests -> responses, we also provide the
 let json: T = fetch_json("https://some.com/url/to/fetch.json")?;
 ```
 
-> Only GET requests are supported.
+Requests are sent with the `GET` method by default. To send a `POST` request instead, set the
+`method` field on the input, or use the
+[`SendRequestInput::post`](https://docs.rs/warpgate_api/latest/warpgate_api/struct.SendRequestInput.html)
+constructor.
+
+```rust
+let response = send_request!(input, SendRequestInput::post("https://some.com/url/to/post"));
+```
+
+> `POST` support was added in proto v0.61. Before that, only `GET` requests were supported.
 
 #### Logging
 
@@ -19994,6 +20032,12 @@ $ proto install deno 1.31
 $ proto install deno canary
 ```
 
+When a version is _not_ provided, it is [detected](../detection) using the same rules as
+[`proto run`](./run) and shims. This honors the
+[`detect-strategy`](../config#detect-strategy) setting, the `PROTO_<TOOL>_VERSION` environment
+variable, and traverses the configuration file chain, instead of only scanning the current working
+directory. <VersionLabel version="0.61.0" />
+
 #### Pinning the version
 
 By default this command will only install the tool into `~/.proto/tools` but will not make the
@@ -20011,6 +20055,27 @@ $ proto install bun --pin global
 # ~/.prototools
 $ proto install bun --pin user
 ```
+
+#### Immutable lockfiles<VersionLabel version="0.61.0" />
+
+When a [lockfile](../lockfile) is in use, the `--immutable-lockfile` option (or the
+`PROTO_IMMUTABLE_LOCKFILE` environment variable) treats it as read-only. Versions are resolved from
+existing records only, and the lockfile is never created, updated, or pruned. If a tool being
+installed has no matching record, the install fails, which is ideal for reproducible installs in
+CI.
+
+```shell
+$ proto install --immutable-lockfile
+```
+
+> This option cannot be combined with `--update-lockfile` or `--pin`.
+
+#### Pruning orphaned records<VersionLabel version="0.61.0" />
+
+After a successful install, proto will remove
+[orphaned records](../lockfile#orphaned-records) from the lockfiles it loaded — records whose tool
+is still configured, but whose requirement no longer matches the configuration. Records for ad-hoc
+installs are never pruned.
 
 ### Handling plugin hooks
 
@@ -20031,6 +20096,9 @@ $ proto install go -- --no-gobin
 ### Options
 
 - `--force` - Force install, even if already installed.
+- `--immutable-lockfile` - Error if the [lockfile](../lockfile) is missing a record or would be
+  modified. Also supports the `PROTO_IMMUTABLE_LOCKFILE` environment variable.
+  <VersionLabel version="0.61.0" />
 - `--update-lockfile` - Don't inherit a version from the [lockfile](../lockfile) and update the
   existing record. <VersionLabel version="0.51.0" />
 - One tool
@@ -20190,6 +20258,11 @@ showing the version locked for each configured specification. Additionally, the 
 will update matching records in the lockfile when writing versions to their respective
 configuration. <VersionLabel version="0.60.0" />
 
+Versions defined in [environment specific configurations](../config#environment-mode)
+(`.prototools.<env>`) are also updated by `--update`, including the records in their
+[sibling lockfiles](../lockfile#environment-scopes). Previously these versions were skipped with a
+warning. <VersionLabel version="0.61.0" />
+
 ### Options
 
 - `--json` - Print the list in JSON format.
@@ -20218,6 +20291,10 @@ the location, or use the `--tool-native` option to use a location unique to the 
 
 When a [lockfile](../lockfile) is in use, matching records will be migrated to the
 newly pinned specification. <VersionLabel version="0.60.0" />
+
+The lockfile of the configuration
+file being modified is always kept in sync, even when another configuration file (like an
+[environment configuration](../config#environment-mode)) takes precedence for that tool. <VersionLabel version="0.61.0" />
 
 ### Arguments
 
@@ -20698,6 +20775,12 @@ $ proto uninstall deno 1.31
 $ proto uninstall deno
 ```
 
+When a [lockfile](../lockfile) is in use, records for the uninstalled version are removed from
+_all_ applicable lockfiles, as the version may be pinned in multiple configuration files (each of
+which is unpinned). When uninstalling all versions, the tool is removed from all applicable
+lockfiles. Afterwards, [orphaned records](../lockfile#orphaned-records) are pruned from the
+lockfiles that were loaded. <VersionLabel version="0.61.0" />
+
 ### Arguments
 
 - `<tool>` - Type of tool.
@@ -20719,9 +20802,10 @@ $ proto unpin node --tool-native
 By default this will update the local [`./.prototools`](../config) file. Pass `--from` to customize
 the location.
 
-When a [lockfile](../lockfile) is in use, matching records will also be removed.
+When a [lockfile](../lockfile) is in use, matching records will also be removed. <VersionLabel version="0.60.0" />
 
-<VersionLabel version="0.60.0" />
+As with [`proto pin`](./pin), the lockfile of the configuration file being modified is always kept
+in sync, even when another configuration file takes precedence for that tool. <VersionLabel version="0.61.0" />
 
 ### Arguments
 
@@ -20957,6 +21041,10 @@ the lookup order would be the following when `PROTO_ENV=production`:
 
 > The global `~/.proto/.prototools` file does not support environment modes.
 
+Each configuration file also owns its own [lockfile](./lockfile#environment-scopes), so
+`.prototools.production` is locked to `.protolock.production`, while `.prototools` remains locked
+to `.protolock`. <VersionLabel version="0.61.0" />
+
 ## Pinning versions
 
 proto supports pinning versions of tools on a per-directory basis through our `.prototools`
@@ -21087,12 +21175,15 @@ builtin-tools = ["node", "bun"]
 
 #### `cache-duration`<VersionLabel version="0.50.1" />
 
-The duration in seconds in which to cache downloaded plugins. Defaults to 30 days.
+The duration in seconds in which to cache downloaded plugins. Defaults to 180 days (6 months).
 
 ```toml title=".prototools"
 [settings]
 cache-duration = 3600
 ```
+
+> Before v0.61, this defaulted to 30 days. It was increased because of GitHub's unreliability, as
+> re-downloading a plugin that hasn't changed is a common source of transient install failures.
 
 #### `detect-strategy`
 
@@ -21156,6 +21247,11 @@ Since v0.60, a lockfile is scoped to the configuration file in which this settin
   installed ad-hoc (without a configured version) are tracked by the closest configuration file.
 - Versions defined in nested configuration files are not included in a parent's lockfile. To lock a
   nested configuration, enable this setting in that file as well.
+
+Since v0.61, [environment specific configurations](#environment-mode) own their own lockfile. When
+`PROTO_ENV` is set, a `.prototools.<env>` file is locked to a sibling `.protolock.<env>` file,
+instead of sharing the directory's `.protolock`. Environment configurations inherit this setting
+from the `.prototools` file in the same directory, but can override it.
 
 > Refer to the [lockfiles documentation](./lockfile) for more information on how lockfiles work.
 
@@ -21972,6 +22068,31 @@ A lockfile is scoped to the `.prototools` configuration file in which the settin
 > Before v0.60, a lockfile locked its directory _and all of its subdirectories_, similar to how
 > package manager workspaces function, and defining nested lockfiles would trigger an error.
 
+#### Environment scopes<VersionLabel version="0.61.0" />
+
+When an [environment mode](./config#environment-mode) is active (the `PROTO_ENV` environment
+variable is set), every configuration file owns its own lockfile. A `.prototools` file is locked to
+`.protolock`, while a `.prototools.production` file is locked to a sibling `.protolock.production`
+file, instead of the 2 configurations sharing the directory's `.protolock`.
+
+- Each lockfile only tracks tools with versions defined in its own configuration file. A version
+  overridden by an environment configuration is tracked in `.protolock.<env>`, while versions
+  inherited from `.prototools` remain in `.protolock`.
+- Tools installed ad-hoc (without a configured version) are tracked by the base `.prototools`
+  configuration.
+- Environment configurations inherit the
+  [`settings.unstable-lockfile`](./config#unstable-lockfile) setting from the `.prototools` file in
+  the same directory, but can override it.
+- Lockfiles for environments that are not currently active are never loaded or modified.
+
+```text title="PROTO_ENV=production"
+.prototools            -> .protolock
+.prototools.production -> .protolock.production
+```
+
+> Records for environment specific versions that were previously written to `.protolock` are no
+> longer used, and will be re-created in `.protolock.<env>` on the next install.
+
 ### Records
 
 For each tool, the lockfile stores a list of records, with each record representing an installation
@@ -22006,6 +22127,8 @@ Each record supports the following fields:
 - `os` / `arch` - The operating system and architecture the record applies to. Since pre-built
   artifacts differ per platform, a record exists for each combination.
 - `backend` - The [backend](./tool-spec#backends) the tool was installed with, if applicable.
+- `metadata` - Additional key-value information about the installation, provided by the tool's
+  plugin. <VersionLabel version="0.61.0" />
 
 Records are created and updated when a tool is explicitly installed with
 [`proto install`](./commands/install), and removed when uninstalled with
@@ -22039,6 +22162,55 @@ locked.
 When a record is migrated to a new version (through the commands below), its checksum is removed,
 and will be re-populated on the next install.
 
+For tools that distribute [GPG detached signatures](./wasm-plugin#verifying-with-gpg) instead of a
+hash, the record stores the fingerprint of the signer that was trusted, and a SHA-256 hash of the
+verified artifact, in the form `gpg:<fingerprint>:sha256:<hash>`. <VersionLabel version="0.61.0" inline />
+
+### Orphaned records<VersionLabel version="0.61.0" />
+
+[`proto install`](./commands/install) and [`proto uninstall`](./commands/uninstall) will prune
+orphaned records from the lockfiles they touch. A record is orphaned when its tool _has_ a version
+defined in the configuration file that owns the lockfile, but the record's requirement no longer
+matches any of that configuration's requirements. This typically happens when a `.prototools` file
+is edited by hand, instead of through proto.
+
+```toml title=".prototools"
+# Was "22", is now "24", so the "22" record is orphaned
+node = "24"
+```
+
+- Records for tools that the owning configuration does _not_ define are ad-hoc installs, and are
+  never pruned.
+- Only lockfiles that have been loaded are pruned, so lockfiles for
+  [inactive environments](#environment-scopes) are left untouched.
+- Pruning runs _after_ the install or uninstall, against configuration files as they stand at that
+  point. Installing an explicit version of a tool that is configured with a different version will
+  not leave a record behind, unless the version is pinned with `--pin`.
+
+> This is the same staleness that [`proto diagnose`](./commands/diagnose) reports, so records it
+> warns about are now removed by the next install or uninstall.
+
+## Immutable lockfiles<VersionLabel version="0.61.0" />
+
+For reproducible installs — think CI, containers, or any environment that should never drift —
+[`proto install`](./commands/install) supports an `--immutable-lockfile` flag (and a
+`PROTO_IMMUTABLE_LOCKFILE` environment variable), which treats the lockfile as read-only.
+
+```shell
+$ proto install --immutable-lockfile
+```
+
+- Versions are resolved _only_ from existing lockfile records, never from the remote registry.
+- The lockfile is never created, updated, or [pruned](#orphaned-records).
+- If a tool being installed has no matching record, the install fails with an error, instead of
+  resolving a fresh version.
+
+This turns "the lockfile is out of date" into a build failure instead of a silent update. To
+populate the missing records, run the install again without the flag, then commit the changes.
+
+> This flag cannot be combined with `--update-lockfile` or `--pin`, as both would modify the
+> lockfile.
+
 ## Lockfile-aware commands<VersionLabel version="0.60.0" />
 
 Beyond installation, lockfiles are integrated across the command line.
@@ -22047,9 +22219,17 @@ Beyond installation, lockfiles are integrated across the command line.
   "Locked" column, showing the version locked for each configured requirement, and include a
   `locked_version` field in their `--json` output.
 - [`proto outdated --update`](./commands/outdated) updates matching records when writing new
-  versions to their respective configuration files.
+  versions to their respective configuration files, including versions defined in
+  [environment scoped configurations](#environment-scopes). <VersionLabel version="0.61.0" inline />
 - [`proto pin`](./commands/pin) (and [`proto install --pin`](./commands/install)) migrates matching records to the newly
-  pinned requirement, while [`proto unpin`](./commands/unpin) removes them entirely.
+  pinned requirement, while [`proto unpin`](./commands/unpin) removes them entirely. Both always
+  keep the lockfile of the modified configuration in sync, even when another configuration (like an
+  environment configuration) takes precedence for that tool.
+  <VersionLabel version="0.61.0" inline />
+- [`proto uninstall`](./commands/uninstall) removes records for the uninstalled version from _all_
+  applicable lockfiles, as the version may be pinned in multiple configurations. When uninstalling
+  all versions, the tool is removed from all applicable lockfiles.
+  <VersionLabel version="0.61.0" inline />
 - [`proto versions`](./commands/versions) labels versions that have a record with "locked", and
   includes a `locked` field in its `--json` output.
 - [`proto debug config`](./commands/debug/config) renders `.protolock` files alongside their
@@ -23002,7 +23182,8 @@ The following fields are available:
   <VersionLabel version="0.47.0" />
 - `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
-- `checksum_public_key` - Public key used for verifying checksums. Only used for `.minisig` files.
+- `checksum_public_key` - Public key used for verifying checksums. Only used for `.minisig`
+  (minisign), and `.sig` / `.asc` (GPG) files. <VersionLabel version="0.61.0" />
 - `post_script` - A script file, relative from the install directory, to execute after the prebuilt
   has been installed.
 - `post_script_args` - A list of arguments to pass to the post-install script when executing it.
@@ -23051,6 +23232,29 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
     }))
 }
 ```
+
+##### Verifying with GPG<VersionLabel version="0.61.0" />
+
+Alongside hashes (`.sha256`, `.sha512`) and minisign signatures (`.minisig`), proto can verify a
+download against a GPG detached signature. Point `checksum_url` at a `.sig` or `.asc` file, and
+provide the project's armored public keyring through `checksum_public_key`.
+
+```rust
+Ok(Json(DownloadPrebuiltOutput {
+    download_url: format!("https://example.com/v{version}/{filename}"),
+    checksum_url: Some(format!("https://example.com/v{version}/{filename}.asc")),
+    checksum_public_key: Some(PUBLIC_KEY.into()),
+    ..DownloadPrebuiltOutput::default()
+}))
+```
+
+- The keyring may contain multiple certificates within a single armored block, or multiple
+  concatenated armored blocks.
+- The signature file may contain multiple binary signatures, multiple signatures within one armored
+  block, or multiple concatenated armored blocks. Verification succeeds when _any_ signature
+  matches a trusted key.
+- Only the verified signer fingerprint and a SHA-256 hash of the artifact are written to the
+  [lockfile](./lockfile#checksum-verification), not the armored public keyring.
 
 ##### Unpacking an archive
 
@@ -37860,3 +38064,217 @@ of changes, but here's a few more worth calling out:
   `convert_to_virtual_path` / `convert_to_real_path` helpers. Toolchains can also now declare
   requirements for the setup environment and setup toolchain actions.
 - Updated proto to [v0.60.2](https://github.com/moonrepo/proto/releases/tag/v0.60.2).
+
+---
+
+## proto v0.61 - Swift support, GPG verification, and immutable lockfiles
+
+A new language joins the toolchain, downloads can now be verified with GPG signatures, and
+lockfiles get the CI story they've been missing.
+
+<!--truncate-->
+
+## Swift support
+
+proto now ships with unstable [Swift](https://www.swift.org/) support, our first new language since
+Java landed in [v0.59](./proto-v0.59). Swift has grown well beyond Apple platforms, and installing a
+specific toolchain version has historically meant reaching for a platform specific installer, so it
+felt like a natural fit.
+
+```shell
+$ proto install swift
+```
+
+This provides the `swift`, `swiftc`, and `sourcekit-lsp` binaries, and detects versions from
+[`.swift-version`](https://github.com/kylef/swiftenv) and
+[`Package.swift`](https://www.swift.org/documentation/package-manager/) files.
+
+> Swift support is still unstable, so please
+> [report any issues](https://github.com/moonrepo/plugins/issues) you run into!
+
+## GPG signature verification
+
+Until now, proto could verify a downloaded artifact against a hash (`.sha256`, `.sha512`) or a
+[minisign](https://jedisct1.github.io/minisign/) signature (`.minisig`). That covers a good chunk of
+the ecosystem, but plenty of projects sign their releases with GPG instead, and those downloads were
+simply left unverified.
+
+In this release, a plugin can point `checksum_url` at a `.sig` or `.asc` detached signature, and
+provide the project's armored public keyring through `checksum_public_key`. proto handles the rest.
+
+```rust
+Ok(Json(DownloadPrebuiltOutput {
+    download_url: format!("https://example.com/v{version}/{filename}"),
+    checksum_url: Some(format!("https://example.com/v{version}/{filename}.asc")),
+    checksum_public_key: Some(PUBLIC_KEY.into()),
+    ..DownloadPrebuiltOutput::default()
+}))
+```
+
+Real-world signing setups are messier than the specification suggests, so we've been deliberately
+permissive about what we accept. A keyring may contain multiple certificates in a single armored
+block, or multiple concatenated blocks. A signature file may contain multiple binary signatures,
+multiple signatures in one armored block, or multiple concatenated blocks — verification succeeds
+when _any_ signature matches a trusted key. This is how projects that rotate signing keys, or sign
+with several, actually publish in practice.
+
+Verification streams the artifact from disk in a blocking worker, so signing a multi-hundred-megabyte
+toolchain archive doesn't balloon memory. And rather than storing the entire armored keyring in your
+lockfile, we record only what's needed to prove the check happened: the fingerprint of the signer
+that was trusted, and a SHA-256 hash of the verified artifact.
+
+```toml title=".protolock"
+checksum = "gpg:0123456789ABCDEF0123456789ABCDEF01234567:sha256:9f86d0..."
+```
+
+## Immutable lockfiles
+
+[Lockfiles](/docs/proto/lockfile) have been steadily maturing since v0.51, but they've been missing
+the one guarantee that makes a lockfile genuinely useful in CI: a way to fail when the lockfile is
+out of date, instead of quietly resolving something new.
+
+That's what `--immutable-lockfile` (and the `PROTO_IMMUTABLE_LOCKFILE` environment variable) does.
+With the flag enabled, the lockfile is treated as read-only.
+
+```shell
+$ proto install --immutable-lockfile
+```
+
+- Versions are resolved _only_ from existing lockfile records, never from the remote registry.
+- The lockfile is never created, updated, or pruned.
+- If a tool being installed has no matching record, the install fails with a clear error.
+
+If you've used `npm ci`, `yarn --immutable`, or `uv sync --locked`, this should feel familiar. Drop
+it into your CI pipeline, and a teammate who bumped a version without committing the lockfile gets a
+red build instead of a machine that silently disagrees with everyone else's.
+
+## Environment scoped lockfiles
+
+proto has supported [environment specific configuration](/docs/proto/config#environment-mode) —
+`.prototools.production`, `.prototools.development`, and so on — since v0.29. Lockfiles never caught
+up though: every configuration file in a directory shared a single `.protolock`, so whichever
+environment ran last would stomp the records of the others.
+
+In this release, every configuration file owns its own lockfile. When `PROTO_ENV` is set, a
+`.prototools.<env>` file is locked to a sibling `.protolock.<env>` file.
+
+```text title="PROTO_ENV=production"
+.prototools            -> .protolock
+.prototools.production -> .protolock.production
+```
+
+Each lockfile only tracks tools with versions defined in its _own_ configuration file. A version
+overridden by an environment configuration is tracked in `.protolock.<env>`, while versions inherited
+from the base `.prototools` stay in `.protolock`. Environment configurations inherit the
+`unstable-lockfile` setting from the `.prototools` file beside them (but can override it), and
+lockfiles for environments that aren't currently active are never loaded or modified.
+
+The rest of the command line caught up too. [`proto pin`](/docs/proto/commands/pin) and
+[`proto unpin`](/docs/proto/commands/unpin) now always keep the lockfile of the configuration file
+they modified in sync, even when another configuration takes precedence for that tool.
+[`proto uninstall`](/docs/proto/commands/uninstall) removes records from _all_ applicable lockfiles,
+since the same version may be pinned in several places. And
+[`proto outdated --update`](/docs/proto/commands/outdated) now updates versions in environment
+configurations, which it previously skipped with a warning.
+
+## Self-healing lockfiles
+
+When you edit a `.prototools` file by hand — bumping `node = "22"` to `node = "24"` — the record for
+the old requirement doesn't go anywhere. [`proto diagnose`](/docs/proto/commands/diagnose) has warned
+about these stale records since v0.60, but warning is all it did. You were left to clean them up
+yourself.
+
+[`proto install`](/docs/proto/commands/install) and
+[`proto uninstall`](/docs/proto/commands/uninstall) now prune these
+[orphaned records](/docs/proto/lockfile#orphaned-records) automatically. A record is orphaned when
+its tool _is_ still defined in the configuration file that owns the lockfile, but the record's
+requirement no longer matches any of that configuration's requirements.
+
+We were careful about the boundaries here, since deleting the wrong record is worse than leaving a
+stale one behind. Records for tools the owning configuration doesn't define are ad-hoc installs, and
+are never pruned. Only lockfiles that were actually loaded are touched, so inactive environments are
+left alone. And pruning is skipped entirely under `--immutable-lockfile`, because pruning is itself a
+modification.
+
+## New WASM APIs
+
+### Downloading files
+
+Plugins have long been able to fetch a URL with the `send_request` host function, but the entire
+response body comes back through WASM memory. That's fine for a JSON manifest and wasteful for a
+300MB toolchain archive.
+
+The new `download_file` host function writes a URL straight to a file on the host, streaming the
+body without it ever passing through the guest.
+
+```rust
+let output = download(DownloadFileInput::new(
+    "https://some.com/url/to/file.tar.xz",
+    temp_dir.join("file.tar.xz"),
+))?;
+
+output.file; // Virtual path written to
+output.size; // Size in bytes
+```
+
+The input also accepts custom `headers`, and if you don't need them, the `download_from_url`
+function takes the URL and destination directly. Requests go through proto's own HTTP client, so
+they respect your [`[settings.http]`](/docs/proto/config#settingshttp) and `.netrc` configuration.
+
+### POST requests
+
+`send_request` now accepts a `method` field, supporting `GET` (the default) and `POST`. There's a
+`SendRequestInput::post()` constructor for the common case.
+
+```rust
+let response = send_request!(input, SendRequestInput::post("https://some.com/url/to/post"));
+```
+
+This unblocks plugins for tools whose version APIs are query based rather than a plain GET endpoint.
+
+### Lockfile metadata
+
+Plugins can now attach arbitrary key-value information to the lockfile record of an install through
+the new `ToolLockOptions.metadata` field. If your plugin resolves something during installation that
+matters for reproducibility — a build variant, a distribution channel, an upstream identifier — it
+can now travel with the record instead of being recomputed.
+
+## Notable fixes
+
+Two fixes in this release are worth calling out directly, as both could silently corrupt state.
+
+**Concurrent config writes no longer erase each other.** proto read `.prototools` under a shared
+lock, released it, then acquired an exclusive lock to write — so two processes could read the same
+content and the last writer would wipe out the entries added by the first. Running
+`proto install <tool> --pin` in parallel (or `pin`, `unpin`, `alias`, `unalias`, `uninstall`,
+`plugin add`, `plugin remove`) could silently drop tools from your configuration, only surfacing much
+later as `proto run` failing to detect a version for a tool that had just installed successfully.
+Reads, modifications, and writes now happen within a single exclusive lock.
+
+**The run fallback guard no longer leaks into child processes.** An internal environment variable
+used to detect fallback loops was inherited by child processes, so an npm script that spawned `node`
+could abort with a false `fallback_loop` error. The guard is now scoped to the process that performed
+the fallback, and proto additionally skips any directory on `PATH` containing a shims `registry.json`,
+so a foreign proto store can never be selected as the global fallback.
+
+We also fixed `proto install <tool>` not respecting the
+[`detect-strategy`](/docs/proto/config#detect-strategy) setting. It scanned the working directory for
+the tool's own version file before consulting `.prototools`, unlike `proto run`, `proto status`, and a
+bare `proto install`, which all honoured the setting. Single-tool installs now detect versions
+identically to everything else, including traversing the configuration file chain and honouring
+`PROTO_<TOOL>_VERSION`.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.61.0) for a full list
+of changes.
+
+- Increased the plugin cache duration from 30 days to 180 days (6 months), because of GitHub's
+  unreliability. Re-downloading a plugin that hasn't changed is a common source of transient install
+  failures.
+- Fixed versions with a pre-release or build identifier beginning with a hyphen (like
+  `1.0.6--canary.9.0c3f3b7.0`) failing to parse, even though they're valid semver. These can appear in
+  `yarn.lock` files transitively through published packages.
+- Fixed an install that failed very early (before any progress output) hanging when not running in a
+  TTY.
+- Updated Rust to v1.98.0.

@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.2705d609.js" defer="defer"></script>
-<script src="/assets/js/main.700fdb4f.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.a99e9825.js" defer="defer"></script>
+<script src="/assets/js/main.81e792ab.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -34,6 +34,10 @@ configuration file in which the version has been configured.</p>
 showing the version locked for each configured specification. Additionally, the <code>--update</code> option
 will update matching records in the lockfile when writing versions to their respective
 configuration. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.60.0</span></p>
+<p>Versions defined in <a class="" href="/docs/proto/config#environment-mode">environment specific configurations</a>
+(<code>.prototools.&lt;env&gt;</code>) are also updated by <code>--update</code>, including the records in their
+<a class="" href="/docs/proto/lockfile#environment-scopes">sibling lockfiles</a>. Previously these versions were skipped with a
+warning. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.61.0</span></p>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="options">Options<a href="#options" class="hash-link" aria-label="Direct link to Options" title="Direct link to Options" translate="no">​</a></h3>
 <ul>
 <li class=""><code>--json</code> - Print the list in JSON format.</li>

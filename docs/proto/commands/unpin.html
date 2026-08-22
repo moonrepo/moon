@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.2705d609.js" defer="defer"></script>
-<script src="/assets/js/main.700fdb4f.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.a99e9825.js" defer="defer"></script>
+<script src="/assets/js/main.81e792ab.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -26,8 +26,9 @@
 <div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto unpin go</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto unpin </span><span class="token function" style="color:#ff94ff;font-weight:bold">node</span><span class="token plain"> --tool-native</span><br></div></code></pre></div></div>
 <p>By default this will update the local <a class="" href="/docs/proto/config"><code>./.prototools</code></a> file. Pass <code>--from</code> to customize
 the location.</p>
-<p>When a <a class="" href="/docs/proto/lockfile">lockfile</a> is in use, matching records will also be removed.</p>
-<span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.60.0</span>
+<p>When a <a class="" href="/docs/proto/lockfile">lockfile</a> is in use, matching records will also be removed. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.60.0</span></p>
+<p>As with <a class="" href="/docs/proto/commands/pin"><code>proto pin</code></a>, the lockfile of the configuration file being modified is always kept
+in sync, even when another configuration file takes precedence for that tool. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.61.0</span></p>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="arguments">Arguments<a href="#arguments" class="hash-link" aria-label="Direct link to Arguments" title="Direct link to Arguments" translate="no">​</a></h3>
 <ul>
 <li class=""><code>&lt;tool&gt;</code> - Type of tool.</li>

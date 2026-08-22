@@ -14,8 +14,8 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="moonrepo" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.6007aebf.css">
-<script src="/assets/js/runtime~main.2705d609.js" defer="defer"></script>
-<script src="/assets/js/main.700fdb4f.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.a99e9825.js" defer="defer"></script>
+<script src="/assets/js/main.81e792ab.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -29,6 +29,9 @@ be used when attempting to <a class="" href="/docs/proto/detection">detect a ver
 the location, or use the <code>--tool-native</code> option to use a location unique to the tool.</p>
 <p>When a <a class="" href="/docs/proto/lockfile">lockfile</a> is in use, matching records will be migrated to the
 newly pinned specification. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.60.0</span></p>
+<p>The lockfile of the configuration
+file being modified is always kept in sync, even when another configuration file (like an
+<a class="" href="/docs/proto/config#environment-mode">environment configuration</a>) takes precedence for that tool. <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-bold uppercase bg-pink-100 text-pink-900 ml-2">v0.61.0</span></p>
 <h3 class="anchor anchorTargetStickyNavbar_tleR" id="arguments">Arguments<a href="#arguments" class="hash-link" aria-label="Direct link to Arguments" title="Direct link to Arguments" translate="no">​</a></h3>
 <ul>
 <li class=""><code>&lt;tool&gt;</code> - Type of tool.</li>

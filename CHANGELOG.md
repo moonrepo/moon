@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+#### 🧰 Toolchains
+
+- **Bun**
+  - Updated the embedded `bun` tool to support Windows arm64 (Bun v1.3.10+) and musl based Linux
+    (Bun v1.1.35+).
+- **Go**
+  - Test binary pseudo-packages are no longer inferred as relationships. `go list -deps -test`
+    reports a synthetic `pkg.test` package for each tested package; its `.test` suffix kept it from
+    matching the package under test, so it resolved to whatever ancestor project it nested under
+    (typically the module root) as a phantom development edge. It is now reduced to the real package
+    path and recognised as ownership.
+  - `go.sum` is now reported as a project-graph input alongside the module's `go.mod`. As the lock
+    file pinning resolved dependency versions, a change there (a dependency added, upgraded, or
+    dropped) can alter what `go list` resolves for relationship inference, so reporting it keeps a
+    locally cached graph from going stale. Only reported when present, since a module with no
+    dependencies has no `go.sum`.
+- **JavaScript**
+  - Updated Bun support for the v1.4 release:
+    - Dependencies are now installed with `bun ci` in CI when a `bun.lock` exists (v1.2.20+), as Bun
+      does not enable frozen lockfiles in CI automatically.
+    - Dependencies are now deduped with `bun dedupe` when the `dedupeOnLockfileChange` setting is
+      enabled (v1.4+).
+    - Focused installs now include workspace dependencies, by passing `...` dependency relations to
+      `--filter` (v1.4+).
+
 #### 🐞 Fixes
 
 - Fixed an issue where a task dependency using the task-tag scope (`~:#tag`) was silently dropped

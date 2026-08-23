@@ -13,10 +13,10 @@ impl ToolchainsConfigExt {
         let node_depman_version = "1.1.0";
 
         match id.as_str() {
-            "bun" => Some(locate("bun_toolchain", "1.0.3")),
+            "bun" => Some(locate("bun_toolchain", "1.0.4")),
             "deno" => Some(locate("deno_toolchain", "1.1.1")),
-            "go" => Some(locate("go_toolchain", "1.5.0")),
-            "javascript" => Some(locate("javascript_toolchain", "1.3.0")),
+            "go" => Some(locate("go_toolchain", "1.5.1")),
+            "javascript" => Some(locate("javascript_toolchain", "1.3.1")),
             "node" => Some(locate("node_toolchain", "1.0.4")),
             "npm" => Some(locate("node_depman_toolchain", node_depman_version)),
             "pnpm" => Some(locate("node_depman_toolchain", node_depman_version)),

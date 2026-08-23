@@ -1254,7 +1254,10 @@ impl<'proj> TasksBuilder<'proj> {
                     .get_project_id()
                     .is_ok_and(|id| id == self.project_id.as_str())
             {
+                // Tag scoped targets (~:#tag) have no task id, so exclude
+                // and rename filters can never match them
                 let Ok(task_id) = dep.target.get_task_id() else {
+                    next_deps.push(dep);
                     continue;
                 };
 

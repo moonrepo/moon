@@ -52,7 +52,7 @@ async fn tail_logs(session: &MoonSession, log_path: &Path) -> SessionResult {
 
 #[cfg(windows)]
 async fn tail_logs(_session: &MoonSession, log_path: &Path) -> SessionResult {
-    use moon_process::{CommandExt, find_command_on_path};
+    use moon_process::{CommandExt, get_default_shell};
 
     Command::create("Get-Content")
         .arg(log_path)

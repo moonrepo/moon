@@ -75,12 +75,12 @@ impl GlobalEnvBag {
 
         // These need to always be propagated to the parent process
         if key.to_str().is_some_and(|k| {
-            k.starts_with("PROTO")
+            k.starts_with("MOON")
+                || k.starts_with("PROTO")
                 || k.starts_with("STARBASE")
                 || k.starts_with("WARPGATE")
                 || k.contains("COLOR")
                 || k == "PATH"
-                || k == "MOON_VERSION"
         }) {
             unsafe {
                 env::set_var(key, value);

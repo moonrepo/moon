@@ -5,6 +5,7 @@ use clap::Args;
 use iocraft::prelude::{FlexDirection, View, element};
 use moon_common::path::{clean_components, locate_config_dir};
 use moon_config::{VcsProvider, WorkspaceConfig};
+use moon_console::ConsoleExt;
 use moon_console::ui::{Confirm, Container, Notice, StyledText, Variant};
 use moon_vcs::{Vcs, git::Git};
 use schematic::schema::{

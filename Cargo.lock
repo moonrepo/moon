@@ -5382,6 +5382,7 @@ dependencies = [
 name = "moon_console"
 version = "0.0.1"
 dependencies = [
+ "async-trait",
  "iocraft",
  "miette 7.6.0",
  "moon_action",

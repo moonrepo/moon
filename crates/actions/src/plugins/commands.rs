@@ -84,7 +84,7 @@ async fn internal_exec_plugin_command(
             .cache
             .is_some_and(|cache| cache == CacheStrategy::Memory),
     );
-    cmd.set_console(Arc::new(app_context.console.clone_inner()));
+    cmd.set_console(app_context.console.clone());
     cmd.set_error_on_nonzero(!command.allow_failure);
     cmd.set_print_command(app_context.workspace_config.pipeline.log_running_command);
     cmd.inherit_colors();

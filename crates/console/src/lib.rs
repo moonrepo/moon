@@ -1,31 +1,26 @@
 mod reporter;
 mod theme;
 
+use async_trait::async_trait;
 use iocraft::prelude::*;
-use std::ops::Deref;
-use std::ops::DerefMut;
 
 pub use reporter::*;
-pub use starbase_console::ConsoleError;
-pub use starbase_console::ConsoleStream;
-pub use starbase_console::ui;
+pub use starbase_console::{ConsoleError, ConsoleStream, ui};
 pub use theme::*;
 
-pub type MoonConsole = starbase_console::Console<MoonReporter>;
+pub type Console = starbase_console::Console<MoonReporter>;
 
-#[derive(Clone, Debug)]
-pub struct Console(MoonConsole);
+#[async_trait]
+pub trait ConsoleExt {
+    async fn render_prompt<T: Component>(
+        &self,
+        element: Element<'_, T>,
+    ) -> Result<(), ConsoleError>;
+}
 
-impl Console {
-    pub fn new(quiet: bool) -> Self {
-        Self(MoonConsole::new(quiet))
-    }
-
-    pub fn new_testing() -> Self {
-        Self(MoonConsole::new_testing())
-    }
-
-    pub async fn render_prompt<T: Component>(
+#[async_trait]
+impl ConsoleExt for Console {
+    async fn render_prompt<T: Component>(
         &self,
         element: Element<'_, T>,
     ) -> Result<(), ConsoleError> {
@@ -38,23 +33,5 @@ impl Console {
             },
         )
         .await
-    }
-
-    pub fn clone_inner(&self) -> MoonConsole {
-        self.0.clone()
-    }
-}
-
-impl Deref for Console {
-    type Target = MoonConsole;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl DerefMut for Console {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
     }
 }

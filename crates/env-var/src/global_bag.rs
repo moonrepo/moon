@@ -51,8 +51,11 @@ impl GlobalEnvBag {
         }
 
         // If it doesn't exist in our current bag, let's check the process,
-        // as it may have been inserted after the fact
-        if let Some(value) = env::var_os(key) {
+        // as it may have been inserted after the fact. However, if the
+        // variable was explicitly removed, do not resurrect it!
+        if !self.removed.contains_sync(key)
+            && let Some(value) = env::var_os(key)
+        {
             let as_value = op(&value);
 
             let _ = self.inherited.insert_sync(key.into(), value);
@@ -72,6 +75,7 @@ impl GlobalEnvBag {
         let value = value.as_ref();
 
         self.added.upsert_sync(key.into(), value.into());
+        self.removed.remove_sync(key);
 
         // These need to always be propagated to the parent process
         if key.to_str().is_some_and(|k| {
@@ -98,6 +102,12 @@ impl GlobalEnvBag {
         self.added.remove_sync(key);
 
         let _ = self.removed.insert_sync(key.into());
+
+        // Remove from the parent process as well, otherwise `get`
+        // may inherit it back through the process fallback
+        unsafe {
+            env::remove_var(key);
+        };
     }
 
     pub fn list(&self, mut op: impl FnMut(&OsString, &OsString)) {

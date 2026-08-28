@@ -4,7 +4,7 @@ use crate::changed_files::*;
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use miette::IntoDiagnostic;
 use moon_common::path::{RelativePath, RelativePathBuf};
-use moon_process::{Command, CommandArg, output_to_string, output_to_trimmed_string};
+use moon_process::{Arg, Command, output_to_string, output_to_trimmed_string};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use std::fmt;
@@ -106,7 +106,7 @@ impl GitTree {
     pub fn create_command<I, A>(&self, args: I) -> Command
     where
         I: IntoIterator<Item = A>,
-        A: Into<CommandArg>,
+        A: Into<Arg>,
     {
         let mut command = create_command(args);
         command.cwd(&self.work_dir);

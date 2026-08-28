@@ -5762,21 +5762,10 @@ dependencies = [
 name = "moon_process"
 version = "0.0.1"
 dependencies = [
- "bytes",
- "libc",
- "miette 7.6.0",
  "moon_common",
  "moon_console",
  "moon_env_var",
- "rustc-hash",
- "scc",
- "serde",
- "starbase_shell",
- "system_env",
- "thiserror 2.0.20",
- "tokio",
- "tracing",
- "windows-sys 0.61.2",
+ "starbase_process",
 ]
 
 [[package]]
@@ -8856,6 +8845,28 @@ dependencies = [
  "schematic",
  "serde",
  "thiserror 2.0.20",
+]
+
+[[package]]
+name = "starbase_process"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cbf0bae1826d76149951750e3cb5fc35debc00cb3bdb8ddeb4b3f53ec87fa8fa"
+dependencies = [
+ "bytes",
+ "libc",
+ "miette 7.6.0",
+ "rustc-hash",
+ "scc",
+ "serde",
+ "starbase_console",
+ "starbase_shell",
+ "starbase_styles",
+ "system_env",
+ "thiserror 2.0.20",
+ "tokio",
+ "tracing",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

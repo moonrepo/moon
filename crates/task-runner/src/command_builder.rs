@@ -43,7 +43,7 @@ impl<'task> CommandBuilder<'task> {
             task,
             working_dir,
             env_bag: GlobalEnvBag::instance(),
-            command: AugmentedCommand::new(app, GlobalEnvBag::instance(), "noop"),
+            command: AugmentedCommand::create(app, GlobalEnvBag::instance(), "noop"),
         }
     }
 

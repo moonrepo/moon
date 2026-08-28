@@ -39,6 +39,10 @@ impl Console {
         )
         .await
     }
+
+    pub fn clone_inner(&self) -> MoonConsole {
+        self.0.clone()
+    }
 }
 
 impl Deref for Console {

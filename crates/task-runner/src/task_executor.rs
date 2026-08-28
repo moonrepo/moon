@@ -7,6 +7,7 @@ use moon_console::TaskReportItem;
 use moon_process::{Command, Output, format_command_line};
 use moon_project::Project;
 use moon_task::Task;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::task::{self, JoinHandle};
 use tokio::time::{sleep, timeout};
@@ -48,7 +49,7 @@ impl<'task> TaskExecutor<'task> {
         node: &ActionNode,
         mut command: Command,
     ) -> Self {
-        command.set_console(app.console.clone());
+        command.set_console(Arc::new(app.console.clone_inner()));
 
         Self {
             attempts: OperationList::default(),

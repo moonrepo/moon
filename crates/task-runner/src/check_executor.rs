@@ -24,7 +24,7 @@ pub struct CheckExecutor {
 
 impl CheckExecutor {
     pub fn new(app: Arc<AppContext>, task: Arc<Task>, mut command: Command) -> Self {
-        command.set_console(app.console.clone());
+        command.set_console(Arc::new(app.console.clone_inner()));
 
         Self { task, command }
     }

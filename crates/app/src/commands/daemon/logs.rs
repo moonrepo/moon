@@ -54,7 +54,7 @@ async fn tail_logs(session: &MoonSession, log_path: &Path) -> SessionResult {
 async fn tail_logs(_session: &MoonSession, log_path: &Path) -> SessionResult {
     use moon_process::get_default_shell;
 
-    Command::with_debug("Get-Content")
+    Command::create("Get-Content")
         .arg(log_path)
         .arg("-Wait")
         // Must run in powershell

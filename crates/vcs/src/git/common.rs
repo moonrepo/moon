@@ -1,5 +1,5 @@
 use super::git_error::GitError;
-use moon_process::{Command, CommandArg};
+use moon_process::{Arg, Command, CommandExt};
 use regex::Regex;
 use std::sync::LazyLock;
 
@@ -15,9 +15,9 @@ pub static VERSION_CLEAN: LazyLock<Regex> =
 pub fn create_command<I, A>(args: I) -> Command
 where
     I: IntoIterator<Item = A>,
-    A: Into<CommandArg>,
+    A: Into<Arg>,
 {
-    let mut command = Command::new("git");
+    let mut command = Command::create("git");
     command.args(args);
     command.envs([
         ("GIT_OPTIONAL_LOCKS", "0"),

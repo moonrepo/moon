@@ -5,6 +5,7 @@ use clap::Args;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_config::{LayerType, StackType};
+use moon_console::ConsoleExt;
 use moon_console::ui::Confirm;
 use starbase_utils::yaml::{self, YamlMapping, YamlValue};
 use starbase_utils::{fs, glob};

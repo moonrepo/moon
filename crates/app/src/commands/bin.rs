@@ -17,7 +17,7 @@ pub async fn bin(session: MoonSession, args: BinArgs) -> SessionResult {
 
     let app_context = session.get_app_context().await?;
 
-    let mut command = AugmentedCommand::new(&app_context, GlobalEnvBag::instance(), "proto");
+    let mut command = AugmentedCommand::create(&app_context, GlobalEnvBag::instance(), "proto");
     command.arg("bin").arg(args.toolchain.as_str());
     command.inherit_from_plugins(None, None).await?;
     command.inherit_proto();

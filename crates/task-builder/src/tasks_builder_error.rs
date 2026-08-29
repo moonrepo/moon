@@ -2,6 +2,7 @@
 
 use miette::Diagnostic;
 use moon_common::{Style, Stylize};
+use moon_config::TaskDependencyType;
 use moon_task::Target;
 use thiserror::Error;
 
@@ -27,13 +28,51 @@ pub enum TasksBuilderError {
 
     #[diagnostic(code(task_builder::dependency::persistent_requirement))]
     #[error(
-        "Non-persistent task {} cannot depend on persistent task {}.\nA task is marked persistent with the {} setting.\n\nIf you're looking to avoid the cache, disable {} instead.",
+        "Non-persistent task {} cannot depend on persistent task {}.\nA task is marked persistent with the {} setting.\n\nIf you're looking to wait for the dependency to start running, mark the dependency with {} instead.\nIf you're looking to avoid the cache, disable {} instead.",
         .task.style(Style::Label),
         .dep.style(Style::Label),
         "options.persistent".style(Style::Property),
+        "type: 'wait'".style(Style::Property),
         "options.cache".style(Style::Property),
     )]
     PersistentDepRequirement { dep: Target, task: Target },
+
+    #[diagnostic(code(task_builder::dependency::persistent_cleanup_dep))]
+    #[error(
+        "Task {} cannot depend on persistent task {} as a {} dependency, as the dependency would never complete.\nA task is marked persistent with the {} setting.",
+        .task.style(Style::Label),
+        .dep.style(Style::Label),
+        "cleanup".style(Style::Symbol),
+        "options.persistent".style(Style::Property),
+    )]
+    PersistentCleanupDepRequirement { dep: Target, task: Target },
+
+    #[diagnostic(code(task_builder::dependency::persistent_cleanup_task))]
+    #[error(
+        "Persistent task {} cannot depend on task {} as a {} dependency, as a persistent task never completes, and the dependency would run at the wrong time.\nA task is marked persistent with the {} setting.",
+        .task.style(Style::Label),
+        .dep.style(Style::Label),
+        "cleanup".style(Style::Symbol),
+        "options.persistent".style(Style::Property),
+    )]
+    PersistentCleanupTaskRequirement { dep: Target, task: Target },
+
+    #[diagnostic(code(task_builder::dependency::conflicting_types))]
+    #[error(
+        "Task {} depends on task {} with conflicting types, {} and {}. A dependency can only use one type.\n\nIf these dependencies are inherited, use the {} option, or the {} exclude/rename filters, to adjust them.",
+        .task.style(Style::Label),
+        .dep.style(Style::Label),
+        .current_type.to_string().style(Style::Symbol),
+        .other_type.to_string().style(Style::Symbol),
+        "options.mergeDeps".style(Style::Property),
+        "workspace.inheritedTasks".style(Style::Property),
+    )]
+    ConflictingDepType {
+        dep: Target,
+        task: Target,
+        current_type: TaskDependencyType,
+        other_type: TaskDependencyType,
+    },
 
     #[diagnostic(
         code(task_builder::unknown_extends),

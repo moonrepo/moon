@@ -3,6 +3,7 @@ use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use iocraft::prelude::element;
 use moon_common::Id;
+use moon_console::ConsoleExt;
 use moon_console::ui::{Input, Notice, Select, SelectOption, StyledText, Variant};
 use moon_docker::*;
 use moon_pdk_api::DefineDockerMetadataInput;

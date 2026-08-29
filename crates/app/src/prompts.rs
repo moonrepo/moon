@@ -2,7 +2,7 @@ use crate::app_error::AppError;
 use iocraft::prelude::element;
 use miette::IntoDiagnostic;
 use moon_common::Id;
-use moon_console::{Console, ui::*};
+use moon_console::{Console, ConsoleExt, ui::*};
 use moon_pdk_api::{
     ConditionType, InitializePluginOutput, PromptType, SettingCondition, SettingPrompt,
 };

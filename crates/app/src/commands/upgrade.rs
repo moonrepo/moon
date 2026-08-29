@@ -10,7 +10,7 @@ use moon_config::PartialWorkspaceConfig;
 use moon_config_loader::{read_config_based_on_extension, write_config_based_on_extension};
 use moon_console::ui::{Container, Notice, StyledText, Variant};
 use moon_env_var::GlobalEnvBag;
-use moon_process::Command;
+use moon_process::{Command, CommandExt};
 use starbase_archive::Archiver;
 use starbase_utils::fs::FsError;
 use starbase_utils::{fs, net};
@@ -126,7 +126,7 @@ pub async fn upgrade(session: MoonSession, args: UpgradeArgs) -> SessionResult {
 
         // Special case to install with proto
         InstalledWith::Proto => {
-            Command::new("proto")
+            Command::create("proto")
                 .args(["install", "moon", "latest", "--pin", "local"])
                 .exec_stream_output()
                 .await?;

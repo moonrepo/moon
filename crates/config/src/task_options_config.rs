@@ -384,7 +384,7 @@ config_struct!(
         /// Whether to run the task in CI or not, when executing `moon ci`,
         /// `moon check`, or `moon run`.
         #[setting(rename = "runInCI")]
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "runInCI", skip_serializing_if = "Option::is_none")]
         pub run_in_ci: Option<TaskOptionRunInCI>,
 
         /// Runs the task automatically when executing `moon sync`.

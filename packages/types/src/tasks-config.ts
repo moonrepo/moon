@@ -6,7 +6,7 @@ import type { ExtendsFrom, Id } from './common';
 import type { LanguageType, LayerType, StackType } from './project-config';
 
 /** The task-to-task relationship of the dependency. */
-export type TaskDependencyType = 'cleanup' | 'required' | 'optional';
+export type TaskDependencyType = 'cleanup' | 'required' | 'wait' | 'optional';
 
 /** A file path input. */
 export interface FileInput {
@@ -110,6 +110,18 @@ export interface TaskDependencyConfig {
 	optional?: boolean | null;
 	/** The target of the depended on task. */
 	target: string;
+	/**
+	 * Controls when this dependency is ran in relation to the current task.
+	 * When `required`, runs before the task and must complete successfully.
+	 * When `cleanup`, runs after the task, even when the task fails.
+	 * When `wait`, runs before the task, but the task only waits for the
+	 * dependency to have started running, not to have completed.
+	 * @since 2.6.0
+	 *
+	 * @default 'required'
+	 * @type {'cleanup' | 'required' | 'wait' | 'optional'}
+	 */
+	type?: TaskDependencyType;
 }
 
 export type TaskDependency = string | TaskDependencyConfig;
@@ -684,6 +696,17 @@ export interface PartialTaskDependencyConfig {
 	optional?: boolean | null;
 	/** The target of the depended on task. */
 	target?: string | null;
+	/**
+	 * Controls when this dependency is ran in relation to the current task.
+	 * When `required`, runs before the task and must complete successfully.
+	 * When `cleanup`, runs after the task, even when the task fails.
+	 * When `wait`, runs before the task, but the task only waits for the
+	 * dependency to have started running, not to have completed.
+	 * @since 2.6.0
+	 *
+	 * @default 'required'
+	 */
+	type?: TaskDependencyType | null;
 }
 
 export type PartialTaskDependency = string | PartialTaskDependencyConfig;

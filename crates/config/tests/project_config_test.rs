@@ -747,3 +747,19 @@ workspace:
         load_project_config_in_format("toml");
     }
 }
+
+mod full_struct_serde {
+    use super::*;
+
+    #[test]
+    fn serializes_schema_field_with_dollar_key() {
+        let json = serde_json::to_value(ProjectConfig::default()).unwrap();
+
+        assert!(json.get("$schema").is_some());
+        assert!(json.get("schema").is_none());
+
+        let parsed: ProjectConfig = serde_json::from_value(json).unwrap();
+
+        assert_eq!(parsed, ProjectConfig::default());
+    }
+}

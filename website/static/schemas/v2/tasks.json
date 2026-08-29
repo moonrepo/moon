@@ -1228,9 +1228,26 @@
           "title": "target",
           "description": "The target of the depended on task.",
           "type": "string"
+        },
+        "type": {
+          "title": "type",
+          "description": "Controls when this dependency is ran in relation to the current task. When required, runs before the task and must complete successfully. When cleanup, runs after the task, even when the task fails. When wait, runs before the task, but the task only waits for the dependency to have started running, not to have completed. @since 2.6.0",
+          "default": "required",
+          "allOf": [
+            {
+              "$ref": "#/definitions/TaskDependencyType"
+            }
+          ],
+          "markdownDescription": "Controls when this dependency is ran in relation to the current task. When `required`, runs before the task and must complete successfully. When `cleanup`, runs after the task, even when the task fails. When `wait`, runs before the task, but the task only waits for the dependency to have started running, not to have completed. @since 2.6.0"
         }
       },
       "additionalProperties": false
+    },
+    "TaskDependencyType": {
+      "description": "The task-to-task relationship of the dependency.",
+      "type": "string",
+      "enum": ["cleanup", "required", "wait", "optional"],
+      "markdownDescription": "The task-to-task relationship of the dependency."
     },
     "TaskOperatingSystem": {
       "description": "The operating system in which to only run this task on.",

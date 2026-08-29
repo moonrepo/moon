@@ -53,6 +53,26 @@ pub(crate) fn validate_deps<D, C>(
                         schematic::PathSegment::Index(i),
                     ));
                 }
+
+                if matches!(cfg.type_of, Some(TaskDependencyType::Optional)) {
+                    return Err(ValidateError::with_segment(
+                        "optional is not a supported dependency type; use the optional field instead",
+                        schematic::PathSegment::Index(i),
+                    ));
+                }
+
+                if matches!(
+                    cfg.cache_strategy,
+                    Some(TaskDependencyCacheStrategy::Hash | TaskDependencyCacheStrategy::Outputs)
+                ) && matches!(
+                    cfg.type_of,
+                    Some(TaskDependencyType::Cleanup | TaskDependencyType::Wait)
+                ) {
+                    return Err(ValidateError::with_segment(
+                        "a cache strategy of hash or outputs is only supported for required dependencies; use ignored instead",
+                        schematic::PathSegment::Index(i),
+                    ));
+                }
             }
             PartialTaskDependency::Target(target) => {
                 scope = &target.project;
@@ -115,12 +135,31 @@ config_unit_enum!(
     /// The task-to-task relationship of the dependency.
     #[derive(ConfigEnum)]
     pub enum TaskDependencyType {
+        /// The dependency runs *after* the task has ran, and will always run,
+        /// even when the task fails or is skipped.
+        /// @since 2.6.0
         Cleanup,
+
+        /// The dependency runs *before* the task, and must complete successfully,
+        /// otherwise the task will not run.
         #[default]
         Required,
+
+        /// The dependency runs *before* the task, but the task only waits for the
+        /// dependency to have *started running*, and not to have completed.
+        /// @since 2.6.0
+        Wait,
+
+        /// Internal only. Marks the relationship between a task and a dependency
+        /// that was inherited from the top-level, and was marked as optional.
+        /// Not accepted by the `type` setting.
         Optional,
     }
 );
+
+fn is_required_dependency_type(type_of: &TaskDependencyType) -> bool {
+    matches!(type_of, TaskDependencyType::Required)
+}
 
 config_enum!(
     /// Controls how a task dependency invalidates the current task's cache entry.
@@ -172,6 +211,20 @@ config_struct!(
         /// @since 2.3.0
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub cache_strategy: Option<TaskDependencyCacheStrategy>,
+
+        /// Controls when this dependency is ran in relation to the current task.
+        /// When `required`, runs before the task and must complete successfully.
+        /// When `cleanup`, runs after the task, even when the task fails.
+        /// When `wait`, runs before the task, but the task only waits for the
+        /// dependency to have started running, not to have completed.
+        /// @since 2.6.0
+        #[setting(rename = "type")]
+        #[serde(
+            default,
+            rename = "type",
+            skip_serializing_if = "is_required_dependency_type"
+        )]
+        pub type_of: TaskDependencyType,
     }
 );
 
@@ -311,7 +364,7 @@ config_struct!(
         /// The type of task, primarily used for categorical reasons. When not provided,
         /// will be automatically determined based on configured outputs.
         #[setting(rename = "type")]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, rename = "type", skip_serializing_if = "Option::is_none")]
         pub type_of: Option<TaskType>,
     }
 );

@@ -270,6 +270,7 @@ config_struct!(
     #[derive(Config)]
     pub struct TemplateConfig {
         #[setting(rename = "$schema")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// A description on what the template scaffolds.

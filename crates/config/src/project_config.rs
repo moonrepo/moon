@@ -104,6 +104,7 @@ config_struct!(
     #[derive(Config)]
     pub struct ProjectConfig {
         #[setting(rename = "$schema")]
+        #[serde(rename = "$schema")]
         pub schema: String,
 
         /// Other projects that this project depends on.

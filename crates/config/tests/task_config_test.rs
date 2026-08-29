@@ -6,7 +6,8 @@ use moon_config::{
     FileGroupInput, FileGroupInputFormat, FilePath, Input, MergeStrategy, OneOrMany, Output,
     ProjectInput, TaskArgs, TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint,
     TaskCheckFingerprintConfig, TaskCheckRequirementConfig, TaskConfig, TaskDependency,
-    TaskDependencyCacheStrategy, TaskDependencyConfig, TaskOptionCache, TaskOutputStyle, TaskType,
+    TaskDependencyCacheStrategy, TaskDependencyConfig, TaskDependencyType, TaskOptionCache,
+    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskType,
 };
 use moon_target::Target;
 use schematic::{ConfigLoader as BaseLoader, RegexSetting};
@@ -194,6 +195,7 @@ deps:
                         target: Target::parse("task").unwrap(),
                         optional: None,
                         cache_strategy: None,
+                        type_of: TaskDependencyType::Required,
                     }),
                     TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
@@ -201,6 +203,7 @@ deps:
                         target: Target::parse("project:task").unwrap(),
                         optional: None,
                         cache_strategy: None,
+                        type_of: TaskDependencyType::Required,
                     }),
                     TaskDependency::Object(TaskDependencyConfig {
                         args: vec![],
@@ -208,6 +211,7 @@ deps:
                         target: Target::parse("^:task").unwrap(),
                         optional: None,
                         cache_strategy: None,
+                        type_of: TaskDependencyType::Required,
                     }),
                     TaskDependency::Object(TaskDependencyConfig {
                         args: vec!["a".into(), "b".into(), "c".into()],
@@ -218,6 +222,7 @@ deps:
                         target: Target::parse("~:task").unwrap(),
                         optional: None,
                         cache_strategy: None,
+                        type_of: TaskDependencyType::Required,
                     }),
                 ])
             );
@@ -311,6 +316,223 @@ deps:
                 ),
                 None
             );
+        }
+
+        fn parse_first_dep(yaml: &str) -> TaskDependency {
+            let config = test_parse_config(yaml, load_config_from_code);
+
+            config.deps.unwrap().remove(0)
+        }
+
+        fn parse_first_dep_type(yaml: &str) -> TaskDependencyType {
+            let TaskDependency::Object(dep_config) = parse_first_dep(yaml) else {
+                panic!("Expected TaskDependency::Object");
+            };
+
+            dep_config.type_of
+        }
+
+        #[test]
+        fn supports_type_required() {
+            assert_eq!(
+                parse_first_dep_type(
+                    r"
+deps:
+  - target: project:task
+    type: required
+"
+                ),
+                TaskDependencyType::Required
+            );
+        }
+
+        #[test]
+        fn supports_type_cleanup() {
+            assert_eq!(
+                parse_first_dep_type(
+                    r"
+deps:
+  - target: project:task
+    type: cleanup
+"
+                ),
+                TaskDependencyType::Cleanup
+            );
+        }
+
+        #[test]
+        fn supports_type_wait() {
+            assert_eq!(
+                parse_first_dep_type(
+                    r"
+deps:
+  - target: project:task
+    type: wait
+"
+                ),
+                TaskDependencyType::Wait
+            );
+        }
+
+        #[test]
+        fn omitted_type_defaults_to_required() {
+            assert_eq!(
+                parse_first_dep_type(
+                    r"
+deps:
+  - target: project:task
+"
+                ),
+                TaskDependencyType::Required
+            );
+        }
+
+        #[test]
+        fn string_dep_defaults_to_required() {
+            assert_eq!(
+                parse_first_dep(
+                    r"
+deps:
+  - project:task
+"
+                )
+                .into_config()
+                .type_of,
+                TaskDependencyType::Required
+            );
+        }
+
+        // Dep de-duplication keys off the full struct `PartialEq`, so an
+        // explicit `required` type must be identical to an omitted one.
+        #[test]
+        fn implicit_and_explicit_required_are_equal() {
+            assert_eq!(
+                parse_first_dep(
+                    r"
+deps:
+  - target: a
+"
+                ),
+                parse_first_dep(
+                    r"
+deps:
+  - target: a
+    type: required
+"
+                )
+            );
+        }
+
+        #[test]
+        fn serializes_default_type_by_omitting_it() {
+            let dep = parse_first_dep(
+                r"
+deps:
+  - target: project:task
+",
+            );
+
+            assert_eq!(
+                serde_json::to_string(&dep).unwrap(),
+                r#"{"args":[],"env":{},"target":"project:task"}"#
+            );
+        }
+
+        #[test]
+        fn serializes_non_default_type() {
+            let dep = parse_first_dep(
+                r"
+deps:
+  - target: project:task
+    type: cleanup
+",
+            );
+
+            assert_eq!(
+                serde_json::to_string(&dep).unwrap(),
+                r#"{"args":[],"env":{},"target":"project:task","type":"cleanup"}"#
+            );
+        }
+
+        // The `TaskDependency` wrapper is untagged, so an invalid enum value
+        // surfaces as a combined "any variant" failure.
+        #[test]
+        #[should_panic(expected = "failed to parse as any variant of PartialTaskDependency")]
+        fn errors_on_invalid_type() {
+            test_parse_config(
+                r"
+deps:
+  - target: project:task
+    type: pre
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "optional is not a supported dependency type; use the optional field instead"
+        )]
+        fn errors_on_optional_type() {
+            test_parse_config(
+                r"
+deps:
+  - target: project:task
+    type: optional
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "a cache strategy of hash or outputs is only supported for required dependencies; use ignored instead"
+        )]
+        fn errors_on_hash_cache_strategy_with_cleanup_type() {
+            test_parse_config(
+                r"
+deps:
+  - target: project:task
+    cacheStrategy: hash
+    type: cleanup
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "a cache strategy of hash or outputs is only supported for required dependencies; use ignored instead"
+        )]
+        fn errors_on_outputs_cache_strategy_with_wait_type() {
+            test_parse_config(
+                r"
+deps:
+  - target: project:task
+    cacheStrategy: outputs
+    type: wait
+",
+                load_config_from_code,
+            );
+        }
+
+        #[test]
+        fn supports_ignored_cache_strategy_with_any_type() {
+            for type_of in ["cleanup", "required", "wait"] {
+                let config = test_parse_config(
+                    &format!(
+                        r"
+deps:
+  - target: project:task
+    cacheStrategy: ignored
+    type: {type_of}
+"
+                    ),
+                    load_config_from_code,
+                );
+
+                assert_eq!(config.deps.unwrap().len(), 1);
+            }
         }
     }
 
@@ -1529,5 +1751,33 @@ options:
     #[test]
     fn supports_toml() {
         load_task_config_in_format("toml");
+    }
+}
+
+mod full_struct_serde {
+    use super::*;
+
+    #[test]
+    fn serializes_renamed_fields_with_config_keys() {
+        let config = TaskConfig {
+            type_of: Some(TaskType::Build),
+            options: TaskOptionsConfig {
+                run_in_ci: Some(TaskOptionRunInCI::Always),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let json = serde_json::to_value(&config).unwrap();
+
+        assert_eq!(json["type"], "build");
+        assert!(json.get("typeOf").is_none());
+        assert!(json["options"].get("runInCI").is_some());
+        assert!(json["options"].get("runInCi").is_none());
+
+        // Round-trips without losing renamed fields (workspace graph cache)
+        let parsed: TaskConfig = serde_json::from_value(json).unwrap();
+
+        assert_eq!(parsed, config);
     }
 }

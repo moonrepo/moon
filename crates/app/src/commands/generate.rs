@@ -12,7 +12,7 @@ use iocraft::prelude::{View, Weight, element};
 use moon_codegen::{CodegenError, FileState, Template, TemplateContext};
 use moon_common::*;
 use moon_config::{TemplateVariable, TemplateVariableEnumDefault};
-use moon_console::{Console, ui::*};
+use moon_console::{Console, ConsoleExt, ui::*};
 use rustc_hash::FxHashMap;
 use starbase_utils::json::{self, JsonValue, serde_json};
 use std::path::PathBuf;

@@ -6,7 +6,7 @@ use moon_common::path::{PathExt, RelativePathBuf, locate_config_dir};
 use moon_config::{GeneratorConfig, PartialTemplateConfig, TemplateLocator};
 use moon_config_loader::ConfigLoader;
 use moon_env::MoonEnvironment;
-use moon_process::{Command, Output};
+use moon_process::{Command, CommandExt, Output};
 use moon_time::now_millis;
 use rustc_hash::FxHashMap;
 use starbase_archive::Archiver;
@@ -323,7 +323,7 @@ async fn clone_and_checkout_git_repository(
     );
 
     async fn run_git(args: &[&str], cwd: &Path) -> miette::Result<Output> {
-        let mut cmd = Command::new("git");
+        let mut cmd = Command::create("git");
 
         for arg in args {
             cmd.arg(*arg);

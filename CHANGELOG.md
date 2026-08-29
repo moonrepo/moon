@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where environment variables removed through moon's internal environment bag (for
+  example `NO_COLOR` when colors are forced) were not removed from the current process, and could be
+  inherited back into the bag on a subsequent read.
+
 ## 2.5.3
 
 #### 🧰 Toolchains

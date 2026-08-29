@@ -8,7 +8,7 @@ use moon_affected::Affected;
 use moon_common::is_ci;
 use moon_config::*;
 use moon_env_var::GlobalEnvBag;
-use moon_process::{Command, CommandExecutable, Env};
+use moon_process::{Command, Env, Executable};
 use moon_task::{Target, TargetLocator, TaskOptionAffectedFiles};
 use std::env;
 use std::ffi::OsString;
@@ -1096,7 +1096,7 @@ mod command_builder {
             });
             let command = container.create_check_command(&check).await;
 
-            assert!(matches!(command.exe, CommandExecutable::Script(_)));
+            assert!(matches!(command.exe, Executable::Script(_)));
             assert_eq!(command.exe.as_os_str(), "which cargo");
         }
 
@@ -1108,7 +1108,7 @@ mod command_builder {
             });
             let command = container.create_check_command(&check).await;
 
-            assert!(matches!(command.exe, CommandExecutable::Script(_)));
+            assert!(matches!(command.exe, Executable::Script(_)));
             assert_eq!(command.exe.as_os_str(), "test -f dist/index.js");
         }
 
@@ -1121,7 +1121,7 @@ mod command_builder {
             });
             let command = container.create_check_command(&check).await;
 
-            assert!(matches!(command.exe, CommandExecutable::Script(_)));
+            assert!(matches!(command.exe, Executable::Script(_)));
             assert_eq!(command.exe.as_os_str(), "rustc --version");
         }
 

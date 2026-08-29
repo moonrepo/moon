@@ -44,6 +44,11 @@
   explicitly requested on the command line) when running in CI, or when the task was hydrated from
   the cache. Primary targets now always display their output, as documented, unless the
   `explicitTaskOutputStyle` experiment is enabled.
+- Fixed an issue where JSON output containing project configuration (`moon project --json`,
+  `moon query projects`, MCP responses, and webhook payloads) serialized renamed settings under the
+  wrong keys: `typeOf` instead of `type` (tasks), `runInCi` instead of `runInCI` (task options), and
+  `schema` instead of `$schema`. The output now matches the documented JSON schemas and
+  `@moonrepo/types`.
 - Fixed an issue where environment variables removed through moon's internal environment bag (for
   example `NO_COLOR` when colors are forced) were not removed from the current process, and could be
   inherited back into the bag on a subsequent read.

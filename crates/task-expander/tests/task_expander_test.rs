@@ -377,6 +377,7 @@ mod task_expander {
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                     cache_strategy: None,
+                    ..Default::default()
                 }]
             );
         }
@@ -407,6 +408,7 @@ mod task_expander {
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                     cache_strategy: None,
+                    ..Default::default()
                 }]
             );
         }
@@ -424,6 +426,7 @@ mod task_expander {
                 target: Target::parse("test").unwrap(),
                 optional: None,
                 cache_strategy: None,
+                ..Default::default()
             });
 
             let context = create_context(sandbox.path());
@@ -439,6 +442,7 @@ mod task_expander {
                     target: Target::parse("~:test").unwrap(),
                     optional: None,
                     cache_strategy: None,
+                    ..Default::default()
                 }]
             );
         }

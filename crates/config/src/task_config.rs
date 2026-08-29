@@ -153,12 +153,22 @@ config_unit_enum!(
         /// Internal only. Marks the relationship between a task and a dependency
         /// that was inherited from the top-level, and was marked as optional.
         /// Not accepted by the `type` setting.
+        #[doc(hidden)]
         Optional,
     }
 );
 
-fn is_required_dependency_type(type_of: &TaskDependencyType) -> bool {
-    matches!(type_of, TaskDependencyType::Required)
+impl TaskDependencyType {
+    pub fn is_required(&self) -> bool {
+        matches!(self, Self::Required)
+    }
+
+    // The `optional` type is an internal graph edge marker that cannot be
+    // configured, but may be constructed programmatically, so treat it the
+    // same as `required` for all constraint checks.
+    pub fn is_required_type(&self) -> bool {
+        matches!(self, Self::Required | Self::Optional)
+    }
 }
 
 config_enum!(
@@ -219,11 +229,7 @@ config_struct!(
         /// dependency to have started running, not to have completed.
         /// @since 2.6.0
         #[setting(rename = "type")]
-        #[serde(
-            default,
-            rename = "type",
-            skip_serializing_if = "is_required_dependency_type"
-        )]
+        #[serde(default, rename = "type")]
         pub type_of: TaskDependencyType,
     }
 );

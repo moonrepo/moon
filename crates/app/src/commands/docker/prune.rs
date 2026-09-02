@@ -202,6 +202,7 @@ impl PruneWorkflow {
                             &ExecCommandOptions {
                                 project: in_project,
                                 prefix: "prune-docker".into(),
+                                toolchain_id: Some(toolchain.id.clone()),
                                 working_dir: Some(workspace.output.root),
                                 on_exec: None,
                             },

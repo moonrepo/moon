@@ -1,5 +1,5 @@
 use extism_pdk::*;
-use moon_pdk::{get_plugin_id, VirtualPathExt};
+use moon_pdk::{VirtualPathExt, get_plugin_id};
 use moon_pdk_api::*;
 use std::fs;
 

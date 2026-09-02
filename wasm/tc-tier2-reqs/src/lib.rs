@@ -1,4 +1,5 @@
 use extism_pdk::*;
+use moon_pdk::plugin_err;
 use moon_pdk_api::*;
 
 pub use tc_tier2::*;
@@ -20,4 +21,22 @@ pub fn define_requirements(
             .and_then(|value| value.as_bool())
             .unwrap_or_default(),
     }))
+}
+
+#[plugin_fn]
+pub fn extend_command(
+    Json(input): Json<ExtendCommandInput>,
+) -> FnResult<Json<ExtendCommandOutput>> {
+    if input
+        .toolchain_config
+        .get("testExtendCommandFailure")
+        .and_then(|value| value.as_bool())
+        .unwrap_or_default()
+    {
+        return Err(plugin_err!(
+            "Unrelated toolchain extended a plugin-generated command (test)"
+        ));
+    }
+
+    Ok(Json(ExtendCommandOutput::default()))
 }

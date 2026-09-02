@@ -131,6 +131,7 @@ pub async fn setup_environment(
             ExecCommandOptions {
                 project,
                 prefix: action.get_prefix().into(),
+                toolchain_id: None,
                 working_dir: Some(node.root.to_logical_path(&app_context.workspace_root)),
                 on_exec: Some(Arc::new(move |cmd, attempts| {
                     handle_on_exec(&app_context.console, cmd, attempts)

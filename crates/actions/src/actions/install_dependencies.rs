@@ -184,6 +184,7 @@ pub async fn install_dependencies(
     let options = ExecCommandOptions {
         project,
         prefix: action.get_prefix().into(),
+        toolchain_id: Some(toolchain.id.clone()),
         working_dir: Some(deps_root),
         on_exec: Some(Arc::new(move |cmd, attempts| {
             handle_on_exec(&console, cmd, attempts)

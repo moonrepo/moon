@@ -69,6 +69,25 @@ mod install_dependencies {
 
     #[serial_test::serial]
     #[tokio::test(flavor = "multi_thread")]
+    async fn does_not_augment_commands_with_unrelated_toolchains() {
+        let (_sandbox, ws) = create_workspace();
+        let ws = ws.update_toolchains_config(|config| {
+            config
+                .plugins
+                .get_mut(&Id::raw("tc-tier2-reqs"))
+                .unwrap()
+                .config
+                .insert("testExtendCommandFailure".into(), JsonValue::Bool(true));
+        });
+
+        let (action, status) = run_action(&ws).await;
+
+        assert_eq!(status, ActionStatus::Passed);
+        assert_eq!(count_execs(&action), 1);
+    }
+
+    #[serial_test::serial]
+    #[tokio::test(flavor = "multi_thread")]
     async fn does_not_dedupe_on_first_install() {
         let (_sandbox, ws) = create_workspace();
 

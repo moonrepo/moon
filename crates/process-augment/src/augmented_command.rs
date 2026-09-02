@@ -195,6 +195,23 @@ impl<'app> AugmentedCommand<'app> {
         task: Option<&Task>,
     ) -> miette::Result<()> {
         let toolchain_ids = self.get_toolchain_ids(project, task);
+
+        self.inherit_from_plugins_for_toolchains(toolchain_ids, project, task)
+            .await
+    }
+
+    /// Inherit command augmentations from an explicit set of toolchains.
+    ///
+    /// Plugin-generated commands may run at a shared dependencies workspace
+    /// root that is not owned by a single project. In this case, deriving the
+    /// toolchains from the project/task context would incorrectly select every
+    /// configured workspace toolchain.
+    pub async fn inherit_from_plugins_for_toolchains(
+        &mut self,
+        toolchain_ids: Vec<Id>,
+        project: Option<&Project>,
+        task: Option<&Task>,
+    ) -> miette::Result<()> {
         let current_dir = project
             .map(|p| &p.root)
             .unwrap_or(&self.context.working_dir);
@@ -315,7 +332,8 @@ impl<'app> AugmentedCommand<'app> {
             }
         }
 
-        self.inherit_from_toolchains(project, task).await?;
+        self.inherit_from_toolchains_with_ids(&toolchain_ids, project)
+            .await?;
 
         Ok(())
     }
@@ -326,6 +344,16 @@ impl<'app> AugmentedCommand<'app> {
         task: Option<&Task>,
     ) -> miette::Result<()> {
         let toolchain_ids = self.get_toolchain_ids(project, task);
+
+        self.inherit_from_toolchains_with_ids(&toolchain_ids, project)
+            .await
+    }
+
+    async fn inherit_from_toolchains_with_ids(
+        &mut self,
+        toolchain_ids: &[Id],
+        project: Option<&Project>,
+    ) -> miette::Result<()> {
         let mut map = FxHashMap::default();
 
         // First pass, gather workspace-level

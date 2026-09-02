@@ -58,6 +58,7 @@ pub struct ExecCommandOptions {
     pub on_exec: Option<OnExecFn>,
     pub prefix: String,
     pub project: Option<Arc<Project>>,
+    pub toolchain_id: Option<Id>,
     pub working_dir: Option<PathBuf>,
 }
 
@@ -70,8 +71,18 @@ async fn internal_exec_plugin_command(
     let input = &command.command;
 
     let mut cmd = AugmentedCommand::from_input(&app_context, GlobalEnvBag::instance(), input);
-    cmd.inherit_from_plugins(options.project.as_deref(), None)
+
+    if let Some(toolchain_id) = &options.toolchain_id {
+        cmd.inherit_from_plugins_for_toolchains(
+            vec![toolchain_id.to_owned()],
+            options.project.as_deref(),
+            None,
+        )
         .await?;
+    } else {
+        cmd.inherit_from_plugins(options.project.as_deref(), None)
+            .await?;
+    }
 
     if let Some(cwd) = input.cwd.as_deref() {
         cmd.cwd(cwd);
@@ -231,8 +242,12 @@ pub async fn exec_plugin_commands(
     toolchain_id: &str,
     app_context: Arc<AppContext>,
     commands: Vec<ExecCommand>,
-    options: ExecCommandOptions,
+    mut options: ExecCommandOptions,
 ) -> miette::Result<Vec<Operation>> {
+    let toolchain_id = Id::new(toolchain_id)?;
+
+    options.toolchain_id = Some(toolchain_id.clone());
+
     let mut serial = vec![];
     let mut parallel = vec![];
     let mut ops = vec![];
@@ -269,7 +284,7 @@ pub async fn exec_plugin_commands(
 
     // Inherit toolchain ID
     for op in &mut ops {
-        op.plugin = Some(Id::new(toolchain_id)?);
+        op.plugin = Some(toolchain_id.clone());
     }
 
     Ok(ops)

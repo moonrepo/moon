@@ -7,7 +7,7 @@ default-members = ["crates/cli"]
 [workspace.dependencies]
 ai_env = "0.1.3"
 async-stream = "0.3.6"
-blake3 = { version = "1.8.6", features = ["mmap"] }
+blake3 = { version = "1.8.7", features = ["mmap"] }
 bazel-remote-apis = { version = "0.27.0", features = ["serde"] }
 bytes = "1.12.1"
 async-trait = "0.1.91"
@@ -32,8 +32,8 @@ daggy = { version = "0.9.0", features = ["serde-1"] }
 dirs = "6.0.0"
 futures = "0.3.34"
 httpmock = "0.8.3"
-indexmap = "2.13.0"
-iocraft = "0.8.3"
+indexmap = "2.14.1"
+iocraft = "0.8.5"
 libc = "0.2.189"
 md5 = "0.8.1"
 miette = "7.6.0"
@@ -56,7 +56,7 @@ reqwest = { version = "0.13.4", default-features = false, features = [
 ] }
 once_cell = "1.21.4"
 rustc-hash = "2.1.3"
-scc = "3.7.1"
+scc = "3.8.8"
 schematic = { version = "0.19.7", default-features = false, features = [
   "schema",
 ] }
@@ -76,7 +76,7 @@ starbase_id = { version = "0.3.5", features = ["miette", "schematic"] }
 starbase_sandbox = "0.12.0"
 starbase_shell = "0.12.8"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.14.2", default-features = false, features = [
+starbase_utils = { version = "0.14.3", default-features = false, features = [
   "editor-config",
   "glob-cache",
   "miette",
@@ -99,7 +99,7 @@ tonic-prost = "0.14.6"
 tower = "0.5.3"
 tracing = "0.1.44"
 url = "2.5.8"
-uuid = { version = "1.24.0", features = ["v4"] }
+uuid = { version = "1.26.0", features = ["v4"] }
 windows-sys = { version = "0.61.2", default-features = false }
 
 # proto/plugin related

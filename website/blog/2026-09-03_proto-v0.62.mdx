@@ -1,0 +1,158 @@
+---
+slug: proto-v0.62
+title: proto v0.62 - Community plugins, shell deactivation, and Zig support
+authors: [milesj]
+tags: [zig, zls, plugins, registry, community, activate, deactivate, shell]
+---
+
+Dozens of community tools now install by name alone, shell activation learned how to turn itself
+off, and a new language joins the toolchain.
+
+<!--truncate-->
+
+## Community plugins, no locator required
+
+proto has supported third-party plugins since nearly the beginning, but using one has always been a
+two-step affair. Find the plugin, add the locator to `.prototools`, _then_ install the tool.
+
+```toml title=".prototools"
+[plugins.tools]
+shfmt = "https://raw.githubusercontent.com/moonrepo/community-plugins/master/tools/shfmt.toml"
+```
+
+That's a lot of ceremony for `shfmt`. So in this release, we've wired proto up to the official
+[community plugins](https://github.com/moonrepo/community-plugins) registry. Every tool in that
+registry can now be installed by ID, with no configuration at all.
+
+```shell
+$ proto install shfmt 3.14.0
+```
+
+That's over 30 tools out of the box — `act`, `actionlint`, `bazel`, `biome`, `caddy`, `cmake`,
+`dprint`, `gitleaks`, `hurl`, `hyperfine`, `just`, `mkcert`, `ninja`, `oxlint`, `ruff`,
+`shellcheck`, `task`, `traefik`, `watchexec`, and more. The full list lives on the
+[supported tools](/docs/proto/tools#community) page.
+
+The registry is consulted _last_, only after your own `[plugins.tools]` entries, any `plugin` fields,
+and the built-in tools have all come up empty. A locator you configure yourself always wins, so
+pointing an ID at your own fork keeps working exactly as it did. The data is cached locally, and if
+the lookup fails — you're offline, GitHub is having a day — proto logs a warning and carries on
+instead of failing the command.
+
+If you'd rather proto never reach for the network on your behalf, turn it off:
+
+```toml title=".prototools"
+[settings]
+community-tools = false
+```
+
+Community plugins are generated nightly from the TOML plugins in
+[moonrepo/community-plugins](https://github.com/moonrepo/community-plugins), which is also where new
+tools should be contributed. Add a TOML file, and it's installable by everyone the next day.
+
+## Turning activation off
+
+[Shell activation](/docs/proto/workflows#shell-activation) has been proto's most powerful workflow
+since v0.38, and also its most one-way. Once you evaluated `proto activate` in a session, the only
+way out was a new terminal.
+
+Not anymore. The activation hook now defines a `proto_deactivate` function alongside the one that
+does the activating.
+
+```shell
+$ proto_deactivate
+```
+
+This unsets the environment variables the activation exported, removes the shell aliases it defined,
+drops the `PATH` entries it injected, unregisters the hook, and then removes both functions. Your
+session is left as though you'd never activated at all, and re-activating is just evaluating
+`proto activate` again.
+
+It's also cheap. Everything that needs reverting is tracked by the activation itself in a few
+internal variables, so deactivating never loads a `.prototools` file or a single WASM plugin. It even
+works from a directory whose configuration would otherwise fail to load — handy when the reason
+you're deactivating is that something is broken.
+
+The `PATH` handling deserves a mention, because getting this wrong is the classic version manager
+foot-gun. Activation marks the boundary of what it injected, and deactivation removes only what's
+inside that boundary. Entries inherited from _outside_ of it — the `~/.proto/shims` your shell
+profile prepended long before the hook ever ran — are left exactly where they were, spelling and
+duplicates intact. Deactivating gives you back the `PATH` you started with, not proto's idea of it.
+
+There's a [`proto deactivate`](/docs/proto/commands/deactivate) command behind the function, if you
+want to drive it yourself.
+
+## Activation in more shells
+
+We've also taught activation a few new tricks.
+
+**More shells.** `ash`, `dash`, `sh`, `powershell` (5.1+), and `xonsh` can all activate now. The
+POSIX shells are the interesting case: they have no change-directory or prompt hook whatsoever, so
+the activation shadows `cd` with a function of its own. Windows PowerShell has no change-directory
+trigger either (`LocationChangedAction` requires PowerShell 6+), so we wrap the prompt instead.
+
+**Prompt triggers.** Activation used to run on directory changes only, which meant editing
+`.prototools` in the directory you were already standing in did nothing until you `cd`'d away and
+back. Every shell with a prompt hook — `elvish`, `fish`, `nu`, `pwsh`, `xonsh`, `zsh` — now triggers
+on prompt changes too, so a configuration edit is picked up on the very next command. If you notice
+any performance regression from this, please [tell us](https://github.com/moonrepo/proto/issues)!
+
+**Nushell, properly.** Nu was always the odd one out. It has no runtime `eval`, so its hook consumed
+a JSON payload instead of the shell syntax every other shell gets, and that gap meant
+[`[shell.aliases]`](/docs/proto/config#aliases) simply never worked there. Nu now gets the same shell
+syntax as everyone else: the hook writes the statements to a file and applies them with `source`,
+which parses them properly. Aliases work, and a previous directory's [`[env]`](/docs/proto/config#env)
+variables are unset when you leave it. The JSON output is still available for tooling that wants it.
+
+While we were in there, aliases were fixed for Elvish too — its statements evaluate in a namespace
+that gets thrown away, so a defined alias vanished the moment it returned — and `[env]` variables
+were fixed for Murex and PowerShell, where unquoted values were being parsed as expressions.
+
+## Zig and ZLS
+
+[Zig](https://ziglang.org/) joins proto's built-in toolchain, and so does
+[ZLS](https://zigtools.org/zls/), its language server.
+
+```shell
+$ proto install zig
+$ proto install zls
+```
+
+Both detect versions from `.zig-version`, `.zigversion`, and the `minimum_zig_version` field in
+`build.zig.zon`, so a Zig project that already pins its toolchain needs no proto-specific
+configuration to be picked up.
+
+> These plugins are brand new, so please
+> [report any issues](https://github.com/moonrepo/plugins/issues) you run into!
+
+## Breaking changes
+
+Activation was reworked fairly deeply this release, so a few things moved.
+
+- The functions the activation hook defines were renamed from `_proto_activate_hook` and
+  `_proto_deactivate_hook`, to `proto_activate` and `proto_deactivate`. They're a documented part of
+  the workflow now, rather than an implementation detail.
+- **Nushell users:** the generated hook must be consumed with `source` instead of `use`, as the
+  appended `proto_activate` call stages the initial activation, which the first prompt applies. If
+  you saved the output to a file, regenerate it and update `config.nu`:
+
+  ```nushell
+  proto activate nu | save --force ($nu.default-config-dir | path join "proto-hook.nu")
+  # Then replace `use proto-hook.nu` with:
+  source proto-hook.nu
+  ```
+
+- The JSON output of `proto activate` now returns `PATH` as a `paths` list, instead of a pre-joined
+  `path` string. Nu models `PATH` as a list, and a joined string loses those semantics.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.62.0) for a full list
+of changes.
+
+- Fixed Elvish activation breaking for the rest of the session after leaving a directory that
+  configured `[shell.aliases]`. Removing the alias failed to compile, which aborted every other
+  statement alongside it.
+- Activation no longer removes `PATH` entries that were inherited from outside of it, even when the
+  same directory is being activated. `~/.proto/shims` and `~/.proto/bin` stay on `PATH` after
+  deactivating, when a shell profile had already added them.

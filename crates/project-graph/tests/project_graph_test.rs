@@ -1732,6 +1732,102 @@ mod project_graph {
         }
     }
 
+    mod task_dep_types {
+        use super::*;
+
+        fn map_targets(targets: Vec<Target>) -> Vec<String> {
+            let mut targets = targets
+                .into_iter()
+                .map(|target| target.to_string())
+                .collect::<Vec<_>>();
+            targets.sort();
+            targets
+        }
+
+        fn map_edges(graph: &WorkspaceGraph) -> Vec<(String, String, String)> {
+            let inner = graph.tasks.get_graph();
+
+            let mut edges = inner
+                .edge_indices()
+                .map(|edge| {
+                    let (source, target) = inner.edge_endpoints(edge).unwrap();
+
+                    (
+                        graph
+                            .tasks
+                            .get_node_by_index(&inner[source])
+                            .target
+                            .to_string(),
+                        graph
+                            .tasks
+                            .get_node_by_index(&inner[target])
+                            .target
+                            .to_string(),
+                        inner[edge].to_string(),
+                    )
+                })
+                .collect::<Vec<_>>();
+            edges.sort();
+            edges
+        }
+
+        async fn assert_dep_type_edges(async_graph: bool) {
+            // a -> b -> c (required), `c` cleans up after `a` (reversed to
+            // a -> c, which doesn't cycle), and `d` waits on `a`
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("task-dep-types", async_graph).await;
+
+            assert_eq!(
+                map_edges(&graph),
+                vec![
+                    (
+                        "proj:a".to_owned(),
+                        "proj:b".to_owned(),
+                        "required".to_owned()
+                    ),
+                    (
+                        "proj:a".to_owned(),
+                        "proj:c".to_owned(),
+                        "cleanup".to_owned()
+                    ),
+                    (
+                        "proj:b".to_owned(),
+                        "proj:c".to_owned(),
+                        "required".to_owned()
+                    ),
+                    ("proj:d".to_owned(), "proj:a".to_owned(), "wait".to_owned()),
+                ]
+            );
+
+            // The cleanup task is a dependent of the task it cleans up
+            let a = graph.get_task_from_project("proj", "a").unwrap();
+            let c = graph.get_task_from_project("proj", "c").unwrap();
+
+            assert_eq!(
+                map_targets(graph.tasks.dependents_of(c.as_ref())),
+                ["proj:a", "proj:b"]
+            );
+            assert_eq!(
+                map_targets(graph.tasks.dependencies_of(a.as_ref())),
+                ["proj:b", "proj:c"]
+            );
+            assert_eq!(
+                map_targets(graph.tasks.dependents_of(a.as_ref())),
+                ["proj:d"]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn maps_types_to_edges_with_sync_builder() {
+            assert_dep_type_edges(false).await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn maps_types_to_edges_with_async_builder() {
+            assert_dep_type_edges(true).await;
+        }
+    }
+
     mod aliases {
         use super::*;
 

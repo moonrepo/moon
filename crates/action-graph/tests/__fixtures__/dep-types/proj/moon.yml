@@ -1,0 +1,59 @@
+tasks:
+  setup:
+    command: 'setup'
+  teardown:
+    command: 'teardown'
+  a:
+    command: 'a'
+  b:
+    command: 'b'
+  server:
+    command: 'server'
+    options:
+      persistent: true
+
+  # Required dep, and a cleanup dep
+  base:
+    command: 'base'
+    deps:
+      - 'setup'
+      - target: 'teardown'
+        type: 'cleanup'
+
+  # Wait on a persistent dep
+  waits:
+    command: 'waits'
+    deps:
+      - target: 'server'
+        type: 'wait'
+
+  # All types, ran serially
+  serial:
+    command: 'serial'
+    deps:
+      - 'a'
+      - target: 'server'
+        type: 'wait'
+      - 'b'
+      - target: 'teardown'
+        type: 'cleanup'
+    options:
+      runDepsInParallel: false
+
+  # Shares the cleanup dep with `base`
+  other:
+    command: 'other'
+    deps:
+      - target: 'teardown'
+        type: 'cleanup'
+
+  # A required chain, the cleanup dep is applied by the test, as it
+  # would cycle the task graph if it was configured here
+  cycle-parent:
+    command: 'cycle-parent'
+    deps: ['cycle-mid']
+  cycle-mid:
+    command: 'cycle-mid'
+    deps: ['cycle-cleanup']
+  cycle-cleanup:
+    command: 'cycle-cleanup'

@@ -229,7 +229,11 @@ config_struct!(
         /// dependency to have started running, not to have completed.
         /// @since 2.6.0
         #[setting(rename = "type")]
-        #[serde(default, rename = "type")]
+        #[serde(
+            default,
+            rename = "type",
+            skip_serializing_if = "TaskDependencyType::is_required"
+        )]
         pub type_of: TaskDependencyType,
     }
 );

@@ -6,13 +6,14 @@ use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements}
 use moon_affected::{AffectedBy, DownstreamScope, UpstreamScope};
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
 use moon_config::{
-    EnvMap, PROTO_CLI_VERSION, PipelineActionSwitch, TaskDependencyConfig, TaskOptionRunInCI,
-    UnresolvedVersionSpec, Version, VersionSpec,
+    EnvMap, PROTO_CLI_VERSION, PipelineActionSwitch, TaskDependencyConfig, TaskDependencyType,
+    TaskOptionRunInCI, UnresolvedVersionSpec, Version, VersionSpec,
 };
 use moon_exec_plan::{ExecutionPlan, GraphBlock, TargetsBlock};
 use moon_graph_utils::*;
 use moon_task::{Target, TargetLocator, Task, TaskFileInput};
 use moon_toolchain::ToolchainSpec;
+use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_sandbox::{assert_snapshot, create_sandbox};
 use utils::ActionGraphContainer;
@@ -3106,6 +3107,350 @@ mod action_graph_builder {
             let (_, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
+        }
+    }
+
+    mod dep_types {
+        use super::*;
+
+        fn find_task_index(graph: &ActionGraph, target: &str) -> NodeIndex {
+            graph
+                .get_inner_nodes()
+                .iter()
+                .find_map(|(index, node)| match node {
+                    ActionNode::RunTask(inner) if inner.target.as_str() == target => Some(*index),
+                    _ => None,
+                })
+                .unwrap_or_else(|| panic!("No node for target {target}!"))
+        }
+
+        fn map_targets(targets: Vec<Target>) -> Vec<String> {
+            let mut targets = targets
+                .into_iter()
+                .map(|target| target.to_string())
+                .collect::<Vec<_>>();
+            targets.sort();
+            targets
+        }
+
+        fn map_edges(graph: &ActionGraph) -> Vec<(String, String, String)> {
+            let inner = graph.get_inner_graph();
+
+            inner
+                .graph()
+                .edge_indices()
+                .map(|edge| {
+                    let (source, target) = inner.edge_endpoints(edge).unwrap();
+
+                    (
+                        graph.get_node_from_index(&source).unwrap().label(),
+                        graph.get_node_from_index(&target).unwrap().label(),
+                        inner.edge_weight(edge).unwrap().to_string(),
+                    )
+                })
+                .collect()
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_required_and_cleanup_deps() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "base").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            // The cleanup edge is reversed, it runs after the task
+            let edges = map_edges(&graph);
+
+            assert!(edges.contains(&(
+                "RunTask(proj:base)".into(),
+                "RunTask(proj:setup)".into(),
+                "required".into()
+            )));
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:base)".into(),
+                "cleanup".into()
+            )));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn tracks_cleanup_indices_through_build() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "base").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            let teardown = find_task_index(&graph, "proj:teardown");
+
+            assert_eq!(
+                graph.get_cleanup_indices().iter().collect::<Vec<_>>(),
+                vec![&teardown]
+            );
+            assert!(graph.is_cleanup_index(&teardown));
+            assert!(!graph.is_cleanup_index(&find_task_index(&graph, "proj:base")));
+            assert!(!graph.is_cleanup_index(&find_task_index(&graph, "proj:setup")));
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_wait_deps() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "waits").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            assert!(map_edges(&graph).contains(&(
+                "RunTask(proj:waits)".into(),
+                "RunPersistentTask(proj:server)".into(),
+                "wait".into()
+            )));
+            assert!(graph.get_cleanup_indices().is_empty());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn graphs_serial_deps_of_all_types() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "serial").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            let edges = map_edges(&graph);
+            let task_edges = edges
+                .iter()
+                .filter(|(source, target, _)| {
+                    source.contains("Task(proj:") && target.contains("Task(proj:")
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+
+            // Only the required deps are chained (b runs after a), while the
+            // wait and cleanup deps take no part in the chain
+            assert_eq!(
+                task_edges,
+                vec![
+                    (
+                        "RunTask(proj:b)".into(),
+                        "RunTask(proj:a)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:serial)".into(),
+                        "RunTask(proj:a)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:serial)".into(),
+                        "RunPersistentTask(proj:server)".into(),
+                        "wait".into()
+                    ),
+                    (
+                        "RunTask(proj:serial)".into(),
+                        "RunTask(proj:b)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:teardown)".into(),
+                        "RunTask(proj:serial)".into(),
+                        "cleanup".into()
+                    ),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn shares_a_cleanup_between_tasks() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            for id in ["base", "other"] {
+                let task = wg.get_task_from_project("proj", id).unwrap();
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+            }
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+
+            let edges = map_edges(&graph);
+
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:base)".into(),
+                "cleanup".into()
+            )));
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:other)".into(),
+                "cleanup".into()
+            )));
+            assert_eq!(graph.get_cleanup_indices().len(), 1);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn expands_cleanups_as_dependents() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "base").unwrap();
+
+            builder
+                .run_task(
+                    &task,
+                    &RunRequirements {
+                        dependents: DownstreamScope::Direct,
+                        ..RunRequirements::default()
+                    },
+                )
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            // The cleanup task is a "dependent" of the task it cleans up, but
+            // it was already inserted as a dependency, so it must not be
+            // duplicated, nor gain a second edge
+            let edges = map_edges(&graph);
+
+            assert_eq!(
+                edges
+                    .iter()
+                    .filter(|(source, target, _)| source == "RunTask(proj:teardown)"
+                        && target.starts_with("RunTask"))
+                    .collect::<Vec<_>>(),
+                vec![&(
+                    "RunTask(proj:teardown)".into(),
+                    "RunTask(proj:base)".into(),
+                    "cleanup".into()
+                )]
+            );
+            assert_eq!(
+                graph
+                    .get_inner_nodes()
+                    .values()
+                    .filter(|node| node.label() == "RunTask(proj:teardown)")
+                    .count(),
+                1
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn errors_when_a_cleanup_would_cycle() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // parent -> mid -> cleanup, and then cleanup -> parent
+            let mut task = wg
+                .get_task_from_project("proj", "cycle-parent")
+                .unwrap()
+                .as_ref()
+                .to_owned();
+
+            task.deps.push(TaskDependencyConfig {
+                target: Target::parse("proj:cycle-cleanup").unwrap(),
+                type_of: TaskDependencyType::Cleanup,
+                ..TaskDependencyConfig::default()
+            });
+
+            let error = builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap_err();
+
+            assert!(
+                error.to_string().contains(
+                    "adding a relationship from action RunTask(proj:cycle-cleanup) to RunTask(proj:cycle-parent) would introduce a cycle"
+                ),
+                "{error}"
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn task_graph_relations_are_reversed_for_cleanups() {
+            let sandbox = create_sandbox("dep-types");
+            let container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+
+            let base = wg.get_task_from_project("proj", "base").unwrap();
+            let teardown = wg.get_task_from_project("proj", "teardown").unwrap();
+
+            // The cleanup task is a dependent of the task it cleans up
+            let mut dependents = map_targets(wg.tasks.dependents_of(base.as_ref()));
+
+            assert_eq!(dependents, vec!["proj:teardown"]);
+
+            assert_eq!(
+                map_targets(wg.tasks.dependencies_of(base.as_ref())),
+                vec!["proj:setup"]
+            );
+
+            // And the task is a dependency of its cleanup
+            dependents = map_targets(wg.tasks.dependents_of(teardown.as_ref()));
+
+            assert!(dependents.is_empty());
+
+            assert_eq!(
+                map_targets(wg.tasks.dependencies_of(teardown.as_ref())),
+                vec!["proj:base", "proj:other", "proj:serial"]
+            );
         }
     }
 

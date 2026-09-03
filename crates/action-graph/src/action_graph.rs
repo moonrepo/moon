@@ -5,7 +5,7 @@ use moon_action::ActionNode;
 use moon_config::TaskDependencyType;
 use moon_graph_utils::*;
 use petgraph::prelude::*;
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
 use tracing::debug;
 
@@ -14,17 +14,42 @@ pub type ActionGraphType = Dag<NodeIndex, TaskDependencyType>;
 pub struct ActionGraph {
     graph: ActionGraphType,
     nodes: FxHashMap<NodeIndex, ActionNode>,
+
+    // Indexes of every action that runs *after* another action as a cleanup.
+    // Tracked separately so that they can be located without having to scan
+    // every edge in the graph.
+    cleanup_indices: FxHashSet<NodeIndex>,
 }
 
 impl ActionGraph {
     pub fn new(graph: ActionGraphType, nodes: FxHashMap<NodeIndex, ActionNode>) -> Self {
+        Self::new_with_cleanups(graph, nodes, FxHashSet::default())
+    }
+
+    pub fn new_with_cleanups(
+        graph: ActionGraphType,
+        nodes: FxHashMap<NodeIndex, ActionNode>,
+        cleanup_indices: FxHashSet<NodeIndex>,
+    ) -> Self {
         debug!("Creating action graph");
 
-        ActionGraph { graph, nodes }
+        ActionGraph {
+            graph,
+            nodes,
+            cleanup_indices,
+        }
     }
 
     pub fn is_empty(&self) -> bool {
         self.get_node_count() == 0
+    }
+
+    pub fn get_cleanup_indices(&self) -> &FxHashSet<NodeIndex> {
+        &self.cleanup_indices
+    }
+
+    pub fn is_cleanup_index(&self, index: &NodeIndex) -> bool {
+        self.cleanup_indices.contains(index)
     }
 
     pub fn get_inner_graph(&self) -> &ActionGraphType {

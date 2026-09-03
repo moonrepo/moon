@@ -10,7 +10,7 @@ mod workspace_cache;
 
 pub use projects_builder::ProjectBuildData;
 pub use repo_type::*;
-pub use tasks_builder::TaskBuildData;
+pub use tasks_builder::{TaskBuildData, WorkspaceTasksBuilder};
 pub use tasks_querent::*;
 pub use workspace_builder::*;
 pub use workspace_builder_async::*;

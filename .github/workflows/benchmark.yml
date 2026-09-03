@@ -64,6 +64,15 @@ jobs:
       - name: Build the benchmark targets
         run: cargo codspeed build -m ${{ matrix.mode }} -p ${{ matrix.package }}
 
+      # CodSpeed's walltime mode installs `linux-tools-$(uname -r)` for perf, but Depot's
+      # runners use a custom kernel that Ubuntu has no matching package for, which fails
+      # the entire apt transaction. Installing perf ourselves (without the kernel specific
+      # package) makes CodSpeed skip its own install.
+      - name: Install perf
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y linux-tools-common linux-tools-generic
+
       - name: Run the benchmarks
         uses: CodSpeedHQ/action@v4
         with:

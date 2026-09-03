@@ -10,6 +10,7 @@ use proto_core::UnresolvedVersionSpec;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::ffi::OsString;
 use std::fs;
+use std::path::Path;
 use std::sync::Arc;
 
 // The `tc-tier3-tool` test toolchain registers a real proto tool, and is
@@ -136,7 +137,9 @@ mod augmented_command {
 
             let bin_dir = sandbox.path().join(".proto/tools/tc-tier3-tool/1.2.3/bin");
 
-            assert!(command.paths.contains(&bin_dir.into_os_string()));
+            // Compare as paths, as `OsString` equality is byte-wise, and Windows
+            // would receive `\` separators from proto but `/` from the join above
+            assert!(command.paths.iter().any(|path| Path::new(path) == bin_dir));
         }
 
         // Guards the tests above: locating this toolchain must actually be

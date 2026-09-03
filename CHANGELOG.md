@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.5.4
 
 #### 🐞 Fixes
 

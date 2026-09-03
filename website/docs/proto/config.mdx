@@ -254,6 +254,21 @@ cache-duration = 3600
 > Before v0.61, this defaulted to 30 days. It was increased because of GitHub's unreliability, as
 > re-downloading a plugin that hasn't changed is a common source of transient install failures.
 
+#### `community-tools`<VersionLabel version="0.62.0" />
+
+Whether to automatically resolve tools from the official
+[community plugins](./plugins#community-plugins) registry, when a tool has no configured plugin
+locator. Defaults to `true` or `PROTO_COMMUNITY_TOOLS`.
+
+```toml title=".prototools"
+[settings]
+community-tools = false
+```
+
+> The registry is only consulted after your own `[plugins.tools]`, the `plugin` fields, and the
+> [built-in tools](#builtin-tools) have all been exhausted, so a locator you configure yourself
+> always wins.
+
 #### `detect-strategy`
 
 The strategy to use when [detecting versions](./detection). Defaults to `first-available` or

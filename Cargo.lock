@@ -8290,7 +8290,7 @@ dependencies = [
  "serde_path_to_error",
  "starbase_styles",
  "thiserror 2.0.20",
- "toml 1.1.4+spec-1.1.0",
+ "toml 1.1.5+spec-1.1.0",
  "tracing",
 ]
 
@@ -8319,7 +8319,7 @@ dependencies = [
  "serde",
  "serde_json",
  "serde_norway",
- "toml 1.1.4+spec-1.1.0",
+ "toml 1.1.5+spec-1.1.0",
  "url",
 ]
 
@@ -8929,9 +8929,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_utils"
-version = "0.14.3"
+version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc4fa3bb440faaea7ef237edd14e81e40875c872fbee854eae6a6765b29cce4a"
+checksum = "4e191c692d1ab7608def8afc816fc493f8a7823780dc5e6a4f7f030d0a1f0d3e"
 dependencies = [
  "async-trait",
  "base64 0.23.1",
@@ -8951,7 +8951,7 @@ dependencies = [
  "starbase_styles",
  "thiserror 2.0.20",
  "tokio",
- "toml 1.1.4+spec-1.1.0",
+ "toml 1.1.5+spec-1.1.0",
  "tracing",
  "url",
  "wax",
@@ -9468,9 +9468,9 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "1.1.4+spec-1.1.0"
+version = "1.1.5+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3aace63f4bbcdfc2c965b059de67119c89c4017a70d633be6c104910f67056f5"
+checksum = "12c0ba9680044b4ce98d391a62094047eada0d64860b80166c39f4a6b5640785"
 dependencies = [
  "indexmap",
  "serde_core",

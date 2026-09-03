@@ -9,6 +9,10 @@
   been installed. For example, `moon docker setup` for a Python only project would fail on a
   declared but unused Node.js toolchain. Toolchain executable paths are now only inherited for
   toolchains that have actually been setup.
+- Fixed an issue where globbing would unnecessarily traverse into directories that were negated,
+  resulting in reduced performance. Globbing is now about 10% faster for these cases.
+- Fixed an issue where globbing would exhaust the internal thread pool, resulting in no results
+  being returned. When the thread pool is now busy, we'll attempt to retry on the main thread.
 
 #### ⚙️ Internal
 

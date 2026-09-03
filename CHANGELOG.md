@@ -10,6 +10,11 @@
   declared but unused Node.js toolchain. Toolchain executable paths are now only inherited for
   toolchains that have actually been setup.
 
+#### ⚙️ Internal
+
+- Updated Rust to v1.98.0.
+- Updated dependencies.
+
 ## 2.5.3
 
 #### 🧰 Toolchains

@@ -36,7 +36,7 @@ pub async fn templates(session: MoonSession, args: TemplatesArgs) -> SessionResu
         session.console.render(element! {
             Container {
                 Notice(variant: Variant::Caution) {
-                    StyledText(content: format!("No templates located. Configure them with the <property>generator.templates</property> setting."))
+                    StyledText(content: "No templates located. Configure them with the <property>generator.templates</property> setting.".to_string())
                 }
             }
         })?;

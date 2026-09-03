@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where `SetupEnvironment` (and other plugin driven commands) would attempt to locate
+  the executables of every toolchain declared in the workspace, and fail when one of them had not
+  been installed. For example, `moon docker setup` for a Python only project would fail on a
+  declared but unused Node.js toolchain. Toolchain executable paths are now only inherited for
+  toolchains that have actually been setup.
+
 ## 2.5.3
 
 #### 🧰 Toolchains

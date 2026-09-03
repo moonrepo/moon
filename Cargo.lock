@@ -5791,8 +5791,13 @@ dependencies = [
  "moon_process",
  "moon_project",
  "moon_task",
+ "moon_test_utils",
  "moon_toolchain",
+ "moon_toolchain_plugin",
+ "proto_core",
  "rustc-hash",
+ "starbase_sandbox",
+ "tokio",
 ]
 
 [[package]]

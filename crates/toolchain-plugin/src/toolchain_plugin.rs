@@ -192,7 +192,7 @@ impl ToolchainPlugin {
     /// the current process. Toolchains that were never setup have no executables
     /// on disk, so locating them would fail.
     pub fn is_setup(&self) -> bool {
-        self.setup.load(Ordering::Relaxed)
+        self.setup.load(Ordering::Acquire)
     }
 
     // Detection

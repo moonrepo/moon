@@ -690,7 +690,21 @@ impl WorkspaceBuilder {
 
         // Then resolve dependency tasks
         for dep_config in &task.deps {
-            if cycle.contains(&dep_config.target) {
+            let edge_type = resolve_dep_edge_type(dep_config);
+            let is_cleanup = matches!(edge_type, TaskDependencyType::Cleanup);
+
+            // Resolve the target the same way that `internal_load_task` does,
+            // as the cycle set tracks resolved targets
+            let dep_target = TaskBuildData::resolve_target(&dep_config.target, &self.project_data)?;
+            let in_cycle = cycle.contains(&dep_target);
+
+            // Tasks that are currently being loaded (they're in the cycle set)
+            // have a pending edge that points from them down to this task, so
+            // linking back up to them would close a loop. This only applies to
+            // edges that point from this task to the dependency — a `cleanup`
+            // edge points from the dependency to this task, which runs *with*
+            // the pending edge instead of against it, and is safe to add.
+            if in_cycle && !is_cleanup {
                 debug!(
                     task_target = target.as_str(),
                     dependency_target = dep_config.target.as_str(),
@@ -700,22 +714,34 @@ impl WorkspaceBuilder {
                 continue;
             }
 
-            if let Some(dep_index) =
+            // A task being loaded higher up the stack already has a node, but
+            // `internal_load_task` will not return it, as it bails on
+            // everything within the cycle set
+            let dep_node_index = if in_cycle {
+                self.task_data
+                    .get(&dep_target)
+                    .and_then(|build_data| build_data.node_index)
+            } else {
                 Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?
-            {
+            };
+
+            if let Some(dep_index) = dep_node_index {
+                let (source_index, target_index) =
+                    resolve_dep_edge_endpoints(index, dep_index, edge_type);
+
                 self.task_graph
-                    .add_edge(
-                        index,
-                        dep_index,
-                        if dep_config.optional.is_some_and(|v| v) {
-                            TaskDependencyType::Optional
+                    .add_edge(source_index, target_index, edge_type)
+                    .map_err(|_| {
+                        let (source, target) = if is_cleanup {
+                            (&dep_config.target, &task.target)
                         } else {
-                            TaskDependencyType::Required
-                        },
-                    )
-                    .map_err(|_| TaskGraphError::WouldCycle {
-                        source_target: task.target.to_string(),
-                        target_target: dep_config.target.to_string(),
+                            (&task.target, &dep_config.target)
+                        };
+
+                        TaskGraphError::WouldCycle {
+                            source_target: source.to_string(),
+                            target_target: target.to_string(),
+                        }
                     })?;
             }
         }

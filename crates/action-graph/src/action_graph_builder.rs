@@ -1,5 +1,6 @@
 use crate::action_graph::ActionGraph;
 use crate::action_graph_error::ActionGraphError;
+use crate::transitive_reduction::transitive_reduce;
 use daggy::{Dag, Walker};
 use miette::IntoDiagnostic;
 use moon_action::{
@@ -86,6 +87,19 @@ pub struct RunPartition {
     pub size: Option<usize>,
 }
 
+/// The graph edges produced by a task's dependencies.
+#[derive(Debug, Default)]
+pub struct RunTaskDependencies {
+    /// Dependencies that run *before* the task, linked from the task to each
+    /// dependency, using the type of the dependency as the edge weight.
+    pub requirements: Vec<(NodeIndex, TaskDependencyType)>,
+
+    /// Dependencies that run *after* the task. These are linked in reverse,
+    /// from the dependency to the task, so they must be linked by the caller
+    /// that owns the task's node index.
+    pub cleanups: Vec<NodeIndex>,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct RunTaskState {
     pub depth: u8,
@@ -150,6 +164,10 @@ pub struct ActionGraphBuilder<'query> {
     // edges (both use `TaskDependencyType::Required`), which would let it escape
     // into unrelated subtrees when nodes are shared across serial parents.
     serial_edges: FxHashSet<EdgeIndex>,
+
+    // Nodes that run *after* another node, as a cleanup. Tracked so that they
+    // can be located without having to scan every edge in the graph.
+    cleanup_indices: FxHashSet<NodeIndex>,
 }
 
 impl<'query> ActionGraphBuilder<'query> {
@@ -172,6 +190,7 @@ impl<'query> ActionGraphBuilder<'query> {
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
             serial_edges: FxHashSet::default(),
+            cleanup_indices: FxHashSet::default(),
             changed_files: None,
             workspace_graph,
         })
@@ -203,12 +222,14 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // Reduce unncessary edges
         if let Some(index) = self.get_index_from_node(&ActionNode::SyncWorkspace) {
-            self.graph.transitive_reduce(vec![index]);
+            transitive_reduce(&mut self.graph, vec![index]);
         }
 
         let mut nodes = FxHashMap::default();
 
         // TODO switch to map_owned
+        // Node indexes are preserved by `map`, so the cleanup indexes
+        // collected during building remain accurate
         let graph = self.graph.map(
             |ni, node| {
                 nodes.insert(ni, node.clone());
@@ -217,7 +238,10 @@ impl<'query> ActionGraphBuilder<'query> {
             |_, edge| edge.to_owned(),
         );
 
-        (context, ActionGraph::new(graph, nodes))
+        (
+            context,
+            ActionGraph::new_with_cleanups(graph, nodes, mem::take(&mut self.cleanup_indices)),
+        )
     }
 
     pub fn get_spec(&self, toolchain_id: &Id, project: Option<&Project>) -> Option<ToolchainSpec> {
@@ -405,7 +429,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     })
                 );
 
-                self.link_first_requirement(
+                self.link_first_available_edge(
                     index,
                     vec![setup_env_index, setup_toolchain_index, sync_workspace_index],
                 )?;
@@ -415,7 +439,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
             // Otherwise pass through to setup environment
             if let Some(setup_env_index) = setup_env_index {
-                self.link_first_requirement(
+                self.link_first_available_edge(
                     setup_env_index,
                     vec![setup_toolchain_index, sync_workspace_index],
                 )?;
@@ -761,9 +785,9 @@ impl<'query> ActionGraphBuilder<'query> {
         task: &Task,
         reqs: &RunRequirements,
         state: &RunTaskState,
-    ) -> miette::Result<Vec<Option<NodeIndex>>> {
+    ) -> miette::Result<RunTaskDependencies> {
         let parallel = task.options.run_deps_in_parallel;
-        let mut indexes: Vec<Option<NodeIndex>> = vec![];
+        let mut deps = RunTaskDependencies::default();
         let mut previous_target_index: Option<NodeIndex> = None;
         let mut previous_standard_index: Option<NodeIndex> = None;
 
@@ -779,6 +803,15 @@ impl<'query> ActionGraphBuilder<'query> {
                     Box::pin(self.internal_run_task(&dep_task, reqs, Some(dep), &mut dep_state))
                         .await?
                 {
+                    // Cleanup dependencies run *after* the task, so the edge
+                    // is reversed and must be linked by the caller, and they
+                    // take no part in the serial chain
+                    if matches!(dep.type_of, TaskDependencyType::Cleanup) {
+                        deps.cleanups.push(dep_index);
+
+                        continue;
+                    }
+
                     // When serial, this dependency's entire task subtree must
                     // run after the previous dependency — not just the
                     // dependency node itself. Otherwise its own transitive
@@ -786,8 +819,15 @@ impl<'query> ActionGraphBuilder<'query> {
                     // earlier serial dependencies. Cycle-forming edges are
                     // skipped, which can happen when the same task node appears
                     // in multiple serial dependency chains across parent tasks.
-                    if !parallel {
-                        self.link_serial_requirements(
+                    // Only dependencies that block the task are chained, as a
+                    // `wait` dependency doesn't run to completion first.
+                    let is_required = dep.type_of.is_required_type();
+
+                    if !parallel
+                        && is_required
+                        && let Some(prev) = previous_target_index
+                    {
+                        self.link_serial_required_edges(
                             dep_index,
                             previous_target_index,
                             previous_standard_index,
@@ -797,9 +837,20 @@ impl<'query> ActionGraphBuilder<'query> {
                     // The parent always depends on each child directly, as
                     // serial chain edges alone can't guarantee this ordering
                     // when a chain edge is skipped for forming a cycle
-                    indexes.push(Some(dep_index));
+                    deps.requirements.push((
+                        dep_index,
+                        // The optional type is only a marker within the task
+                        // graph, the action graph has always used required
+                        if is_required {
+                            TaskDependencyType::Required
+                        } else {
+                            dep.type_of
+                        },
+                    ));
 
-                    previous_target_index = Some(dep_index);
+                    if is_required {
+                        previous_target_index = Some(dep_index);
+                    }
 
                     // A persistent dependency never completes, so it can't order
                     // the dependencies that come after it. Track the previous one
@@ -812,7 +863,7 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
-        Ok(indexes)
+        Ok(deps)
     }
 
     #[instrument(skip(self))]
@@ -1138,9 +1189,10 @@ impl<'query> ActionGraphBuilder<'query> {
             if had_ignored_dependencies && !task.deps.is_empty() {
                 child_reqs.skip_affected = true;
 
-                let edges = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
+                let deps = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
 
-                self.link_optional_requirements(index, edges)?;
+                self.link_edges(index, deps.requirements)?;
+                self.link_cleanup_edges(index, deps.cleanups)?;
             }
 
             if had_ignored_dependents {
@@ -1167,12 +1219,13 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // Insert and then link edges
         let index = self.insert_node(node);
+        let mut deps = RunTaskDependencies::default();
 
         if !task.deps.is_empty() {
             if should_run_dependencies {
                 child_reqs.skip_affected = true;
 
-                edges.extend(Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?);
+                deps = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
             } else {
                 self.ignored_dependencies.insert(
                     task.target.clone(),
@@ -1181,7 +1234,9 @@ impl<'query> ActionGraphBuilder<'query> {
             }
         }
 
-        self.link_optional_requirements(index, edges)?;
+        self.link_available_edges(index, edges)?;
+        self.link_edges(index, deps.requirements)?;
+        self.link_cleanup_edges(index, deps.cleanups)?;
 
         // And possibly dependents
         if should_run_dependents {
@@ -1271,7 +1326,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_optional_requirements(index, edges)?;
+        self.link_available_edges(index, edges)?;
 
         Ok(Some(index))
     }
@@ -1418,7 +1473,7 @@ impl<'query> ActionGraphBuilder<'query> {
             })
         );
 
-        self.link_optional_requirements(index, edges)?;
+        self.link_available_edges(index, edges)?;
 
         Ok(Some(index))
     }
@@ -1483,7 +1538,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         if !edges.is_empty() {
-            self.link_requirements(index, edges)?;
+            self.link_required_edges(index, edges)?;
         }
 
         Ok(Some(index))
@@ -1506,41 +1561,59 @@ impl<'query> ActionGraphBuilder<'query> {
         self.nodes.get(node).cloned()
     }
 
-    fn link_first_requirement(
+    fn link_first_available_edge(
         &mut self,
         index: NodeIndex,
         edges: Vec<Option<NodeIndex>>,
     ) -> miette::Result<()> {
         if let Some(edge) = edges.into_iter().flatten().next() {
-            self.link_requirements(index, vec![edge])?;
+            self.link_required_edges(index, vec![edge])?;
         }
 
         Ok(())
     }
 
-    fn link_optional_requirements(
+    fn link_available_edges(
         &mut self,
         index: NodeIndex,
         edges: Vec<Option<NodeIndex>>,
     ) -> miette::Result<()> {
-        self.link_requirements(index, edges.into_iter().flatten().collect())
+        self.link_required_edges(index, edges.into_iter().flatten().collect())
     }
 
-    fn link_requirements(&mut self, index: NodeIndex, edges: Vec<NodeIndex>) -> miette::Result<()> {
+    fn link_required_edges(
+        &mut self,
+        index: NodeIndex,
+        edges: Vec<NodeIndex>,
+    ) -> miette::Result<()> {
+        self.link_edges(
+            index,
+            edges
+                .into_iter()
+                .map(|edge| (edge, TaskDependencyType::Required))
+                .collect(),
+        )
+    }
+
+    fn link_edges(
+        &mut self,
+        index: NodeIndex,
+        edges: Vec<(NodeIndex, TaskDependencyType)>,
+    ) -> miette::Result<()> {
         if edges.is_empty() {
             return Ok(());
         }
 
         let mut added_edges = vec![];
 
-        for edge in edges {
+        for (edge, edge_type) in edges {
             if self.graph.find_edge(index, edge).is_none() {
-                self.graph
-                    .add_edge(index, edge, TaskDependencyType::Required)
-                    .map_err(|_| ActionGraphError::WouldCycle {
+                self.graph.add_edge(index, edge, edge_type).map_err(|_| {
+                    ActionGraphError::WouldCycle {
                         source_action: self.graph.node_weight(index).unwrap().label(),
                         target_action: self.graph.node_weight(edge).unwrap().label(),
-                    })?;
+                    }
+                })?;
 
                 added_edges.push(edge);
             }
@@ -1552,6 +1625,38 @@ impl<'query> ActionGraphBuilder<'query> {
                 requires = ?added_edges.iter().map(|edge| edge.index()).collect::<Vec<_>>(),
                 "Linking requirements for index"
             );
+        }
+
+        Ok(())
+    }
+
+    /// Link every cleanup dependency of the node at `index`. Cleanup actions
+    /// run *after* the node they clean up, so the edge points from the cleanup
+    /// action to the node, and not the other way around like a requirement.
+    fn link_cleanup_edges(
+        &mut self,
+        index: NodeIndex,
+        edges: Vec<NodeIndex>,
+    ) -> miette::Result<()> {
+        for edge in edges {
+            // May already be linked when the cleanup action also depends on
+            // the node in some other way, but it's still a cleanup action
+            if self.graph.find_edge(edge, index).is_none() {
+                self.graph
+                    .add_edge(edge, index, TaskDependencyType::Cleanup)
+                    .map_err(|_| ActionGraphError::WouldCycle {
+                        source_action: self.graph.node_weight(edge).unwrap().label(),
+                        target_action: self.graph.node_weight(index).unwrap().label(),
+                    })?;
+
+                trace!(
+                    index = edge.index(),
+                    cleans_up = ?[index.index()],
+                    "Linking cleanup for index"
+                );
+            }
+
+            self.cleanup_indices.insert(edge);
         }
 
         Ok(())
@@ -1576,7 +1681,7 @@ impl<'query> ActionGraphBuilder<'query> {
     /// a shared node `b` — would let the walk escape `index`'s real subtree and
     /// wrongly order unrelated tasks. Cycle-forming edges are skipped when
     /// linked via [`Self::try_link_requirements`].
-    fn link_serial_requirements(
+    fn link_serial_required_edges(
         &mut self,
         index: NodeIndex,
         previous: Option<NodeIndex>,
@@ -1606,6 +1711,15 @@ impl<'query> ActionGraphBuilder<'query> {
 
             while let Some((edge_index, child_index)) = children.walk_next(&self.graph) {
                 if !self.serial_edges.contains(&edge_index)
+                    // Only follow edges that block the node from running. A
+                    // `cleanup` edge points from a cleanup action back to the
+                    // node it cleans up, so following it would escape into the
+                    // task that owns the cleanup and serialize it wrongly,
+                    // while a `wait` edge doesn't run to completion first
+                    && self
+                        .graph
+                        .edge_weight(edge_index)
+                        .is_some_and(|weight| weight.is_required_type())
                     && matches!(
                         self.graph.node_weight(child_index),
                         Some(ActionNode::RunTask(_))
@@ -1631,7 +1745,7 @@ impl<'query> ActionGraphBuilder<'query> {
             if let Some(anchor) = anchor
                 && anchor != node_index
             {
-                self.try_link_requirements(node_index, anchor);
+                self.try_link_edge(node_index, anchor);
             }
         }
     }
@@ -1648,7 +1762,7 @@ impl<'query> ActionGraphBuilder<'query> {
     /// dependency. Silently skips the edge if it would introduce a cycle — this
     /// happens when the same task node appears in multiple serial dependency
     /// chains across different parent tasks.
-    fn try_link_requirements(&mut self, index: NodeIndex, edge: NodeIndex) {
+    fn try_link_edge(&mut self, index: NodeIndex, edge: NodeIndex) {
         if self.graph.find_edge(index, edge).is_none()
             && let Ok(edge_index) = self
                 .graph

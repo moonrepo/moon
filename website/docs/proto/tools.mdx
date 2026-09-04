@@ -3,16 +3,30 @@ title: Supported tools
 ---
 
 import Button from '@site/src/ui/Button';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 import ToolCards from '@site/src/components/Products/Proto/ToolCards';
-import { BUILT_IN_TOOLS, THIRD_PARTY_TOOLS } from '@site/src/data/proto-tools';
 
-## Built-in
+## Official built-in
 
 The following tools are supported natively in proto's toolchain.
 
 <ToolCards data="built-in" />
 
-## Third-party
+## Official community<VersionLabel version="0.62.0" />
+
+<Button
+  className="float-right -mt-8"
+  href="https://github.com/moonrepo/community-plugins"
+  label="Add tool"
+/>
+
+The following tools are provided by the official
+[community plugins](./plugins#community-plugins) registry. They're resolved automatically by ID, so
+no [plugin](./plugins) configuration is required.
+
+<ToolCards data="community" />
+
+## Unofficial third-party
 
 <Button
   className="float-right -mt-8"

@@ -129,6 +129,44 @@ $ cd /another/path && node --version
 View the [`proto activate`](./commands/activate#setup) documentation for information on how to setup
 your shell profile for this workflow.
 
+### Supported shells
+
+Activation is supported in the following shells. Every shell that provides a prompt hook now
+triggers on prompt changes as well as directory changes, so configuration edits within the current
+directory are reflected without having to `cd` away and back. <VersionLabel version="0.62.0" inline />
+
+| Shell                                                        | Triggers on                          |
+| ------------------------------------------------------------ | ------------------------------------ |
+| `ash`, `dash`, `sh` <VersionLabel version="0.62.0" inline /> | 🟠 `cd` only, which the hook shadows |
+| `bash`                                                       | 🟢 Prompt change                     |
+| `elvish`                                                     | 🟢 Directory and prompt change       |
+| `fish`                                                       | 🟢 Directory and prompt change       |
+| `murex`                                                      | 🟢 Prompt change                     |
+| `nu`                                                         | 🟢 Directory and prompt change       |
+| `powershell` <VersionLabel version="0.62.0" inline />        | 🟢 Prompt change (5.1+)              |
+| `pwsh`                                                       | 🟢 Directory and prompt change       |
+| `xonsh` <VersionLabel version="0.62.0" inline />             | 🟢 Directory and prompt change       |
+| `zsh`                                                        | 🟢 Directory and prompt change       |
+
+> `ion` does not support hooks of any kind, so activation is unavailable there.
+
+### Deactivating<VersionLabel version="0.62.0" />
+
+Activation isn't a one-way door. The hook also defines a `proto_deactivate` function, which reverses
+everything the activation applied to the current shell session: environment variables are unset,
+shell aliases are removed, and the `PATH` entries that were injected are dropped. The hook is
+unregistered, and both functions are removed.
+
+```shell
+$ proto_deactivate
+```
+
+`PATH` entries that were inherited from _outside_ of the activation are kept, so if your shell
+profile already prepended `~/.proto/shims` or `~/.proto/bin`, they'll still be there afterwards.
+
+To turn everything back on, simply evaluate [`proto activate`](./commands/activate) again (or open a new terminal session). View the
+[`proto deactivate`](./commands/deactivate) documentation for more information.
+
 ## Comparison
 
 The workflows above may come across as information overload, so we've provided the following

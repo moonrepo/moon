@@ -348,6 +348,7 @@ const sidebars: SidebarsConfig = {
 				'proto/commands/bin',
 				'proto/commands/clean',
 				'proto/commands/completions',
+				'proto/commands/deactivate',
 				{
 					type: 'category',
 					label: 'debug',

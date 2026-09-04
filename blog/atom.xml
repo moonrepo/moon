@@ -2,11 +2,137 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://moonrepo.dev/blog</id>
     <title>moonrepo Blog</title>
-    <updated>2026-08-22T00:00:00.000Z</updated>
+    <updated>2026-09-03T00:00:00.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://moonrepo.dev/blog"/>
     <subtitle>moonrepo Blog</subtitle>
     <icon>https://moonrepo.dev/img/favicon.svg</icon>
+    <entry>
+        <title type="html"><![CDATA[proto v0.62 - Community plugins, shell deactivation, and Zig support]]></title>
+        <id>https://moonrepo.dev/blog/proto-v0.62</id>
+        <link href="https://moonrepo.dev/blog/proto-v0.62"/>
+        <updated>2026-09-03T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[Dozens of community tools now install by name alone, shell activation learned how to turn itself]]></summary>
+        <content type="html"><![CDATA[<p>Dozens of community tools now install by name alone, shell activation learned how to turn itself
+off, and a new language joins the toolchain.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="community-plugins-no-locator-required">Community plugins, no locator required<a href="https://moonrepo.dev/blog/proto-v0.62#community-plugins-no-locator-required" class="hash-link" aria-label="Direct link to Community plugins, no locator required" title="Direct link to Community plugins, no locator required" translate="no">​</a></h2>
+<p>proto has supported third-party plugins since nearly the beginning, but using one has always been a
+two-step affair. Find the plugin, add the locator to <code>.prototools</code>, <em>then</em> install the tool.</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">plugins.tools</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">shfmt</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"https://raw.githubusercontent.com/moonrepo/community-plugins/master/tools/shfmt.toml"</span><br></div></code></pre></div></div>
+<p>That's a lot of ceremony for <code>shfmt</code>. So in this release, we've wired proto up to the official
+<a href="https://github.com/moonrepo/community-plugins" target="_blank" rel="noopener noreferrer" class="">community plugins</a> registry. Every tool in that
+registry can now be installed by ID, with no configuration at all.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> shfmt </span><span class="token number" style="color:#94dded">3.14</span><span class="token plain">.0</span><br></div></code></pre></div></div>
+<p>That's over 30 tools out of the box — <code>act</code>, <code>actionlint</code>, <code>bazel</code>, <code>biome</code>, <code>caddy</code>, <code>cmake</code>,
+<code>dprint</code>, <code>gitleaks</code>, <code>hurl</code>, <code>hyperfine</code>, <code>just</code>, <code>mkcert</code>, <code>ninja</code>, <code>oxlint</code>, <code>ruff</code>,
+<code>shellcheck</code>, <code>task</code>, <code>traefik</code>, <code>watchexec</code>, and more. The full list lives on the
+<a class="" href="https://moonrepo.dev/docs/proto/tools#community">supported tools</a> page.</p>
+<p>The registry is consulted <em>last</em>, only after your own <code>[plugins.tools]</code> entries, any <code>plugin</code> fields,
+and the built-in tools have all come up empty. A locator you configure yourself always wins, so
+pointing an ID at your own fork keeps working exactly as it did. The data is cached locally, and if
+the lookup fails — you're offline, GitHub is having a day — proto logs a warning and carries on
+instead of failing the command.</p>
+<p>If you'd rather proto never reach for the network on your behalf, turn it off:</p>
+<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">community-tools</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">false</span><br></div></code></pre></div></div>
+<p>Community plugins are generated nightly from the TOML plugins in
+<a href="https://github.com/moonrepo/community-plugins" target="_blank" rel="noopener noreferrer" class="">moonrepo/community-plugins</a>, which is also where new
+tools should be contributed. Add a TOML file, and it's installable by everyone the next day.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="turning-activation-off">Turning activation off<a href="https://moonrepo.dev/blog/proto-v0.62#turning-activation-off" class="hash-link" aria-label="Direct link to Turning activation off" title="Direct link to Turning activation off" translate="no">​</a></h2>
+<p><a class="" href="https://moonrepo.dev/docs/proto/workflows#shell-activation">Shell activation</a> has been proto's most powerful workflow
+since v0.38, and also its most one-way. Once you evaluated <code>proto activate</code> in a session, the only
+way out was a new terminal.</p>
+<p>Not anymore. The activation hook now defines a <code>proto_deactivate</code> function alongside the one that
+does the activating.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto_deactivate</span><br></div></code></pre></div></div>
+<p>This unsets the environment variables the activation exported, removes the shell aliases it defined,
+drops the <code>PATH</code> entries it injected, unregisters the hook, and then removes both functions. Your
+session is left as though you'd never activated at all, and re-activating is just evaluating
+<code>proto activate</code> again.</p>
+<p>It's also cheap. Everything that needs reverting is tracked by the activation itself in a few
+internal variables, so deactivating never loads a <code>.prototools</code> file or a single WASM plugin. It even
+works from a directory whose configuration would otherwise fail to load — handy when the reason
+you're deactivating is that something is broken.</p>
+<p>The <code>PATH</code> handling deserves a mention, because getting this wrong is the classic version manager
+foot-gun. Activation marks the boundary of what it injected, and deactivation removes only what's
+inside that boundary. Entries inherited from <em>outside</em> of it — the <code>~/.proto/shims</code> your shell
+profile prepended long before the hook ever ran — are left exactly where they were, spelling and
+duplicates intact. Deactivating gives you back the <code>PATH</code> you started with, not proto's idea of it.</p>
+<p>There's a <a class="" href="https://moonrepo.dev/docs/proto/commands/deactivate"><code>proto deactivate</code></a> command behind the function, if you
+want to drive it yourself.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="activation-in-more-shells">Activation in more shells<a href="https://moonrepo.dev/blog/proto-v0.62#activation-in-more-shells" class="hash-link" aria-label="Direct link to Activation in more shells" title="Direct link to Activation in more shells" translate="no">​</a></h2>
+<p>We've also taught activation a few new tricks.</p>
+<p><strong>More shells.</strong> <code>ash</code>, <code>dash</code>, <code>sh</code>, <code>powershell</code> (5.1+), and <code>xonsh</code> can all activate now. The
+POSIX shells are the interesting case: they have no change-directory or prompt hook whatsoever, so
+the activation shadows <code>cd</code> with a function of its own. Windows PowerShell has no change-directory
+trigger either (<code>LocationChangedAction</code> requires PowerShell 6+), so we wrap the prompt instead.</p>
+<p><strong>Prompt triggers.</strong> Activation used to run on directory changes only, which meant editing
+<code>.prototools</code> in the directory you were already standing in did nothing until you <code>cd</code>'d away and
+back. Every shell with a prompt hook — <code>elvish</code>, <code>fish</code>, <code>nu</code>, <code>pwsh</code>, <code>xonsh</code>, <code>zsh</code> — now triggers
+on prompt changes too, so a configuration edit is picked up on the very next command. If you notice
+any performance regression from this, please <a href="https://github.com/moonrepo/proto/issues" target="_blank" rel="noopener noreferrer" class="">tell us</a>!</p>
+<p><strong>Nushell, properly.</strong> Nu was always the odd one out. It has no runtime <code>eval</code>, so its hook consumed
+a JSON payload instead of the shell syntax every other shell gets, and that gap meant
+<a class="" href="https://moonrepo.dev/docs/proto/config#aliases"><code>[shell.aliases]</code></a> simply never worked there. Nu now gets the same shell
+syntax as everyone else: the hook writes the statements to a file and applies them with <code>source</code>,
+which parses them properly. Aliases work, and a previous directory's <a class="" href="https://moonrepo.dev/docs/proto/config#env"><code>[env]</code></a>
+variables are unset when you leave it. The JSON output is still available for tooling that wants it.</p>
+<p>While we were in there, aliases were fixed for Elvish too — its statements evaluate in a namespace
+that gets thrown away, so a defined alias vanished the moment it returned — and <code>[env]</code> variables
+were fixed for Murex and PowerShell, where unquoted values were being parsed as expressions.</p>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="zig-and-zls">Zig and ZLS<a href="https://moonrepo.dev/blog/proto-v0.62#zig-and-zls" class="hash-link" aria-label="Direct link to Zig and ZLS" title="Direct link to Zig and ZLS" translate="no">​</a></h2>
+<p><a href="https://ziglang.org/" target="_blank" rel="noopener noreferrer" class="">Zig</a> joins proto's built-in toolchain, and so does
+<a href="https://zigtools.org/zls/" target="_blank" rel="noopener noreferrer" class="">ZLS</a>, its language server.</p>
+<div class="language-shell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-shell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> zig</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">$ proto </span><span class="token function" style="color:#ff94ff;font-weight:bold">install</span><span class="token plain"> zls</span><br></div></code></pre></div></div>
+<p>Both detect versions from <code>.zig-version</code>, <code>.zigversion</code>, and the <code>minimum_zig_version</code> field in
+<code>build.zig.zon</code>, so a Zig project that already pins its toolchain needs no proto-specific
+configuration to be picked up.</p>
+<blockquote>
+<p>These plugins are brand new, so please
+<a href="https://github.com/moonrepo/plugins/issues" target="_blank" rel="noopener noreferrer" class="">report any issues</a> you run into!</p>
+</blockquote>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="breaking-changes">Breaking changes<a href="https://moonrepo.dev/blog/proto-v0.62#breaking-changes" class="hash-link" aria-label="Direct link to Breaking changes" title="Direct link to Breaking changes" translate="no">​</a></h2>
+<p>Activation was reworked fairly deeply this release, so a few things moved.</p>
+<ul>
+<li class="">
+<p>The functions the activation hook defines were renamed from <code>_proto_activate_hook</code> and
+<code>_proto_deactivate_hook</code>, to <code>proto_activate</code> and <code>proto_deactivate</code>. They're a documented part of
+the workflow now, rather than an implementation detail.</p>
+</li>
+<li class="">
+<p><strong>Nushell users:</strong> the generated hook must be consumed with <code>source</code> instead of <code>use</code>, as the
+appended <code>proto_activate</code> call stages the initial activation, which the first prompt applies. If
+you saved the output to a file, regenerate it and update <code>config.nu</code>:</p>
+<div class="language-nushell codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-nushell codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token plain">proto activate nu | save --force ($nu.default-config-dir | path join "proto-hook.nu")</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"># Then replace `use proto-hook.nu` with:</span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">source proto-hook.nu</span><br></div></code></pre></div></div>
+</li>
+<li class="">
+<p>The JSON output of <code>proto activate</code> now returns <code>PATH</code> as a <code>paths</code> list, instead of a pre-joined
+<code>path</code> string. Nu models <code>PATH</code> as a list, and a joined string loses those semantics.</p>
+</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.62#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
+<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.62.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
+of changes.</p>
+<ul>
+<li class="">Fixed Elvish activation breaking for the rest of the session after leaving a directory that
+configured <code>[shell.aliases]</code>. Removing the alias failed to compile, which aborted every other
+statement alongside it.</li>
+<li class="">Activation no longer removes <code>PATH</code> entries that were inherited from outside of it, even when the
+same directory is being activated. <code>~/.proto/shims</code> and <code>~/.proto/bin</code> stay on <code>PATH</code> after
+deactivating, when a shell profile had already added them.</li>
+</ul>]]></content>
+        <author>
+            <name>Miles Johnson</name>
+            <uri>https://github.com/milesj</uri>
+        </author>
+        <category label="zig" term="zig"/>
+        <category label="zls" term="zls"/>
+        <category label="plugins" term="plugins"/>
+        <category label="registry" term="registry"/>
+        <category label="community" term="community"/>
+        <category label="activate" term="activate"/>
+        <category label="deactivate" term="deactivate"/>
+        <category label="shell" term="shell"/>
+    </entry>
     <entry>
         <title type="html"><![CDATA[proto v0.61 - Swift support, GPG verification, and immutable lockfiles]]></title>
         <id>https://moonrepo.dev/blog/proto-v0.61</id>
@@ -2286,102 +2412,5 @@ of changes.</p>
         <category label="proto" term="proto"/>
         <category label="project" term="project"/>
         <category label="layer" term="layer"/>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[proto v0.51 - Unstable lockfiles and plugin registries]]></title>
-        <id>https://moonrepo.dev/blog/proto-v0.51</id>
-        <link href="https://moonrepo.dev/blog/proto-v0.51"/>
-        <updated>2025-07-17T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[With this release, we're excited to introduce two major features that pave the way for proto's]]></summary>
-        <content type="html"><![CDATA[<p>With this release, we're excited to introduce two major features that pave the way for proto's
-future!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="unstable-lockfile-support">Unstable lockfile support<a href="https://moonrepo.dev/blog/proto-v0.51#unstable-lockfile-support" class="hash-link" aria-label="Direct link to Unstable lockfile support" title="Direct link to Unstable lockfile support" translate="no">​</a></h2>
-<p>Lockfiles have been requested by the community since proto's inception, but adopting them has been a
-non-trivial task, as it requires touching almost every aspect of proto. With that said, we've been
-slowly reworking the internals to support lockfiles, and with this release, we're introducing
-unstable support for them!</p>
-<p>If you're unaware of what lockfiles are, they allow you to pin the exact version (and checksum) of a
-tool that is installed, ensuring that your development environment is consistent and reproducible.
-If you've used package managers like npm, Cargo, or uv, you're likely familiar with this concept.</p>
-<p>In proto, the concept of lockfiles is mostly the same, but the manner in which they are created and
-updated may differ based on other tools. To start, lockfiles in proto are <em>opt-in</em> and can be
-enabled with the new <a class="" href="https://moonrepo.dev/docs/proto/config#unstable-lockfile"><code>settings.unstable-lockfile</code></a> setting in
-<code>.prototools</code>.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">unstable-lockfile</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><br></div></code></pre></div></div>
-<p>This will create a <code>.protolock</code> file in the current directory, relative to the <code>.prototools</code> file.
-In effect, this locks that directory and all of its subdirectories. As a side-effect, nested
-lockfiles are not supported.</p>
-<p>To demonstrate how lockfiles work, installing the following tools with <code>proto install</code>...</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token key property" style="color:#b7a9f9">bun</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"1.2.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">deno</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"2.4.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">node</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"22.17.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">unstable-lockfile</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token boolean" style="color:#94dded">true</span><br></div></code></pre></div></div>
-<p>... would generate the following <code>.protolock</code> file:</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.protolock</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token comment" style="color:#97a1af;font-style:italic"># Generated by proto. Do not modify!</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.bun</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">spec</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"1.2.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">version</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"1.2.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">checksum</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"sha256:fa72173cb2220d00e2d2650fefdc0b5b37bfd8bb33d8d671b50efb409c2f5745"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.deno</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">spec</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"2.4.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">version</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"2.4.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">checksum</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"sha256:c913d018d64c48dcc5b7b90d844efb6d017595a7c1e237f89141df1b3ef8b962"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">tools.node</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">spec</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"22.17.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">version</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"22.17.0"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">checksum</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"sha256:cc9cc294eaf782dd93c8c51f460da610cc35753c6a9947411731524d16e97914"</span><br></div></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="updated-workflows">Updated workflows<a href="https://moonrepo.dev/blog/proto-v0.51#updated-workflows" class="hash-link" aria-label="Direct link to Updated workflows" title="Direct link to Updated workflows" translate="no">​</a></h3>
-<p>The <a class="" href="https://moonrepo.dev/docs/proto/commands/run"><code>proto run</code></a> (shims),
-<a class="" href="https://moonrepo.dev/docs/proto/commands/install"><code>proto install</code></a>, and
-<a class="" href="https://moonrepo.dev/docs/proto/commands/uninstall"><code>proto uninstall</code></a> commands have been updated to support lockfiles.</p>
-<p>When running or installing tools and a matching specification exists in the lockfile, the locked
-version will be inherited even if there's a newer version upstream, and the tool's checksum will be
-validated when available. These checks can be bypassed with the new <code>--update-lockfile</code> flag
-(install only).</p>
-<p>Inversely, when uninstalling tools, the lockfile will be updated to remove any matching
-specification records.</p>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="still-a-work-in-progress">Still a work in progress<a href="https://moonrepo.dev/blog/proto-v0.51#still-a-work-in-progress" class="hash-link" aria-label="Direct link to Still a work in progress" title="Direct link to Still a work in progress" translate="no">​</a></h3>
-<p>We are marking lockfiles as unstable as they have not been fully implemented or thoroughly tested.
-There are other commands like <a class="" href="https://moonrepo.dev/docs/proto/commands/outdated"><code>proto outdated</code></a> and
-<a class="" href="https://moonrepo.dev/docs/proto/commands/status"><code>proto status</code></a> that are not lockfile aware yet, but will be in the
-future.</p>
-<p>But please, give them a whirl and let us know what you think!</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="unstable-oci-registries-for-plugin-storage">Unstable OCI registries for plugin storage<a href="https://moonrepo.dev/blog/proto-v0.51#unstable-oci-registries-for-plugin-storage" class="hash-link" aria-label="Direct link to Unstable OCI registries for plugin storage" title="Direct link to Unstable OCI registries for plugin storage" translate="no">​</a></h2>
-<p>Another important feature that is necessary for proto's success is support for an official plugin
-registry. Before we get to that, we need to lay the groundwork for how plugins are stored and
-distributed. With this release, we're introducing unstable support for
-<a href="https://opencontainers.org/" target="_blank" rel="noopener noreferrer" class="">OCI registries</a> as a storage mechanism for plugins. If you're
-unfamiliar with OCI registries, they are a standard for storing and distributing container images
-(Docker), but can also be used to store other types of
-<a href="https://oras.land/docs/concepts/artifact" target="_blank" rel="noopener noreferrer" class="">artifacts</a>, in this case, WASM plugins.</p>
-<p>To support registries, we have introduced a new
-<a class="" href="https://moonrepo.dev/docs/proto/config#unstable-registries"><code>settings.unstable-registries</code></a> setting in <code>.prototools</code>,
-which allows you to configure a list of registries to query for applicable plugins. For example:</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">settings</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">unstable-registries</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">[</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain">  </span><span class="token punctuation" style="color:#cad4e2">{</span><span class="token plain"> registry: </span><span class="token string" style="color:#c9e166">"ghcr.io"</span><span class="token punctuation" style="color:#cad4e2">,</span><span class="token plain"> namespace: </span><span class="token string" style="color:#c9e166">"moonrepo"</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">}</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token punctuation" style="color:#cad4e2">]</span><br></div></code></pre></div></div>
-<p>Additionally, we are introducing a new <code>registry://</code> plugin locator, which allows you to configure a
-plugin by its OCI reference.</p>
-<div class="language-toml codeBlockContainer_mQmQ theme-code-block" style="--prism-background-color:#00080f;--prism-color:#e5e9f1"><div class="codeBlockTitle_kY6l">.prototools</div><div class="codeBlockContent_t_Hd"><pre tabindex="0" class="prism-code language-toml codeBlock_RMoD thin-scrollbar" style="background-color:#00080f;color:#e5e9f1"><code class="codeBlockLines_AclH"><div class="token-line" style="color:#e5e9f1"><span class="token punctuation" style="color:#cad4e2">[</span><span class="token table class-name" style="color:#ff94ff;font-weight:bold">plugins</span><span class="token punctuation" style="color:#cad4e2">]</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Longform with tag</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">bun</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"registry://ghcr.io/moonrepo/bun_tool:v1.2.3"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Longform without tag</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">bun</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"registry://ghcr.io/moonrepo/bun_tool"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Shortform with tag</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">bun</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"registry://bun_tool:v1.2.3"</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token comment" style="color:#97a1af;font-style:italic"># Shortform without tag</span><span class="token plain"></span><br></div><div class="token-line" style="color:#e5e9f1"><span class="token plain"></span><span class="token key property" style="color:#b7a9f9">bun</span><span class="token plain"> </span><span class="token punctuation" style="color:#cad4e2">=</span><span class="token plain"> </span><span class="token string" style="color:#c9e166">"registry://bun_tool"</span><br></div></code></pre></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="how-it-works">How it works<a href="https://moonrepo.dev/blog/proto-v0.51#how-it-works" class="hash-link" aria-label="Direct link to How it works" title="Direct link to How it works" translate="no">​</a></h3>
-<p>Using a container registry to store plugins seems odd at first, but it actually allows us to
-leverage existing specifications, infrastructure, and tools to manage and distribute plugins. We
-don't want to re-invent the wheel here, so why not use something that most of the industry is
-already using?</p>
-<p>With that said, how does this work in proto? Since we are not a container image, we use the
-<a href="https://oras.land/docs/concepts/artifact" target="_blank" rel="noopener noreferrer" class="">artifact portion of the specification</a> instead.
-Primarily, plugins are stored in layers! The blob/content of WASM, TOML, JSON, and YAML plugins are
-stored in CAS, and referenced in layers by a sha256 digest.</p>
-<p>As for annotations, we support the
-<a href="https://github.com/opencontainers/image-spec/blob/main/annotations.md" target="_blank" rel="noopener noreferrer" class="">OCI standard annotations</a>,
-but will also support moonrepo-specific annotations in the future.</p>
-<div class="theme-admonition theme-admonition-info admonition_WCGJ alert alert--info"><div class="admonitionHeading_GCBg"><span class="admonitionIcon_L39b"><svg viewBox="0 0 14 16"><path fill-rule="evenodd" d="M7 2.3c3.14 0 5.7 2.56 5.7 5.7s-2.56 5.7-5.7 5.7A5.71 5.71 0 0 1 1.3 8c0-3.14 2.56-5.7 5.7-5.7zM7 1C3.14 1 0 4.14 0 8s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm1 3H6v5h2V4zm0 6H6v2h2v-2z"></path></svg></span>info</div><div class="admonitionContent_pbrs"><p>At this time, we do not provide a mechanism for uploading plugins to a registry. You'll need to do
-that manually.</p></div></div>
-<h3 class="anchor anchorTargetStickyNavbar_tleR" id="official-registry">Official registry?<a href="https://moonrepo.dev/blog/proto-v0.51#official-registry" class="hash-link" aria-label="Direct link to Official registry?" title="Direct link to Official registry?" translate="no">​</a></h3>
-<p>We do have plans to support an official moonrepo plugin registry, for both proto and moon. We are in
-the process of investigating solutions to this and will provide more details soon.</p>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="other-changes">Other changes<a href="https://moonrepo.dev/blog/proto-v0.51#other-changes" class="hash-link" aria-label="Direct link to Other changes" title="Direct link to Other changes" translate="no">​</a></h2>
-<p>View the <a href="https://github.com/moonrepo/proto/releases/tag/v0.51.0" target="_blank" rel="noopener noreferrer" class="">official release</a> for a full list
-of changes.</p>
-<ul>
-<li class="">Removed <code>--canary</code> from <code>proto install</code>, just use <code>canary</code> as the version specifier instead.</li>
-</ul>
-<h2 class="anchor anchorTargetStickyNavbar_tleR" id="looking-for-contributors">Looking for contributors<a href="https://moonrepo.dev/blog/proto-v0.51#looking-for-contributors" class="hash-link" aria-label="Direct link to Looking for contributors" title="Direct link to Looking for contributors" translate="no">​</a></h2>
-<p>We have a lot of cool stuff planned for proto, like backend plugins, more official tools, improved
-workflows, an official registry, and more! So if you're interested in Rust or WASM, we would love
-and appreciate your help. Feel free to ping us on Discord!</p>]]></content>
-        <author>
-            <name>Miles Johnson</name>
-            <uri>https://github.com/milesj</uri>
-        </author>
-        <category label="lockfile" term="lockfile"/>
-        <category label="record" term="record"/>
-        <category label="registry" term="registry"/>
-        <category label="oci" term="oci"/>
-        <category label="plugin" term="plugin"/>
-        <category label="locator" term="locator"/>
     </entry>
 </feed>

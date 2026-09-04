@@ -19535,7 +19535,8 @@ projectLayer=application && taskToolchain=node
 
 The `proto activate <shell>` command will activate proto for the current shell session, by exporting
 environment variables and prepending `PATH` for each tool configured in the current directory.
-Activation is ran each time the current directory changes using a shell hook.
+Activation is ran each time the current directory changes, or the prompt is redrawn, using a shell
+hook.
 
 :::info
 
@@ -19557,6 +19558,25 @@ Learn more about
 - `--no-init` - Do not trigger activation when initialized in the shell, and instead wait for a
   cd/prompt change. <VersionLabel version="0.50.0" />
 
+### Functions<VersionLabel version="0.62.0" />
+
+Evaluating the output of this command defines 2 functions in your shell session.
+
+- `proto_activate` - Applies the activation. This is what the hook calls on every directory or
+  prompt change, but it can also be called manually to re-apply immediately.
+- `proto_deactivate` - Runs [`proto deactivate`](./deactivate), unregisters the hook, and then
+  removes both functions.
+
+```shell
+# Turn proto off for this session
+$ proto_deactivate
+
+# And back on again
+$ eval "$(proto activate zsh)"
+```
+
+> Before v0.62, these functions were named `_proto_activate_hook` and `_proto_deactivate_hook`.
+
 ### Caveats
 
 - Only tools that have a [version configured in `.prototools`](../config#pinning-versions) will be
@@ -19564,11 +19584,47 @@ Learn more about
 - Tool versions configured in the global `~/.proto/.prototools` are _not_ included by default. Pass
   `--config-mode all` during activation to include them.
   - Do note that this will worsen performance depending on the number of tools.
+- Activation only removes `PATH` entries that a previous activation injected. Entries inherited from
+  your shell profile are left exactly as they were. <VersionLabel version="0.62.0" />
+
+### JSON output<VersionLabel version="0.62.0" />
+
+When `--json` is passed, the environment variables and `PATH` entries to apply are printed as a JSON
+object, for consumption by other tooling. A `null` environment value denotes a variable that should
+be unset.
+
+```json
+{
+  "env": {
+    "PROTO_NODE_VERSION": "22.0.0",
+    "OLD_VAR": null
+  },
+  "paths": ["/home/user/.proto/shims", "/home/user/.proto/bin"]
+}
+```
+
+> Before v0.62, `PATH` was returned as a pre-joined `path` string. It's now a `paths` list, as
+> [Nu](#nu) models `PATH` as a list, and would otherwise lose its path semantics.
 
 ### Setup
 
 The following activation steps should be added _after_ all environment variable and `PATH`
 modifications have happened in your shell, typically at the end of your shell profile.
+
+#### Ash, Dash, Sh<VersionLabel version="0.62.0" />
+
+Add the following line to the end of your `~/.ashrc` or `~/.profile`.
+
+```shell
+eval "$(proto activate sh)"
+```
+
+:::warning
+
+POSIX shells have no change-directory or prompt hook, so the activation shadows `cd` with a function
+of its own. This will clobber any other `cd` wrapper you may have defined.
+
+:::
 
 #### Bash
 
@@ -19612,22 +19668,49 @@ proto activate murex -> source
 
 Generate the hook:
 
-```shell
-(proto activate nu) | save ~/.config/nushell/proto-hook.nu
+```nushell
+proto activate nu | save --force ($nu.default-config-dir | path join "proto-hook.nu")
 ```
 
 Then add the following line to your `~/.config/nushell/config.nu` file.
 
-```shell
-use proto-hook.nu
+```nushell
+source proto-hook.nu
 ```
+
+:::warning
+
+Before v0.62, this hook was consumed with `use proto-hook.nu`. If you saved the output to a file,
+regenerate it and replace `use` with `source`, as the appended `proto_activate` call stages the
+initial activation, which the first prompt applies.
+
+:::
+
+#### PowerShell<VersionLabel version="0.62.0" />
+
+For Windows PowerShell (5.1+). Add the following line to the end of your profile (`$PROFILE`).
+
+```powershell
+proto activate powershell | Out-String | Invoke-Expression
+```
+
+> Windows PowerShell has no change-directory trigger, as `LocationChangedAction` requires PowerShell
+> 6+, so the global prompt is wrapped instead. For PowerShell 6+, use [Pwsh](#pwsh).
 
 #### Pwsh
 
 Add the following line to the end of your profile (`$PROFILE`).
 
-```shell
+```powershell
 proto activate pwsh | Out-String | Invoke-Expression
+```
+
+#### Xonsh<VersionLabel version="0.62.0" />
+
+Add the following line to the end of your `~/.config/xonsh/rc.xsh` or `~/.xonshrc`.
+
+```python
+execx($(proto activate xonsh))
 ```
 
 #### Zsh
@@ -19806,6 +19889,57 @@ omz reload
 
 </TabItem>
 </Tabs>
+
+---
+
+## deactivate
+
+<VersionLabel version="0.62.0" header />
+
+The `proto deactivate <shell>` command will deactivate proto for the current shell session, by
+reverting everything that a previous [activation](./activate) applied. This unsets environment
+variables, removes shell aliases, and removes the `PATH` entries that were injected.
+
+```shell
+$ proto deactivate
+```
+
+:::danger
+
+Do not call this command directly, prefer calling the `proto_deactivate` shell function that the activation hook defines, as it also
+unregisters the hook itself, and removes both functions. Learn more about
+[shell activation in the official workflow documentation](../workflows#shell-activation)!
+
+:::
+
+### Arguments
+
+- `<shell>` - The shell to deactivate for. Is detected if not provided.
+
+### Options
+
+- `--export` - Print the deactivate instructions in shell-specific syntax.
+- `--json` - Print the deactivate instructions in JSON format.
+
+### Caveats
+
+- Everything that must be reverted is tracked by the activation itself (through the
+  `_PROTO_ACTIVATED_ENV`, `_PROTO_ACTIVATED_ALIASES`, and `_PROTO_ACTIVATED_PATH` variables), so
+  configuration files and tool plugins are _never_ loaded. Deactivating is cheap, and works even
+  when the current directory would fail to load.
+- `PATH` entries that were inherited from outside of the activation are _not_ removed. If your shell
+  profile already prepended `~/.proto/shims` or `~/.proto/bin`, they'll remain after deactivating.
+- In [Nu](./activate#nu), the teardown is staged like every other statement, so it applies on the
+  trigger that follows the call, instead of immediately.
+
+### Re-activating
+
+Deactivation is not permanent. To activate again within the same session, simply evaluate
+[`proto activate`](./activate) once more.
+
+```shell
+$ eval "$(proto activate zsh)"
+```
 
 ---
 
@@ -20326,6 +20460,9 @@ $ proto plugin add node "https://github.com/moonrepo/node-plugin/releases/latest
 
 > Learn more about [plugin locator strings](../../plugins#enabling-plugins).
 
+> Tools in the official [community plugins](../../plugins#community-plugins) registry are resolved
+> by ID, and do not need to be added. <VersionLabel version="0.62.0" inline />
+
 ### Arguments
 
 - `<id>` - ID of the tool.
@@ -20504,8 +20641,10 @@ $ proto plugin remove node
 
 <VersionLabel version="0.36.0" header />
 
-The `proto plugin search <query>` command will search for plugins provided by the community, based
-on the provided query string. Built-in plugins _are not_ searchable.
+The `proto plugin search <query>` command will search for third-party plugins, based on the provided
+query string. [Built-in](../../tools#built-in) and
+[community](../../plugins#community-plugins) plugins _are not_ searchable, as both are resolved by
+ID without a locator.
 
 ```
 $ proto plugin search moon
@@ -21184,6 +21323,21 @@ cache-duration = 3600
 
 > Before v0.61, this defaulted to 30 days. It was increased because of GitHub's unreliability, as
 > re-downloading a plugin that hasn't changed is a common source of transient install failures.
+
+#### `community-tools`<VersionLabel version="0.62.0" />
+
+Whether to automatically resolve tools from the official
+[community plugins](./plugins#community-plugins) registry, when a tool has no configured plugin
+locator. Defaults to `true` or `PROTO_COMMUNITY_TOOLS`.
+
+```toml title=".prototools"
+[settings]
+community-tools = false
+```
+
+> The registry is only consulted after your own `[plugins.tools]`, the `plugin` fields, and the
+> [built-in tools](#builtin-tools) have all been exhausted, so a locator you configure yourself
+> always wins.
 
 #### `detect-strategy`
 
@@ -22610,6 +22764,34 @@ settings to be defined side-by-side. <VersionLabel version="0.60.0" />
 plugin = "<protocol>://<location>"
 ```
 
+## Community plugins<VersionLabel version="0.62.0" />
+
+proto also maintains an official registry of [community plugins](./tools#community), which are TOML
+based plugins for tools that aren't built-in. Any tool in this registry can be used _by ID alone_,
+without configuring a locator first.
+
+```shell
+$ proto install shfmt 3.14.0
+```
+
+When proto can't find a plugin for a tool, it consults the registry as a last resort, after your own
+`[plugins.tools]` entries, any `plugin` fields, and the [built-in tools](./tools#built-in) have all
+been exhausted. A locator that you configure always wins, so pointing an ID at your own fork
+continues to work exactly as before.
+
+The registry data is cached locally, and a lookup failure (an outage, being offline) is logged as a
+warning instead of failing the command. If you'd rather proto never reach for it, disable the
+[`community-tools`](./config#community-tools) setting.
+
+```toml title=".prototools"
+[settings]
+community-tools = false
+```
+
+Community plugins are generated nightly from the
+[moonrepo/community-plugins](https://github.com/moonrepo/community-plugins) repository, which is
+also where new tools should be contributed.
+
 ## Creating plugins
 
 To ease the plugin development process, proto supports 2 types of plugins, a
@@ -22978,13 +23160,27 @@ For example, if you want to use `npm` 11.6.2 but 11.6.3 has an issue, use:
 
 ## Supported tools
 
-## Built-in
+## Official built-in
 
 The following tools are supported natively in proto's toolchain.
 
 <ToolCards data="built-in" />
 
-## Third-party
+## Official community<VersionLabel version="0.62.0" />
+
+<Button
+  className="float-right -mt-8"
+  href="https://github.com/moonrepo/community-plugins"
+  label="Add tool"
+/>
+
+The following tools are provided by the official
+[community plugins](./plugins#community-plugins) registry. They're resolved automatically by ID, so
+no [plugin](./plugins) configuration is required.
+
+<ToolCards data="community" />
+
+## Unofficial third-party
 
 <Button
   className="float-right -mt-8"
@@ -23828,6 +24024,44 @@ $ cd /another/path && node --version
 
 View the [`proto activate`](./commands/activate#setup) documentation for information on how to setup
 your shell profile for this workflow.
+
+### Supported shells
+
+Activation is supported in the following shells. Every shell that provides a prompt hook now
+triggers on prompt changes as well as directory changes, so configuration edits within the current
+directory are reflected without having to `cd` away and back. <VersionLabel version="0.62.0" inline />
+
+| Shell                                                        | Triggers on                          |
+| ------------------------------------------------------------ | ------------------------------------ |
+| `ash`, `dash`, `sh` <VersionLabel version="0.62.0" inline /> | 🟠 `cd` only, which the hook shadows |
+| `bash`                                                       | 🟢 Prompt change                     |
+| `elvish`                                                     | 🟢 Directory and prompt change       |
+| `fish`                                                       | 🟢 Directory and prompt change       |
+| `murex`                                                      | 🟢 Prompt change                     |
+| `nu`                                                         | 🟢 Directory and prompt change       |
+| `powershell` <VersionLabel version="0.62.0" inline />        | 🟢 Prompt change (5.1+)              |
+| `pwsh`                                                       | 🟢 Directory and prompt change       |
+| `xonsh` <VersionLabel version="0.62.0" inline />             | 🟢 Directory and prompt change       |
+| `zsh`                                                        | 🟢 Directory and prompt change       |
+
+> `ion` does not support hooks of any kind, so activation is unavailable there.
+
+### Deactivating<VersionLabel version="0.62.0" />
+
+Activation isn't a one-way door. The hook also defines a `proto_deactivate` function, which reverses
+everything the activation applied to the current shell session: environment variables are unset,
+shell aliases are removed, and the `PATH` entries that were injected are dropped. The hook is
+unregistered, and both functions are removed.
+
+```shell
+$ proto_deactivate
+```
+
+`PATH` entries that were inherited from _outside_ of the activation are kept, so if your shell
+profile already prepended `~/.proto/shims` or `~/.proto/bin`, they'll still be there afterwards.
+
+To turn everything back on, simply evaluate [`proto activate`](./commands/activate) again (or open a new terminal session). View the
+[`proto deactivate`](./commands/deactivate) documentation for more information.
 
 ## Comparison
 
@@ -38278,3 +38512,159 @@ of changes.
 - Fixed an install that failed very early (before any progress output) hanging when not running in a
   TTY.
 - Updated Rust to v1.98.0.
+
+---
+
+## proto v0.62 - Community plugins, shell deactivation, and Zig support
+
+Dozens of community tools now install by name alone, shell activation learned how to turn itself
+off, and a new language joins the toolchain.
+
+<!--truncate-->
+
+## Community plugins, no locator required
+
+proto has supported third-party plugins since nearly the beginning, but using one has always been a
+two-step affair. Find the plugin, add the locator to `.prototools`, _then_ install the tool.
+
+```toml title=".prototools"
+[plugins.tools]
+shfmt = "https://raw.githubusercontent.com/moonrepo/community-plugins/master/tools/shfmt.toml"
+```
+
+That's a lot of ceremony for `shfmt`. So in this release, we've wired proto up to the official
+[community plugins](https://github.com/moonrepo/community-plugins) registry. Every tool in that
+registry can now be installed by ID, with no configuration at all.
+
+```shell
+$ proto install shfmt 3.14.0
+```
+
+That's over 30 tools out of the box — `act`, `actionlint`, `bazel`, `biome`, `caddy`, `cmake`,
+`dprint`, `gitleaks`, `hurl`, `hyperfine`, `just`, `mkcert`, `ninja`, `oxlint`, `ruff`,
+`shellcheck`, `task`, `traefik`, `watchexec`, and more. The full list lives on the
+[supported tools](/docs/proto/tools#community) page.
+
+The registry is consulted _last_, only after your own `[plugins.tools]` entries, any `plugin` fields,
+and the built-in tools have all come up empty. A locator you configure yourself always wins, so
+pointing an ID at your own fork keeps working exactly as it did. The data is cached locally, and if
+the lookup fails — you're offline, GitHub is having a day — proto logs a warning and carries on
+instead of failing the command.
+
+If you'd rather proto never reach for the network on your behalf, turn it off:
+
+```toml title=".prototools"
+[settings]
+community-tools = false
+```
+
+Community plugins are generated nightly from the TOML plugins in
+[moonrepo/community-plugins](https://github.com/moonrepo/community-plugins), which is also where new
+tools should be contributed. Add a TOML file, and it's installable by everyone the next day.
+
+## Turning activation off
+
+[Shell activation](/docs/proto/workflows#shell-activation) has been proto's most powerful workflow
+since v0.38, and also its most one-way. Once you evaluated `proto activate` in a session, the only
+way out was a new terminal.
+
+Not anymore. The activation hook now defines a `proto_deactivate` function alongside the one that
+does the activating.
+
+```shell
+$ proto_deactivate
+```
+
+This unsets the environment variables the activation exported, removes the shell aliases it defined,
+drops the `PATH` entries it injected, unregisters the hook, and then removes both functions. Your
+session is left as though you'd never activated at all, and re-activating is just evaluating
+`proto activate` again.
+
+It's also cheap. Everything that needs reverting is tracked by the activation itself in a few
+internal variables, so deactivating never loads a `.prototools` file or a single WASM plugin. It even
+works from a directory whose configuration would otherwise fail to load — handy when the reason
+you're deactivating is that something is broken.
+
+The `PATH` handling deserves a mention, because getting this wrong is the classic version manager
+foot-gun. Activation marks the boundary of what it injected, and deactivation removes only what's
+inside that boundary. Entries inherited from _outside_ of it — the `~/.proto/shims` your shell
+profile prepended long before the hook ever ran — are left exactly where they were, spelling and
+duplicates intact. Deactivating gives you back the `PATH` you started with, not proto's idea of it.
+
+There's a [`proto deactivate`](/docs/proto/commands/deactivate) command behind the function, if you
+want to drive it yourself.
+
+## Activation in more shells
+
+We've also taught activation a few new tricks.
+
+**More shells.** `ash`, `dash`, `sh`, `powershell` (5.1+), and `xonsh` can all activate now. The
+POSIX shells are the interesting case: they have no change-directory or prompt hook whatsoever, so
+the activation shadows `cd` with a function of its own. Windows PowerShell has no change-directory
+trigger either (`LocationChangedAction` requires PowerShell 6+), so we wrap the prompt instead.
+
+**Prompt triggers.** Activation used to run on directory changes only, which meant editing
+`.prototools` in the directory you were already standing in did nothing until you `cd`'d away and
+back. Every shell with a prompt hook — `elvish`, `fish`, `nu`, `pwsh`, `xonsh`, `zsh` — now triggers
+on prompt changes too, so a configuration edit is picked up on the very next command. If you notice
+any performance regression from this, please [tell us](https://github.com/moonrepo/proto/issues)!
+
+**Nushell, properly.** Nu was always the odd one out. It has no runtime `eval`, so its hook consumed
+a JSON payload instead of the shell syntax every other shell gets, and that gap meant
+[`[shell.aliases]`](/docs/proto/config#aliases) simply never worked there. Nu now gets the same shell
+syntax as everyone else: the hook writes the statements to a file and applies them with `source`,
+which parses them properly. Aliases work, and a previous directory's [`[env]`](/docs/proto/config#env)
+variables are unset when you leave it. The JSON output is still available for tooling that wants it.
+
+While we were in there, aliases were fixed for Elvish too — its statements evaluate in a namespace
+that gets thrown away, so a defined alias vanished the moment it returned — and `[env]` variables
+were fixed for Murex and PowerShell, where unquoted values were being parsed as expressions.
+
+## Zig and ZLS
+
+[Zig](https://ziglang.org/) joins proto's built-in toolchain, and so does
+[ZLS](https://zigtools.org/zls/), its language server.
+
+```shell
+$ proto install zig
+$ proto install zls
+```
+
+Both detect versions from `.zig-version`, `.zigversion`, and the `minimum_zig_version` field in
+`build.zig.zon`, so a Zig project that already pins its toolchain needs no proto-specific
+configuration to be picked up.
+
+> These plugins are brand new, so please
+> [report any issues](https://github.com/moonrepo/plugins/issues) you run into!
+
+## Breaking changes
+
+Activation was reworked fairly deeply this release, so a few things moved.
+
+- The functions the activation hook defines were renamed from `_proto_activate_hook` and
+  `_proto_deactivate_hook`, to `proto_activate` and `proto_deactivate`. They're a documented part of
+  the workflow now, rather than an implementation detail.
+- **Nushell users:** the generated hook must be consumed with `source` instead of `use`, as the
+  appended `proto_activate` call stages the initial activation, which the first prompt applies. If
+  you saved the output to a file, regenerate it and update `config.nu`:
+
+  ```nushell
+  proto activate nu | save --force ($nu.default-config-dir | path join "proto-hook.nu")
+  # Then replace `use proto-hook.nu` with:
+  source proto-hook.nu
+  ```
+
+- The JSON output of `proto activate` now returns `PATH` as a `paths` list, instead of a pre-joined
+  `path` string. Nu models `PATH` as a list, and a joined string loses those semantics.
+
+## Other changes
+
+View the [official release](https://github.com/moonrepo/proto/releases/tag/v0.62.0) for a full list
+of changes.
+
+- Fixed Elvish activation breaking for the rest of the session after leaving a directory that
+  configured `[shell.aliases]`. Removing the alias failed to compile, which aborted every other
+  statement alongside it.
+- Activation no longer removes `PATH` entries that were inherited from outside of it, even when the
+  same directory is being activated. `~/.proto/shims` and `~/.proto/bin` stay on `PATH` after
+  deactivating, when a shell profile had already added them.

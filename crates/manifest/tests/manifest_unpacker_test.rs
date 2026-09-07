@@ -252,9 +252,38 @@ mod symlinks {
         let link = sandbox.path().join("out/link.txt");
 
         assert!(link.is_symlink());
+        assert_eq!(std::fs::read_link(&link).unwrap(), PathBuf::from("a.txt"));
+        assert_eq!(std::fs::read_to_string(link).unwrap(), "contents");
+    }
+
+    #[test]
+    fn links_relatively_so_the_restored_tree_can_be_moved() {
+        // An absolute target binds the tree to this workspace root: copy it
+        // elsewhere (a container image, another checkout) and every link dangles.
+        let sandbox = create_empty_sandbox();
+
+        let manifest = Manifest {
+            files: vec![ManifestFile {
+                bytes: Some(Bytes::from_static(b"contents")),
+                digest: digest(b"contents"),
+                path: "out/a.txt".into(),
+                ..Default::default()
+            }],
+            symlinks: vec![ManifestSymlink {
+                path: "out/nested/link.txt".into(),
+                target: "out/a.txt".into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+
+        unpack(&sandbox, &manifest).unwrap();
+
+        let link = sandbox.path().join("out/nested/link.txt");
+
         assert_eq!(
             std::fs::read_link(&link).unwrap(),
-            sandbox.path().join("out/a.txt")
+            PathBuf::from("../a.txt")
         );
         assert_eq!(std::fs::read_to_string(link).unwrap(), "contents");
     }

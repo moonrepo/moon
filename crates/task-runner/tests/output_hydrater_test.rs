@@ -213,6 +213,40 @@ mod output_hydrater {
             );
         }
 
+        #[tokio::test(flavor = "multi_thread")]
+        async fn preserves_existing_output_when_cache_blob_is_missing() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container
+                .sandbox
+                .create_file("project/file.txt", "contents");
+
+            let mut state = container.create_state();
+            setup_cas_state(&mut state);
+            let source = archive_and_load(&container, &state).await;
+
+            let output = container.sandbox.path().join("project/file.txt");
+            fs::write(&output, "local output").unwrap();
+
+            let blob_digest = Digest::from_bytes(b"contents").unwrap();
+            let blob_path = container
+                .sandbox
+                .path()
+                .join(".moon/cache/blobs")
+                .join(blob_digest.hash.prefix())
+                .join(blob_digest.hash.suffix());
+            fs::remove_file(blob_path).unwrap();
+
+            let result = container
+                .create_hydrator()
+                .hydrate(HydrateFrom::Storage(Box::new(source)), "hash123", &state)
+                .await;
+
+            if let Ok(outcome) = result {
+                assert_not_hydrated(outcome);
+            }
+            assert_eq!(fs::read_to_string(output).unwrap(), "local output");
+        }
+
         #[cfg(unix)]
         #[tokio::test(flavor = "multi_thread")]
         async fn hydrates_read_only_output_file_from_cas() {

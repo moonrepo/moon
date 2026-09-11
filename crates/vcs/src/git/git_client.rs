@@ -18,6 +18,7 @@ use moon_process::{Command, CommandArg, find_command_on_path, output_to_trimmed_
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use tokio::sync::OnceCell;
 use tokio::task::JoinSet;
 use tracing::{debug, warn};
 use version_spec::Version;
@@ -63,6 +64,11 @@ pub struct Git {
     /// The current working tree. Either a worktree checkout,
     /// or the root of the repository itself.
     pub worktree: Arc<GitTree>,
+
+    /// Working tree status, collected at most once. The status of the
+    /// checkout cannot change while a run is in progress, and rebuilding
+    /// the map is expensive when many files have changed.
+    changed_files_cache: OnceCell<ChangedFiles>,
 }
 
 impl Git {
@@ -212,6 +218,7 @@ impl Git {
             submodules: submodules.into_iter().map(Arc::new).collect(),
             workspace_root: workspace_root.to_path_buf(),
             worktree: Arc::new(worktree),
+            changed_files_cache: OnceCell::new(),
         })
     }
 
@@ -501,18 +508,23 @@ impl Vcs for Git {
     }
 
     async fn get_changed_files(&self) -> miette::Result<ChangedFiles> {
-        let mut changed_files = ChangedFiles::default();
-        let mut set = JoinSet::new();
+        self.changed_files_cache
+            .get_or_try_init(|| async {
+                let mut changed_files = ChangedFiles::default();
+                let mut set = JoinSet::new();
 
-        for tree in self.get_all_trees() {
-            set.spawn(async move { tree.exec_status().await });
-        }
+                for tree in self.get_all_trees() {
+                    set.spawn(async move { tree.exec_status().await });
+                }
 
-        while let Some(result) = set.join_next().await {
-            changed_files.merge(result.into_diagnostic()??);
-        }
+                while let Some(result) = set.join_next().await {
+                    changed_files.merge(result.into_diagnostic()??);
+                }
 
-        changed_files.into_workspace_relative(&self.workspace_root)
+                changed_files.into_workspace_relative(&self.workspace_root)
+            })
+            .await
+            .cloned()
     }
 
     async fn get_changed_files_against_previous_revision(

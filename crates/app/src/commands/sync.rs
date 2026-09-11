@@ -34,7 +34,7 @@ pub async fn sync(session: MoonSession) -> SessionResult {
     session.console.render(element! {
         Container {
             Notice(variant: Variant::Success) {
-                StyledText(content: format!("Synced the workspace and all projects"))
+                StyledText(content: "Synced the workspace and all projects".to_string())
             }
         }
     })?;

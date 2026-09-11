@@ -16,5 +16,12 @@ moon_toolchain = { path = "../toolchain" }
 rustc-hash = { workspace = true }
 miette = { workspace = true }
 
+[dev-dependencies]
+moon_test_utils = { path = "../test-utils" }
+moon_toolchain_plugin = { path = "../toolchain-plugin" }
+proto_core = { workspace = true }
+starbase_sandbox = { workspace = true }
+tokio = { workspace = true }
+
 [lints]
 workspace = true

@@ -188,7 +188,8 @@ The following fields are available:
   <VersionLabel version="0.47.0" />
 - `checksum_url` - A secure URL to download the checksum file for verification. If the tool does not
   support checksum verification, this setting can be omitted.
-- `checksum_public_key` - Public key used for verifying checksums. Only used for `.minisig` files.
+- `checksum_public_key` - Public key used for verifying checksums. Only used for `.minisig`
+  (minisign), and `.sig` / `.asc` (GPG) files. <VersionLabel version="0.61.0" />
 - `post_script` - A script file, relative from the install directory, to execute after the prebuilt
   has been installed.
 - `post_script_args` - A list of arguments to pass to the post-install script when executing it.
@@ -237,6 +238,29 @@ pub fn download_prebuilt(Json(input): Json<DownloadPrebuiltInput>) -> FnResult<J
     }))
 }
 ```
+
+##### Verifying with GPG<VersionLabel version="0.61.0" />
+
+Alongside hashes (`.sha256`, `.sha512`) and minisign signatures (`.minisig`), proto can verify a
+download against a GPG detached signature. Point `checksum_url` at a `.sig` or `.asc` file, and
+provide the project's armored public keyring through `checksum_public_key`.
+
+```rust
+Ok(Json(DownloadPrebuiltOutput {
+    download_url: format!("https://example.com/v{version}/{filename}"),
+    checksum_url: Some(format!("https://example.com/v{version}/{filename}.asc")),
+    checksum_public_key: Some(PUBLIC_KEY.into()),
+    ..DownloadPrebuiltOutput::default()
+}))
+```
+
+- The keyring may contain multiple certificates within a single armored block, or multiple
+  concatenated armored blocks.
+- The signature file may contain multiple binary signatures, multiple signatures within one armored
+  block, or multiple concatenated armored blocks. Verification succeeds when _any_ signature
+  matches a trusted key.
+- Only the verified signer fingerprint and a SHA-256 hash of the artifact are written to the
+  [lockfile](./lockfile#checksum-verification), not the armored public keyring.
 
 ##### Unpacking an archive
 

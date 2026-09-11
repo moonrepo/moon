@@ -9,7 +9,8 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The `proto activate <shell>` command will activate proto for the current shell session, by exporting
 environment variables and prepending `PATH` for each tool configured in the current directory.
-Activation is ran each time the current directory changes using a shell hook.
+Activation is ran each time the current directory changes, or the prompt is redrawn, using a shell
+hook.
 
 :::info
 
@@ -31,6 +32,25 @@ Learn more about
 - `--no-init` - Do not trigger activation when initialized in the shell, and instead wait for a
   cd/prompt change. <VersionLabel version="0.50.0" />
 
+### Functions<VersionLabel version="0.62.0" />
+
+Evaluating the output of this command defines 2 functions in your shell session.
+
+- `proto_activate` - Applies the activation. This is what the hook calls on every directory or
+  prompt change, but it can also be called manually to re-apply immediately.
+- `proto_deactivate` - Runs [`proto deactivate`](./deactivate), unregisters the hook, and then
+  removes both functions.
+
+```shell
+# Turn proto off for this session
+$ proto_deactivate
+
+# And back on again
+$ eval "$(proto activate zsh)"
+```
+
+> Before v0.62, these functions were named `_proto_activate_hook` and `_proto_deactivate_hook`.
+
 ### Caveats
 
 - Only tools that have a [version configured in `.prototools`](../config#pinning-versions) will be
@@ -38,11 +58,47 @@ Learn more about
 - Tool versions configured in the global `~/.proto/.prototools` are _not_ included by default. Pass
   `--config-mode all` during activation to include them.
   - Do note that this will worsen performance depending on the number of tools.
+- Activation only removes `PATH` entries that a previous activation injected. Entries inherited from
+  your shell profile are left exactly as they were. <VersionLabel version="0.62.0" />
+
+### JSON output<VersionLabel version="0.62.0" />
+
+When `--json` is passed, the environment variables and `PATH` entries to apply are printed as a JSON
+object, for consumption by other tooling. A `null` environment value denotes a variable that should
+be unset.
+
+```json
+{
+  "env": {
+    "PROTO_NODE_VERSION": "22.0.0",
+    "OLD_VAR": null
+  },
+  "paths": ["/home/user/.proto/shims", "/home/user/.proto/bin"]
+}
+```
+
+> Before v0.62, `PATH` was returned as a pre-joined `path` string. It's now a `paths` list, as
+> [Nu](#nu) models `PATH` as a list, and would otherwise lose its path semantics.
 
 ### Setup
 
 The following activation steps should be added _after_ all environment variable and `PATH`
 modifications have happened in your shell, typically at the end of your shell profile.
+
+#### Ash, Dash, Sh<VersionLabel version="0.62.0" />
+
+Add the following line to the end of your `~/.ashrc` or `~/.profile`.
+
+```shell
+eval "$(proto activate sh)"
+```
+
+:::warning
+
+POSIX shells have no change-directory or prompt hook, so the activation shadows `cd` with a function
+of its own. This will clobber any other `cd` wrapper you may have defined.
+
+:::
 
 #### Bash
 
@@ -86,22 +142,49 @@ proto activate murex -> source
 
 Generate the hook:
 
-```shell
-(proto activate nu) | save ~/.config/nushell/proto-hook.nu
+```nushell
+proto activate nu | save --force ($nu.default-config-dir | path join "proto-hook.nu")
 ```
 
 Then add the following line to your `~/.config/nushell/config.nu` file.
 
-```shell
-use proto-hook.nu
+```nushell
+source proto-hook.nu
 ```
+
+:::warning
+
+Before v0.62, this hook was consumed with `use proto-hook.nu`. If you saved the output to a file,
+regenerate it and replace `use` with `source`, as the appended `proto_activate` call stages the
+initial activation, which the first prompt applies.
+
+:::
+
+#### PowerShell<VersionLabel version="0.62.0" />
+
+For Windows PowerShell (5.1+). Add the following line to the end of your profile (`$PROFILE`).
+
+```powershell
+proto activate powershell | Out-String | Invoke-Expression
+```
+
+> Windows PowerShell has no change-directory trigger, as `LocationChangedAction` requires PowerShell
+> 6+, so the global prompt is wrapped instead. For PowerShell 6+, use [Pwsh](#pwsh).
 
 #### Pwsh
 
 Add the following line to the end of your profile (`$PROFILE`).
 
-```shell
+```powershell
 proto activate pwsh | Out-String | Invoke-Expression
+```
+
+#### Xonsh<VersionLabel version="0.62.0" />
+
+Add the following line to the end of your `~/.config/xonsh/rc.xsh` or `~/.xonshrc`.
+
+```python
+execx($(proto activate xonsh))
 ```
 
 #### Zsh

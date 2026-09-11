@@ -141,6 +141,9 @@ WASM is pretty powerful but it can't do everything since it's sandboxed. To work
 provide a mechanism known as host functions, which are functions that are implemented on the host
 (in Rust), and can be executed from WASM. The following host functions are currently available:
 
+- [`download_file`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.download_file.html) -
+  Download a file from a URL directly to a file on the host machine, without loading the contents
+  into WASM memory. <sup>proto v0.61+</sup>
 - [`exec_command`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.exec_command.html) -
   Execute a system command on the host machine, with a provided list of arguments or environment
   variables.
@@ -167,6 +170,7 @@ use extism_pdk::*;
 
 #[host_fn]
 extern "ExtismHost" {
+    fn download_file(input: Json<DownloadFileInput>) -> Json<DownloadFileOutput>;
     fn exec_command(input: Json<ExecCommandInput>) -> Json<ExecCommandOutput>;
     fn get_env_var(key: String) -> String;
     fn host_log(input: Json<HostLogInput>);
@@ -266,6 +270,31 @@ exec(ExecCommandInput {
 })?;
 ```
 
+#### Downloading files
+
+The [`download_file!`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.download_file.html)
+macro can be used to download a file from a URL straight to a destination file on the host, using
+the `download_file` host function. Unlike [sending a request](#sending-requests), the response body
+is streamed to disk and never passes through WASM memory, which avoids allocating the entire file
+in the guest. This is ideal for large artifacts, like archives and installers.
+
+```rust
+let output = download_file!("https://some.com/url/to/file.tar.xz", temp_dir.join("file.tar.xz"));
+
+output.file; // Virtual path written to
+output.size; // Size in bytes
+```
+
+For a simpler API, the
+[`download_from_url`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.download_from_url.html)
+and [`download`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/fn.download.html) functions can
+be used instead, the latter accepting a `DownloadFileInput` for full control (like custom headers).
+
+Requests are made with proto's own HTTP client, so they respect
+[`[settings.http]`](/docs/proto/config#settingshttp) and `.netrc` configuration.
+
+> This host function is only available in proto v0.61 and above.
+
 #### Sending requests
 
 The [`send_request`](https://docs.rs/warpgate_pdk/latest/warpgate_pdk/macro.send_request.html) macro
@@ -293,7 +322,16 @@ To simplify the handling of requests -> responses, we also provide the
 let json: T = fetch_json("https://some.com/url/to/fetch.json")?;
 ```
 
-> Only GET requests are supported.
+Requests are sent with the `GET` method by default. To send a `POST` request instead, set the
+`method` field on the input, or use the
+[`SendRequestInput::post`](https://docs.rs/warpgate_api/latest/warpgate_api/struct.SendRequestInput.html)
+constructor.
+
+```rust
+let response = send_request!(input, SendRequestInput::post("https://some.com/url/to/post"));
+```
+
+> `POST` support was added in proto v0.61. Before that, only `GET` requests were supported.
 
 #### Logging
 

@@ -1700,6 +1700,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "tc_tier3_tool"
+version = "0.0.1"
+dependencies = [
+ "extism-pdk",
+ "moon_common",
+ "moon_config",
+ "moon_pdk",
+ "moon_pdk_api",
+ "moon_target",
+ "proto_pdk_api",
+ "rustc-hash",
+]
+
+[[package]]
 name = "test_plugin"
 version = "0.0.1"
 dependencies = [

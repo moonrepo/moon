@@ -92,7 +92,7 @@ tracing = { workspace = true }
 version_spec = { workspace = true }
 
 # Visualizer
-open = "5.4.1"
+open = "5.4.3"
 petgraph = { workspace = true }
 tera = { workspace = true }
 tiny_http = "0.12.0"

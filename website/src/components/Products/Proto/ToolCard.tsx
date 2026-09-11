@@ -4,25 +4,27 @@ import Text from '@site/src/ui/typography/Text';
 import CodeBlock from '@theme/CodeBlock';
 import Code from '@theme/MDXComponents/Code';
 
-import { getAuthorName, ProtoTool } from '../../../data/proto-tools';
+import { getAuthorName, ProtoTool, ProtoToolType } from '../../../data/proto-tools';
 import TomlLink from '../../Docs/TomlLink';
 import WasmLink from '../../Docs/WasmLink';
 
 export interface ToolCardProps {
 	id: string;
 	tool: ProtoTool;
-	builtin?: boolean;
+	type: ProtoToolType;
 }
 
 // oxlint-disable-next-line complexity
-export default function ToolCard({ id, tool, builtin }: ToolCardProps) {
+export default function ToolCard({ id, tool, type }: ToolCardProps) {
+	// Built-in and community tools are resolved by ID, so they require no locator
+	const requiresLocator = type === 'third-party';
 	const bins = tool.bins ?? [];
 	const dirs = tool.globalsDirs ?? [];
 	const detect = tool.detectionSources ?? [];
 	const usageId = tool.id ?? id;
 	let usage = `proto install ${usageId}`;
 
-	if (tool.locator && !builtin) {
+	if (tool.locator && requiresLocator) {
 		usage = `proto plugin add ${usageId} "${tool.locator}"\n${usage}`;
 	}
 
@@ -33,7 +35,7 @@ export default function ToolCard({ id, tool, builtin }: ToolCardProps) {
 
 			<Heading level={5} className="mb-1">
 				<Link href={tool.homepageUrl ?? tool.repositoryUrl}>{tool.name}</Link>
-				{!builtin && (
+				{type !== 'built-in' && (
 					<Text as="span" variant="muted" size="sm" className="ml-1">
 						({getAuthorName(tool.author)})
 					</Text>

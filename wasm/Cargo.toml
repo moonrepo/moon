@@ -9,6 +9,8 @@ moon_config = { path = "../crates/config" }
 moon_pdk = { path = "../crates/pdk" }
 moon_pdk_api = { path = "../crates/pdk-api" }
 moon_target = { path = "../crates/target" }
+proto_pdk_api = "0.33.0"
+rustc-hash = "2.1.3"
 extism = "=1.30.0"
 extism-pdk = "1.4.1"
 

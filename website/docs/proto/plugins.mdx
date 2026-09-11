@@ -31,6 +31,34 @@ settings to be defined side-by-side. <VersionLabel version="0.60.0" />
 plugin = "<protocol>://<location>"
 ```
 
+## Community plugins<VersionLabel version="0.62.0" />
+
+proto also maintains an official registry of [community plugins](./tools#community), which are TOML
+based plugins for tools that aren't built-in. Any tool in this registry can be used _by ID alone_,
+without configuring a locator first.
+
+```shell
+$ proto install shfmt 3.14.0
+```
+
+When proto can't find a plugin for a tool, it consults the registry as a last resort, after your own
+`[plugins.tools]` entries, any `plugin` fields, and the [built-in tools](./tools#built-in) have all
+been exhausted. A locator that you configure always wins, so pointing an ID at your own fork
+continues to work exactly as before.
+
+The registry data is cached locally, and a lookup failure (an outage, being offline) is logged as a
+warning instead of failing the command. If you'd rather proto never reach for it, disable the
+[`community-tools`](./config#community-tools) setting.
+
+```toml title=".prototools"
+[settings]
+community-tools = false
+```
+
+Community plugins are generated nightly from the
+[moonrepo/community-plugins](https://github.com/moonrepo/community-plugins) repository, which is
+also where new tools should be contributed.
+
 ## Creating plugins
 
 To ease the plugin development process, proto supports 2 types of plugins, a

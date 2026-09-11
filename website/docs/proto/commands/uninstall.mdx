@@ -2,6 +2,8 @@
 title: uninstall
 ---
 
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
 The `proto uninstall <tool> [version]` (or `proto ui`) command will uninstall and remove a tool from
 `~/.proto/tools/<tool>`. If the tool has not been installed, the command will exit early.
 
@@ -12,6 +14,12 @@ $ proto uninstall deno 1.31
 # Remove all versions
 $ proto uninstall deno
 ```
+
+When a [lockfile](../lockfile) is in use, records for the uninstalled version are removed from
+_all_ applicable lockfiles, as the version may be pinned in multiple configuration files (each of
+which is unpinned). When uninstalling all versions, the tool is removed from all applicable
+lockfiles. Afterwards, [orphaned records](../lockfile#orphaned-records) are pruned from the
+lockfiles that were loaded. <VersionLabel version="0.61.0" />
 
 ### Arguments
 

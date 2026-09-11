@@ -30,7 +30,9 @@ export function getAuthorName(author: ProtoTool['author']): string {
 	return typeof author === 'string' ? author : author.name;
 }
 
-export async function loadToolsData(type: 'built-in' | 'third-party'): Promise<ProtoTool[]> {
+export type ProtoToolType = 'built-in' | 'community' | 'third-party';
+
+export async function loadToolsData(type: ProtoToolType): Promise<ProtoTool[]> {
 	const res = await fetch(
 		`https://raw.githubusercontent.com/moonrepo/proto/master/registry/data/${type}.json`,
 		{ cache: 'default' },

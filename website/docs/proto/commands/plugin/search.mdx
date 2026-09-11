@@ -7,8 +7,10 @@ import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 <VersionLabel version="0.36.0" header />
 
-The `proto plugin search <query>` command will search for plugins provided by the community, based
-on the provided query string. Built-in plugins _are not_ searchable.
+The `proto plugin search <query>` command will search for third-party plugins, based on the provided
+query string. [Built-in](../../tools#built-in) and
+[community](../../plugins#community-plugins) plugins _are not_ searchable, as both are resolved by
+ID without a locator.
 
 ```
 $ proto plugin search moon

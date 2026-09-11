@@ -1,0 +1,53 @@
+---
+title: deactivate
+toc_max_heading_level: 4
+---
+
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
+
+<VersionLabel version="0.62.0" header />
+
+The `proto deactivate <shell>` command will deactivate proto for the current shell session, by
+reverting everything that a previous [activation](./activate) applied. This unsets environment
+variables, removes shell aliases, and removes the `PATH` entries that were injected.
+
+```shell
+$ proto deactivate
+```
+
+:::danger
+
+Do not call this command directly, prefer calling the `proto_deactivate` shell function that the activation hook defines, as it also
+unregisters the hook itself, and removes both functions. Learn more about
+[shell activation in the official workflow documentation](../workflows#shell-activation)!
+
+:::
+
+### Arguments
+
+- `<shell>` - The shell to deactivate for. Is detected if not provided.
+
+### Options
+
+- `--export` - Print the deactivate instructions in shell-specific syntax.
+- `--json` - Print the deactivate instructions in JSON format.
+
+### Caveats
+
+- Everything that must be reverted is tracked by the activation itself (through the
+  `_PROTO_ACTIVATED_ENV`, `_PROTO_ACTIVATED_ALIASES`, and `_PROTO_ACTIVATED_PATH` variables), so
+  configuration files and tool plugins are _never_ loaded. Deactivating is cheap, and works even
+  when the current directory would fail to load.
+- `PATH` entries that were inherited from outside of the activation are _not_ removed. If your shell
+  profile already prepended `~/.proto/shims` or `~/.proto/bin`, they'll remain after deactivating.
+- In [Nu](./activate#nu), the teardown is staged like every other statement, so it applies on the
+  trigger that follows the call, instead of immediately.
+
+### Re-activating
+
+Deactivation is not permanent. To activate again within the same session, simply evaluate
+[`proto activate`](./activate) once more.
+
+```shell
+$ eval "$(proto activate zsh)"
+```

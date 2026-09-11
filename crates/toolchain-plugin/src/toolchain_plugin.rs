@@ -24,6 +24,7 @@ use std::fmt;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::RwLock;
 use tracing::instrument;
 
@@ -36,6 +37,7 @@ pub struct ToolchainPlugin {
 
     plugin: Arc<PluginContainer>,
     tool: Option<RwLock<Tool>>,
+    setup: AtomicBool,
 
     globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
     locations_cache: scc::HashMap<UnresolvedVersionSpec, LocatorResponse>,
@@ -74,6 +76,7 @@ impl Plugin for ToolchainPlugin {
             locator: registration.locator,
             globals_cache: scc::HashMap::new(),
             locations_cache: scc::HashMap::new(),
+            setup: AtomicBool::new(false),
             metadata,
             plugin,
         })
@@ -185,6 +188,13 @@ impl ToolchainPlugin {
         )
     }
 
+    /// Returns true if this toolchain has been setup (installed/located) during
+    /// the current process. Toolchains that were never setup have no executables
+    /// on disk, so locating them would fail.
+    pub fn is_setup(&self) -> bool {
+        self.setup.load(Ordering::Acquire)
+    }
+
     // Detection
     pub async fn supports_tier_1(&self) -> bool {
         self.has_func("register_toolchain").await || self.has_func("detect_version_files").await
@@ -211,7 +221,11 @@ impl ToolchainPlugin {
     ) -> miette::Result<Vec<PathBuf>> {
         let mut paths = IndexSet::<PathBuf>::default();
 
+        // Toolchains that are merely declared in the workspace
+        // (and were never installed) have no executables on disk,
+        // and attempting to locate them would fail
         if let Some(version) = &version
+            && self.is_setup()
             && let Some(locations) = self.cache_locations(version).await?
         {
             if let Some(dir) = locations.exe_file.parent() {
@@ -655,6 +669,8 @@ impl ToolchainPlugin {
                 if let Some(version) = &spec.version {
                     tool.inventory.create_product(version).track_used_at()?;
                 }
+
+                self.setup.store(true, Ordering::Relaxed);
             }
 
             // Pre-load the tool plugin so that task executions

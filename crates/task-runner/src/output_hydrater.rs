@@ -106,9 +106,6 @@ impl OutputHydrater<'_> {
                 // Validate the output paths are legit before doing anything
                 self.validate_output_paths(&source.manifest)?;
 
-                // Delete existing outputs first so that reflinking works
-                self.delete_existing_outputs()?;
-
                 // Retrieve the manifest from the local/remote caches
                 let mut manifest = None;
 
@@ -143,6 +140,10 @@ impl OutputHydrater<'_> {
                         .await?;
 
                     if let Some(manifest) = &manifest {
+                        // Delete existing outputs only after all cache reads succeed.
+                        // A failed read is a cache miss and must not remove outputs
+                        // that the task may rely on recreating.
+                        self.delete_existing_outputs()?;
                         ManifestUnpacker::new(manifest, self.app_context.workspace_root.clone())
                             .unpack()?;
                     }

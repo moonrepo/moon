@@ -137,7 +137,7 @@ config_struct!(
         pub glob: GlobPath,
 
         /// Cache the glob walking result for increased performance.
-        #[serde(default = "default_true", skip_serializing_if = "is_false")]
+        #[serde(skip_serializing_if = "is_false")]
         #[setting(default = true)]
         pub cache: bool,
     }

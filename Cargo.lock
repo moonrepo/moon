@@ -5616,7 +5616,7 @@ dependencies = [
  "starbase",
  "starbase_archive",
  "starbase_sandbox",
- "starbase_shell 0.14.1",
+ "starbase_shell",
  "starbase_styles",
  "starbase_utils",
  "tera 1.20.1",
@@ -8192,7 +8192,7 @@ dependencies = [
  "shell-words",
  "starbase_archive",
  "starbase_console",
- "starbase_shell 0.14.1",
+ "starbase_shell",
  "starbase_styles",
  "starbase_utils",
  "system_env",
@@ -9732,9 +9732,9 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "starbase"
-version = "0.13.2"
+version = "0.13.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3af1e170d9c74392689d6350e4a2973d1f493a9156e269bc469581ebba71e2ee"
+checksum = "365c915a28d0c8d941178234af45a25e086773e7cb95348e93ee4b8e0cb68258"
 dependencies = [
  "async-trait",
  "chrono",
@@ -9775,9 +9775,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_args"
-version = "0.1.13"
+version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1a5c360df360ae85c50f4159996369738d605172d603ada26179837c5c0822d"
+checksum = "e0c9be36c0d7652ad21f808a3f0e166556af839e2542c784fb23e35bb50f1e1d"
 dependencies = [
  "pest",
  "pest_derive",
@@ -9817,9 +9817,9 @@ dependencies = [
 
 [[package]]
 name = "starbase_process"
-version = "0.1.0"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbf0bae1826d76149951750e3cb5fc35debc00cb3bdb8ddeb4b3f53ec87fa8fa"
+checksum = "bb2e4b45f38113082088430af3d372f0872ee623c097119eab86a2dedc77f451"
 dependencies = [
  "bytes",
  "libc",
@@ -9828,7 +9828,7 @@ dependencies = [
  "scc",
  "serde",
  "starbase_console",
- "starbase_shell 0.12.8",
+ "starbase_shell",
  "starbase_styles",
  "system_env",
  "thiserror 2.0.20",
@@ -9849,20 +9849,6 @@ dependencies = [
  "predicates",
  "pretty_assertions",
  "starbase_utils",
-]
-
-[[package]]
-name = "starbase_shell"
-version = "0.12.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "faa99da498ff199c18eb754d315429157b2cb8ccea3f5685d883a0d4b24ec5c4"
-dependencies = [
- "base64 0.23.1",
- "regex",
- "shell-quote",
- "sysinfo",
- "thiserror 2.0.20",
- "tracing",
 ]
 
 [[package]]
@@ -11069,7 +11055,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starbase_archive",
- "starbase_shell 0.14.1",
+ "starbase_shell",
  "starbase_styles",
  "starbase_utils",
  "system_env",

@@ -8,6 +8,10 @@
   example `NO_COLOR` when colors are forced) were not removed from the current process, and could be
   inherited back into the bag on a subsequent read.
 
+#### ⚙️ Internal
+
+- Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2.
+
 ## 2.5.4
 
 #### 🐞 Fixes

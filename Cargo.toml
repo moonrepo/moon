@@ -24,7 +24,7 @@ clap_complete = "4.6.9"
 compact_str = { version = "0.10.0", default-features = false, features = [
   "serde",
 ] }
-convert_case = "0.11.0"
+convert_case = "0.12.0"
 criterion = { package = "codspeed-criterion-compat", version = "5.0.1", default-features = false, features = [
   "async_tokio",
 ] }

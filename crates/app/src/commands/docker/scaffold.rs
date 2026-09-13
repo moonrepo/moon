@@ -81,6 +81,13 @@ impl ScaffoldWorkflow {
             self.session.config_loader.get_ext_glob()
         ));
 
+        // Ignore rules travel with the skeleton. A build that keeps the git
+        // directory reachable otherwise sees every file the package manager
+        // installed as untracked, because `--exclude-standard` has no rules to
+        // apply. This is matched per copied directory rather than recursively,
+        // so each project contributes its own file without a full tree walk.
+        globs.insert(".gitignore".into());
+
         globs.extend(
             match self.phase {
                 ScaffoldDockerPhase::Configs => {

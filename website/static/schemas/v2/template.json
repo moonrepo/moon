@@ -99,7 +99,7 @@
       ]
     },
     "TemplateVariableArraySetting": {
-      "description": "Configuration for a template variable.",
+      "description": "An array variable.",
       "type": "object",
       "properties": {
         "default": {
@@ -167,7 +167,7 @@
       "additionalProperties": false
     },
     "TemplateVariableBoolSetting": {
-      "description": "Configuration for a template variable.",
+      "description": "A boolean variable.",
       "type": "object",
       "properties": {
         "default": {
@@ -242,6 +242,7 @@
       ]
     },
     "TemplateVariableEnumSetting": {
+      "description": "A string enumerable variable.",
       "type": "object",
       "properties": {
         "default": {
@@ -346,7 +347,7 @@
       "additionalProperties": false
     },
     "TemplateVariableNumberSetting": {
-      "description": "Configuration for a template variable.",
+      "description": "A number variable.",
       "type": "object",
       "properties": {
         "default": {
@@ -408,7 +409,7 @@
       "additionalProperties": false
     },
     "TemplateVariableObjectSetting": {
-      "description": "Configuration for a template variable.",
+      "description": "An object variable.",
       "type": "object",
       "properties": {
         "default": {
@@ -482,7 +483,7 @@
       "additionalProperties": false
     },
     "TemplateVariableStringSetting": {
-      "description": "Configuration for a template variable.",
+      "description": "A string variable.",
       "type": "object",
       "properties": {
         "default": {

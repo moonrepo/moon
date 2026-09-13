@@ -115,7 +115,7 @@ pub async fn run_action_pipeline(
 }
 
 pub async fn create_progress_loader(
-    console: Arc<Console>,
+    console: Console,
     message: impl AsRef<str>,
 ) -> ProgressInstance {
     let reporter = Arc::new(ProgressReporter::default());

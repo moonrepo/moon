@@ -314,7 +314,7 @@ export interface ProjectConfig {
 	workspace: ProjectWorkspaceConfig;
 }
 
-/** Expanded information about a project dependency. */
+/** A project referenced by identifier, with additional parameters. */
 export interface PartialProjectDependencyConfig {
 	/** Identifier of the depended on project. */
 	id?: Id | null;

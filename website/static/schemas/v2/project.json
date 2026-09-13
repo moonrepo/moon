@@ -364,6 +364,32 @@
           "description": "The literal file path.",
           "type": "string"
         },
+        "match": {
+          "title": "match",
+          "description": "Regex pattern to match the file's contents against when determining affected status.",
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "regex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "matches": {
+          "title": "matches",
+          "description": "Regex pattern to match the file's contents against when determining affected status.",
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "regex"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "optional": {
           "title": "optional",
           "description": "Mark the file as optional instead of logging a warning when hashing a task.",
@@ -446,6 +472,7 @@
       "additionalProperties": false
     },
     "Id": {
+      "description": "A project referenced by identifier.",
       "type": "string"
     },
     "Input": {
@@ -471,73 +498,71 @@
       "description": "Supported programming languages that each project can be written in.",
       "anyOf": [
         {
-          "title": "Bash",
+          "title": "bash",
           "const": "bash"
         },
         {
-          "title": "Batch",
+          "title": "batch",
           "const": "batch"
         },
         {
-          "title": "CPlusPlus",
+          "title": "cplusplus",
           "const": "cplusplus"
         },
         {
-          "title": "CSharp",
+          "title": "csharp",
           "const": "csharp"
         },
         {
-          "title": "DotNet",
+          "title": "dotnet",
           "const": "dotnet"
         },
         {
-          "title": "Go",
+          "title": "go",
           "const": "go"
         },
         {
-          "title": "Java",
+          "title": "java",
           "const": "java"
         },
         {
-          "title": "JavaScript",
+          "title": "javascript",
           "const": "javascript"
         },
         {
-          "title": "Kotlin",
+          "title": "kotlin",
           "const": "kotlin"
         },
         {
-          "title": "Php",
+          "title": "php",
           "const": "php"
         },
         {
-          "title": "Python",
+          "title": "python",
           "const": "python"
         },
         {
-          "title": "Ruby",
+          "title": "ruby",
           "const": "ruby"
         },
         {
-          "title": "Rust",
+          "title": "rust",
           "const": "rust"
         },
         {
-          "title": "Swift",
+          "title": "swift",
           "const": "swift"
         },
         {
-          "title": "TypeScript",
+          "title": "typescript",
           "const": "typescript"
         },
         {
-          "title": "Unknown",
-          "description": "Not explicitly set or detected.",
+          "title": "unknown",
           "const": "unknown"
         },
         {
-          "title": "Other",
-          "description": "A custom language.",
+          "title": "other",
           "type": "string"
         }
       ]
@@ -640,12 +665,15 @@
       "description": "A mapping of file paths and file globs to owners.",
       "anyOf": [
         {
+          "description": "A list of file paths and glob patterns. The owner of these is the project-level defaultOwner.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "A list of file paths and glob patterns. The owner of these is the project-level `defaultOwner`."
         },
         {
+          "description": "A map of file paths and glob patterns to owners.",
           "type": "object",
           "additionalProperties": {
             "type": "array",
@@ -664,7 +692,7 @@
       "type": "string"
     },
     "ProjectDependencyConfig": {
-      "description": "Expanded information about a project dependency.",
+      "description": "A project referenced by identifier, with additional parameters.",
       "type": "object",
       "properties": {
         "id": {
@@ -1054,12 +1082,15 @@
       "description": "Configures a command and its arguments to execute.",
       "anyOf": [
         {
+          "description": "No value defined; no operation.",
           "type": "null"
         },
         {
+          "description": "A command and arguments as a string. Will be parsed into a list.",
           "type": "string"
         },
         {
+          "description": "A command and arguments as a list of individual values.",
           "type": "array",
           "items": {
             "type": "string"
@@ -1397,6 +1428,7 @@
       "description": "Configures another task that this task depends on.",
       "anyOf": [
         {
+          "description": "A task referenced by target.",
           "type": "string"
         },
         {
@@ -1411,7 +1443,7 @@
       "markdownDescription": "Controls how a task dependency invalidates the current task's cache entry. When omitted, the effective strategy is `Hash` if the dependency declares outputs, or `Ignored` otherwise. @since 2.3.0"
     },
     "TaskDependencyConfig": {
-      "description": "Expanded information about a task dependency.",
+      "description": "A task referenced by target, with additional parameters to pass through.",
       "type": "object",
       "properties": {
         "args": {
@@ -1520,6 +1552,7 @@
         "passDotWhenNoResults": {
           "title": "passDotWhenNoResults",
           "description": "When there are no affected files after matching and filtering, use . instead of an empty value.",
+          "default": true,
           "anyOf": [
             {
               "type": "boolean"

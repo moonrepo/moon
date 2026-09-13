@@ -1056,12 +1056,15 @@
           "$ref": "#/definitions/WorkspaceProjectsConfig"
         },
         {
+          "description": "Using glob patterns. Suffix with moon.* to be distinct.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "Using glob patterns. Suffix with `moon.*` to be distinct."
         },
         {
+          "description": "Using a map of identifiers to file source paths.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -1073,7 +1076,7 @@
       ]
     },
     "WorkspaceProjectsConfig": {
-      "description": "Configures projects in the workspace, using both globs and explicit source paths.",
+      "description": "Using both glob patterns and file source paths.",
       "type": "object",
       "properties": {
         "globFormat": {

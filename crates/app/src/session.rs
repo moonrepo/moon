@@ -261,8 +261,8 @@ impl MoonSession {
         Ok(self.cache_engine.get().map(Arc::clone).unwrap())
     }
 
-    pub fn get_console(&self) -> miette::Result<Arc<Console>> {
-        Ok(Arc::new(self.console.clone()))
+    pub fn get_console(&self) -> miette::Result<Console> {
+        Ok(self.console.clone())
     }
 
     pub fn get_daemon_connector(&self) -> miette::Result<DaemonConnector> {

@@ -88,7 +88,7 @@ mod augmented_command {
             let app_context = mocker.mock_app_context();
             let bag = GlobalEnvBag::default();
 
-            let mut command = AugmentedCommand::new(&app_context, &bag, "noop");
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
 
             // Would fail with `proto::locate::missing_executable` if we
             // attempted to locate the uninstalled toolchain
@@ -107,7 +107,7 @@ mod augmented_command {
             let app_context = mocker.mock_app_context();
             let bag = GlobalEnvBag::default();
 
-            let mut command = AugmentedCommand::new(&app_context, &bag, "noop");
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
             command.inherit_from_toolchains(None, None).await.unwrap();
 
             let command = command.augment();
@@ -130,7 +130,7 @@ mod augmented_command {
 
             assert!(toolchain.is_setup());
 
-            let mut command = AugmentedCommand::new(&app_context, &bag, "noop");
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
             command.inherit_from_toolchains(None, None).await.unwrap();
 
             let command = command.augment();

@@ -675,12 +675,17 @@ impl ToolchainPlugin {
 
             // Pre-load the tool plugin so that task executions
             // avoid network race conditions and collisions
-            if let Ok(loader) = tool.proto.get_plugin_loader()
-                && let Some(locator) = tool.locator.clone().or_else(|| {
-                    locate_plugin(&tool.context, &tool.proto, ProtoPluginType::Tool).ok()
-                })
-            {
-                let _ = loader.load_plugin(&tool.context.id, &locator).await;
+            if let Ok(loader) = tool.proto.get_plugin_loader() {
+                let locator = match tool.locator.clone() {
+                    Some(loc) => Some(loc),
+                    None => locate_plugin(&tool.context, &tool.proto, ProtoPluginType::Tool)
+                        .await
+                        .ok(),
+                };
+
+                if let Some(locator) = &locator {
+                    let _ = loader.load_plugin(&tool.context.id, &locator).await;
+                }
             }
         }
 

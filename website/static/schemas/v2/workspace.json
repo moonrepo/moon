@@ -171,7 +171,7 @@
       "description": "Requires a specific version of the moon binary.",
       "anyOf": [
         {
-          "$ref": "#/definitions/Requirement"
+          "$ref": "#/definitions/Range"
         },
         {
           "type": "null"
@@ -736,6 +736,9 @@
       },
       "additionalProperties": false
     },
+    "Range": {
+      "type": "string"
+    },
     "RemoteApi": {
       "description": "The API format of the remote service. @since 1.32.0",
       "type": "string",
@@ -955,9 +958,6 @@
       "additionalProperties": false,
       "markdownDescription": "Configures for server-only authentication with TLS. @since 1.30.0"
     },
-    "Requirement": {
-      "type": "string"
-    },
     "VcsClient": {
       "description": "The VCS being utilized by the repository.",
       "type": "string",
@@ -1056,12 +1056,15 @@
           "$ref": "#/definitions/WorkspaceProjectsConfig"
         },
         {
+          "description": "Using glob patterns. Suffix with moon.* to be distinct.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "markdownDescription": "Using glob patterns. Suffix with `moon.*` to be distinct."
         },
         {
+          "description": "Using a map of identifiers to file source paths.",
           "type": "object",
           "additionalProperties": {
             "type": "string"
@@ -1073,7 +1076,7 @@
       ]
     },
     "WorkspaceProjectsConfig": {
-      "description": "Configures projects in the workspace, using both globs and explicit source paths.",
+      "description": "Using both glob patterns and file source paths.",
       "type": "object",
       "properties": {
         "globFormat": {

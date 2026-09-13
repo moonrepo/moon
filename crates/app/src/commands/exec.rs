@@ -23,7 +23,6 @@ use petgraph::graph::NodeIndex;
 use rustc_hash::{FxHashMap, FxHashSet};
 use starbase_utils::json;
 use std::fmt;
-use std::sync::Arc;
 use tracing::{debug, instrument, warn};
 
 #[derive(Clone, Debug, Default, PartialEq, ValueEnum)]
@@ -145,7 +144,7 @@ pub async fn exec(session: MoonSession, args: ExecArgs) -> SessionResult {
 
 pub struct ExecWorkflow {
     args: ExecArgs,
-    console: Arc<Console>,
+    console: Console,
     plan: ExecutionPlan,
     session: MoonSession,
 

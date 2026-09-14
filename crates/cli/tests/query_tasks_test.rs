@@ -127,7 +127,9 @@ mod query_tasks {
         assert!(targets_ci.contains(&"tasks:ci-only".to_string()));
         assert!(!targets_ci.contains(&"tasks:ci-disabled".to_string()));
 
-        // When NOT in CI
+        // When NOT in CI (local mode checks uncommitted changes)
+        sandbox.create_file("tasks/file.txt", "uncommitted change");
+
         let assert_local = sandbox.run_bin(|cmd| {
             cmd.arg("query")
                 .arg("tasks")

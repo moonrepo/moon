@@ -1,6 +1,7 @@
 mod utils;
 
 use moon_affected::{Affected, AffectedProjectState, AffectedTaskState};
+use moon_common::is_ci;
 use moon_task::Target;
 use rustc_hash::FxHashSet;
 use starbase_utils::json::serde_json;
@@ -35,12 +36,18 @@ mod query_affected {
 
         let mut affected: Affected = serde_json::from_str(assert.stdout().trim()).unwrap();
 
+        let expected_tasks = if is_ci() {
+            FxHashSet::default()
+        } else {
+            FxHashSet::from_iter([Target::parse("basic:dev").unwrap()])
+        };
+
         assert!(!affected.projects.contains_key("advanced"));
         assert_eq!(
             affected.projects.remove("basic").unwrap(),
             AffectedProjectState {
                 files: FxHashSet::from_iter(["basic/file.txt".into()]),
-                tasks: FxHashSet::from_iter([Target::parse("basic:dev").unwrap()]),
+                tasks: expected_tasks,
                 ..Default::default()
             }
         );
@@ -117,7 +124,9 @@ mod query_affected {
                 .contains_key(&Target::parse("tasks:ci-disabled").unwrap())
         );
 
-        // When NOT in CI
+        // When NOT in CI (local mode checks uncommitted changes)
+        sandbox.create_file("tasks/file.txt", "uncommitted change");
+
         let assert_local = sandbox.run_bin(|cmd| {
             cmd.arg("query")
                 .arg("affected")

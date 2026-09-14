@@ -7,7 +7,7 @@ use std::hash::Hash;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
-#[derive(Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ChangedFiles<T: Hash + Eq + PartialEq = WorkspaceRelativePathBuf> {
     pub files: FxHashMap<T, Vec<ChangedStatus>>,
 }

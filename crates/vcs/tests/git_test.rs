@@ -354,6 +354,7 @@ mod git {
             sandbox.create_file("root.txt", "");
             sandbox.create_file("submodules/mono/packages/a/sub.txt", "");
 
+            let git = Git::load(sandbox.path(), "master", &["origin".into()]).unwrap();
             let files = git.get_changed_files().await.unwrap();
 
             assert_eq!(
@@ -582,6 +583,12 @@ mod git {
             sandbox.create_file("trees/one/tree.txt", "");
             sandbox.create_file("trees/one/submodules/mono/packages/a/sub.txt", "");
 
+            let git = Git::load(
+                sandbox.path().join("trees/one"),
+                "master",
+                &["origin".into()],
+            )
+            .unwrap();
             let files = git.get_changed_files().await.unwrap();
 
             assert_eq!(

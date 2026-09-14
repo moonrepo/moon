@@ -4,7 +4,7 @@ use crate::plugin_error::PluginError;
 use moon_common::Id;
 use moon_pdk_api::MoonContext;
 use proto_core::is_offline;
-use starbase_utils::{fs, json::JsonValue};
+use starbase_utils::json::JsonValue;
 use std::collections::BTreeMap;
 use std::fmt;
 use std::fmt::Debug;
@@ -53,6 +53,14 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
         host_data: MoonHostData,
         config_data: Cfg,
     ) -> miette::Result<Self> {
+        if type_of != Inst::get_type() {
+            return Err(miette::miette!(
+                "cannot load a {} plugin in the {} registry",
+                Inst::get_type().get_label(),
+                type_of.get_label()
+            ));
+        }
+
         debug!(
             plugin_type = type_of.get_label(),
             "Creating plugin registry"
@@ -115,7 +123,15 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
             "Creating plugin manifest from WASM file",
         );
 
-        let mut manifest = PluginManifest::new([Wasm::file(wasm_file)]);
+        self.create_manifest_with_wasm(id, Wasm::file(wasm_file))
+    }
+
+    pub(crate) fn create_manifest_with_wasm(
+        &self,
+        id: &Id,
+        wasm: Wasm,
+    ) -> miette::Result<PluginManifest> {
+        let mut manifest = PluginManifest::new([wasm]);
 
         // Allow all hosts because we don't know what endpoints plugins
         // will communicate with. Far too many to account for.
@@ -135,12 +151,6 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
 
         // Inherit default configs, like host environment and ID.
         inject_default_manifest_config(id, &self.host_data.moon_env.home_dir, &mut manifest)?;
-
-        // Ensure virtual host paths exist, otherwise WASI (via extism)
-        // will throw a cryptic file/directory not found error.
-        for (host_path, _) in &self.virtual_paths {
-            fs::create_dir_all(host_path)?;
-        }
 
         Ok(manifest)
     }

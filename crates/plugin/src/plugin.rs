@@ -1,3 +1,4 @@
+use crate::ProcessHostAccess;
 use async_trait::async_trait;
 use moon_env::MoonEnvironment;
 use proto_core::ProtoEnvironment;
@@ -14,12 +15,23 @@ pub struct PluginRegistration {
     pub moon_env: Arc<MoonEnvironment>,
     pub proto_env: Arc<ProtoEnvironment>,
     pub wasm_file: PathBuf,
+    pub(crate) process_host_access: Option<ProcessHostAccess>,
 }
 
-#[derive(Clone, Copy, Debug)]
+impl PluginRegistration {
+    /// Take the process host capability assigned to a VCS plugin registration.
+    pub fn take_process_host_access(&mut self) -> miette::Result<ProcessHostAccess> {
+        self.process_host_access
+            .take()
+            .ok_or_else(|| miette::miette!("plugin registration has no process host capability"))
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PluginType {
     Extension,
     Toolchain,
+    Vcs,
 }
 
 impl PluginType {
@@ -27,6 +39,7 @@ impl PluginType {
         match self {
             PluginType::Extension => "extensions",
             PluginType::Toolchain => "toolchains",
+            PluginType::Vcs => "vcs",
         }
     }
 
@@ -34,6 +47,7 @@ impl PluginType {
         match self {
             PluginType::Extension => "extension",
             PluginType::Toolchain => "toolchain",
+            PluginType::Vcs => "VCS",
         }
     }
 }
@@ -42,9 +56,8 @@ impl PluginType {
 pub trait Plugin: Debug + Send + Sync + Sized + 'static {
     async fn new(registration: PluginRegistration) -> miette::Result<Self>;
 
+    fn get_type() -> PluginType;
     fn get_id(&self) -> &Id;
-
-    fn get_type(&self) -> PluginType;
 
     async fn has_func(&self, name: &str) -> bool;
 }

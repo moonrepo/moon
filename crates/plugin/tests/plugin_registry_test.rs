@@ -1,6 +1,11 @@
 use async_trait::async_trait;
 use moon_common::Id;
 use moon_env::MoonEnvironment;
+use moon_pdk_api::{
+    ProcessCommandInput, ProcessCommandResult, ProcessOutputChunk, ProcessOutputChunkInput,
+    ProcessOutputStream, RegisterVcsInput, RegisterVcsOutput, VCS_PLUGIN_PROTOCOL_VERSION,
+    VirtualPath,
+};
 use moon_plugin::{
     CallOptions, MoonHostData, Plugin, PluginLocator, PluginManifest, PluginRegistration,
     PluginRegistry, PluginType, PluginsConfig,
@@ -8,6 +13,7 @@ use moon_plugin::{
 use proto_core::{ProtoEnvironment, warpgate::FileLocator};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::{create_empty_sandbox, create_sandbox};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -19,7 +25,9 @@ struct TestPlugin {
 
 #[async_trait]
 impl Plugin for TestPlugin {
-    async fn new(reg: PluginRegistration) -> miette::Result<Self> {
+    async fn new(mut reg: PluginRegistration) -> miette::Result<Self> {
+        assert!(reg.take_process_host_access().is_err());
+
         Ok(TestPlugin { id: reg.id })
     }
 
@@ -27,7 +35,7 @@ impl Plugin for TestPlugin {
         &self.id
     }
 
-    fn get_type(&self) -> PluginType {
+    fn get_type() -> PluginType {
         PluginType::Extension
     }
 
@@ -36,10 +44,120 @@ impl Plugin for TestPlugin {
     }
 }
 
+struct ProcessVcsPlugin {
+    id: Id,
+    plugin: Arc<moon_plugin::PluginContainer>,
+}
+
+impl ProcessVcsPlugin {
+    async fn execute_process(
+        &self,
+        input: ProcessCommandInput,
+    ) -> miette::Result<(i32, Vec<u8>, Vec<u8>)> {
+        Ok(self.plugin.call_func_with("execute_process", input).await?)
+    }
+
+    async fn start_process(
+        &self,
+        input: ProcessCommandInput,
+    ) -> miette::Result<ProcessCommandResult> {
+        Ok(self.plugin.call_func_with("start_process", input).await?)
+    }
+
+    async fn read_process_output(
+        &self,
+        input: ProcessOutputChunkInput,
+    ) -> miette::Result<ProcessOutputChunk> {
+        Ok(self
+            .plugin
+            .call_func_with("read_process_output", input)
+            .await?)
+    }
+}
+
+impl std::fmt::Debug for ProcessVcsPlugin {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ProcessVcsPlugin")
+            .field("id", &self.id)
+            .finish()
+    }
+}
+
+#[async_trait]
+impl Plugin for ProcessVcsPlugin {
+    async fn new(mut reg: PluginRegistration) -> miette::Result<Self> {
+        let process_access = reg.take_process_host_access()?;
+        let workspace_root = reg.moon_env.workspace_root.clone();
+        let plugin = Arc::new(reg.container);
+        let metadata: RegisterVcsOutput = plugin
+            .call_func_with(
+                "register_vcs",
+                RegisterVcsInput {
+                    id: reg.id.clone(),
+                    host_protocol_version: VCS_PLUGIN_PROTOCOL_VERSION,
+                },
+            )
+            .await?;
+        process_access.configure(&metadata.process_capabilities, &workspace_root)?;
+
+        Ok(Self { id: reg.id, plugin })
+    }
+
+    fn get_id(&self) -> &Id {
+        &self.id
+    }
+
+    fn get_type() -> PluginType {
+        PluginType::Vcs
+    }
+
+    async fn has_func(&self, name: &str) -> bool {
+        self.plugin.has_func(name).await
+    }
+}
+
+#[derive(Debug)]
+struct UnconfiguredProcessVcsPlugin;
+
+#[async_trait]
+impl Plugin for UnconfiguredProcessVcsPlugin {
+    async fn new(mut reg: PluginRegistration) -> miette::Result<Self> {
+        reg.take_process_host_access()?;
+        let _: (i32, Vec<u8>, Vec<u8>) = reg
+            .container
+            .call_func_with(
+                "execute_process",
+                ProcessCommandInput {
+                    capability: Id::raw("git"),
+                    args: vec!["--version".into()],
+                    cwd: None,
+                    env: Default::default(),
+                },
+            )
+            .await?;
+
+        Ok(Self)
+    }
+
+    fn get_id(&self) -> &Id {
+        unreachable!()
+    }
+
+    fn get_type() -> PluginType {
+        PluginType::Vcs
+    }
+
+    async fn has_func(&self, _name: &str) -> bool {
+        false
+    }
+}
+
 #[derive(Debug, Default)]
 struct TestConfig {
     plugins: FxHashMap<Id, PluginLocator>,
     configured: Mutex<Vec<Id>>,
+    allowed_path: Option<PathBuf>,
 }
 
 impl TestConfig {
@@ -50,7 +168,13 @@ impl TestConfig {
                 .map(|id| (Id::raw(id), create_locator(sandbox)))
                 .collect(),
             configured: Mutex::default(),
+            allowed_path: None,
         }
+    }
+
+    fn with_allowed_path(mut self, path: PathBuf) -> Self {
+        self.allowed_path = Some(path);
+        self
     }
 }
 
@@ -59,9 +183,16 @@ impl PluginsConfig for TestConfig {
         &self,
         id: &Id,
         _host_data: &MoonHostData,
-        _manifest: &mut PluginManifest,
+        manifest: &mut PluginManifest,
     ) -> miette::Result<()> {
         self.configured.lock().unwrap().push(id.to_owned());
+
+        if let Some(path) = &self.allowed_path {
+            manifest
+                .allowed_paths
+                .get_or_insert_default()
+                .insert(path.to_string_lossy().into_owned(), "/configured".into());
+        }
 
         Ok(())
     }
@@ -82,8 +213,15 @@ fn create_locator(sandbox: &Path) -> PluginLocator {
     }))
 }
 
+fn create_process_host_locator(sandbox: &Path) -> PluginLocator {
+    PluginLocator::File(Box::new(FileLocator {
+        file: "".into(),
+        path: Some(sandbox.join("process_host.wasm")),
+    }))
+}
+
 fn create_registry(sandbox: &Path, config: TestConfig) -> PluginRegistry<TestConfig, TestPlugin> {
-    let registry = PluginRegistry::new(
+    PluginRegistry::new(
         PluginType::Extension,
         MoonHostData {
             moon_env: Arc::new(MoonEnvironment::new_testing(sandbox)),
@@ -92,14 +230,20 @@ fn create_registry(sandbox: &Path, config: TestConfig) -> PluginRegistry<TestCon
         },
         config,
     )
-    .unwrap();
+    .unwrap()
+}
 
-    // These must exist or extism errors
-    for (host_path, _) in registry.get_virtual_paths() {
-        fs::create_dir_all(host_path).unwrap();
-    }
-
-    registry
+fn create_process_vcs_registry<Inst: Plugin>(sandbox: &Path) -> PluginRegistry<TestConfig, Inst> {
+    PluginRegistry::new(
+        PluginType::Vcs,
+        MoonHostData {
+            moon_env: Arc::new(MoonEnvironment::new_testing(sandbox)),
+            proto_env: Arc::new(ProtoEnvironment::new_testing(sandbox).unwrap()),
+            ..Default::default()
+        },
+        TestConfig::default(),
+    )
+    .unwrap()
 }
 
 fn create_test_plugin(id: &str) -> TestPlugin {
@@ -108,6 +252,26 @@ fn create_test_plugin(id: &str) -> TestPlugin {
 
 mod plugin_registry {
     use super::*;
+
+    #[test]
+    fn rejects_plugin_types_that_do_not_match_the_registry() {
+        let sandbox = create_empty_sandbox();
+        let error = PluginRegistry::<TestConfig, TestPlugin>::new(
+            PluginType::Vcs,
+            MoonHostData {
+                moon_env: Arc::new(MoonEnvironment::new_testing(sandbox.path())),
+                proto_env: Arc::new(ProtoEnvironment::new_testing(sandbox.path()).unwrap()),
+                ..Default::default()
+            },
+            TestConfig::default(),
+        )
+        .err()
+        .unwrap()
+        .to_string();
+
+        assert!(error.contains("extension plugin"), "{error}");
+        assert!(error.contains("VCS registry"), "{error}");
+    }
 
     #[test]
     fn removes_duplicate_workspace_vpath() {
@@ -222,6 +386,196 @@ mod registry_loader {
     use super::*;
 
     #[tokio::test]
+    async fn executes_declared_processes_through_the_vcs_host() {
+        let sandbox = create_sandbox("wasm");
+        let registry = create_process_vcs_registry::<ProcessVcsPlugin>(sandbox.path());
+        let plugin = registry
+            .do_load(
+                Id::raw("process-host"),
+                create_process_host_locator(sandbox.path()),
+            )
+            .await
+            .unwrap();
+
+        let (exit_code, stdout, stderr) = plugin
+            .execute_process(ProcessCommandInput {
+                capability: Id::raw("git"),
+                args: vec!["--version".into()],
+                cwd: None,
+                env: BTreeMap::new(),
+            })
+            .await
+            .unwrap();
+        assert_eq!(exit_code, 0);
+        assert!(
+            String::from_utf8(stdout)
+                .unwrap()
+                .starts_with("git version")
+        );
+        assert!(stderr.is_empty());
+
+        plugin
+            .execute_process(ProcessCommandInput {
+                capability: Id::raw("git"),
+                args: vec!["init".into(), "--quiet".into()],
+                cwd: Some(VirtualPath::new("/workspace")),
+                env: BTreeMap::new(),
+            })
+            .await
+            .unwrap();
+        let expected = vec![0, 0xff, b'a', b'\n'];
+        fs::write(sandbox.path().join("bytes.bin"), &expected).unwrap();
+        let (_, hash, _) = plugin
+            .execute_process(ProcessCommandInput {
+                capability: Id::raw("git"),
+                args: vec!["hash-object".into(), "-w".into(), "bytes.bin".into()],
+                cwd: Some(VirtualPath::new("/workspace")),
+                env: BTreeMap::new(),
+            })
+            .await
+            .unwrap();
+        let hash = String::from_utf8(hash).unwrap().trim().to_owned();
+        let (exit_code, stdout, stderr) = plugin
+            .execute_process(ProcessCommandInput {
+                capability: Id::raw("git"),
+                args: vec!["cat-file".into(), "blob".into(), hash],
+                cwd: Some(VirtualPath::new("/workspace")),
+                env: BTreeMap::new(),
+            })
+            .await
+            .unwrap();
+        assert_eq!(exit_code, 0);
+        assert_eq!(stdout, expected);
+        assert!(stderr.is_empty());
+
+        let (exit_code, stdout, stderr) = plugin
+            .execute_process(ProcessCommandInput {
+                capability: Id::raw("git"),
+                args: vec!["definitely-not-a-git-command".into()],
+                cwd: None,
+                env: BTreeMap::new(),
+            })
+            .await
+            .unwrap();
+        assert_ne!(exit_code, 0);
+        assert!(stdout.is_empty());
+        assert!(!stderr.is_empty());
+
+        let (_, stdout, _) = plugin
+            .execute_process(ProcessCommandInput {
+                capability: Id::raw("git"),
+                args: vec!["var".into(), "GIT_EDITOR".into()],
+                cwd: None,
+                env: BTreeMap::from([("GIT_EDITOR".into(), "moon-test-editor".into())]),
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            String::from_utf8(stdout).unwrap().trim(),
+            "moon-test-editor"
+        );
+
+        let error = plugin
+            .execute_process(ProcessCommandInput {
+                capability: Id::raw("undeclared"),
+                args: vec![],
+                cwd: None,
+                env: BTreeMap::new(),
+            })
+            .await
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("undeclared process capability"), "{error}");
+
+        fs::write(sandbox.path().join("not-a-directory"), "file").unwrap();
+        let error = plugin
+            .execute_process(ProcessCommandInput {
+                capability: Id::raw("git"),
+                args: vec!["--version".into()],
+                cwd: Some(VirtualPath::new("/workspace/not-a-directory")),
+                env: BTreeMap::new(),
+            })
+            .await
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("not a directory"), "{error}");
+    }
+
+    #[tokio::test]
+    async fn isolates_and_invalidates_raw_process_results() {
+        let sandbox = create_sandbox("wasm");
+        let registry = create_process_vcs_registry::<ProcessVcsPlugin>(sandbox.path());
+        let first = registry
+            .do_load(
+                Id::raw("process-host-a"),
+                create_process_host_locator(sandbox.path()),
+            )
+            .await
+            .unwrap();
+        let second = registry
+            .do_load(
+                Id::raw("process-host-b"),
+                create_process_host_locator(sandbox.path()),
+            )
+            .await
+            .unwrap();
+        let result = first
+            .start_process(ProcessCommandInput {
+                capability: Id::raw("git"),
+                args: vec!["--version".into()],
+                cwd: None,
+                env: BTreeMap::new(),
+            })
+            .await
+            .unwrap();
+        let read = ProcessOutputChunkInput {
+            result_id: result.result_id,
+            stream: ProcessOutputStream::Stdout,
+            offset: 0,
+        };
+
+        assert!(second.read_process_output(read.clone()).await.is_err());
+        assert!(
+            !first
+                .read_process_output(read.clone())
+                .await
+                .unwrap()
+                .decode()
+                .unwrap()
+                .is_empty()
+        );
+
+        assert!(
+            first
+                .start_process(ProcessCommandInput {
+                    capability: Id::raw("undeclared"),
+                    args: vec![],
+                    cwd: None,
+                    env: BTreeMap::new(),
+                })
+                .await
+                .is_err()
+        );
+        assert!(first.read_process_output(read).await.is_err());
+    }
+
+    #[tokio::test]
+    async fn rejects_process_execution_before_capability_configuration() {
+        let sandbox = create_sandbox("wasm");
+        let registry = create_process_vcs_registry::<UnconfiguredProcessVcsPlugin>(sandbox.path());
+        let error = registry
+            .do_load(
+                Id::raw("process-host"),
+                create_process_host_locator(sandbox.path()),
+            )
+            .await
+            .unwrap_err()
+            .to_string();
+
+        assert!(error.contains("not configured"), "{error}");
+    }
+
+    #[tokio::test]
     async fn loads_a_plugin_with_an_explicit_locator() {
         let sandbox = create_sandbox("wasm");
         let registry = create_registry(sandbox.path(), TestConfig::default());
@@ -233,6 +587,23 @@ mod registry_loader {
 
         assert_eq!(plugin.get_id(), &Id::raw("id"));
         assert!(registry.is_registered(&Id::raw("id")).await);
+    }
+
+    #[tokio::test]
+    async fn creates_final_manifest_allowed_paths_before_loading() {
+        let sandbox = create_sandbox("wasm");
+        let allowed_path = sandbox.path().join("configured").join("nested");
+        let config = TestConfig::default().with_allowed_path(allowed_path.clone());
+        let registry = create_registry(sandbox.path(), config);
+
+        assert!(!allowed_path.exists());
+
+        registry
+            .do_load(Id::raw("id"), create_locator(sandbox.path()))
+            .await
+            .unwrap();
+
+        assert!(allowed_path.is_dir());
     }
 
     #[tokio::test]

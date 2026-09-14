@@ -1,5 +1,5 @@
 use crate::host::*;
-use crate::plugin::{Plugin, PluginRegistration};
+use crate::plugin::{Plugin, PluginRegistration, PluginType};
 use crate::plugin_error::PluginError;
 use crate::plugin_registry::*;
 use futures::StreamExt;
@@ -7,6 +7,7 @@ use futures::stream::FuturesOrdered;
 use miette::IntoDiagnostic;
 use moon_common::{Id, IdExt};
 use scc::hash_map::Entry;
+use starbase_utils::fs;
 use std::fmt::Debug;
 use std::sync::Arc;
 use tracing::{debug, instrument};
@@ -126,9 +127,12 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
 
         // Load the WASM file (this must happen first because of async)
         let plugin_file = self.loader.load_plugin(&id, locator).await?;
+        let process_host_access =
+            matches!(self.type_of, PluginType::Vcs).then(ProcessHostAccess::default);
 
         // Create host functions (provided by warpgate)
         let functions = create_host_functions(
+            self.type_of,
             self.host_data.clone(),
             HostData {
                 cache_dir: self.host_data.moon_env.cache_dir.clone(),
@@ -136,6 +140,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
                 virtual_paths: self.virtual_paths.clone(),
                 working_dir: self.host_data.moon_env.working_dir.clone(),
             },
+            process_host_access.clone(),
         );
 
         // Create the manifest and let the consumer configure it
@@ -143,6 +148,14 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
 
         self.config_data
             .configure_manifest(&id, &self.host_data, &mut manifest)?;
+
+        // Ensure the final set of virtual host paths exists, otherwise WASI
+        // (via extism) will throw a cryptic file/directory not found error.
+        if let Some(paths) = &manifest.allowed_paths {
+            for host_path in paths.keys() {
+                fs::create_dir_all(host_path)?;
+            }
+        }
 
         debug!(
             plugin_type = self.type_of.get_label(),
@@ -165,6 +178,7 @@ impl<Cfg: PluginsConfig, Inst: Plugin> PluginRegistry<Cfg, Inst> {
             moon_env: Arc::clone(&self.host_data.moon_env),
             proto_env: Arc::clone(&self.host_data.proto_env),
             wasm_file: plugin_file,
+            process_host_access,
         })
         .await?;
 

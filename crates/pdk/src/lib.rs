@@ -2,11 +2,13 @@ mod args;
 mod extension;
 mod funcs;
 mod toolchain;
+mod vcs;
 
 pub use args::*;
 pub use extension::*;
 pub use funcs::*;
 pub use toolchain::*;
+pub use vcs::*;
 pub use warpgate_pdk::*;
 
 /// Map a `miette` (or similar error) to an `extism` Error.

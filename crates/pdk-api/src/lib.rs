@@ -3,6 +3,7 @@ mod context;
 mod extension;
 mod host;
 mod macros;
+mod process;
 mod prompts;
 mod toolchain;
 mod vcs;
@@ -14,6 +15,7 @@ pub use host::*;
 pub use moon_common::Id;
 pub use moon_project::ProjectFragment;
 pub use moon_task::TaskFragment;
+pub use process::*;
 pub use prompts::*;
 pub use proto_pdk_api::{
     ExecCommandInput, ExecCommandOutput, HostArch, HostLibc, HostLogInput, HostLogTarget, HostOS,

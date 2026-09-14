@@ -6282,6 +6282,7 @@ dependencies = [
 name = "moon_pdk_api"
 version = "2.1.3"
 dependencies = [
+ "base64 0.22.1",
  "bitflags 2.13.1",
  "derive_setters",
  "moon_common",

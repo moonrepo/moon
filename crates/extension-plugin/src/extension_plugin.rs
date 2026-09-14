@@ -45,7 +45,7 @@ impl Plugin for ExtensionPlugin {
         &self.id
     }
 
-    fn get_type(&self) -> PluginType {
+    fn get_type() -> PluginType {
         PluginType::Extension
     }
 

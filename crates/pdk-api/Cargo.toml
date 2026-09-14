@@ -9,6 +9,7 @@ repository = "https://github.com/moonrepo/moon"
 publish = true
 
 [dependencies]
+base64 = { workspace = true }
 bitflags = { workspace = true }
 moon_common = { version = "2.0.8", path = "../common" }
 moon_config = { version = "2.1.2", path = "../config" }

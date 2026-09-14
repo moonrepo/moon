@@ -5,6 +5,7 @@ use crate::queries::projects::*;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_common::is_ci;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -91,6 +92,7 @@ pub async fn projects(session: MoonSession, args: QueryProjectsArgs) -> SessionR
         let changed_files = query_changed_files_for_affected(&vcs, by.as_ref()).await?;
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
+        affected_tracker.set_ci_check(is_ci());
         affected_tracker.set_project_scopes(args.upstream, args.downstream);
 
         if session.workspace_config.experiments.async_affected_tracking {

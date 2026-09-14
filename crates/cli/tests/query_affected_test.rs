@@ -69,4 +69,79 @@ mod query_affected {
             }
         );
     }
+
+    #[test]
+    fn respects_run_in_ci() {
+        let sandbox = create_query_sandbox();
+
+        sandbox.create_file(
+            "tasks/moon.yml",
+            r#"tasks:
+  default:
+    command: echo default
+    inputs: ['file.txt']
+  ci-only:
+    command: echo only
+    inputs: ['file.txt']
+    options:
+      runInCI: only
+  ci-disabled:
+    command: echo never
+    inputs: ['file.txt']
+    options:
+      runInCI: false
+"#,
+        );
+
+        change_files(&sandbox, ["tasks/file.txt"]);
+
+        // When in CI
+        let assert_ci = sandbox.run_bin(|cmd| {
+            cmd.arg("query").arg("affected").env("CI", "true");
+        });
+
+        let affected_ci: Affected = serde_json::from_str(assert_ci.stdout().trim()).unwrap();
+        assert!(
+            affected_ci
+                .tasks
+                .contains_key(&Target::parse("tasks:default").unwrap())
+        );
+        assert!(
+            affected_ci
+                .tasks
+                .contains_key(&Target::parse("tasks:ci-only").unwrap())
+        );
+        assert!(
+            !affected_ci
+                .tasks
+                .contains_key(&Target::parse("tasks:ci-disabled").unwrap())
+        );
+
+        // When NOT in CI
+        let assert_local = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("affected")
+                .env_remove("CI")
+                .env_remove("CI_NAME")
+                .env_remove("AZURE_PIPELINES")
+                .env_remove("GITHUB_ACTIONS");
+        });
+
+        let affected_local: Affected = serde_json::from_str(assert_local.stdout().trim()).unwrap();
+        assert!(
+            affected_local
+                .tasks
+                .contains_key(&Target::parse("tasks:default").unwrap())
+        );
+        assert!(
+            !affected_local
+                .tasks
+                .contains_key(&Target::parse("tasks:ci-only").unwrap())
+        );
+        assert!(
+            affected_local
+                .tasks
+                .contains_key(&Target::parse("tasks:ci-disabled").unwrap())
+        );
+    }
 }

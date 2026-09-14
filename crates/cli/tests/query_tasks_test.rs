@@ -88,6 +88,66 @@ mod query_tasks {
     }
 
     #[test]
+    fn can_filter_by_affected_respects_run_in_ci() {
+        let sandbox = create_query_sandbox();
+
+        sandbox.create_file(
+            "tasks/moon.yml",
+            r#"tasks:
+  default:
+    command: echo default
+    inputs: ['file.txt']
+  ci-only:
+    command: echo only
+    inputs: ['file.txt']
+    options:
+      runInCI: only
+  ci-disabled:
+    command: echo never
+    inputs: ['file.txt']
+    options:
+      runInCI: false
+"#,
+        );
+
+        change_files(&sandbox, ["tasks/file.txt"]);
+
+        // When in CI
+        let assert_ci = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("tasks")
+                .arg("--affected")
+                .env("CI", "true");
+        });
+
+        let json_ci: QueryTasksResult = serde_json::from_str(assert_ci.stdout().trim()).unwrap();
+        let targets_ci = extract_targets(&json_ci);
+
+        assert!(targets_ci.contains(&"tasks:default".to_string()));
+        assert!(targets_ci.contains(&"tasks:ci-only".to_string()));
+        assert!(!targets_ci.contains(&"tasks:ci-disabled".to_string()));
+
+        // When NOT in CI
+        let assert_local = sandbox.run_bin(|cmd| {
+            cmd.arg("query")
+                .arg("tasks")
+                .arg("--affected")
+                .env_remove("CI")
+                .env_remove("CI_NAME")
+                .env_remove("AZURE_PIPELINES")
+                .env_remove("GITHUB_ACTIONS");
+        });
+
+        let json_local: QueryTasksResult =
+            serde_json::from_str(assert_local.stdout().trim()).unwrap();
+        let targets_local = extract_targets(&json_local);
+
+        assert!(targets_local.contains(&"tasks:default".to_string()));
+        assert!(!targets_local.contains(&"tasks:ci-only".to_string()));
+        assert!(targets_local.contains(&"tasks:ci-disabled".to_string()));
+    }
+
+    #[test]
     fn can_filter_by_id() {
         let sandbox = create_query_sandbox();
 

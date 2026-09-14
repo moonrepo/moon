@@ -3,6 +3,7 @@ use crate::queries::changed_files::*;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
+use moon_common::is_ci;
 use starbase_utils::json;
 use tracing::instrument;
 
@@ -36,6 +37,7 @@ pub async fn affected(session: MoonSession, args: QueryAffectedArgs) -> SessionR
         session.get_workspace_graph().await?,
         query_changed_files_for_affected(&vcs, args.by.as_ref()).await?,
     );
+    affected_tracker.set_ci_check(is_ci());
     affected_tracker.set_scopes(args.upstream, args.downstream);
 
     if session.workspace_config.experiments.async_affected_tracking {

@@ -5,7 +5,7 @@ use crate::queries::tasks::*;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_affected::{AffectedTracker, DownstreamScope, UpstreamScope};
-use moon_common::Id;
+use moon_common::{Id, is_ci};
 use starbase_utils::json;
 use std::collections::BTreeMap;
 use tracing::instrument;
@@ -89,6 +89,7 @@ pub async fn tasks(session: MoonSession, args: QueryTasksArgs) -> SessionResult 
         let changed_files = query_changed_files_for_affected(&vcs, by.as_ref()).await?;
 
         let mut affected_tracker = AffectedTracker::new(workspace_graph.clone(), changed_files);
+        affected_tracker.set_ci_check(is_ci());
         affected_tracker.set_task_scopes(args.upstream, args.downstream);
 
         if session.workspace_config.experiments.async_affected_tracking {

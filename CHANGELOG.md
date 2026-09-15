@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Changed files aggregation is now cached for improved performance.
+
+#### 🐞 Fixes
+
+- Fixed `moon query` commands not respecting the task `options.runInCI` setting, when running in CI.
+- Fixed an issue where `.gitignore` was not copied into Dockerfile's.
+- Fixed an issue where previously generated task outputs were cleaned when a hydration fails,
+  resulting in a broken task run.
+
 ## 2.5.4
 
 #### 🐞 Fixes

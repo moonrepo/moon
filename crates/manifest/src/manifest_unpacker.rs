@@ -33,14 +33,25 @@ impl<'owner> ManifestUnpacker<'owner> {
 
         for link in &self.manifest.symlinks {
             let output_path = self.resolve_abs_path(&link.path)?;
+            let target_path = self.resolve_abs_path(&link.target).map_err(|_| {
+                ManifestError::OutputSymlinkOutsideOfWorkspace {
+                    output: output_path.clone(),
+                    target: PathBuf::from(link.target.as_str()),
+                }
+            })?;
+
+            // Both paths are workspace relative, so the link can be written
+            // relative to its own directory. An absolute target would bind the
+            // restored tree to this root and dangle as soon as it is copied.
+            let link_target = link
+                .path
+                .parent()
+                .unwrap_or_else(|| WorkspaceRelativePath::new(""))
+                .relative(&link.target);
 
             self.link_output_file(
-                self.resolve_abs_path(&link.target).map_err(|_| {
-                    ManifestError::OutputSymlinkOutsideOfWorkspace {
-                        output: output_path.clone(),
-                        target: PathBuf::from(link.target.as_str()),
-                    }
-                })?,
+                target_path,
+                PathBuf::from(link_target.as_str()),
                 output_path,
             )?;
         }
@@ -94,7 +105,12 @@ impl<'owner> ManifestUnpacker<'owner> {
     // The manifest's unix mode is deliberately not applied: it records the
     // followed target's mode (which the target's own manifest entry restores),
     // and a chmod through the link would modify the target, not the link
-    fn link_output_file(&self, from_path: PathBuf, to_path: PathBuf) -> miette::Result<()> {
+    fn link_output_file(
+        &self,
+        from_path: PathBuf,
+        link_target: PathBuf,
+        to_path: PathBuf,
+    ) -> miette::Result<()> {
         if let Some(parent) = to_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -104,14 +120,18 @@ impl<'owner> ManifestUnpacker<'owner> {
             error: Box::new(error),
         };
 
+        // The resolved target is only read to pick the link kind, which Windows
+        // requires up front and Unix does not
+        let _ = &from_path;
+
         #[cfg(windows)]
         {
             use std::os::windows::fs::{symlink_dir, symlink_file};
 
             if from_path.is_dir() {
-                symlink_dir(&from_path, &to_path).map_err(map_error)?;
+                symlink_dir(&link_target, &to_path).map_err(map_error)?;
             } else {
-                symlink_file(&from_path, &to_path).map_err(map_error)?;
+                symlink_file(&link_target, &to_path).map_err(map_error)?;
             }
         }
 
@@ -119,7 +139,7 @@ impl<'owner> ManifestUnpacker<'owner> {
         {
             use std::os::unix::fs::symlink;
 
-            symlink(&from_path, &to_path).map_err(map_error)?;
+            symlink(&link_target, &to_path).map_err(map_error)?;
         }
 
         Ok(())

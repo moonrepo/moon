@@ -1,3 +1,5 @@
+#[cfg(feature = "api-docs")]
+use moon_config_schema::api_docs::generate_api_docs;
 use moon_config_schema::json_schemas::generate_json_schemas;
 #[cfg(feature = "typescript")]
 use moon_config_schema::typescript_types::generate_typescript_types;
@@ -8,6 +10,22 @@ fn main() {
     let cwd = env::current_dir().unwrap();
 
     generate_json_schemas(cwd.join("website/static/schemas/v2"), Default::default()).unwrap();
+
+    #[cfg(feature = "api-docs")]
+    {
+        for lookup in [
+            "../moonrepo/website/web/content/api/moon",
+            "../website/web/content/api/moon",
+            "temp/moon-api-docs",
+        ] {
+            let dir = cwd.join(lookup);
+
+            if dir.exists() {
+                generate_api_docs(dir).unwrap();
+                break;
+            }
+        }
+    }
 
     #[cfg(feature = "typescript")]
     generate_typescript_types(cwd.join("packages/types/src")).unwrap();

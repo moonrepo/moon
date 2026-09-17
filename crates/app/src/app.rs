@@ -30,6 +30,7 @@ use crate::commands::templates::TemplatesArgs;
 use crate::commands::toolchain::ToolchainCommands;
 use crate::commands::upgrade::UpgradeArgs;
 use crate::systems::bootstrap;
+use clap::builder::PossibleValuesParser;
 use clap::builder::styling::{Color, Style, Styles};
 use clap::{Parser, Subcommand};
 use moon_cache::CacheMode;
@@ -291,9 +292,13 @@ pub struct Cli {
         global = true,
         env = "MOON_COLOR",
         help = "Force colored output",
-        help_heading = "Global options"
+        help_heading = "Global options",
+        num_args = 0..=1,
+        require_equals = true,
+        default_missing_value = "3",
+        value_parser = PossibleValuesParser::new(["false", "true", "0", "1", "2", "3"])
     )]
-    pub color: bool,
+    pub color: Option<String>,
 
     #[arg(
         long,
@@ -388,9 +393,15 @@ pub struct Cli {
 
 impl Cli {
     pub fn setup_env_vars(&self) {
-        bootstrap::setup_colors(self.color);
-
         let bag = GlobalEnvBag::instance();
+
+        // Set MOON_COLOR so `bootstrap` can read it
+        if let Some(color) = &self.color {
+            bag.set("MOON_COLOR", color);
+        }
+
+        bootstrap::setup_colors(self.color.is_some());
+
         bag.set("STARBASE_LOG", self.log.to_string());
         bag.set("STARBASE_THEME", self.theme.to_string());
 

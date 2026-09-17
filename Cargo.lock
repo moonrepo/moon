@@ -9107,9 +9107,9 @@ dependencies = [
 
 [[package]]
 name = "schematic"
-version = "0.20.5"
+version = "0.20.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77eb17dfe65fd079b9083729e7ee2b77f538d668b87a5b3c7513f3cbfd12d259"
+checksum = "6a132e9a792419faf8e9dfe4249d91fecd7e6fd0fa69ae1c100d1c393811f3b4"
 dependencies = [
  "convert_case 0.12.0",
  "garde",

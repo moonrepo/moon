@@ -2,7 +2,7 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{ManifestSource, StorageOptions, TaskManifest, TaskManifestUnpacker};
+use moon_cache::{StorageOptions, TaskManifest, TaskManifestSource, TaskManifestUnpacker};
 use moon_common::{color, path::WorkspaceRelativePath};
 use moon_daemon_client::DaemonClient;
 use moon_task::Task;
@@ -16,7 +16,7 @@ use tracing::{debug, instrument, warn};
 pub enum HydrateFrom {
     PreviousOutput,
     LocalArchive,
-    Storage(Box<ManifestSource>),
+    Storage(Box<TaskManifestSource>),
 }
 
 impl Debug for HydrateFrom {
@@ -136,7 +136,7 @@ impl OutputHydrater<'_> {
                             include_remote: use_remote,
                             ..Default::default()
                         })
-                        .hydrate_manifest(&state.digest, *source)
+                        .hydrate_task_manifest(&state.digest, *source)
                         .await?;
 
                     if let Some(manifest) = &manifest {

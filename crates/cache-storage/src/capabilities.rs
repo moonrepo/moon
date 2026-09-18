@@ -13,7 +13,7 @@ pub struct CacheCapabilities {
     pub digest_functions: Vec<DigestFunction>,
     pub max_batch_total_size_bytes: usize,
     // pub max_cas_blob_size_bytes: usize,
-    pub store_manifests: bool,
+    pub store_task_manifests: bool,
     pub supported_batch_update_compressors: Vec<Compressor>,
     pub supported_compressors: Vec<Compressor>,
     // pub symlink_absolute_path_strategy: AbsoluteSymlinkStrategy,
@@ -25,7 +25,7 @@ impl Default for CacheCapabilities {
             digest_functions: vec![DigestFunction::Sha256],
             max_batch_total_size_bytes: 0,
             // max_cas_blob_size_bytes: 0,
-            store_manifests: true,
+            store_task_manifests: true,
             supported_batch_update_compressors: vec![Compressor::Identity],
             supported_compressors: vec![Compressor::Identity],
             // symlink_absolute_path_strategy: AbsoluteSymlinkStrategy::Disallowed,
@@ -43,7 +43,7 @@ impl CacheCapabilities {
                 .collect(),
             max_batch_total_size_bytes: capabilities.max_batch_total_size_bytes as usize,
             // max_cas_blob_size_bytes: capabilities.max_cas_blob_size_bytes as usize,
-            store_manifests: capabilities
+            store_task_manifests: capabilities
                 .action_cache_update_capabilities
                 .map(|c| c.update_enabled)
                 .unwrap_or_default(),
@@ -67,7 +67,7 @@ impl CacheCapabilities {
     pub fn into_bazel_capabilities(self) -> BazelCacheCapabilities {
         BazelCacheCapabilities {
             action_cache_update_capabilities: Some(ActionCacheUpdateCapabilities {
-                update_enabled: self.store_manifests,
+                update_enabled: self.store_task_manifests,
             }),
             digest_functions: self
                 .digest_functions

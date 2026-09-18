@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_cache::{CacheMode, TaskManifest, TaskManifestFile, ManifestSource};
+use moon_cache::{CacheMode, TaskManifest, TaskManifestFile, TaskManifestSource};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
 use moon_task_runner::TaskRunState;
@@ -159,7 +159,7 @@ mod output_hydrater {
         async fn archive_and_load(
             container: &TaskRunnerContainer,
             state: &TaskRunState,
-        ) -> ManifestSource {
+        ) -> TaskManifestSource {
             container
                 .create_archiver()
                 .archive("hash123", state)
@@ -173,12 +173,12 @@ mod output_hydrater {
         async fn load_source(
             container: &TaskRunnerContainer,
             state: &TaskRunState,
-        ) -> ManifestSource {
+        ) -> TaskManifestSource {
             container
                 .app_context
                 .cache_engine
                 .storage
-                .load_manifest(&state.digest)
+                .load_task_manifest(&state.digest)
                 .await
                 .unwrap()
                 .expect("manifest was stored")

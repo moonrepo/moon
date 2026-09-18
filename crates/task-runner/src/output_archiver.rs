@@ -99,7 +99,7 @@ impl OutputArchiver<'_> {
                         include_remote: use_remote,
                         ..Default::default()
                     })
-                    .archive_manifest(&state.digest, manifest)
+                    .archive_task_manifest(&state.digest, manifest)
                     .await?;
             }
         }

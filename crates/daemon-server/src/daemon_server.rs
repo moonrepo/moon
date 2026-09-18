@@ -1,7 +1,7 @@
 use crate::daemon_server_error::DaemonServerError;
 use crate::daemon_watcher::{start_file_listener, start_file_watcher};
 use moon_app_context::AppContext;
-use moon_cache_storage::{ManifestSource, StorageOptions, TaskManifest, TaskManifestUnpacker};
+use moon_cache_storage::{StorageOptions, TaskManifest, TaskManifestSource, TaskManifestUnpacker};
 use moon_common::path::WorkspaceRelativePathBuf;
 use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{
@@ -149,7 +149,7 @@ impl MoonDaemon for DaemonService {
                     include_remote: request.include_remote,
                     ..Default::default()
                 })
-                .archive_manifest(&digest, manifest)
+                .archive_task_manifest(&digest, manifest)
                 .await
             {
                 warn!(
@@ -203,14 +203,14 @@ impl MoonDaemon for DaemonService {
             .map(|backend| Arc::clone(backend))
             .ok_or_else(|| Status::invalid_argument("Missing storage backend"))?;
 
-        let source = ManifestSource {
+        let source = TaskManifestSource {
             // This is questionable, but we'll see how it pans out
             remote: backend.get_id().contains("remote") || !backend.get_id().contains("local"),
             backend,
             manifest,
         };
 
-        match storage.hydrate_manifest(&digest, source).await {
+        match storage.hydrate_task_manifest(&digest, source).await {
             Ok(mut maybe_manifest) => {
                 if let Some(manifest) = &mut maybe_manifest {
                     TaskManifestUnpacker::new(manifest, app_context.workspace_root.clone())

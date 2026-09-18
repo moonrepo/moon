@@ -85,7 +85,7 @@ impl TestDaemon {
         self.app_context
             .cache_engine
             .storage
-            .load_manifest(digest)
+            .load_task_manifest(digest)
             .await
             .unwrap()
             .is_some()
@@ -121,7 +121,7 @@ impl TestDaemon {
         self.app_context
             .cache_engine
             .storage
-            .archive_manifest(digest, manifest)
+            .archive_task_manifest(digest, manifest)
             .await
             .unwrap();
 
@@ -138,7 +138,7 @@ impl TestDaemon {
         self.app_context
             .cache_engine
             .storage
-            .load_manifest(digest)
+            .load_task_manifest(digest)
             .await
             .unwrap()
             .expect("manifest should have been seeded")

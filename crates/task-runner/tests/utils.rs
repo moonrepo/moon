@@ -114,7 +114,7 @@ impl TaskRunnerContainer {
         self.app_context
             .cache_engine
             .storage
-            .load_manifest(digest)
+            .load_task_manifest(digest)
             .await
             .unwrap()
             .is_some()
@@ -137,7 +137,7 @@ impl TaskRunnerContainer {
         let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
 
         backend
-            .store_manifest(digest.clone(), manifest)
+            .store_task_manifest(digest.clone(), manifest)
             .await
             .unwrap();
     }

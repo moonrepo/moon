@@ -151,7 +151,7 @@ mod http_remote_storage {
                 ..Default::default()
             };
 
-            storage.store_manifest(digest, manifest).await.unwrap();
+            storage.store_task_manifest(digest, manifest).await.unwrap();
 
             mock.assert_calls_async(1).await;
         }
@@ -170,7 +170,7 @@ mod http_remote_storage {
 
             assert!(
                 storage
-                    .store_manifest(digest, TaskManifest::default())
+                    .store_task_manifest(digest, TaskManifest::default())
                     .await
                     .is_err()
             );
@@ -221,7 +221,11 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            let manifest = storage.retrieve_manifest(digest).await.unwrap().unwrap();
+            let manifest = storage
+                .retrieve_task_manifest(digest)
+                .await
+                .unwrap()
+                .unwrap();
 
             mock.assert_calls_async(1).await;
             assert_eq!(manifest.exit_code, 7);
@@ -264,7 +268,7 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            assert!(storage.retrieve_manifest(digest).await.is_err());
+            assert!(storage.retrieve_task_manifest(digest).await.is_err());
         }
 
         #[tokio::test]
@@ -279,7 +283,13 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            assert!(storage.retrieve_manifest(digest).await.unwrap().is_none());
+            assert!(
+                storage
+                    .retrieve_task_manifest(digest)
+                    .await
+                    .unwrap()
+                    .is_none()
+            );
         }
 
         #[tokio::test]
@@ -294,7 +304,7 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            assert!(storage.retrieve_manifest(digest).await.is_err());
+            assert!(storage.retrieve_task_manifest(digest).await.is_err());
         }
     }
 

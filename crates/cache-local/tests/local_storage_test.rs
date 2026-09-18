@@ -1,6 +1,6 @@
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_local::LocalStorage;
-use moon_cache_storage::{CacheContext, TaskManifest, TaskManifestFile, StorageBackend};
+use moon_cache_storage::{CacheContext, StorageBackend, TaskManifest, TaskManifestFile};
 use moon_config::CacheConfig;
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
@@ -225,7 +225,7 @@ mod local_storage {
         // Missing manifest reads back as None.
         assert!(
             backend
-                .retrieve_manifest(key.clone())
+                .retrieve_task_manifest(key.clone())
                 .await
                 .unwrap()
                 .is_none()
@@ -244,10 +244,13 @@ mod local_storage {
             ..Default::default()
         };
 
-        backend.store_manifest(key.clone(), manifest).await.unwrap();
+        backend
+            .store_task_manifest(key.clone(), manifest)
+            .await
+            .unwrap();
 
         let loaded = backend
-            .retrieve_manifest(key)
+            .retrieve_task_manifest(key)
             .await
             .unwrap()
             .expect("manifest was stored");
@@ -273,7 +276,7 @@ mod local_storage {
             .await
             .unwrap();
         backend
-            .store_manifest(action_digest(), manifest_referencing(&ref_digest))
+            .store_task_manifest(action_digest(), manifest_referencing(&ref_digest))
             .await
             .unwrap();
 
@@ -319,7 +322,7 @@ mod local_storage {
             .await
             .unwrap();
         backend
-            .store_manifest(action_digest(), manifest_referencing(&blob_digest))
+            .store_task_manifest(action_digest(), manifest_referencing(&blob_digest))
             .await
             .unwrap();
 
@@ -338,7 +341,7 @@ mod local_storage {
         assert_eq!(stats.blobs_removed, 2);
         assert!(
             backend
-                .retrieve_manifest(action_digest())
+                .retrieve_task_manifest(action_digest())
                 .await
                 .unwrap()
                 .is_none()
@@ -365,7 +368,7 @@ mod local_storage {
             .await
             .unwrap();
         backend
-            .store_manifest(action_digest(), manifest_referencing(&blob_digest))
+            .store_task_manifest(action_digest(), manifest_referencing(&blob_digest))
             .await
             .unwrap();
 
@@ -377,7 +380,7 @@ mod local_storage {
         );
         assert!(
             backend
-                .retrieve_manifest(action_digest())
+                .retrieve_task_manifest(action_digest())
                 .await
                 .unwrap()
                 .is_some()
@@ -388,7 +391,7 @@ mod local_storage {
         assert_eq!(stats.blobs_removed, 0);
         assert!(
             backend
-                .retrieve_manifest(action_digest())
+                .retrieve_task_manifest(action_digest())
                 .await
                 .unwrap()
                 .is_some()
@@ -422,7 +425,7 @@ mod local_storage {
                 .await
                 .unwrap();
             backend
-                .store_manifest(action.clone(), manifest_referencing(digest))
+                .store_task_manifest(action.clone(), manifest_referencing(digest))
                 .await
                 .unwrap();
         }
@@ -449,7 +452,7 @@ mod local_storage {
         assert_eq!(stats.blobs_removed, 2);
         assert!(
             backend
-                .retrieve_manifest(cold_action)
+                .retrieve_task_manifest(cold_action)
                 .await
                 .unwrap()
                 .is_none(),
@@ -457,14 +460,14 @@ mod local_storage {
         );
         assert!(
             backend
-                .retrieve_manifest(warm_action)
+                .retrieve_task_manifest(warm_action)
                 .await
                 .unwrap()
                 .is_some()
         );
         assert!(
             backend
-                .retrieve_manifest(hot_action)
+                .retrieve_task_manifest(hot_action)
                 .await
                 .unwrap()
                 .is_some()

@@ -7,7 +7,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::ActionResult;
 use miette::IntoDiagnostic;
 use moon_blob::{BlobContent, BlobInput, BlobOutput};
 use moon_cache_storage::{
-    CacheCapabilities, CacheContext, TaskManifest, StorageBackend, check_blob_integrity,
+    CacheCapabilities, CacheContext, StorageBackend, TaskManifest, check_blob_integrity,
 };
 use moon_common::{Id, color, is_ci, is_remote};
 use moon_config::RemoteCompression;
@@ -175,7 +175,7 @@ impl StorageBackend for HttpRemoteStorage {
         Ok(())
     }
 
-    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
+    async fn retrieve_task_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
         match self
             .get_client()
             .get(self.get_endpoint("ac", &digest.hash))
@@ -213,7 +213,11 @@ impl StorageBackend for HttpRemoteStorage {
         }
     }
 
-    async fn store_manifest(&self, digest: Digest, manifest: TaskManifest) -> miette::Result<()> {
+    async fn store_task_manifest(
+        &self,
+        digest: Digest,
+        manifest: TaskManifest,
+    ) -> miette::Result<()> {
         match self
             .get_client()
             .put(self.get_endpoint("ac", &digest.hash))

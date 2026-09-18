@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_blob::{Blob, BlobCleanStats, BlobContent, BlobInput, BlobOutput};
-use moon_cache_storage::{CacheCapabilities, CacheContext, TaskManifest, StorageBackend};
+use moon_cache_storage::{CacheCapabilities, CacheContext, StorageBackend, TaskManifest};
 use moon_cas::CasStore;
 use moon_common::Id;
 use moon_hash::{ContentHash, Digest};
@@ -120,7 +120,7 @@ impl StorageBackend for LocalStorage {
         })
     }
 
-    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
+    async fn retrieve_task_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
         let manifests = Arc::clone(&self.manifests);
 
         spawn_blocking(move || {
@@ -142,7 +142,7 @@ impl StorageBackend for LocalStorage {
         .into_diagnostic()?
     }
 
-    async fn store_manifest(&self, digest: Digest, manifest: TaskManifest) -> miette::Result<()> {
+    async fn store_task_manifest(&self, digest: Digest, manifest: TaskManifest) -> miette::Result<()> {
         let manifests = Arc::clone(&self.manifests);
 
         spawn_blocking(move || {

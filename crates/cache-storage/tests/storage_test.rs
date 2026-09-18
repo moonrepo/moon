@@ -86,11 +86,11 @@ impl StorageBackend for MemoryBackend {
         !self.read_only
     }
 
-    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
+    async fn retrieve_task_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
         Ok(self.manifests.lock().unwrap().get(&digest).cloned())
     }
 
-    async fn store_manifest(
+    async fn store_task_manifest(
         &self,
         digest: Digest,
         mut manifest: TaskManifest,
@@ -216,14 +216,14 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob))
+            .archive_task_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
 
         // The persisted manifest comes back without inline bytes...
         let source = storage
-            .load_manifest(&action)
+            .load_task_manifest(&action)
             .await
             .unwrap()
             .expect("manifest was stored");
@@ -231,7 +231,7 @@ mod storage {
 
         // ...and hydration refills them from the stored blobs.
         let hydrated = storage
-            .hydrate_manifest(&action, source)
+            .hydrate_task_manifest(&action, source)
             .await
             .unwrap()
             .expect("manifest was hydrated");
@@ -246,7 +246,7 @@ mod storage {
 
         assert!(
             storage
-                .load_manifest(&digest('a', 0))
+                .load_task_manifest(&digest('a', 0))
                 .await
                 .unwrap()
                 .is_none()
@@ -281,11 +281,11 @@ mod storage {
         storage.add_local_backend(primary);
         storage.add_local_backend(secondary);
 
-        let source = storage.load_manifest(&action).await.unwrap().unwrap();
+        let source = storage.load_task_manifest(&action).await.unwrap().unwrap();
         assert_eq!(source.backend.get_id().as_str(), "primary");
 
         let hydrated = storage
-            .hydrate_manifest(&action, source)
+            .hydrate_task_manifest(&action, source)
             .await
             .unwrap()
             .expect("hydrated from secondary");
@@ -305,13 +305,13 @@ mod storage {
         let action = digest('a', 0);
 
         storage
-            .archive_manifest(&action, TaskManifest::default())
+            .archive_task_manifest(&action, TaskManifest::default())
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
 
         assert!(
-            storage.load_manifest(&action).await.unwrap().is_some(),
+            storage.load_task_manifest(&action).await.unwrap().is_some(),
             "a blob-less manifest should still be stored"
         );
     }
@@ -339,7 +339,10 @@ mod storage {
             ..Default::default()
         });
 
-        storage.archive_manifest(&action, manifest).await.unwrap();
+        storage
+            .archive_task_manifest(&action, manifest)
+            .await
+            .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
 
         assert!(
@@ -364,7 +367,10 @@ mod storage {
         let manifest = manifest_with_file(&output_blob);
         assert!(manifest.digest_source.is_none());
 
-        storage.archive_manifest(&action, manifest).await.unwrap();
+        storage
+            .archive_task_manifest(&action, manifest)
+            .await
+            .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
 
         assert!(manifests.lock().unwrap().contains_key(&action));
@@ -381,14 +387,14 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob))
+            .archive_task_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         // A failed upload must not surface as a program error.
         storage.wait_for_background_tasks().await.unwrap();
 
         assert!(
-            storage.load_manifest(&action).await.unwrap().is_none(),
+            storage.load_task_manifest(&action).await.unwrap().is_none(),
             "manifest must be skipped when a blob fails to upload"
         );
     }
@@ -404,12 +410,12 @@ mod storage {
         let blob = Digest::from_bytes(b"output").unwrap();
 
         storage
-            .archive_manifest(&action, manifest_with_file(&blob))
+            .archive_task_manifest(&action, manifest_with_file(&blob))
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
 
-        assert!(storage.load_manifest(&action).await.unwrap().is_none());
+        assert!(storage.load_task_manifest(&action).await.unwrap().is_none());
     }
 
     #[tokio::test]
@@ -431,11 +437,11 @@ mod storage {
         let mut storage = create_storage();
         storage.add_local_backend(backend);
 
-        let source = storage.load_manifest(&action).await.unwrap().unwrap();
+        let source = storage.load_task_manifest(&action).await.unwrap().unwrap();
 
         assert!(
             storage
-                .hydrate_manifest(&action, source)
+                .hydrate_task_manifest(&action, source)
                 .await
                 .unwrap()
                 .is_none(),
@@ -467,11 +473,11 @@ mod storage {
         let mut storage = create_storage();
         storage.add_local_backend(backend);
 
-        let source = storage.load_manifest(&action).await.unwrap().unwrap();
+        let source = storage.load_task_manifest(&action).await.unwrap().unwrap();
 
         assert!(
             storage
-                .hydrate_manifest(&action, source)
+                .hydrate_task_manifest(&action, source)
                 .await
                 .unwrap()
                 .is_none()
@@ -498,11 +504,11 @@ mod storage {
         storage.add_local_backend(local);
         storage.add_remote_backend(remote);
 
-        let source = storage.load_manifest(&action).await.unwrap().unwrap();
+        let source = storage.load_task_manifest(&action).await.unwrap().unwrap();
         assert!(source.remote, "entry must be served by the remote backend");
 
         let hydrated = storage
-            .hydrate_manifest(&action, source)
+            .hydrate_task_manifest(&action, source)
             .await
             .unwrap()
             .expect("hydrated from remote");
@@ -541,9 +547,9 @@ mod storage {
         storage.add_local_backend(local_b);
         storage.add_remote_backend(remote);
 
-        let source = storage.load_manifest(&action).await.unwrap().unwrap();
+        let source = storage.load_task_manifest(&action).await.unwrap().unwrap();
         storage
-            .hydrate_manifest(&action, source)
+            .hydrate_task_manifest(&action, source)
             .await
             .unwrap()
             .unwrap();
@@ -572,11 +578,11 @@ mod storage {
         storage.add_local_backend(primary);
         storage.add_local_backend(secondary);
 
-        let source = storage.load_manifest(&action).await.unwrap().unwrap();
+        let source = storage.load_task_manifest(&action).await.unwrap().unwrap();
         assert!(!source.remote, "entry must be served by a local backend");
 
         storage
-            .hydrate_manifest(&action, source)
+            .hydrate_task_manifest(&action, source)
             .await
             .unwrap()
             .unwrap();
@@ -603,9 +609,9 @@ mod storage {
         storage.add_local_backend(local);
         storage.add_remote_backend(remote);
 
-        let source = storage.load_manifest(&action).await.unwrap().unwrap();
+        let source = storage.load_task_manifest(&action).await.unwrap().unwrap();
         storage
-            .hydrate_manifest(&action, source)
+            .hydrate_task_manifest(&action, source)
             .await
             .unwrap()
             .unwrap();
@@ -640,11 +646,11 @@ mod storage {
             ..Default::default()
         });
 
-        let source = scoped.load_manifest(&action).await.unwrap().unwrap();
+        let source = scoped.load_task_manifest(&action).await.unwrap().unwrap();
         assert!(source.remote);
 
         scoped
-            .hydrate_manifest(&action, source)
+            .hydrate_task_manifest(&action, source)
             .await
             .unwrap()
             .unwrap();

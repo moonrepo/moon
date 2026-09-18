@@ -5,7 +5,7 @@ use moon_cache_storage::{
 };
 use moon_common::Id;
 use moon_hash::{ContentHash, Digest};
-use moon_manifest::{Manifest, ManifestFile};
+use moon_manifest::{TaskManifest, TaskManifestFile};
 use rustc_hash::FxHashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -21,7 +21,7 @@ struct MemoryBackend {
     id: Id,
     capabilities: CacheCapabilities,
     blobs: Arc<Mutex<FxHashMap<Digest, Bytes>>>,
-    manifests: Arc<Mutex<FxHashMap<Digest, Manifest>>>,
+    manifests: Arc<Mutex<FxHashMap<Digest, TaskManifest>>>,
 
     // Failure injection for the abort/degrade paths.
     fail_find_missing: bool,
@@ -86,11 +86,15 @@ impl StorageBackend for MemoryBackend {
         !self.read_only
     }
 
-    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
+    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
         Ok(self.manifests.lock().unwrap().get(&digest).cloned())
     }
 
-    async fn store_manifest(&self, digest: Digest, mut manifest: Manifest) -> miette::Result<()> {
+    async fn store_manifest(
+        &self,
+        digest: Digest,
+        mut manifest: TaskManifest,
+    ) -> miette::Result<()> {
         // Mimic a serializing backend: byte fields are #[serde(skip)], so a
         // persisted manifest returns without inline bytes and must be
         // re-hydrated from the stored blobs.
@@ -170,9 +174,9 @@ fn digest(seed: char, size: i64) -> Digest {
     }
 }
 
-fn manifest_with_file(blob: &Digest) -> Manifest {
-    Manifest {
-        files: vec![ManifestFile {
+fn manifest_with_file(blob: &Digest) -> TaskManifest {
+    TaskManifest {
+        files: vec![TaskManifestFile {
             bytes: Some(Bytes::from_static(b"output")),
             digest: Some(blob.clone()),
             path: "out/a.txt".into(),
@@ -301,7 +305,7 @@ mod storage {
         let action = digest('a', 0);
 
         storage
-            .archive_manifest(&action, Manifest::default())
+            .archive_manifest(&action, TaskManifest::default())
             .await
             .unwrap();
         storage.wait_for_background_tasks().await.unwrap();
@@ -328,7 +332,7 @@ mod storage {
         let output_blob = Digest::from_bytes(b"output").unwrap();
 
         let mut manifest = manifest_with_file(&output_blob);
-        manifest.digest_source = Some(ManifestFile {
+        manifest.digest_source = Some(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"action")),
             digest: Some(action.clone()),
             path: ".moon/cache/hashes/action.json".into(),

@@ -5,7 +5,7 @@ use miette::IntoDiagnostic;
 use moon_blob::{BlobCleanStats, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain};
 use moon_hash::Digest;
-use moon_manifest::Manifest;
+use moon_manifest::TaskManifest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;
@@ -59,12 +59,12 @@ where
     /// Retrieve the manifest for the given digest if it exists, otherwise return `None`.
     /// This *does not* retrieve all the associated blobs for the manifest, only the manifest
     /// itself. Use `retrieve_blobs` to retrieve the blobs after retrieving the manifest.
-    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>>;
+    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>>;
 
     /// Store the manifest for the given digest. This *does not* store the associated blobs for the
     /// manifest, only the manifest itself. Use `store_blobs` to store the blobs before the
     /// manifest, and ensure the manifest is only stored if all blobs are successfully stored.
-    async fn store_manifest(&self, digest: Digest, manifest: Manifest) -> miette::Result<()>;
+    async fn store_manifest(&self, digest: Digest, manifest: TaskManifest) -> miette::Result<()>;
 
     //---------- FINDING BLOBS ----------//
 

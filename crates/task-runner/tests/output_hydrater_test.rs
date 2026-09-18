@@ -1,6 +1,6 @@
 mod utils;
 
-use moon_cache::{CacheMode, Manifest, ManifestFile, ManifestSource};
+use moon_cache::{CacheMode, TaskManifest, TaskManifestFile, ManifestSource};
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
 use moon_task_runner::TaskRunState;
@@ -346,7 +346,7 @@ mod output_hydrater {
             state.digest = Digest::from_bytes(b"hash123").unwrap();
 
             container
-                .seed_manifest(&state.digest, Manifest::default())
+                .seed_manifest(&state.digest, TaskManifest::default())
                 .await;
             let source = load_source(&container, &state).await;
 
@@ -448,7 +448,7 @@ mod output_hydrater {
             let stderr_digest = container.seed_blob(b"stderr output").await;
             let stdout_digest = container.seed_blob(b"stdout output").await;
 
-            let manifest = Manifest {
+            let manifest = TaskManifest {
                 stderr_digest: Some(stderr_digest),
                 stdout_digest: Some(stdout_digest),
                 ..Default::default()
@@ -502,8 +502,8 @@ mod output_hydrater {
                 .join(&outside_name);
             let _ = fs::remove_file(&outside_path);
 
-            let manifest = Manifest {
-                files: vec![ManifestFile {
+            let manifest = TaskManifest {
+                files: vec![TaskManifestFile {
                     path: format!("../{outside_name}").into(),
                     digest: Some(Digest::from_bytes(b"").unwrap()),
                     ..Default::default()
@@ -553,8 +553,8 @@ mod output_hydrater {
                 .join(&outside_name);
             let _ = fs::remove_file(&outside_path);
 
-            let manifest = Manifest {
-                files: vec![ManifestFile {
+            let manifest = TaskManifest {
+                files: vec![TaskManifestFile {
                     path: outside_path.to_string_lossy().to_string().into(),
                     digest: Some(Digest::from_bytes(b"").unwrap()),
                     ..Default::default()
@@ -590,8 +590,8 @@ mod output_hydrater {
             let undeclared_path = container.sandbox.path().join("project/runner.js");
             let _ = fs::remove_file(&undeclared_path);
 
-            let manifest = Manifest {
-                files: vec![ManifestFile {
+            let manifest = TaskManifest {
+                files: vec![TaskManifestFile {
                     path: "project/runner.js".into(),
                     digest: Some(Digest::from_bytes(b"").unwrap()),
                     ..Default::default()
@@ -627,10 +627,10 @@ mod output_hydrater {
             setup_cas_state(&mut state);
 
             let empty_digest = Digest::from_bytes(b"").unwrap();
-            let manifest = Manifest {
+            let manifest = TaskManifest {
                 files: ["a.txt", "b.txt", "c.txt"]
                     .into_iter()
-                    .map(|name| ManifestFile {
+                    .map(|name| TaskManifestFile {
                         path: format!("project/{name}").into(),
                         digest: Some(empty_digest.clone()),
                         ..Default::default()

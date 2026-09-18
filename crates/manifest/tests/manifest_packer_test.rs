@@ -1,5 +1,5 @@
 use moon_hash::Digest;
-use moon_manifest::ManifestPacker;
+use moon_manifest::TaskManifestPacker;
 use starbase_sandbox::create_empty_sandbox;
 
 mod inherit_source {
@@ -17,7 +17,7 @@ mod inherit_source {
         let path = sandbox.path().join(".moon/cache/hashes/abc.json");
         let digest = Digest::from_file(&path).unwrap();
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_source(&digest, path.clone()).unwrap();
 
         let source = packer
@@ -40,7 +40,7 @@ mod inherit_source {
         let path = sandbox.path().join(".moon/cache/hashes/missing.json");
         let digest = Digest::from_bytes(b"missing").unwrap();
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_source(&digest, path).unwrap();
 
         assert!(packer.pack().digest_source.is_none());
@@ -56,7 +56,7 @@ mod inherit_source {
         let path = sandbox.path().join(".moon/cache/hashes/abc.json");
         let digest = Digest::from_file(&path).unwrap();
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_source(&digest, path).unwrap();
 
         assert!(packer.pack().digest_source.unwrap().bytes.is_none());
@@ -72,7 +72,7 @@ mod inherit_source {
         let path = sandbox.path().join(".moon/cache/hashes/abc.json");
         let digest = Digest::from_file(&path).unwrap();
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_source(&digest, path).unwrap();
 
         let manifest = packer.pack();
@@ -92,7 +92,7 @@ mod inherit_output {
 
         let abs_path = sandbox.path().join("out/a.txt");
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_output(abs_path.clone()).unwrap();
 
         let manifest = packer.pack();
@@ -117,7 +117,7 @@ mod inherit_output {
         sandbox.create_file("out/a.txt", "a");
         sandbox.create_file("out/nested/b.txt", "b");
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_output(sandbox.path().join("out")).unwrap();
 
         let manifest = packer.pack();
@@ -149,7 +149,7 @@ mod inherit_output {
         )
         .unwrap();
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer
             .inherit_output(sandbox.path().join("out/link.txt"))
             .unwrap();
@@ -167,7 +167,7 @@ mod inherit_output {
         // Optional outputs may simply not have been produced.
         let sandbox = create_empty_sandbox();
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer
             .inherit_output(sandbox.path().join("out/missing.txt"))
             .unwrap();
@@ -184,7 +184,7 @@ mod inherit_output {
         let outside = create_empty_sandbox();
         outside.create_file("a.txt", "contents");
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         let error = packer
             .inherit_output(outside.path().join("a.txt"))
             .unwrap_err()
@@ -217,7 +217,7 @@ mod inherit_output {
         )
         .unwrap();
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         let error = packer
             .inherit_output(sandbox.path().join("link.txt"))
             .unwrap_err()
@@ -245,7 +245,7 @@ mod inherit_operation {
 
         operation.get_exec_output_mut().unwrap().exit_code = Some(2);
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_operation(&operation).unwrap();
 
         let manifest = packer.pack();
@@ -273,7 +273,7 @@ mod inherit_operation {
         let mut operation = Operation::task_execution("build");
         operation.finish_from_output(None, vec![], vec![]);
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_operation(&operation).unwrap();
 
         let manifest = packer.pack();
@@ -289,7 +289,7 @@ mod inherit_operation {
 
         let operation = Operation::output_hydration();
 
-        let mut packer = ManifestPacker::new(sandbox.path().to_path_buf());
+        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
         packer.inherit_operation(&operation).unwrap();
 
         let manifest = packer.pack();

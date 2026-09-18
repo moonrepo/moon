@@ -1,6 +1,6 @@
 use crate::helpers::*;
-use crate::manifest::{Manifest, ManifestFile, ManifestSymlink};
 use crate::manifest_error::ManifestError;
+use crate::task_manifest::{TaskManifest, TaskManifestFile, TaskManifestSymlink};
 use moon_action::Operation;
 use moon_blob::Blob;
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
@@ -10,26 +10,26 @@ use starbase_utils::glob::{self, GlobWalkOptions};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
-pub struct ManifestPacker {
-    manifest: Manifest,
+pub struct TaskManifestPacker {
+    manifest: TaskManifest,
     workspace_root: PathBuf,
 }
 
-impl ManifestPacker {
+impl TaskManifestPacker {
     pub fn new(workspace_root: PathBuf) -> Self {
         Self {
-            manifest: Manifest::default(),
+            manifest: TaskManifest::default(),
             workspace_root,
         }
     }
 
-    pub fn pack(self) -> Manifest {
+    pub fn pack(self) -> TaskManifest {
         self.manifest
     }
 
     pub fn inherit_source(&mut self, digest: &Digest, path: PathBuf) -> miette::Result<()> {
         if path.exists() {
-            self.manifest.digest_source = Some(ManifestFile {
+            self.manifest.digest_source = Some(TaskManifestFile {
                 digest: Some(digest.to_owned()),
                 path: self.resolve_rel_path(&path)?,
                 source_path: Some(path),
@@ -91,7 +91,7 @@ impl ManifestPacker {
     fn insert_file(&mut self, abs_path: PathBuf) -> miette::Result<()> {
         let metadata = fs::metadata(&abs_path)?;
 
-        self.manifest.files.push(ManifestFile {
+        self.manifest.files.push(TaskManifestFile {
             bytes: None,
             digest: Some(Digest::from_file(&abs_path)?),
             is_executable: is_file_executable(&abs_path, &metadata),
@@ -120,7 +120,7 @@ impl ManifestPacker {
 
         let metadata = fs::metadata(&abs_path)?;
 
-        self.manifest.symlinks.push(ManifestSymlink {
+        self.manifest.symlinks.push(TaskManifestSymlink {
             modified_at: metadata.modified().ok(),
             path: self.resolve_rel_path(&abs_path)?,
             target: self.resolve_rel_path(&link)?,

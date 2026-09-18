@@ -4,7 +4,7 @@ use bazel_remote_apis::build::bazel::remote::execution::v2::{
 use bazel_remote_apis::google::protobuf::Timestamp;
 use moon_blob::{BlobContent, Bytes};
 use moon_hash::{ContentHash, Digest};
-use moon_manifest::{Manifest, ManifestFile};
+use moon_manifest::{TaskManifest, TaskManifestFile};
 use rustc_hash::FxHashMap;
 use starbase_sandbox::create_empty_sandbox;
 use starbase_utils::json::serde_json;
@@ -21,8 +21,8 @@ fn digest(seed: char, size: i64) -> Digest {
     }
 }
 
-fn file(bytes: Option<Bytes>, digest: Option<Digest>) -> ManifestFile {
-    ManifestFile {
+fn file(bytes: Option<Bytes>, digest: Option<Digest>) -> TaskManifestFile {
+    TaskManifestFile {
         bytes,
         digest,
         path: "out/a.txt".into(),
@@ -49,7 +49,7 @@ mod from_bazel {
             node_properties: None,
         };
 
-        let manifest_file = ManifestFile::from_bazel_file(output).unwrap();
+        let manifest_file = TaskManifestFile::from_bazel_file(output).unwrap();
 
         assert!(manifest_file.bytes.is_none());
         assert!(manifest_file.digest.is_some());
@@ -68,7 +68,7 @@ mod from_bazel {
             node_properties: None,
         };
 
-        let manifest_file = ManifestFile::from_bazel_file(output).unwrap();
+        let manifest_file = TaskManifestFile::from_bazel_file(output).unwrap();
 
         assert_eq!(manifest_file.bytes, Some(Bytes::from_static(b"hello")));
     }
@@ -92,7 +92,7 @@ mod from_bazel {
             ..Default::default()
         };
 
-        let manifest = Manifest::from_bazel_action_result(result).unwrap();
+        let manifest = TaskManifest::from_bazel_action_result(result).unwrap();
 
         assert!(manifest.stdout_bytes.is_none());
         assert!(manifest.stderr_bytes.is_none());
@@ -105,7 +105,7 @@ mod from_bazel {
         // The RE API reserves `stdout_raw`/`stderr_raw` for server responses; a client
         // that populates them on `UpdateActionResult` is rejected by backends that
         // validate the contract. The digests carry the output instead.
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             stdout_bytes: Some(Bytes::from_static(b"out")),
             stdout_digest: Some(digest('c', 3)),
             stderr_bytes: Some(Bytes::from_static(b"err")),
@@ -126,7 +126,7 @@ mod from_bazel {
         // The daemon hop is moon's own RPC, not `UpdateActionResult`, and the
         // console output lives only in the client's memory — so it has to be
         // inlined or the daemon has no bytes to upload for it.
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             stdout_bytes: Some(Bytes::from_static(b"out")),
             stdout_digest: Some(digest('c', 3)),
             stderr_bytes: Some(Bytes::from_static(b"err")),
@@ -147,7 +147,7 @@ mod from_bazel {
         // A digest can be present with no bytes (nothing was captured, or the
         // manifest isn't hydrated). That must stay an empty raw field rather
         // than becoming an empty blob under the real, non-empty digest.
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             stdout_bytes: None,
             stdout_digest: Some(digest('c', 3)),
             stderr_bytes: None,
@@ -165,7 +165,7 @@ mod from_bazel {
     fn stdio_bytes_survive_a_persisted_round_trip() {
         // What the daemon actually relies on: bytes handed to the client come
         // back out the other side, since it can't re-read them from anywhere.
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             exit_code: 4,
             stdout_bytes: Some(Bytes::from_static(b"out")),
             stdout_digest: Some(digest('c', 3)),
@@ -175,7 +175,8 @@ mod from_bazel {
         };
 
         let restored =
-            Manifest::from_bazel_action_result(manifest.into_bazel_action_result(true)).unwrap();
+            TaskManifest::from_bazel_action_result(manifest.into_bazel_action_result(true))
+                .unwrap();
 
         assert_eq!(restored.exit_code, 4);
         assert_eq!(restored.stdout_bytes, Some(Bytes::from_static(b"out")));
@@ -187,14 +188,15 @@ mod from_bazel {
     fn stdio_bytes_are_lost_on_an_unpersisted_round_trip() {
         // The counterpart to the above: an upload-shaped conversion drops the
         // bytes and leaves only the digests to fetch them by.
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             stdout_bytes: Some(Bytes::from_static(b"out")),
             stdout_digest: Some(digest('c', 3)),
             ..Default::default()
         };
 
         let restored =
-            Manifest::from_bazel_action_result(manifest.into_bazel_action_result(false)).unwrap();
+            TaskManifest::from_bazel_action_result(manifest.into_bazel_action_result(false))
+                .unwrap();
 
         assert!(restored.stdout_bytes.is_none());
         assert_eq!(restored.stdout_digest, Some(digest('c', 3)));
@@ -222,7 +224,7 @@ mod from_bazel {
             ..Default::default()
         };
 
-        let manifest = Manifest::from_bazel_action_result(result).unwrap();
+        let manifest = TaskManifest::from_bazel_action_result(result).unwrap();
 
         assert_eq!(
             manifest.upload_started_at,
@@ -272,7 +274,7 @@ mod from_bazel {
             ..Default::default()
         };
 
-        let manifest = Manifest::from_bazel_action_result(result).unwrap();
+        let manifest = TaskManifest::from_bazel_action_result(result).unwrap();
         assert_eq!(manifest.exit_code, 7);
         assert_eq!(manifest.files.len(), 1);
         assert_eq!(manifest.files[0].path.as_str(), "out/a.txt");
@@ -294,7 +296,7 @@ mod collect_blob_sources {
 
     #[test]
     fn uses_file_path_when_no_inline_bytes() {
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             files: vec![file(None, Some(digest('a', 5)))],
             ..Default::default()
         };
@@ -310,7 +312,7 @@ mod collect_blob_sources {
 
     #[test]
     fn uses_inline_when_bytes_present() {
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             files: vec![file(Some(Bytes::from_static(b"hi")), Some(digest('a', 2)))],
             ..Default::default()
         };
@@ -326,7 +328,7 @@ mod collect_blob_sources {
 
     #[test]
     fn includes_stderr_and_stdout_when_present() {
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             stderr_bytes: Some(Bytes::from_static(b"err")),
             stderr_digest: Some(digest('b', 3)),
             stdout_bytes: Some(Bytes::from_static(b"out")),
@@ -344,8 +346,8 @@ mod collect_blob_sources {
         // Once a file records where its bytes actually live, that wins over
         // resolving the workspace-relative path — the two differ for blobs
         // sourced from outside the output tree (e.g. the fingerprint file).
-        let manifest = Manifest {
-            files: vec![ManifestFile {
+        let manifest = TaskManifest {
+            files: vec![TaskManifestFile {
                 digest: Some(digest('a', 5)),
                 path: "out/a.txt".into(),
                 source_path: Some(PathBuf::from("/elsewhere/cached.txt")),
@@ -370,9 +372,9 @@ mod collect_blob_sources {
         // The action digest names the fingerprint file, and a backend that
         // validates the RE contract rejects an action result whose action
         // digest is absent from the CAS — so it must be uploaded too.
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             files: vec![file(None, Some(digest('a', 5)))],
-            digest_source: Some(ManifestFile {
+            digest_source: Some(TaskManifestFile {
                 digest: Some(digest('f', 11)),
                 path: ".moon/cache/hashes/abc.json".into(),
                 source_path: Some(PathBuf::from("/workspace/.moon/cache/hashes/abc.json")),
@@ -394,7 +396,7 @@ mod collect_blob_sources {
 
     #[test]
     fn omits_the_digest_source_when_unset() {
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             files: vec![file(None, Some(digest('a', 5)))],
             ..Default::default()
         };
@@ -410,7 +412,7 @@ mod collect_blob_sources {
         // A size-0 output must become a shared inline empty blob, never a
         // File(path): the path isn't materialized when warming runs, and empty
         // files dedupe to the one empty digest in CAS.
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             files: vec![
                 file(None, Some(digest('a', 0))),
                 file(Some(Bytes::from_static(b"hi")), Some(digest('c', 2))),
@@ -439,7 +441,7 @@ mod hydration {
 
     #[test]
     fn empty_manifest_is_hydrated() {
-        assert!(Manifest::default().is_hydrated());
+        assert!(TaskManifest::default().is_hydrated());
     }
 
     #[test]
@@ -447,8 +449,8 @@ mod hydration {
         // The digest source is upload-only: it's the action the manifest was
         // produced from, not an output to restore. Pulling it in here would
         // make every cache hit download a blob it never writes anywhere.
-        let manifest = Manifest {
-            digest_source: Some(ManifestFile {
+        let manifest = TaskManifest {
+            digest_source: Some(TaskManifestFile {
                 digest: Some(digest('f', 11)),
                 path: ".moon/cache/hashes/abc.json".into(),
                 ..Default::default()
@@ -462,7 +464,7 @@ mod hydration {
 
     #[test]
     fn digest_without_bytes_is_not_hydrated() {
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             files: vec![file(None, Some(digest('a', 5)))],
             ..Default::default()
         };
@@ -472,7 +474,7 @@ mod hydration {
 
     #[test]
     fn collect_unhydrated_skips_already_present_bytes() {
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             stderr_bytes: None,
             stderr_digest: Some(digest('b', 1)),
             // stdout already hydrated → excluded.
@@ -491,7 +493,7 @@ mod hydration {
 
     #[test]
     fn hydrate_fills_bytes_from_blob_map() {
-        let mut manifest = Manifest {
+        let mut manifest = TaskManifest {
             stderr_bytes: None,
             stderr_digest: Some(digest('b', 3)),
             files: vec![file(None, Some(digest('a', 4)))],
@@ -524,7 +526,7 @@ mod hydration {
         sandbox.create_file("err", "boom");
         sandbox.create_file("out.txt", "file contents");
 
-        let mut manifest = Manifest {
+        let mut manifest = TaskManifest {
             stderr_bytes: None,
             stderr_digest: Some(digest('b', 4)),
             files: vec![file(None, Some(digest('a', 13)))],
@@ -560,7 +562,7 @@ mod serialization {
 
     #[test]
     fn byte_fields_are_never_serialized() {
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             exit_code: 2,
             stderr_bytes: Some(Bytes::from_static(b"stderr-secret")),
             stderr_digest: Some(digest('b', 13)),
@@ -584,8 +586,8 @@ mod serialization {
         // It only exists to get the action blob uploaded during archiving; a
         // persisted manifest has no use for it, and the local GC reads these
         // files back to decide which blobs to keep.
-        let manifest = Manifest {
-            digest_source: Some(ManifestFile {
+        let manifest = TaskManifest {
+            digest_source: Some(TaskManifestFile {
                 digest: Some(digest('f', 11)),
                 path: ".moon/cache/hashes/abc.json".into(),
                 source_path: Some(PathBuf::from("/workspace/.moon/cache/hashes/abc.json")),
@@ -597,13 +599,13 @@ mod serialization {
         let json = serde_json::to_string(&manifest).unwrap();
         assert!(!json.contains("digest_source"));
 
-        let restored: Manifest = serde_json::from_str(&json).unwrap();
+        let restored: TaskManifest = serde_json::from_str(&json).unwrap();
         assert!(restored.digest_source.is_none());
     }
 
     #[test]
     fn round_trip_drops_bytes_but_keeps_digests() {
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             exit_code: 2,
             stderr_bytes: Some(Bytes::from_static(b"stderr-secret")),
             stderr_digest: Some(digest('b', 13)),
@@ -615,7 +617,7 @@ mod serialization {
         };
 
         let json = serde_json::to_string(&manifest).unwrap();
-        let restored: Manifest = serde_json::from_str(&json).unwrap();
+        let restored: TaskManifest = serde_json::from_str(&json).unwrap();
 
         assert_eq!(restored.exit_code, 2);
         assert!(restored.stderr_bytes.is_none());

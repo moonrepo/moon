@@ -1,6 +1,6 @@
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_local::LocalStorage;
-use moon_cache_storage::{CacheContext, Manifest, ManifestFile, StorageBackend};
+use moon_cache_storage::{CacheContext, TaskManifest, TaskManifestFile, StorageBackend};
 use moon_config::CacheConfig;
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
@@ -60,9 +60,9 @@ fn manifest_path(sandbox: &Sandbox, action: &Digest) -> PathBuf {
         .join(action.hash.suffix())
 }
 
-fn manifest_referencing(digest: &Digest) -> Manifest {
-    Manifest {
-        files: vec![ManifestFile {
+fn manifest_referencing(digest: &Digest) -> TaskManifest {
+    TaskManifest {
+        files: vec![TaskManifestFile {
             digest: Some(digest.clone()),
             path: "out.txt".into(),
             ..Default::default()
@@ -231,9 +231,9 @@ mod local_storage {
                 .is_none()
         );
 
-        let manifest = Manifest {
+        let manifest = TaskManifest {
             exit_code: 3,
-            files: vec![ManifestFile {
+            files: vec![TaskManifestFile {
                 bytes: None,
                 digest: Some(Digest::from_bytes(b"f").unwrap()),
                 is_executable: true,

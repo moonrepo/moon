@@ -5,7 +5,7 @@
 #![cfg(unix)]
 
 use moon_app_context::AppContext;
-use moon_cache_storage::{Manifest, ManifestFile};
+use moon_cache_storage::{TaskManifest, TaskManifestFile};
 use moon_daemon_client::DaemonClient;
 use moon_daemon_server::{DaemonService, DaemonState, serve_unix};
 use moon_daemon_utils::endpoint::*;
@@ -117,7 +117,7 @@ impl TestDaemon {
 
     /// Persist a manifest straight into storage, standing in for a previous run
     /// so hydration has something to find.
-    async fn seed(&self, digest: &Digest, manifest: Manifest) {
+    async fn seed(&self, digest: &Digest, manifest: TaskManifest) {
         self.app_context
             .cache_engine
             .storage
@@ -134,7 +134,7 @@ impl TestDaemon {
     }
 
     /// The manifest as a hydration source sees it: digests, no inline bytes.
-    async fn load_source_manifest(&self, digest: &Digest) -> Manifest {
+    async fn load_source_manifest(&self, digest: &Digest) -> TaskManifest {
         self.app_context
             .cache_engine
             .storage
@@ -156,9 +156,9 @@ fn action_digest() -> Digest {
     Digest::from_bytes(b"fingerprint").unwrap()
 }
 
-fn manifest_with_output(contents: &'static [u8]) -> Manifest {
-    Manifest {
-        files: vec![ManifestFile {
+fn manifest_with_output(contents: &'static [u8]) -> TaskManifest {
+    TaskManifest {
+        files: vec![TaskManifestFile {
             bytes: Some(contents.into()),
             digest: Some(Digest::from_bytes(contents).unwrap()),
             path: "project/out.txt".into(),
@@ -280,7 +280,7 @@ mod archive {
         let daemon = TestDaemon::start().await;
 
         let mut manifest = manifest_with_output(b"output");
-        manifest.digest_source = Some(ManifestFile {
+        manifest.digest_source = Some(TaskManifestFile {
             bytes: Some(b"fingerprint".as_slice().into()),
             digest: Some(action_digest()),
             path: ".moon/cache/hashes/abc.json".into(),
@@ -301,7 +301,7 @@ mod archive {
         let daemon = TestDaemon::start().await;
         let action = Digest::from_bytes(b"other-fingerprint").unwrap();
 
-        manifest.digest_source = Some(ManifestFile {
+        manifest.digest_source = Some(TaskManifestFile {
             bytes: Some(b"other-fingerprint".as_slice().into()),
             digest: Some(action.clone()),
             path: ".moon/cache/hashes/def.json".into(),

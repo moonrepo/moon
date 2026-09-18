@@ -18,7 +18,7 @@ use bazel_remote_apis::google::bytestream::{
 };
 use moon_blob::{BlobContent, BlobInput, BlobOutput, Bytes};
 use moon_cache_storage::{
-    CacheCapabilities, CacheContext, Compressor, DigestFunction, Manifest, StorageBackend,
+    CacheCapabilities, CacheContext, Compressor, DigestFunction, StorageBackend, TaskManifest,
     check_blob_integrity,
 };
 use moon_common::{Id, color, is_ci, is_remote};
@@ -327,7 +327,7 @@ impl StorageBackend for GrpcRemoteStorage {
         Ok(())
     }
 
-    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
+    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
         match self
             .get_ac_client()
             .get_action_result(GetActionResultRequest {
@@ -343,7 +343,7 @@ impl StorageBackend for GrpcRemoteStorage {
             Ok(response) => {
                 let result = response.into_inner();
 
-                Ok(Some(Manifest::from_bazel_action_result(result)?))
+                Ok(Some(TaskManifest::from_bazel_action_result(result)?))
             }
             Err(status) => {
                 if matches!(status.code(), Code::NotFound) {
@@ -366,7 +366,7 @@ impl StorageBackend for GrpcRemoteStorage {
         }
     }
 
-    async fn store_manifest(&self, digest: Digest, manifest: Manifest) -> miette::Result<()> {
+    async fn store_manifest(&self, digest: Digest, manifest: TaskManifest) -> miette::Result<()> {
         match self
             .get_ac_client()
             .update_action_result(UpdateActionResultRequest {

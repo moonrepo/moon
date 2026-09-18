@@ -1,7 +1,9 @@
 use httpmock::prelude::*;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::HttpRemoteStorage;
-use moon_cache_storage::{CacheContext, Manifest, ManifestFile, ManifestSymlink, StorageBackend};
+use moon_cache_storage::{
+    CacheContext, StorageBackend, TaskManifest, TaskManifestFile, TaskManifestSymlink,
+};
 use moon_config::RemoteConfig;
 use moon_hash::Digest;
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
@@ -131,15 +133,15 @@ mod http_remote_storage {
             let sandbox = create_empty_sandbox();
             let storage = create_storage(&sandbox, server.base_url());
 
-            let manifest = Manifest {
+            let manifest = TaskManifest {
                 exit_code: 2,
-                files: vec![ManifestFile {
+                files: vec![TaskManifestFile {
                     digest: Some(file_digest),
                     is_executable: true,
                     path: "out/file.txt".into(),
                     ..Default::default()
                 }],
-                symlinks: vec![ManifestSymlink {
+                symlinks: vec![TaskManifestSymlink {
                     path: "out/link".into(),
                     target: "out/file.txt".into(),
                     ..Default::default()
@@ -168,7 +170,7 @@ mod http_remote_storage {
 
             assert!(
                 storage
-                    .store_manifest(digest, Manifest::default())
+                    .store_manifest(digest, TaskManifest::default())
                     .await
                     .is_err()
             );
@@ -247,7 +249,7 @@ mod http_remote_storage {
             // cache hit.
             let server = MockServer::start_async().await;
             let digest = digest_of(b"action");
-            let body = serde_json::to_string(&Manifest {
+            let body = serde_json::to_string(&TaskManifest {
                 exit_code: 7,
                 ..Default::default()
             })

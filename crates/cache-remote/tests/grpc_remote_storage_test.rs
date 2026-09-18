@@ -21,7 +21,7 @@ use bazel_remote_apis::google::bytestream::{
 use bazel_remote_apis::google::rpc::Status as RpcStatus;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::{GrpcRemoteStorage, RemoteError};
-use moon_cache_storage::{CacheContext, Manifest, StorageBackend};
+use moon_cache_storage::{CacheContext, TaskManifest, StorageBackend};
 use moon_config::{RemoteCompression, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
@@ -467,7 +467,7 @@ mod grpc_remote_storage {
             storage
                 .store_manifest(
                     digest.clone(),
-                    Manifest {
+                    TaskManifest {
                         exit_code: 9,
                         ..Default::default()
                     },
@@ -510,7 +510,7 @@ mod grpc_remote_storage {
             let (_sandbox, storage) = connect(backend).await;
 
             let error = storage
-                .store_manifest(digest_of(b"action"), Manifest::default())
+                .store_manifest(digest_of(b"action"), TaskManifest::default())
                 .await
                 .unwrap_err();
 

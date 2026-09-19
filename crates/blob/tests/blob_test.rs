@@ -61,6 +61,28 @@ mod blob {
     }
 
     #[test]
+    fn into_input_keeps_the_digest_and_inlines_the_bytes() {
+        // Converting to an input must not re-hash: the digest travels with the
+        // bytes, so a blob built from one source can be stored without a second
+        // read or hash pass.
+        let blob = Blob::from_bytes(b"abc".to_vec()).unwrap();
+        let digest = blob.digest.clone();
+        let input = blob.into_input();
+
+        assert_eq!(input.digest, digest);
+        assert_eq!(input.content.get_bytes(), Some(b"abc".as_slice()));
+    }
+
+    #[test]
+    fn into_input_round_trips_back_into_a_blob() {
+        let blob = Blob::from_bytes(b"abc".to_vec()).unwrap();
+        let round_tripped = blob.clone().into_input().into_blob().unwrap();
+
+        assert_eq!(round_tripped.bytes, blob.bytes);
+        assert_eq!(round_tripped.digest, blob.digest);
+    }
+
+    #[test]
     fn debug_does_not_dump_bytes() {
         // Bytes may be large (or sensitive). The Debug impl deliberately omits
         // them — this regression guard catches an accidental `derive(Debug)`

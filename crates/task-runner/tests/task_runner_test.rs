@@ -2,7 +2,7 @@ mod utils;
 
 use moon_action::ActionStatus;
 use moon_action_context::*;
-use moon_cache::{CacheMode, Manifest};
+use moon_cache::{CacheMode, TaskManifest};
 use moon_config::{
     TaskCheck, TaskCheckConditionConfig, TaskCheckFingerprint, TaskCheckFingerprintConfig,
     TaskCheckRequirementConfig,
@@ -633,7 +633,7 @@ mod task_runner {
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
-                    .seed_manifest(&runner.state.digest, Manifest::default())
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
                     .await;
 
                 assert!(matches!(
@@ -652,7 +652,7 @@ mod task_runner {
                 runner.state.digest = Digest::from_bytes(b"hash123").unwrap();
 
                 container
-                    .seed_manifest(&runner.state.digest, Manifest::default())
+                    .seed_manifest(&runner.state.digest, TaskManifest::default())
                     .await;
 
                 assert!(runner.is_cached("hash123").await.unwrap().is_none());
@@ -903,12 +903,15 @@ mod task_runner {
 
             let hash = runner.hash(&context, &node).await.unwrap();
 
+            // The fingerprint is stored as a blob in the local CAS, which
+            // shards objects by the first 2 chars of their hash.
             assert!(
                 container
                     .sandbox
                     .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{hash}.json"))
+                    .join(".moon/cache/blobs")
+                    .join(&hash[0..2])
+                    .join(&hash[2..])
                     .exists()
             );
         }

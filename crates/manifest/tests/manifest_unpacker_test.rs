@@ -1,6 +1,6 @@
 use moon_blob::Bytes;
 use moon_hash::Digest;
-use moon_manifest::{Manifest, ManifestFile, ManifestSymlink, ManifestUnpacker};
+use moon_manifest::{TaskManifest, TaskManifestFile, TaskManifestSymlink, TaskManifestUnpacker};
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
 use std::path::PathBuf;
 use std::time::{Duration, UNIX_EPOCH};
@@ -9,12 +9,12 @@ fn digest(bytes: &[u8]) -> Option<Digest> {
     Some(Digest::from_bytes(bytes).unwrap())
 }
 
-fn unpack(sandbox: &Sandbox, manifest: &Manifest) -> miette::Result<()> {
-    ManifestUnpacker::new(manifest, sandbox.path().to_path_buf()).unpack()
+fn unpack(sandbox: &Sandbox, manifest: &TaskManifest) -> miette::Result<()> {
+    TaskManifestUnpacker::new(manifest, sandbox.path().to_path_buf()).unpack()
 }
 
-fn manifest_with(file: ManifestFile) -> Manifest {
-    Manifest {
+fn manifest_with(file: TaskManifestFile) -> TaskManifest {
+    TaskManifest {
         files: vec![file],
         ..Default::default()
     }
@@ -27,7 +27,7 @@ mod files {
     fn writes_a_file_from_inline_bytes() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"contents")),
             digest: digest(b"contents"),
             path: "out/a.txt".into(),
@@ -47,7 +47,7 @@ mod files {
         // Nothing creates the output tree beforehand, so the unpacker has to.
         let sandbox = create_empty_sandbox();
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"deep")),
             digest: digest(b"deep"),
             path: "out/nested/deeper/a.txt".into(),
@@ -68,7 +68,7 @@ mod files {
         // land on disk as an empty file rather than be skipped.
         let sandbox = create_empty_sandbox();
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             bytes: None,
             digest: digest(b""),
             path: "out/empty.txt".into(),
@@ -90,7 +90,7 @@ mod files {
         let sandbox = create_empty_sandbox();
         sandbox.create_file("cas/blob", "cached");
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             digest: digest(b"cached"),
             path: "out/a.txt".into(),
             source_path: Some(sandbox.path().join("cas/blob")),
@@ -109,7 +109,7 @@ mod files {
     fn skips_a_file_without_a_digest() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"contents")),
             digest: None,
             path: "out/a.txt".into(),
@@ -126,7 +126,7 @@ mod files {
         let sandbox = create_empty_sandbox();
         let modified = UNIX_EPOCH + Duration::from_secs(1_700_000_000);
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"contents")),
             digest: digest(b"contents"),
             modified_at: Some(modified),
@@ -159,7 +159,7 @@ mod unix_modes {
     fn applies_the_recorded_unix_mode() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"#!/bin/sh")),
             digest: digest(b"#!/bin/sh"),
             path: "out/run.sh".into(),
@@ -184,7 +184,7 @@ mod unix_modes {
         let source = sandbox.path().join("cas/blob");
         std::fs::set_permissions(&source, Permissions::from_mode(0o444)).unwrap();
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             digest: digest(b"cached"),
             modified_at: Some(UNIX_EPOCH + Duration::from_secs(1_700_000_000)),
             path: "out/a.txt".into(),
@@ -211,7 +211,7 @@ mod unix_modes {
         let source = sandbox.path().join("cas/blob");
         std::fs::set_permissions(&source, Permissions::from_mode(0o444)).unwrap();
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             digest: digest(b"cached"),
             path: "out/a.txt".into(),
             source_path: Some(source),
@@ -232,14 +232,14 @@ mod symlinks {
     fn links_to_the_target() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = Manifest {
-            files: vec![ManifestFile {
+        let manifest = TaskManifest {
+            files: vec![TaskManifestFile {
                 bytes: Some(Bytes::from_static(b"contents")),
                 digest: digest(b"contents"),
                 path: "out/a.txt".into(),
                 ..Default::default()
             }],
-            symlinks: vec![ManifestSymlink {
+            symlinks: vec![TaskManifestSymlink {
                 path: "out/link.txt".into(),
                 target: "out/a.txt".into(),
                 ..Default::default()
@@ -263,8 +263,8 @@ mod symlinks {
     fn links_into_nested_directories() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = Manifest {
-            symlinks: vec![ManifestSymlink {
+        let manifest = TaskManifest {
+            symlinks: vec![TaskManifestSymlink {
                 path: "out/nested/link.txt".into(),
                 target: "out/a.txt".into(),
                 ..Default::default()
@@ -292,8 +292,8 @@ mod path_containment {
         );
     }
 
-    fn manifest_at(path: &str) -> Manifest {
-        manifest_with(ManifestFile {
+    fn manifest_at(path: &str) -> TaskManifest {
+        manifest_with(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"pwned")),
             digest: digest(b"pwned"),
             path: path.into(),
@@ -341,7 +341,7 @@ mod path_containment {
     fn rejects_a_file_path_that_traverses_out_of_the_workspace() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = manifest_with(ManifestFile {
+        let manifest = manifest_with(TaskManifestFile {
             bytes: Some(Bytes::from_static(b"pwned")),
             digest: digest(b"pwned"),
             path: "../moon-escape.txt".into(),
@@ -363,8 +363,8 @@ mod path_containment {
     fn rejects_a_symlink_path_that_traverses_out_of_the_workspace() {
         let sandbox = create_empty_sandbox();
 
-        let manifest = Manifest {
-            symlinks: vec![ManifestSymlink {
+        let manifest = TaskManifest {
+            symlinks: vec![TaskManifestSymlink {
                 path: "../moon-escape.txt".into(),
                 target: "out/a.txt".into(),
                 ..Default::default()
@@ -389,8 +389,8 @@ mod path_containment {
         // would otherwise plant a link pointing at an arbitrary file.
         let sandbox = create_empty_sandbox();
 
-        let manifest = Manifest {
-            symlinks: vec![ManifestSymlink {
+        let manifest = TaskManifest {
+            symlinks: vec![TaskManifestSymlink {
                 path: "out/link.txt".into(),
                 target: "../../etc/passwd".into(),
                 ..Default::default()

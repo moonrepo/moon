@@ -1032,11 +1032,14 @@ mod exec {
                     .join(format!("{}.tar.gz", state.hash))
                     .exists()
             );
+            // The hash manifest is a blob in the local CAS, which shards
+            // objects by the first 2 chars of their hash.
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{}.json", state.hash))
+                    .join(".moon/cache/blobs")
+                    .join(&state.hash[0..2])
+                    .join(&state.hash[2..])
                     .exists()
             );
         }
@@ -2444,12 +2447,13 @@ mod exec {
 
             let hash = extract_hash_from_run(sandbox.path(), "outputs:generateFile");
 
-            // hash
+            // hash manifest, stored as a blob in the local CAS
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{hash}.json"))
+                    .join(".moon/cache/blobs")
+                    .join(&hash[0..2])
+                    .join(&hash[2..])
                     .exists()
             );
 
@@ -2476,8 +2480,9 @@ mod exec {
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{hash}.json"))
+                    .join(".moon/cache/blobs")
+                    .join(&hash[0..2])
+                    .join(&hash[2..])
                     .exists()
             );
 
@@ -2503,8 +2508,9 @@ mod exec {
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{hash}.json"))
+                    .join(".moon/cache/blobs")
+                    .join(&hash[0..2])
+                    .join(&hash[2..])
                     .exists()
             );
 
@@ -2530,8 +2536,9 @@ mod exec {
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{hash}.json"))
+                    .join(".moon/cache/blobs")
+                    .join(&hash[0..2])
+                    .join(&hash[2..])
                     .exists()
             );
 
@@ -2557,8 +2564,9 @@ mod exec {
             assert!(
                 sandbox
                     .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{hash}.json"))
+                    .join(".moon/cache/blobs")
+                    .join(&hash[0..2])
+                    .join(&hash[2..])
                     .exists()
             );
 

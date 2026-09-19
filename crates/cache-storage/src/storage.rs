@@ -1,11 +1,12 @@
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
-use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput};
+use moon_blob::{Blob, BlobCleanStats, BlobContent, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain, is_daemon_env};
 use moon_config::{CacheConfig, RemoteConfig};
-use moon_hash::Digest;
-use moon_manifest::Manifest;
+use moon_hash::{ContentHasher, Digest};
+use moon_manifest::TaskManifest;
 use rustc_hash::FxHashMap;
+use serde::Serialize;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -20,9 +21,9 @@ use tracing::{debug, warn};
 /// aborted and reported, and simply get re-uploaded on the next run.
 const BACKGROUND_FLUSH_TIMEOUT: Duration = Duration::from_secs(300);
 
-pub struct ManifestSource {
+pub struct TaskManifestSource {
     pub backend: BoxedStorageBackend,
-    pub manifest: Manifest,
+    pub manifest: TaskManifest,
     pub remote: bool,
 }
 
@@ -265,25 +266,114 @@ impl Storage {
         Ok(())
     }
 
-    pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
-        debug!(hash = digest.hash.as_str(), "Checking for a cache manifest");
+    pub async fn store_hash_manifest<T: Serialize>(
+        &self,
+        label: &str,
+        content: T,
+    ) -> miette::Result<Digest> {
+        let mut hasher = ContentHasher::new(label);
+        hasher.hash_content(content)?;
+
+        self.store_hash_manifest_with_hasher(hasher).await
+    }
+
+    pub async fn store_hash_manifest_with_hasher(
+        &self,
+        mut hasher: ContentHasher,
+    ) -> miette::Result<Digest> {
+        let digest = Digest::from_hasher(&mut hasher)?;
+
+        debug!(label = hasher.label, "Storing hash manifest (local only)");
+
+        let data = hasher.into_bytes();
+
+        // This writes inline rather than queueing a background task: the very
+        // next thing to happen may be another action (or another process
+        // waiting on the same lock) asking whether this hash was stored, and it
+        // has to see it. They're small and local, so there's nothing to gain by
+        // deferring them.
+        let input = Blob::new(digest.clone(), data).into_input();
+
+        for backend in self.get_local_backends() {
+            if backend.is_writable() {
+                Arc::clone(backend)
+                    .store_blobs_batched(digest.clone(), vec![input.clone()])
+                    .await?;
+            }
+        }
+
+        Ok(digest)
+    }
+
+    pub async fn has_hash_manifest(&self, digest: &Digest) -> bool {
+        for backend in self.get_local_backends() {
+            if !backend.is_readable() {
+                continue;
+            }
+
+            match backend.find_missing_blobs(vec![digest.to_owned()]).await {
+                Ok(missing) => {
+                    if missing.is_empty() {
+                        return true;
+                    }
+                }
+                Err(error) => {
+                    warn!(
+                        storage = backend.get_id().as_str(),
+                        hash = digest.hash.as_str(),
+                        error = format_error_chain(&error),
+                        "Failed to check for a hash manifest, assuming it is missing"
+                    );
+                }
+            }
+        }
+
+        false
+    }
+
+    pub async fn load_hash_manifest(&self, digest: &Digest) -> miette::Result<Option<BlobContent>> {
+        for backend in self.get_local_backends() {
+            if !backend.is_readable() {
+                continue;
+            }
+
+            let mut blobs = backend
+                .retrieve_blobs(vec![digest.to_owned()], false)
+                .await?;
+
+            if !blobs.is_empty() {
+                return Ok(Some(blobs.remove(0).content));
+            }
+        }
+
+        Ok(None)
+    }
+
+    pub async fn load_task_manifest(
+        &self,
+        digest: &Digest,
+    ) -> miette::Result<Option<TaskManifestSource>> {
+        debug!(
+            hash = digest.hash.as_str(),
+            "Checking for a cached task manifest"
+        );
 
         for backend in self.get_backends() {
             if !backend.is_readable() {
                 continue;
             }
 
-            if let Some(manifest) = backend.retrieve_manifest(digest.to_owned()).await? {
+            if let Some(manifest) = backend.retrieve_task_manifest(digest.to_owned()).await? {
                 debug!(
                     storage = backend.get_id().as_str(),
                     hash = digest.hash.as_str(),
                     files = manifest.files.len(),
                     symlinks = manifest.symlinks.len(),
                     exit_code = manifest.exit_code,
-                    "Cache hit on manifest"
+                    "Cache hit on task manifest"
                 );
 
-                return Ok(Some(ManifestSource {
+                return Ok(Some(TaskManifestSource {
                     backend: Arc::clone(backend),
                     manifest,
                     remote: self
@@ -294,15 +384,15 @@ impl Storage {
             }
         }
 
-        debug!(hash = digest.hash.as_str(), "Cache miss on manifest");
+        debug!(hash = digest.hash.as_str(), "Cache miss on task manifest");
 
         Ok(None)
     }
 
-    pub async fn archive_manifest(
+    pub async fn archive_task_manifest(
         &self,
         digest: &Digest,
-        manifest: Manifest,
+        manifest: TaskManifest,
     ) -> miette::Result<()> {
         let mut background_tasks = self.background_tasks.lock().await;
 
@@ -311,7 +401,7 @@ impl Storage {
             files = manifest.files.len(),
             symlinks = manifest.symlinks.len(),
             exit_code = manifest.exit_code,
-            "Archiving cache manifest"
+            "Archiving task manifest"
         );
 
         // Store the manifest in all backends in parallel, but if any fail,
@@ -324,7 +414,7 @@ impl Storage {
                 continue;
             }
 
-            let future = Box::pin(persist_manifest_in_backend(
+            let future = Box::pin(persist_task_manifest_in_backend(
                 Arc::clone(backend),
                 digest.to_owned(),
                 manifest.clone(),
@@ -347,7 +437,7 @@ impl Storage {
             files = manifest.files.len(),
             symlinks = manifest.symlinks.len(),
             exit_code = manifest.exit_code,
-            "Archived cache manifest {}",
+            "Archived task manifest {}",
             if in_background {
                 "(in background queue)"
             } else {
@@ -358,12 +448,12 @@ impl Storage {
         Ok(())
     }
 
-    pub async fn hydrate_manifest(
+    pub async fn hydrate_task_manifest(
         &self,
         digest: &Digest,
-        manifest_source: ManifestSource,
-    ) -> miette::Result<Option<Manifest>> {
-        let ManifestSource {
+        manifest_source: TaskManifestSource,
+    ) -> miette::Result<Option<TaskManifest>> {
+        let TaskManifestSource {
             mut manifest,
             backend: original_backend,
             remote,
@@ -371,11 +461,11 @@ impl Storage {
         let mut backends = VecDeque::from_iter(self.get_backends());
         let mut count = 1;
 
-        debug!(hash = digest.hash.as_str(), "Hydrating cache manifest");
+        debug!(hash = digest.hash.as_str(), "Hydrating task manifest");
 
         // Hydrate the manifest from the backend it was originally loaded from,
         // as that's the most likely to have all the blobs available
-        hydrate_manifest_from_backend(&original_backend, digest, &mut manifest).await?;
+        hydrate_task_manifest_from_backend(&original_backend, digest, &mut manifest).await?;
 
         // If the original backend doesn't have all the blobs available,
         // we should attempt to hydrate from the other backends,
@@ -389,7 +479,7 @@ impl Storage {
 
             count += 1;
 
-            hydrate_manifest_from_backend_and_copy_to_original(
+            hydrate_task_manifest_from_backend_and_copy_to_original(
                 &original_backend,
                 backend,
                 digest,
@@ -403,7 +493,7 @@ impl Storage {
         if manifest.is_hydrated() {
             debug!(
                 hash = digest.hash.as_str(),
-                "Hydrated cache manifest from {count} storage backends"
+                "Hydrated task manifest from {count} storage backends"
             );
 
             // A remote hit leaves the local tier cold. Warm it from the
@@ -418,7 +508,7 @@ impl Storage {
 
         debug!(
             hash = digest.hash.as_str(),
-            "Failed to hydrate cache manifest as some blobs were missing"
+            "Failed to hydrate task manifest as some blobs were missing"
         );
 
         Ok(None)
@@ -428,7 +518,7 @@ impl Storage {
     /// hydrated manifest and its blobs into every active, writable local
     /// backend, so the next run resolves locally instead of round-tripping to
     /// the remote.
-    async fn warm_local_backends(&self, digest: &Digest, manifest: &Manifest) {
+    async fn warm_local_backends(&self, digest: &Digest, manifest: &TaskManifest) {
         let mut background_tasks = self.background_tasks.lock().await;
 
         for backend in self.get_local_backends() {
@@ -445,7 +535,7 @@ impl Storage {
             // No action blob here: warming targets local backends only, which
             // don't validate the RE contract, so the fingerprint file needn't be
             // re-stored into the local CAS.
-            background_tasks.push(tokio::spawn(Box::pin(persist_manifest_in_backend(
+            background_tasks.push(tokio::spawn(Box::pin(persist_task_manifest_in_backend(
                 Arc::clone(backend),
                 digest.to_owned(),
                 manifest.clone(),
@@ -509,10 +599,10 @@ impl Storage {
     }
 }
 
-async fn persist_manifest_in_backend(
+async fn persist_task_manifest_in_backend(
     backend: BoxedStorageBackend,
     digest: Digest,
-    mut manifest: Manifest,
+    mut manifest: TaskManifest,
     workspace_root: PathBuf,
 ) -> miette::Result<()> {
     let blob_inputs = manifest.collect_blob_inputs(&workspace_root);
@@ -533,8 +623,8 @@ async fn persist_manifest_in_backend(
         }
     }
 
-    if backend.get_capabilities().store_manifests {
-        if let Err(error) = backend.store_manifest(digest.clone(), manifest).await {
+    if backend.get_capabilities().store_task_manifests {
+        if let Err(error) = backend.store_task_manifest(digest.clone(), manifest).await {
             warn!(
                 storage = backend.get_id().as_str(),
                 hash = digest.hash.as_str(),
@@ -553,10 +643,10 @@ async fn persist_manifest_in_backend(
     Ok(())
 }
 
-async fn hydrate_manifest_from_backend(
+async fn hydrate_task_manifest_from_backend(
     backend: &BoxedStorageBackend,
     digest: &Digest,
-    manifest: &mut Manifest,
+    manifest: &mut TaskManifest,
 ) -> miette::Result<FxHashMap<Digest, BlobContent>> {
     let blob_digests = manifest.collect_unhydrated_blob_digests();
 
@@ -577,16 +667,16 @@ async fn hydrate_manifest_from_backend(
     Ok(blobs_map)
 }
 
-async fn hydrate_manifest_from_backend_and_copy_to_original(
+async fn hydrate_task_manifest_from_backend_and_copy_to_original(
     original_backend: &BoxedStorageBackend,
     backend: &BoxedStorageBackend,
     digest: &Digest,
-    manifest: &mut Manifest,
+    manifest: &mut TaskManifest,
 ) -> miette::Result<()> {
     // Collect the unhydrated blob digests from the manifest before hydrating,
     // so we can compare which are missing and attempt to copy them
     let unhydrated_digests = manifest.collect_unhydrated_blob_digests();
-    let blobs_map = hydrate_manifest_from_backend(backend, digest, manifest).await?;
+    let blobs_map = hydrate_task_manifest_from_backend(backend, digest, manifest).await?;
 
     // Loop through and create the blob inputs for the missing blobs
     let mut blob_inputs = vec![];

@@ -5,7 +5,7 @@ use miette::IntoDiagnostic;
 use moon_blob::{BlobCleanStats, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain};
 use moon_hash::Digest;
-use moon_manifest::Manifest;
+use moon_manifest::TaskManifest;
 use moon_process::ProcessRegistry;
 use rustc_hash::FxHashSet;
 use std::fmt::Debug;
@@ -56,15 +56,19 @@ where
         Ok(())
     }
 
-    /// Retrieve the manifest for the given digest if it exists, otherwise return `None`.
+    /// Retrieve the task manifest for the given digest if it exists, otherwise return `None`.
     /// This *does not* retrieve all the associated blobs for the manifest, only the manifest
     /// itself. Use `retrieve_blobs` to retrieve the blobs after retrieving the manifest.
-    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>>;
+    async fn retrieve_task_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>>;
 
-    /// Store the manifest for the given digest. This *does not* store the associated blobs for the
-    /// manifest, only the manifest itself. Use `store_blobs` to store the blobs before the
+    /// Store the task manifest for the given digest. This *does not* store the associated blobs
+    /// for the manifest, only the manifest itself. Use `store_blobs` to store the blobs before the
     /// manifest, and ensure the manifest is only stored if all blobs are successfully stored.
-    async fn store_manifest(&self, digest: Digest, manifest: Manifest) -> miette::Result<()>;
+    async fn store_task_manifest(
+        &self,
+        digest: Digest,
+        manifest: TaskManifest,
+    ) -> miette::Result<()>;
 
     //---------- FINDING BLOBS ----------//
 
@@ -131,6 +135,13 @@ where
     /// and return the list of missing blob digests. This is used to determine which blobs need
     /// to be uploaded before storing a manifest.
     async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>>;
+
+    /// Find the digests of stored blobs whose hash starts with the given prefix.
+    /// Only backends that can enumerate their contents implement this; a remote
+    /// has no such API, so the default finds nothing.
+    async fn find_blobs_by_prefix(&self, _prefix: &str) -> miette::Result<Vec<Digest>> {
+        Ok(vec![])
+    }
 
     //---------- STORING BLOBS ----------//
 

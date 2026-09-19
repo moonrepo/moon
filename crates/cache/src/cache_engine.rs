@@ -6,7 +6,7 @@ use moon_cache_item::*;
 use moon_cache_storage::{CacheContext, Storage};
 use moon_common::path::{WorkspaceRelativePathBuf, encode_component};
 use moon_env_var::GlobalEnvBag;
-use moon_hash::ContentHash;
+use moon_hash::{ContentHash, ContentHasher, Digest};
 use moon_time::parse_duration;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
@@ -220,17 +220,17 @@ impl CacheEngine {
         T: Serialize,
         F: AsyncFnOnce(&str) -> miette::Result<R>,
     {
-        let mut hasher = self.hash.create_hasher(label.as_ref());
+        let mut hasher = ContentHasher::new(label.as_ref());
         hasher.hash_content(fingerprint)?;
 
-        let hash = hasher.generate_hash()?;
+        let digest = Digest::from_hasher(&mut hasher)?;
 
         // If the hash manifest exists, then it has ran before,
         // otherwise run and write the manifest
-        if !self.hash.get_manifest_path(&hash).exists() {
-            let result = op(&hash).await?;
+        if !self.storage.has_hash_manifest(&digest).await {
+            let result = op(digest.hash.as_str()).await?;
 
-            self.hash.save_manifest(&mut hasher)?;
+            self.storage.store_hash_manifest_with_hasher(hasher).await?;
 
             return Ok(Some(result));
         }

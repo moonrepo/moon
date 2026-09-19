@@ -2,7 +2,7 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{Manifest, ManifestSource, ManifestUnpacker, StorageOptions};
+use moon_cache::{StorageOptions, TaskManifest, TaskManifestSource, TaskManifestUnpacker};
 use moon_common::{color, path::WorkspaceRelativePath};
 use moon_daemon_client::DaemonClient;
 use moon_task::Task;
@@ -16,7 +16,7 @@ use tracing::{debug, instrument, warn};
 pub enum HydrateFrom {
     PreviousOutput,
     LocalArchive,
-    Storage(Box<ManifestSource>),
+    Storage(Box<TaskManifestSource>),
 }
 
 impl Debug for HydrateFrom {
@@ -33,9 +33,9 @@ pub enum HydrateOutcome {
     Skipped,
     Missed,
     Hit,
-    // Boxed to keep the enum small: `Manifest` dwarfs the unit variants, so
+    // Boxed to keep the enum small: `TaskManifest` dwarfs the unit variants, so
     // every `HydrateOutcome` would otherwise be sized for this one case.
-    HitFromStorage(Box<Manifest>, bool),
+    HitFromStorage(Box<TaskManifest>, bool),
 }
 
 pub struct OutputHydrater<'task> {
@@ -124,7 +124,7 @@ impl OutputHydrater<'_> {
                     if res.hydrated
                         && let Some(action_result) = res.manifest
                     {
-                        manifest = Some(Manifest::from_bazel_action_result(action_result)?);
+                        manifest = Some(TaskManifest::from_bazel_action_result(action_result)?);
                     }
                 } else {
                     manifest = self
@@ -136,7 +136,7 @@ impl OutputHydrater<'_> {
                             include_remote: use_remote,
                             ..Default::default()
                         })
-                        .hydrate_manifest(&state.digest, *source)
+                        .hydrate_task_manifest(&state.digest, *source)
                         .await?;
 
                     if let Some(manifest) = &manifest {
@@ -144,8 +144,11 @@ impl OutputHydrater<'_> {
                         // A failed read is a cache miss and must not remove outputs
                         // that the task may rely on recreating.
                         self.delete_existing_outputs()?;
-                        ManifestUnpacker::new(manifest, self.app_context.workspace_root.clone())
-                            .unpack()?;
+                        TaskManifestUnpacker::new(
+                            manifest,
+                            self.app_context.workspace_root.clone(),
+                        )
+                        .unpack()?;
                     }
                 }
 
@@ -242,7 +245,7 @@ impl OutputHydrater<'_> {
         Ok(())
     }
 
-    fn validate_output_paths(&self, manifest: &Manifest) -> miette::Result<()> {
+    fn validate_output_paths(&self, manifest: &TaskManifest) -> miette::Result<()> {
         for file in &manifest.files {
             if file.digest.is_some() {
                 self.validate_output_path(&file.path)?;

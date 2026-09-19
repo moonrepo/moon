@@ -59,8 +59,9 @@ pub async fn sync_codeowners(
 
         app_context
             .cache_engine
-            .hash
-            .save_manifest_without_hasher("codeowners", fingerprint)?;
+            .storage
+            .store_hash_manifest("codeowners", fingerprint)
+            .await?;
 
         return Ok(Some(file_path));
     }

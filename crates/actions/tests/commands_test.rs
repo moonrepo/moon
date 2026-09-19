@@ -331,11 +331,31 @@ mod plugin_commands {
     mod cache {
         use super::*;
 
+        /// Hash manifests are stored as blobs in the local CAS, which shards
+        /// objects by the first 2 chars of their hash. Nothing else is stored
+        /// in these tests, so every object here is a hash manifest.
         fn get_hashes(root: &Path) -> Vec<PathBuf> {
-            fs::read_dir(root.join(".moon/cache/hashes"))
+            let mut paths = fs::read_dir(root.join(".moon/cache/blobs"))
                 .unwrap()
-                .map(|dir| dir.unwrap().path())
-                .collect::<Vec<_>>()
+                .filter_map(|dir| {
+                    let shard = dir.unwrap().path();
+
+                    if !shard.is_dir() || shard.ends_with("temp") {
+                        return None;
+                    }
+
+                    Some(
+                        fs::read_dir(shard)
+                            .unwrap()
+                            .map(|entry| entry.unwrap().path())
+                            .collect::<Vec<_>>(),
+                    )
+                })
+                .flatten()
+                .collect::<Vec<_>>();
+
+            paths.sort();
+            paths
         }
 
         #[tokio::test]

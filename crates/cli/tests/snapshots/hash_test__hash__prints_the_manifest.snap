@@ -2,7 +2,8 @@
 source: crates/cli/tests/hash_test.rs
 expression: assert.output()
 ---
-Hash: a
+
+Hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 {
   "command": "base",

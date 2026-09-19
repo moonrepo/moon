@@ -21,7 +21,7 @@ use bazel_remote_apis::google::bytestream::{
 use bazel_remote_apis::google::rpc::Status as RpcStatus;
 use moon_blob::{BlobContent, BlobInput, Bytes};
 use moon_cache_remote::{GrpcRemoteStorage, RemoteError};
-use moon_cache_storage::{CacheContext, Manifest, StorageBackend};
+use moon_cache_storage::{CacheContext, StorageBackend, TaskManifest};
 use moon_config::{RemoteCompression, RemoteConfig};
 use moon_hash::Digest;
 use rustc_hash::FxHashMap;
@@ -465,9 +465,9 @@ mod grpc_remote_storage {
             let digest = digest_of(b"action");
 
             storage
-                .store_manifest(
+                .store_task_manifest(
                     digest.clone(),
-                    Manifest {
+                    TaskManifest {
                         exit_code: 9,
                         ..Default::default()
                     },
@@ -475,7 +475,7 @@ mod grpc_remote_storage {
                 .await
                 .unwrap();
 
-            let result = storage.retrieve_manifest(digest).await.unwrap();
+            let result = storage.retrieve_task_manifest(digest).await.unwrap();
 
             assert_eq!(result.unwrap().exit_code, 9);
         }
@@ -485,7 +485,7 @@ mod grpc_remote_storage {
             let (_sandbox, storage) = connect(MockBackend::default()).await;
 
             let result = storage
-                .retrieve_manifest(digest_of(b"missing"))
+                .retrieve_task_manifest(digest_of(b"missing"))
                 .await
                 .unwrap();
 
@@ -499,7 +499,10 @@ mod grpc_remote_storage {
             let backend = MockBackend::default().failing_get_action(Code::OutOfRange);
             let (_sandbox, storage) = connect(backend).await;
 
-            let result = storage.retrieve_manifest(digest_of(b"big")).await.unwrap();
+            let result = storage
+                .retrieve_task_manifest(digest_of(b"big"))
+                .await
+                .unwrap();
 
             assert!(result.is_none());
         }
@@ -510,7 +513,7 @@ mod grpc_remote_storage {
             let (_sandbox, storage) = connect(backend).await;
 
             let error = storage
-                .store_manifest(digest_of(b"action"), Manifest::default())
+                .store_task_manifest(digest_of(b"action"), TaskManifest::default())
                 .await
                 .unwrap_err();
 

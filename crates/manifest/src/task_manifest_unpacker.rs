@@ -1,5 +1,5 @@
 use crate::ManifestError;
-use crate::manifest::{Manifest, ManifestFile};
+use crate::task_manifest::{TaskManifest, TaskManifestFile};
 use moon_blob::grant_owner_write_access;
 use moon_common::path::{WorkspaceRelativePath, clean_components};
 use starbase_utils::fs::{self, FsError};
@@ -7,13 +7,13 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
-pub struct ManifestUnpacker<'owner> {
-    manifest: &'owner Manifest,
+pub struct TaskManifestUnpacker<'owner> {
+    manifest: &'owner TaskManifest,
     workspace_root: PathBuf,
 }
 
-impl<'owner> ManifestUnpacker<'owner> {
-    pub fn new(manifest: &'owner Manifest, workspace_root: PathBuf) -> Self {
+impl<'owner> TaskManifestUnpacker<'owner> {
+    pub fn new(manifest: &'owner TaskManifest, workspace_root: PathBuf) -> Self {
         Self {
             manifest,
             workspace_root,
@@ -48,7 +48,11 @@ impl<'owner> ManifestUnpacker<'owner> {
         Ok(())
     }
 
-    fn write_output_file(&self, output_path: PathBuf, file: &ManifestFile) -> miette::Result<()> {
+    fn write_output_file(
+        &self,
+        output_path: PathBuf,
+        file: &TaskManifestFile,
+    ) -> miette::Result<()> {
         let map_error = |error| FsError::Write {
             path: output_path.clone(),
             error: Box::new(error),

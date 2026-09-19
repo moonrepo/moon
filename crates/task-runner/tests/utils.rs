@@ -4,7 +4,7 @@ use moon_action::{ActionNode, RunTaskNode};
 use moon_action_context::ActionContext;
 use moon_app_context::AppContext;
 use moon_blob::{BlobContent, BlobInput, Bytes};
-use moon_cache::Manifest;
+use moon_cache::TaskManifest;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::Digest;
 use moon_process::Command;
@@ -114,7 +114,7 @@ impl TaskRunnerContainer {
         self.app_context
             .cache_engine
             .storage
-            .load_manifest(digest)
+            .load_task_manifest(digest)
             .await
             .unwrap()
             .is_some()
@@ -133,11 +133,11 @@ impl TaskRunnerContainer {
 
     /// Persist a manifest directly into the local storage backend, so it can be
     /// loaded back as a hydration source.
-    pub async fn seed_manifest(&self, digest: &Digest, manifest: Manifest) {
+    pub async fn seed_manifest(&self, digest: &Digest, manifest: TaskManifest) {
         let backend = self.app_context.cache_engine.storage.get_backends()[0].clone();
 
         backend
-            .store_manifest(digest.clone(), manifest)
+            .store_task_manifest(digest.clone(), manifest)
             .await
             .unwrap();
     }

@@ -12,10 +12,10 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct Manifest {
+pub struct TaskManifest {
     // Outputs
-    pub files: Vec<ManifestFile>,
-    pub symlinks: Vec<ManifestSymlink>,
+    pub files: Vec<TaskManifestFile>,
+    pub symlinks: Vec<TaskManifestSymlink>,
 
     // Process
     pub exit_code: i32,
@@ -37,21 +37,21 @@ pub struct Manifest {
     // In Bazel terms, this source path is the "action", while this manifest
     // is the "action result".
     #[serde(skip)]
-    pub digest_source: Option<ManifestFile>,
+    pub digest_source: Option<TaskManifestFile>,
 }
 
-impl Manifest {
+impl TaskManifest {
     pub fn from_bazel_action_result(result: ActionResult) -> miette::Result<Self> {
         let metadata = result.execution_metadata.unwrap_or_default();
         let mut files = vec![];
         let mut symlinks = vec![];
 
         for file in result.output_files {
-            files.push(ManifestFile::from_bazel_file(file)?);
+            files.push(TaskManifestFile::from_bazel_file(file)?);
         }
 
         for symlink in result.output_symlinks {
-            symlinks.push(ManifestSymlink::from_bazel_symlink(symlink)?);
+            symlinks.push(TaskManifestSymlink::from_bazel_symlink(symlink)?);
         }
 
         Ok(Self {
@@ -253,7 +253,7 @@ impl Manifest {
     pub fn collect_blob_inputs(&self, workspace_root: &Path) -> Vec<BlobInput> {
         let mut inputs = vec![];
 
-        let collect_file = |file: &ManifestFile, inputs: &mut Vec<BlobInput>| {
+        let collect_file = |file: &TaskManifestFile, inputs: &mut Vec<BlobInput>| {
             if let Some(digest) = &file.digest {
                 let content = if digest.size == 0 {
                     BlobContent::Inline(Bytes::new())
@@ -298,7 +298,7 @@ impl Manifest {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct ManifestFile {
+pub struct TaskManifestFile {
     #[serde(skip)]
     pub bytes: Option<Bytes>,
     pub digest: Option<Digest>,
@@ -310,7 +310,7 @@ pub struct ManifestFile {
     pub unix_mode: Option<u32>,
 }
 
-impl ManifestFile {
+impl TaskManifestFile {
     pub fn from_bazel_file(file: OutputFile) -> miette::Result<Self> {
         let props = file.node_properties.unwrap_or_default();
 
@@ -352,14 +352,14 @@ impl ManifestFile {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct ManifestSymlink {
+pub struct TaskManifestSymlink {
     pub modified_at: Option<SystemTime>,
     pub path: WorkspaceRelativePathBuf,
     pub target: WorkspaceRelativePathBuf,
     pub unix_mode: Option<u32>,
 }
 
-impl ManifestSymlink {
+impl TaskManifestSymlink {
     pub fn from_bazel_symlink(file: OutputSymlink) -> miette::Result<Self> {
         let props = file.node_properties.unwrap_or_default();
 

@@ -1,5 +1,4 @@
-use moon_hash::{ContentHasher, Digest};
-use serde::Serialize;
+use moon_hash::ContentHasher;
 use starbase_utils::fs;
 use std::path::{Path, PathBuf};
 use tracing::debug;
@@ -37,55 +36,7 @@ impl HashEngine {
         ContentHasher::new(label.as_ref())
     }
 
-    pub fn find_manifest_path(&self, hash: &str) -> miette::Result<Option<PathBuf>> {
-        debug!(hash, "Finding hash manifest");
-
-        for file in fs::read_dir(&self.hashes_dir)? {
-            let path = file.path();
-            let name = fs::file_name(&path).replace(".json", "");
-
-            if hash == name || name.starts_with(hash) {
-                debug!(hash, name, "Found hash manifest");
-
-                return Ok(Some(path));
-            }
-        }
-
-        Ok(None)
-    }
-
     pub fn get_archive_path(&self, hash: &str) -> PathBuf {
         self.outputs_dir.join(format!("{hash}.tar.gz"))
-    }
-
-    pub fn get_manifest_path(&self, hash: &str) -> PathBuf {
-        self.hashes_dir.join(format!("{hash}.json"))
-    }
-
-    pub fn save_manifest(&self, hasher: &mut ContentHasher) -> miette::Result<Digest> {
-        let hash = hasher.generate_hash()?;
-        let path = self.get_manifest_path(&hash);
-
-        debug!(label = hasher.label, manifest = ?path, "Saving hash manifest");
-
-        let data = hasher.serialize()?;
-
-        fs::write_file(&path, data)?;
-
-        Ok(Digest {
-            hash,
-            size: data.len() as i64,
-        })
-    }
-
-    pub fn save_manifest_without_hasher<T: Serialize>(
-        &self,
-        label: &str,
-        content: T,
-    ) -> miette::Result<Digest> {
-        let mut hasher = ContentHasher::new(label);
-        hasher.hash_content(content)?;
-
-        self.save_manifest(&mut hasher)
     }
 }

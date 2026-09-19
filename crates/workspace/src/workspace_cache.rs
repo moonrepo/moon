@@ -233,6 +233,7 @@ pub async fn generate_graph_cache_digest(
 
     context
         .cache_engine
-        .hash
-        .save_manifest_without_hasher("workspace-graph", &fingerprint)
+        .storage
+        .store_hash_manifest("workspace-graph", &fingerprint)
+        .await
 }

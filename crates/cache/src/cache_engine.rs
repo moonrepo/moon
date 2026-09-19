@@ -230,7 +230,7 @@ impl CacheEngine {
         if !self.hash.get_manifest_path(&hash).exists() {
             let result = op(&hash).await?;
 
-            self.hash.save_manifest(&mut hasher)?;
+            self.storage.store_hash_manifest_with_hasher(hasher).await?;
 
             return Ok(Some(result));
         }

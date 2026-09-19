@@ -51,7 +51,7 @@ pub fn create_hasher(
     Ok(hasher)
 }
 
-pub fn create_hash_and_return_lock(
+pub async fn create_hash_and_return_lock(
     action: &mut Action,
     app_context: &AppContext,
     data: impl Serialize,
@@ -64,7 +64,11 @@ pub fn create_hash_and_return_lock(
         .cache_engine
         .create_lock(format!("{}-{hash}", action.get_prefix()))?;
 
-    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
+    app_context
+        .cache_engine
+        .storage
+        .store_hash_manifest_with_hasher(hasher)
+        .await?;
 
     Ok(HashLock {
         lock,
@@ -73,7 +77,7 @@ pub fn create_hash_and_return_lock(
     })
 }
 
-pub fn create_hash_and_return_lock_if_changed(
+pub async fn create_hash_and_return_lock_if_changed(
     action: &mut Action,
     app_context: &AppContext,
     fingerprint: impl Serialize,
@@ -93,7 +97,11 @@ pub fn create_hash_and_return_lock_if_changed(
         return Ok(None);
     }
 
-    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
+    app_context
+        .cache_engine
+        .storage
+        .store_hash_manifest_with_hasher(hasher)
+        .await?;
 
     Ok(Some(HashLock {
         lock,

@@ -381,8 +381,8 @@ impl<'task> TaskRunner<'task> {
             "Generating a unique hash for this task"
         );
 
-        let hash_engine = &self.app_context.cache_engine.hash;
-        let mut hasher = hash_engine.create_hasher(node.label());
+        let cache_engine = &self.app_context.cache_engine;
+        let mut hasher = cache_engine.hash.create_hasher(node.label());
         let mut operation = Operation::hash_generation();
 
         // Hash common fields
@@ -404,7 +404,10 @@ impl<'task> TaskRunner<'task> {
         self.hash_checks(&mut hasher).await?;
 
         // Generate the digest and store values
-        let digest = hash_engine.save_manifest(&mut hasher)?;
+        let digest = cache_engine
+            .storage
+            .store_hash_manifest_with_hasher(hasher)
+            .await?;
 
         operation.meta.set_hash(&digest.hash);
         operation.finish(ActionStatus::Passed);

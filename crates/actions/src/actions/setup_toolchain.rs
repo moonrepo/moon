@@ -80,7 +80,8 @@ pub async fn setup_toolchain(
                 .is_installed_in_proto(node.toolchain.req.as_ref())
                 .await?,
         },
-    )?;
+    )
+    .await?;
 
     // Run the install and setup flows
     debug!(

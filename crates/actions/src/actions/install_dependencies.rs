@@ -161,7 +161,8 @@ pub async fn install_dependencies(
         )
         .await?,
         || first_install,
-    )?
+    )
+    .await?
     else {
         debug!(
             toolchain_id = toolchain.id.as_str(),

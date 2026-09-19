@@ -8,7 +8,8 @@ use starbase_utils::{
     json::{self, JsonValue},
 };
 use std::collections::BTreeMap;
-use tracing::instrument;
+use std::path::PathBuf;
+use tracing::{debug, instrument};
 
 #[derive(Args, Clone, Debug)]
 pub struct HashArgs {
@@ -32,15 +33,33 @@ pub async fn hash(session: MoonSession, args: HashArgs) -> SessionResult {
     Ok(None)
 }
 
+fn find_manifest_path(
+    session: &MoonSession,
+    partial_hash: &str,
+) -> miette::Result<Option<PathBuf>> {
+    let cache_engine = session.get_cache_engine()?;
+
+    debug!(hash = partial_hash, "Finding hash manifest");
+
+    for file in fs::read_dir(&cache_engine.hash.hashes_dir)? {
+        let path = file.path();
+        let name = fs::file_name(&path).replace(".json", "");
+
+        if partial_hash == name || name.starts_with(partial_hash) {
+            debug!(hash = partial_hash, name, "Found hash manifest");
+
+            return Ok(Some(path));
+        }
+    }
+
+    Ok(None)
+}
+
 async fn load_hash_manifest(
     session: &MoonSession,
     partial_hash: &str,
 ) -> miette::Result<(String, String, JsonValue)> {
-    if let Some(manifest_path) = session
-        .get_cache_engine()?
-        .hash
-        .find_manifest_path(partial_hash)?
-    {
+    if let Some(manifest_path) = find_manifest_path(session, partial_hash)? {
         let hash = fs::file_name(&manifest_path).replace(".json", "");
 
         // Our cache is non-pretty, but we wan't to output as pretty,

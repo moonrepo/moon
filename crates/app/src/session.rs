@@ -230,15 +230,17 @@ impl MoonSession {
 
             let mut engine = CacheEngine::new(context.clone())?;
 
-            if self.workspace_config.experiments.cas_outputs_cache {
-                engine.storage.add_local_backend(LocalStorage::new(
-                    context.clone(),
-                    context
-                        .cache_shared_dir
-                        .as_deref()
-                        .unwrap_or(&context.cache_dir),
-                )?);
-            }
+            // Always register the local backend: it's the home for hash
+            // manifests, which every run depends on regardless of whether task
+            // outputs are cached here. Using it for task outputs stays gated on
+            // the experiment (see `TaskRunState::local_cas_enabled`).
+            engine.storage.add_local_backend(LocalStorage::new(
+                context.clone(),
+                context
+                    .cache_shared_dir
+                    .as_deref()
+                    .unwrap_or(&context.cache_dir),
+            )?);
 
             if context.remote_config.is_enabled() {
                 match context.remote_config.api {

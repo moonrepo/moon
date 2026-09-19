@@ -39,8 +39,4 @@ impl HashEngine {
     pub fn get_archive_path(&self, hash: &str) -> PathBuf {
         self.outputs_dir.join(format!("{hash}.tar.gz"))
     }
-
-    pub fn get_manifest_path(&self, hash: &str) -> PathBuf {
-        self.hashes_dir.join(format!("{hash}.json"))
-    }
 }

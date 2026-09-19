@@ -5469,6 +5469,7 @@ dependencies = [
  "moon_app_context",
  "moon_cache",
  "moon_cache_item",
+ "moon_cache_storage",
  "moon_codeowners",
  "moon_common",
  "moon_config",

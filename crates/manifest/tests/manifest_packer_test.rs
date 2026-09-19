@@ -1,3 +1,4 @@
+use moon_blob::{BlobContent, Bytes};
 use moon_hash::Digest;
 use moon_manifest::TaskManifestPacker;
 use starbase_sandbox::create_empty_sandbox;
@@ -6,60 +7,62 @@ mod inherit_source {
     use super::*;
 
     #[test]
-    fn records_the_file_when_it_exists() {
-        // The action digest names moon's fingerprint file, which has to reach
-        // the CAS or an RE-compliant backend rejects the action result. The
-        // path is stored relative for the manifest and absolute for the upload,
-        // since the fingerprint lives outside the task's output tree.
+    fn records_a_cas_backed_fingerprint_by_path() {
+        // The action digest names moon's fingerprint, which has to reach the CAS
+        // or an RE-compliant backend rejects the action result. A local backend
+        // hands back the blob's path, which is kept as the upload source so the
+        // bytes are never pulled into memory.
         let sandbox = create_empty_sandbox();
-        sandbox.create_file(".moon/cache/hashes/abc.json", "[\"abc\"]");
+        sandbox.create_file(".moon/cache/blobs/ab/cdef", "[\"abc\"]");
 
-        let path = sandbox.path().join(".moon/cache/hashes/abc.json");
+        let path = sandbox.path().join(".moon/cache/blobs/ab/cdef");
         let digest = Digest::from_file(&path).unwrap();
 
         let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
-        packer.inherit_source(&digest, path.clone()).unwrap();
+        packer
+            .inherit_source(&digest, BlobContent::File(path.clone()))
+            .unwrap();
 
         let source = packer
             .pack()
             .digest_source
-            .expect("an existing fingerprint file must be recorded");
+            .expect("the fingerprint must be recorded");
 
-        assert_eq!(source.digest, Some(digest));
-        assert_eq!(source.path.as_str(), ".moon/cache/hashes/abc.json");
+        assert_eq!(source.digest, Some(digest.clone()));
         assert_eq!(source.source_path, Some(path));
+        assert!(source.bytes.is_none());
+
+        // The manifest names the blob by its CAS location. It's a label —
+        // uploads read the bytes or the source path, never this.
+        assert_eq!(
+            source.path.as_str(),
+            format!(
+                ".moon/cache/blobs/{}/{}",
+                digest.hash.prefix(),
+                digest.hash.suffix()
+            )
+        );
     }
 
     #[test]
-    fn is_a_noop_when_the_file_is_missing() {
-        // Archiving without a computed fingerprint leaves nothing to upload.
-        // That must stay a no-op rather than recording a blob whose bytes
-        // can't be read at upload time.
+    fn records_an_inline_fingerprint_as_bytes() {
+        // A backend that returns content inline (rather than a path) must still
+        // produce an uploadable source.
         let sandbox = create_empty_sandbox();
-
-        let path = sandbox.path().join(".moon/cache/hashes/missing.json");
-        let digest = Digest::from_bytes(b"missing").unwrap();
+        let digest = Digest::from_bytes(b"[\"abc\"]").unwrap();
 
         let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
-        packer.inherit_source(&digest, path).unwrap();
+        packer
+            .inherit_source(
+                &digest,
+                BlobContent::Inline(Bytes::from_static(b"[\"abc\"]")),
+            )
+            .unwrap();
 
-        assert!(packer.pack().digest_source.is_none());
-    }
+        let source = packer.pack().digest_source.unwrap();
 
-    #[test]
-    fn carries_no_inline_bytes() {
-        // The fingerprint is read from disk during upload, not held in memory —
-        // inlining it would duplicate the file into every manifest.
-        let sandbox = create_empty_sandbox();
-        sandbox.create_file(".moon/cache/hashes/abc.json", "[\"abc\"]");
-
-        let path = sandbox.path().join(".moon/cache/hashes/abc.json");
-        let digest = Digest::from_file(&path).unwrap();
-
-        let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
-        packer.inherit_source(&digest, path).unwrap();
-
-        assert!(packer.pack().digest_source.unwrap().bytes.is_none());
+        assert_eq!(source.bytes, Some(Bytes::from_static(b"[\"abc\"]")));
+        assert!(source.source_path.is_none());
     }
 
     #[test]
@@ -67,13 +70,15 @@ mod inherit_source {
         // It's the action the manifest came from, not something to restore on
         // a cache hit, so it must not leak into the output file list.
         let sandbox = create_empty_sandbox();
-        sandbox.create_file(".moon/cache/hashes/abc.json", "[\"abc\"]");
+        sandbox.create_file(".moon/cache/blobs/ab/cdef", "[\"abc\"]");
 
-        let path = sandbox.path().join(".moon/cache/hashes/abc.json");
+        let path = sandbox.path().join(".moon/cache/blobs/ab/cdef");
         let digest = Digest::from_file(&path).unwrap();
 
         let mut packer = TaskManifestPacker::new(sandbox.path().to_path_buf());
-        packer.inherit_source(&digest, path).unwrap();
+        packer
+            .inherit_source(&digest, BlobContent::File(path))
+            .unwrap();
 
         let manifest = packer.pack();
 

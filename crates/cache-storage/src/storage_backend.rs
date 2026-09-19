@@ -136,6 +136,13 @@ where
     /// to be uploaded before storing a manifest.
     async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>>;
 
+    /// Find the digests of stored blobs whose hash starts with the given prefix.
+    /// Only backends that can enumerate their contents implement this; a remote
+    /// has no such API, so the default finds nothing.
+    async fn find_blobs_by_prefix(&self, _prefix: &str) -> miette::Result<Vec<Digest>> {
+        Ok(vec![])
+    }
+
     //---------- STORING BLOBS ----------//
 
     /// Store the blobs from the given list of blob sources in batches. This method will

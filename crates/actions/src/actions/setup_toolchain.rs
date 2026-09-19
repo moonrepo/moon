@@ -71,6 +71,8 @@ pub async fn setup_toolchain(
     }
 
     // Create a lock if we haven't run before
+    let cache_engine = Arc::clone(&app_context.cache_engine);
+
     let mut lock = create_hash_and_return_lock(
         action,
         &app_context,
@@ -126,7 +128,7 @@ pub async fn setup_toolchain(
             .collect(),
     )?;
 
-    lock.persist_hash_manifest();
+    lock.persist_hash_manifest(&cache_engine.storage).await?;
 
     Ok(if output.installed {
         ActionStatus::Passed

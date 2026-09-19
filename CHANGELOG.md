@@ -10,6 +10,10 @@
 
 #### ⚙️ Internal
 
+- Hash manifests are now stored as blobs in the local content-addressable cache, instead of as
+  individual files in `.moon/cache/hashes`. The local cache backend is now always enabled, as it
+  backs these manifests; storing task _outputs_ in it remains gated by the `cas_outputs_cache`
+  experiment.
 - Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2.
 
 ## 2.5.5

@@ -179,14 +179,18 @@ impl OutputArchiver<'_> {
         // Then inherit the execution operation metadata
         packer.inherit_operation(&state.operation)?;
 
-        // Then inherit the source fingerprint file
-        packer.inherit_source(
-            &state.digest,
-            self.app_context
-                .cache_engine
-                .hash
-                .get_manifest_path(&state.digest.hash),
-        )?;
+        // Then inherit the source fingerprint, which lives in the local CAS.
+        // Without a local tier there's nothing to attach, and the manifest is
+        // archived without it.
+        if let Some(blob) = self
+            .app_context
+            .cache_engine
+            .storage
+            .load_hash_manifest(&state.digest)
+            .await?
+        {
+            packer.inherit_source(&state.digest, blob)?;
+        }
 
         Ok(packer.pack())
     }

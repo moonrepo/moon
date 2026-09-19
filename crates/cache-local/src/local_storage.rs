@@ -202,6 +202,15 @@ impl StorageBackend for LocalStorage {
         .into_diagnostic()?
     }
 
+    async fn find_blobs_by_prefix(&self, prefix: &str) -> miette::Result<Vec<Digest>> {
+        let blobs = Arc::clone(&self.blobs);
+        let prefix = prefix.to_owned();
+
+        spawn_blocking(move || blobs.find_objects_by_prefix(&prefix))
+            .await
+            .into_diagnostic()?
+    }
+
     async fn store_blobs(
         &self,
         blob_inputs: Vec<BlobInput>,

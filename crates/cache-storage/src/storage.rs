@@ -162,7 +162,6 @@ impl Storage {
     pub fn get_local_backends(&self) -> Vec<&BoxedStorageBackend> {
         self.get_backends_with_options(&StorageOptions {
             // Respect previously configured options
-            include_local: true,
             include_remote: false,
             ..self.options.clone()
         })
@@ -172,7 +171,6 @@ impl Storage {
         self.get_backends_with_options(&StorageOptions {
             // Respect previously configured options
             include_local: false,
-            include_remote: true,
             ..self.options.clone()
         })
     }
@@ -283,27 +281,72 @@ impl Storage {
         &self,
         mut hasher: ContentHasher,
     ) -> miette::Result<Digest> {
-        let hash = hasher.generate_hash()?;
+        let digest = Digest::from_hasher(&mut hasher)?;
 
         debug!(label = hasher.label, "Storing hash manifest (local only)");
 
         let data = hasher.into_bytes();
-        let digest = Digest {
-            hash,
-            size: data.len() as i64,
-        };
 
-        // Hash manifests should only be stored locally, as they
-        // represent the current state of a user's machine
-        self.with_options(StorageOptions {
-            include_local: true,
-            include_remote: false,
-            ..self.options.clone()
-        })
-        .store_blob(Blob::new(digest.clone(), data).into_input())
-        .await?;
+        // This writes inline rather than queueing a background task: the very
+        // next thing to happen may be another action (or another process
+        // waiting on the same lock) asking whether this hash was stored, and it
+        // has to see it. They're small and local, so there's nothing to gain by
+        // deferring them.
+        let input = Blob::new(digest.clone(), data).into_input();
+
+        for backend in self.get_local_backends() {
+            if backend.is_writable() {
+                Arc::clone(backend)
+                    .store_blobs_batched(digest.clone(), vec![input.clone()])
+                    .await?;
+            }
+        }
 
         Ok(digest)
+    }
+
+    pub async fn has_hash_manifest(&self, digest: &Digest) -> bool {
+        for backend in self.get_local_backends() {
+            if !backend.is_readable() {
+                continue;
+            }
+
+            match backend.find_missing_blobs(vec![digest.to_owned()]).await {
+                Ok(missing) => {
+                    if missing.is_empty() {
+                        return true;
+                    }
+                }
+                Err(error) => {
+                    warn!(
+                        storage = backend.get_id().as_str(),
+                        hash = digest.hash.as_str(),
+                        error = format_error_chain(&error),
+                        "Failed to check for a hash manifest, assuming it is missing"
+                    );
+                }
+            }
+        }
+
+        false
+    }
+
+    pub async fn load_hash_manifest(&self, digest: &Digest) -> miette::Result<Option<BlobContent>> {
+        for backend in self.get_local_backends() {
+            if !backend.is_readable() {
+                continue;
+            }
+
+            let mut blobs = backend
+                .retrieve_blobs(vec![digest.to_owned()], false)
+                .await?;
+
+            if !blobs.is_empty() {
+                return Ok(Some(blobs.remove(0).content));
+            }
+        }
+
+        Ok(None)
     }
 
     pub async fn load_task_manifest(

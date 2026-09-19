@@ -111,6 +111,17 @@ impl StorageBackend for MemoryBackend {
         Ok(())
     }
 
+    async fn find_blobs_by_prefix(&self, prefix: &str) -> miette::Result<Vec<Digest>> {
+        Ok(self
+            .blobs
+            .lock()
+            .unwrap()
+            .keys()
+            .filter(|digest| digest.hash.as_str().starts_with(prefix))
+            .cloned()
+            .collect())
+    }
+
     async fn find_missing_blobs(&self, blob_digests: Vec<Digest>) -> miette::Result<Vec<Digest>> {
         if self.fail_find_missing {
             return Err(miette::miette!("simulated find_missing failure"));
@@ -881,9 +892,10 @@ mod hash_manifests {
     }
 
     #[tokio::test]
-    async fn stores_to_every_writable_backend() {
-        // The hash manifest must reach the remote tier too, since a remote cache
-        // hit on another machine has to resolve the same action digest.
+    async fn stores_to_the_local_tier_only() {
+        // A hash manifest describes the state of *this* machine (a toolchain it
+        // installed, a file it synced), so it must never reach the remote tier
+        // where another machine could read it as its own state.
         let local = MemoryBackend::new("local");
         let read_only = MemoryBackend::new("read-only").read_only();
         let remote = MemoryBackend::new("remote");
@@ -904,10 +916,252 @@ mod hash_manifests {
         storage.wait_for_background_tasks().await.unwrap();
 
         assert!(local_blobs.lock().unwrap().contains_key(&digest));
-        assert!(remote_blobs.lock().unwrap().contains_key(&digest));
+        assert!(
+            remote_blobs.lock().unwrap().is_empty(),
+            "a hash manifest must not be uploaded to the remote tier"
+        );
         assert!(
             read_only_blobs.lock().unwrap().is_empty(),
             "a read-only backend must not be written to"
         );
+    }
+
+    #[tokio::test]
+    async fn stores_nothing_when_the_local_tier_is_scoped_out() {
+        // Hash manifests only ever go local, so scoping the local tier out
+        // leaves nowhere to put them. What matters is that the check agrees:
+        // the same scope must report the hash as not stored, so a caller can
+        // never mark work done that was never recorded.
+        let local = MemoryBackend::new("local");
+        let remote = MemoryBackend::new("remote");
+
+        let local_blobs = Arc::clone(&local.blobs);
+        let remote_blobs = Arc::clone(&remote.blobs);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(local);
+        storage.add_remote_backend(remote);
+
+        let scoped = storage.with_options(StorageOptions {
+            include_local: false,
+            include_remote: true,
+            ..Default::default()
+        });
+
+        let digest = scoped
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+
+        assert!(local_blobs.lock().unwrap().is_empty());
+        assert!(
+            remote_blobs.lock().unwrap().is_empty(),
+            "a hash manifest must never reach the remote tier"
+        );
+        assert!(
+            !scoped.has_hash_manifest(&digest).await,
+            "the check must agree with the store"
+        );
+    }
+}
+
+mod hash_manifest_lookups {
+    use super::*;
+
+    /// Mirrors how `moon hash` resolves an abbreviated hash: ask each readable
+    /// local backend, since remotes can't be enumerated.
+    async fn find_by_prefix(storage: &Storage, prefix: &str) -> Vec<Digest> {
+        let mut digests = vec![];
+
+        for backend in storage.get_local_backends() {
+            if backend.is_readable() {
+                digests.extend(backend.find_blobs_by_prefix(prefix).await.unwrap());
+            }
+        }
+
+        digests
+    }
+
+    #[derive(Serialize)]
+    struct Fingerprint {
+        command: &'static str,
+    }
+
+    fn fingerprint() -> Fingerprint {
+        Fingerprint { command: "build" }
+    }
+
+    #[tokio::test]
+    async fn reports_a_stored_manifest_as_present() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local"));
+
+        let digest = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+
+        assert!(storage.has_hash_manifest(&digest).await);
+    }
+
+    #[tokio::test]
+    async fn reports_an_unknown_manifest_as_absent() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local"));
+
+        assert!(!storage.has_hash_manifest(&digest('a', 0)).await);
+    }
+
+    #[tokio::test]
+    async fn reports_absent_when_there_is_no_local_tier() {
+        // Without a local backend nothing can be stored, so the check must say
+        // "not done" and let the caller redo the work rather than claiming it
+        // was already handled.
+        let storage = create_storage();
+
+        assert!(!storage.has_hash_manifest(&digest('a', 0)).await);
+    }
+
+    #[tokio::test]
+    async fn never_reports_present_from_a_remote_hit() {
+        // A hash manifest records what *this* machine did. Another machine
+        // having done it is not a reason to skip a local side effect.
+        let remote = MemoryBackend::new("remote");
+        let action = digest('a', 6);
+
+        remote
+            .blobs
+            .lock()
+            .unwrap()
+            .insert(action.clone(), Bytes::from_static(b"[]"));
+
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local"));
+        storage.add_remote_backend(remote);
+
+        assert!(!storage.has_hash_manifest(&action).await);
+    }
+
+    #[tokio::test]
+    async fn treats_a_backend_failure_as_absent() {
+        // Degrading to "re-run the work" is safe; claiming it was done when the
+        // check never completed is not.
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local").failing_find_missing());
+
+        assert!(!storage.has_hash_manifest(&digest('a', 0)).await);
+    }
+
+    #[tokio::test]
+    async fn loads_a_stored_manifests_bytes_back() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local"));
+
+        let digest = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+
+        let bytes = storage
+            .load_hash_manifest(&digest)
+            .await
+            .unwrap()
+            .expect("the manifest reads back")
+            .read_bytes()
+            .unwrap();
+
+        assert_eq!(Digest::from_bytes(&bytes).unwrap(), digest);
+        assert_eq!(
+            bytes,
+            format!("[{}]", serde_json::to_string(&fingerprint()).unwrap()).into_bytes()
+        );
+    }
+
+    #[tokio::test]
+    async fn loading_an_unknown_manifest_is_none() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local"));
+
+        assert!(
+            storage
+                .load_hash_manifest(&digest('a', 0))
+                .await
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[tokio::test]
+    async fn resolves_a_digest_from_a_partial_hash() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local"));
+
+        let digest = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+
+        let prefix = &digest.hash.as_str()[0..8];
+        let found = find_by_prefix(&storage, prefix).await;
+
+        assert_eq!(found, vec![digest]);
+    }
+
+    #[tokio::test]
+    async fn finds_nothing_for_an_unmatched_prefix() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local"));
+
+        storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+
+        assert!(find_by_prefix(&storage, "ffffffffff").await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn does_not_resolve_prefixes_against_the_remote_tier() {
+        // Remotes can't be enumerated, so a prefix lookup must not appear to
+        // work against one.
+        let remote = MemoryBackend::new("remote");
+        let action = digest('a', 6);
+
+        remote
+            .blobs
+            .lock()
+            .unwrap()
+            .insert(action.clone(), Bytes::from_static(b"[]"));
+
+        let mut storage = create_storage();
+        storage.add_remote_backend(remote);
+
+        assert!(
+            find_by_prefix(&storage, &action.hash.as_str()[0..8])
+                .await
+                .is_empty()
+        );
+    }
+
+    #[tokio::test]
+    async fn reports_a_prefix_match_once_per_local_backend() {
+        // The same manifest in two local backends comes back twice. Callers
+        // that treat "more than one result" as an ambiguous abbreviation must
+        // collapse duplicate digests first, or a second local backend would
+        // make every lookup ambiguous.
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("local-a"));
+        storage.add_local_backend(MemoryBackend::new("local-b"));
+
+        let digest = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+
+        let found = find_by_prefix(&storage, &digest.hash.as_str()[0..8]).await;
+
+        // Both backends hold it, so the caller sees it twice and has to treat
+        // duplicates as one manifest rather than as an ambiguous abbreviation.
+        assert_eq!(found, vec![digest.clone(), digest]);
     }
 }

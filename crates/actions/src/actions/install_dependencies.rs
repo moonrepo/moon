@@ -148,6 +148,8 @@ pub async fn install_dependencies(
         && !has_vendor_installed_dependencies(&toolchain, &deps_root);
 
     // Create a lock if we haven't run before
+    let cache_engine = Arc::clone(&app_context.cache_engine);
+
     let Some(mut lock) = create_hash_and_return_lock_if_changed(
         action,
         &app_context,
@@ -241,7 +243,7 @@ pub async fn install_dependencies(
 
     finalize_action_operations(action, &toolchain, setup_op, output.operations, vec![])?;
 
-    lock.persist_hash_manifest();
+    lock.persist_hash_manifest(&cache_engine.storage).await?;
 
     Ok(if skipped {
         ActionStatus::Skipped

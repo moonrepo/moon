@@ -2,7 +2,7 @@ use crate::helpers::*;
 use crate::manifest_error::ManifestError;
 use crate::task_manifest::{TaskManifest, TaskManifestFile, TaskManifestSymlink};
 use moon_action::Operation;
-use moon_blob::Blob;
+use moon_blob::{Blob, BlobContent};
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_hash::Digest;
 use starbase_utils::fs::{self, FsError};
@@ -27,15 +27,29 @@ impl TaskManifestPacker {
         self.manifest
     }
 
-    pub fn inherit_source(&mut self, digest: &Digest, path: PathBuf) -> miette::Result<()> {
-        if path.exists() {
-            self.manifest.digest_source = Some(TaskManifestFile {
-                digest: Some(digest.to_owned()),
-                path: self.resolve_rel_path(&path)?,
-                source_path: Some(path),
-                ..Default::default()
-            });
-        }
+    /// Record the fingerprint that the action digest addresses, so it is
+    /// uploaded to the CAS alongside the outputs and an RE-compliant backend can
+    /// resolve the action result.
+    pub fn inherit_source(&mut self, digest: &Digest, content: BlobContent) -> miette::Result<()> {
+        let (bytes, source_path) = match content {
+            BlobContent::Inline(bytes) => (Some(bytes), None),
+            BlobContent::File(path) => (None, Some(path)),
+        };
+
+        self.manifest.digest_source = Some(TaskManifestFile {
+            bytes,
+            digest: Some(digest.to_owned()),
+            // The fingerprint is a CAS blob, not a file in the workspace, but
+            // the manifest still names it. This label is descriptive only —
+            // uploads read the bytes or the source path above, never this.
+            path: WorkspaceRelativePathBuf::from(format!(
+                ".moon/cache/blobs/{}/{}",
+                digest.hash.prefix(),
+                digest.hash.suffix(),
+            )),
+            source_path,
+            ..Default::default()
+        });
 
         Ok(())
     }

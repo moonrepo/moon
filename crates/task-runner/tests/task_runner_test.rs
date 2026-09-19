@@ -903,12 +903,15 @@ mod task_runner {
 
             let hash = runner.hash(&context, &node).await.unwrap();
 
+            // The fingerprint is stored as a blob in the local CAS, which
+            // shards objects by the first 2 chars of their hash.
             assert!(
                 container
                     .sandbox
                     .path()
-                    .join(".moon/cache/hashes")
-                    .join(format!("{hash}.json"))
+                    .join(".moon/cache/blobs")
+                    .join(&hash[0..2])
+                    .join(&hash[2..])
                     .exists()
             );
         }

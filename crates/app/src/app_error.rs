@@ -32,6 +32,13 @@ pub enum AppError {
     )]
     MissingConfigFile(String),
 
+    #[diagnostic(code(app::ambiguous_hash_manifest))]
+    #[error(
+        "Found multiple hash manifests starting with {}, provide more characters to disambiguate.",
+        .0.style(Style::Hash),
+    )]
+    AmbiguousHashManifest(String),
+
     #[diagnostic(code(app::missing_hash_manifest))]
     #[error(
         "Unable to find a hash manifest for {}!",

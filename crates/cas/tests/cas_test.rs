@@ -745,3 +745,126 @@ mod cas {
         }
     }
 }
+
+mod find_objects_by_prefix {
+    use super::*;
+
+    #[test]
+    fn resolves_a_full_and_abbreviated_hash() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+        let digest = store.store_bytes(b"contents").unwrap();
+
+        for len in [2, 8, 40, 64] {
+            let found = store
+                .find_objects_by_prefix(&digest.hash.as_str()[0..len])
+                .unwrap();
+
+            assert_eq!(found, vec![digest.clone()], "prefix of {len} chars");
+        }
+    }
+
+    #[test]
+    fn scans_every_shard_for_a_single_char_prefix() {
+        // A 1-char prefix can't narrow to a shard (shards are 2 chars), so the
+        // whole store is walked. Store enough objects that some shard other
+        // than the first is populated.
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        let digests = (0..16)
+            .map(|i| {
+                store
+                    .store_bytes(format!("contents {i}").as_bytes())
+                    .unwrap()
+            })
+            .collect::<Vec<_>>();
+
+        for digest in digests {
+            let found = store
+                .find_objects_by_prefix(&digest.hash.as_str()[0..1])
+                .unwrap();
+
+            assert!(found.contains(&digest));
+        }
+    }
+
+    #[test]
+    fn reports_the_stored_size() {
+        // The digest has to round-trip usefully, so the size must come from the
+        // object on disk rather than being left at zero.
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+        let digest = store.store_bytes(b"contents").unwrap();
+
+        let found = store.find_objects_by_prefix(digest.hash.as_str()).unwrap();
+
+        assert_eq!(found[0].size, "contents".len() as i64);
+    }
+
+    #[test]
+    fn finds_nothing_for_an_unmatched_prefix() {
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+        store.store_bytes(b"contents").unwrap();
+
+        assert!(
+            store
+                .find_objects_by_prefix("ffffffffff")
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn ignores_input_that_cannot_be_a_hash() {
+        // An empty, over-long, or non-hex prefix can't address an object. These
+        // must come back empty rather than erroring or walking into the temp
+        // staging directory (which lives inside the objects root).
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+        store.store_bytes(b"contents").unwrap();
+
+        for prefix in ["", "zz", "te", "not-hex", &"a".repeat(65)] {
+            assert!(
+                store.find_objects_by_prefix(prefix).unwrap().is_empty(),
+                "prefix {prefix:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn finds_every_object_sharing_a_prefix() {
+        // An ambiguous abbreviation must return all of its matches so the caller
+        // can ask the user to disambiguate, rather than silently picking one.
+        let sandbox = create_empty_sandbox();
+        let store = create_store(&sandbox);
+
+        let mut digests = vec![];
+        let mut i = 0;
+
+        // Find two objects that share a 2-char shard.
+        while digests.len() < 2 {
+            let digest = store
+                .store_bytes(format!("contents {i}").as_bytes())
+                .unwrap();
+
+            if digest.hash.prefix() == "00" {
+                digests.push(digest);
+            }
+
+            i += 1;
+
+            if i > 5000 {
+                break;
+            }
+        }
+
+        if digests.len() == 2 {
+            let found = store.find_objects_by_prefix("00").unwrap();
+
+            assert!(found.contains(&digests[0]));
+            assert!(found.contains(&digests[1]));
+        }
+    }
+}

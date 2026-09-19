@@ -332,6 +332,58 @@ impl CasStore {
         Ok(paths)
     }
 
+    /// Digests of stored objects whose hash starts with `prefix`, so callers can
+    /// resolve an abbreviated hash the way `git` does. The store shards on the
+    /// first 2 hex chars, so any prefix of 2 or more narrows to a single shard
+    /// rather than walking every object.
+    pub fn find_objects_by_prefix(&self, prefix: &str) -> miette::Result<Vec<Digest>> {
+        let mut digests = vec![];
+
+        if prefix.is_empty() || prefix.len() > 64 || !prefix.chars().all(|c| c.is_ascii_hexdigit())
+        {
+            return Ok(digests);
+        }
+
+        let shard_paths = if prefix.len() >= 2 {
+            vec![self.objects_dir.join(&prefix[..2])]
+        } else {
+            fs::read_dir(&self.objects_dir)?
+                .into_iter()
+                .map(|entry| entry.path())
+                .collect()
+        };
+
+        for shard_path in shard_paths {
+            if !shard_path.is_dir() || shard_path == self.temp_dir {
+                continue;
+            }
+
+            let shard = fs::file_name(&shard_path);
+
+            for entry in fs::read_dir(&shard_path)? {
+                let path = entry.path();
+                let hash = format!("{shard}{}", fs::file_name(&path));
+
+                if !hash.starts_with(prefix) {
+                    continue;
+                }
+
+                // A stray file that isn't a valid object name is skipped rather
+                // than failing the lookup.
+                let Ok(hash) = ContentHash::from_hex(&hash) else {
+                    continue;
+                };
+
+                digests.push(Digest {
+                    hash,
+                    size: fs::metadata(&path)?.len() as i64,
+                });
+            }
+        }
+
+        Ok(digests)
+    }
+
     pub fn object_path_with_exists_check(&self, hash: &ContentHash) -> miette::Result<PathBuf> {
         let path = self.object_path(hash);
 

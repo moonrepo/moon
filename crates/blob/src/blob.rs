@@ -95,6 +95,13 @@ impl Blob {
     pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {
         Self::from_bytes(fs::read_file_bytes(path.as_ref())?)
     }
+
+    pub fn into_input(self) -> BlobInput {
+        BlobInput {
+            content: BlobContent::Inline(self.bytes),
+            digest: self.digest,
+        }
+    }
 }
 
 impl Debug for Blob {

@@ -142,7 +142,11 @@ impl StorageBackend for LocalStorage {
         .into_diagnostic()?
     }
 
-    async fn store_task_manifest(&self, digest: Digest, manifest: TaskManifest) -> miette::Result<()> {
+    async fn store_task_manifest(
+        &self,
+        digest: Digest,
+        manifest: TaskManifest,
+    ) -> miette::Result<()> {
         let manifests = Arc::clone(&self.manifests);
 
         spawn_blocking(move || {

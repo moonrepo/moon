@@ -4,9 +4,11 @@ use moon_cache_storage::{
     CacheCapabilities, CacheContext, Storage, StorageBackend, StorageOptions,
 };
 use moon_common::Id;
-use moon_hash::{ContentHash, Digest};
+use moon_hash::{ContentHash, ContentHasher, Digest};
 use moon_manifest::{TaskManifest, TaskManifestFile};
 use rustc_hash::FxHashMap;
+use serde::Serialize;
+use starbase_utils::json::serde_json;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -659,6 +661,253 @@ mod storage {
         assert!(
             local_blobs.lock().unwrap().is_empty(),
             "warming must honor include_local = false"
+        );
+    }
+}
+
+mod hash_manifests {
+    use super::*;
+
+    #[derive(Serialize)]
+    struct Fingerprint {
+        command: &'static str,
+        inputs: Vec<&'static str>,
+    }
+
+    fn fingerprint() -> Fingerprint {
+        Fingerprint {
+            command: "build",
+            inputs: vec!["a.ts"],
+        }
+    }
+
+    /// The bytes the hasher would serialize for the given contents, which is
+    /// what a stored hash manifest blob must contain.
+    fn envelope<T: Serialize>(contents: &[T]) -> Vec<u8> {
+        format!(
+            "[{}]",
+            contents
+                .iter()
+                .map(|content| serde_json::to_string(content).unwrap())
+                .collect::<Vec<_>>()
+                .join(",")
+        )
+        .into_bytes()
+    }
+
+    #[tokio::test]
+    async fn stores_a_blob_addressed_by_the_returned_digest() {
+        // The returned digest is handed back to the caller as an action digest,
+        // so it must actually address the bytes that were stored — otherwise the
+        // manifest would point at a blob nobody can resolve.
+        let backend = MemoryBackend::new("mem");
+        let blobs = Arc::clone(&backend.blobs);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        let digest = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        let stored = blobs
+            .lock()
+            .unwrap()
+            .get(&digest)
+            .cloned()
+            .expect("hash manifest was stored as a blob");
+
+        assert_eq!(Digest::from_bytes(&stored).unwrap(), digest);
+        assert_eq!(digest.size, stored.len() as i64);
+    }
+
+    #[tokio::test]
+    async fn stores_the_hasher_envelope_not_the_raw_content() {
+        // A hash manifest is the hasher's serialized form (contents wrapped in a
+        // JSON array), not the bare content, since that's what the hash is
+        // computed over.
+        let backend = MemoryBackend::new("mem");
+        let blobs = Arc::clone(&backend.blobs);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        let digest = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        assert_eq!(
+            blobs.lock().unwrap().get(&digest).unwrap(),
+            &Bytes::from(envelope(&[fingerprint()]))
+        );
+    }
+
+    #[tokio::test]
+    async fn stored_manifest_is_retrievable_through_storage() {
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("mem"));
+
+        let digest = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        let blob = storage
+            .retrieve_blob(digest.clone())
+            .await
+            .unwrap()
+            .expect("blob is readable back out of storage");
+
+        assert_eq!(blob.digest, digest);
+        assert_eq!(
+            blob.content.get_bytes().unwrap(),
+            envelope(&[fingerprint()])
+        );
+    }
+
+    #[tokio::test]
+    async fn digests_are_content_addressed() {
+        // Identical content must dedupe to one digest (and so one CAS entry),
+        // while differing content must not collide.
+        let mut storage = create_storage();
+        storage.add_local_backend(MemoryBackend::new("mem"));
+
+        let one = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+        let two = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+        let other = storage
+            .store_hash_manifest(
+                "task",
+                Fingerprint {
+                    command: "test",
+                    inputs: vec!["a.ts"],
+                },
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(one, two);
+        assert_ne!(one, other);
+    }
+
+    #[tokio::test]
+    async fn label_does_not_affect_the_digest() {
+        // The label is a debugging aid only — it isn't hashed, so the same
+        // content stored under different labels stays a single CAS entry.
+        let backend = MemoryBackend::new("mem");
+        let blobs = Arc::clone(&backend.blobs);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        let one = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+        let two = storage
+            .store_hash_manifest("project", fingerprint())
+            .await
+            .unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        assert_eq!(one, two);
+        assert_eq!(blobs.lock().unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn stores_every_content_from_a_prebuilt_hasher() {
+        // Callers that build up a hasher across many contents must get all of
+        // them persisted, not just the first.
+        let backend = MemoryBackend::new("mem");
+        let blobs = Arc::clone(&backend.blobs);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        let mut hasher = ContentHasher::new("task");
+        hasher.hash_content(fingerprint()).unwrap();
+        hasher.hash_content("extra").unwrap();
+
+        let digest = storage
+            .store_hash_manifest_with_hasher(hasher)
+            .await
+            .unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        let stored = blobs.lock().unwrap().get(&digest).cloned().unwrap();
+
+        assert_eq!(
+            stored,
+            Bytes::from(format!(
+                "[{},\"extra\"]",
+                serde_json::to_string(&fingerprint()).unwrap()
+            ))
+        );
+        assert_eq!(Digest::from_bytes(&stored).unwrap(), digest);
+    }
+
+    #[tokio::test]
+    async fn stores_a_hasher_with_no_content() {
+        // The hasher only fills its serialization cache when the hash is
+        // generated, so storing must hash before consuming the bytes. If that
+        // order flipped, this would store zero bytes against a non-empty digest.
+        let backend = MemoryBackend::new("mem");
+        let blobs = Arc::clone(&backend.blobs);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(backend);
+
+        let digest = storage
+            .store_hash_manifest_with_hasher(ContentHasher::new("task"))
+            .await
+            .unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        let stored = blobs.lock().unwrap().get(&digest).cloned().unwrap();
+
+        assert_eq!(stored, Bytes::from_static(b"[]"));
+        assert_eq!(digest.size, 2);
+        assert_eq!(Digest::from_bytes(&stored).unwrap(), digest);
+    }
+
+    #[tokio::test]
+    async fn stores_to_every_writable_backend() {
+        // The hash manifest must reach the remote tier too, since a remote cache
+        // hit on another machine has to resolve the same action digest.
+        let local = MemoryBackend::new("local");
+        let read_only = MemoryBackend::new("read-only").read_only();
+        let remote = MemoryBackend::new("remote");
+
+        let local_blobs = Arc::clone(&local.blobs);
+        let read_only_blobs = Arc::clone(&read_only.blobs);
+        let remote_blobs = Arc::clone(&remote.blobs);
+
+        let mut storage = create_storage();
+        storage.add_local_backend(local);
+        storage.add_local_backend(read_only);
+        storage.add_remote_backend(remote);
+
+        let digest = storage
+            .store_hash_manifest("task", fingerprint())
+            .await
+            .unwrap();
+        storage.wait_for_background_tasks().await.unwrap();
+
+        assert!(local_blobs.lock().unwrap().contains_key(&digest));
+        assert!(remote_blobs.lock().unwrap().contains_key(&digest));
+        assert!(
+            read_only_blobs.lock().unwrap().is_empty(),
+            "a read-only backend must not be written to"
         );
     }
 }

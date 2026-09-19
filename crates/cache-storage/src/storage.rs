@@ -1,11 +1,12 @@
 use crate::storage_backend::{BoxedStorageBackend, StorageBackend};
 use miette::IntoDiagnostic;
-use moon_blob::{BlobCleanStats, BlobContent, BlobInput, BlobOutput};
+use moon_blob::{Blob, BlobCleanStats, BlobContent, BlobInput, BlobOutput};
 use moon_common::{Id, format_error_chain, is_daemon_env};
 use moon_config::{CacheConfig, RemoteConfig};
-use moon_hash::Digest;
+use moon_hash::{ContentHasher, Digest};
 use moon_manifest::TaskManifest;
 use rustc_hash::FxHashMap;
+use serde::Serialize;
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -161,6 +162,7 @@ impl Storage {
     pub fn get_local_backends(&self) -> Vec<&BoxedStorageBackend> {
         self.get_backends_with_options(&StorageOptions {
             // Respect previously configured options
+            include_local: true,
             include_remote: false,
             ..self.options.clone()
         })
@@ -170,6 +172,7 @@ impl Storage {
         self.get_backends_with_options(&StorageOptions {
             // Respect previously configured options
             include_local: false,
+            include_remote: true,
             ..self.options.clone()
         })
     }
@@ -263,6 +266,44 @@ impl Storage {
         }
 
         Ok(())
+    }
+
+    pub async fn store_hash_manifest<T: Serialize>(
+        &self,
+        label: &str,
+        content: T,
+    ) -> miette::Result<Digest> {
+        let mut hasher = ContentHasher::new(label);
+        hasher.hash_content(content)?;
+
+        self.store_hash_manifest_with_hasher(hasher).await
+    }
+
+    pub async fn store_hash_manifest_with_hasher(
+        &self,
+        mut hasher: ContentHasher,
+    ) -> miette::Result<Digest> {
+        let hash = hasher.generate_hash()?;
+
+        debug!(label = hasher.label, "Storing hash manifest (local only)");
+
+        let data = hasher.into_bytes();
+        let digest = Digest {
+            hash,
+            size: data.len() as i64,
+        };
+
+        // Hash manifests should only be stored locally, as they
+        // represent the current state of a user's machine
+        self.with_options(StorageOptions {
+            include_local: true,
+            include_remote: false,
+            ..self.options.clone()
+        })
+        .store_blob(Blob::new(digest.clone(), data).into_input())
+        .await?;
+
+        Ok(digest)
     }
 
     pub async fn load_task_manifest(

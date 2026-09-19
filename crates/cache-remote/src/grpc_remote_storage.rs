@@ -366,7 +366,11 @@ impl StorageBackend for GrpcRemoteStorage {
         }
     }
 
-    async fn store_task_manifest(&self, digest: Digest, manifest: TaskManifest) -> miette::Result<()> {
+    async fn store_task_manifest(
+        &self,
+        digest: Digest,
+        manifest: TaskManifest,
+    ) -> miette::Result<()> {
         match self
             .get_ac_client()
             .update_action_result(UpdateActionResultRequest {

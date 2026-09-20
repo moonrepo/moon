@@ -12,6 +12,13 @@
 - Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
   `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be
   enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
+- Changed persistent tasks to run when they are processed in the action graph, instead of being
+  batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
+  alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on
+  it. Non-persistent tasks are still not allowed to depend on persistent tasks.
+- Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
+  dependencies that follow them, as a persistent dependency never completes. Those dependencies are
+  now ordered against the previous dependency that does complete.
 
 #### 🐞 Fixes
 
@@ -25,6 +32,9 @@
 
 #### ⚙️ Internal
 
+- Improved the performance of the action pipeline's job dispatcher by 10-15x. Dependency
+  relationships are now extracted from the action graph once up front, and completed jobs unblock
+  their dependents incrementally, instead of re-traversing the graph for every dispatch check.
 - Hash manifests are now stored as blobs in the local content-addressable cache, instead of as
   individual files in `.moon/cache/hashes`. The local cache backend is now always enabled, as it
   backs these manifests; storing task _outputs_ in it remains gated by the `cas_outputs_cache`

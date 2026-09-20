@@ -111,7 +111,8 @@ capabilities. All interactive tasks are run in isolation in the graph.
 ### Run persistent task
 
 Like the base run task, but runs the [task in a persistent process](../concepts/task#persistent)
-that never exits. All persistent tasks are run in parallel as the last batch in the graph.
+that never exits. Persistent tasks are run in parallel, and never block the actions that come after
+them in the graph.
 
 ## What is the graph used for?
 

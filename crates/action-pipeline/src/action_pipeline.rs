@@ -18,6 +18,7 @@ use moon_console::Level;
 use moon_daemon_client::DaemonClient;
 use moon_process::{ProcessRegistry, SignalType};
 use moon_workspace_graph::WorkspaceGraph;
+use petgraph::graph::NodeIndex;
 use rustc_hash::FxHashMap;
 use std::mem;
 use std::sync::Arc;
@@ -172,6 +173,9 @@ impl ActionPipeline {
         // This aggregates results from jobs
         let (sender, mut receiver) = mpsc::channel::<Action>(total_actions.max(1));
 
+        // This aggregates completed jobs for the dispatcher
+        let (completed_sender, completed_receiver) = mpsc::unbounded_channel::<NodeIndex>();
+
         // Create job context
         let abort_token = CancellationToken::new();
         let cancel_token = CancellationToken::new();
@@ -180,7 +184,7 @@ impl ActionPipeline {
             abort_token: abort_token.clone(),
             bail: self.bail,
             cancel_token: cancel_token.clone(),
-            completed_queue: Arc::new(RwLock::new(vec![])),
+            completed_queue: completed_sender,
             daemon_client: self.daemon_client.clone(),
             emitter: Arc::clone(&self.emitter),
             result_sender: sender,
@@ -193,7 +197,8 @@ impl ActionPipeline {
         let signal_handle = self.monitor_signals(cancel_token.clone());
 
         // Dispatch jobs from the graph to run actions
-        let queue_handle = self.dispatch_jobs(action_graph, job_context.clone())?;
+        let queue_handle =
+            self.dispatch_jobs(action_graph, job_context.clone(), completed_receiver)?;
 
         // Wait and receive all results coming through
         debug!("Waiting for jobs to return results");
@@ -284,6 +289,7 @@ impl ActionPipeline {
         &self,
         action_graph: ActionGraph,
         job_context: JobContext,
+        completed_queue: mpsc::UnboundedReceiver<NodeIndex>,
     ) -> miette::Result<JoinHandle<JobHandles>> {
         let node_indices = action_graph.sort_topological()?;
         let node_count = node_indices.len();
@@ -294,8 +300,12 @@ impl ActionPipeline {
         debug!(total_jobs = node_count, "Dispatching jobs in the pipeline");
 
         Ok(tokio::spawn(Box::pin(async move {
-            let mut dispatcher =
-                JobDispatcher::new(&action_graph, job_context.clone(), priority_groups);
+            let mut dispatcher = JobDispatcher::new(
+                &action_graph,
+                job_context.clone(),
+                priority_groups,
+                completed_queue,
+            );
             let mut job_handles = JobHandles::default();
 
             while dispatcher.has_queued_jobs() {

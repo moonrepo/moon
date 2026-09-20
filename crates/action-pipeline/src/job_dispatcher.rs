@@ -4,11 +4,12 @@ use moon_action_graph::ActionGraph;
 use petgraph::prelude::*;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::collections::BTreeMap;
-use std::mem;
+use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::debug;
 
 pub struct JobDispatcher<'graph> {
     context: JobContext,
+    completed_queue: UnboundedReceiver<NodeIndex>,
     nodes: &'graph FxHashMap<NodeIndex, ActionNode>,
     groups: BTreeMap<u8, Vec<NodeIndex>>, // topo
 
@@ -38,6 +39,7 @@ impl<'graph> JobDispatcher<'graph> {
         action_graph: &'graph ActionGraph,
         context: JobContext,
         groups: BTreeMap<u8, Vec<NodeIndex>>,
+        completed_queue: UnboundedReceiver<NodeIndex>,
     ) -> Self {
         let graph = action_graph.get_inner_graph().graph();
         let total_nodes = graph.node_count();
@@ -68,6 +70,7 @@ impl<'graph> JobDispatcher<'graph> {
 
         Self {
             context,
+            completed_queue,
             nodes: action_graph.get_inner_nodes(),
             groups,
             dependencies,
@@ -88,18 +91,8 @@ impl<'graph> JobDispatcher<'graph> {
     /// their dependents. A job may be marked as completed more than once (a
     /// persistent job is marked when dispatched, and again when it exits), so
     /// only the first completion is counted.
-    async fn drain_completed_jobs(&mut self) {
-        let drained = {
-            let mut queue = self.context.completed_queue.write().await;
-
-            if queue.is_empty() {
-                return;
-            }
-
-            mem::take(&mut *queue)
-        };
-
-        for index in drained {
+    fn drain_completed_jobs(&mut self) {
+        while let Ok(index) = self.completed_queue.try_recv() {
             if !self.completed.insert(index) {
                 continue;
             }
@@ -165,7 +158,7 @@ impl<'graph> JobDispatcher<'graph> {
 // This is based on the `Topo` struct from petgraph!
 impl JobDispatcher<'_> {
     pub async fn next(&mut self) -> Option<NodeIndex> {
-        self.drain_completed_jobs().await;
+        self.drain_completed_jobs();
 
         // Everything that remains is waiting on a job that is still running,
         // so avoid scanning the groups entirely
@@ -265,21 +258,24 @@ mod tests {
     use tokio::sync::{RwLock, Semaphore, mpsc};
     use tokio_util::sync::CancellationToken;
 
-    async fn create_job_context() -> JobContext {
+    async fn create_job_context() -> (JobContext, UnboundedReceiver<NodeIndex>) {
         let (sender, _receiver) = mpsc::channel::<Action>(8);
+        let (completed_sender, completed_receiver) = mpsc::unbounded_channel::<NodeIndex>();
 
-        JobContext {
+        let context = JobContext {
             abort_token: CancellationToken::new(),
             bail: false,
             cancel_token: CancellationToken::new(),
-            completed_queue: Arc::new(RwLock::new(vec![])),
+            completed_queue: completed_sender,
             daemon_client: None,
             emitter: Arc::new(EventEmitter::default()),
             result_sender: sender,
             running_jobs: Arc::new(RwLock::new(FxHashMap::default())),
             semaphore: Arc::new(Semaphore::new(1)),
             workspace_graph: Arc::new(WorkspaceGraph::default()),
-        }
+        };
+
+        (context, completed_receiver)
     }
 
     fn create_dense_sync_graph(depth: usize, width: usize) -> ActionGraph {
@@ -378,8 +374,8 @@ mod tests {
     async fn doesnt_unblock_from_duplicate_completions() {
         let action_graph = create_shared_dependency_graph();
         let groups = action_graph.group_priorities(action_graph.sort_topological().unwrap());
-        let context = create_job_context().await;
-        let mut dispatcher = JobDispatcher::new(&action_graph, context.clone(), groups);
+        let (context, completed) = create_job_context().await;
+        let mut dispatcher = JobDispatcher::new(&action_graph, context.clone(), groups, completed);
 
         let first = dispatcher.next().await.unwrap();
         let second = dispatcher.next().await.unwrap();
@@ -405,8 +401,9 @@ mod tests {
         for depth in [8, 12, 16, 20, 24] {
             let action_graph = create_dense_sync_graph(depth, 2);
             let groups = action_graph.group_priorities(action_graph.sort_topological().unwrap());
-            let context = create_job_context().await;
-            let mut dispatcher = JobDispatcher::new(&action_graph, context.clone(), groups);
+            let (context, completed) = create_job_context().await;
+            let mut dispatcher =
+                JobDispatcher::new(&action_graph, context.clone(), groups, completed);
             let mut dispatched = vec![];
 
             while dispatcher.has_queued_jobs() {
@@ -429,8 +426,8 @@ mod tests {
     async fn dispatches_while_jobs_are_running() {
         let action_graph = create_dense_sync_graph(12, 3);
         let groups = action_graph.group_priorities(action_graph.sort_topological().unwrap());
-        let context = create_job_context().await;
-        let mut dispatcher = JobDispatcher::new(&action_graph, context.clone(), groups);
+        let (context, completed) = create_job_context().await;
+        let mut dispatcher = JobDispatcher::new(&action_graph, context.clone(), groups, completed);
         let mut dispatched = vec![];
         let mut running: Vec<NodeIndex> = vec![];
 
@@ -459,8 +456,8 @@ mod tests {
     async fn avoids_rewalking_blocked_sync_subgraphs() {
         let action_graph = create_dense_sync_graph(12, 4);
         let groups = action_graph.group_priorities(action_graph.sort_topological().unwrap());
-        let context = create_job_context().await;
-        let mut dispatcher = JobDispatcher::new(&action_graph, context, groups);
+        let (context, completed) = create_job_context().await;
+        let mut dispatcher = JobDispatcher::new(&action_graph, context, groups, completed);
 
         assert_eq!(dispatcher.next().await, Some(NodeIndex::new(0)));
 

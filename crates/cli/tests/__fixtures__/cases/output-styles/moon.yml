@@ -60,3 +60,11 @@ tasks:
     command: noop
     deps:
       - '~:stream'
+
+  # No `outputStyle`, for testing the `--output-style` option
+  plain:
+    command: node
+    args: ./style.js
+  plainFail:
+    command: node
+    args: ./style.js --fail

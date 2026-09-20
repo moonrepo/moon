@@ -299,17 +299,20 @@ impl<'task> TaskExecutor<'task> {
         let is_primary = context.is_primary_target(&self.task.target);
         let is_only_primary = is_primary && context.primary_targets.len() == 1;
 
-        // When the primary target, always stream the output for a better developer experience.
-        // However, transitive targets can opt into streaming as well. When the
-        // `explicitTaskOutputStyle` experiment is enabled, the configured style is
-        // always applied, even for primary targets.
-        let explicit_style = self
-            .app
-            .workspace_config
-            .experiments
-            .explicit_task_output_style;
+        // A style passed on the command line overrides the task's own option, and
+        // because it was requested explicitly, it also applies to primary targets.
+        let explicit_style = context.output_style.is_some()
+            || self
+                .app
+                .workspace_config
+                .experiments
+                .explicit_task_output_style;
+        let output_style = context.output_style.or(self.task.options.output_style);
 
-        self.stream = match &self.task.options.output_style {
+        // When the primary target, always stream the output for a better developer experience.
+        // However, transitive targets can opt into streaming as well. When the style is
+        // explicit, it is always applied, even for primary targets.
+        self.stream = match output_style {
             Some(output_style) if explicit_style || !is_primary || is_ci => {
                 matches!(output_style, TaskOutputStyle::Stream)
             }

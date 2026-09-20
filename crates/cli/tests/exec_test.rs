@@ -2837,6 +2837,72 @@ mod exec {
         }
 
         #[test]
+        fn option_applies_to_direct_tasks() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:plain")
+                    .arg("--output-style")
+                    .arg("none");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("outputStyles:plain").eval(&output));
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn option_overrides_the_task_option() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:stream")
+                    .arg("--output-style")
+                    .arg("none");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn option_quiets_success_and_shows_failure() {
+            let sandbox = create_cases_sandbox();
+
+            // Passing task, no output
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:plain")
+                    .arg("--output-style")
+                    .arg("buffer-only-failure");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+
+            // Failing task, full output
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:plainFail")
+                    .arg("--output-style")
+                    .arg("buffer-only-failure");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
+        }
+
+        #[test]
         fn stream() {
             let sandbox = create_cases_sandbox();
 

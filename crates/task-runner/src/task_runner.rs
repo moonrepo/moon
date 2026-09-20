@@ -133,7 +133,10 @@ impl<'task> TaskRunner<'task> {
         let is_primary = context.is_primary_target(&self.task.target);
 
         self.report.output_prefix = Some(context.get_target_prefix(&self.task.target));
-        self.report.output_style = if is_primary
+        self.report.output_style = if let Some(output_style) = context.output_style {
+            // Passed on the command line, so it applies to every target
+            Some(output_style)
+        } else if is_primary
             && !self
                 .app_context
                 .workspace_config

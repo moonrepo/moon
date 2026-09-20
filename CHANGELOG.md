@@ -4,6 +4,11 @@
 
 #### 🚀 Updates
 
+- Added a new `--output-style` option to `moon run`, `moon ci`, `moon check`, and `moon exec`, which
+  controls how output is displayed for _all_ tasks, overriding their `options.outputStyle`. Since it
+  is requested explicitly, it also applies to primary targets. For example,
+  `moon ci :test --output-style buffer-only-failure` keeps passing tasks quiet and prints the full
+  output of failing ones.
 - Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
   `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be
   enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.

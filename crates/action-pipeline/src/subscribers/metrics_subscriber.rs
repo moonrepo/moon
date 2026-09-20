@@ -1,8 +1,11 @@
 use crate::event_emitter::{Event, Subscriber};
 use async_trait::async_trait;
-use moon_action::{Action, ActionNode, Operation};
+use moon_action::{Action, ActionNode, Operation, RunTaskNode};
+use moon_task::Task;
+use moon_workspace_graph::WorkspaceGraph;
 use opentelemetry::metrics::{Counter, Histogram, Meter};
 use opentelemetry::{KeyValue, global};
+use std::sync::Arc;
 use std::time::Duration;
 
 const METER_NAME: &str = "moon";
@@ -15,14 +18,17 @@ pub struct MetricsSubscriber {
     action_duration: Histogram<f64>,
     operation_executions: Counter<u64>,
     operation_duration: Histogram<f64>,
+    task_runs: Counter<u64>,
+    task_duration: Histogram<f64>,
+    workspace_graph: Arc<WorkspaceGraph>,
 }
 
 impl MetricsSubscriber {
-    pub fn new() -> Self {
-        Self::from_meter(global::meter(METER_NAME))
+    pub fn new(workspace_graph: Arc<WorkspaceGraph>) -> Self {
+        Self::from_meter(global::meter(METER_NAME), workspace_graph)
     }
 
-    fn from_meter(meter: Meter) -> Self {
+    fn from_meter(meter: Meter, workspace_graph: Arc<WorkspaceGraph>) -> Self {
         Self {
             action_executions: meter
                 .u64_counter("moon.action.executions")
@@ -42,6 +48,16 @@ impl MetricsSubscriber {
                 .with_description("Duration of operations executed within an action")
                 .with_unit("ms")
                 .build(),
+            task_runs: meter
+                .u64_counter("moon.task.runs")
+                .with_description("Number of tasks ran within the pipeline")
+                .build(),
+            task_duration: meter
+                .f64_histogram("moon.task.duration")
+                .with_description("Duration of tasks ran within the pipeline")
+                .with_unit("ms")
+                .build(),
+            workspace_graph,
         }
     }
 
@@ -57,6 +73,14 @@ impl MetricsSubscriber {
         for operation in action.operations.iter() {
             self.record_operation(action, operation);
         }
+
+        // Tasks are the primary unit of work for consumers, so they are also
+        // recorded on their own, with task specific dimensions. This happens
+        // here instead of on `TaskRan`, as that event fires before the action
+        // has finished, and carries no duration, status, or flakiness
+        if let ActionNode::RunTask(node) = &*action.node {
+            self.record_task(action, node);
+        }
     }
 
     fn record_operation(&self, action: &Action, operation: &Operation) {
@@ -71,6 +95,18 @@ impl MetricsSubscriber {
         // Plugin driven operations are nested within their parent operation
         for nested_operation in &operation.operations {
             self.record_operation(action, nested_operation);
+        }
+    }
+
+    fn record_task(&self, action: &Action, node: &RunTaskNode) {
+        // The graph caches tasks by target, so this lookup is cheap
+        let task = self.workspace_graph.get_task(&node.target).ok();
+        let attrs = get_task_attrs(action, node, task.as_deref());
+
+        self.task_runs.add(1, &attrs);
+
+        if let Some(duration) = &action.duration {
+            self.task_duration.record(as_millis(duration), &attrs);
         }
     }
 }
@@ -151,13 +187,44 @@ fn get_operation_attrs(action: &Action, operation: &Operation) -> Vec<KeyValue> 
     attrs
 }
 
+fn get_task_attrs(action: &Action, node: &RunTaskNode, task: Option<&Task>) -> Vec<KeyValue> {
+    let mut attrs = vec![KeyValue::new("target", node.target.to_string())];
+
+    // Grouping by the project or task alone is far more useful than
+    // grouping by the target, especially in large workspaces
+    if let Ok(project_id) = node.target.get_project_id() {
+        attrs.push(KeyValue::new("project", project_id.to_owned()));
+    }
+
+    if let Ok(task_id) = node.target.get_task_id() {
+        attrs.push(KeyValue::new("task", task_id.to_owned()));
+    }
+
+    // A task may run within multiple toolchains, so expose the primary (first)
+    // one for grouping, and the full list for everything else. The list is a
+    // joined string instead of an array value, as metric backends don't handle
+    // array attributes consistently, and the set of combinations in a workspace
+    // is small. This mirrors the `$taskToolchain(s)` tokens
+    if let Some(task) = task
+        && let Some(toolchain) = task.toolchains.first()
+    {
+        attrs.push(KeyValue::new("toolchain", toolchain.to_string()));
+        attrs.push(KeyValue::new("toolchains", task.toolchains.join(",")));
+    }
+
+    attrs.push(KeyValue::new("status", action.status.get_type()));
+    attrs.push(KeyValue::new("flaky", action.flaky));
+
+    attrs
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use moon_action::{ActionStatus, RunTaskNode, SetupToolchainNode, SyncProjectNode};
+    use moon_action::{ActionStatus, SetupToolchainNode, SyncProjectNode};
     use moon_common::Id;
     use moon_config::UnresolvedVersionSpec;
-    use moon_task::Target;
+    use moon_task::{Target, Task};
     use moon_toolchain::ToolchainSpec;
     use opentelemetry::metrics::MeterProvider;
     use opentelemetry_sdk::metrics::data::{AggregatedMetrics, MetricData};
@@ -170,11 +237,12 @@ mod tests {
         action
     }
 
+    fn create_task_node() -> RunTaskNode {
+        RunTaskNode::new(Target::parse("app:build").unwrap())
+    }
+
     fn create_task_action(status: ActionStatus) -> Action {
-        create_action(
-            ActionNode::run_task(RunTaskNode::new(Target::parse("app:build").unwrap())),
-            status,
-        )
+        create_action(ActionNode::run_task(create_task_node()), status)
     }
 
     fn get_attrs<'attr>(attrs: impl IntoIterator<Item = &'attr KeyValue>) -> Vec<(String, String)> {
@@ -273,6 +341,74 @@ mod tests {
         }
 
         #[test]
+        fn includes_the_task_dimensions_for_runs() {
+            let mut action = create_task_action(ActionStatus::Passed);
+            action.flaky = true;
+
+            let task = Task {
+                toolchains: vec![Id::raw("node"), Id::raw("typescript")],
+                ..Task::default()
+            };
+
+            assert_eq!(
+                get_attrs(&get_task_attrs(&action, &create_task_node(), Some(&task))),
+                vec![
+                    ("target".into(), "app:build".into()),
+                    ("project".into(), "app".into()),
+                    ("task".into(), "build".into()),
+                    // Primary toolchain, then all of them
+                    ("toolchain".into(), "node".into()),
+                    ("toolchains".into(), "node,typescript".into()),
+                    ("status".into(), "passed".into()),
+                    ("flaky".into(), "true".into()),
+                ]
+            );
+        }
+
+        #[test]
+        fn repeats_a_single_toolchain_in_the_list() {
+            let action = create_task_action(ActionStatus::Passed);
+            let task = Task {
+                toolchains: vec![Id::raw("system")],
+                ..Task::default()
+            };
+
+            let attrs = get_attrs(&get_task_attrs(&action, &create_task_node(), Some(&task)));
+
+            assert!(attrs.contains(&("toolchain".into(), "system".into())));
+            assert!(attrs.contains(&("toolchains".into(), "system".into())));
+        }
+
+        #[test]
+        fn omits_both_toolchains_when_empty() {
+            let action = create_task_action(ActionStatus::Passed);
+            let task = Task {
+                toolchains: vec![],
+                ..Task::default()
+            };
+
+            let attrs = get_attrs(&get_task_attrs(&action, &create_task_node(), Some(&task)));
+
+            assert!(attrs.iter().all(|(key, _)| !key.starts_with("toolchain")));
+        }
+
+        #[test]
+        fn omits_the_toolchains_for_unknown_tasks() {
+            let action = create_task_action(ActionStatus::Skipped);
+
+            assert_eq!(
+                get_attrs(&get_task_attrs(&action, &create_task_node(), None)),
+                vec![
+                    ("target".into(), "app:build".into()),
+                    ("project".into(), "app".into()),
+                    ("task".into(), "build".into()),
+                    ("status".into(), "skipped".into()),
+                    ("flaky".into(), "false".into()),
+                ]
+            );
+        }
+
+        #[test]
         fn omits_the_target_from_operations() {
             let action = create_task_action(ActionStatus::Passed);
             let mut operation = Operation::hash_generation();
@@ -295,6 +431,16 @@ mod tests {
         /// A data point as `(metric name, attributes, value)`.
         type DataPoint = (String, Vec<(String, String)>, u64);
 
+        /// The SDK doesn't guarantee the order of exported attributes,
+        /// so sort them to compare against
+        fn get_sorted_attrs<'attr>(
+            attrs: impl IntoIterator<Item = &'attr KeyValue>,
+        ) -> Vec<(String, String)> {
+            let mut attrs = get_attrs(attrs);
+            attrs.sort();
+            attrs
+        }
+
         struct TestHarness {
             exporter: InMemoryMetricExporter,
             provider: SdkMeterProvider,
@@ -307,7 +453,10 @@ mod tests {
                 let provider = SdkMeterProvider::builder()
                     .with_periodic_exporter(exporter.clone())
                     .build();
-                let subscriber = MetricsSubscriber::from_meter(provider.meter(METER_NAME));
+                let subscriber = MetricsSubscriber::from_meter(
+                    provider.meter(METER_NAME),
+                    Arc::new(WorkspaceGraph::default()),
+                );
 
                 Self {
                     exporter,
@@ -333,7 +482,7 @@ mod tests {
                                     for point in sum.data_points() {
                                         points.push((
                                             name.clone(),
-                                            get_attrs(point.attributes()),
+                                            get_sorted_attrs(point.attributes()),
                                             point.value(),
                                         ));
                                     }
@@ -342,7 +491,7 @@ mod tests {
                                     for point in histogram.data_points() {
                                         points.push((
                                             name.clone(),
-                                            get_attrs(point.attributes()),
+                                            get_sorted_attrs(point.attributes()),
                                             point.count(),
                                         ));
                                     }
@@ -376,17 +525,22 @@ mod tests {
 
             harness.subscriber.record_action(&action);
 
-            let task_attrs = vec![
+            let action_attrs = vec![
                 ("action".to_owned(), "run-task".to_owned()),
                 ("status".to_owned(), "passed".to_owned()),
                 ("target".to_owned(), "app:build".to_owned()),
             ];
 
+            // Task metrics are asserted separately
             assert_eq!(
-                harness.flush(),
+                harness
+                    .flush()
+                    .into_iter()
+                    .filter(|(name, _, _)| !name.starts_with("moon.task."))
+                    .collect::<Vec<_>>(),
                 vec![
-                    ("moon.action.duration".to_owned(), task_attrs.clone(), 1),
-                    ("moon.action.executions".to_owned(), task_attrs, 1),
+                    ("moon.action.duration".to_owned(), action_attrs.clone(), 1),
+                    ("moon.action.executions".to_owned(), action_attrs, 1),
                     (
                         "moon.operation.duration".to_owned(),
                         vec![
@@ -521,7 +675,55 @@ mod tests {
                 vec![
                     ("moon.action.duration".to_owned(), 1),
                     ("moon.action.executions".to_owned(), 1),
+                    ("moon.task.duration".to_owned(), 1),
+                    ("moon.task.runs".to_owned(), 1),
                 ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+        async fn records_task_runs_for_task_actions() {
+            let harness = TestHarness::new();
+
+            harness
+                .subscriber
+                .record_action(&create_task_action(ActionStatus::Cached));
+
+            let task_attrs = vec![
+                ("flaky".to_owned(), "false".to_owned()),
+                ("project".to_owned(), "app".to_owned()),
+                ("status".to_owned(), "cached".to_owned()),
+                ("target".to_owned(), "app:build".to_owned()),
+                ("task".to_owned(), "build".to_owned()),
+            ];
+
+            assert_eq!(
+                harness
+                    .flush()
+                    .into_iter()
+                    .filter(|(name, _, _)| name.starts_with("moon.task."))
+                    .collect::<Vec<_>>(),
+                vec![
+                    ("moon.task.duration".to_owned(), task_attrs.clone(), 1),
+                    ("moon.task.runs".to_owned(), task_attrs, 1),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread", worker_threads = 1)]
+        async fn doesnt_record_task_runs_for_other_actions() {
+            let harness = TestHarness::new();
+
+            harness.subscriber.record_action(&create_action(
+                ActionNode::sync_workspace(),
+                ActionStatus::Passed,
+            ));
+
+            assert!(
+                harness
+                    .flush()
+                    .into_iter()
+                    .all(|(name, _, _)| !name.starts_with("moon.task."))
             );
         }
 

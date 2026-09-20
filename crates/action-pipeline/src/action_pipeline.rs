@@ -501,7 +501,9 @@ impl ActionPipeline {
                 color::property("--otel"),
             );
 
-            self.emitter.subscribe(MetricsSubscriber::new()).await;
+            self.emitter
+                .subscribe(MetricsSubscriber::new(Arc::clone(&self.workspace_graph)))
+                .await;
         }
 
         // TODO: Disabled for now as we've hit the posthog limit!

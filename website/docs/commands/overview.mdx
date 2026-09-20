@@ -208,20 +208,40 @@ $ moon --otel run app:build
 
 ### Metrics<VersionLabel version="2.6.0" />
 
-Alongside traces, moon records metrics for every action and operation that runs within the pipeline.
-Actions are the units of work in the action graph (running a task, syncing a project, installing
-dependencies, and so on), while operations are the individual steps _within_ an action (generating a
-hash, hydrating outputs from the cache, executing the command, and so on).
+Alongside traces, moon records metrics for every task, action, and operation that runs within the
+pipeline. Actions are the units of work in the action graph (running a task, syncing a project,
+installing dependencies, and so on), while operations are the individual steps _within_ an action
+(generating a hash, hydrating outputs from the cache, executing the command, and so on). Tasks are
+recorded on their own as well, since they're the unit of work that matters most.
 
 | Metric                      | Instrument | Description                                     |
 | :-------------------------- | :--------- | :---------------------------------------------- |
+| `moon.task.runs`            | Counter    | Number of tasks ran within the pipeline.        |
+| `moon.task.duration`        | Histogram  | Duration of tasks in milliseconds.              |
 | `moon.action.executions`    | Counter    | Number of actions executed within the pipeline. |
 | `moon.action.duration`      | Histogram  | Duration of actions in milliseconds.            |
 | `moon.operation.executions` | Counter    | Number of operations executed within an action. |
 | `moon.operation.duration`   | Histogram  | Duration of operations in milliseconds.         |
 
-Action metrics are recorded with the following attributes, allowing them to be grouped and filtered
-by what the action operated on.
+Task metrics are recorded with the following attributes. These are the metrics to reach for when
+building dashboards, as they can be grouped by an individual target, by a project (how expensive is
+this project?), or by a task identifier (how long does `build` take across the workspace?).
+
+- `target` - Target that was ran, like `app:build`.
+- `project` - Project the task belongs to.
+- `task` - Identifier of the task.
+- `toolchain` - Primary (first) toolchain the task ran in, if any.
+- `toolchains` - All toolchains the task ran in, comma separated, like `node,typescript`. Mirrors
+  the `$taskToolchains` token. This is a joined string rather than an array value, as metric
+  backends don't handle array attributes consistently. To aggregate by an individual toolchain,
+  group by `toolchain`, or match against `toolchains` with a contains filter.
+- `status` - Final status of the task, like `passed`, `failed`, `cached`, or `cached-from-remote`.
+  Cache hit rates can be derived by comparing the cached statuses against the total.
+- `flaky` - Whether the task passed only after being retried.
+
+Action metrics cover the pipeline as a whole, and are recorded with the following attributes. For
+`run-task` actions, the duration is the same measurement as `moon.task.duration`, only with fewer
+dimensions to group by.
 
 - `action` - Kind of action, like `run-task` or `sync-project`.
 - `status` - Final status of the action, like `passed`, `failed`, or `cached-from-remote`.
@@ -241,9 +261,16 @@ cardinality of the metrics. Traces provide this level of detail instead.
 
 :::caution
 
-Since the `target` attribute is recorded for every task that runs, the cardinality of
-`moon.action.*` metrics scales with the number of tasks in your workspace. If this is a problem for
-your observability backend, drop or aggregate away the attribute within your OTEL collector.
+Since the `target` attribute is recorded for every task that runs, the cardinality of `moon.task.*`
+and `moon.action.*` metrics scales with the number of tasks in your workspace. If this is a problem
+for your observability backend, drop or aggregate away the attribute within your OTEL collector.
+
+:::
+
+:::info
+
+Persistent tasks never complete on their own, so they are not recorded. Tasks that were skipped
+because a dependency failed _are_ recorded, with a `skipped` status.
 
 :::
 

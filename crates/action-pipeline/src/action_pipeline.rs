@@ -18,7 +18,7 @@ use moon_console::Level;
 use moon_daemon_client::DaemonClient;
 use moon_process::{ProcessRegistry, SignalType};
 use moon_workspace_graph::WorkspaceGraph;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -180,7 +180,7 @@ impl ActionPipeline {
             abort_token: abort_token.clone(),
             bail: self.bail,
             cancel_token: cancel_token.clone(),
-            completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
+            completed_queue: Arc::new(RwLock::new(vec![])),
             daemon_client: self.daemon_client.clone(),
             emitter: Arc::clone(&self.emitter),
             result_sender: sender,

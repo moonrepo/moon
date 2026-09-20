@@ -3,7 +3,7 @@ use moon_action::Action;
 use moon_daemon_client::DaemonClient;
 use moon_workspace_graph::WorkspaceGraph;
 use petgraph::graph::NodeIndex;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use std::sync::Arc;
 use tokio::sync::{RwLock, Semaphore, mpsc::Sender};
 use tokio_util::sync::CancellationToken;
@@ -19,8 +19,9 @@ pub struct JobContext {
     /// Receives cancel/shutdown signals
     pub cancel_token: CancellationToken,
 
-    /// Completed jobs (used by the dispatcher)
-    pub completed_jobs: Arc<RwLock<FxHashSet<NodeIndex>>>,
+    /// Jobs that have completed since the last dispatch. Drained by the
+    /// dispatcher, which tracks the completions itself
+    pub completed_queue: Arc<RwLock<Vec<NodeIndex>>>,
 
     /// Optional daemon client for use within actions.
     pub daemon_client: Option<DaemonClient>,
@@ -48,7 +49,7 @@ impl JobContext {
 
     pub async fn mark_completed(&self, index: NodeIndex) {
         self.running_jobs.write().await.remove(&index);
-        self.completed_jobs.write().await.insert(index);
+        self.completed_queue.write().await.push(index);
     }
 
     /// Whether the action should abort the entire pipeline.

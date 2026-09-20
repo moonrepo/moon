@@ -32,6 +32,9 @@
 
 #### ⚙️ Internal
 
+- Improved the performance of the action pipeline's job dispatcher by 10-15x. Dependency
+  relationships are now extracted from the action graph once up front, and completed jobs unblock
+  their dependents incrementally, instead of re-traversing the graph for every dispatch check.
 - Hash manifests are now stored as blobs in the local content-addressable cache, instead of as
   individual files in `.moon/cache/hashes`. The local cache backend is now always enabled, as it
   backs these manifests; storing task _outputs_ in it remains gated by the `cas_outputs_cache`

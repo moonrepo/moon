@@ -12,6 +12,10 @@
 - Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
   `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be
   enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
+- Changed persistent tasks to run when they are processed in the action graph, instead of being
+  batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
+  alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on
+  it. Non-persistent tasks are still not allowed to depend on persistent tasks.
 
 #### 🐞 Fixes
 

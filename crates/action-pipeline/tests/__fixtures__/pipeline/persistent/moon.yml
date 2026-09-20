@@ -1,0 +1,21 @@
+tasks:
+  # Emulates a long-running server by signaling that it has started,
+  # and then waiting around for a bit
+  server:
+    command: 'node ./signal.mjs write started'
+    options:
+      persistent: true
+
+  # Only completes once the persistent task above is running, which
+  # requires both to run in parallel
+  client:
+    command: 'node ./signal.mjs wait started'
+
+  # Like the above, but is persistent itself, and depends on the
+  # persistent task, which must not block it from running
+  persistent-client:
+    command: 'node ./signal.mjs wait started'
+    deps:
+      - 'server'
+    options:
+      persistent: true

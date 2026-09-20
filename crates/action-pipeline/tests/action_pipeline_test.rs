@@ -1,13 +1,21 @@
-use moon_action::Action;
+use moon_action::{Action, ActionStatus};
 use moon_action_graph::RunRequirements;
 use moon_common::Id;
 use moon_task::Target;
 use moon_test_utils::WorkspaceMocker;
 use moon_toolchain::ToolchainSpec;
+use rustc_hash::FxHashMap;
 use starbase_sandbox::{Sandbox, create_sandbox};
 
 fn get_labels(actions: Vec<Action>) -> Vec<String> {
     actions.into_iter().map(|action| action.label).collect()
+}
+
+fn get_statuses(actions: Vec<Action>) -> FxHashMap<String, ActionStatus> {
+    actions
+        .into_iter()
+        .map(|action| (action.label, action.status))
+        .collect()
 }
 
 // Provisions a `SetupEnvironment -> InstallDependencies` chain for the
@@ -235,6 +243,83 @@ mod action_pipeline {
                     "RunTask(priority:high-low-base)",
                     "RunTask(priority:high-low)"
                 ]
+            );
+        }
+    }
+
+    mod persistent {
+        use super::*;
+
+        // Persistent tasks are dispatched topologically like any other task,
+        // instead of being batched and ran at the end of the pipeline, so that
+        // other tasks can run alongside them
+        #[tokio::test(flavor = "multi_thread")]
+        async fn runs_in_parallel_with_other_tasks() {
+            let sandbox = create_sandbox("pipeline");
+            let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
+
+            let reqs = RunRequirements::default();
+            let mut graph = mocker.create_action_graph().await;
+            graph
+                .run_task_by_target(&Target::parse("persistent:server").unwrap(), &reqs)
+                .await
+                .unwrap();
+            graph
+                .run_task_by_target(&Target::parse("persistent:client").unwrap(), &reqs)
+                .await
+                .unwrap();
+
+            let (context, graph) = graph.build();
+            let actions = mocker
+                .mock_action_pipeline()
+                .await
+                .run_with_context(graph, context)
+                .await
+                .unwrap();
+            let statuses = get_statuses(actions);
+            assert_eq!(
+                statuses.get("RunPersistentTask(persistent:server)"),
+                Some(&ActionStatus::Passed)
+            );
+            assert_eq!(
+                statuses.get("RunTask(persistent:client)"),
+                Some(&ActionStatus::Passed)
+            );
+        }
+
+        // A persistent task never completes, so it must not block the
+        // persistent tasks that depend on it
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_block_persistent_dependents() {
+            let sandbox = create_sandbox("pipeline");
+            let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
+
+            let reqs = RunRequirements::default();
+            let mut graph = mocker.create_action_graph().await;
+            graph
+                .run_task_by_target(
+                    &Target::parse("persistent:persistent-client").unwrap(),
+                    &reqs,
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = graph.build();
+            let actions = mocker
+                .mock_action_pipeline()
+                .await
+                .run_with_context(graph, context)
+                .await
+                .unwrap();
+            let statuses = get_statuses(actions);
+
+            assert_eq!(
+                statuses.get("RunPersistentTask(persistent:server)"),
+                Some(&ActionStatus::Passed)
+            );
+            assert_eq!(
+                statuses.get("RunPersistentTask(persistent:persistent-client)"),
+                Some(&ActionStatus::Passed)
             );
         }
     }

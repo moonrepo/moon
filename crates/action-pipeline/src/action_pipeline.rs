@@ -18,7 +18,8 @@ use moon_console::Level;
 use moon_daemon_client::DaemonClient;
 use moon_process::{ProcessRegistry, SignalType};
 use moon_workspace_graph::WorkspaceGraph;
-use rustc_hash::{FxHashMap, FxHashSet};
+use petgraph::graph::NodeIndex;
+use rustc_hash::FxHashMap;
 use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -45,6 +46,28 @@ pub struct ActionPipeline {
     daemon_client: Option<DaemonClient>,
     emitter: Arc<EventEmitter>,
     workspace_graph: Arc<WorkspaceGraph>,
+}
+
+/// Handles of all jobs currently dispatched in the pipeline.
+#[derive(Default)]
+struct JobHandles {
+    /// Handles for non-persistent jobs, which eventually complete.
+    standard: JoinSet<()>,
+
+    /// Handles for persistent jobs, which never complete on their own,
+    /// and as such, must never be awaited alongside standard jobs.
+    persistent: JoinSet<()>,
+}
+
+impl JobHandles {
+    fn is_empty(&self) -> bool {
+        self.standard.is_empty() && self.persistent.is_empty()
+    }
+
+    async fn shutdown(&mut self) {
+        self.standard.shutdown().await;
+        self.persistent.shutdown().await;
+    }
 }
 
 impl ActionPipeline {
@@ -150,6 +173,9 @@ impl ActionPipeline {
         // This aggregates results from jobs
         let (sender, mut receiver) = mpsc::channel::<Action>(total_actions.max(1));
 
+        // This aggregates completed jobs for the dispatcher
+        let (completed_sender, completed_receiver) = mpsc::unbounded_channel::<NodeIndex>();
+
         // Create job context
         let abort_token = CancellationToken::new();
         let cancel_token = CancellationToken::new();
@@ -158,7 +184,7 @@ impl ActionPipeline {
             abort_token: abort_token.clone(),
             bail: self.bail,
             cancel_token: cancel_token.clone(),
-            completed_jobs: Arc::new(RwLock::new(FxHashSet::default())),
+            completed_queue: completed_sender,
             daemon_client: self.daemon_client.clone(),
             emitter: Arc::clone(&self.emitter),
             result_sender: sender,
@@ -171,7 +197,8 @@ impl ActionPipeline {
         let signal_handle = self.monitor_signals(cancel_token.clone());
 
         // Dispatch jobs from the graph to run actions
-        let queue_handle = self.dispatch_jobs(action_graph, job_context.clone())?;
+        let queue_handle =
+            self.dispatch_jobs(action_graph, job_context.clone(), completed_receiver)?;
 
         // Wait and receive all results coming through
         debug!("Waiting for jobs to return results");
@@ -262,7 +289,8 @@ impl ActionPipeline {
         &self,
         action_graph: ActionGraph,
         job_context: JobContext,
-    ) -> miette::Result<JoinHandle<JoinSet<()>>> {
+        completed_queue: mpsc::UnboundedReceiver<NodeIndex>,
+    ) -> miette::Result<JoinHandle<JobHandles>> {
         let node_indices = action_graph.sort_topological()?;
         let node_count = node_indices.len();
         let priority_groups = action_graph.group_priorities(node_indices);
@@ -272,17 +300,18 @@ impl ActionPipeline {
         debug!(total_jobs = node_count, "Dispatching jobs in the pipeline");
 
         Ok(tokio::spawn(Box::pin(async move {
-            let mut dispatcher =
-                JobDispatcher::new(&action_graph, job_context.clone(), priority_groups);
-            let mut persistent_indices = vec![];
-            let mut job_handles = JoinSet::new();
+            let mut dispatcher = JobDispatcher::new(
+                &action_graph,
+                job_context.clone(),
+                priority_groups,
+                completed_queue,
+            );
+            let mut job_handles = JobHandles::default();
 
             while dispatcher.has_queued_jobs() {
                 // If the pipeline was aborted or cancelled (signal),
                 // loop through and abort all currently running handles
                 if job_context.is_aborted_or_cancelled() {
-                    // Return instead of break, so that we avoid
-                    // running persistent tasks below
                     return job_handles;
                 }
 
@@ -291,7 +320,7 @@ impl ActionPipeline {
                 // awaiting the current job handles. So to move this forward, only
                 // advance 1 handle at a time!
                 let Some(node_index) = dispatcher.next().await else {
-                    job_handles.join_next().await;
+                    job_handles.standard.join_next().await;
 
                     continue;
                 };
@@ -309,22 +338,39 @@ impl ActionPipeline {
                     continue;
                 };
 
-                // Run persistent actions later, so only grab the index for now
+                // Persistent actions are dispatched topologically like any other
+                // action, but they never complete on their own, so they require
+                // some special handling
                 if node.is_persistent() {
-                    debug!(
-                        index = node_index.index(),
-                        "Marking action as persistent, will defer dispatch",
-                    );
+                    debug!(index = node_index.index(), "Dispatching persistent job");
 
-                    // Must mark as completed otherwise the loop hangs
+                    // Mark as completed immediately, otherwise the loop hangs, and
+                    // dependents (which must also be persistent) would never dispatch
                     job_context.mark_completed(node_index).await;
-                    persistent_indices.push(node_index);
+
+                    // Set the state early since it "never finishes", otherwise the
+                    // runner will error about a missing hash if it's a dependency
+                    // of another persistent task
+                    if let ActionNode::RunTask(inner) = node {
+                        action_context
+                            .set_target_state(inner.target.clone(), TargetState::Passthrough);
+                    }
+
+                    // Dispatch without a permit, otherwise these long-running
+                    // actions would consume the entire concurrency pool
+                    job_handles.persistent.spawn(dispatch_job(
+                        node.to_owned(),
+                        node_index.index(),
+                        job_context.clone(),
+                        Arc::clone(&app_context),
+                        Arc::clone(&action_context),
+                    ));
 
                     continue;
                 }
 
                 // Otherwise run the action topologically
-                job_handles.spawn(dispatch_job_with_permit(
+                job_handles.standard.spawn(dispatch_job_with_permit(
                     node.to_owned(),
                     node_index.index(),
                     job_context.clone(),
@@ -332,54 +378,18 @@ impl ActionPipeline {
                     Arc::clone(&action_context),
                 ));
 
-                // Run this in isolation by exhausting the current list of handles
+                // Run this in isolation by exhausting the current list of handles.
+                // Persistent handles are excluded as they never complete!
                 if node.is_interactive()
-                    && exhaust_job_handles(&mut job_handles, &job_context).await
+                    && exhaust_job_handles(&mut job_handles.standard, &job_context).await
                 {
                     return job_handles;
                 }
             }
 
-            // Ensure all non-persistent actions have finished
-            if exhaust_job_handles(&mut job_handles, &job_context).await {
-                return job_handles;
-            }
-
-            // Then run all persistent actions in parallel
-            if persistent_indices.is_empty() {
-                return job_handles;
-            }
-
-            debug!(
-                indices = ?persistent_indices,
-                "Running {} persistent actions",
-                persistent_indices.len()
-            );
-
-            persistent_indices
-                .into_iter()
-                .flat_map(|node_index| {
-                    let node = action_graph.get_node_from_index(&node_index)?;
-
-                    // Since the task is persistent, set the state early since
-                    // it "never finishes", otherwise the runner will error about
-                    // a missing hash if it's a dependency of another persistent task
-                    if let ActionNode::RunTask(inner) = node {
-                        action_context
-                            .set_target_state(inner.target.clone(), TargetState::Passthrough);
-                    }
-
-                    Some((node.to_owned(), node_index.index()))
-                })
-                .for_each(|(node, node_index)| {
-                    job_handles.spawn(dispatch_job(
-                        node,
-                        node_index,
-                        job_context.clone(),
-                        Arc::clone(&app_context),
-                        Arc::clone(&action_context),
-                    ));
-                });
+            // Ensure all non-persistent actions have finished, while allowing
+            // persistent actions to continue running in the background
+            exhaust_job_handles(&mut job_handles.standard, &job_context).await;
 
             job_handles
         })))

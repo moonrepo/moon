@@ -88,12 +88,17 @@ Tasks that never complete, like servers and watchers, are known as persistent ta
 tasks are typically problematic when it comes to dependency graphs, because if they run in the
 middle of the graph, subsequent tasks will never run because the persistent task never completes!
 
-However in moon, this is a non-issue, as we collect all persistent tasks within the action graph and
-run them _last as a batch_. This is perfect for a few reasons:
+However in moon, this is a non-issue, as persistent tasks are handled uniquely in the pipeline. They
+are ran when they are processed in the action graph, like any other task, but they never block the
+actions that come after them. This is perfect for a few reasons:
 
 - All persistent tasks are ran in parallel, so they don't block each other.
 - Running both the backend API and frontend webapp in parallel is a breeze.
+- Persistent tasks run alongside other tasks, instead of waiting for the entire graph to finish.
 - Dependencies of persistent tasks are guaranteed to have ran and completed.
+
+Furthermore, a non-persistent task _cannot_ depend on a persistent task, as it would never run, and
+we error during task building when this happens.
 
 To mark a task as persistent, enable the [`options.persistent`](../config/project#persistent)
 setting.

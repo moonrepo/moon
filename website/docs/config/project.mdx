@@ -1634,8 +1634,9 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskOptionsConfig#persistent" />
 
 Marks the task as persistent (continuously running). [Persistent tasks](../concepts/task#persistent)
-are handled differently than non-persistent tasks in the action graph. When running a target, all
-persistent tasks are _ran last_ and _in parallel_, after all their dependencies have completed.
+are handled differently than non-persistent tasks in the action graph. When running a target,
+persistent tasks are ran _in parallel_ with other tasks, after all their dependencies have
+completed, and they never block the tasks that come after them.
 
 This is extremely useful for running a server (or a watcher) in the background while other tasks are
 running.
@@ -1697,6 +1698,10 @@ Whether to run the task's direct [`deps`](#deps) in parallel or serial (in order
 When disabled, each dependency runs after the previous one completes. This ordering applies to a
 dependency's entire dependency subtree, so transitive dependencies (dependencies of dependencies)
 also run after the preceding direct dependency — not only the direct dependency itself.
+
+[Persistent dependencies](../concepts/task#persistent) never complete, so they are skipped when
+ordering the dependencies that follow them. Those dependencies are instead ordered against the
+previous dependency that does complete, while the persistent one starts when it is reached.
 
 ```yaml title="moon.yml" {8}
 tasks:

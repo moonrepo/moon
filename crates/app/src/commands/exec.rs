@@ -601,6 +601,7 @@ impl ExecWorkflow {
                 .collect::<Vec<_>>(),
         );
 
+        action_context.output_style = self.args.output_style.map(|style| style.to_output_style());
         action_context.passthrough_args = self.args.passthrough.clone();
 
         let results =

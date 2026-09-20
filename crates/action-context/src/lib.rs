@@ -1,5 +1,6 @@
 use moon_affected::Affected;
 use moon_common::path::WorkspaceRelativePathBuf;
+use moon_config::TaskOutputStyle;
 use moon_target::{Target, TargetLocator};
 use rustc_hash::{FxHashMap, FxHashSet};
 use scc::hash_map::Entry;
@@ -57,6 +58,11 @@ pub struct ActionContext {
     /// Dependency edges that were intentionally ignored by graph options.
     #[serde(default, skip_serializing_if = "FxHashMap::is_empty")]
     pub ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
+
+    /// Output style passed on the command line (via `--output-style`), which
+    /// overrides the `outputStyle` option of every task. Because it was
+    /// requested explicitly, it also applies to primary targets.
+    pub output_style: Option<TaskOutputStyle>,
 
     /// Additional arguments passed after `--` to passthrough.
     pub passthrough_args: Vec<String>,

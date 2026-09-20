@@ -10,7 +10,7 @@ use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, watch};
 use tokio::task::{AbortHandle, JoinHandle, JoinSet};
 use tracing::{debug, warn};
 
@@ -19,6 +19,11 @@ use tracing::{debug, warn};
 /// slower than just running the task would have been; stragglers past this are
 /// aborted and reported, and simply get re-uploaded on the next run.
 const BACKGROUND_FLUSH_TIMEOUT: Duration = Duration::from_secs(300);
+
+/// Upper bound on how long a read or write waits for backends that are still
+/// connecting. Past this, unconnected backends are skipped, as a cache miss
+/// must never make a run slower than running the task would have been.
+const CONNECTION_WAIT_TIMEOUT: Duration = Duration::from_secs(30);
 
 pub struct ManifestSource {
     pub backend: BoxedStorageBackend,
@@ -68,9 +73,27 @@ impl Default for StorageOptions {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum ConnectionState {
+    NotStarted,
+    Connecting,
+    Finished,
+}
+
+/// Marks the connection as finished when dropped, so waiters are released
+/// even if connecting panics or its task is aborted.
+struct FinishConnection<'a>(&'a watch::Sender<ConnectionState>);
+
+impl Drop for FinishConnection<'_> {
+    fn drop(&mut self) {
+        self.0.send_replace(ConnectionState::Finished);
+    }
+}
+
 #[derive(Debug)]
 pub struct Storage {
     background_tasks: Arc<Mutex<Vec<JoinHandle<miette::Result<()>>>>>,
+    connection: Arc<watch::Sender<ConnectionState>>,
     local_backends: Vec<BoxedStorageBackend>,
     remote_backends: Vec<BoxedStorageBackend>,
 
@@ -82,6 +105,7 @@ impl Storage {
     pub fn new(context: CacheContext) -> Self {
         Self {
             background_tasks: Arc::new(Mutex::new(vec![])),
+            connection: Arc::new(watch::Sender::new(ConnectionState::NotStarted)),
             local_backends: vec![],
             remote_backends: vec![],
             context,
@@ -92,6 +116,7 @@ impl Storage {
     pub fn with_options(&self, options: StorageOptions) -> Self {
         Self {
             background_tasks: Arc::clone(&self.background_tasks),
+            connection: Arc::clone(&self.connection),
             local_backends: self.local_backends.clone(),
             remote_backends: self.remote_backends.clone(),
             context: self.context.clone(),
@@ -107,7 +132,22 @@ impl Storage {
         self.remote_backends.push(Arc::new(backend));
     }
 
+    /// Connect to the backends in the background. The connection is marked as
+    /// in progress before this returns, so any read or write that happens
+    /// before it completes waits for it, instead of skipping backends that
+    /// are not connected yet.
+    pub fn spawn_connect_backends(&self) {
+        self.connection.send_replace(ConnectionState::Connecting);
+
+        let storage = self.with_options(self.options.clone());
+
+        tokio::spawn(async move { storage.connect_backends().await });
+    }
+
     pub async fn connect_backends(&self) -> miette::Result<()> {
+        self.connection.send_replace(ConnectionState::Connecting);
+
+        let _finish = FinishConnection(&self.connection);
         let mut set = JoinSet::new();
 
         for backend in self.get_backends() {
@@ -134,6 +174,26 @@ impl Storage {
         }
 
         Ok(())
+    }
+
+    async fn wait_for_connection(&self) {
+        let mut receiver = self.connection.subscribe();
+
+        if *receiver.borrow() == ConnectionState::Connecting {
+            debug!("Waiting for storage backends to connect");
+
+            let wait = receiver.wait_for(|state| *state != ConnectionState::Connecting);
+
+            if tokio::time::timeout(CONNECTION_WAIT_TIMEOUT, wait)
+                .await
+                .is_err()
+            {
+                warn!(
+                    "Storage backends did not connect within {}s, skipping unconnected backends",
+                    CONNECTION_WAIT_TIMEOUT.as_secs()
+                );
+            }
+        }
     }
 
     pub fn get_backends(&self) -> Vec<&BoxedStorageBackend> {
@@ -222,6 +282,8 @@ impl Storage {
     }
 
     pub async fn retrieve_blobs(&self, digests: Vec<Digest>) -> miette::Result<Vec<BlobOutput>> {
+        self.wait_for_connection().await;
+
         for backend in self.get_backends() {
             if !backend.is_readable() {
                 continue;
@@ -244,6 +306,8 @@ impl Storage {
     }
 
     pub async fn store_blobs(&self, blobs: Vec<BlobInput>) -> miette::Result<()> {
+        self.wait_for_connection().await;
+
         let mut background_tasks = self.background_tasks.lock().await;
 
         for backend in self.get_backends() {
@@ -267,6 +331,8 @@ impl Storage {
 
     pub async fn load_manifest(&self, digest: &Digest) -> miette::Result<Option<ManifestSource>> {
         debug!(hash = digest.hash.as_str(), "Checking for a cache manifest");
+
+        self.wait_for_connection().await;
 
         for backend in self.get_backends() {
             if !backend.is_readable() {
@@ -304,6 +370,8 @@ impl Storage {
         digest: &Digest,
         manifest: Manifest,
     ) -> miette::Result<()> {
+        self.wait_for_connection().await;
+
         let mut background_tasks = self.background_tasks.lock().await;
 
         debug!(
@@ -363,6 +431,8 @@ impl Storage {
         digest: &Digest,
         manifest_source: ManifestSource,
     ) -> miette::Result<Option<Manifest>> {
+        self.wait_for_connection().await;
+
         let ManifestSource {
             mut manifest,
             backend: original_backend,

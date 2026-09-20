@@ -9,6 +9,7 @@ use moon_action::{ActionNode, ActionStatus, Operation, OperationList, OperationM
 use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::{CacheItem, StorageOptions};
+use moon_common::format_error_chain;
 use moon_console::TaskReportItem;
 use moon_daemon_client::DaemonClient;
 use moon_hash::{ContentHash, ContentHasher};
@@ -19,7 +20,7 @@ use moon_task_hasher::*;
 use moon_time::{is_stale, now_millis};
 use starbase_utils::fs;
 use std::sync::Arc;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 
 #[derive(Debug)]
 pub struct TaskRunResult {
@@ -305,8 +306,8 @@ impl<'task> TaskRunner<'task> {
 
         // Then check the storage backends, but don't bubble up errors,
         // just treat them as cache misses
-        if self.state.digest.is_valid()
-            && let Ok(Some(source)) = self
+        if self.state.digest.is_valid() {
+            match self
                 .app_context
                 .cache_engine
                 .storage
@@ -317,8 +318,20 @@ impl<'task> TaskRunner<'task> {
                 })
                 .load_manifest(&self.state.digest)
                 .await
-        {
-            return Ok(Some(HydrateFrom::Storage(Box::new(source))));
+            {
+                Ok(Some(source)) => {
+                    return Ok(Some(HydrateFrom::Storage(Box::new(source))));
+                }
+                Ok(None) => {}
+                Err(error) => {
+                    warn!(
+                        task_target = self.task.target.as_str(),
+                        hash,
+                        error = format_error_chain(&error),
+                        "Failed to check storage backends for a cached manifest, treating as a cache miss"
+                    );
+                }
+            }
         }
 
         debug!(

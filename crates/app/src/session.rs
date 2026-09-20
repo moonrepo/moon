@@ -499,7 +499,14 @@ impl AppSession for MoonSession {
 
         // Preload components
         if self.requires_workspace_configured() {
-            let _ = self.get_cache_engine()?;
+            let cache_engine = self.get_cache_engine()?;
+
+            // Connect to the storage backends as early as possible, but only for
+            // commands that will actually read/write to it. Reads and writes wait
+            // for the connection to finish
+            if self.is_pipeline_command() || self.is_daemon_server_command() {
+                cache_engine.storage.spawn_connect_backends();
+            }
         }
 
         Ok(None)
@@ -507,12 +514,6 @@ impl AppSession for MoonSession {
 
     // This function runs in an async task (background thread)
     async fn execute(&mut self) -> AppResult<Self::Error> {
-        // Connect to the storage backends as early as possible,
-        // but only for commands that will actually read/write to it
-        if self.is_pipeline_command() || self.is_daemon_server_command() {
-            self.get_cache_engine()?.storage.connect_backends().await?;
-        }
-
         // Check for a new version and log to the console
         if self.is_telemetry_enabled() && self.is_pipeline_command() {
             execute::check_for_new_version(&self, &self.toolchains_config.moon.manifest_url)

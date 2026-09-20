@@ -35,6 +35,22 @@ pub enum ActionStatus {
     Aborted,
 }
 
+impl ActionStatus {
+    pub fn get_type(&self) -> &'static str {
+        match self {
+            ActionStatus::Aborted => "aborted",
+            ActionStatus::Cached => "cached",
+            ActionStatus::CachedFromRemote => "cached-from-remote",
+            ActionStatus::Failed => "failed",
+            ActionStatus::Invalid => "invalid",
+            ActionStatus::Passed => "passed",
+            ActionStatus::Running => "running",
+            ActionStatus::Skipped => "skipped",
+            ActionStatus::TimedOut => "timed-out",
+        }
+    }
+}
+
 #[derive(Debug, Default, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Action {
@@ -167,7 +183,7 @@ impl Action {
             .and_then(|output| output.exit_code)
     }
 
-    pub fn get_prefix(&self) -> &str {
+    pub fn get_prefix(&self) -> &'static str {
         match &*self.node {
             ActionNode::None => "unknown",
             ActionNode::InstallDependencies(_) => "install-dependencies",

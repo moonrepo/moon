@@ -4,6 +4,11 @@
 
 #### 🚀 Updates
 
+- Added OpenTelemetry metrics for the action pipeline, which are exported when `--otel` (or
+  `MOON_OTEL`) is enabled. Records `moon.action.executions` and `moon.action.duration` for every
+  action that runs, and `moon.operation.executions` and `moon.operation.duration` for every
+  operation within those actions. Actions are labeled with the target, project, or toolchain that
+  they operated on.
 - Added a new `--output-style` option to `moon run`, `moon ci`, `moon check`, and `moon exec`, which
   controls how output is displayed for _all_ tasks, overriding their `options.outputStyle`. Since it
   is requested explicitly, it also applies to primary targets. For example,

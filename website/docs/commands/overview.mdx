@@ -206,18 +206,53 @@ $ export OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4317"
 $ moon --otel run app:build
 ```
 
+### Metrics<VersionLabel version="2.6.0" />
+
+Alongside traces, moon records metrics for every action and operation that runs within the pipeline.
+Actions are the units of work in the action graph (running a task, syncing a project, installing
+dependencies, and so on), while operations are the individual steps _within_ an action (generating a
+hash, hydrating outputs from the cache, executing the command, and so on).
+
+| Metric                      | Instrument | Description                                     |
+| :-------------------------- | :--------- | :---------------------------------------------- |
+| `moon.action.executions`    | Counter    | Number of actions executed within the pipeline. |
+| `moon.action.duration`      | Histogram  | Duration of actions in milliseconds.            |
+| `moon.operation.executions` | Counter    | Number of operations executed within an action. |
+| `moon.operation.duration`   | Histogram  | Duration of operations in milliseconds.         |
+
+Action metrics are recorded with the following attributes, allowing them to be grouped and filtered
+by what the action operated on.
+
+- `action` - Kind of action, like `run-task` or `sync-project`.
+- `status` - Final status of the action, like `passed`, `failed`, or `cached-from-remote`.
+- `target` - Target that was ran, for `run-task` actions only.
+- `project` - Project that was synced, for `sync-project` actions only.
+- `toolchain` - Toolchain that was setup, for toolchain based actions only.
+
+Operation metrics are recorded with these attributes instead. The target, project, and toolchain are
+purposefully _not_ recorded here, as multiplying them by every operation would explode the
+cardinality of the metrics. Traces provide this level of detail instead.
+
+- `action` - Kind of action the operation ran within.
+- `operation` - Kind of operation, like `hash-generation` or `task-execution`.
+- `status` - Final status of the operation.
+- `id` - Identifier of the operation, for setup and sync operations only.
+- `plugin` - Toolchain plugin that provided the operation, if applicable.
+
+:::caution
+
+Since the `target` attribute is recorded for every task that runs, the cardinality of
+`moon.action.*` metrics scales with the number of tasks in your workspace. If this is a problem for
+your observability backend, drop or aggregate away the attribute within your OTEL collector.
+
+:::
+
 ### Disabling signals
 
 The standard environment variables can also force signals off, even when the options above have
-enabled them. `OTEL_SDK_DISABLED=true` disables all signals, while `OTEL_TRACES_EXPORTER=none` and
-`OTEL_LOGS_EXPORTER=none` disable an individual signal. These variables can only disable a signal,
-never enable one.
-
-:::info
-
-moon does not record OTEL metrics at this time, only traces and logs.
-
-:::
+enabled them. `OTEL_SDK_DISABLED=true` disables all signals, while `OTEL_TRACES_EXPORTER=none`,
+`OTEL_METRICS_EXPORTER=none`, and `OTEL_LOGS_EXPORTER=none` disable an individual signal. These
+variables can only disable a signal, never enable one.
 
 ## Profiling<VersionLabel version="1.26.0" />
 

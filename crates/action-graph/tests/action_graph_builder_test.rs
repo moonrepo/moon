@@ -3083,6 +3083,31 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn serial_deps_arent_ordered_after_persistent_deps() {
+            let sandbox = create_sandbox("serial-persistent");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            // dev => [first-build, server, last-build] (serial), where server is
+            // persistent. A persistent action is marked as completed the moment
+            // it is dispatched, so ordering last-build after it would run it
+            // immediately anyways. Instead, the snapshot must contain a
+            // `last-build -> first-build` edge, and no `last-build -> server`
+            let task = wg.get_task_from_project("proj", "dev").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            assert_snapshot!(graph.to_dot());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn serial_subtree_doesnt_escape_via_shared_node() {
             let sandbox = create_sandbox("serial-shared");
             let mut container = ActionGraphContainer::new(sandbox.path());

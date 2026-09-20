@@ -19,3 +19,45 @@ tasks:
       - 'server'
     options:
       persistent: true
+
+  # Takes a moment before signaling, so that dependents that don't
+  # wait for it will fail their check
+  slow-build:
+    command: 'node ./signal.mjs write built 500'
+
+  # Persistent tasks must still wait for their own dependencies
+  server-with-deps:
+    command: 'node ./signal.mjs check built'
+    deps:
+      - 'slow-build'
+    options:
+      persistent: true
+
+  # Serial dependencies where one of them is persistent, which must
+  # not deadlock the tasks that are ordered after it
+  serial-server:
+    command: 'node ./signal.mjs check built'
+    deps:
+      - 'server'
+      - 'slow-build'
+    options:
+      persistent: true
+      runDepsInParallel: false
+
+  # A serial chain where a persistent dependency sits between two
+  # non-persistent ones, which must still be ordered against each other
+  first-build:
+    command: 'node ./signal.mjs write first'
+
+  last-build:
+    command: 'node ./signal.mjs check first'
+
+  serial-mixed-server:
+    command: 'node ./signal.mjs check first'
+    deps:
+      - 'first-build'
+      - 'server'
+      - 'last-build'
+    options:
+      persistent: true
+      runDepsInParallel: false

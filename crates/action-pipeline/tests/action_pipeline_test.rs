@@ -287,6 +287,124 @@ mod action_pipeline {
             );
         }
 
+        // Persistent tasks are marked as completed the moment they are
+        // dispatched, so that they don't block other actions, but they must
+        // still wait for their own dependencies to finish
+        #[tokio::test(flavor = "multi_thread")]
+        async fn waits_for_dependencies_to_complete() {
+            let sandbox = create_sandbox("pipeline");
+            let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
+
+            let reqs = RunRequirements::default();
+            let mut graph = mocker.create_action_graph().await;
+            graph
+                .run_task_by_target(
+                    &Target::parse("persistent:server-with-deps").unwrap(),
+                    &reqs,
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = graph.build();
+            let actions = mocker
+                .mock_action_pipeline()
+                .await
+                .run_with_context(graph, context)
+                .await
+                .unwrap();
+            let statuses = get_statuses(actions);
+
+            assert_eq!(
+                statuses.get("RunTask(persistent:slow-build)"),
+                Some(&ActionStatus::Passed)
+            );
+            assert_eq!(
+                statuses.get("RunPersistentTask(persistent:server-with-deps)"),
+                Some(&ActionStatus::Passed)
+            );
+        }
+
+        // When dependencies run serially, the tasks ordered after a persistent
+        // dependency must not deadlock waiting on it to complete
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_block_serial_dependencies() {
+            let sandbox = create_sandbox("pipeline");
+            let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
+
+            let reqs = RunRequirements::default();
+            let mut graph = mocker.create_action_graph().await;
+            graph
+                .run_task_by_target(&Target::parse("persistent:serial-server").unwrap(), &reqs)
+                .await
+                .unwrap();
+
+            let (context, graph) = graph.build();
+            let actions = mocker
+                .mock_action_pipeline()
+                .await
+                .run_with_context(graph, context)
+                .await
+                .unwrap();
+            let statuses = get_statuses(actions);
+
+            assert_eq!(
+                statuses.get("RunPersistentTask(persistent:server)"),
+                Some(&ActionStatus::Passed)
+            );
+            assert_eq!(
+                statuses.get("RunTask(persistent:slow-build)"),
+                Some(&ActionStatus::Passed)
+            );
+            assert_eq!(
+                statuses.get("RunPersistentTask(persistent:serial-server)"),
+                Some(&ActionStatus::Passed)
+            );
+        }
+
+        // The serial dependencies that surround a persistent dependency are
+        // still ordered against each other, as they do complete
+        #[tokio::test(flavor = "multi_thread")]
+        async fn orders_serial_dependencies_around_persistent() {
+            let sandbox = create_sandbox("pipeline");
+            let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
+
+            let reqs = RunRequirements::default();
+            let mut graph = mocker.create_action_graph().await;
+            graph
+                .run_task_by_target(
+                    &Target::parse("persistent:serial-mixed-server").unwrap(),
+                    &reqs,
+                )
+                .await
+                .unwrap();
+
+            let (context, graph) = graph.build();
+            let actions = mocker
+                .mock_action_pipeline()
+                .await
+                .run_with_context(graph, context)
+                .await
+                .unwrap();
+            let statuses = get_statuses(actions);
+
+            assert_eq!(
+                statuses.get("RunTask(persistent:first-build)"),
+                Some(&ActionStatus::Passed)
+            );
+            assert_eq!(
+                statuses.get("RunTask(persistent:last-build)"),
+                Some(&ActionStatus::Passed)
+            );
+            assert_eq!(
+                statuses.get("RunPersistentTask(persistent:server)"),
+                Some(&ActionStatus::Passed)
+            );
+            assert_eq!(
+                statuses.get("RunPersistentTask(persistent:serial-mixed-server)"),
+                Some(&ActionStatus::Passed)
+            );
+        }
+
         // A persistent task never completes, so it must not block the
         // persistent tasks that depend on it
         #[tokio::test(flavor = "multi_thread")]

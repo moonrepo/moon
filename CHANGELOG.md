@@ -16,6 +16,9 @@
   batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
   alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on
   it. Non-persistent tasks are still not allowed to depend on persistent tasks.
+- Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
+  dependencies that follow them, as a persistent dependency never completes. Those dependencies are
+  now ordered against the previous dependency that does complete.
 
 #### 🐞 Fixes
 

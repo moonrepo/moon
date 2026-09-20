@@ -1699,6 +1699,10 @@ When disabled, each dependency runs after the previous one completes. This order
 dependency's entire dependency subtree, so transitive dependencies (dependencies of dependencies)
 also run after the preceding direct dependency — not only the direct dependency itself.
 
+[Persistent dependencies](../concepts/task#persistent) never complete, so they are skipped when
+ordering the dependencies that follow them. Those dependencies are instead ordered against the
+previous dependency that does complete, while the persistent one starts when it is reached.
+
 ```yaml title="moon.yml" {8}
 tasks:
   start:

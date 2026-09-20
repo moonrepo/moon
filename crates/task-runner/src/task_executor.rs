@@ -300,13 +300,20 @@ impl<'task> TaskExecutor<'task> {
         let is_only_primary = is_primary && context.primary_targets.len() == 1;
 
         // When the primary target, always stream the output for a better developer experience.
-        // However, transitive targets can opt into streaming as well.
-        self.stream = if is_primary && !is_ci {
-            true
-        } else if let Some(output_style) = &self.task.options.output_style {
-            matches!(output_style, TaskOutputStyle::Stream)
-        } else {
-            false
+        // However, transitive targets can opt into streaming as well. When the
+        // `explicitTaskOutputStyle` experiment is enabled, the configured style is
+        // always applied, even for primary targets.
+        let explicit_style = self
+            .app
+            .workspace_config
+            .experiments
+            .explicit_task_output_style;
+
+        self.stream = match &self.task.options.output_style {
+            Some(output_style) if explicit_style || !is_primary || is_ci => {
+                matches!(output_style, TaskOutputStyle::Stream)
+            }
+            _ => is_primary && !is_ci,
         };
 
         // If only a single persistent task is being ran, we should not prefix the output.
@@ -321,7 +328,6 @@ impl<'task> TaskExecutor<'task> {
         report_item.attempt_current = self.attempt_index;
         report_item.attempt_total = self.attempt_total;
         report_item.output_streamed = self.stream;
-        report_item.output_style = self.task.options.output_style;
         report_item.primary = is_primary;
     }
 

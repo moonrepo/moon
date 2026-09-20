@@ -2,8 +2,18 @@
 
 ## Unreleased
 
+#### 🚀 Updates
+
+- Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
+  `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be
+  enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
+
 #### 🐞 Fixes
 
+- Fixed an issue where a task's `options.outputStyle` was applied to primary targets (those
+  explicitly requested on the command line) when running in CI, or when the task was hydrated from
+  the cache. Primary targets now always display their output, as documented, unless the
+  `explicitTaskOutputStyle` experiment is enabled.
 - Fixed an issue where environment variables removed through moon's internal environment bag (for
   example `NO_COLOR` when colors are forced) were not removed from the current process, and could be
   inherited back into the bag on a subsequent read.

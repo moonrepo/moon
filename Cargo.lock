@@ -5381,6 +5381,7 @@ version = "0.0.1"
 dependencies = [
  "moon_affected",
  "moon_common",
+ "moon_config",
  "moon_target",
  "rustc-hash",
  "scc",

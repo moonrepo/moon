@@ -227,6 +227,14 @@ export interface ExperimentsConfig {
 	 */
 	casOutputsCache: boolean;
 	/**
+	 * Always use the task's `outputStyle` option, even when running
+	 * the task as a primary target.
+	 * @since 2.6.0
+	 *
+	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
+	 */
+	explicitTaskOutputStyle: boolean;
+	/**
 	 * Use native file hashing instead of using the VCS.
 	 * @since 2.3.0
 	 *
@@ -950,6 +958,14 @@ export interface PartialExperimentsConfig {
 	 * @env MOON_EXPERIMENT_CAS_OUTPUTS_CACHE
 	 */
 	casOutputsCache?: boolean | null;
+	/**
+	 * Always use the task's `outputStyle` option, even when running
+	 * the task as a primary target.
+	 * @since 2.6.0
+	 *
+	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
+	 */
+	explicitTaskOutputStyle?: boolean | null;
 	/**
 	 * Use native file hashing instead of using the VCS.
 	 * @since 2.3.0

@@ -51,6 +51,13 @@ pub fn with_shared_exec_args(attr: TokenStream, item: TokenStream) -> TokenStrea
         quote! {
             #[arg(
                 long,
+                help = "Control how output is displayed for all tasks, overriding their `outputStyle` option"
+            )]
+            pub output_style: Option<crate::app_options::OutputStyleOption>
+        },
+        quote! {
+            #[arg(
+                long,
                 short = 's',
                 env = "MOON_SUMMARY",
                 help = "Print a summary of all actions that were ran in the pipeline"

@@ -2691,6 +2691,7 @@ mod exec {
 
     mod output_styles {
         use super::*;
+        use moon_config::PartialExperimentsConfig;
 
         #[test]
         fn buffer() {
@@ -2764,10 +2765,6 @@ mod exec {
 
         #[test]
         fn ignores_style_for_direct_tasks() {
-            if is_ci() {
-                return;
-            }
-
             let sandbox = create_cases_sandbox();
 
             let assert = sandbox.run_bin(|cmd| {
@@ -2786,6 +2783,121 @@ mod exec {
             let output = assert.output();
 
             assert!(predicate::str::contains("cached").eval(&output));
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
+        }
+
+        #[test]
+        fn applies_style_to_direct_tasks_when_experiment_enabled() {
+            let sandbox = create_cases_sandbox_with_config(|workspace_config| {
+                workspace_config.experiments = Some(PartialExperimentsConfig {
+                    explicit_task_output_style: Some(true),
+                    ..PartialExperimentsConfig::default()
+                });
+            });
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run").arg("outputStyles:none");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+
+            // And again when hydrating from the cache
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run").arg("outputStyles:none");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("cached").eval(&output));
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn streams_direct_tasks_when_experiment_enabled() {
+            let sandbox = create_cases_sandbox_with_config(|workspace_config| {
+                workspace_config.experiments = Some(PartialExperimentsConfig {
+                    explicit_task_output_style: Some(true),
+                    ..PartialExperimentsConfig::default()
+                });
+            });
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run").arg("outputStyles:stream");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").eval(&output));
+            assert!(predicate::str::contains("stderr").eval(&output));
+        }
+
+        #[test]
+        fn option_applies_to_direct_tasks() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:plain")
+                    .arg("--output-style")
+                    .arg("none");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("outputStyles:plain").eval(&output));
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn option_overrides_the_task_option() {
+            let sandbox = create_cases_sandbox();
+
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:stream")
+                    .arg("--output-style")
+                    .arg("none");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+        }
+
+        #[test]
+        fn option_quiets_success_and_shows_failure() {
+            let sandbox = create_cases_sandbox();
+
+            // Passing task, no output
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:plain")
+                    .arg("--output-style")
+                    .arg("buffer-only-failure");
+            });
+
+            let output = assert.output();
+
+            assert!(predicate::str::contains("stdout").not().eval(&output));
+            assert!(predicate::str::contains("stderr").not().eval(&output));
+
+            // Failing task, full output
+            let assert = sandbox.run_bin(|cmd| {
+                cmd.arg("run")
+                    .arg("outputStyles:plainFail")
+                    .arg("--output-style")
+                    .arg("buffer-only-failure");
+            });
+
+            let output = assert.output();
+
             assert!(predicate::str::contains("stdout").eval(&output));
             assert!(predicate::str::contains("stderr").eval(&output));
         }

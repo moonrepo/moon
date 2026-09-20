@@ -299,14 +299,24 @@ impl<'task> TaskExecutor<'task> {
         let is_primary = context.is_primary_target(&self.task.target);
         let is_only_primary = is_primary && context.primary_targets.len() == 1;
 
+        // A style passed on the command line overrides the task's own option, and
+        // because it was requested explicitly, it also applies to primary targets.
+        let explicit_style = context.output_style.is_some()
+            || self
+                .app
+                .workspace_config
+                .experiments
+                .explicit_task_output_style;
+        let output_style = context.output_style.or(self.task.options.output_style);
+
         // When the primary target, always stream the output for a better developer experience.
-        // However, transitive targets can opt into streaming as well.
-        self.stream = if is_primary && !is_ci {
-            true
-        } else if let Some(output_style) = &self.task.options.output_style {
-            matches!(output_style, TaskOutputStyle::Stream)
-        } else {
-            false
+        // However, transitive targets can opt into streaming as well. When the style is
+        // explicit, it is always applied, even for primary targets.
+        self.stream = match output_style {
+            Some(output_style) if explicit_style || !is_primary || is_ci => {
+                matches!(output_style, TaskOutputStyle::Stream)
+            }
+            _ => is_primary && !is_ci,
         };
 
         // If only a single persistent task is being ran, we should not prefix the output.
@@ -321,7 +331,6 @@ impl<'task> TaskExecutor<'task> {
         report_item.attempt_current = self.attempt_index;
         report_item.attempt_total = self.attempt_total;
         report_item.output_streamed = self.stream;
-        report_item.output_style = self.task.options.output_style;
         report_item.primary = is_primary;
     }
 

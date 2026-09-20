@@ -1,5 +1,36 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added a new `--output-style` option to `moon run`, `moon ci`, `moon check`, and `moon exec`, which
+  controls how output is displayed for _all_ tasks, overriding their `options.outputStyle`. Since it
+  is requested explicitly, it also applies to primary targets. For example,
+  `moon ci :test --output-style buffer-only-failure` keeps passing tasks quiet and prints the full
+  output of failing ones.
+- Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
+  `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be
+  enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
+
+#### 🐞 Fixes
+
+- Fixed an issue where a task's `options.outputStyle` was applied to primary targets (those
+  explicitly requested on the command line) when running in CI, or when the task was hydrated from
+  the cache. Primary targets now always display their output, as documented, unless the
+  `explicitTaskOutputStyle` experiment is enabled.
+- Fixed an issue where environment variables removed through moon's internal environment bag (for
+  example `NO_COLOR` when colors are forced) were not removed from the current process, and could be
+  inherited back into the bag on a subsequent read.
+
+#### ⚙️ Internal
+
+- Hash manifests are now stored as blobs in the local content-addressable cache, instead of as
+  individual files in `.moon/cache/hashes`. The local cache backend is now always enabled, as it
+  backs these manifests; storing task _outputs_ in it remains gated by the `cas_outputs_cache`
+  experiment.
+- Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2.
+
 ## 2.5.5
 
 #### 🚀 Updates

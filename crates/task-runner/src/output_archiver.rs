@@ -2,10 +2,10 @@ use crate::run_state::TaskRunState;
 use crate::task_runner_error::TaskRunnerError;
 use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
-use moon_cache::{Manifest, StorageOptions};
+use moon_cache::{StorageOptions, TaskManifest};
 use moon_common::color;
 use moon_daemon_client::DaemonClient;
-use moon_manifest::ManifestPacker;
+use moon_manifest::TaskManifestPacker;
 use moon_task::Task;
 use starbase_archive::Archiver;
 use std::sync::Arc;
@@ -99,7 +99,7 @@ impl OutputArchiver<'_> {
                         include_remote: use_remote,
                         ..Default::default()
                     })
-                    .archive_manifest(&state.digest, manifest)
+                    .archive_task_manifest(&state.digest, manifest)
                     .await?;
             }
         }
@@ -157,7 +157,7 @@ impl OutputArchiver<'_> {
     }
 
     #[instrument(skip(self, state))]
-    async fn create_cache_manifest(&self, state: &TaskRunState) -> miette::Result<Manifest> {
+    async fn create_cache_manifest(&self, state: &TaskRunState) -> miette::Result<TaskManifest> {
         let task = Arc::clone(self.task);
         let workspace_root = self.app_context.workspace_root.clone();
 
@@ -165,7 +165,7 @@ impl OutputArchiver<'_> {
         // so we run it in a blocking thread to avoid blocking the async runtime
         let mut packer = spawn_blocking(move || {
             let outputs = task.get_output_files(&workspace_root, true)?;
-            let mut packer = ManifestPacker::new(workspace_root);
+            let mut packer = TaskManifestPacker::new(workspace_root);
 
             for output in outputs {
                 packer.inherit_output(output)?;
@@ -179,14 +179,18 @@ impl OutputArchiver<'_> {
         // Then inherit the execution operation metadata
         packer.inherit_operation(&state.operation)?;
 
-        // Then inherit the source fingerprint file
-        packer.inherit_source(
-            &state.digest,
-            self.app_context
-                .cache_engine
-                .hash
-                .get_manifest_path(&state.digest.hash),
-        )?;
+        // Then inherit the source fingerprint, which lives in the local CAS.
+        // Without a local tier there's nothing to attach, and the manifest is
+        // archived without it.
+        if let Some(blob) = self
+            .app_context
+            .cache_engine
+            .storage
+            .load_hash_manifest(&state.digest)
+            .await?
+        {
+            packer.inherit_source(&state.digest, blob)?;
+        }
 
         Ok(packer.pack())
     }

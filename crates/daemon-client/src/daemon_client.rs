@@ -4,7 +4,7 @@ use moon_common::{color, format_error_chain};
 use moon_daemon_proto::{moon_daemon_client::MoonDaemonClient, *};
 use moon_daemon_utils::endpoint::*;
 use moon_hash::{Digest, InternalDigestExt};
-use moon_manifest::Manifest;
+use moon_manifest::TaskManifest;
 use std::future::Future;
 use std::io::Error;
 use std::path::Path;
@@ -205,7 +205,7 @@ impl DaemonClient {
         &mut self,
         task_target: String,
         digest: Digest,
-        manifest: Manifest,
+        manifest: TaskManifest,
         include_local: bool,
         include_remote: bool,
     ) -> miette::Result<ArchiveTaskOutputsResponse> {
@@ -233,7 +233,7 @@ impl DaemonClient {
         &mut self,
         task_target: String,
         digest: Digest,
-        manifest: Manifest,
+        manifest: TaskManifest,
         include_local: bool,
         include_remote: bool,
         backend_id: String,

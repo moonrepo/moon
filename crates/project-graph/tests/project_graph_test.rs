@@ -509,11 +509,14 @@ mod project_graph {
 
                     assert!(!state.last_hash.as_str().is_empty());
 
+                    // The hash manifest is a blob in the local CAS, which
+                    // shards objects by the first 2 chars of their hash.
                     assert!(
                         sandbox
                             .path()
-                            .join(".moon/cache/hashes")
-                            .join(format!("{}.json", state.last_hash))
+                            .join(".moon/cache/blobs")
+                            .join(&state.last_hash.as_str()[0..2])
+                            .join(&state.last_hash.as_str()[2..])
                             .exists()
                     );
                 }

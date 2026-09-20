@@ -89,6 +89,8 @@ pub async fn setup_environment(
     let output = toolchain.setup_environment(input.clone()).await?;
 
     // Create a lock if we haven't run before
+    let cache_engine = Arc::clone(&app_context.cache_engine);
+
     let Some(mut lock) = create_hash_and_return_lock_if_changed(
         action,
         &app_context,
@@ -100,7 +102,8 @@ pub async fn setup_environment(
             operations: &output.operations,
         },
         || false,
-    )?
+    )
+    .await?
     else {
         debug!(
             toolchain_id = node.toolchain_id.as_str(),
@@ -154,7 +157,7 @@ pub async fn setup_environment(
             .collect(),
     )?;
 
-    lock.persist_hash_manifest();
+    lock.persist_hash_manifest(&cache_engine.storage).await?;
 
     Ok(if skipped {
         ActionStatus::Skipped

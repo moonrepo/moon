@@ -16,6 +16,7 @@ schematic = { workspace = true, features = ["renderer_json_schema", "schema"] }
 
 [features]
 default = []
+api-docs = ["schematic/renderer_api_docs"]
 typescript = ["schematic/renderer_typescript"]
 
 [lints]

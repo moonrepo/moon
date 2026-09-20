@@ -14,7 +14,17 @@ export interface FileInput {
 	 * Regex pattern to match the file's contents against
 	 * when determining affected status.
 	 */
-	content: string | null;
+	match?: string | null;
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
+	matches?: string | null;
+	/**
+	 * Regex pattern to match the file's contents against
+	 * when determining affected status.
+	 */
+	content?: string | null;
 	/** The literal file path. */
 	file: string;
 	/**
@@ -90,7 +100,7 @@ export type Input = string | FileInput | FileGroupInput | GlobInput | ProjectInp
  */
 export type TaskDependencyCacheStrategy = 'hash' | 'ignored' | 'outputs';
 
-/** Expanded information about a task dependency. */
+/** A task referenced by target, with additional parameters to pass through. */
 export interface TaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
 	args: string[];
@@ -114,10 +124,7 @@ export interface TaskDependencyConfig {
 
 export type TaskDependency = string | TaskDependencyConfig;
 
-/**
- * A condition that utilizes a combination of logical operators
- * to match against. When matching, all clauses must be satisfied.
- */
+/** Condition applies using logical operator clauses. */
 export interface InheritedClauseConfig {
 	/** Require all values to match, using an AND operator. */
 	and?: Id | Id[] | null;
@@ -203,6 +210,62 @@ export interface InheritedByConfig {
 	toolchains?: InheritedConditionConfig | null;
 }
 
+export type TaskArgs = null | string | string[];
+
+/** Task check configuration for conditions. */
+export interface TaskCheckConditionConfig {
+	check: 'condition';
+	/** The shell script to execute. */
+	script: string;
+}
+
+/** Task check configuration for requirements. */
+export interface TaskCheckRequirementConfig {
+	check: 'requirement';
+	/** The shell script to execute. */
+	script: string;
+}
+
+/** Task check configuration for fingerprinting. */
+export interface TaskCheckFingerprintConfig {
+	check: 'fingerprint';
+	/** The content hashing strategy. */
+	hash?: boolean | 'exit-code' | 'stderr' | 'stdout';
+	/** The shell script to execute. */
+	script: string;
+}
+
+export type TaggedTaskCheck =
+	| TaskCheckConditionConfig
+	| TaskCheckRequirementConfig
+	| TaskCheckFingerprintConfig;
+
+export type TaskCheck = string | TaggedTaskCheck;
+
+/** A file path output. */
+export interface FileOutput {
+	/** The literal file path. */
+	file: string;
+	/**
+	 * Mark the file as optional instead of failing with
+	 * an error after running a task and the output doesn't exist.
+	 */
+	optional?: boolean | null;
+}
+
+/** A glob pattern output. */
+export interface GlobOutput {
+	/** The glob pattern. */
+	glob: string;
+	/**
+	 * Mark the file as optional instead of failing with
+	 * an error after running a task and the output doesn't exist.
+	 */
+	optional?: boolean | null;
+}
+
+export type Output = string | FileOutput | GlobOutput;
+
 /** Expanded information about affected files handling. */
 export interface TaskOptionAffectedFilesConfig {
 	/**
@@ -221,6 +284,8 @@ export interface TaskOptionAffectedFilesConfig {
 	/**
 	 * When there are no affected files after matching and filtering,
 	 * use `.` instead of an empty value.
+	 *
+	 * @default true
 	 */
 	passDotWhenNoResults?: boolean | null;
 	/**
@@ -452,62 +517,6 @@ export interface TaskOptionsConfig {
 	windowsShell?: TaskWindowsShell | null;
 }
 
-export type TaskArgs = null | string | string[];
-
-/** Task check configuration for conditions. */
-export interface TaskCheckConditionConfig {
-	check: 'condition';
-	/** The shell script to execute. */
-	script: string;
-}
-
-/** Task check configuration for requirements. */
-export interface TaskCheckRequirementConfig {
-	check: 'requirement';
-	/** The shell script to execute. */
-	script: string;
-}
-
-/** Task check configuration for fingerprinting. */
-export interface TaskCheckFingerprintConfig {
-	check: 'fingerprint';
-	/** The content hashing strategy. */
-	hash?: boolean | 'exit-code' | 'stderr' | 'stdout';
-	/** The shell script to execute. */
-	script: string;
-}
-
-export type TaggedTaskCheck =
-	| TaskCheckConditionConfig
-	| TaskCheckRequirementConfig
-	| TaskCheckFingerprintConfig;
-
-export type TaskCheck = string | TaggedTaskCheck;
-
-/** A file path output. */
-export interface FileOutput {
-	/** The literal file path. */
-	file: string;
-	/**
-	 * Mark the file as optional instead of failing with
-	 * an error after running a task and the output doesn't exist.
-	 */
-	optional?: boolean | null;
-}
-
-/** A glob pattern output. */
-export interface GlobOutput {
-	/** The glob pattern. */
-	glob: string;
-	/**
-	 * Mark the file as optional instead of failing with
-	 * an error after running a task and the output doesn't exist.
-	 */
-	optional?: boolean | null;
-}
-
-export type Output = string | FileOutput | GlobOutput;
-
 /** Preset options to inherit. */
 export type TaskPreset = 'utility' | 'server';
 
@@ -664,7 +673,7 @@ export interface InheritedTasksConfig {
 	tasks?: Record<Id, TaskConfig>;
 }
 
-/** Expanded information about a task dependency. */
+/** A task referenced by target, with additional parameters to pass through. */
 export interface PartialTaskDependencyConfig {
 	/** Additional arguments to pass to this dependency when it's ran. */
 	args?: string[] | null;
@@ -688,10 +697,7 @@ export interface PartialTaskDependencyConfig {
 
 export type PartialTaskDependency = string | PartialTaskDependencyConfig;
 
-/**
- * A condition that utilizes a combination of logical operators
- * to match against. When matching, all clauses must be satisfied.
- */
+/** Condition applies using logical operator clauses. */
 export interface PartialInheritedClauseConfig {
 	/** Require all values to match, using an AND operator. */
 	and?: Id | Id[] | null;
@@ -777,6 +783,8 @@ export interface PartialInheritedByConfig {
 	toolchains?: PartialInheritedConditionConfig | null;
 }
 
+export type PartialTaskArgs = null | string | string[];
+
 /** Expanded information about affected files handling. */
 export interface PartialTaskOptionAffectedFilesConfig {
 	/**
@@ -795,6 +803,8 @@ export interface PartialTaskOptionAffectedFilesConfig {
 	/**
 	 * When there are no affected files after matching and filtering,
 	 * use `.` instead of an empty value.
+	 *
+	 * @default true
 	 */
 	passDotWhenNoResults?: boolean | null;
 	/**
@@ -983,15 +993,13 @@ export interface PartialTaskOptionsConfig {
 	windowsShell?: TaskWindowsShell | null;
 }
 
-export type PartialTaskArgs = null | string | string[];
-
 /** Configures a task to be ran within the action pipeline. */
 export interface PartialTaskConfig {
 	/**
 	 * Arguments to pass to the command when it's ran. Can be
 	 * defined as a string, or a list of individual arguments.
 	 */
-	args?: PartialTaskArgs | null;
+	args?: PartialTaskArgs;
 	/**
 	 * Checks are shell scripts that run before the task is executed,
 	 * and are categorized into three types: conditions, requirements,
@@ -1005,7 +1013,7 @@ export interface PartialTaskConfig {
 	 * Supports the command (executable) with or without arguments.
 	 * Can be defined as a string, or a list of individual arguments.
 	 */
-	command?: PartialTaskArgs | null;
+	command?: PartialTaskArgs;
 	/**
 	 * Other tasks that this task depends on, and must run to completion
 	 * before this task is ran. Can depend on sibling tasks, or tasks in

@@ -4,7 +4,7 @@ use super::map_miette_error;
 use moon_app_context::AppContext;
 use moon_codegen::CodeGenerator;
 use moon_config::TemplateVariable;
-use moon_process::{Command, output_to_trimmed_string};
+use moon_process::{Command, CommandExt, output_to_trimmed_string};
 use regex::Regex;
 use rust_mcp_sdk::{
     macros::{JsonSchema, mcp_tool},
@@ -139,7 +139,7 @@ impl GenerateTool {
             }
         }
 
-        let output = Command::new("moon")
+        let output = Command::create("moon")
             .args(args)
             .cwd(&app_context.workspace_root)
             .exec_capture_output()

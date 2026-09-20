@@ -1,43 +1,47 @@
 use moon_action::{Action, ActionStatus, Operation};
 use moon_app_context::AppContext;
+use moon_cache_storage::Storage;
 use moon_env_var::GlobalEnvBag;
-use moon_hash::ContentHasher;
+use moon_hash::{ContentHasher, Digest};
 use serde::Serialize;
-use starbase_utils::fs::{self, FileLock};
-use std::path::PathBuf;
+use starbase_utils::fs::FileLock;
 
+/// Holds the action's lock plus the hash manifest that records it as done.
+///
+/// The manifest is deliberately *not* stored up front: it is written only when
+/// the caller reaches `persist_hash_manifest`, so an action that fails or is
+/// killed leaves nothing behind claiming it succeeded. (A content-addressed
+/// store has no delete, so the old write-then-remove-on-drop approach can't be
+/// expressed against it anyway.)
 pub struct HashLock {
     #[allow(dead_code)]
     lock: FileLock,
-    manifest_path: PathBuf,
-    remove_on_drop: bool,
+    digest: Digest,
+    pending: Option<ContentHasher>,
 }
 
 impl HashLock {
-    pub fn persist_hash_manifest(&mut self) {
-        self.remove_on_drop = false;
+    pub fn get_digest(&self) -> &Digest {
+        &self.digest
     }
-}
 
-impl Drop for HashLock {
-    fn drop(&mut self) {
-        if self.remove_on_drop {
-            let _ = fs::remove_file(&self.manifest_path);
+    pub async fn persist_hash_manifest(&mut self, storage: &Storage) -> miette::Result<()> {
+        if let Some(hasher) = self.pending.take() {
+            storage.store_hash_manifest_with_hasher(hasher).await?;
         }
+
+        Ok(())
     }
 }
 
 pub fn create_hasher(
     action: &mut Action,
-    app_context: &AppContext,
+    _app_context: &AppContext,
     data: impl Serialize,
 ) -> miette::Result<ContentHasher> {
     let mut op = Operation::hash_generation();
 
-    let mut hasher = app_context
-        .cache_engine
-        .hash
-        .create_hasher(action.get_prefix());
+    let mut hasher = ContentHasher::new(action.get_prefix());
 
     hasher.hash_content(data)?;
 
@@ -51,54 +55,56 @@ pub fn create_hasher(
     Ok(hasher)
 }
 
-pub fn create_hash_and_return_lock(
+pub async fn create_hash_and_return_lock(
     action: &mut Action,
     app_context: &AppContext,
     data: impl Serialize,
 ) -> miette::Result<HashLock> {
     let mut hasher = create_hasher(action, app_context, data)?;
-    let hash = hasher.generate_hash()?;
-    let manifest_path = app_context.cache_engine.hash.get_manifest_path(&hash);
+    let digest = Digest::from_hasher(&mut hasher)?;
 
-    let lock = app_context
-        .cache_engine
-        .create_lock(format!("{}-{hash}", action.get_prefix()))?;
-
-    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
+    let lock =
+        app_context
+            .cache_engine
+            .create_lock(format!("{}-{}", action.get_prefix(), digest.hash))?;
 
     Ok(HashLock {
         lock,
-        manifest_path,
-        remove_on_drop: true,
+        digest,
+        pending: Some(hasher),
     })
 }
 
-pub fn create_hash_and_return_lock_if_changed(
+pub async fn create_hash_and_return_lock_if_changed(
     action: &mut Action,
     app_context: &AppContext,
     fingerprint: impl Serialize,
     should_force: impl Fn() -> bool,
 ) -> miette::Result<Option<HashLock>> {
     let mut hasher = create_hasher(action, app_context, fingerprint)?;
-    let hash = hasher.generate_hash()?;
-    let manifest_path = app_context.cache_engine.hash.get_manifest_path(&hash);
+    let digest = Digest::from_hasher(&mut hasher)?;
 
-    let lock = app_context
-        .cache_engine
-        .create_lock(format!("{}-{hash}", action.get_prefix()))?;
+    let lock =
+        app_context
+            .cache_engine
+            .create_lock(format!("{}-{}", action.get_prefix(), digest.hash))?;
 
     // If the hash manifest exists, then it has run before. Check this after
     // locking so that concurrent processes wait for in-progress actions.
-    if !should_force() && manifest_path.exists() {
+    if !should_force()
+        && app_context
+            .cache_engine
+            .storage
+            .has_hash_manifest(&digest)
+            .await
+    {
         return Ok(None);
     }
 
-    app_context.cache_engine.hash.save_manifest(&mut hasher)?;
-
     Ok(Some(HashLock {
         lock,
-        manifest_path,
-        remove_on_drop: true,
+        digest,
+        pending: Some(hasher),
     }))
 }
 

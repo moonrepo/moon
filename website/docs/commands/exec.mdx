@@ -61,7 +61,21 @@ For a declarative alternative to CLI options, see the [execution plan guide](../
 - `-i`, `--interactive` - Run the pipeline and tasks interactively.
 - `-p`, `--plan <PATH>` - Path to an execution plan JSON file. See the
   [execution plan guide](../guides/exec-plan) for more details. <VersionLabel version="2.1.0" />
+- `--output-style <STYLE>` - Control how output is displayed for _all_ tasks, overriding their
+  [`outputStyle`](../config/project#outputstyle) option. Supports the same values: "buffer",
+  "buffer-only-failure", "hash", "none", "stream". <VersionLabel version="2.6.0" />
 - `-s`, `--summary [LEVEL]` - Print a summary of all actions that were ran in the pipeline.
+
+> Unlike the task option, a style passed on the command line also applies to _primary_ targets, since
+> it was requested explicitly. This makes it useful for CI and automation, where you want successful
+> tasks to stay quiet but failures to print in full:
+>
+> ```shell
+> $ moon ci :test :lint --output-style buffer-only-failure --summary minimal
+> ```
+>
+> [Interactive](../config/project#interactive) tasks are an exception, as they must remain attached
+> to the terminal, and so always stream their output.
 
 ### Workflow
 

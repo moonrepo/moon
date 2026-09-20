@@ -8,7 +8,9 @@ use moon_hash::{ContentHash, Digest};
 use moon_manifest::{Manifest, ManifestFile};
 use rustc_hash::FxHashMap;
 use std::path::Path;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use tokio::sync::Notify;
 
 fn create_storage() -> Storage {
     Storage::new(CacheContext::new(Path::new("/moon-test")))
@@ -31,6 +33,10 @@ struct MemoryBackend {
     // A read-only tier (e.g. a shared cache the user can't write) must never
     // be a warm target.
     read_only: bool,
+
+    // A remote tier is unreadable until its connection is established.
+    connect_gate: Option<Arc<Notify>>,
+    connected: Arc<AtomicBool>,
 }
 
 impl MemoryBackend {
@@ -44,7 +50,15 @@ impl MemoryBackend {
             fail_store_blobs: false,
             fail_retrieve_blobs: false,
             read_only: false,
+            connect_gate: None,
+            connected: Arc::new(AtomicBool::new(true)),
         }
+    }
+
+    fn connecting_until(mut self, gate: Arc<Notify>) -> Self {
+        self.connect_gate = Some(gate);
+        self.connected = Arc::new(AtomicBool::new(false));
+        self
     }
 
     fn failing_find_missing(mut self) -> Self {
@@ -79,7 +93,17 @@ impl StorageBackend for MemoryBackend {
     }
 
     fn is_readable(&self) -> bool {
-        true
+        self.connected.load(Ordering::SeqCst)
+    }
+
+    async fn connect(&self) -> miette::Result<()> {
+        if let Some(gate) = &self.connect_gate {
+            gate.notified().await;
+        }
+
+        self.connected.store(true, Ordering::SeqCst);
+
+        Ok(())
     }
 
     fn is_writable(&self) -> bool {
@@ -233,6 +257,29 @@ mod storage {
             .expect("manifest was hydrated");
         assert!(hydrated.is_hydrated());
         assert_eq!(hydrated.files[0].bytes, Some(Bytes::from_static(b"output")));
+    }
+
+    #[tokio::test]
+    async fn load_manifest_waits_for_a_connection_in_progress() {
+        let gate = Arc::new(Notify::new());
+        let remote = MemoryBackend::new("remote").connecting_until(Arc::clone(&gate));
+        let action = digest('a', 0);
+        seed_backend(&remote, &action, &digest('b', 6), b"output");
+
+        let mut storage = create_storage();
+        storage.add_remote_backend(remote);
+        storage.spawn_connect_backends();
+
+        let lookup = {
+            let storage = storage.with_options(StorageOptions::default());
+            tokio::spawn(async move { storage.load_manifest(&action).await })
+        };
+
+        // Let the lookup run before the connection completes
+        tokio::task::yield_now().await;
+        gate.notify_one();
+
+        assert!(lookup.await.unwrap().unwrap().is_some());
     }
 
     #[tokio::test]

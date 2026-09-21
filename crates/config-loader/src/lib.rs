@@ -15,6 +15,7 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use starbase_utils::envx::bool_var;
 use starbase_utils::{fs, json, toml, yaml};
+use std::env;
 use std::path::Path;
 use std::sync::OnceLock;
 
@@ -50,6 +51,22 @@ pub fn write_config_based_on_extension<T: Serialize>(path: &Path, config: T) -> 
 
 pub fn find_debug_locator_with_fallback(name: &str, version: &str) -> PluginLocator {
     static URL_CACHE: OnceLock<bool> = OnceLock::new();
+    static MOON_BUILTIN_REGISTRY_HOST: OnceLock<String> = OnceLock::new();
+    static MOON_BUILTIN_REGISTRY_NAMESPACE: OnceLock<String> = OnceLock::new();
+
+    let registry_host = MOON_BUILTIN_REGISTRY_HOST.get_or_init(|| {
+        env::var("MOON_BUILTIN_REGISTRY_HOST")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "ghcr.io".to_string())
+    });
+
+    let registry_namespace = MOON_BUILTIN_REGISTRY_NAMESPACE.get_or_init(|| {
+        env::var("MOON_BUILTIN_REGISTRY_NAMESPACE")
+            .ok()
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "moonrepo".to_string())
+    });
 
     let use_urls = *URL_CACHE.get_or_init(|| bool_var("MOON_PLUGINS_USE_URL_DIST"));
 
@@ -62,8 +79,8 @@ pub fn find_debug_locator_with_fallback(name: &str, version: &str) -> PluginLoca
             }))
         } else {
             PluginLocator::Registry(Box::new(RegistryLocator {
-                registry: Some("ghcr.io".into()),
-                namespace: Some("moonrepo".into()),
+                registry: Some(registry_host.into()),
+                namespace: Some(registry_namespace.into()),
                 image: name.into(),
                 tag: Some(version.into()),
             }))

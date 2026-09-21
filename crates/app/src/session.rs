@@ -183,6 +183,7 @@ impl MoonSession {
             console: self.get_console()?,
             daemon_dir: self.config_dir.join("cache").join("daemon"),
             moon_env: Arc::clone(&self.moon_env),
+            otel_enabled: self.cli.otel,
             proto_env: Arc::clone(&self.proto_env),
             extensions_config: Arc::clone(&self.extensions_config),
             extension_registry: self.get_extension_registry().await?,

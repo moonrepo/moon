@@ -5448,6 +5448,8 @@ dependencies = [
  "moon_toolchain_plugin",
  "moon_workspace_graph",
  "num_cpus",
+ "opentelemetry",
+ "opentelemetry_sdk",
  "petgraph 0.8.3",
  "rustc-hash",
  "serde",

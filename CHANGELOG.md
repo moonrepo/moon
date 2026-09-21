@@ -22,6 +22,14 @@
 
 #### 🐞 Fixes
 
+- Fixed an issue where a task's resolved `toolchains` list was ordered by an internal hash set,
+  instead of by what was configured. The toolchains configured for a task (or inherited from the
+  project) now come first, followed by any toolchains they require. This also fixes the
+  `$taskToolchain` token, which would expand to a required toolchain (like `npm`) instead of the
+  configured one (like `node`), and makes the `append`/`prepend` merge strategies apply to
+  toolchains as they do to other task fields. Since this list is part of a task's hash, existing
+  caches will be invalidated once.
+
 - Fixed an issue where a task's `options.outputStyle` was applied to primary targets (those
   explicitly requested on the command line) when running in CI, or when the task was hydrated from
   the cache. Primary targets now always display their output, as documented, unless the

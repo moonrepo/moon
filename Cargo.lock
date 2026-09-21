@@ -6390,6 +6390,7 @@ dependencies = [
 name = "moon_project_builder"
 version = "0.0.1"
 dependencies = [
+ "indexmap",
  "miette 7.6.0",
  "moon_common",
  "moon_config",

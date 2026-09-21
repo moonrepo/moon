@@ -230,11 +230,11 @@ this project?), or by a task identifier (how long does `build` take across the w
 - `target` - Target that was ran, like `app:build`.
 - `project` - Project the task belongs to.
 - `task` - Identifier of the task.
-- `toolchain` - Primary (first) toolchain the task ran in, if any.
-- `toolchains` - All toolchains the task ran in, comma separated, like `node,typescript`. Mirrors
-  the `$taskToolchains` token. This is a joined string rather than an array value, as metric
-  backends don't handle array attributes consistently. To aggregate by an individual toolchain,
-  group by `toolchain`, or match against `toolchains` with a contains filter.
+- `toolchains` - All toolchains the task ran in, sorted and comma separated, like
+  `node,npm,typescript`. This is the expanded list, so it includes toolchains that were required by
+  the configured ones. It's a joined string rather than an array value, as metric backends don't
+  handle array attributes consistently. To aggregate by an individual toolchain, match against it
+  with a contains filter.
 - `status` - Final status of the task, like `passed`, `failed`, `cached`, or `cached-from-remote`.
   Cache hit rates can be derived by comparing the cached statuses against the total.
 - `flaky` - Whether the task passed only after being retried.

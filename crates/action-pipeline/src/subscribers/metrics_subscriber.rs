@@ -200,16 +200,19 @@ fn get_task_attrs(action: &Action, node: &RunTaskNode, task: Option<&Task>) -> V
         attrs.push(KeyValue::new("task", task_id.to_owned()));
     }
 
-    // A task may run within multiple toolchains, so expose the primary (first)
-    // one for grouping, and the full list for everything else. The list is a
-    // joined string instead of an array value, as metric backends don't handle
-    // array attributes consistently, and the set of combinations in a workspace
-    // is small. This mirrors the `$taskToolchain(s)` tokens
+    // A task may run within multiple toolchains, and the list it carries is the
+    // expanded set of them (a `node` task also requires `npm`, and so on), which
+    // is ordered by a hash set internally. Sort it so that the same set always
+    // produces the same attribute, otherwise it could churn into multiple time
+    // series. A joined string is used instead of an array value, as metric
+    // backends don't handle array attributes consistently
     if let Some(task) = task
-        && let Some(toolchain) = task.toolchains.first()
+        && !task.toolchains.is_empty()
     {
-        attrs.push(KeyValue::new("toolchain", toolchain.to_string()));
-        attrs.push(KeyValue::new("toolchains", task.toolchains.join(",")));
+        let mut toolchains = task.toolchains.clone();
+        toolchains.sort();
+
+        attrs.push(KeyValue::new("toolchains", toolchains.join(",")));
     }
 
     attrs.push(KeyValue::new("status", action.status.get_type()));
@@ -346,7 +349,7 @@ mod tests {
             action.flaky = true;
 
             let task = Task {
-                toolchains: vec![Id::raw("node"), Id::raw("typescript")],
+                toolchains: vec![Id::raw("typescript"), Id::raw("node")],
                 ..Task::default()
             };
 
@@ -356,8 +359,7 @@ mod tests {
                     ("target".into(), "app:build".into()),
                     ("project".into(), "app".into()),
                     ("task".into(), "build".into()),
-                    // Primary toolchain, then all of them
-                    ("toolchain".into(), "node".into()),
+                    // Sorted, regardless of the order they resolved in
                     ("toolchains".into(), "node,typescript".into()),
                     ("status".into(), "passed".into()),
                     ("flaky".into(), "true".into()),
@@ -366,7 +368,7 @@ mod tests {
         }
 
         #[test]
-        fn repeats_a_single_toolchain_in_the_list() {
+        fn includes_a_single_toolchain() {
             let action = create_task_action(ActionStatus::Passed);
             let task = Task {
                 toolchains: vec![Id::raw("system")],
@@ -375,12 +377,11 @@ mod tests {
 
             let attrs = get_attrs(&get_task_attrs(&action, &create_task_node(), Some(&task)));
 
-            assert!(attrs.contains(&("toolchain".into(), "system".into())));
             assert!(attrs.contains(&("toolchains".into(), "system".into())));
         }
 
         #[test]
-        fn omits_both_toolchains_when_empty() {
+        fn omits_toolchains_when_empty() {
             let action = create_task_action(ActionStatus::Passed);
             let task = Task {
                 toolchains: vec![],

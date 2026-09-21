@@ -344,6 +344,7 @@ impl WorkspaceMocker {
             console: self.mock_console(),
             daemon_dir: self.config_dir.join("cache/daemon"),
             moon_env: Arc::new(self.moon_env.clone()),
+            otel_enabled: false,
             proto_env: Arc::new(self.proto_env.clone()),
             extensions_config: Arc::new(self.extensions_config.clone()),
             extension_registry: Arc::new(self.mock_extension_registry()),

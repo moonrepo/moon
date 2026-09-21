@@ -1,3 +1,4 @@
+use indexmap::IndexSet;
 use moon_common::{Id, IdExt, color, path::WorkspaceRelativePath};
 use moon_config::{
     DependencySource, EnvMap, InheritFor, InheritedTasks, InheritedTasksManager, Input,
@@ -187,8 +188,10 @@ impl<'app> ProjectBuilder<'app> {
             config.language.clone()
         };
 
-        // Determine toolchains that this project belongs to
-        let mut toolchains = FxHashSet::default();
+        // Determine toolchains that this project belongs to. Ordered, so that
+        // the toolchains configured by the user stay ahead of inferred and
+        // detected ones, as consumers treat the first as the primary
+        let mut toolchains = IndexSet::<Id>::default();
 
         // 1 - Explicitly configured by the user
         if let Some(default_ids) = &config.toolchains.default {
@@ -224,14 +227,14 @@ impl<'app> ProjectBuilder<'app> {
             if override_config.is_enabled() {
                 toolchains.insert(plugin_id.to_owned());
             } else {
-                toolchains.remove(plugin_id);
+                toolchains.shift_remove(plugin_id);
             }
         }
 
         // Task inheritance relies entirely on stable IDs as the file
         // names are in the format of `tasks/node.yml`, etc
         self.toolchains_inheritance =
-            Vec::from_iter(toolchains.iter().map(Id::stable).collect::<FxHashSet<_>>());
+            Vec::from_iter(toolchains.iter().map(Id::stable).collect::<IndexSet<_>>());
 
         // While the toolchains within a task use their literal
         // stable or unstable IDs based on what's configured/enabled

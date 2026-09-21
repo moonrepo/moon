@@ -4,6 +4,7 @@ use crate::job_context::JobContext;
 use crate::job_dispatcher::JobDispatcher;
 use crate::subscribers::cleanup_subscriber::CleanupSubscriber;
 use crate::subscribers::console_subscriber::ConsoleSubscriber;
+use crate::subscribers::metrics_subscriber::MetricsSubscriber;
 use crate::subscribers::notifications_subscriber::NotificationsSubscriber;
 use crate::subscribers::reports_subscriber::ReportsSubscriber;
 // use crate::subscribers::telemetry_subscriber::TelemetrySubscriber;
@@ -489,6 +490,19 @@ impl ActionPipeline {
                     self.daemon_client.clone(),
                     lifetime,
                 ))
+                .await;
+        }
+
+        // Metrics are recorded against the global meter provider, which is
+        // only configured when OTLP exporting has been enabled
+        if self.app_context.otel_enabled {
+            debug!(
+                "Subscribing OpenTelemetry metrics ({} enabled)",
+                color::property("--otel"),
+            );
+
+            self.emitter
+                .subscribe(MetricsSubscriber::new(Arc::clone(&self.workspace_graph)))
                 .await;
         }
 

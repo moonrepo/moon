@@ -73,6 +73,20 @@ pub enum OperationMeta {
 }
 
 impl OperationMeta {
+    pub fn get_type(&self) -> &'static str {
+        match self {
+            Self::ArchiveCreation => "archive-creation",
+            Self::HashGeneration(_) => "hash-generation",
+            Self::MutexAcquisition => "mutex-acquisition",
+            Self::NoOperation => "no-operation",
+            Self::OutputHydration(_) => "output-hydration",
+            Self::ProcessExecution(_) => "process-execution",
+            Self::SetupOperation(_) => "setup-operation",
+            Self::SyncOperation(_) => "sync-operation",
+            Self::TaskExecution(_) => "task-execution",
+        }
+    }
+
     pub fn is_archive_creation(&self) -> bool {
         matches!(self, Self::ArchiveCreation)
     }

@@ -38,6 +38,13 @@ libc = "0.2.189"
 md5 = "0.8.1"
 miette = "7.6.0"
 num_cpus = "1.17.0"
+opentelemetry = { version = "0.32.0", default-features = false, features = [
+  "metrics",
+] }
+opentelemetry_sdk = { version = "0.32.1", default-features = false, features = [
+  "metrics",
+  "testing",
+] }
 pathdiff = "0.2.3"
 pest = "2.8.6"
 pest_derive = "2.8.6"

@@ -15,7 +15,6 @@ deserialize_untagged_verbose_error = "0.1.5"
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }
-rpkl = "0.7.0"
 rustc-hash = { workspace = true }
 schematic = { workspace = true, features = [
 	"config",

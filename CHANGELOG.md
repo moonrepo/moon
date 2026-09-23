@@ -27,6 +27,9 @@
 - Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
   dependencies that follow them, as a persistent dependency never completes. Those dependencies are
   now ordered against the previous dependency that does complete.
+- Updated the MCP server (`moon mcp`) to the stateless MCP `2026-07-28` protocol. Clients must
+  support this protocol version, as older versions (`2025-11-25` and below) and the `initialize`
+  handshake are no longer supported.
 
 #### 🐞 Fixes
 

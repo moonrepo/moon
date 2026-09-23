@@ -11,16 +11,16 @@ blake3 = { version = "1.8.7", features = ["mmap"] }
 bazel-remote-apis = { version = "0.27.0", features = ["serde"] }
 bytes = "1.12.1"
 async-trait = "0.1.91"
-bitflags = "2.13.1"
+bitflags = "2.13.2"
 chrono = { version = "0.4.44", features = ["serde"] }
 cd_env = "0.4.2"
 ci_env = "0.5.3"
-clap = { version = "4.6.4", default-features = false, features = [
+clap = { version = "4.6.7", default-features = false, features = [
   "derive",
   "std",
   "error-context",
 ] }
-clap_complete = "4.6.9"
+clap_complete = "4.6.11"
 compact_str = { version = "0.10.0", default-features = false, features = [
   "serde",
 ] }
@@ -46,8 +46,8 @@ opentelemetry_sdk = { version = "0.32.1", default-features = false, features = [
   "testing",
 ] }
 pathdiff = "0.2.3"
-pest = "2.8.6"
-pest_derive = "2.8.6"
+pest = "2.9.2"
+pest_derive = "2.9.2"
 petgraph = { version = "0.8.3", default-features = false, features = [
   "serde-1",
 ] }
@@ -56,7 +56,7 @@ regex = { version = "1.13.1", default-features = false, features = [
   "std",
   "perf",
 ] }
-reqwest = { version = "0.13.4", default-features = false, features = [
+reqwest = { version = "0.13.5", default-features = false, features = [
   "rustls",
   # We don't use openssl but its required for musl builds
   "native-tls-vendored",
@@ -72,19 +72,19 @@ serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 sha2 = "0.11.0"
 starbase = { version = "0.13.3", features = ["clap", "miette"] }
-starbase_archive = { version = "0.14.4", default-features = false, features = [
+starbase_archive = { version = "0.14.6", default-features = false, features = [
   "miette",
   "tar-all",
   "zip-all",
 ] }
-starbase_args = { version = "0.1.14" }
+starbase_args = { version = "0.1.15" }
 starbase_console = { version = "0.6.33", features = ["miette"] }
 starbase_id = { version = "0.4.0", features = ["miette", "schematic"] }
 starbase_process = "0.1.2"
 starbase_sandbox = "0.12.0"
 starbase_shell = "0.14.1"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.14.4", default-features = false, features = [
+starbase_utils = { version = "0.14.6", default-features = false, features = [
   "editor-config",
   "glob-cache",
   "miette",
@@ -107,7 +107,7 @@ tonic-prost = "0.14.6"
 tower = "0.5.3"
 tracing = "0.1.44"
 url = "2.5.8"
-uuid = { version = "1.26.0", features = ["v4"] }
+uuid = { version = "1.26.1", features = ["v4"] }
 windows-sys = { version = "0.61.2", default-features = false }
 
 # proto/plugin related

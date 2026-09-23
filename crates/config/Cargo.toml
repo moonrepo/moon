@@ -11,7 +11,10 @@ publish = true
 [dependencies]
 moon_common = { version = "2.1.0", path = "../common" }
 moon_target = { version = "3.1.0", path = "../target" }
-deserialize_untagged_verbose_error = "0.1.5"
+# Pinned: macro v0.1.4+ rejects lists with more than 1 item for newtype
+# variants (`Files(Vec<FilePath>)`), with "expected a tuple of size 1".
+deserialize_untagged_verbose_error = "=0.1.5"
+deserialize_untagged_verbose_error_macro = "=0.1.3"
 indexmap = { workspace = true }
 miette = { workspace = true }
 regex = { workspace = true }

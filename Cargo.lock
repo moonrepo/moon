@@ -5942,7 +5942,7 @@ dependencies = [
 
 [[package]]
 name = "moon_common"
-version = "2.0.8"
+version = "2.1.0"
 dependencies = [
  "dirs 6.0.0",
  "miette 7.6.0",
@@ -5957,7 +5957,7 @@ dependencies = [
 
 [[package]]
 name = "moon_config"
-version = "2.1.2"
+version = "2.2.0"
 dependencies = [
  "deserialize_untagged_verbose_error",
  "httpmock",
@@ -6310,7 +6310,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "clap",
  "extism-pdk",
@@ -6326,7 +6326,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_api"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "bitflags 2.13.2",
  "derive_setters",
@@ -6344,7 +6344,7 @@ dependencies = [
 
 [[package]]
 name = "moon_pdk_test_utils"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "extism",
  "moon_pdk_api",
@@ -6520,7 +6520,7 @@ dependencies = [
 
 [[package]]
 name = "moon_target"
-version = "3.0.1"
+version = "3.1.0"
 dependencies = [
  "compact_str 0.10.0",
  "miette 7.6.0",

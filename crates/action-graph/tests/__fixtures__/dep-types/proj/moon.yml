@@ -7,6 +7,8 @@ tasks:
     command: 'a'
   b:
     command: 'b'
+  c:
+    command: 'c'
   server:
     command: 'server'
     options:
@@ -37,6 +39,18 @@ tasks:
       - 'b'
       - target: 'teardown'
         type: 'cleanup'
+    options:
+      runDepsInParallel: false
+
+  # A non-persistent wait dep completes, but isn't waited on,
+  # so it must not order the serial deps that follow it
+  serial-wait:
+    command: 'serial-wait'
+    deps:
+      - 'a'
+      - target: 'c'
+        type: 'wait'
+      - 'b'
     options:
       runDepsInParallel: false
 

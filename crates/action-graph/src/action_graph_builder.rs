@@ -823,10 +823,7 @@ impl<'query> ActionGraphBuilder<'query> {
                     // `wait` dependency doesn't run to completion first.
                     let is_required = dep.type_of.is_required_type();
 
-                    if !parallel
-                        && is_required
-                        && let Some(prev) = previous_target_index
-                    {
+                    if !parallel && is_required {
                         self.link_serial_required_edges(
                             dep_index,
                             previous_target_index,
@@ -850,14 +847,14 @@ impl<'query> ActionGraphBuilder<'query> {
 
                     if is_required {
                         previous_target_index = Some(dep_index);
-                    }
 
-                    // A persistent dependency never completes, so it can't order
-                    // the dependencies that come after it. Track the previous one
-                    // that actually completes, so that they can be ordered against
-                    // it instead
-                    if !dep_task.is_persistent() {
-                        previous_standard_index = Some(dep_index);
+                        // A persistent dependency never completes, so it can't order
+                        // the dependencies that come after it. Track the previous one
+                        // that actually completes, so that they can be ordered against
+                        // it instead
+                        if !dep_task.is_persistent() {
+                            previous_standard_index = Some(dep_index);
+                        }
                     }
                 }
             }
@@ -1680,7 +1677,7 @@ impl<'query> ActionGraphBuilder<'query> {
     /// following them — e.g. a `b -> a` edge left by an earlier serial parent on
     /// a shared node `b` — would let the walk escape `index`'s real subtree and
     /// wrongly order unrelated tasks. Cycle-forming edges are skipped when
-    /// linked via [`Self::try_link_requirements`].
+    /// linked via [`Self::try_link_edge`].
     fn link_serial_required_edges(
         &mut self,
         index: NodeIndex,
@@ -1758,7 +1755,7 @@ impl<'query> ActionGraphBuilder<'query> {
 
     /// Try to add a serial ordering edge between two dependency nodes, recording
     /// it in `serial_edges` so the subtree walk in
-    /// [`Self::link_serial_requirements`] won't mistake it for a real
+    /// [`Self::link_serial_required_edges`] won't mistake it for a real
     /// dependency. Silently skips the edge if it would introduce a cycle — this
     /// happens when the same task node appears in multiple serial dependency
     /// chains across different parent tasks.

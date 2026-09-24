@@ -231,7 +231,7 @@ impl OutputHydrater<'_> {
     fn delete_existing_outputs(&self) -> miette::Result<()> {
         for output in self
             .task
-            .get_output_files(&self.app_context.workspace_root, true)?
+            .get_output_files_uncached(&self.app_context.workspace_root, true)?
         {
             // Ignore failures as we don't want to crash the entire pipeline,
             // and in most cases, these artifacts will just be overwritten

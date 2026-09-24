@@ -3328,6 +3328,61 @@ mod action_graph_builder {
         }
 
         #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_chain_serial_deps_after_non_persistent_wait_deps() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            let task = wg.get_task_from_project("proj", "serial-wait").unwrap();
+
+            builder
+                .run_task(&task, &RunRequirements::default())
+                .await
+                .unwrap();
+
+            let (_, graph) = builder.build();
+
+            let edges = map_edges(&graph);
+            let task_edges = edges
+                .iter()
+                .filter(|(source, target, _)| {
+                    source.contains("Task(proj:") && target.contains("Task(proj:")
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+
+            // Unlike a persistent dep, a non-persistent wait dep completes,
+            // but it's not waited on, so b is still chained after a (not c)
+            assert_eq!(
+                task_edges,
+                vec![
+                    (
+                        "RunTask(proj:b)".into(),
+                        "RunTask(proj:a)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:serial-wait)".into(),
+                        "RunTask(proj:a)".into(),
+                        "required".into()
+                    ),
+                    (
+                        "RunTask(proj:serial-wait)".into(),
+                        "RunTask(proj:c)".into(),
+                        "wait".into()
+                    ),
+                    (
+                        "RunTask(proj:serial-wait)".into(),
+                        "RunTask(proj:b)".into(),
+                        "required".into()
+                    ),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
         async fn shares_a_cleanup_between_tasks() {
             let sandbox = create_sandbox("dep-types");
             let mut container = ActionGraphContainer::new(sandbox.path());

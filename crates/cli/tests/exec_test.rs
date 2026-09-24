@@ -4,7 +4,7 @@ use moon_cache::{CacheContext, CacheEngine};
 use moon_common::is_ci;
 use moon_config::{HasherWalkStrategy, PartialHasherConfig};
 use moon_task_runner::TaskRunCacheState;
-use moon_test_utils::{create_moon_sandbox, predicates::prelude::*};
+use moon_test_utils::{create_empty_moon_sandbox, create_moon_sandbox, predicates::prelude::*};
 use starbase_utils::{fs, json};
 use std::path::{MAIN_SEPARATOR_STR, Path};
 use utils::{
@@ -1936,6 +1936,89 @@ mod exec {
             let with_deps = extract_hash_from_run(sandbox.path(), "outputs:withDeps");
 
             assert_ne!(as_dep, with_deps);
+        }
+
+        #[cfg(unix)]
+        #[test]
+        fn keeps_outputs_strategy_hash_stable_after_cas_hydration() {
+            let sandbox = create_empty_moon_sandbox();
+            sandbox.enable_git();
+            sandbox.create_file(
+                ".moon/workspace.yml",
+                r#"projects:
+  producer: producer
+  consumer: consumer
+vcs:
+  defaultBranch: main
+  provider: github
+pipeline:
+  installDependencies: false
+experiments:
+  casOutputsCache: true
+"#,
+            );
+            sandbox.create_file(
+                "producer/moon.yml",
+                r#"language: bash
+tasks:
+  build:
+    command: bash
+    args: [build.sh]
+    inputs: [src.txt, build.sh]
+    outputs: [dist/**/*]
+"#,
+            );
+            sandbox.create_file(
+                "producer/build.sh",
+                "#!/usr/bin/env bash\nset -euo pipefail\nmkdir -p dist\ncp src.txt dist/value.txt\n",
+            );
+            sandbox.create_file("producer/src.txt", "stable-output");
+            sandbox.create_file(
+                "consumer/moon.yml",
+                r#"language: bash
+tasks:
+  build:
+    command: bash
+    args: [build.sh]
+    deps:
+      - target: producer:build
+        cacheStrategy: outputs
+    inputs: [build.sh]
+    outputs: [dist/**/*]
+"#,
+            );
+            sandbox.create_file(
+                "consumer/build.sh",
+                "#!/usr/bin/env bash\nset -euo pipefail\nmkdir -p dist\ncp ../producer/dist/value.txt dist/result.txt\n",
+            );
+
+            let run = || {
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("consumer:build");
+                    // Starbase disables its glob cache in test mode, but this
+                    // regression specifically depends on the production cache.
+                    cmd.env_remove("STARBASE_TEST");
+                    cmd.env("MOON_DAEMON", "false");
+                })
+            };
+
+            run().success();
+
+            let producer_hash1 = extract_hash_from_run(sandbox.path(), "producer:build");
+            let consumer_hash1 = extract_hash_from_run(sandbox.path(), "consumer:build");
+
+            fs::remove_dir_all(sandbox.path().join("producer/dist")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("consumer/dist")).unwrap();
+
+            run().success();
+
+            let producer_hash2 = extract_hash_from_run(sandbox.path(), "producer:build");
+            let consumer_hash2 = extract_hash_from_run(sandbox.path(), "consumer:build");
+
+            assert_eq!(producer_hash1, producer_hash2);
+            assert_eq!(consumer_hash1, consumer_hash2);
+            assert!(sandbox.path().join("producer/dist/value.txt").exists());
+            assert!(sandbox.path().join("consumer/dist/result.txt").exists());
         }
 
         #[test]

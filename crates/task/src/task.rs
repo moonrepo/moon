@@ -274,6 +274,24 @@ impl Task {
         workspace_root: &Path,
         include_non_globs: bool,
     ) -> miette::Result<Vec<PathBuf>> {
+        self.get_output_files_with_glob_cache(workspace_root, include_non_globs, true)
+    }
+
+    /// Return output files without caching glob walk results.
+    pub fn get_output_files_uncached(
+        &self,
+        workspace_root: &Path,
+        include_non_globs: bool,
+    ) -> miette::Result<Vec<PathBuf>> {
+        self.get_output_files_with_glob_cache(workspace_root, include_non_globs, false)
+    }
+
+    fn get_output_files_with_glob_cache(
+        &self,
+        workspace_root: &Path,
+        include_non_globs: bool,
+        cache_globs: bool,
+    ) -> miette::Result<Vec<PathBuf>> {
         let mut list = FxHashSet::default();
 
         if include_non_globs {
@@ -283,10 +301,16 @@ impl Task {
         }
 
         if !self.output_globs.is_empty() {
+            let mut options = GlobWalkOptions::default().files();
+
+            if cache_globs {
+                options = options.cache();
+            }
+
             list.extend(glob::walk_fast_with_options(
                 workspace_root,
                 self.output_globs.keys(),
-                GlobWalkOptions::default().files().cache(),
+                options,
             )?);
         }
 

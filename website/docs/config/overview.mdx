@@ -135,7 +135,7 @@ We highly suggest reading the Pkl
 #### Type checking<VersionLabel version="2.6.0" />
 
 Every configuration file has a Pkl module that types its settings, which is generated to
-`.moon/cache/pkl`, alongside the [JSON schemas](#schema-validation). A config that amends its module
+`.moon/cache/schemas/pkl`, alongside the [JSON schemas](#schema-validation). A config that amends its module
 is type checked by Pkl itself, which reports unknown settings and invalid values when the config is
 evaluated, and editors with Pkl support provide completion and documentation for each setting.
 
@@ -146,42 +146,42 @@ evaluated, and editors with Pkl support provide completion and documentation for
 <TabItem value=".moon/workspace">
 
 ```pkl title=".moon/workspace.pkl"
-amends "./cache/pkl/WorkspaceConfig.pkl"
+amends "./cache/schemas/pkl/WorkspaceConfig.pkl"
 ```
 
 </TabItem>
 <TabItem value=".moon/extensions">
 
 ```pkl title=".moon/extensions.pkl"
-extends "./cache/pkl/ExtensionsConfig.pkl"
+extends "./cache/schemas/pkl/ExtensionsConfig.pkl"
 ```
 
 </TabItem>
 <TabItem value=".moon/toolchains">
 
 ```pkl title=".moon/toolchains.pkl"
-extends "./cache/pkl/ToolchainsConfig.pkl"
+extends "./cache/schemas/pkl/ToolchainsConfig.pkl"
 ```
 
 </TabItem>
 <TabItem value=".moon/tasks">
 
 ```pkl title=".moon/tasks/all.pkl"
-amends "../cache/pkl/InheritedTasksConfig.pkl"
+amends "../cache/schemas/pkl/InheritedTasksConfig.pkl"
 ```
 
 </TabItem>
 <TabItem value="moon">
 
 ```pkl title="moon.pkl"
-amends ".../.moon/cache/pkl/ProjectConfig.pkl"
+amends ".../.moon/cache/schemas/pkl/ProjectConfig.pkl"
 ```
 
 </TabItem>
 <TabItem value="template">
 
 ```pkl title="template.pkl"
-amends ".../.moon/cache/pkl/TemplateConfig.pkl"
+amends ".../.moon/cache/schemas/pkl/TemplateConfig.pkl"
 ```
 
 </TabItem>
@@ -191,14 +191,7 @@ A path that starts with `.../` is a
 [triple-dot URI](https://pkl-lang.org/main/current/language-reference/index.html#triple-dot-module-uris),
 which Pkl resolves by searching each parent directory in turn, so the same path works for a project
 at any depth. It never searches the config's own directory though, so a project at the root of the
-workspace uses `./.moon/cache/pkl/ProjectConfig.pkl` instead.
-
-:::info
-
-The modules are automatically created when running a task. If they do not exist yet, you can run
-[`moon sync config-schemas`](../commands/sync/config-schemas) to generate them manually.
-
-:::
+workspace uses `./.moon/cache/schemas/pkl/ProjectConfig.pkl` instead.
 
 Toolchains and extensions are configured by plugins, whose settings the modules can't know ahead of
 time. A config that amends a module can't declare settings the module doesn't, but one that
@@ -207,7 +200,7 @@ The settings of each plugin aren't type checked, and the same applies to the `to
 and custom `project` metadata of a `moon.pkl`.
 
 ```pkl title=".moon/toolchains.pkl"
-extends "./cache/pkl/ToolchainsConfig.pkl"
+extends "./cache/schemas/pkl/ToolchainsConfig.pkl"
 
 proto {
   version = "0.60.0"
@@ -224,9 +217,9 @@ shapes, such as a task dependency that is either a target or an object, can't te
 `new { ... }` creates. Import the module of the object, and create it by name instead.
 
 ```pkl title="moon.pkl"
-amends ".../.moon/cache/pkl/ProjectConfig.pkl"
+amends ".../.moon/cache/schemas/pkl/ProjectConfig.pkl"
 
-import ".../.moon/cache/pkl/TaskDependencyConfig.pkl"
+import ".../.moon/cache/schemas/pkl/TaskDependencyConfig.pkl"
 
 tasks {
   ["build"] {

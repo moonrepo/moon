@@ -44,6 +44,13 @@ pub async fn hash_common_task_contents(
         let mut deps = BTreeMap::default();
 
         for dep in &task.deps {
+            // Only dependencies that must complete before this task can affect
+            // its outputs. The others have not ran (cleanup), or may still be
+            // running (wait), so their state would make the hash nondeterministic
+            if !dep.type_of.is_required_type() {
+                continue;
+            }
+
             if action_context.is_dependency_ignored(&task.target, &dep.target) {
                 deps.insert(&dep.target, "passthrough".into());
                 continue;

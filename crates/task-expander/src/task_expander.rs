@@ -73,10 +73,13 @@ impl<'graph> TaskExpander<'graph> {
     #[instrument(skip_all)]
     pub fn inject_deps_outputs(&mut self, task: &mut Task) -> miette::Result<()> {
         for dep in task.deps.iter() {
-            if !matches!(
-                dep.cache_strategy,
-                Some(TaskDependencyCacheStrategy::Outputs)
-            ) {
+            // Outputs only exist for dependencies that complete before this task
+            if !dep.type_of.is_required_type()
+                || !matches!(
+                    dep.cache_strategy,
+                    Some(TaskDependencyCacheStrategy::Outputs)
+                )
+            {
                 continue;
             }
 

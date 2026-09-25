@@ -9,10 +9,12 @@ tasks:
     command: 'b'
   c:
     command: 'c'
+  # Must run in CI (persistent tasks don't by default) to be waited on
   server:
     command: 'server'
     options:
       persistent: true
+      runInCI: true
 
   # Required dep, and a cleanup dep
   base:
@@ -53,6 +55,45 @@ tasks:
       - 'b'
     options:
       runDepsInParallel: false
+
+  # The cleanup is passed args, and is also a dependent of
+  # the task in the task graph, as it runs after it
+  args-parent:
+    command: 'args-parent'
+    deps:
+      - 'setup'
+      - target: 'teardown'
+        type: 'cleanup'
+        args: ['--force']
+
+  # The cleanup also requires the task it cleans up after,
+  # which are separate relationships between them
+  both-parent:
+    command: 'both-parent'
+    deps:
+      - target: 'both-cleanup'
+        type: 'cleanup'
+
+  both-cleanup:
+    command: 'both-cleanup'
+    deps: ['both-parent']
+
+  # Serial, where the second dependency waits on the first,
+  # but must still run after it completes
+  serial-inner-wait:
+    command: 'serial-inner-wait'
+    deps: ['s-first', 's-second']
+    options:
+      runDepsInParallel: false
+
+  s-first:
+    command: 's-first'
+
+  s-second:
+    command: 's-second'
+    deps:
+      - target: 's-first'
+        type: 'wait'
 
   # Shares the cleanup dep with `base`
   other:

@@ -10,6 +10,7 @@ use moon_action_context::{ActionContext, TargetState};
 use moon_app_context::AppContext;
 use moon_cache::{CacheItem, StorageOptions};
 use moon_common::format_error_chain;
+use moon_config::TaskDependencyType;
 use moon_console::TaskReportItem;
 use moon_daemon_client::DaemonClient;
 use moon_hash::{ContentHash, ContentHasher};
@@ -373,7 +374,10 @@ impl<'task> TaskRunner<'task> {
         }
 
         for dep in &self.task.deps {
-            if context.is_dependency_ignored(&self.task.target, &dep.target) {
+            // Cleanup dependencies run *after* this task, so have not ran yet
+            if matches!(dep.type_of, TaskDependencyType::Cleanup)
+                || context.is_dependency_ignored(&self.task.target, &dep.target)
+            {
                 continue;
             }
 
@@ -389,6 +393,10 @@ impl<'task> TaskRunner<'task> {
                 );
 
                 return Ok(false);
+            }
+            // Wait dependencies only need to have started, so may still be running
+            else if matches!(dep.type_of, TaskDependencyType::Wait) {
+                continue;
             } else {
                 return Err(TaskRunnerError::MissingDependencyHash {
                     dep_target: dep.target.clone(),

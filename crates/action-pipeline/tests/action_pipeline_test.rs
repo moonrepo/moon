@@ -1,6 +1,7 @@
 use moon_action::{Action, ActionStatus};
 use moon_action_graph::RunRequirements;
 use moon_common::Id;
+use moon_process::ProcessRegistry;
 use moon_task::Target;
 use moon_test_utils::WorkspaceMocker;
 use moon_toolchain::ToolchainSpec;
@@ -439,6 +440,295 @@ mod action_pipeline {
                 statuses.get("RunPersistentTask(persistent:persistent-client)"),
                 Some(&ActionStatus::Passed)
             );
+        }
+    }
+
+    mod dep_types {
+        use super::*;
+
+        async fn run_pipeline(
+            sandbox: &Sandbox,
+            targets: &[&str],
+            bail: bool,
+            concurrency: usize,
+        ) -> miette::Result<Vec<Action>> {
+            let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
+
+            let reqs = RunRequirements::default();
+            let mut graph = mocker.create_action_graph().await;
+
+            for target in targets {
+                graph
+                    .run_task_by_target(&Target::parse(target).unwrap(), &reqs)
+                    .await
+                    .unwrap();
+            }
+
+            let (context, graph) = graph.build();
+            let mut pipeline = mocker.mock_action_pipeline().await;
+            pipeline.bail = bail;
+            pipeline.concurrency = concurrency;
+
+            pipeline.run_with_context(graph, context).await
+        }
+
+        async fn run_targets(
+            sandbox: &Sandbox,
+            targets: &[&str],
+            bail: bool,
+        ) -> FxHashMap<String, ActionStatus> {
+            // Enough for tasks that wait on each other to run in parallel
+            get_statuses(run_pipeline(sandbox, targets, bail, 4).await.unwrap())
+        }
+
+        fn has_signal(sandbox: &Sandbox, name: &str) -> bool {
+            sandbox.path().join("dep-types").join(name).exists()
+        }
+
+        mod wait {
+            use super::*;
+
+            // The dependency only completes once the task has started, so this
+            // deadlocks (and times out) if the task waits for it to complete
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_once_the_dependency_has_started() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:client"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:server)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:client)"),
+                    Some(&ActionStatus::Passed)
+                );
+            }
+
+            // The dependency runs without a permit, as it may never complete
+            // until the task runs, which would otherwise never get a permit
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_with_a_single_permit() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = get_statuses(
+                    run_pipeline(&sandbox, &["dep-types:client"], false, 1)
+                        .await
+                        .unwrap(),
+                );
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:server)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:client)"),
+                    Some(&ActionStatus::Passed)
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn can_wait_on_a_persistent_task() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:persistent-client"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunPersistentTask(dep-types:persistent-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:persistent-client)"),
+                    Some(&ActionStatus::Passed)
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_the_dependency_already_failed() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:after-crash"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:crash)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:settle)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:after-crash)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert!(!has_signal(&sandbox, "after-crash-ran"));
+            }
+        }
+
+        mod cleanup {
+            use super::*;
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_after_the_task() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:parent"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:parent)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_after_the_task_fails() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:failing-parent"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:failing-parent)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:failing-cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert!(has_signal(&sandbox, "failing-cleaned"));
+            }
+
+            // The failure aborts the pipeline, which must still run the cleanup
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_after_the_task_fails_when_bailing() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:failing-parent"], true).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:failing-parent)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:failing-cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert!(has_signal(&sandbox, "failing-cleaned"));
+            }
+
+            // The task never ran its command, so there's nothing to clean up
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_if_the_task_is_skipped() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:blocked-parent"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:broken)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-parent)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-cleanup)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert!(!has_signal(&sandbox, "blocked-cleaned"));
+            }
+
+            // Unless the cleanup was explicitly requested
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_when_requested_even_if_the_task_is_skipped() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(
+                    &sandbox,
+                    &["dep-types:blocked-parent", "dep-types:blocked-cleanup"],
+                    false,
+                )
+                .await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-parent)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert!(has_signal(&sandbox, "blocked-cleaned"));
+            }
+
+            // Tasks that were terminated because of the abort are not the failure,
+            // but they carry the error of their termination, which must not be
+            // reported as the pipeline's error (this used to be discarded)
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_report_terminated_tasks_as_the_failure() {
+                let sandbox = create_sandbox("pipeline");
+                let result = run_pipeline(
+                    &sandbox,
+                    &["dep-types:failing-parent", "dep-types:long-sibling"],
+                    true,
+                    4,
+                )
+                .await;
+
+                let statuses = get_statuses(result.unwrap());
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:failing-parent)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:long-sibling)"),
+                    Some(&ActionStatus::Aborted)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:failing-cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+            }
+
+            // Aborting terminates the running processes, and the process registry
+            // kills the ones it tracks once its threshold has elapsed (even those
+            // started afterwards), so the cleanup must not start until then
+            #[tokio::test(flavor = "multi_thread")]
+            async fn isnt_killed_when_the_pipeline_terminates_processes() {
+                // Must be registered before anything else uses the registry
+                ProcessRegistry::register(500);
+
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(
+                    &sandbox,
+                    &["dep-types:slow-failing-parent", "dep-types:long-sibling"],
+                    true,
+                )
+                .await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:slow-failing-parent)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:slow-cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert!(has_signal(&sandbox, "slow-cleaned"));
+            }
+
+            // The pipeline is aborted before the task runs,
+            // so there's nothing for the cleanup to clean up
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_if_the_task_never_ran_when_bailing() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:blocked-parent"], true).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:broken)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert_eq!(statuses.get("RunTask(dep-types:blocked-parent)"), None);
+                assert_eq!(statuses.get("RunTask(dep-types:blocked-cleanup)"), None);
+                assert!(!has_signal(&sandbox, "blocked-ran"));
+                assert!(!has_signal(&sandbox, "blocked-cleaned"));
+            }
         }
     }
 }

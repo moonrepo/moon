@@ -123,7 +123,8 @@ export interface TaskDependencyConfig {
 	/**
 	 * Controls when this dependency is ran in relation to the current task.
 	 * When `required`, runs before the task and must complete successfully.
-	 * When `cleanup`, runs after the task, even when the task fails.
+	 * When `cleanup`, runs after the task has ran its command, even when
+	 * the task fails (but not when it was skipped, or hydrated from the cache).
 	 * When `wait`, runs before the task, but the task only waits for the
 	 * dependency to have started running, not to have completed.
 	 * @since 2.6.0
@@ -708,7 +709,8 @@ export interface PartialTaskDependencyConfig {
 	/**
 	 * Controls when this dependency is ran in relation to the current task.
 	 * When `required`, runs before the task and must complete successfully.
-	 * When `cleanup`, runs after the task, even when the task fails.
+	 * When `cleanup`, runs after the task has ran its command, even when
+	 * the task fails (but not when it was skipped, or hydrated from the cache).
 	 * When `wait`, runs before the task, but the task only waits for the
 	 * dependency to have started running, not to have completed.
 	 * @since 2.6.0

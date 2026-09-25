@@ -1,0 +1,6 @@
+inheritedBy:
+  tags: ['implicit-cleanup']
+
+implicitDeps:
+  - target: 'app:teardown'
+    type: 'cleanup'

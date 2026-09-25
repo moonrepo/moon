@@ -1,0 +1,9 @@
+tags: [implicit-cleanup]
+
+tasks:
+  standard:
+    command: 'standard'
+  server:
+    command: 'server'
+    options:
+      persistent: true

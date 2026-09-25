@@ -1,3 +1,4 @@
+use crate::abort_state::AbortState;
 use crate::event_emitter::EventEmitter;
 use moon_action::Action;
 use moon_daemon_client::DaemonClient;
@@ -8,10 +9,30 @@ use std::sync::Arc;
 use tokio::sync::{RwLock, Semaphore, mpsc::Sender, mpsc::UnboundedSender};
 use tokio_util::sync::CancellationToken;
 
+/// A job that has completed, as sent to the dispatcher.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CompletedJob {
+    pub index: NodeIndex,
+
+    /// Whether the job's action started running, instead of being
+    /// aborted or skipped before it could start.
+    pub started: bool,
+
+    /// Whether the job's action failed, or was aborted.
+    pub failed: bool,
+
+    /// Whether the job's action executed a task's command, instead of the
+    /// task being skipped, or hydrated from the cache.
+    pub executed: bool,
+}
+
 #[derive(Clone)]
 pub struct JobContext {
     /// Force aborts running jobs
     pub abort_token: CancellationToken,
+
+    /// State for handling an aborted pipeline
+    pub abort_state: Arc<AbortState>,
 
     /// Abort the pipeline when any job fails, not just hard failures
     pub bail: bool,
@@ -21,7 +42,7 @@ pub struct JobContext {
 
     /// Sends jobs that have completed to the dispatcher, which drains the
     /// queue and tracks the completions itself
-    pub completed_queue: UnboundedSender<NodeIndex>,
+    pub completed_queue: UnboundedSender<CompletedJob>,
 
     /// Optional daemon client for use within actions.
     pub daemon_client: Option<DaemonClient>,
@@ -47,12 +68,24 @@ impl JobContext {
         self.abort_token.is_cancelled() || self.cancel_token.is_cancelled()
     }
 
-    pub async fn mark_completed(&self, index: NodeIndex) {
-        self.running_jobs.write().await.remove(&index);
+    /// Mark a job as completed without a result, like a persistent job
+    /// (which never completes) that has been dispatched.
+    pub async fn mark_completed(&self, index: NodeIndex, started: bool) {
+        self.mark_completed_job(CompletedJob {
+            index,
+            started,
+            failed: false,
+            executed: false,
+        })
+        .await;
+    }
+
+    async fn mark_completed_job(&self, job: CompletedJob) {
+        self.running_jobs.write().await.remove(&job.index);
 
         // Fails when the dispatcher has stopped receiving (the pipeline
         // was aborted), in which case nothing is waiting on this job
-        let _ = self.completed_queue.send(index);
+        let _ = self.completed_queue.send(job);
     }
 
     /// Whether the action should abort the entire pipeline.
@@ -70,7 +103,13 @@ impl JobContext {
             self.abort_token.cancel();
         }
 
-        self.mark_completed(NodeIndex::new(action.node_index)).await;
+        self.mark_completed_job(CompletedJob {
+            index: NodeIndex::new(action.node_index),
+            started: action.started_at.is_some(),
+            failed: action.has_failed(),
+            executed: action.operations.has_executed_task(),
+        })
+        .await;
 
         let _ = self.result_sender.send(action).await;
     }

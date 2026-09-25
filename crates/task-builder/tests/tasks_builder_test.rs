@@ -2280,6 +2280,25 @@ tasks:
     mod global_implicits {
         use super::*;
 
+        // Persistent tasks never complete, so they can't be cleaned up after,
+        // which must not break every persistent task in the workspace
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inherit_cleanup_deps_for_persistent_tasks() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("implicits-cleanup").await;
+
+            assert_eq!(
+                tasks.get("standard").unwrap().deps,
+                vec![TaskDependencyConfig {
+                    type_of: TaskDependencyType::Cleanup,
+                    ..TaskDependencyConfig::new(Target::parse("app:teardown").unwrap())
+                }]
+            );
+            assert!(tasks.get("server").unwrap().deps.is_empty());
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn no_inputs() {
             let sandbox = create_sandbox("builder");

@@ -216,12 +216,16 @@ impl TaskDepsBuilder<'_> {
         dep_task_options: &TaskOptions,
         dep_config: &TaskDependencyConfig,
     ) -> miette::Result<TaskDependencyConfig> {
-        // Cleanup and wait dependencies do not block the task, and their
-        // result is never consumed, so many constraints do not apply
         let is_required = dep_config.type_of.is_required_type();
 
+        // Cleanup dependencies run after the task, and their result is never
+        // consumed by it, so the constraints of running before it don't apply.
+        // Wait dependencies do run before the task, and it's skipped when they
+        // fail before it starts (which would be silent if they can fail)
+        let is_cleanup = matches!(dep_config.type_of, TaskDependencyType::Cleanup);
+
         // Do not depend on tasks that can fail
-        if is_required && dep_task_options.allow_failure {
+        if !is_cleanup && dep_task_options.allow_failure {
             return Err(TasksBuilderError::AllowFailureDepRequirement {
                 dep: dep_task_target.to_owned(),
                 task: self.task.target.to_owned(),
@@ -230,7 +234,7 @@ impl TaskDepsBuilder<'_> {
         }
 
         // Do not depend on tasks that can't run in CI
-        if is_required
+        if !is_cleanup
             && !dep_task_options.run_in_ci.is_enabled()
             && self.task.options.run_in_ci.is_enabled()
             && dep_task_options.run_in_ci != TaskOptionRunInCI::Skip

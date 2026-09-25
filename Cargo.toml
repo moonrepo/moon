@@ -138,3 +138,9 @@ assigning_clones = "allow"
 
 [workspace.metadata.cargo-shear]
 ignored = ["serde"]
+
+[patch.crates-io]
+schematic = { path = "../schematic/crates/schematic" }
+schematic_core = { path = "../schematic/crates/core" }
+schematic_macros = { path = "../schematic/crates/macros" }
+schematic_types = { path = "../schematic/crates/types" }

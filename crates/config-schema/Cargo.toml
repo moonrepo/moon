@@ -15,7 +15,7 @@ rustc-hash = { workspace = true }
 schematic = { workspace = true, features = ["renderer_json_schema", "schema"] }
 
 [features]
-default = []
+default = ["schematic/renderer_pkl_schema"]
 api-docs = ["schematic/renderer_api_docs"]
 typescript = ["schematic/renderer_typescript"]
 

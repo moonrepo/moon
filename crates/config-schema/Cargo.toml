@@ -12,10 +12,10 @@ publish = false
 moon_config = { path = "../config" }
 miette = { workspace = true }
 rustc-hash = { workspace = true }
-schematic = { workspace = true, features = ["renderer_json_schema", "schema"] }
+schematic = { workspace = true, features = ["renderer_json_schema", "renderer_pkl_schema", "schema"] }
 
 [features]
-default = ["schematic/renderer_pkl_schema"]
+default = []
 api-docs = ["schematic/renderer_api_docs"]
 typescript = ["schematic/renderer_typescript"]
 

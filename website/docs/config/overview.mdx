@@ -87,6 +87,13 @@ The schemas are automatically created when running a task. If they do not exist 
 
 :::
 
+:::tip
+
+For Pkl configuration files, amend the [Pkl modules](#type-checking) instead, which Pkl type checks
+itself.
+
+:::
+
 :::danger
 
 In older versions of moon, the schema files were located at `https://moonrepo.dev/schemas`. These
@@ -115,6 +122,7 @@ To start using Pkl in moon, simply:
 - Install [Pkl](#installing-pkl) and the
   [VS Code extension](https://pkl-lang.org/vscode/current/index.html).
 - Create configs with the `.pkl` extension.
+- Amend the [module](#type-checking) of each config, so that Pkl type checks it.
 
 :::info
 
@@ -124,12 +132,123 @@ We highly suggest reading the Pkl
 
 :::
 
+#### Type checking<VersionLabel version="2.6.0" />
+
+Every configuration file has a Pkl module that types its settings, which is generated to
+`.moon/cache/pkl`, alongside the [JSON schemas](#schema-validation). A config that amends its module
+is type checked by Pkl itself, which reports unknown settings and invalid values when the config is
+evaluated, and editors with Pkl support provide completion and documentation for each setting.
+
+<Tabs
+  groupId="configs"
+  defaultValue=".moon/workspace"
+>
+<TabItem value=".moon/workspace">
+
+```pkl title=".moon/workspace.pkl"
+amends "./cache/pkl/WorkspaceConfig.pkl"
+```
+
+</TabItem>
+<TabItem value=".moon/extensions">
+
+```pkl title=".moon/extensions.pkl"
+extends "./cache/pkl/ExtensionsConfig.pkl"
+```
+
+</TabItem>
+<TabItem value=".moon/toolchains">
+
+```pkl title=".moon/toolchains.pkl"
+extends "./cache/pkl/ToolchainsConfig.pkl"
+```
+
+</TabItem>
+<TabItem value=".moon/tasks">
+
+```pkl title=".moon/tasks/all.pkl"
+amends "../cache/pkl/InheritedTasksConfig.pkl"
+```
+
+</TabItem>
+<TabItem value="moon">
+
+```pkl title="moon.pkl"
+amends ".../.moon/cache/pkl/ProjectConfig.pkl"
+```
+
+</TabItem>
+<TabItem value="template">
+
+```pkl title="template.pkl"
+amends ".../.moon/cache/pkl/TemplateConfig.pkl"
+```
+
+</TabItem>
+</Tabs>
+
+A path that starts with `.../` is a
+[triple-dot URI](https://pkl-lang.org/main/current/language-reference/index.html#triple-dot-module-uris),
+which Pkl resolves by searching each parent directory in turn, so the same path works for a project
+at any depth. It never searches the config's own directory though, so a project at the root of the
+workspace uses `./.moon/cache/pkl/ProjectConfig.pkl` instead.
+
+:::info
+
+The modules are automatically created when running a task. If they do not exist yet, you can run
+[`moon sync config-schemas`](../commands/sync/config-schemas) to generate them manually.
+
+:::
+
+Toolchains and extensions are configured by plugins, whose settings the modules can't know ahead of
+time. A config that amends a module can't declare settings the module doesn't, but one that
+_extends_ it can, so `.moon/toolchains.pkl` and `.moon/extensions.pkl` extend their modules instead.
+The settings of each plugin aren't type checked, and the same applies to the `toolchains` overrides
+and custom `project` metadata of a `moon.pkl`.
+
+```pkl title=".moon/toolchains.pkl"
+extends "./cache/pkl/ToolchainsConfig.pkl"
+
+proto {
+  version = "0.60.0"
+}
+
+node {
+  version = "22.0.0"
+}
+```
+
+Lists and maps can be amended, or assigned a `List`, `Set`, or `Map`, so the
+[examples below](#example-functionality) type check as is. However, a setting that accepts several
+shapes, such as a task dependency that is either a target or an object, can't tell which shape
+`new { ... }` creates. Import the module of the object, and create it by name instead.
+
+```pkl title="moon.pkl"
+amends ".../.moon/cache/pkl/ProjectConfig.pkl"
+
+import ".../.moon/cache/pkl/TaskDependencyConfig.pkl"
+
+tasks {
+  ["build"] {
+    command = "vite build"
+    deps = List(
+      "^:build",
+      new TaskDependencyConfig {
+        target = "codegen"
+        optional = true
+      }
+    )
+  }
+}
+```
+
 #### Caveats and restrictions
 
 Since this is an entirely new configuration format that is quite dynamic compared to YAML, there are
 some key differences to be aware of!
 
-- Only files are supported. Cannot use or extend from URLs.
+- Only files are supported. Cannot use or extend from URLs with the `extends` setting. This doesn't
+  apply to Pkl's own `amends` and `import`, which can load a [module](#type-checking) from a URL.
 
 - Each `.pkl` file is evaluated in isolation (loops are processed, variables assigned, etc). This
   means that task inheritance and file merging cannot extend or infer this native functionality.
@@ -138,7 +257,8 @@ some key differences to be aware of!
   [special feature](https://pkl-lang.org/main/current/language-reference/index.html#default-element)
   in Pkl and cannot be used as a setting name. This only applies to
   [`template.pkl`](../config/template#default), but can be worked around by using `defaultValue`
-  instead.
+  instead, or by creating the variable with its [module](#type-checking), such as
+  `new TemplateVariableNumberSetting { default = 0 }`.
 
 ```pkl title="template.pkl"
 variables {
@@ -146,6 +266,7 @@ variables {
     type = "number"
     prompt = "Age?"
     defaultValue = 0
+  }
 }
 ```
 

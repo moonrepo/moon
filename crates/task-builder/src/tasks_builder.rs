@@ -9,9 +9,9 @@ use moon_common::{
 use moon_config::{
     EnvMap, InheritedTasksConfig, Input, MergeStrategy, ProjectConfig, ProjectDependencyConfig,
     ProjectInput, ProjectWorkspaceInheritedTasksConfig, TaskArgs, TaskConfig, TaskDependency,
-    TaskDependencyConfig, TaskOptionAffectedFilesEntry, TaskOptionCache, TaskOptionRunInCI,
-    TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType, ToolchainsConfig,
-    is_glob_like, merge_index_map, merge_vec,
+    TaskDependencyConfig, TaskDependencyType, TaskOptionAffectedFilesEntry, TaskOptionCache,
+    TaskOptionRunInCI, TaskOptionsConfig, TaskOutputStyle, TaskPreset, TaskPriority, TaskType,
+    ToolchainsConfig, is_glob_like, merge_index_map, merge_vec,
 };
 use moon_config_loader::ConfigLoader;
 use moon_env_var::contains_env_var;
@@ -525,6 +525,18 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if !global_deps.is_empty() {
+            // Persistent tasks never complete, so they can't be cleaned up after.
+            // Only implicit dependencies are filtered, as they apply to every
+            // task, while explicitly configured ones are an error instead
+            let global_deps = if task.options.persistent {
+                global_deps
+                    .into_iter()
+                    .filter(|dep| !matches!(dep.type_of, TaskDependencyType::Cleanup))
+                    .collect()
+            } else {
+                global_deps
+            };
+
             task.deps = merge_vec(task.deps, global_deps, MergeStrategy::Append, 1000, true);
         }
 

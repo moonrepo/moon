@@ -15,6 +15,18 @@ tasks:
     deps:
       - 'dep'
 
+  has-cleanup-dep:
+    command: noop
+    deps:
+      - target: 'dep'
+        type: 'cleanup'
+
+  has-wait-dep:
+    command: noop
+    deps:
+      - target: 'dep'
+        type: 'wait'
+
   no-deps:
     command: noop
 

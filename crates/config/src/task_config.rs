@@ -135,8 +135,9 @@ config_unit_enum!(
     /// The task-to-task relationship of the dependency.
     #[derive(ConfigEnum)]
     pub enum TaskDependencyType {
-        /// The dependency runs *after* the task has ran, and will always run,
-        /// even when the task fails or is skipped.
+        /// The dependency runs *after* the task has ran its command, even when
+        /// the task fails. It does not run when the task did not run its
+        /// command, as it was skipped, or hydrated from the cache.
         /// @since 2.6.0
         Cleanup,
 
@@ -224,7 +225,8 @@ config_struct!(
 
         /// Controls when this dependency is ran in relation to the current task.
         /// When `required`, runs before the task and must complete successfully.
-        /// When `cleanup`, runs after the task, even when the task fails.
+        /// When `cleanup`, runs after the task has ran its command, even when
+        /// the task fails (but not when it was skipped, or hydrated from the cache).
         /// When `wait`, runs before the task, but the task only waits for the
         /// dependency to have started running, not to have completed.
         /// @since 2.6.0

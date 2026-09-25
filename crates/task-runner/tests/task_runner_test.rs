@@ -834,6 +834,111 @@ mod task_runner {
 
             runner.is_dependencies_complete(&context).unwrap();
         }
+
+        mod cleanup_deps {
+            use super::*;
+
+            // Cleanup dependencies run after the task, so they haven't ran yet
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_true_if_dep_not_ran() {
+                let container = TaskRunnerContainer::new("runner", "has-cleanup-dep").await;
+                let runner = container.create_runner();
+                let context = ActionContext::default();
+
+                assert!(runner.is_dependencies_complete(&context).unwrap());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_true_if_dep_failed() {
+                let container = TaskRunnerContainer::new("runner", "has-cleanup-dep").await;
+                let runner = container.create_runner();
+                let context = ActionContext::default();
+
+                context
+                    .target_states
+                    .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
+                    .unwrap();
+
+                assert!(runner.is_dependencies_complete(&context).unwrap());
+            }
+        }
+
+        mod wait_deps {
+            use super::*;
+
+            // Wait dependencies only need to have started, so may still be running
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_true_if_dep_still_running() {
+                let container = TaskRunnerContainer::new("runner", "has-wait-dep").await;
+                let runner = container.create_runner();
+                let context = ActionContext::default();
+
+                assert!(runner.is_dependencies_complete(&context).unwrap());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_true_if_dep_passed() {
+                let container = TaskRunnerContainer::new("runner", "has-wait-dep").await;
+                let runner = container.create_runner();
+                let context = ActionContext::default();
+
+                context
+                    .target_states
+                    .insert_sync(
+                        Target::new("project", "dep").unwrap(),
+                        TargetState::Passed("hash123".into()),
+                    )
+                    .unwrap();
+
+                assert!(runner.is_dependencies_complete(&context).unwrap());
+            }
+
+            // Persistent dependencies are passthrough once they're dispatched
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_true_if_dep_passthrough() {
+                let container = TaskRunnerContainer::new("runner", "has-wait-dep").await;
+                let runner = container.create_runner();
+                let context = ActionContext::default();
+
+                context
+                    .target_states
+                    .insert_sync(
+                        Target::new("project", "dep").unwrap(),
+                        TargetState::Passthrough,
+                    )
+                    .unwrap();
+
+                assert!(runner.is_dependencies_complete(&context).unwrap());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_false_if_dep_failed() {
+                let container = TaskRunnerContainer::new("runner", "has-wait-dep").await;
+                let runner = container.create_runner();
+                let context = ActionContext::default();
+
+                context
+                    .target_states
+                    .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Failed)
+                    .unwrap();
+
+                assert!(!runner.is_dependencies_complete(&context).unwrap());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_false_if_dep_skipped() {
+                let container = TaskRunnerContainer::new("runner", "has-wait-dep").await;
+                let runner = container.create_runner();
+                let context = ActionContext::default();
+
+                context
+                    .target_states
+                    .insert_sync(Target::new("project", "dep").unwrap(), TargetState::Skipped)
+                    .unwrap();
+
+                assert!(!runner.is_dependencies_complete(&context).unwrap());
+            }
+        }
     }
 
     mod generate_hash {
@@ -873,6 +978,57 @@ mod task_runner {
             let after_hash = runner.hash(&context, &node).await.unwrap();
 
             assert_ne!(before_hash, after_hash);
+        }
+
+        // Dependencies that don't complete before the task (cleanup and wait)
+        // may or may not have a state when hashing, so they're not hashed,
+        // otherwise the hash (and cache hits) would be nondeterministic
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_hash_cleanup_dep_state() {
+            let container = TaskRunnerContainer::new("runner", "has-cleanup-dep").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner();
+            let context = ActionContext::default();
+            let node = container.create_action_node();
+
+            let before_hash = runner.hash(&context, &node).await.unwrap();
+
+            context
+                .target_states
+                .insert_sync(
+                    Target::new("project", "dep").unwrap(),
+                    TargetState::Passed("hash123".into()),
+                )
+                .unwrap();
+
+            let after_hash = runner.hash(&context, &node).await.unwrap();
+
+            assert_eq!(before_hash, after_hash);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_hash_wait_dep_state() {
+            let container = TaskRunnerContainer::new("runner", "has-wait-dep").await;
+            container.sandbox.enable_git();
+
+            let mut runner = container.create_runner();
+            let context = ActionContext::default();
+            let node = container.create_action_node();
+
+            let before_hash = runner.hash(&context, &node).await.unwrap();
+
+            context
+                .target_states
+                .insert_sync(
+                    Target::new("project", "dep").unwrap(),
+                    TargetState::Passed("hash123".into()),
+                )
+                .unwrap();
+
+            let after_hash = runner.hash(&context, &node).await.unwrap();
+
+            assert_eq!(before_hash, after_hash);
         }
 
         #[tokio::test(flavor = "multi_thread")]

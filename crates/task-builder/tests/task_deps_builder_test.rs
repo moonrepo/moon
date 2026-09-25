@@ -187,8 +187,11 @@ mod task_deps_builder {
         );
     }
 
+    // The task is skipped when a wait dependency fails before it starts,
+    // which would silently pass the pipeline if the dependency can fail
     #[test]
-    fn doesnt_error_if_dep_on_allow_failure_and_wait() {
+    #[should_panic(expected = "Task project:task cannot depend on task project:allow-failure")]
+    fn errors_if_dep_on_allow_failure_and_wait() {
         let mut project = create_project();
 
         let mut task = create_task();
@@ -196,14 +199,6 @@ mod task_deps_builder {
             .push(dep_typed("allow-failure", TaskDependencyType::Wait));
 
         build_task_deps_with_data(&mut project, &mut task, allow_failure_data());
-
-        assert_eq!(
-            task.deps,
-            vec![dep_ignored_typed(
-                "project:allow-failure",
-                TaskDependencyType::Wait
-            )]
-        );
     }
 
     mod run_in_ci {
@@ -262,8 +257,10 @@ mod task_deps_builder {
             );
         }
 
+        // The task would run in CI without the dependency it waits on
         #[test]
-        fn doesnt_error_if_dep_not_enabled_but_wait() {
+        #[should_panic(expected = "Task project:task cannot depend on task project:no-ci")]
+        fn errors_if_dep_not_enabled_and_wait() {
             let mut project = create_project();
 
             let mut task = create_task();
@@ -280,11 +277,6 @@ mod task_deps_builder {
                         ..Default::default()
                     },
                 )]),
-            );
-
-            assert_eq!(
-                task.deps,
-                vec![dep_ignored_typed("project:no-ci", TaskDependencyType::Wait)]
             );
         }
 

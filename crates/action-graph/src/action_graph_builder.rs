@@ -786,12 +786,27 @@ impl<'query> ActionGraphBuilder<'query> {
         reqs: &RunRequirements,
         state: &RunTaskState,
     ) -> miette::Result<RunTaskDependencies> {
+        self.internal_run_task_dependencies(task, reqs, state, false)
+            .await
+    }
+
+    async fn internal_run_task_dependencies(
+        &mut self,
+        task: &Task,
+        reqs: &RunRequirements,
+        state: &RunTaskState,
+        cleanups_only: bool,
+    ) -> miette::Result<RunTaskDependencies> {
         let parallel = task.options.run_deps_in_parallel;
         let mut deps = RunTaskDependencies::default();
         let mut previous_target_index: Option<NodeIndex> = None;
         let mut previous_standard_index: Option<NodeIndex> = None;
 
         for dep in &task.deps {
+            if cleanups_only && !matches!(dep.type_of, TaskDependencyType::Cleanup) {
+                continue;
+            }
+
             for dep_task in self
                 .internal_resolve_tasks_from_target(&dep.target, true)
                 .await?
@@ -872,7 +887,22 @@ impl<'query> ActionGraphBuilder<'query> {
     ) -> miette::Result<Vec<Option<NodeIndex>>> {
         let mut indexes = vec![];
 
+        // Cleanup dependencies are dependents in the task graph, as they run
+        // after the task, but they're always linked through the task itself,
+        // with their configured args and env (running them again as a dependent
+        // would create a separate action that isn't ordered after the task)
+        let cleanup_targets = task
+            .deps
+            .iter()
+            .filter(|dep| matches!(dep.type_of, TaskDependencyType::Cleanup))
+            .map(|dep| &dep.target)
+            .collect::<FxHashSet<_>>();
+
         for dep_target in self.workspace_graph.tasks.dependents_of(task) {
+            if cleanup_targets.contains(&dep_target) {
+                continue;
+            }
+
             for dep_task in self
                 .internal_resolve_tasks_from_target(&dep_target, true)
                 .await?
@@ -1219,15 +1249,21 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut deps = RunTaskDependencies::default();
 
         if !task.deps.is_empty() {
-            if should_run_dependencies {
-                child_reqs.skip_affected = true;
+            child_reqs.skip_affected = true;
 
+            if should_run_dependencies {
                 deps = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
             } else {
                 self.ignored_dependencies.insert(
                     task.target.clone(),
                     task.deps.iter().map(|dep| dep.target.clone()).collect(),
                 );
+
+                // Cleanup dependencies must always run after the task,
+                // even when its dependencies are not in scope
+                deps =
+                    Box::pin(self.internal_run_task_dependencies(task, &child_reqs, state, true))
+                        .await?;
             }
         }
 
@@ -1604,7 +1640,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut added_edges = vec![];
 
         for (edge, edge_type) in edges {
-            if self.graph.find_edge(index, edge).is_none() {
+            if !self.has_edge_of_type(index, edge, edge_type) {
                 self.graph.add_edge(index, edge, edge_type).map_err(|_| {
                     ActionGraphError::WouldCycle {
                         source_action: self.graph.node_weight(index).unwrap().label(),
@@ -1636,9 +1672,9 @@ impl<'query> ActionGraphBuilder<'query> {
         edges: Vec<NodeIndex>,
     ) -> miette::Result<()> {
         for edge in edges {
-            // May already be linked when the cleanup action also depends on
-            // the node in some other way, but it's still a cleanup action
-            if self.graph.find_edge(edge, index).is_none() {
+            // The cleanup action may also depend on the node in some other way,
+            // which is a separate edge, as both relationships must be honored
+            if !self.has_edge_of_type(edge, index, TaskDependencyType::Cleanup) {
                 self.graph
                     .add_edge(edge, index, TaskDependencyType::Cleanup)
                     .map_err(|_| ActionGraphError::WouldCycle {
@@ -1747,6 +1783,21 @@ impl<'query> ActionGraphBuilder<'query> {
         }
     }
 
+    /// Whether an edge of the provided type already links the two nodes. Edges
+    /// of different types may link the same nodes (a task that both requires
+    /// and cleans up after another), and the pipeline honors all of them.
+    fn has_edge_of_type(
+        &self,
+        from: NodeIndex,
+        to: NodeIndex,
+        edge_type: TaskDependencyType,
+    ) -> bool {
+        self.graph
+            .graph()
+            .edges_connecting(from, to)
+            .any(|edge| *edge.weight() == edge_type)
+    }
+
     fn is_persistent_index(&self, index: NodeIndex) -> bool {
         self.graph
             .node_weight(index)
@@ -1760,7 +1811,7 @@ impl<'query> ActionGraphBuilder<'query> {
     /// happens when the same task node appears in multiple serial dependency
     /// chains across different parent tasks.
     fn try_link_edge(&mut self, index: NodeIndex, edge: NodeIndex) {
-        if self.graph.find_edge(index, edge).is_none()
+        if !self.has_edge_of_type(index, edge, TaskDependencyType::Required)
             && let Ok(edge_index) = self
                 .graph
                 .add_edge(index, edge, TaskDependencyType::Required)

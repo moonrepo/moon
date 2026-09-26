@@ -1,3 +1,5 @@
+extends "../../../../../../website/static/pkl/v2/ExtensionsConfig.pkl"
+
 custom {
 	plugin = "file://node.wasm"
 	key = "value"

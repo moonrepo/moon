@@ -1,3 +1,7 @@
+amends "../../../../../../website/static/pkl/v2/WorkspaceConfig.pkl"
+
+import "../../../../../../website/static/pkl/v2/WorkspaceProjectsConfig.pkl"
+
 codeowners {
 	globalPaths = new Mapping {
 		["*"] = List("@admins")
@@ -41,7 +45,7 @@ notifier {
 	webhookUrl = "http://localhost"
 }
 
-projects {
+projects = new WorkspaceProjectsConfig {
 	globs = List("apps/*", "packages/*")
 	sources = new Mapping {
 		["root"] = "."

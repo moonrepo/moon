@@ -20,6 +20,9 @@
 - Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
   `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be
   enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
+- Added Pkl modules for every configuration file, which are generated to `.moon/cache/schemas/pkl`
+  when `pkl` is installed. A `.pkl` config that amends (or extends) its module is type checked by
+  Pkl itself, and editors with Pkl support provide completion and documentation for each setting.
 - Changed persistent tasks to run when they are processed in the action graph, instead of being
   batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
   alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on

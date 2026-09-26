@@ -7,6 +7,9 @@ pub fn link_renderer(name: &str) -> String {
 }
 
 pub fn generate_api_docs(out_dir: impl AsRef<Path>) -> miette::Result<bool> {
+    let out_dir = out_dir.as_ref();
+    let _ = std::fs::remove_dir_all(out_dir);
+
     let mut generator = SchemaGenerator::default();
     generator.add::<WorkspaceConfig>();
     generator.add::<ToolchainsConfig>();

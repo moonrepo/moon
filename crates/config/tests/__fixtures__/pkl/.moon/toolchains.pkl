@@ -1,3 +1,5 @@
+extends "../../../../../../website/static/pkl/v2/ToolchainsConfig.pkl"
+
 typescript {
 	createMissingConfig = false
 	includeProjectReferenceSources = true

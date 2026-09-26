@@ -1,6 +1,10 @@
+amends "../../../../../website/static/pkl/v2/ProjectConfig.pkl"
+
+import "../../../../../website/static/pkl/v2/ProjectDependencyConfig.pkl"
+
 dependsOn = new Listing {
 	"a"
-	new {
+	new ProjectDependencyConfig {
 		id = "b"
 		scope = "build"
 		source = "implicit"

@@ -64,7 +64,7 @@ reqwest = { version = "0.13.5", default-features = false, features = [
 once_cell = "1.21.4"
 rustc-hash = "2.1.3"
 scc = "3.8.8"
-schematic = { version = "0.20.6", default-features = false, features = [
+schematic = { version = "0.20.8", default-features = false, features = [
   "schema",
 ] }
 serial_test = "4.0.1"
@@ -138,3 +138,9 @@ assigning_clones = "allow"
 
 [workspace.metadata.cargo-shear]
 ignored = ["serde"]
+
+# [patch.crates-io]
+# schematic = { path = "../schematic/crates/schematic" }
+# schematic_core = { path = "../schematic/crates/core" }
+# schematic_macros = { path = "../schematic/crates/macros" }
+# schematic_types = { path = "../schematic/crates/types" }

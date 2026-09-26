@@ -3,6 +3,7 @@ use miette::IntoDiagnostic;
 use moon_cache::{ContentHash, cache_item};
 use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
 use moon_common::{Id, is_docker};
+use moon_config::InheritedTasksManager;
 use moon_env_var::GlobalEnvBag;
 use moon_hash::{Digest, fingerprint};
 use moon_pdk_api::VirtualPath;
@@ -157,6 +158,37 @@ async fn hash_input_paths(
     }
 }
 
+/// Collect the files referenced by `inheritedBy` file conditions, resolved
+/// against every project source directory. Matching checks file existence
+/// at graph build time, so existence must feed the graph digest: both hash
+/// backends omit missing files, which means adding or removing a condition
+/// file changes the digest and invalidates the cached graph.
+pub fn inherited_by_file_paths(
+    inherited_tasks: &InheritedTasksManager,
+    projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
+) -> BTreeSet<WorkspaceRelativePathBuf> {
+    let mut paths = BTreeSet::new();
+
+    for entry in &inherited_tasks.configs {
+        let Some(by) = &entry.config.inherited_by else {
+            continue;
+        };
+        let Some(files) = &by.files else {
+            continue;
+        };
+
+        for file in files.to_list() {
+            let file = file.to_string();
+
+            for source in projects.values() {
+                paths.insert(WorkspaceRelativePathBuf::from(source.to_string()).join(&file));
+            }
+        }
+    }
+
+    paths
+}
+
 /// Generate a digest for the current workspace, derived from project
 /// sources, config file contents, plugin input files (discovered while
 /// extending the graph during the previous build), plugin versions,
@@ -222,6 +254,7 @@ pub async fn generate_graph_cache_digest(
     let mut all_paths = config_paths;
     all_paths.extend(toolchain_paths);
     all_paths.extend(plugin_input_paths);
+    all_paths.extend(inherited_by_file_paths(&context.inherited_tasks, projects));
 
     let mut fingerprint = WorkspaceGraphFingerprint::default();
     fingerprint.set_async_graph_building(async_graph_building);
@@ -235,4 +268,84 @@ pub async fn generate_graph_cache_digest(
         .cache_engine
         .hash
         .save_manifest_without_hasher("workspace-graph", &fingerprint)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use moon_config::{
+        FilePath, InheritedByConfig, InheritedTasksConfig, InheritedTasksEntry, OneOrMany,
+        PortablePath,
+    };
+
+    fn projects() -> BTreeMap<Id, WorkspaceRelativePathBuf> {
+        BTreeMap::from([
+            (Id::raw("a"), WorkspaceRelativePathBuf::from("projects/a")),
+            (Id::raw("b"), WorkspaceRelativePathBuf::from("projects/b")),
+        ])
+    }
+
+    fn manager_with_files(files: OneOrMany<FilePath>) -> InheritedTasksManager {
+        InheritedTasksManager {
+            configs: vec![InheritedTasksEntry {
+                input: WorkspaceRelativePathBuf::from(".moon/tasks/marked.yml"),
+                config: InheritedTasksConfig {
+                    inherited_by: Some(InheritedByConfig {
+                        files: Some(files),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                },
+            }],
+        }
+    }
+
+    #[test]
+    fn collects_condition_files_per_project() {
+        // The #2726 shape: `inheritedBy: { file: "marker.txt" }` must feed
+        // `projects/<each>/marker.txt` into the graph digest, so that adding
+        // or removing a marker invalidates the cached graph.
+        let paths = inherited_by_file_paths(
+            &manager_with_files(OneOrMany::One(FilePath::parse("marker.txt").unwrap())),
+            &projects(),
+        );
+
+        assert_eq!(
+            paths,
+            BTreeSet::from([
+                WorkspaceRelativePathBuf::from("projects/a/marker.txt"),
+                WorkspaceRelativePathBuf::from("projects/b/marker.txt"),
+            ])
+        );
+    }
+
+    #[test]
+    fn collects_many_condition_files() {
+        let paths = inherited_by_file_paths(
+            &manager_with_files(OneOrMany::Many(vec![
+                FilePath::parse("marker.txt").unwrap(),
+                FilePath::parse("tsconfig.json").unwrap(),
+            ])),
+            &projects(),
+        );
+
+        assert_eq!(paths.len(), 4);
+        assert!(paths.contains(&WorkspaceRelativePathBuf::from("projects/a/tsconfig.json")));
+    }
+
+    #[test]
+    fn ignores_configs_without_file_conditions() {
+        let manager = InheritedTasksManager {
+            configs: vec![InheritedTasksEntry {
+                input: WorkspaceRelativePathBuf::from(".moon/tasks/all.yml"),
+                config: InheritedTasksConfig {
+                    inherited_by: None,
+                    ..Default::default()
+                },
+            }],
+        };
+
+        assert!(inherited_by_file_paths(&manager, &projects()).is_empty());
+        assert!(inherited_by_file_paths(&InheritedTasksManager::default(), &projects()).is_empty());
+    }
 }

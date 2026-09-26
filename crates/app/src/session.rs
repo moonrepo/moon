@@ -461,7 +461,7 @@ impl AppSession for MoonSession {
         // Load configs
 
         if self.requires_workspace_configured() {
-            sync_pkl_schemas(&self.config_dir)?;
+            sync_pkl_schemas(&self.config_dir.join("cache"), false)?;
 
             let (workspace_config, tasks_config, extensions_config, toolchains_config) = try_join!(
                 startup::load_workspace_config(self.config_loader.clone(), &self.workspace_root),

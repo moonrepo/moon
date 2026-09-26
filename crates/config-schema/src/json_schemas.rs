@@ -153,8 +153,6 @@ pub fn generate_json_schemas(
     mut toolchain_schemas: FxHashMap<String, Schema>,
 ) -> miette::Result<bool> {
     let out_dir = out_dir.as_ref();
-    let _ = std::fs::remove_dir_all(out_dir);
-
     let entry_config = SchemaBuilder::build_root::<ToolchainPluginConfig>();
 
     for schema in toolchain_schemas.values_mut() {

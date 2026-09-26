@@ -1,34 +1,42 @@
+amends "../../../../../website/static/pkl/v2/TemplateConfig.pkl"
+
+import "../../../../../website/static/pkl/v2/TemplateVariableBoolSetting.pkl"
+import "../../../../../website/static/pkl/v2/TemplateVariableEnumSetting.pkl"
+import "../../../../../website/static/pkl/v2/TemplateVariableEnumValueConfig.pkl"
+import "../../../../../website/static/pkl/v2/TemplateVariableNumberSetting.pkl"
+import "../../../../../website/static/pkl/v2/TemplateVariableStringSetting.pkl"
+
 title = "Title"
 description = "Description"
 destination = "./out"
 id = "template-name"
 variables {
-	["boolean"] {
+	["boolean"] = new TemplateVariableBoolSetting {
 		type = "boolean"
 		defaultValue = false
 		prompt = "Why?"
 		required = true
 	}
-	["enum"] {
+	["enum"] = new TemplateVariableEnumSetting {
 		type = "enum"
 		multiple = true
 		order = 4
 		values = new Listing {
 			"a"
-			new {
+			new TemplateVariableEnumValueConfig {
 				label = "B"
 				value = "b"
 			}
 			"c"
 		}
 	}
-	["number"] {
+	["number"] = new TemplateVariableNumberSetting {
 		type = "number"
 		defaultValue = 123
 		prompt = "Why?"
 		order = 1
 	}
-	["string"] {
+	["string"] = new TemplateVariableStringSetting {
 		type = "string"
 		defaultValue = "abc"
 		internal = true

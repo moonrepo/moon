@@ -1,3 +1,7 @@
+amends "../../../../../website/static/pkl/v2/TaskConfig.pkl"
+
+import "../../../../../website/static/pkl/v2/TaskDependencyConfig.pkl"
+
 description = "I do something"
 
 command = "cmd --arg"
@@ -6,11 +10,11 @@ args = List("-c", "-b", "arg")
 
 deps = new Listing {
 	"proj:task"
-	new {
+	new TaskDependencyConfig {
 		target = "^:build"
 		optional = true
 	}
-	new {
+	new TaskDependencyConfig {
 		target = "~:build"
 		args = List("--minify")
 		env {

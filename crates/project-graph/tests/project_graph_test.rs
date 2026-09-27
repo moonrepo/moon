@@ -429,6 +429,28 @@ mod project_graph {
             assert_ne!(state1.last_hash, state2.last_hash);
         }
 
+        // Tasks that are only inherited by projects that contain a marker file
+        const INHERITED_BY_FILE_CONFIG: &str = r#"
+inheritedBy:
+  file: "marker.txt"
+tasks:
+  marked:
+    command: "echo marked"
+"#;
+
+        async fn build_inherited_by_file_graph(
+            async_graph: bool,
+            func: impl FnOnce(&MoonSandbox),
+        ) -> (MoonSandbox, WorkspaceGraph) {
+            build_cached_graph(async_graph, |sandbox| {
+                sandbox.create_file(".moon/tasks/marked.yml", INHERITED_BY_FILE_CONFIG);
+                sandbox.enable_git();
+
+                func(sandbox);
+            })
+            .await
+        }
+
         async fn build_plugins_cached_graph(
             async_graph: bool,
             func: impl FnOnce(&MoonSandbox),
@@ -565,6 +587,61 @@ mod project_graph {
                         })
                         .await;
                     }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn with_inherited_by_file_added() {
+                        let (sandbox, graph) =
+                            build_inherited_by_file_graph($async_graph, |_| {}).await;
+                        let state1 = load_state(&sandbox);
+
+                        assert!(graph.get_task_from_project("a", "marked").is_err());
+
+                        sandbox.create_file("a/marker.txt", "");
+
+                        let graph = do_generate(sandbox.path(), $async_graph).await;
+                        let state2 = load_state(&sandbox);
+
+                        assert_ne!(state1.last_hash, state2.last_hash);
+                        assert!(graph.get_task_from_project("a", "marked").is_ok());
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn with_inherited_by_file_removed() {
+                        let (sandbox, graph) =
+                            build_inherited_by_file_graph($async_graph, |sandbox| {
+                                sandbox.create_file("a/marker.txt", "");
+                            })
+                            .await;
+                        let state1 = load_state(&sandbox);
+
+                        assert!(graph.get_task_from_project("a", "marked").is_ok());
+
+                        fs::remove_file(sandbox.path().join("a/marker.txt")).unwrap();
+
+                        let graph = do_generate(sandbox.path(), $async_graph).await;
+                        let state2 = load_state(&sandbox);
+
+                        assert_ne!(state1.last_hash, state2.last_hash);
+                        assert!(graph.get_task_from_project("a", "marked").is_err());
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn not_with_inherited_by_file_content_changes() {
+                        let (sandbox, _graph) =
+                            build_inherited_by_file_graph($async_graph, |sandbox| {
+                                sandbox.create_file("a/marker.txt", "");
+                            })
+                            .await;
+                        let state1 = load_state(&sandbox);
+
+                        // Only the existence of the file affects inheritance
+                        sandbox.create_file("a/marker.txt", "# Changes");
+
+                        do_generate(sandbox.path(), $async_graph).await;
+                        let state2 = load_state(&sandbox);
+
+                        assert_eq!(state1.last_hash, state2.last_hash);
+                    }
                 }
 
                 mod plugins {
@@ -670,6 +747,25 @@ mod project_graph {
                             },
                             |sandbox| {
                                 fs::remove_file(sandbox.path().join("a/tc.cfg")).unwrap();
+                            },
+                        )
+                        .await;
+                    }
+
+                    #[tokio::test(flavor = "multi_thread")]
+                    async fn invalidates_with_changed_manifest_file_used_by_inherited_by() {
+                        test_plugins_invalidate(
+                            $async_graph,
+                            |sandbox| {
+                                // Existence tracking must not replace the content hash
+                                sandbox.create_file(
+                                    ".moon/tasks/manifest.yml",
+                                    "inheritedBy:\n  file: tc.cfg\n",
+                                );
+                                sandbox.create_file("a/tc.cfg", "a-alias");
+                            },
+                            |sandbox| {
+                                sandbox.create_file("a/tc.cfg", "a-alias-changed");
                             },
                         )
                         .await;

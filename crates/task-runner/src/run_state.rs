@@ -10,6 +10,7 @@ cache_item!(
         pub exit_code: i32,
         pub hash: String,
         pub last_run_time: u128,
+        pub output_globs_hash: String,
         pub target: String,
     }
 );

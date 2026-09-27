@@ -54,7 +54,9 @@ timeline, where every point in time will have its own hash + archive that moon c
 
 Furthermore, if we receive a cache hit on the hash, and the hash is the same as the last run, and
 outputs exist, we exit early without hydrating and assume the project is already hydrated. In the
-terminal, you'll see a message for "cached".
+terminal, you'll see a message for "cached". For outputs declared as globs, the files they currently
+match are compared against the files they matched after the last run, and hydration only occurs
+when a file has been added or removed.
 
 > As of v2.3, an experimental content-addressable storage (CAS) layer is also available that
 > replaces the tarball-based local cache with the same content-addressed format used by the remote

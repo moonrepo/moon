@@ -663,7 +663,7 @@ mod output_archiver {
             let container = TaskRunnerContainer::new("archive", "file-outputs").await;
             let archiver = container.create_archiver();
 
-            assert!(!archiver.has_outputs_been_created(false).unwrap());
+            assert!(!archiver.has_outputs_been_created().unwrap());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -673,7 +673,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
 
-            assert!(archiver.has_outputs_been_created(false).unwrap());
+            assert!(archiver.has_outputs_been_created().unwrap());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -681,7 +681,7 @@ mod output_archiver {
             let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
             let archiver = container.create_archiver();
 
-            assert!(!archiver.has_outputs_been_created(false).unwrap());
+            assert!(!archiver.has_outputs_been_created().unwrap());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -691,7 +691,7 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
 
-            assert!(archiver.has_outputs_been_created(false).unwrap());
+            assert!(archiver.has_outputs_been_created().unwrap());
         }
 
         #[tokio::test(flavor = "multi_thread")]
@@ -701,7 +701,205 @@ mod output_archiver {
 
             let archiver = container.create_archiver();
 
-            assert!(archiver.has_outputs_been_created(false).unwrap());
+            assert!(archiver.has_outputs_been_created().unwrap());
+        }
+    }
+
+    mod has_previous_outputs {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_no_files() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            let archiver = container.create_archiver();
+
+            assert!(!archiver.has_previous_outputs_been_created("").unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_true_if_files() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+
+            // No globs, so the previous hash is irrelevant
+            assert!(archiver.has_previous_outputs_been_created("").unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_true_if_only_negated_globs() {
+            let container = TaskRunnerContainer::new("archive", "negated-outputs-only").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+
+            assert!(archiver.has_previous_outputs_been_created("").unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_globs_without_previous_hash() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+
+            assert!(!archiver.has_previous_outputs_been_created("").unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_globs_dont_match_previous_hash() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+
+            assert!(
+                !archiver
+                    .has_previous_outputs_been_created("hash123")
+                    .unwrap()
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_true_if_globs_match_previous_hash() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            assert!(archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_glob_file_was_removed() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            container.sandbox.create_file("project/a.txt", "");
+            container.sandbox.create_file("project/b.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            fs::remove_file(container.sandbox.path().join("project/b.txt")).unwrap();
+
+            assert!(!archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_glob_file_was_added() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            container.sandbox.create_file("project/a.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            container.sandbox.create_file("project/b.txt", "");
+
+            assert!(!archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_true_if_glob_file_was_modified() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            container.sandbox.create_file("project/a.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            // Only existence is verified, the same as literal paths
+            container.sandbox.create_file("project/a.txt", "modified");
+
+            assert!(archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_false_if_globs_match_but_literal_path_missing() {
+            let container = TaskRunnerContainer::new("archive", "output-many-dirs").await;
+            container.sandbox.create_file("project/a/file.txt", "");
+            container.sandbox.create_file("project/b/file.txt", "");
+            container.sandbox.create_file("project/c/file.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash = archiver.hash_output_globs().unwrap().unwrap();
+
+            assert!(archiver.has_previous_outputs_been_created(&hash).unwrap());
+
+            fs::remove_dir_all(container.sandbox.path().join("project/a")).unwrap();
+
+            assert!(!archiver.has_previous_outputs_been_created(&hash).unwrap());
+        }
+    }
+
+    mod hash_output_globs {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_none_if_no_globs() {
+            let container = TaskRunnerContainer::new("archive", "file-outputs").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+
+            assert!(archiver.hash_output_globs().unwrap().is_none());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_none_if_only_negated_globs() {
+            let container = TaskRunnerContainer::new("archive", "negated-outputs-only").await;
+            container.sandbox.create_file("project/file.txt", "");
+
+            let archiver = container.create_archiver();
+
+            assert!(archiver.hash_output_globs().unwrap().is_none());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn returns_some_if_globs_match_nothing() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            let archiver = container.create_archiver();
+
+            assert!(archiver.hash_output_globs().unwrap().is_some());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn is_stable_and_changes_with_matched_files() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs").await;
+            container.sandbox.create_file("project/a.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash1 = archiver.hash_output_globs().unwrap().unwrap();
+
+            assert_eq!(hash1, archiver.hash_output_globs().unwrap().unwrap());
+
+            container.sandbox.create_file("project/b.txt", "");
+
+            let hash2 = archiver.hash_output_globs().unwrap().unwrap();
+
+            assert_ne!(hash1, hash2);
+
+            fs::remove_file(container.sandbox.path().join("project/b.txt")).unwrap();
+
+            assert_eq!(hash1, archiver.hash_output_globs().unwrap().unwrap());
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn ignores_files_matched_by_negated_globs() {
+            let container = TaskRunnerContainer::new("archive", "glob-outputs-negated").await;
+            container.sandbox.create_file("project/a.txt", "");
+
+            let archiver = container.create_archiver();
+            let hash1 = archiver.hash_output_globs().unwrap().unwrap();
+
+            // Negated
+            container.sandbox.create_file("project/b.txt", "");
+
+            assert_eq!(hash1, archiver.hash_output_globs().unwrap().unwrap());
+
+            container.sandbox.create_file("project/c.txt", "");
+
+            assert_ne!(hash1, archiver.hash_output_globs().unwrap().unwrap());
         }
     }
 }

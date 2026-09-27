@@ -4,7 +4,9 @@ use miette::IntoDiagnostic;
 use moon_app_context::AppContext;
 use moon_cache::{Manifest, StorageOptions};
 use moon_common::color;
+use moon_common::path::to_relative_virtual_string;
 use moon_daemon_client::DaemonClient;
+use moon_hash::ContentHash;
 use moon_manifest::ManifestPacker;
 use moon_task::Task;
 use starbase_archive::Archiver;
@@ -46,7 +48,7 @@ impl OutputArchiver<'_> {
         state: &TaskRunState,
     ) -> miette::Result<ArchiveOutcome> {
         // Check that outputs actually exist
-        if self.task.is_build_type() && !self.has_outputs_been_created(false)? {
+        if self.task.is_build_type() && !self.has_outputs_been_created()? {
             return Err(TaskRunnerError::MissingOutputs {
                 target: self.task.target.clone(),
             }
@@ -113,31 +115,16 @@ impl OutputArchiver<'_> {
     }
 
     #[instrument(skip(self))]
-    pub fn has_outputs_been_created(&self, bypass_globs: bool) -> miette::Result<bool> {
-        let has_globs = !self.task.output_globs.is_empty();
-        let all_negated_globs = self
-            .task
-            .output_globs
-            .keys()
-            .all(|glob| glob.as_str().starts_with('!'));
-
-        // If using globs, we have no way to truly determine if all outputs
-        // exist on the current file system, so always hydrate...
-        if bypass_globs && has_globs && !all_negated_globs {
-            return Ok(false);
-        }
-
+    pub fn has_outputs_been_created(&self) -> miette::Result<bool> {
         // Check paths first since they are literal
-        for (output, params) in &self.task.output_files {
-            if !output.to_path(&self.app_context.workspace_root).exists() && !params.optional {
-                return Ok(false);
-            }
+        if !self.has_output_files_been_created() {
+            return Ok(false);
         }
 
         // Check globs last, as they are costly!
         // If all globs are negated, then the empty check will always
         // fail, resulting in archives not being created
-        if has_globs && !all_negated_globs {
+        if self.has_output_globs() {
             let outputs = self
                 .task
                 .get_output_files(&self.app_context.workspace_root, false)?;
@@ -154,6 +141,67 @@ impl OutputArchiver<'_> {
         }
 
         Ok(true)
+    }
+
+    #[instrument(skip(self))]
+    pub fn has_previous_outputs_been_created(
+        &self,
+        previous_globs_hash: &str,
+    ) -> miette::Result<bool> {
+        if !self.has_output_files_been_created() {
+            return Ok(false);
+        }
+
+        if let Some(globs_hash) = self.hash_output_globs()?
+            && globs_hash != previous_globs_hash
+        {
+            debug!(
+                task_target = self.task.target.as_str(),
+                "Files matched by output globs differ from the previous run, will hydrate"
+            );
+
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    /// Create a hash from the workspace relative paths of all files currently
+    /// matched by output globs, so that a subsequent run can verify that the
+    /// exact same set of files still exists. Returns `None` if the task has
+    /// no globs that can match files (negated globs are ignored).
+    #[instrument(skip(self))]
+    pub fn hash_output_globs(&self) -> miette::Result<Option<String>> {
+        if !self.has_output_globs() {
+            return Ok(None);
+        }
+
+        let workspace_root = &self.app_context.workspace_root;
+        let mut paths = vec![];
+
+        for file in self.task.get_output_files(workspace_root, false)? {
+            paths.push(to_relative_virtual_string(file, workspace_root)?);
+        }
+
+        // Walk order is not guaranteed
+        paths.sort();
+
+        Ok(Some(ContentHash::hash_bytes(paths.join("\n"))?.to_string()))
+    }
+
+    fn has_output_files_been_created(&self) -> bool {
+        self.task.output_files.iter().all(|(output, params)| {
+            params.optional || output.to_path(&self.app_context.workspace_root).exists()
+        })
+    }
+
+    /// Return true if the task has output globs that can match files,
+    /// as negated globs cannot match anything on their own.
+    fn has_output_globs(&self) -> bool {
+        self.task
+            .output_globs
+            .keys()
+            .any(|glob| !glob.as_str().starts_with('!'))
     }
 
     #[instrument(skip(self, state))]

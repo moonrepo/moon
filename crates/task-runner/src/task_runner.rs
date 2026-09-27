@@ -239,7 +239,9 @@ impl<'task> TaskRunner<'task> {
         // However, ensure the outputs also exist, otherwise we should hydrate
         if self.cache.data.exit_code == 0
             && self.cache.data.hash == hash
-            && self.archiver.has_outputs_been_created(true)?
+            && self
+                .archiver
+                .has_previous_outputs_been_created(&self.cache.data.output_globs_hash)?
         {
             if is_cache_stale() {
                 return Ok(None);
@@ -786,6 +788,9 @@ impl<'task> TaskRunner<'task> {
             }
         };
 
+        // Outputs were just created by the task, so record them
+        self.record_output_globs()?;
+
         self.operations.push(operation);
 
         Ok(archived)
@@ -813,6 +818,8 @@ impl<'task> TaskRunner<'task> {
             hydrate_from = ?from,
             "Running cache hydration operation"
         );
+
+        let from_previous_outputs = matches!(from, HydrateFrom::PreviousOutput);
 
         let hydrated = match self.hydrater.hydrate(from, hash, &self.state).await? {
             HydrateOutcome::Skipped => {
@@ -895,10 +902,24 @@ impl<'task> TaskRunner<'task> {
         self.operations.push(operation);
 
         if hydrated {
+            // Outputs were just restored from a cache, so record them
+            if !from_previous_outputs {
+                self.record_output_globs()?;
+            }
+
             self.state.target = Some(TargetState::Passed(hash.to_owned()));
         }
 
         Ok(hydrated)
+    }
+
+    /// Record a hash of the files currently matched by output globs, so that
+    /// a subsequent run with the same hash can verify the outputs still exist,
+    /// and reuse them instead of hydrating (which deletes and recreates them).
+    fn record_output_globs(&mut self) -> miette::Result<()> {
+        self.cache.data.output_globs_hash = self.archiver.hash_output_globs()?.unwrap_or_default();
+
+        Ok(())
     }
 
     // If a task fails *before* the command is actually executed, say during the command

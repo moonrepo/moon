@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+#### 🐞 Fixes
+
+- Fixed an issue where a dependency using `cacheStrategy: outputs` would produce a different hash
+  for the dependent task when the dependency's outputs were hydrated from the content addressable
+  storage (`experiments.casOutputsCache`) instead of being executed. The output glob walk was being
+  cached before hydration, resulting in an empty file list when the dependent was hashed.
+- Fixed an issue where a task with glob `outputs` would delete and restore its output files on every
+  cached run, even when the hash matched the previous run and all files still existed. Each file
+  received a new inode, causing file watchers to detect a change. We now record the files matched by
+  output globs after each run, and reuse them as-is when they still exist, the same as literal file
+  and directory outputs.
+- Fixed an issue where the workspace graph cache was not invalidated when a file referenced by an
+  `inheritedBy.files` condition was added to or removed from a project, resulting in stale task
+  inheritance until the cache was cleared.
+
 ## 2.5.5
 
 #### 🚀 Updates

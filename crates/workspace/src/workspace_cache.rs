@@ -43,8 +43,9 @@ fingerprint!(
         // This flag helps to continuously bust the cache.
         in_docker: bool,
 
-        // Project and workspace configs and toolchain inputs required
-        // for cache invalidation.
+        // Project and workspace configs, toolchain inputs, and `inheritedBy`
+        // files required for cache invalidation. The latter only track
+        // existence, so they have an empty value instead of a content hash.
         inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
 
         // Versions of the toolchain plugins that may extend the graph.
@@ -157,11 +158,46 @@ async fn hash_input_paths(
     }
 }
 
+/// Tasks may only be inherited when a file exists within a project
+/// (`inheritedBy.files`), so we must track which of these files exist,
+/// otherwise adding or removing them would not invalidate the cache.
+fn find_inherited_by_files(
+    context: &WorkspaceBuilderContext,
+    projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
+) -> BTreeSet<WorkspaceRelativePathBuf> {
+    let file_names = context
+        .inherited_tasks
+        .configs
+        .iter()
+        .filter_map(|entry| entry.config.inherited_by.as_ref()?.files.as_ref())
+        .flat_map(|files| files.to_list())
+        .map(|file| file.as_str())
+        .collect::<BTreeSet<_>>();
+
+    let mut paths = BTreeSet::default();
+
+    if file_names.is_empty() {
+        return paths;
+    }
+
+    for source in projects.values() {
+        let root = source.to_logical_path(&context.workspace_root);
+
+        for file_name in &file_names {
+            if root.join(file_name).exists() {
+                paths.insert(source.join(file_name));
+            }
+        }
+    }
+
+    paths
+}
+
 /// Generate a digest for the current workspace, derived from project
-/// sources, config file contents, plugin input files (discovered while
-/// extending the graph during the previous build), plugin versions,
-/// and environment variables. This digest is used to invalidate the
-/// cached workspace graph.
+/// sources, config file contents, `inheritedBy` file existence, plugin
+/// input files (discovered while extending the graph during the previous
+/// build), plugin versions, and environment variables. This digest is
+/// used to invalidate the cached workspace graph.
 pub async fn generate_graph_cache_digest(
     context: Arc<WorkspaceBuilderContext>,
     projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,
@@ -185,11 +221,12 @@ pub async fn generate_graph_cache_digest(
         Ok::<_, miette::Report>(versions)
     });
 
-    let toolchain_context = Arc::clone(&context);
     let project_sources = projects
         .values()
         .map(|source| source.to_string())
         .collect::<Vec<_>>();
+
+    let toolchain_context = Arc::clone(&context);
     let toolchain_handle = tokio::spawn(async move {
         let mut paths = BTreeSet::default();
         let mut versions = BTreeMap::default();
@@ -222,6 +259,7 @@ pub async fn generate_graph_cache_digest(
     let mut all_paths = config_paths;
     all_paths.extend(toolchain_paths);
     all_paths.extend(plugin_input_paths);
+    all_paths.extend(find_inherited_by_files(&context, projects));
 
     let mut fingerprint = WorkspaceGraphFingerprint::default();
     fingerprint.set_async_graph_building(async_graph_building);

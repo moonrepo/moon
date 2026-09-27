@@ -44,8 +44,7 @@ fingerprint!(
         in_docker: bool,
 
         // Project and workspace configs, toolchain inputs, and `inheritedBy`
-        // files required for cache invalidation. The latter only track
-        // existence, so they have an empty value instead of a content hash.
+        // files required for cache invalidation.
         inputs: BTreeMap<WorkspaceRelativePathBuf, String>,
 
         // Versions of the toolchain plugins that may extend the graph.
@@ -194,10 +193,10 @@ fn find_inherited_by_files(
 }
 
 /// Generate a digest for the current workspace, derived from project
-/// sources, config file contents, `inheritedBy` file existence, plugin
-/// input files (discovered while extending the graph during the previous
-/// build), plugin versions, and environment variables. This digest is
-/// used to invalidate the cached workspace graph.
+/// sources, config and `inheritedBy` file contents, plugin input files
+/// (discovered while extending the graph during the previous build),
+/// plugin versions, and environment variables. This digest is used to
+/// invalidate the cached workspace graph.
 pub async fn generate_graph_cache_digest(
     context: Arc<WorkspaceBuilderContext>,
     projects: &BTreeMap<Id, WorkspaceRelativePathBuf>,

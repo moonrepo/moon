@@ -626,7 +626,7 @@ tasks:
                     }
 
                     #[tokio::test(flavor = "multi_thread")]
-                    async fn not_with_inherited_by_file_content_changes() {
+                    async fn with_inherited_by_file_content_changes() {
                         let (sandbox, _graph) =
                             build_inherited_by_file_graph($async_graph, |sandbox| {
                                 sandbox.create_file("a/marker.txt", "");
@@ -634,13 +634,12 @@ tasks:
                             .await;
                         let state1 = load_state(&sandbox);
 
-                        // Only the existence of the file affects inheritance
                         sandbox.create_file("a/marker.txt", "# Changes");
 
                         do_generate(sandbox.path(), $async_graph).await;
                         let state2 = load_state(&sandbox);
 
-                        assert_eq!(state1.last_hash, state2.last_hash);
+                        assert_ne!(state1.last_hash, state2.last_hash);
                     }
                 }
 
@@ -747,25 +746,6 @@ tasks:
                             },
                             |sandbox| {
                                 fs::remove_file(sandbox.path().join("a/tc.cfg")).unwrap();
-                            },
-                        )
-                        .await;
-                    }
-
-                    #[tokio::test(flavor = "multi_thread")]
-                    async fn invalidates_with_changed_manifest_file_used_by_inherited_by() {
-                        test_plugins_invalidate(
-                            $async_graph,
-                            |sandbox| {
-                                // Existence tracking must not replace the content hash
-                                sandbox.create_file(
-                                    ".moon/tasks/manifest.yml",
-                                    "inheritedBy:\n  file: tc.cfg\n",
-                                );
-                                sandbox.create_file("a/tc.cfg", "a-alias");
-                            },
-                            |sandbox| {
-                                sandbox.create_file("a/tc.cfg", "a-alias-changed");
                             },
                         )
                         .await;

@@ -186,7 +186,7 @@ impl OutputArchiver<'_> {
         // Walk order is not guaranteed
         paths.sort();
 
-        Ok(Some(ContentHash::hash_bytes(paths.join("\n"))?.to_string()))
+        Ok(Some(ContentHash::hash_bytes(paths.join("\0"))?.to_string()))
     }
 
     fn has_output_files_been_created(&self) -> bool {

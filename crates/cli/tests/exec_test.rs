@@ -4,7 +4,7 @@ use moon_cache::{CacheContext, CacheEngine};
 use moon_common::is_ci;
 use moon_config::{HasherWalkStrategy, PartialHasherConfig};
 use moon_task_runner::TaskRunCacheState;
-use moon_test_utils::{create_empty_moon_sandbox, create_moon_sandbox, predicates::prelude::*};
+use moon_test_utils::{create_moon_sandbox, predicates::prelude::*};
 use starbase_utils::{fs, json};
 use std::path::{MAIN_SEPARATOR_STR, Path};
 use utils::{
@@ -1942,7 +1942,7 @@ mod exec {
         #[cfg(unix)]
         #[test]
         fn keeps_outputs_cache_strategy_hash_stable_after_cas_hydration() {
-            let sandbox = create_empty_moon_sandbox();
+            let sandbox = moon_test_utils::create_empty_moon_sandbox();
             sandbox.enable_git();
             sandbox.create_file(
                 ".moon/workspace.yml",

@@ -16,6 +16,8 @@
 - Fixed an issue where the workspace graph cache was not invalidated when a file referenced by an
   `inheritedBy.files` condition was added to or removed from a project, resulting in stale task
   inheritance until the cache was cleared.
+- Fixed an issue with the Rust toolchain where rustup binaries would shadow cargo binaries,
+  resulting in a broken experience.
 
 ## 2.5.5
 

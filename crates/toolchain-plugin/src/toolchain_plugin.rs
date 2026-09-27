@@ -228,12 +228,12 @@ impl ToolchainPlugin {
             && self.is_setup()
             && let Some(locations) = self.cache_locations(version).await?
         {
+            paths.extend(locations.globals_dirs);
+            paths.extend(locations.exes_dirs);
+
             if let Some(dir) = locations.exe_file.parent() {
                 paths.insert(dir.to_path_buf());
             }
-
-            paths.extend(locations.exes_dirs);
-            paths.extend(locations.globals_dirs);
         }
 
         Ok(paths.into_iter().collect())

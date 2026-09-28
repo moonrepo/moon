@@ -289,7 +289,7 @@ mod storage {
 
         let lookup = {
             let storage = storage.with_options(StorageOptions::default());
-            tokio::spawn(async move { storage.load_hash_manifest(&action).await })
+            tokio::spawn(async move { storage.load_task_manifest(&action).await })
         };
 
         // Let the lookup run before the connection completes

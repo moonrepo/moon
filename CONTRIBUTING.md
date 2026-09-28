@@ -6,6 +6,7 @@ Contributions are always welcome, no matter how large or small!
 
 - Node.js >= v22.18
 - Rust >= 1.97
+- Protocol Buffers compiler (`protoc`)
 - Git >= 2.28 (for `test-coverage`)
 - Just
 
@@ -20,6 +21,12 @@ Before following the rest of this guide you'll need to install
 
 moon is built on Rust and requires `rustup` and `cargo` to exist in your environment. You can
 [install Rust from the official website](https://www.rust-lang.org/tools/install).
+
+Building also requires the [Protocol Buffers compiler](https://protobuf.dev/installation/)
+(`protoc`) to be available on your `PATH`, as the daemon's gRPC definitions in `crates/daemon-proto`
+are compiled during the build. Install it with your system package manager (`brew install protobuf`,
+`apt install protobuf-compiler`, etc), or set the `PROTOC` environment variable to the path of the
+binary. The Nix dev shell provides it automatically.
 
 We also require 3rd-party Cargo commands, which can be installed with the following.
 

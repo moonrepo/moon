@@ -1938,6 +1938,101 @@ mod exec {
             assert_ne!(as_dep, with_deps);
         }
 
+        // https://github.com/moonrepo/moon/issues/2723
+        #[cfg(unix)]
+        #[test]
+        fn keeps_outputs_cache_strategy_hash_stable_after_cas_hydration() {
+            let sandbox = moon_test_utils::create_empty_moon_sandbox();
+            sandbox.enable_git();
+            sandbox.create_file(
+                ".moon/workspace.yml",
+                r#"
+projects:
+  producer: producer
+  consumer: consumer
+pipeline:
+  installDependencies: false
+experiments:
+  casOutputsCache: true
+"#,
+            );
+            sandbox.create_file(
+                "producer/moon.yml",
+                r#"
+language: bash
+tasks:
+  build:
+    command: bash
+    args: [build.sh]
+    inputs: [src.txt, build.sh]
+    outputs: ['dist/**/*']
+"#,
+            );
+            sandbox.create_file(
+                "producer/build.sh",
+                "#!/usr/bin/env bash\nset -euo pipefail\nmkdir -p dist\ncp src.txt dist/value.txt\n",
+            );
+            sandbox.create_file("producer/src.txt", "stable-output");
+            sandbox.create_file(
+                "consumer/moon.yml",
+                r#"
+language: bash
+tasks:
+  build:
+    command: bash
+    args: [build.sh]
+    deps:
+      - target: producer:build
+        cacheStrategy: outputs
+    inputs: [build.sh]
+    outputs: ['dist/**/*']
+"#,
+            );
+            sandbox.create_file(
+                "consumer/build.sh",
+                "#!/usr/bin/env bash\nset -euo pipefail\necho executed >> ../consumer-runs.log\nmkdir -p dist\ncp ../producer/dist/value.txt dist/result.txt\n",
+            );
+
+            let run = || {
+                sandbox.run_bin(|cmd| {
+                    cmd.arg("exec").arg("consumer:build");
+                    // The glob cache is disabled in test mode, but this regression
+                    // depends on it being populated during output hydration
+                    cmd.env_remove("STARBASE_TEST");
+                    // Hydration without the daemon deletes existing outputs
+                    // before unpacking, which is the path that walks output globs
+                    cmd.env("MOON_DAEMON", "false");
+                })
+            };
+
+            run().success();
+
+            let producer_hash1 = extract_hash_from_run(sandbox.path(), "producer:build");
+            let consumer_hash1 = extract_hash_from_run(sandbox.path(), "consumer:build");
+
+            // Remove outputs so both tasks hydrate from the CAS
+            fs::remove_dir_all(sandbox.path().join("producer/dist")).unwrap();
+            fs::remove_dir_all(sandbox.path().join("consumer/dist")).unwrap();
+
+            let assert = run();
+            let output = assert.output();
+
+            assert.success();
+
+            let producer_hash2 = extract_hash_from_run(sandbox.path(), "producer:build");
+            let consumer_hash2 = extract_hash_from_run(sandbox.path(), "consumer:build");
+
+            assert_eq!(producer_hash1, producer_hash2);
+            assert_eq!(consumer_hash1, consumer_hash2);
+            assert!(predicate::str::contains("Tasks: 2 completed (2 cached)").eval(&output));
+            assert_eq!(
+                fs::read_file(sandbox.path().join("consumer-runs.log")).unwrap(),
+                "executed\n"
+            );
+            assert!(sandbox.path().join("producer/dist/value.txt").exists());
+            assert!(sandbox.path().join("consumer/dist/result.txt").exists());
+        }
+
         #[test]
         fn changes_primary_hash_if_deps_hash_changes() {
             let sandbox = create_cases_sandbox();

@@ -29,6 +29,14 @@ tasks:
     options:
       shell: true
 
+  create-file-glob:
+    command: 'New-Item file.txt'
+    outputs:
+      - '*.txt'
+    toolchain: system
+    options:
+      shell: true
+
   with-mutex:
     extends: success
     options:

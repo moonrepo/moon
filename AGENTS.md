@@ -19,6 +19,8 @@ npm package is itself a moon project.
 
 - Rust >= 1.97 (pinned in `rust-toolchain.toml`, edition 2024)
 - Cargo — Rust toolchain
+- [Protocol Buffers compiler](https://protobuf.dev/installation/) — `protoc` on `PATH` (or via the
+  `PROTOC` env var), required to build `crates/daemon-proto`
 - Node.js >= 22.18
 - Yarn >= 4
 - [Just](https://github.com/casey/just) — Rust task runner

@@ -365,6 +365,134 @@ mod task_runner {
                 assert_eq!(result.operations[1].status, ActionStatus::Cached);
             }
 
+            mod glob_outputs {
+                use super::*;
+
+                /// A unique identifier for the file on disk, to verify that an
+                /// output was reused as-is instead of being deleted and recreated.
+                fn get_file_id(path: &std::path::Path) -> u64 {
+                    #[cfg(unix)]
+                    {
+                        use std::os::unix::fs::MetadataExt;
+
+                        std::fs::metadata(path).unwrap().ino()
+                    }
+
+                    #[cfg(windows)]
+                    {
+                        let _ = path;
+                        0
+                    }
+                }
+
+                fn assert_hydrated(result: &moon_task_runner::TaskRunResult) {
+                    assert_eq!(result.operations.len(), 2);
+                    assert!(result.operations[0].meta.is_hash_generation());
+                    assert!(result.operations[1].meta.is_output_hydration());
+                    assert_eq!(result.operations[0].status, ActionStatus::Passed);
+                    assert_eq!(result.operations[1].status, ActionStatus::Cached);
+                }
+
+                async fn run_reuses_existing_outputs(cas_enabled: bool) {
+                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
+                    container.sandbox.enable_git();
+
+                    let mut runner = container.create_runner();
+                    runner.state.local_cas_enabled = cas_enabled;
+
+                    let node = container.create_action_node();
+                    let context = ActionContext::default();
+                    let file = container
+                        .sandbox
+                        .path()
+                        .join(&container.project_id)
+                        .join("file.txt");
+
+                    let before = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(before.operations.len(), 4);
+                    assert!(file.exists());
+                    assert!(!runner.cache.data.output_globs_hash.is_empty());
+
+                    container.flush_storage().await;
+
+                    let file_id = get_file_id(&file);
+
+                    // Hash matches and all files still exist, so nothing is hydrated
+                    let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(before.hash, result.hash);
+                    assert_hydrated(&result);
+                    assert_eq!(get_file_id(&file), file_id);
+
+                    let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(before.hash, result.hash);
+                    assert_hydrated(&result);
+                    assert_eq!(get_file_id(&file), file_id);
+                }
+
+                async fn run_restores_missing_outputs(cas_enabled: bool) {
+                    let container = TaskRunnerContainer::new_os("runner", "create-file-glob").await;
+                    container.sandbox.enable_git();
+
+                    let mut runner = container.create_runner();
+                    runner.state.local_cas_enabled = cas_enabled;
+
+                    let node = container.create_action_node();
+                    let context = ActionContext::default();
+                    let file = container
+                        .sandbox
+                        .path()
+                        .join(&container.project_id)
+                        .join("file.txt");
+
+                    let before = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(before.operations.len(), 4);
+
+                    container.flush_storage().await;
+
+                    // Hash matches but a file is missing, so it must be hydrated
+                    std::fs::remove_file(&file).unwrap();
+
+                    let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(before.hash, result.hash);
+                    assert_hydrated(&result);
+                    assert!(file.exists());
+
+                    let file_id = get_file_id(&file);
+
+                    // Then reused as-is on the next run
+                    let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(before.hash, result.hash);
+                    assert_hydrated(&result);
+                    assert_eq!(get_file_id(&file), file_id);
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_reuses_existing_outputs_from_archive() {
+                    run_reuses_existing_outputs(false).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_reuses_existing_outputs_from_cas() {
+                    run_reuses_existing_outputs(true).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_restores_missing_outputs_from_archive() {
+                    run_restores_missing_outputs(false).await;
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn running_again_restores_missing_outputs_from_cas() {
+                    run_restores_missing_outputs(true).await;
+                }
+            }
+
             #[tokio::test(flavor = "multi_thread")]
             #[should_panic(expected = "defines outputs but after being ran")]
             async fn errors_if_outputs_missing() {
@@ -549,6 +677,59 @@ mod task_runner {
                 let mut runner = container.create_runner();
 
                 runner.cache.data.exit_code = 1;
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_glob_outputs_have_no_previous_hash() {
+                let container = TaskRunnerContainer::new("runner", "glob-outputs").await;
+                let mut runner = container.create_runner();
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                container.sandbox.create_file("project/file.txt", "");
+
+                assert!(runner.is_cached("hash123").await.unwrap().is_none());
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn returns_if_glob_outputs_match_previous_hash() {
+                let container = TaskRunnerContainer::new("runner", "glob-outputs").await;
+                let mut runner = container.create_runner();
+
+                container.sandbox.create_file("project/file.txt", "");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.output_globs_hash = container
+                    .create_archiver()
+                    .hash_output_globs()
+                    .unwrap()
+                    .unwrap();
+
+                assert!(matches!(
+                    runner.is_cached("hash123").await.unwrap(),
+                    Some(HydrateFrom::PreviousOutput)
+                ));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_glob_outputs_dont_match_previous_hash() {
+                let container = TaskRunnerContainer::new("runner", "glob-outputs").await;
+                let mut runner = container.create_runner();
+
+                container.sandbox.create_file("project/file.txt", "");
+
+                runner.cache.data.exit_code = 0;
+                runner.cache.data.hash = "hash123".into();
+                runner.cache.data.output_globs_hash = container
+                    .create_archiver()
+                    .hash_output_globs()
+                    .unwrap()
+                    .unwrap();
+
+                std::fs::remove_file(container.sandbox.path().join("project/file.txt")).unwrap();
 
                 assert!(runner.is_cached("hash123").await.unwrap().is_none());
             }

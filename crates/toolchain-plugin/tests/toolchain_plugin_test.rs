@@ -1,5 +1,8 @@
 use moon_common::Id;
-use moon_pdk_api::{DefineRequirementsInput, ExtendTaskCommandInput, LocateDependenciesRootInput};
+use moon_pdk_api::{
+    DefineRequirementsInput, ExtendTaskCommandInput, LocateDependenciesRootInput,
+    UnresolvedVersionSpec,
+};
 use moon_test_utils::WorkspaceMocker;
 use moon_toolchain::{DependenciesWorkspace, DependenciesWorkspaceRole};
 use starbase_sandbox::{Sandbox, create_empty_sandbox};
@@ -30,6 +33,21 @@ mod toolchain_plugin {
 
     mod guarded_funcs {
         use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn activate_environment_returns_default_when_func_missing() {
+            let (_sandbox, ws) = create_workspace();
+            let registry = ws.mock_toolchain_registry();
+            let toolchain = registry.load("tc-tier1").await.unwrap();
+
+            let output = toolchain
+                .activate_environment(UnresolvedVersionSpec::parse("1.2.3").ok())
+                .await
+                .unwrap();
+
+            assert!(output.env.is_empty());
+            assert!(output.paths.is_empty());
+        }
 
         #[tokio::test(flavor = "multi_thread")]
         async fn define_toolchain_config_returns_none_when_func_missing() {

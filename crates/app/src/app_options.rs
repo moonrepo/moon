@@ -1,5 +1,6 @@
 use clap::ValueEnum;
 use moon_common::is_local;
+use moon_config::TaskOutputStyle;
 use moon_console::Level;
 use std::fmt;
 use std::str::FromStr;
@@ -21,6 +22,29 @@ impl fmt::Display for AppTheme {
                 Self::Light => "light",
             }
         )
+    }
+}
+
+/// Mirrors `moon_config::TaskOutputStyle` for the command line, so that
+/// `moon_config` doesn't need to depend on `clap`.
+#[derive(ValueEnum, Clone, Copy, Debug)]
+pub enum OutputStyleOption {
+    Buffer,
+    BufferOnlyFailure,
+    Hash,
+    None,
+    Stream,
+}
+
+impl OutputStyleOption {
+    pub fn to_output_style(self) -> TaskOutputStyle {
+        match self {
+            Self::Buffer => TaskOutputStyle::Buffer,
+            Self::BufferOnlyFailure => TaskOutputStyle::BufferOnlyFailure,
+            Self::Hash => TaskOutputStyle::Hash,
+            Self::None => TaskOutputStyle::None,
+            Self::Stream => TaskOutputStyle::Stream,
+        }
     }
 }
 

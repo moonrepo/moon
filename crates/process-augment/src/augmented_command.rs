@@ -5,7 +5,7 @@ use moon_pdk_api::{
     ExecCommandInput, Extend, ExtendCommandInput, ExtendCommandOutput, ExtendTaskCommandInput,
     ExtendTaskScriptInput, ExtendTaskScriptOutput,
 };
-use moon_process::{Command, CommandArg, Env};
+use moon_process::{Arg, Command, CommandExt, Env};
 use moon_project::Project;
 use moon_task::{Task, TaskCheck};
 use moon_toolchain::{
@@ -28,6 +28,7 @@ use std::path::PathBuf;
 
 // Path ordering:
 // - Plugin `extend_*` injected paths
+// - Toolchain `activate_environment` injected paths
 // - Toolchain executable paths
 // - proto store/shims/bin paths
 // - moon store paths
@@ -39,9 +40,13 @@ pub struct AugmentedCommand<'app> {
 }
 
 impl<'app> AugmentedCommand<'app> {
-    pub fn new(context: &'app AppContext, bag: &'app GlobalEnvBag, bin: impl AsRef<OsStr>) -> Self {
+    pub fn create(
+        context: &'app AppContext,
+        bag: &'app GlobalEnvBag,
+        bin: impl AsRef<OsStr>,
+    ) -> Self {
         AugmentedCommand {
-            command: Command::new(bin),
+            command: Command::create(bin),
             bag,
             context,
         }
@@ -52,27 +57,27 @@ impl<'app> AugmentedCommand<'app> {
         bag: &'app GlobalEnvBag,
         input: &ExecCommandInput,
     ) -> Self {
-        let mut builder = Self::new(context, bag, &input.command);
+        let mut builder = Self::create(context, bag, &input.command);
         builder.args(&input.args);
         builder.envs(&input.env);
         builder
     }
 
     pub fn from_task(context: &'app AppContext, bag: &'app GlobalEnvBag, task: &Task) -> Self {
-        let mut builder = Self::new(context, bag, &task.command.value);
+        let mut builder = Self::create(context, bag, &task.command.value);
 
         if let Some(script) = &task.script {
             builder.set_script(script);
         } else {
             if let Some(quoted_command) = &task.command.quoted_value {
-                builder.set_bin(CommandArg {
+                builder.set_bin(Arg {
                     quoted_value: Some(OsString::from(quoted_command)),
                     value: OsString::from(&task.command.value),
                 });
             }
 
             for arg in &task.args {
-                builder.args.push_back(CommandArg {
+                builder.args.push_back(Arg {
                     quoted_value: arg.quoted_value.as_ref().map(OsString::from),
                     value: OsString::from(&arg.value),
                 });
@@ -99,7 +104,7 @@ impl<'app> AugmentedCommand<'app> {
         bag: &'app GlobalEnvBag,
         check: &TaskCheck,
     ) -> Self {
-        let mut builder = Self::new(context, bag, "noop");
+        let mut builder = Self::create(context, bag, "noop");
         builder.set_script(check.get_script());
         builder
     }
@@ -158,7 +163,7 @@ impl<'app> AugmentedCommand<'app> {
             }
             Extend::Prepend(next) => {
                 for arg in next.into_iter().rev() {
-                    self.args.push_front(CommandArg {
+                    self.args.push_front(Arg {
                         quoted_value: None,
                         value: OsString::from(arg),
                     });
@@ -364,23 +369,50 @@ impl<'app> AugmentedCommand<'app> {
             self.env(get_version_env_key(id), get_version_env_value(version));
         }
 
-        // If forced to globals, don't inject any paths but keep env vars
+        // If forced to globals, don't inject any paths or activate
+        // environments, but keep env vars
         if is_using_global_toolchains(self.bag) {
             return Ok(());
         }
 
-        // Add toolchain specific paths
-        if !map.is_empty() {
-            let paths = self
-                .context
-                .toolchain_registry
-                .get_command_paths(map.keys().copied().collect(), |toolchain| {
-                    map.get(&toolchain.id).map(|version| (*version).to_owned())
-                })
-                .await?;
+        // Follow the order of the configured toolchains, so that the
+        // first toolchain takes precedence for paths and variables
+        let ids = toolchain_ids
+            .iter()
+            .filter(|id| map.contains_key(id))
+            .collect::<Vec<_>>();
+        let registry = &self.context.toolchain_registry;
 
-            self.append_paths(paths);
+        if ids.is_empty() {
+            return Ok(());
         }
+
+        // Activate toolchain environments (like `JAVA_HOME`)
+        for output in registry
+            .activate_environment_many(ids.clone(), |toolchain| {
+                map.get(&toolchain.id).map(|version| (*version).to_owned())
+            })
+            .await?
+        {
+            for (key, value) in output.env {
+                // Don't override variables already configured for the command,
+                // like task `env` or plugin injected, or from a previous toolchain
+                if !self.contains_env(&key) {
+                    self.env(key, value);
+                }
+            }
+
+            self.apply_paths(output.paths);
+        }
+
+        // Add toolchain specific paths
+        let paths = registry
+            .get_command_paths(ids, |toolchain| {
+                map.get(&toolchain.id).map(|version| (*version).to_owned())
+            })
+            .await?;
+
+        self.apply_paths(paths);
 
         Ok(())
     }

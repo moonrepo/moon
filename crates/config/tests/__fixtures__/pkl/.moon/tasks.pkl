@@ -1,3 +1,8 @@
+amends "../../../../../../website/static/pkl/v2/InheritedTasksConfig.pkl"
+
+import "../../../../../../website/static/pkl/v2/TaskDependencyConfig.pkl"
+import "../../../../../../website/static/pkl/v2/TaskOptionAffectedFilesConfig.pkl"
+
 env {
 	["KEY"] = "value"
 }
@@ -14,12 +19,12 @@ fileGroups {
 
 implicitDeps = new Listing {
 	"project:task-a"
-	new {
+	new TaskDependencyConfig {
 		target = "project:task-b"
 		optional = true
 	}
 	"project:task-c"
-	new {
+	new TaskDependencyConfig {
 		target = "project:task-d"
 		args = List("--foo", "--bar")
 		env {
@@ -38,7 +43,7 @@ implicitInputs = new Listing {
 }
 
 taskOptions {
-	affectedFiles {
+	affectedFiles = new TaskOptionAffectedFilesConfig {
 		pass = "args"
 		passInputsWhenNoMatch = true
 	}

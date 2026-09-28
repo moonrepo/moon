@@ -5,7 +5,6 @@ mod storage_backend;
 
 pub use capabilities::*;
 pub use helpers::*;
+pub use moon_manifest::*;
 pub use storage::*;
 pub use storage_backend::*;
-
-pub use moon_manifest::*;

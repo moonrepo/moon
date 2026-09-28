@@ -1,0 +1,24 @@
+tasks:
+  first-build:
+    command: 'build'
+  last-build:
+    command: 'build'
+
+  server:
+    command: 'serve'
+    options:
+      persistent: true
+
+  # Serial deps where a persistent dep sits between 2 non-persistent deps.
+  # The persistent dep never completes, so it must not be used to order the
+  # deps that come after it. Instead, they are ordered against the previous
+  # dep that does complete
+  dev:
+    deps:
+      - '~:first-build'
+      - '~:server'
+      - '~:last-build'
+    inputs: []
+    options:
+      persistent: true
+      runDepsInParallel: false

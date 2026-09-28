@@ -9,7 +9,7 @@ use moon_action_graph::ActionGraph;
 use moon_action_pipeline::ActionPipeline;
 use moon_common::Id;
 use moon_console::ui::{OwnedOrShared, Progress, ProgressDisplay, ProgressReporter};
-use moon_console::{Console, ConsoleError, Level};
+use moon_console::{Console, ConsoleError, ConsoleExt, Level};
 use serde::Serialize;
 use starbase_utils::{fs, json, toml, yaml};
 use std::ops::Deref;
@@ -115,7 +115,7 @@ pub async fn run_action_pipeline(
 }
 
 pub async fn create_progress_loader(
-    console: Arc<Console>,
+    console: Console,
     message: impl AsRef<str>,
 ) -> ProgressInstance {
     let reporter = Arc::new(ProgressReporter::default());

@@ -4,6 +4,7 @@ use crate::commands::daemon::DaemonCommands;
 use crate::systems::*;
 use async_trait::async_trait;
 use moon_action_graph::{ActionGraphBuilder, ActionGraphBuilderOptions};
+use moon_actions::operations::sync_pkl_schemas;
 use moon_api::Launchpad;
 use moon_app_context::AppContext;
 use moon_cache::{CacheContext, CacheEngine};
@@ -183,6 +184,7 @@ impl MoonSession {
             console: self.get_console()?,
             daemon_dir: self.config_dir.join("cache").join("daemon"),
             moon_env: Arc::clone(&self.moon_env),
+            otel_enabled: self.cli.otel,
             proto_env: Arc::clone(&self.proto_env),
             extensions_config: Arc::clone(&self.extensions_config),
             extension_registry: self.get_extension_registry().await?,
@@ -230,15 +232,17 @@ impl MoonSession {
 
             let mut engine = CacheEngine::new(context.clone())?;
 
-            if self.workspace_config.experiments.cas_outputs_cache {
-                engine.storage.add_local_backend(LocalStorage::new(
-                    context.clone(),
-                    context
-                        .cache_shared_dir
-                        .as_deref()
-                        .unwrap_or(&context.cache_dir),
-                )?);
-            }
+            // Always register the local backend: it's the home for hash
+            // manifests, which every run depends on regardless of whether task
+            // outputs are cached here. Using it for task outputs stays gated on
+            // the experiment (see `TaskRunState::local_cas_enabled`).
+            engine.storage.add_local_backend(LocalStorage::new(
+                context.clone(),
+                context
+                    .cache_shared_dir
+                    .as_deref()
+                    .unwrap_or(&context.cache_dir),
+            )?);
 
             if context.remote_config.is_enabled() {
                 match context.remote_config.api {
@@ -261,8 +265,8 @@ impl MoonSession {
         Ok(self.cache_engine.get().map(Arc::clone).unwrap())
     }
 
-    pub fn get_console(&self) -> miette::Result<Arc<Console>> {
-        Ok(Arc::new(self.console.clone()))
+    pub fn get_console(&self) -> miette::Result<Console> {
+        Ok(self.console.clone())
     }
 
     pub fn get_daemon_connector(&self) -> miette::Result<DaemonConnector> {
@@ -457,6 +461,8 @@ impl AppSession for MoonSession {
         // Load configs
 
         if self.requires_workspace_configured() {
+            sync_pkl_schemas(&self.config_dir.join("cache"), false)?;
+
             let (workspace_config, tasks_config, extensions_config, toolchains_config) = try_join!(
                 startup::load_workspace_config(self.config_loader.clone(), &self.workspace_root),
                 startup::load_tasks_configs(self.config_loader.clone(), &self.workspace_root),

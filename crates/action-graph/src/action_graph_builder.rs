@@ -765,6 +765,7 @@ impl<'query> ActionGraphBuilder<'query> {
         let parallel = task.options.run_deps_in_parallel;
         let mut indexes: Vec<Option<NodeIndex>> = vec![];
         let mut previous_target_index: Option<NodeIndex> = None;
+        let mut previous_standard_index: Option<NodeIndex> = None;
 
         for dep in &task.deps {
             for dep_task in self
@@ -785,8 +786,12 @@ impl<'query> ActionGraphBuilder<'query> {
                     // earlier serial dependencies. Cycle-forming edges are
                     // skipped, which can happen when the same task node appears
                     // in multiple serial dependency chains across parent tasks.
-                    if !parallel && let Some(prev) = previous_target_index {
-                        self.link_serial_requirements(dep_index, prev);
+                    if !parallel {
+                        self.link_serial_requirements(
+                            dep_index,
+                            previous_target_index,
+                            previous_standard_index,
+                        );
                     }
 
                     // The parent always depends on each child directly, as
@@ -795,6 +800,14 @@ impl<'query> ActionGraphBuilder<'query> {
                     indexes.push(Some(dep_index));
 
                     previous_target_index = Some(dep_index);
+
+                    // A persistent dependency never completes, so it can't order
+                    // the dependencies that come after it. Track the previous one
+                    // that actually completes, so that they can be ordered against
+                    // it instead
+                    if !dep_task.is_persistent() {
+                        previous_standard_index = Some(dep_index);
+                    }
                 }
             }
         }
@@ -1545,13 +1558,17 @@ impl<'query> ActionGraphBuilder<'query> {
     }
 
     /// Add serial ordering edges from every task within `index`'s dependency
-    /// subtree (including `index` itself) to `previous`, so the whole subtree
-    /// runs after the previous serial dependency. The subtree is discovered by
+    /// subtree (including `index` itself) to the previous serial dependency, so
+    /// that the whole subtree runs after it. The subtree is discovered by
     /// walking dependency edges — from a node to the tasks it requires — at link
     /// time (rather than collected during insertion) because a subtree shared
     /// with another target is inserted once and then reused via node
     /// deduplication. Only `RunTask` nodes are ordered; non-task nodes such as
     /// project syncs must not be forced to wait on the previous dependency.
+    ///
+    /// Non-persistent tasks are ordered against `previous_standard` — the
+    /// previous dependency that actually completes — instead of `previous`,
+    /// as a persistent dependency never completes and so cannot order them.
     ///
     /// Serial ordering edges (tracked in `serial_edges`) are skipped during the
     /// walk. They share the `Required` edge type with real dependencies, so
@@ -1559,7 +1576,16 @@ impl<'query> ActionGraphBuilder<'query> {
     /// a shared node `b` — would let the walk escape `index`'s real subtree and
     /// wrongly order unrelated tasks. Cycle-forming edges are skipped when
     /// linked via [`Self::try_link_requirements`].
-    fn link_serial_requirements(&mut self, index: NodeIndex, previous: NodeIndex) {
+    fn link_serial_requirements(
+        &mut self,
+        index: NodeIndex,
+        previous: Option<NodeIndex>,
+        previous_standard: Option<NodeIndex>,
+    ) {
+        if previous.is_none() && previous_standard.is_none() {
+            return;
+        }
+
         let mut visited = FxHashSet::default();
         let mut ordered = vec![];
         let mut stack = vec![index];
@@ -1591,8 +1617,29 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         for node_index in ordered {
-            self.try_link_requirements(node_index, previous);
+            // A persistent action is marked as completed the moment it is
+            // dispatched, as it never completes on its own, so ordering a
+            // non-persistent action after one would simply run it immediately,
+            // instead of after the dependency has actually finished. Order
+            // those against the previous dependency that does complete
+            let anchor = if self.is_persistent_index(node_index) {
+                previous
+            } else {
+                previous_standard
+            };
+
+            if let Some(anchor) = anchor
+                && anchor != node_index
+            {
+                self.try_link_requirements(node_index, anchor);
+            }
         }
+    }
+
+    fn is_persistent_index(&self, index: NodeIndex) -> bool {
+        self.graph
+            .node_weight(index)
+            .is_some_and(|node| node.is_persistent())
     }
 
     /// Try to add a serial ordering edge between two dependency nodes, recording

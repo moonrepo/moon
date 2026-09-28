@@ -2,13 +2,11 @@ use crate::app_error::AppError;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
 use moon_common::color;
+use rustc_hash::FxHashSet;
 use serde::{Deserialize, Serialize};
-use starbase_utils::{
-    fs,
-    json::{self, JsonValue},
-};
+use starbase_utils::json::{self, JsonValue, serde_json};
 use std::collections::BTreeMap;
-use tracing::instrument;
+use tracing::{debug, instrument};
 
 #[derive(Args, Clone, Debug)]
 pub struct HashArgs {
@@ -32,25 +30,49 @@ pub async fn hash(session: MoonSession, args: HashArgs) -> SessionResult {
     Ok(None)
 }
 
+/// Resolve a full or abbreviated hash to a stored hash manifest, then read it
+/// back out of the local CAS.
 async fn load_hash_manifest(
     session: &MoonSession,
     partial_hash: &str,
 ) -> miette::Result<(String, String, JsonValue)> {
-    if let Some(manifest_path) = session
-        .get_cache_engine()?
-        .hash
-        .find_manifest_path(partial_hash)?
-    {
-        let hash = fs::file_name(&manifest_path).replace(".json", "");
+    let cache_engine = session.get_cache_engine()?;
+    let mut digests = FxHashSet::default();
 
-        // Our cache is non-pretty, but we wan't to output as pretty,
-        // so we need to manually convert it here!
-        let data: JsonValue = json::read_file(manifest_path)?;
+    debug!(hash = partial_hash, "Finding hash manifest");
 
-        return Ok((hash, json::format(&data, true)?, data));
+    for backend in cache_engine.storage.get_local_backends() {
+        if backend.is_readable() {
+            digests.extend(backend.find_blobs_by_prefix(partial_hash).await?);
+        }
     }
 
-    Err(AppError::MissingHashManifest(partial_hash.to_owned()).into())
+    if digests.len() > 1 {
+        return Err(AppError::AmbiguousHashManifest(partial_hash.to_owned()).into());
+    }
+
+    let Some(digest) = digests.into_iter().next() else {
+        return Err(AppError::MissingHashManifest(partial_hash.to_owned()).into());
+    };
+
+    debug!(
+        hash = partial_hash,
+        name = digest.hash.as_str(),
+        "Found hash manifest"
+    );
+
+    let Some(blob) = cache_engine.storage.load_hash_manifest(&digest).await? else {
+        return Err(AppError::MissingHashManifest(partial_hash.to_owned()).into());
+    };
+
+    // The blob store is keyed by content, so a prefix can in principle land on
+    // a blob that isn't a hash manifest. Reject that rather than printing it.
+    let data: JsonValue = serde_json::from_slice(&blob.read_bytes()?)
+        .map_err(|_| AppError::MissingHashManifest(partial_hash.to_owned()))?;
+
+    // Our cache is non-pretty, but we wan't to output as pretty,
+    // so we need to manually convert it here!
+    Ok((digest.hash.to_string(), json::format(&data, true)?, data))
 }
 
 async fn view_hash(session: &MoonSession, partial_hash: &str, as_json: bool) -> miette::Result<()> {

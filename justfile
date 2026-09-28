@@ -82,8 +82,8 @@ mcp:
 moon-check:
 	cargo run -- check --all --log trace --summary
 
-schemas:
-	cargo run -p moon_config_schema --features typescript
+gen:
+	cargo run -p moon_config_schema --features api-docs --features typescript
 
 clean-bazel-remote:
 	rm -f ~/.moon/bazel-cache/cas.v2/.DS_Store && rm -f ~/.moon/bazel-cache/ac.v2/.DS_Store

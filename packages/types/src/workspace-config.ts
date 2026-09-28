@@ -227,6 +227,14 @@ export interface ExperimentsConfig {
 	 */
 	casOutputsCache: boolean;
 	/**
+	 * Always use the task's `outputStyle` option, even when running
+	 * the task as a primary target.
+	 * @since 2.6.0
+	 *
+	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
+	 */
+	explicitTaskOutputStyle: boolean;
+	/**
 	 * Use native file hashing instead of using the VCS.
 	 * @since 2.3.0
 	 *
@@ -386,7 +394,7 @@ export interface PipelineConfig {
 /** The project identifier format for glob located projects. */
 export type WorkspaceProjectGlobFormat = 'dir-name' | 'source-path';
 
-/** Configures projects in the workspace, using both globs and explicit source paths. */
+/** Using both glob patterns and file source paths. */
 export interface WorkspaceProjectsConfig {
 	/**
 	 * The project identifier format for glob located projects.
@@ -951,6 +959,14 @@ export interface PartialExperimentsConfig {
 	 */
 	casOutputsCache?: boolean | null;
 	/**
+	 * Always use the task's `outputStyle` option, even when running
+	 * the task as a primary target.
+	 * @since 2.6.0
+	 *
+	 * @env MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE
+	 */
+	explicitTaskOutputStyle?: boolean | null;
+	/**
 	 * Use native file hashing instead of using the VCS.
 	 * @since 2.3.0
 	 *
@@ -1061,7 +1077,7 @@ export interface PartialPipelineConfig {
 	 * when changes to lockfiles and manifests are detected.
 	 * @since 1.34.0
 	 */
-	installDependencies?: PartialPipelineActionSwitch | null;
+	installDependencies?: PartialPipelineActionSwitch;
 	/**
 	 * A threshold in milliseconds in which to force kill running child
 	 * processes after the pipeline receives an external signal. A value
@@ -1086,7 +1102,7 @@ export interface PartialPipelineConfig {
 	 * of a running task.
 	 * @since 1.34.0
 	 */
-	syncProjects?: PartialPipelineActionSwitch | null;
+	syncProjects?: PartialPipelineActionSwitch;
 	/**
 	 * Run the `SyncWorkspace` action before all actions in the pipeline.
 	 * @since 1.34.0
@@ -1096,7 +1112,7 @@ export interface PartialPipelineConfig {
 	syncWorkspace?: boolean | null;
 }
 
-/** Configures projects in the workspace, using both globs and explicit source paths. */
+/** Using both glob patterns and file source paths. */
 export interface PartialWorkspaceProjectsConfig {
 	/**
 	 * The project identifier format for glob located projects.

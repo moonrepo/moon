@@ -28,6 +28,7 @@ moon_workspace_graph = { path = "../workspace-graph" }
 async-trait = { workspace = true }
 miette = { workspace = true }
 num_cpus = { workspace = true }
+opentelemetry = { workspace = true }
 petgraph = { workspace = true }
 rustc-hash = { workspace = true }
 serde = { workspace = true }
@@ -37,6 +38,7 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 moon_test_utils = { path = "../test-utils" }
+opentelemetry_sdk = { workspace = true }
 serde_json = { workspace = true }
 starbase_sandbox = { workspace = true }
 

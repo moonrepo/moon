@@ -94,7 +94,7 @@ projects:
         }
 
         #[test]
-        #[should_panic(expected = "no matching source format")]
+        #[should_panic(expected = "Failed to read URL")]
         fn not_a_yaml_url() {
             test_load_config(
                 FILENAME,

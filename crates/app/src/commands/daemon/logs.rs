@@ -27,7 +27,7 @@ pub async fn logs(session: MoonSession) -> SessionResult {
 
 #[cfg(unix)]
 async fn tail_logs(session: &MoonSession, log_path: &Path) -> SessionResult {
-    use moon_process::find_command_on_path;
+    use moon_process::{CommandExt, find_command_on_path};
 
     if find_command_on_path("tail").is_none() {
         session.console.render(element! {
@@ -41,7 +41,7 @@ async fn tail_logs(session: &MoonSession, log_path: &Path) -> SessionResult {
         return Ok(Some(1));
     }
 
-    Command::new("tail")
+    Command::create("tail")
         .arg("-f")
         .arg(log_path)
         .exec_stream_output()
@@ -52,9 +52,9 @@ async fn tail_logs(session: &MoonSession, log_path: &Path) -> SessionResult {
 
 #[cfg(windows)]
 async fn tail_logs(_session: &MoonSession, log_path: &Path) -> SessionResult {
-    use moon_process::get_default_shell;
+    use moon_process::{CommandExt, get_default_shell};
 
-    Command::new("Get-Content")
+    Command::create("Get-Content")
         .arg(log_path)
         .arg("-Wait")
         // Must run in powershell

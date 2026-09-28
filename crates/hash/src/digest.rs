@@ -1,4 +1,5 @@
 use crate::content_hash::ContentHash;
+use crate::content_hasher::ContentHasher;
 use miette::IntoDiagnostic;
 use serde::{Deserialize, Serialize};
 use starbase_utils::{fs, json};
@@ -27,6 +28,13 @@ impl Digest {
         let bytes = json::serde_json::to_vec(&data).into_diagnostic()?;
 
         Self::from_bytes(&bytes)
+    }
+
+    pub fn from_hasher(hasher: &mut ContentHasher) -> miette::Result<Self> {
+        let hash = hasher.generate_hash()?;
+        let size = hasher.serialize()?.len() as i64;
+
+        Ok(Digest { hash, size })
     }
 
     pub fn from_file<T: AsRef<Path>>(path: T) -> miette::Result<Self> {

@@ -11,20 +11,20 @@ blake3 = { version = "1.8.7", features = ["mmap"] }
 bazel-remote-apis = { version = "0.27.0", features = ["serde"] }
 bytes = "1.12.1"
 async-trait = "0.1.91"
-bitflags = "2.13.1"
+bitflags = "2.13.2"
 chrono = { version = "0.4.44", features = ["serde"] }
 cd_env = "0.4.2"
 ci_env = "0.5.3"
-clap = { version = "4.6.4", default-features = false, features = [
+clap = { version = "4.6.7", default-features = false, features = [
   "derive",
   "std",
   "error-context",
 ] }
-clap_complete = "4.6.9"
+clap_complete = "4.6.11"
 compact_str = { version = "0.10.0", default-features = false, features = [
   "serde",
 ] }
-convert_case = "0.11.0"
+convert_case = "0.12.0"
 criterion = { package = "codspeed-criterion-compat", version = "5.0.1", default-features = false, features = [
   "async_tokio",
 ] }
@@ -32,15 +32,22 @@ daggy = { version = "0.9.0", features = ["serde-1"] }
 dirs = "6.0.0"
 futures = "0.3.34"
 httpmock = "0.8.3"
-indexmap = "2.14.1"
+indexmap = "2.14.2"
 iocraft = "0.8.5"
 libc = "0.2.189"
 md5 = "0.8.1"
 miette = "7.6.0"
 num_cpus = "1.17.0"
+opentelemetry = { version = "0.32.0", default-features = false, features = [
+  "metrics",
+] }
+opentelemetry_sdk = { version = "0.32.1", default-features = false, features = [
+  "metrics",
+  "testing",
+] }
 pathdiff = "0.2.3"
-pest = "2.8.6"
-pest_derive = "2.8.6"
+pest = "2.9.2"
+pest_derive = "2.9.2"
 petgraph = { version = "0.8.3", default-features = false, features = [
   "serde-1",
 ] }
@@ -49,7 +56,7 @@ regex = { version = "1.13.1", default-features = false, features = [
   "std",
   "perf",
 ] }
-reqwest = { version = "0.13.4", default-features = false, features = [
+reqwest = { version = "0.13.5", default-features = false, features = [
   "rustls",
   # We don't use openssl but its required for musl builds
   "native-tls-vendored",
@@ -57,26 +64,27 @@ reqwest = { version = "0.13.4", default-features = false, features = [
 once_cell = "1.21.4"
 rustc-hash = "2.1.3"
 scc = "3.8.8"
-schematic = { version = "0.19.7", default-features = false, features = [
+schematic = { version = "0.20.8", default-features = false, features = [
   "schema",
 ] }
 serial_test = "4.0.1"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 sha2 = "0.11.0"
-starbase = { version = "0.13.2", features = ["clap", "miette"] }
-starbase_archive = { version = "0.14.4", default-features = false, features = [
+starbase = { version = "0.13.3", features = ["clap", "miette"] }
+starbase_archive = { version = "0.14.6", default-features = false, features = [
   "miette",
   "tar-all",
   "zip-all",
 ] }
-starbase_args = { version = "0.1.13" }
+starbase_args = { version = "0.1.15" }
 starbase_console = { version = "0.6.33", features = ["miette"] }
-starbase_id = { version = "0.3.5", features = ["miette", "schematic"] }
+starbase_id = { version = "0.4.0", features = ["miette", "schematic"] }
+starbase_process = "0.1.2"
 starbase_sandbox = "0.12.0"
-starbase_shell = "0.12.8"
+starbase_shell = "0.14.1"
 starbase_styles = { version = "0.6.1", features = ["relative-path"] }
-starbase_utils = { version = "0.14.4", default-features = false, features = [
+starbase_utils = { version = "0.14.6", default-features = false, features = [
   "editor-config",
   "glob-cache",
   "miette",
@@ -99,21 +107,21 @@ tonic-prost = "0.14.6"
 tower = "0.5.3"
 tracing = "0.1.44"
 url = "2.5.8"
-uuid = { version = "1.26.0", features = ["v4"] }
+uuid = { version = "1.26.1", features = ["v4"] }
 windows-sys = { version = "0.61.2", default-features = false }
 
 # proto/plugin related
 extism = "=1.30.0"
 extism-pdk = "1.4.1"
-proto_core = "0.60.4"
-proto_pdk_api = "0.33.0"
-proto_pdk_test_utils = "0.48.0"
-proto_shim = "0.8.3"
-system_env = "0.10.1"
-version_spec = "0.11.2"
-warpgate = "0.35.2"
-warpgate_api = "0.18.2"
-warpgate_pdk = "0.17.0"
+proto_core = "0.62.1"
+proto_pdk_api = "0.34.4"
+proto_pdk_test_utils = "0.50.1"
+proto_shim = "0.8.5"
+system_env = "0.10.4"
+version_spec = "0.11.5"
+warpgate = "0.36.3"
+warpgate_api = "0.19.3"
+warpgate_pdk = "0.18.3"
 
 # proto_core = { path = "../proto/crates/core" }
 # proto_pdk_api = { path = "../proto/crates/pdk-api" }
@@ -130,3 +138,9 @@ assigning_clones = "allow"
 
 [workspace.metadata.cargo-shear]
 ignored = ["serde"]
+
+# [patch.crates-io]
+# schematic = { path = "../schematic/crates/schematic" }
+# schematic_core = { path = "../schematic/crates/core" }
+# schematic_macros = { path = "../schematic/crates/macros" }
+# schematic_types = { path = "../schematic/crates/types" }

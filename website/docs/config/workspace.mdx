@@ -465,6 +465,21 @@ Can also be enabled with the `MOON_EXPERIMENT_CAS_OUTPUTS_CACHE` environment var
 
 > The CAS layer can be tuned through the top-level [`cache`](#cache) setting.
 
+### `explicitTaskOutputStyle`<VersionLabel version="2.6.0" />
+
+<HeadingApiLink to="/api/types/interface/ExperimentsConfig#explicitTaskOutputStyle" />
+
+Applies a task's [`outputStyle`](./project#outputstyle) option to _all_ targets, instead of only
+transitive (non-primary) ones. By default, a primary target (one you explicitly requested on the
+command line) always displays its output and ignores the configured style. Defaults to `false`.
+
+```yaml title=".moon/workspace.yml" {2}
+experiments:
+  explicitTaskOutputStyle: true
+```
+
+Can also be enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
+
 ### `nativeFileHashing`<VersionLabel version="2.3.0" />
 
 <HeadingApiLink to="/api/types/interface/ExperimentsConfig#nativeFileHashing" />

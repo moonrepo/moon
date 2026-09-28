@@ -15,12 +15,13 @@ use std::sync::Arc;
 pub struct AppContext {
     pub cli_version: Version,
     pub moon_env: Arc<MoonEnvironment>,
+    pub otel_enabled: bool,
     pub proto_env: Arc<ProtoEnvironment>,
 
     // Components
     pub cache_engine: Arc<CacheEngine>,
     pub config_exts: Vec<String>,
-    pub console: Arc<Console>,
+    pub console: Console, // Doesn't need Arc
     pub vcs: Arc<BoxedVcs>,
 
     // Configs

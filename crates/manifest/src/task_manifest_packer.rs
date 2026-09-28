@@ -1,0 +1,156 @@
+use crate::helpers::*;
+use crate::manifest_error::ManifestError;
+use crate::task_manifest::{TaskManifest, TaskManifestFile, TaskManifestSymlink};
+use moon_action::Operation;
+use moon_blob::{Blob, BlobContent};
+use moon_common::path::{PathExt, WorkspaceRelativePathBuf};
+use moon_hash::Digest;
+use starbase_utils::fs::{self, FsError};
+use starbase_utils::glob::{self, GlobWalkOptions};
+use std::path::{Path, PathBuf};
+
+#[derive(Debug)]
+pub struct TaskManifestPacker {
+    manifest: TaskManifest,
+    workspace_root: PathBuf,
+}
+
+impl TaskManifestPacker {
+    pub fn new(workspace_root: PathBuf) -> Self {
+        Self {
+            manifest: TaskManifest::default(),
+            workspace_root,
+        }
+    }
+
+    pub fn pack(self) -> TaskManifest {
+        self.manifest
+    }
+
+    /// Record the fingerprint that the action digest addresses, so it is
+    /// uploaded to the CAS alongside the outputs and an RE-compliant backend can
+    /// resolve the action result.
+    pub fn inherit_source(&mut self, digest: &Digest, content: BlobContent) -> miette::Result<()> {
+        let (bytes, source_path) = match content {
+            BlobContent::Inline(bytes) => (Some(bytes), None),
+            BlobContent::File(path) => (None, Some(path)),
+        };
+
+        self.manifest.digest_source = Some(TaskManifestFile {
+            bytes,
+            digest: Some(digest.to_owned()),
+            // The fingerprint is a CAS blob, not a file in the workspace, but
+            // the manifest still names it. This label is descriptive only —
+            // uploads read the bytes or the source path above, never this.
+            path: WorkspaceRelativePathBuf::from(format!(
+                ".moon/cache/blobs/{}/{}",
+                digest.hash.prefix(),
+                digest.hash.suffix(),
+            )),
+            source_path,
+            ..Default::default()
+        });
+
+        Ok(())
+    }
+
+    pub fn inherit_operation(&mut self, operation: &Operation) -> miette::Result<()> {
+        if let Some(exec) = operation.get_exec_output() {
+            self.manifest.exit_code = exec.exit_code.unwrap_or_default();
+
+            if let Some(stderr) = &exec.stderr {
+                let blob = Blob::from_bytes(stderr.as_bytes().to_owned())?;
+
+                self.manifest.stderr_digest = Some(blob.digest);
+                self.manifest.stderr_bytes = Some(blob.bytes);
+            }
+
+            if let Some(stdout) = &exec.stdout {
+                let blob = Blob::from_bytes(stdout.as_bytes().to_owned())?;
+
+                self.manifest.stdout_digest = Some(blob.digest);
+                self.manifest.stdout_bytes = Some(blob.bytes);
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn inherit_output(&mut self, abs_path: PathBuf) -> miette::Result<()> {
+        if !abs_path.starts_with(&self.workspace_root) {
+            return Err(ManifestError::OutputFileOutsideOfWorkspace { output: abs_path }.into());
+        }
+
+        if abs_path.is_symlink() {
+            self.insert_symlink(abs_path)?;
+        } else if abs_path.is_file() {
+            self.insert_file(abs_path)?;
+        } else if abs_path.is_dir() {
+            self.insert_dir(abs_path)?;
+        }
+
+        Ok(())
+    }
+
+    fn insert_dir(&mut self, abs_path: PathBuf) -> miette::Result<()> {
+        for abs_file in
+            glob::walk_fast_with_options(abs_path, ["**/*"], GlobWalkOptions::default().files())?
+        {
+            self.insert_file(abs_file)?;
+        }
+
+        Ok(())
+    }
+
+    fn insert_file(&mut self, abs_path: PathBuf) -> miette::Result<()> {
+        let metadata = fs::metadata(&abs_path)?;
+
+        self.manifest.files.push(TaskManifestFile {
+            bytes: None,
+            digest: Some(Digest::from_file(&abs_path)?),
+            is_executable: is_file_executable(&abs_path, &metadata),
+            modified_at: metadata.modified().ok(),
+            path: self.resolve_rel_path(&abs_path)?,
+            source_path: Some(abs_path),
+            unix_mode: extract_unix_mode(&metadata),
+        });
+
+        Ok(())
+    }
+
+    fn insert_symlink(&mut self, abs_path: PathBuf) -> miette::Result<()> {
+        let link = std::fs::read_link(&abs_path).map_err(|error| FsError::Read {
+            path: abs_path.clone(),
+            error: Box::new(error),
+        })?;
+
+        if !link.starts_with(&self.workspace_root) {
+            return Err(ManifestError::OutputSymlinkOutsideOfWorkspace {
+                output: abs_path,
+                target: link,
+            }
+            .into());
+        }
+
+        let metadata = fs::metadata(&abs_path)?;
+
+        self.manifest.symlinks.push(TaskManifestSymlink {
+            modified_at: metadata.modified().ok(),
+            path: self.resolve_rel_path(&abs_path)?,
+            target: self.resolve_rel_path(&link)?,
+            unix_mode: extract_unix_mode(&metadata),
+        });
+
+        Ok(())
+    }
+
+    fn resolve_rel_path(&self, abs_path: &Path) -> miette::Result<WorkspaceRelativePathBuf> {
+        let rel_path = abs_path.relative_to(&self.workspace_root).map_err(|_| {
+            ManifestError::OutputFileOutsideOfWorkspace {
+                output: abs_path.to_owned(),
+            }
+        })?;
+
+        Ok(rel_path)
+    }
+}

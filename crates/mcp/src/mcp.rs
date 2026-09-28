@@ -9,11 +9,14 @@ use moon_workspace_graph::WorkspaceGraph;
 use rust_mcp_sdk::error::SdkResult;
 use rust_mcp_sdk::mcp_server::{McpServerOptions, ServerHandler, server_runtime};
 use rust_mcp_sdk::schema::{
-    CallToolRequestParams, CallToolResult, Implementation, InitializeResult,
-    LATEST_PROTOCOL_VERSION, ListToolsResult, PaginatedRequestParams, RpcError, ServerCapabilities,
-    ServerCapabilitiesTools, schema_utils::CallToolError,
+    CallToolRequestParams, Implementation, ListToolsResult, ListToolsResultCacheScope,
+    PaginatedRequestParams, RpcError, ServerCapabilities, ServerCapabilitiesTools, ServerResult,
+    schema_utils::CallToolError,
 };
-use rust_mcp_sdk::{McpServer, StdioTransport, ToMcpServerHandler, TransportOptions, tool_box};
+use rust_mcp_sdk::{
+    McpServer, RequestContext, ServerDetails, StdioTransport, ToMcpServerHandler, TransportOptions,
+    tool_box,
+};
 use std::env;
 use std::sync::Arc;
 
@@ -27,23 +30,28 @@ impl ServerHandler for MoonMcpHandler {
     async fn handle_list_tools_request(
         &self,
         _request: Option<PaginatedRequestParams>,
+        _context: &RequestContext,
         _runtime: Arc<dyn McpServer>,
     ) -> Result<ListToolsResult, RpcError> {
         Ok(ListToolsResult {
+            cache_scope: ListToolsResultCacheScope::Private,
             meta: None,
             next_cursor: None,
+            result_type: "complete".into(),
             tools: MoonTools::tools(),
+            ttl_ms: 0,
         })
     }
 
     async fn handle_call_tool_request(
         &self,
         request: CallToolRequestParams,
+        _context: &RequestContext,
         _runtime: Arc<dyn McpServer>,
-    ) -> std::result::Result<CallToolResult, CallToolError> {
+    ) -> std::result::Result<ServerResult, CallToolError> {
         let tool_params: MoonTools = MoonTools::try_from(request).map_err(CallToolError::new)?;
 
-        match tool_params {
+        let result = match tool_params {
             MoonTools::GenerateTool(inner) => inner.call_tool(&self.app_context).await,
             MoonTools::GetChangedFilesTool(inner) => inner.call_tool(&self.app_context).await,
             MoonTools::GetProjectTool(inner) => inner.call_tool(&self.workspace_graph),
@@ -62,7 +70,9 @@ impl ServerHandler for MoonMcpHandler {
                     .call_tool(&self.app_context, &self.workspace_graph)
                     .await
             }
-        }
+        }?;
+
+        Ok(ServerResult::from(result))
     }
 }
 
@@ -71,7 +81,7 @@ pub async fn run_mcp(
     workspace_graph: Arc<WorkspaceGraph>,
 ) -> SdkResult<()> {
     // STEP 1: Define server details and capabilities
-    let server_details = InitializeResult {
+    let server_details = ServerDetails {
         server_info: Implementation {
             name: "moon_mcp_server".to_string(),
             version: env::var("MOON_VERSION")
@@ -85,9 +95,8 @@ pub async fn run_mcp(
             tools: Some(ServerCapabilitiesTools { list_changed: None }),
             ..Default::default()
         },
-        meta: None,
         instructions: None,
-        protocol_version: LATEST_PROTOCOL_VERSION.to_string(),
+        meta: None,
     };
 
     // STEP 2: Create an std transport with default options
@@ -104,8 +113,6 @@ pub async fn run_mcp(
         transport,
         handler: handler.to_mcp_server_handler(),
         server_details,
-        task_store: None,
-        client_task_store: None,
         message_observer: None,
     });
 

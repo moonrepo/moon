@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use miette::IntoDiagnostic;
 use moon_blob::{Blob, BlobCleanStats, BlobContent, BlobInput, BlobOutput};
-use moon_cache_storage::{CacheCapabilities, CacheContext, Manifest, StorageBackend};
+use moon_cache_storage::{CacheCapabilities, CacheContext, StorageBackend, TaskManifest};
 use moon_cas::CasStore;
 use moon_common::Id;
 use moon_hash::{ContentHash, Digest};
@@ -120,13 +120,13 @@ impl StorageBackend for LocalStorage {
         })
     }
 
-    async fn retrieve_manifest(&self, digest: Digest) -> miette::Result<Option<Manifest>> {
+    async fn retrieve_task_manifest(&self, digest: Digest) -> miette::Result<Option<TaskManifest>> {
         let manifests = Arc::clone(&self.manifests);
 
         spawn_blocking(move || {
             if manifests.contains_object(&digest) {
                 let blob = manifests.read(&digest)?;
-                let manifest: Manifest = serde_json::from_slice(&blob).into_diagnostic()?;
+                let manifest: TaskManifest = serde_json::from_slice(&blob).into_diagnostic()?;
 
                 // Refresh the manifest's mtime so GC treats it as recently used:
                 // a hit keeps it (and, by reachability, its blobs) alive, making
@@ -142,7 +142,11 @@ impl StorageBackend for LocalStorage {
         .into_diagnostic()?
     }
 
-    async fn store_manifest(&self, digest: Digest, manifest: Manifest) -> miette::Result<()> {
+    async fn store_task_manifest(
+        &self,
+        digest: Digest,
+        manifest: TaskManifest,
+    ) -> miette::Result<()> {
         let manifests = Arc::clone(&self.manifests);
 
         spawn_blocking(move || {
@@ -196,6 +200,15 @@ impl StorageBackend for LocalStorage {
         })
         .await
         .into_diagnostic()?
+    }
+
+    async fn find_blobs_by_prefix(&self, prefix: &str) -> miette::Result<Vec<Digest>> {
+        let blobs = Arc::clone(&self.blobs);
+        let prefix = prefix.to_owned();
+
+        spawn_blocking(move || blobs.find_objects_by_prefix(&prefix))
+            .await
+            .into_diagnostic()?
     }
 
     async fn store_blobs(
@@ -257,7 +270,7 @@ fn evict_manifests(
         let Ok(bytes) = fs::read(&path) else {
             continue;
         };
-        let Ok(manifest) = serde_json::from_slice::<Manifest>(&bytes) else {
+        let Ok(manifest) = serde_json::from_slice::<TaskManifest>(&bytes) else {
             continue;
         };
 

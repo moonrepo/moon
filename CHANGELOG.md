@@ -1,5 +1,73 @@
 # Changelog
 
+## Unreleased
+
+#### 🚀 Updates
+
+- Added OpenTelemetry metrics for the action pipeline, which are exported when `--otel` (or
+  `MOON_OTEL`) is enabled.
+  - Records `moon.task.runs` and `moon.task.duration` for every task that runs, labeled with the
+    target, project, task, toolchains, status, and flakiness.
+  - Records `moon.action.executions` and `moon.action.duration` for every action that runs, labeled
+    with the target, project, or toolchain that it operated on.
+  - Records `moon.operation.executions` and `moon.operation.duration` for every operation within
+    those actions, labeled with the operation type, status, and plugin.
+- Added a new `--output-style` option to `moon run`, `moon ci`, `moon check`, and `moon exec`, which
+  controls how output is displayed for _all_ tasks, overriding their `options.outputStyle`. Since it
+  is requested explicitly, it also applies to primary targets. For example,
+  `moon ci :test --output-style buffer-only-failure` keeps passing tasks quiet and prints the full
+  output of failing ones.
+- Added a new `experiments.explicitTaskOutputStyle` setting, which applies a task's
+  `options.outputStyle` to all targets, instead of only transitive (non-primary) ones. Can also be
+  enabled with the `MOON_EXPERIMENT_EXPLICIT_TASK_OUTPUT_STYLE` environment variable.
+- Added Pkl modules for every configuration file, which are generated to `.moon/cache/schemas/pkl`
+  when `pkl` is installed. A `.pkl` config that amends (or extends) its module is type checked by
+  Pkl itself, and editors with Pkl support provide completion and documentation for each setting.
+- Added support for the proto `activate_environment` plugin function to toolchains. When building a
+  command (for tasks and toolchain operations), the environment of each toolchain that has been
+  setup is now activated, which may set environment variables (like `JAVA_HOME` for Java) and
+  prepend paths to `PATH`. Variables that are already configured, like a task's `env`, are not
+  overridden, and the first toolchain configured for a task takes precedence (#2568).
+- Changed persistent tasks to run when they are processed in the action graph, instead of being
+  batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
+  alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on
+  it. Non-persistent tasks are still not allowed to depend on persistent tasks.
+- Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
+  dependencies that follow them, as a persistent dependency never completes. Those dependencies are
+  now ordered against the previous dependency that does complete.
+- Updated the MCP server (`moon mcp`) to the stateless MCP `2026-07-28` protocol. Clients must
+  support this protocol version, as older versions (`2025-11-25` and below) and the `initialize`
+  handshake are no longer supported.
+
+#### 🐞 Fixes
+
+- Fixed an issue where a task's resolved `toolchains` list was ordered by an internal hash set,
+  instead of by what was configured. The toolchains configured for a task (or inherited from the
+  project) now come first, followed by any toolchains they require. This also fixes the
+  `$taskToolchain` token, which would expand to a required toolchain (like `npm`) instead of the
+  configured one (like `node`), and makes the `append`/`prepend` merge strategies apply to
+  toolchains as they do to other task fields. Since this list is part of a task's hash, existing
+  caches will be invalidated once.
+
+- Fixed an issue where a task's `options.outputStyle` was applied to primary targets (those
+  explicitly requested on the command line) when running in CI, or when the task was hydrated from
+  the cache. Primary targets now always display their output, as documented, unless the
+  `explicitTaskOutputStyle` experiment is enabled.
+- Fixed an issue where environment variables removed through moon's internal environment bag (for
+  example `NO_COLOR` when colors are forced) were not removed from the current process, and could be
+  inherited back into the bag on a subsequent read.
+
+#### ⚙️ Internal
+
+- Improved the performance of the action pipeline's job dispatcher by 10-15x. Dependency
+  relationships are now extracted from the action graph once up front, and completed jobs unblock
+  their dependents incrementally, instead of re-traversing the graph for every dispatch check.
+- Hash manifests are now stored as blobs in the local content-addressable cache, instead of as
+  individual files in `.moon/cache/hashes`. The local cache backend is now always enabled, as it
+  backs these manifests; storing task _outputs_ in it remains gated by the `cas_outputs_cache`
+  experiment.
+- Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2.
+
 ## 2.5.6
 
 #### 🐞 Fixes

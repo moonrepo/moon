@@ -32,7 +32,7 @@ export interface PartialTemplateFrontmatterConfig {
 	to?: string | null;
 }
 
-/** Configuration for a template variable. */
+/** An array variable. */
 export interface TemplateVariableArraySetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: unknown[];
@@ -49,7 +49,7 @@ export interface TemplateVariableArraySetting {
 	type: 'array';
 }
 
-/** Configuration for a template variable. */
+/** A boolean variable. */
 export interface TemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: boolean;
@@ -77,6 +77,7 @@ export interface TemplateVariableEnumValueConfig {
 
 export type TemplateVariableEnumValue = string | TemplateVariableEnumValueConfig;
 
+/** A string enumerable variable. */
 export interface TemplateVariableEnumSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: TemplateVariableEnumDefault;
@@ -95,7 +96,7 @@ export interface TemplateVariableEnumSetting {
 	values: TemplateVariableEnumValue[];
 }
 
-/** Configuration for a template variable. */
+/** A number variable. */
 export interface TemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: number;
@@ -112,7 +113,7 @@ export interface TemplateVariableNumberSetting {
 	type: 'number';
 }
 
-/** Configuration for a template variable. */
+/** An object variable. */
 export interface TemplateVariableObjectSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: Record<string, unknown>;
@@ -129,7 +130,7 @@ export interface TemplateVariableObjectSetting {
 	type: 'object';
 }
 
-/** Configuration for a template variable. */
+/** A string variable. */
 export interface TemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: string;
@@ -180,7 +181,7 @@ export interface TemplateConfig {
 	variables?: Record<string, TemplateVariable>;
 }
 
-/** Configuration for a template variable. */
+/** An array variable. */
 export interface PartialTemplateVariableArraySetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: unknown[] | null;
@@ -197,7 +198,7 @@ export interface PartialTemplateVariableArraySetting {
 	type?: 'array' | null;
 }
 
-/** Configuration for a template variable. */
+/** A boolean variable. */
 export interface PartialTemplateVariableBoolSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: boolean | null;
@@ -225,6 +226,7 @@ export interface PartialTemplateVariableEnumValueConfig {
 
 export type PartialTemplateVariableEnumValue = string | PartialTemplateVariableEnumValueConfig;
 
+/** A string enumerable variable. */
 export interface PartialTemplateVariableEnumSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: PartialTemplateVariableEnumDefault | null;
@@ -243,7 +245,7 @@ export interface PartialTemplateVariableEnumSetting {
 	values?: PartialTemplateVariableEnumValue[] | null;
 }
 
-/** Configuration for a template variable. */
+/** A number variable. */
 export interface PartialTemplateVariableNumberSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: number | null;
@@ -260,7 +262,7 @@ export interface PartialTemplateVariableNumberSetting {
 	type?: 'number' | null;
 }
 
-/** Configuration for a template variable. */
+/** An object variable. */
 export interface PartialTemplateVariableObjectSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: Record<string, unknown> | null;
@@ -277,7 +279,7 @@ export interface PartialTemplateVariableObjectSetting {
 	type?: 'object' | null;
 }
 
-/** Configuration for a template variable. */
+/** A string variable. */
 export interface PartialTemplateVariableStringSetting {
 	/** The default value of the variable if none was provided. */
 	defaultValue?: string | null;

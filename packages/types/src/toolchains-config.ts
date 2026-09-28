@@ -20,6 +20,17 @@ export interface MoonConfig {
 	manifestUrl?: string;
 }
 
+export type VersionSpec = string;
+
+/** Configures how moon integrates with proto. */
+export interface ProtoConfig {
+	/**
+	 * The version of proto to download and install,
+	 * and to use for installing and running other toolchains.
+	 */
+	version?: VersionSpec;
+}
+
 export type PluginLocator = string;
 
 export type UnresolvedVersionSpec = string;
@@ -60,17 +71,6 @@ export interface ToolchainPluginConfigBase {
 
 /** Configures an individual toolchain. */
 export type ToolchainPluginConfig = ToolchainPluginConfigBase & ToolchainPluginConfigConfig;
-
-export type VersionSpec = string;
-
-/** Configures how moon integrates with proto. */
-export interface ProtoConfig {
-	/**
-	 * The version of proto to download and install,
-	 * and to use for installing and running other toolchains.
-	 */
-	version?: VersionSpec;
-}
 
 export type ToolchainsConfigPlugins = Record<Id, ToolchainPluginConfig>;
 
@@ -115,6 +115,15 @@ export interface PartialMoonConfig {
 	manifestUrl?: string | null;
 }
 
+/** Configures how moon integrates with proto. */
+export interface PartialProtoConfig {
+	/**
+	 * The version of proto to download and install,
+	 * and to use for installing and running other toolchains.
+	 */
+	version?: VersionSpec | null;
+}
+
 export type PartialToolchainPluginConfigConfig = Record<string, unknown>;
 
 /** Configures an individual toolchain. */
@@ -150,15 +159,6 @@ export interface PartialToolchainPluginConfigBase {
 /** Configures an individual toolchain. */
 export type PartialToolchainPluginConfig = PartialToolchainPluginConfigBase &
 	PartialToolchainPluginConfigConfig;
-
-/** Configures how moon integrates with proto. */
-export interface PartialProtoConfig {
-	/**
-	 * The version of proto to download and install,
-	 * and to use for installing and running other toolchains.
-	 */
-	version?: VersionSpec | null;
-}
 
 export type PartialToolchainsConfigPlugins = Record<Id, PartialToolchainPluginConfig>;
 

@@ -81,6 +81,7 @@ pub async fn info(session: MoonSession, args: ToolchainInfoArgs) -> SessionResul
             "download_prebuilt",
             "unpack_archive",
             "locate_executables",
+            "activate_environment",
             "setup_toolchain",
             "teardown_toolchain",
         ],

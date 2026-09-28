@@ -164,4 +164,129 @@ mod augmented_command {
             assert!(error.to_string().contains("Unable to find an executable"));
         }
     }
+
+    // https://github.com/moonrepo/moon/issues/2568
+    mod activate_environment {
+        use super::*;
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn activates_toolchains_that_have_been_setup() {
+            let (sandbox, mocker) = create_workspace();
+
+            install_toolchain_tool(&sandbox, true);
+
+            let app_context = mocker.mock_app_context();
+            let bag = GlobalEnvBag::default();
+
+            setup_toolchain(&app_context).await;
+
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
+            command.inherit_from_toolchains(None, None).await.unwrap();
+
+            let command = command.augment();
+            let tool_dir = sandbox.path().join(".proto/tools/tc-tier3-tool/1.2.3");
+
+            assert_eq!(
+                get_env(&command, "TC_TOOL_HOME").map(Path::new),
+                Some(tool_dir.as_path())
+            );
+            assert_eq!(
+                get_env(&command, "TC_TOOL_ACTIVATED_VERSION"),
+                Some("1.2.3")
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn prepends_activated_paths_before_executable_paths() {
+            let (sandbox, mocker) = create_workspace();
+
+            install_toolchain_tool(&sandbox, true);
+
+            let app_context = mocker.mock_app_context();
+            let bag = GlobalEnvBag::default();
+
+            setup_toolchain(&app_context).await;
+
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
+            command.inherit_from_toolchains(None, None).await.unwrap();
+
+            let command = command.augment();
+            let tool_dir = sandbox.path().join(".proto/tools/tc-tier3-tool/1.2.3");
+
+            // The plugin returns a virtual path, which must be converted
+            let activated_index = command
+                .paths
+                .iter()
+                .position(|path| Path::new(path) == tool_dir.join("activated"))
+                .expect("activated path missing");
+            let bin_index = command
+                .paths
+                .iter()
+                .position(|path| Path::new(path) == tool_dir.join("bin"))
+                .expect("bin path missing");
+
+            assert!(activated_index < bin_index);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_override_existing_env_vars() {
+            let (sandbox, mocker) = create_workspace();
+
+            install_toolchain_tool(&sandbox, true);
+
+            let app_context = mocker.mock_app_context();
+            let bag = GlobalEnvBag::default();
+
+            setup_toolchain(&app_context).await;
+
+            // Like a task's `env` setting
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
+            command.env("TC_TOOL_HOME", "/custom/home");
+            command.inherit_from_toolchains(None, None).await.unwrap();
+
+            let command = command.augment();
+
+            assert_eq!(get_env(&command, "TC_TOOL_HOME"), Some("/custom/home"));
+            assert_eq!(
+                get_env(&command, "TC_TOOL_ACTIVATED_VERSION"),
+                Some("1.2.3")
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_activate_toolchains_that_have_not_been_setup() {
+            let (_sandbox, mocker) = create_workspace();
+            let app_context = mocker.mock_app_context();
+            let bag = GlobalEnvBag::default();
+
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
+            command.inherit_from_toolchains(None, None).await.unwrap();
+
+            let command = command.augment();
+
+            assert_eq!(get_env(&command, "TC_TOOL_HOME"), None);
+            assert_eq!(get_env(&command, "TC_TOOL_ACTIVATED_VERSION"), None);
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_activate_toolchains_forced_to_globals() {
+            let (sandbox, mocker) = create_workspace();
+
+            install_toolchain_tool(&sandbox, true);
+
+            let app_context = mocker.mock_app_context();
+            let bag = GlobalEnvBag::default();
+            bag.set("MOON_TOOLCHAIN_FORCE_GLOBALS", "tc-tier3-tool");
+
+            setup_toolchain(&app_context).await;
+
+            let mut command = AugmentedCommand::create(&app_context, &bag, "noop");
+            command.inherit_from_toolchains(None, None).await.unwrap();
+
+            let command = command.augment();
+
+            assert_eq!(get_env(&command, "TC_TOOL_HOME"), None);
+            assert!(command.paths.is_empty());
+        }
+    }
 }

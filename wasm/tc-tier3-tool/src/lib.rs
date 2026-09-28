@@ -1,8 +1,10 @@
 use extism_pdk::*;
+use moon_pdk::VirtualPathExt;
 use moon_pdk_api::*;
 use proto_pdk_api::{
-    ExecutableConfig, LoadVersionsInput, LoadVersionsOutput, LocateExecutablesInput,
-    LocateExecutablesOutput, RegisterToolInput, RegisterToolOutput, VersionSpec,
+    ActivateEnvironmentInput, ActivateEnvironmentOutput, ExecutableConfig, LoadVersionsInput,
+    LoadVersionsOutput, LocateExecutablesInput, LocateExecutablesOutput, RegisterToolInput,
+    RegisterToolOutput, VersionSpec,
 };
 use rustc_hash::FxHashMap;
 use std::path::PathBuf;
@@ -53,4 +55,28 @@ pub fn locate_executables(
         )]),
         ..Default::default()
     }))
+}
+
+#[plugin_fn]
+pub fn activate_environment(
+    Json(input): Json<ActivateEnvironmentInput>,
+) -> FnResult<Json<ActivateEnvironmentOutput>> {
+    let mut output = ActivateEnvironmentOutput::default();
+
+    // Like `JAVA_HOME` for Java, point to the tool's install directory
+    if let Some(dir) = input.context.tool_dir.to_real_path()? {
+        output.env.insert("TC_TOOL_HOME".into(), dir.to_string());
+    }
+
+    output.env.insert(
+        "TC_TOOL_ACTIVATED_VERSION".into(),
+        input.context.version.to_string(),
+    );
+
+    // Virtual paths must be converted to real paths by the host
+    output
+        .paths
+        .push(input.context.tool_dir.join("activated").into_inner());
+
+    Ok(Json(output))
 }

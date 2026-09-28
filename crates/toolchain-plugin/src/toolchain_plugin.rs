@@ -17,7 +17,7 @@ use proto_core::{
     PluginLocator, PluginType as ProtoPluginType, Tool, ToolContext, ToolSpec,
     UnresolvedVersionSpec, locate_plugin,
 };
-use proto_pdk_api::InstallStrategy;
+use proto_pdk_api::{ActivateEnvironmentInput, ActivateEnvironmentOutput, InstallStrategy};
 use scc::hash_map::Entry;
 use starbase_utils::glob::{self, GlobSet};
 use std::fmt;
@@ -40,7 +40,7 @@ pub struct ToolchainPlugin {
     setup: AtomicBool,
 
     globals_cache: scc::HashMap<UnresolvedVersionSpec, Option<PathBuf>>,
-    locations_cache: scc::HashMap<UnresolvedVersionSpec, LocatorResponse>,
+    locations_cache: scc::HashMap<UnresolvedVersionSpec, (ToolSpec, LocatorResponse)>,
 }
 
 #[async_trait]
@@ -138,7 +138,7 @@ impl ToolchainPlugin {
     async fn cache_locations(
         &self,
         version: &UnresolvedVersionSpec,
-    ) -> miette::Result<Option<LocatorResponse>> {
+    ) -> miette::Result<Option<(ToolSpec, LocatorResponse)>> {
         if let Some(tool) = &self.tool {
             return match self.locations_cache.entry_async(version.to_owned()).await {
                 Entry::Occupied(entry) => Ok(Some(entry.get().to_owned())),
@@ -150,9 +150,9 @@ impl ToolchainPlugin {
 
                     let locations = Locator::locate(&tool, &spec).await?;
 
-                    entry.insert_entry(locations.clone());
+                    entry.insert_entry((spec.clone(), locations.clone()));
 
-                    Ok(Some(locations))
+                    Ok(Some((spec, locations)))
                 }
             };
         }
@@ -226,7 +226,7 @@ impl ToolchainPlugin {
         // and attempting to locate them would fail
         if let Some(version) = &version
             && self.is_setup()
-            && let Some(locations) = self.cache_locations(version).await?
+            && let Some((_, locations)) = self.cache_locations(version).await?
         {
             paths.extend(locations.globals_dirs);
             paths.extend(locations.exes_dirs);
@@ -237,6 +237,42 @@ impl ToolchainPlugin {
         }
 
         Ok(paths.into_iter().collect())
+    }
+
+    #[instrument(skip(self))]
+    pub async fn activate_environment(
+        &self,
+        version: Option<UnresolvedVersionSpec>,
+    ) -> miette::Result<ActivateEnvironmentOutput> {
+        let mut output = ActivateEnvironmentOutput::default();
+
+        // Like command paths, the environment can only be activated
+        // for toolchains that have been setup, as the tool directory
+        // (and its executables) won't exist on disk otherwise
+        if let Some(version) = &version
+            && let Some(tool) = &self.tool
+            && self.is_setup()
+            && self.has_func("activate_environment").await
+            && let Some((spec, locations)) = self.cache_locations(version).await?
+        {
+            let input = {
+                let tool = tool.read().await;
+
+                ActivateEnvironmentInput {
+                    context: tool.create_plugin_context(&spec),
+                    globals_dir: locations
+                        .globals_dir
+                        .as_ref()
+                        .map(|dir| tool.to_virtual_path(dir)),
+                }
+            };
+
+            output = self.cache_func_with("activate_environment", input).await?;
+
+            self.convert_output_files(&mut output.paths);
+        }
+
+        Ok(output)
     }
 
     #[instrument(skip(self))]

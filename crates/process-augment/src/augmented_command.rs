@@ -28,6 +28,7 @@ use std::path::PathBuf;
 
 // Path ordering:
 // - Plugin `extend_*` injected paths
+// - Toolchain `activate_environment` injected paths
 // - Toolchain executable paths
 // - proto store/shims/bin paths
 // - moon store paths
@@ -368,23 +369,50 @@ impl<'app> AugmentedCommand<'app> {
             self.env(get_version_env_key(id), get_version_env_value(version));
         }
 
-        // If forced to globals, don't inject any paths but keep env vars
+        // If forced to globals, don't inject any paths or activate
+        // environments, but keep env vars
         if is_using_global_toolchains(self.bag) {
             return Ok(());
         }
 
-        // Add toolchain specific paths
-        if !map.is_empty() {
-            let paths = self
-                .context
-                .toolchain_registry
-                .get_command_paths(map.keys().copied().collect(), |toolchain| {
-                    map.get(&toolchain.id).map(|version| (*version).to_owned())
-                })
-                .await?;
+        // Follow the order of the configured toolchains, so that the
+        // first toolchain takes precedence for paths and variables
+        let ids = toolchain_ids
+            .iter()
+            .filter(|id| map.contains_key(id))
+            .collect::<Vec<_>>();
+        let registry = &self.context.toolchain_registry;
 
-            self.append_paths(paths);
+        if ids.is_empty() {
+            return Ok(());
         }
+
+        // Activate toolchain environments (like `JAVA_HOME`)
+        for output in registry
+            .activate_environment_many(ids.clone(), |toolchain| {
+                map.get(&toolchain.id).map(|version| (*version).to_owned())
+            })
+            .await?
+        {
+            for (key, value) in output.env {
+                // Don't override variables already configured for the command,
+                // like task `env` or plugin injected, or from a previous toolchain
+                if !self.contains_env(&key) {
+                    self.env(key, value);
+                }
+            }
+
+            self.apply_paths(output.paths);
+        }
+
+        // Add toolchain specific paths
+        let paths = registry
+            .get_command_paths(ids, |toolchain| {
+                map.get(&toolchain.id).map(|version| (*version).to_owned())
+            })
+            .await?;
+
+        self.apply_paths(paths);
 
         Ok(())
     }

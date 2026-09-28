@@ -13,6 +13,7 @@ use moon_pdk_api::{
 use moon_plugin::{CallOptions, CallResult};
 use moon_toolchain::DependenciesWorkspace;
 use proto_core::UnresolvedVersionSpec;
+use proto_pdk_api::ActivateEnvironmentOutput;
 use rustc_hash::FxHashMap;
 use std::path::{Path, PathBuf};
 
@@ -21,6 +22,26 @@ use std::path::{Path, PathBuf};
 // depending on the need of the call site.
 
 impl ToolchainRegistry {
+    pub async fn activate_environment_many<InFn>(
+        &self,
+        ids: Vec<&Id>,
+        input_factory: InFn,
+    ) -> miette::Result<Vec<ActivateEnvironmentOutput>>
+    where
+        InFn: Fn(&ToolchainPlugin) -> Option<UnresolvedVersionSpec>,
+    {
+        let results = self
+            .call_func(
+                "activate_environment",
+                ids,
+                input_factory,
+                |toolchain, input| async move { toolchain.activate_environment(input).await },
+            )
+            .await?;
+
+        Ok(results.into_iter().map(|result| result.output).collect())
+    }
+
     pub async fn get_command_paths<InFn>(
         &self,
         ids: Vec<&Id>,

@@ -89,6 +89,7 @@ Tier 2 - Ecosystem integration ────────────────�
 
 Tier 3 - Tool management ───────────────────────────────────
 
+  ⚫️ activate_environment
   ⚫️ download_prebuilt (required)
   ⚫️ load_versions
   ⚫️ locate_executables (required)

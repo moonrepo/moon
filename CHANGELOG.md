@@ -23,6 +23,11 @@
 - Added Pkl modules for every configuration file, which are generated to `.moon/cache/schemas/pkl`
   when `pkl` is installed. A `.pkl` config that amends (or extends) its module is type checked by
   Pkl itself, and editors with Pkl support provide completion and documentation for each setting.
+- Added support for the proto `activate_environment` plugin function to toolchains. When building a
+  command (for tasks and toolchain operations), the environment of each toolchain that has been
+  setup is now activated, which may set environment variables (like `JAVA_HOME` for Java) and
+  prepend paths to `PATH`. Variables that are already configured, like a task's `env`, are not
+  overridden, and the first toolchain configured for a task takes precedence (#2568).
 - Changed persistent tasks to run when they are processed in the action graph, instead of being
   batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
   alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on

@@ -85,6 +85,9 @@
   individual files in `.moon/cache/hashes`. The local cache backend is now always enabled, as it
   backs these manifests; storing task _outputs_ in it remains gated by the `cas_outputs_cache`
   experiment.
+- Removed the action graph's "transitive reduction", which never removed any edges, as it started
+  from the workspace sync action, which has no dependencies to walk. Edges that are implied by a
+  longer path don't change the order that actions run in.
 - Updated proto to [v0.62.2](https://github.com/moonrepo/proto/releases/tag/v0.62.0) from 0.60.2.
 
 ## 2.5.6

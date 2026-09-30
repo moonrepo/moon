@@ -1,6 +1,5 @@
 use crate::action_graph::ActionGraph;
 use crate::action_graph_error::ActionGraphError;
-use crate::transitive_reduction::transitive_reduce;
 use daggy::{Dag, Walker};
 use miette::IntoDiagnostic;
 use moon_action::{
@@ -220,10 +219,10 @@ impl<'query> ActionGraphBuilder<'query> {
             context.changed_files = files.to_owned();
         }
 
-        // Reduce unncessary edges
-        if let Some(index) = self.get_index_from_node(&ActionNode::SyncWorkspace) {
-            transitive_reduce(&mut self.graph, vec![index]);
-        }
+        // Edges that are implied by a longer path (like a task's edge to its project's sync,
+        // when one of its dependencies already depends on it) are intentionally not removed,
+        // as they don't change the order that actions run in, and a transitive reduction is
+        // costly for large graphs, while other consumers (like cleanup) read direct edges
 
         let mut nodes = FxHashMap::default();
 

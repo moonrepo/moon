@@ -28,10 +28,22 @@
   setup is now activated, which may set environment variables (like `JAVA_HOME` for Java) and
   prepend paths to `PATH`. Variables that are already configured, like a task's `env`, are not
   overridden, and the first toolchain configured for a task takes precedence (#2568).
+- Added a new `type` setting to task `deps`, which controls when a dependency runs in relation to
+  the task. Supports the following values:
+  - `required` (default) - Runs before the task, and must complete successfully.
+  - `cleanup` - Runs after the task has ran its command, even when the task fails, or the failure
+    aborts the pipeline. Useful for tearing down resources, like stopping a database. It's skipped
+    when the task didn't run its command (it was skipped, or hydrated from the cache).
+  - `wait` - Runs before the task, but the task only waits for it to start running, not to complete.
+    Useful for long-running dependencies, like a development server, and allows non-persistent tasks
+    to depend on persistent tasks.
+  - Since `cleanup` and `wait` dependencies don't complete before the task runs, they don't
+    contribute to the task's hash.
 - Changed persistent tasks to run when they are processed in the action graph, instead of being
   batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
   alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on
-  it. Non-persistent tasks are still not allowed to depend on persistent tasks.
+  it. Non-persistent tasks are still not allowed to depend on persistent tasks, unless they only
+  wait for them to start, with the new `wait` dependency type.
 - Changed `runDepsInParallel` (when disabled) to skip persistent dependencies when ordering the
   dependencies that follow them, as a persistent dependency never completes. Those dependencies are
   now ordered against the previous dependency that does complete.

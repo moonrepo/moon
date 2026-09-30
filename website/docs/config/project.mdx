@@ -741,8 +741,9 @@ tasks:
 <HeadingApiLink to="/api/types/interface/TaskConfig#deps" />
 
 The `deps` field is a list of other tasks (known as [targets](../concepts/target)), either within
-this project or found in another project, that will be executed _before_ this task. It achieves this
-by generating a directed task graph based on the project graph.
+this project or found in another project, that will be executed _before_ this task (unless
+configured otherwise with a [`type`](#type)). It achieves this by generating a directed task graph
+based on the project graph.
 
 ```yaml title="moon.yml" {4-8}
 tasks:
@@ -840,6 +841,76 @@ tasks:
       - target: '^:build'
         cacheStrategy: 'outputs'
 ```
+
+#### Type<VersionLabel version="2.6.0" />
+
+The `type` field controls when the dependency runs in relation to this task, and supports the
+following values:
+
+- `required` (default) - Runs _before_ this task, and must complete successfully, otherwise this
+  task is skipped.
+- `cleanup` - Runs _after_ this task, even when this task fails. Useful for tearing down what this
+  task relies on, like stopping a database, or removing temporary files.
+- `wait` - Runs _before_ this task, but this task only waits for the dependency to _start_ running,
+  not for it to complete. Useful for long-running dependencies, like a server that this task sends
+  requests to.
+
+```yaml title="moon.yml" {9,12}
+tasks:
+  e2e:
+    command: 'playwright test'
+    deps:
+      # Start the database, and wait for it to be ready
+      - 'db:start'
+      # Start the server, and run alongside it
+      - target: 'web:serve'
+        type: 'wait'
+      # Stop the database, once the tests have ran
+      - target: 'db:stop'
+        type: 'cleanup'
+```
+
+Cleanup dependencies:
+
+- Run once this task has ran its command, whether it passed or failed. When this task did not run
+  its command, because it was skipped (one of its own dependencies failed), or hydrated from the
+  cache, there's nothing to clean up, so the cleanup dependency is skipped as well (unless it was
+  explicitly requested, or another task depends on it).
+- Run once when shared by multiple tasks, after all of them.
+- Still run when a failure aborts the pipeline (like with [`moon run`](../commands/run)), for the
+  tasks that ran. They start once the processes that were running have been terminated, after
+  [`pipeline.killProcessThreshold`](./workspace#killprocessthreshold).
+- Can't be [persistent](#persistent), and persistent tasks can't have them, as persistent tasks
+  never complete.
+
+Wait dependencies:
+
+- Only need to have _started_ running, which is not the same as being _ready_ (like a server
+  accepting connections). If this task requires the dependency to be ready, it should wait for it
+  itself, for example, by polling a health check endpoint.
+- Skip this task when they have already failed by the time this task runs. When they fail after this
+  task has started, this task is not affected.
+- Can be [persistent](#persistent), as this task doesn't wait for them to complete. However,
+  persistent tasks don't run in CI by default, so they must enable [`runInCI`](#runinci) when this
+  task runs in CI.
+- Are not stopped once this task has completed. A persistent dependency keeps running until the
+  pipeline is exited, while others keep the pipeline running until they complete. To stop them,
+  pair them with a `cleanup` dependency that does.
+- Don't count towards the pipeline's concurrency limit, so they never prevent the tasks waiting on
+  them from running.
+
+Since neither `cleanup` nor `wait` dependencies complete before this task runs, they don't
+contribute to this task's [hash](../concepts/cache#hashing), and their
+[`cacheStrategy`](#cache-strategy) can only be `ignored`. Additionally, a task can't depend on the
+same task with different types.
+
+:::caution
+
+Cleanup dependencies are not ran when the pipeline is interrupted by a signal (like pressing
+Ctrl+C), and a cleanup dependency that is already running when another task fails is terminated
+along with every other running task.
+
+:::
 
 ### `env`
 
@@ -1316,7 +1387,8 @@ The following additional parameters are supported:
 Allows a task to fail without failing the entire pipeline. When enabled, the following changes
 occur:
 
-- Other tasks _cannot_ depend on this task, as we can't ensure it's side-effect free.
+- Other tasks _cannot_ depend on this task, as we can't ensure it's side-effect free, unless it's a
+  [`cleanup`](#type) dependency, which runs after them.
 - For [`moon run`](../commands/run), the process will not bail early and will run to completion.
 - For [`moon ci`](../commands/ci), the process will not exit with a non-zero exit code, if the only
   failing tasks are allowed to fail.
@@ -1649,6 +1721,9 @@ tasks:
       persistent: true
 ```
 
+Since persistent tasks never complete, non-persistent tasks cannot depend on them, unless they only
+wait for them to start with a [`wait`](#type) dependency.
+
 > We suggest using the [`preset`](#preset) setting instead, which enables this setting, amongst
 > other useful settings.
 
@@ -1702,6 +1777,9 @@ also run after the preceding direct dependency — not only the direct dependenc
 [Persistent dependencies](../concepts/task#persistent) never complete, so they are skipped when
 ordering the dependencies that follow them. Those dependencies are instead ordered against the
 previous dependency that does complete, while the persistent one starts when it is reached.
+
+Only [`required`](#type) dependencies are ordered, as `wait` and `cleanup` dependencies don't
+complete before the task runs.
 
 ```yaml title="moon.yml" {8}
 tasks:

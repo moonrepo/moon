@@ -97,7 +97,8 @@ implicitDeps:
 :::info
 
 Implicit dependencies are _always_ inherited, regardless of the [`mergeDeps`](./project#mergedeps)
-option.
+option. The only exception are [`cleanup`](./project#type) dependencies, which are not inherited by
+persistent tasks, as they never complete.
 
 :::
 

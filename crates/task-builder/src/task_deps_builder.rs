@@ -152,6 +152,21 @@ impl TaskDepsBuilder<'_> {
                     .is_ok_and(|id| id == project.id.as_str())
                     && dep_task_target.get_task_id()? == self.task.target.get_task_id()?
                 {
+                    // A required dependency on itself is a harmless cycle (common
+                    // when inheriting `~:` dependencies), but the other types
+                    // describe an ordering that a task can't have with itself
+                    if !dep_config.type_of.is_required_type() {
+                        return Err(TasksBuilderError::SelfDepRequirement {
+                            task: self.task.target.to_owned(),
+                            type_of: dep_config.type_of,
+                            relation: match dep_config.type_of {
+                                TaskDependencyType::Cleanup => "after",
+                                _ => "alongside",
+                            },
+                        }
+                        .into());
+                    }
+
                     continue;
                 }
 
@@ -270,7 +285,18 @@ impl TaskDepsBuilder<'_> {
             }
             // A wait dependency only waits for the dependency to start
             // running, which is the entire point of depending on a server
-            TaskDependencyType::Wait => {}
+            TaskDependencyType::Wait => {
+                // But an interactive dependency runs in isolation (it owns stdin),
+                // so the task can't run alongside it, and would wait for it to
+                // complete instead, which isn't what was configured
+                if dep_task_options.interactive {
+                    return Err(TasksBuilderError::InteractiveWaitDepRequirement {
+                        dep: dep_task_target.to_owned(),
+                        task: self.task.target.to_owned(),
+                    }
+                    .into());
+                }
+            }
             _ => {
                 if dep_task_options.persistent && !self.task.options.persistent {
                     return Err(TasksBuilderError::PersistentDepRequirement {

@@ -369,6 +369,67 @@ mod task_deps_builder {
         }
     }
 
+    mod interactive {
+        use super::*;
+
+        fn interactive_data() -> FxHashMap<Target, TaskOptions> {
+            FxHashMap::from_iter([(
+                Target::parse("project:interactive").unwrap(),
+                TaskOptions {
+                    interactive: true,
+                    ..Default::default()
+                },
+            )])
+        }
+
+        // An interactive dependency runs in isolation, so nothing can run alongside it
+        #[test]
+        #[should_panic(
+            expected = "Task project:task cannot depend on interactive task project:interactive as a wait dependency"
+        )]
+        fn errors_for_interactive_wait_dep() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("interactive", TaskDependencyType::Wait));
+
+            build_task_deps_with_data(&mut project, &mut task, interactive_data());
+        }
+
+        #[test]
+        fn doesnt_error_for_interactive_required_dep() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("interactive", TaskDependencyType::Required));
+
+            build_task_deps_with_data(&mut project, &mut task, interactive_data());
+
+            assert_eq!(task.deps, vec![dep_ignored("project:interactive")]);
+        }
+
+        #[test]
+        fn doesnt_error_for_interactive_cleanup_dep() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("interactive", TaskDependencyType::Cleanup));
+
+            build_task_deps_with_data(&mut project, &mut task, interactive_data());
+
+            assert_eq!(
+                task.deps,
+                vec![dep_ignored_typed(
+                    "project:interactive",
+                    TaskDependencyType::Cleanup
+                )]
+            );
+        }
+    }
+
     mod persistent {
         use super::*;
 
@@ -767,6 +828,35 @@ mod task_deps_builder {
             build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
 
             assert_eq!(task.deps, vec![]);
+        }
+
+        // Only a required dependency on itself is a harmless cycle
+        #[test]
+        #[should_panic(
+            expected = "Task project:task cannot depend on itself as a cleanup dependency, as it can't run after itself"
+        )]
+        fn errors_for_self_cleanup() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("~:task", TaskDependencyType::Cleanup));
+
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
+        }
+
+        #[test]
+        #[should_panic(
+            expected = "Task project:task cannot depend on itself as a wait dependency, as it can't run alongside itself"
+        )]
+        fn errors_for_self_wait() {
+            let mut project = create_project();
+
+            let mut task = create_task();
+            task.deps
+                .push(dep_typed("~:task", TaskDependencyType::Wait));
+
+            build_task_deps_with_data(&mut project, &mut task, create_project_task_data());
         }
 
         #[test]

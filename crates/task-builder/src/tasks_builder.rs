@@ -525,17 +525,32 @@ impl<'proj> TasksBuilder<'proj> {
         }
 
         if !global_deps.is_empty() {
-            // Persistent tasks never complete, so they can't be cleaned up after.
-            // Only implicit dependencies are filtered, as they apply to every
-            // task, while explicitly configured ones are an error instead
-            let global_deps = if task.options.persistent {
-                global_deps
-                    .into_iter()
-                    .filter(|dep| !matches!(dep.type_of, TaskDependencyType::Cleanup))
-                    .collect()
-            } else {
-                global_deps
-            };
+            // Implicit dependencies apply to every task, so filter out those that
+            // can't apply to this task (explicitly configured ones error instead):
+            // - Persistent tasks never complete, so they can't be cleaned up after
+            // - A task can't depend on itself, which happens when the dependency
+            //   references the task by name, as it's inherited by that task too
+            let is_persistent = task.options.persistent;
+
+            let global_deps: Vec<_> = global_deps
+                .into_iter()
+                .filter(|dep| {
+                    if is_persistent && matches!(dep.type_of, TaskDependencyType::Cleanup) {
+                        return false;
+                    }
+
+                    let (scope, scope_value) = dep.target.get_project_scope();
+                    let is_own_project = matches!(scope, TargetProjectScope::OwnSelf)
+                        || (matches!(scope, TargetProjectScope::Id)
+                            && scope_value == self.project_id.as_str());
+
+                    !(is_own_project
+                        && dep
+                            .target
+                            .get_task_id()
+                            .is_ok_and(|task_id| task_id == id.as_str()))
+                })
+                .collect();
 
             task.deps = merge_vec(task.deps, global_deps, MergeStrategy::Append, 1000, true);
         }

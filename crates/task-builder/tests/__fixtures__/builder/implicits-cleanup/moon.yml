@@ -7,3 +7,5 @@ tasks:
     command: 'server'
     options:
       persistent: true
+  local-teardown:
+    command: 'local-teardown'

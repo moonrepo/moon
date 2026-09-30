@@ -893,6 +893,8 @@ Wait dependencies:
 - Can be [persistent](#persistent), as this task doesn't wait for them to complete. However,
   persistent tasks don't run in CI by default, so they must enable [`runInCI`](#runinci) when this
   task runs in CI.
+- Can't be [interactive](#interactive), as interactive tasks run in isolation, so nothing can run
+  alongside them.
 - Are not stopped once this task has completed. A persistent dependency keeps running until the
   pipeline is exited, while others keep the pipeline running until they complete. To stop them,
   pair them with a `cleanup` dependency that does.

@@ -57,6 +57,29 @@ pub enum TasksBuilderError {
     )]
     PersistentCleanupTaskRequirement { dep: Target, task: Target },
 
+    #[diagnostic(code(task_builder::dependency::interactive_wait_dep))]
+    #[error(
+        "Task {} cannot depend on interactive task {} as a {} dependency, as an interactive task runs in isolation, so nothing can run alongside it.\nA task is marked interactive with the {} setting.",
+        .task.style(Style::Label),
+        .dep.style(Style::Label),
+        "wait".style(Style::Symbol),
+        "options.interactive".style(Style::Property),
+    )]
+    InteractiveWaitDepRequirement { dep: Target, task: Target },
+
+    #[diagnostic(code(task_builder::dependency::self_reference))]
+    #[error(
+        "Task {} cannot depend on itself as a {} dependency, as it can't run {} itself.",
+        .task.style(Style::Label),
+        .type_of.to_string().style(Style::Symbol),
+        .relation,
+    )]
+    SelfDepRequirement {
+        task: Target,
+        type_of: TaskDependencyType,
+        relation: &'static str,
+    },
+
     #[diagnostic(code(task_builder::dependency::conflicting_types))]
     #[error(
         "Task {} depends on task {} with conflicting types, {} and {}. A dependency can only use one type.\n\nIf these dependencies are inherited, use the {} option, or the {} exclude/rename filters, to adjust them.",

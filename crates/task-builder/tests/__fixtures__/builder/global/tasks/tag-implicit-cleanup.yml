@@ -4,3 +4,6 @@ inheritedBy:
 implicitDeps:
   - target: 'app:teardown'
     type: 'cleanup'
+  # Also inherited by `local-teardown` itself, which must not depend on itself
+  - target: '~:local-teardown'
+    type: 'cleanup'

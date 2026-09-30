@@ -2291,12 +2291,36 @@ tasks:
 
             assert_eq!(
                 tasks.get("standard").unwrap().deps,
+                vec![
+                    TaskDependencyConfig {
+                        type_of: TaskDependencyType::Cleanup,
+                        ..TaskDependencyConfig::new(Target::parse("app:teardown").unwrap())
+                    },
+                    TaskDependencyConfig {
+                        type_of: TaskDependencyType::Cleanup,
+                        ..TaskDependencyConfig::new(Target::parse("~:local-teardown").unwrap())
+                    },
+                ]
+            );
+            assert!(tasks.get("server").unwrap().deps.is_empty());
+        }
+
+        // Implicit dependencies apply to every task, including the task they
+        // reference, which must not end up depending on itself
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_inherit_self_referencing_deps() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+
+            let tasks = container.build_tasks("implicits-cleanup").await;
+
+            assert_eq!(
+                tasks.get("local-teardown").unwrap().deps,
                 vec![TaskDependencyConfig {
                     type_of: TaskDependencyType::Cleanup,
                     ..TaskDependencyConfig::new(Target::parse("app:teardown").unwrap())
                 }]
             );
-            assert!(tasks.get("server").unwrap().deps.is_empty());
         }
 
         #[tokio::test(flavor = "multi_thread")]

@@ -72,6 +72,9 @@
 - Fixed an issue where environment variables removed through moon's internal environment bag (for
   example `NO_COLOR` when colors are forced) were not removed from the current process, and could be
   inherited back into the bag on a subsequent read.
+- Fixed an issue where a task with `options.retryCount` would attempt to run again after the
+  pipeline was aborted (because another task failed) or interrupted (like with Ctrl+C), which
+  started a new process that was never terminated, and could continue running after moon exited.
 
 #### ⚙️ Internal
 

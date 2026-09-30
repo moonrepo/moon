@@ -4,10 +4,11 @@ use moon_app_context::AppContext;
 use moon_common::is_ci_env;
 use moon_config::TaskOutputStyle;
 use moon_console::TaskReportItem;
-use moon_process::{Command, Output, format_command_line};
+use moon_process::{Command, Output, ProcessRegistry, SignalType, format_command_line};
 use moon_project::Project;
 use moon_task::Task;
 use std::time::Duration;
+use tokio::sync::broadcast::{Receiver, error::TryRecvError};
 use tokio::task::{self, JoinHandle};
 use tokio::time::{sleep, timeout};
 use tokio_util::sync::CancellationToken;
@@ -81,6 +82,11 @@ impl<'task> TaskExecutor<'task> {
 
         // Execute the command on a loop as an attempt for every retry count we have
         let command_line = self.command.get_command_line(false, false);
+
+        // Running processes are terminated when the pipeline is aborted (or receives
+        // a signal), which fails the current attempt, so listen for this, otherwise
+        // another attempt would start a new process that is never terminated
+        let mut signal_receiver = ProcessRegistry::instance().receive_signal();
 
         let execution_error: Option<miette::Report> = loop {
             let mut attempt = Operation::task_execution(&command_line);
@@ -196,6 +202,16 @@ impl<'task> TaskExecutor<'task> {
                     }
                     // Unsuccessful execution (maybe flaky), attempt again
                     else if self.attempt_index < self.attempt_total {
+                        // Unless running processes are being terminated
+                        if has_received_signal(&mut signal_receiver) {
+                            debug!(
+                                task_target = self.task.target.as_str(),
+                                "Task was unsuccessful, but not attempting again, as running processes are being terminated",
+                            );
+
+                            break None;
+                        }
+
                         debug!(
                             task_target = self.task.target.as_str(),
                             "Task was unsuccessful, attempting again",
@@ -362,4 +378,10 @@ impl Drop for TaskExecutor<'_> {
     fn drop(&mut self) {
         self.stop_monitoring();
     }
+}
+
+/// Whether a signal was received, or running processes were terminated
+/// (which is broadcast like a signal), since subscribing.
+fn has_received_signal(receiver: &mut Receiver<SignalType>) -> bool {
+    matches!(receiver.try_recv(), Ok(_) | Err(TryRecvError::Lagged(_)))
 }

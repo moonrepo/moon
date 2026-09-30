@@ -1755,6 +1755,9 @@ tasks:
 The number of attempts the task will retry execution before returning a failure. This is especially
 useful for flaky tasks. Defaults to `0`.
 
+The task is not retried once the pipeline has been aborted (because another task failed), or
+interrupted (like with Ctrl+C), as its running process is terminated.
+
 ```yaml title="moon.yml" {5}
 tasks:
   test:

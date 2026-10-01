@@ -13,6 +13,7 @@ rustc-hash = { workspace = true }
 scc = { workspace = true, features = ["serde"] }
 serde = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 
 [lints]
 workspace = true

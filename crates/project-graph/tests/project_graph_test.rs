@@ -1905,6 +1905,40 @@ tasks:
         async fn maps_types_to_edges_with_async_builder() {
             assert_dep_type_edges(true).await;
         }
+
+        // A `cleanup` edge is reversed, so when the lazy builder loads a cleanup
+        // dependency, the tasks that are being loaded are not upstream of it, and
+        // its own dependencies on them are not cycles (they were being dropped)
+        async fn assert_edges_across_cleanups(async_graph: bool) {
+            let (_sandbox, graph) =
+                build_graph_from_fixture_for_builder("task-dep-types-crossing", async_graph).await;
+
+            let edge = |from: &str, to: &str, type_of: &str| {
+                (from.to_owned(), to.to_owned(), type_of.to_owned())
+            };
+
+            assert_eq!(
+                map_edges(&graph),
+                vec![
+                    edge("one:b-cleanup", "one:a-parent", "cleanup"),
+                    edge("one:b-cleanup", "one:c-mid", "required"),
+                    edge("one:c-mid", "one:a-parent", "required"),
+                    edge("two:a-mid", "two:c-parent", "required"),
+                    edge("two:b-cleanup", "two:a-mid", "required"),
+                    edge("two:b-cleanup", "two:c-parent", "cleanup"),
+                ]
+            );
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn links_edges_across_cleanups_with_sync_builder() {
+            assert_edges_across_cleanups(false).await;
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn links_edges_across_cleanups_with_async_builder() {
+            assert_edges_across_cleanups(true).await;
+        }
     }
 
     mod aliases {

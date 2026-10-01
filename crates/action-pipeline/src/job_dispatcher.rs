@@ -79,6 +79,10 @@ pub struct JobDispatcher<'graph> {
     /// Completed nodes whose action failed, or was aborted.
     failed: FxHashSet<NodeIndex>,
 
+    /// Dispatched nodes whose task will be skipped instead of ran, as one
+    /// of its dependencies failed, so it never starts.
+    never_started: FxHashSet<NodeIndex>,
+
     /// Nodes that have released their wait dependents.
     released: FxHashSet<NodeIndex>,
 
@@ -155,6 +159,7 @@ impl<'graph> JobDispatcher<'graph> {
             completed: FxHashSet::default(),
             executed: FxHashSet::default(),
             failed: FxHashSet::default(),
+            never_started: FxHashSet::default(),
             released: FxHashSet::default(),
             started: FxHashSet::default(),
             visited: FxHashSet::default(),
@@ -171,6 +176,12 @@ impl<'graph> JobDispatcher<'graph> {
         self.wait_dependents
             .get(index.index())
             .is_some_and(|dependents| !dependents.is_empty())
+    }
+
+    /// Mark a dispatched job as one that will never start, as its task will be
+    /// skipped instead of ran (one of its dependencies failed).
+    pub fn mark_never_started(&mut self, index: NodeIndex) {
+        self.never_started.insert(index);
     }
 
     /// Drain the jobs that have completed since the last dispatch, and unblock
@@ -279,11 +290,13 @@ impl<'graph> JobDispatcher<'graph> {
     /// and mark them as dispatched. Jobs that were not dispatched before the
     /// abort will never run now, so a cleanup job can run once:
     ///
+    /// - It has a reason to run: there's something to clean up after one of
+    ///   the jobs it cleans up after, or another cleanup job that has a
+    ///   reason to run depends on it.
     /// - Its own dependencies have started and completed, and those that are
     ///   not tasks (like installing dependencies) have passed.
-    /// - The jobs it cleans up after are no longer running (or pending when they
-    ///   are cleanup jobs themselves), and at least one of them started (there's
-    ///   nothing to clean up otherwise).
+    /// - The jobs it cleans up after are no longer running (or pending when
+    ///   they are cleanup jobs themselves).
     ///
     /// When giving up, jobs that are still running are no longer waited on, and
     /// are treated as if they will never complete (unless they're cleanup jobs).
@@ -315,9 +328,14 @@ impl<'graph> JobDispatcher<'graph> {
         let mut taken = vec![];
 
         while !pending.is_empty() {
+            let needed = self.get_needed_cleanups(&pending);
+
             let runnable = pending
                 .iter()
-                .filter(|index| self.can_cleanup_after_abort(**index, &pending, give_up))
+                .filter(|index| {
+                    needed.contains(index)
+                        && self.can_cleanup_after_abort(**index, &pending, give_up)
+                })
                 .copied()
                 .collect::<Vec<_>>();
 
@@ -402,8 +420,6 @@ impl<'graph> JobDispatcher<'graph> {
             return false;
         };
 
-        let mut cleans_up_executed = false;
-
         for (dep_index, relation) in dependencies {
             let completed = self.completed.contains(dep_index);
             let started = completed && self.started.contains(dep_index);
@@ -415,22 +431,12 @@ impl<'graph> JobDispatcher<'graph> {
                 if !started || (!self.is_task(dep_index) && self.failed.contains(dep_index)) {
                     return false;
                 }
-
-                if relation.cleanup && self.executed.contains(dep_index) {
-                    cleans_up_executed = true;
-                }
             } else if relation.cleanup {
-                // It ran its command, so there's something to clean up
-                if completed {
-                    if self.executed.contains(dep_index) {
-                        cleans_up_executed = true;
-                    }
-                }
-                // Still running, or another cleanup job that may run first
-                else if self.is_unfinished(dep_index, pending, give_up) {
+                // Still running, or another cleanup job that may run first.
+                // Otherwise it has completed, or never started and never will
+                if !completed && self.is_unfinished(dep_index, pending, give_up) {
                     return false;
                 }
-                // Otherwise it never started, and never will
             }
             // Wait dependencies must have started, or still be running
             else if !started && !self.is_running(dep_index) {
@@ -438,21 +444,83 @@ impl<'graph> JobDispatcher<'graph> {
             }
         }
 
-        cleans_up_executed
+        true
+    }
+
+    /// The pending cleanup jobs that have a reason to run after the pipeline
+    /// was aborted: there's something to clean up after one of the jobs they
+    /// clean up after, or another cleanup job that has a reason to run
+    /// depends on them (it requires them, or waits on them).
+    fn get_needed_cleanups(&self, pending: &[NodeIndex]) -> FxHashSet<NodeIndex> {
+        let mut needed = FxHashSet::default();
+
+        let mut queue = pending
+            .iter()
+            .filter(|index| self.cleans_up_after_something(index))
+            .copied()
+            .collect::<Vec<_>>();
+
+        needed.extend(queue.iter().copied());
+
+        while let Some(index) = queue.pop() {
+            let Some(dependencies) = self.dependencies.get(index.index()) else {
+                continue;
+            };
+
+            for (dep_index, relation) in dependencies {
+                if (relation.required || relation.wait)
+                    && pending.binary_search(dep_index).is_ok()
+                    && needed.insert(*dep_index)
+                {
+                    queue.push(*dep_index);
+                }
+            }
+        }
+
+        needed
+    }
+
+    /// Whether a job has started a dependency that it only waits on, which
+    /// keeps running regardless of whether the job itself ran its command.
+    fn has_started_wait_dependency(&self, index: &NodeIndex) -> bool {
+        self.dependencies
+            .get(index.index())
+            .is_some_and(|dependencies| {
+                dependencies.iter().any(|(dep_index, relation)| {
+                    relation.wait
+                        && !self.never_started.contains(dep_index)
+                        && (self.is_running(dep_index) || self.started.contains(dep_index))
+                })
+            })
+    }
+
+    /// Whether there's something to clean up after a job: it executed its
+    /// task's command, or it started a dependency that it only waits on,
+    /// which is typically stopped by one of its cleanup jobs.
+    fn has_something_to_clean_up(&self, index: &NodeIndex) -> bool {
+        self.executed.contains(index) || self.has_started_wait_dependency(index)
+    }
+
+    /// Whether a cleanup job cleans up after a job that has something to clean up.
+    fn cleans_up_after_something(&self, index: &NodeIndex) -> bool {
+        self.dependencies
+            .get(index.index())
+            .is_some_and(|dependencies| {
+                dependencies.iter().any(|(dep_index, relation)| {
+                    relation.cleanup && self.has_something_to_clean_up(dep_index)
+                })
+            })
     }
 
     /// Whether a cleanup job has nothing to clean up, as none of the jobs it
     /// cleans up after executed their command (they were skipped or cached),
-    /// and no other job depends on it. This must be called once all of
-    /// its dependencies have completed (it has been dispatched).
+    /// or started a dependency that they only wait on, and no other job
+    /// depends on it. This must be called once all of its dependencies have
+    /// completed (it has been dispatched).
     pub fn is_needless_cleanup(&self, index: NodeIndex) -> bool {
-        if !self.cleanups.contains(&index) {
+        if !self.cleanups.contains(&index) || self.dependencies.get(index.index()).is_none() {
             return false;
         }
-
-        let Some(dependencies) = self.dependencies.get(index.index()) else {
-            return false;
-        };
 
         // Other jobs may require (or wait on) it, regardless of cleaning up
         let is_depended_on = self
@@ -471,10 +539,7 @@ impl<'graph> JobDispatcher<'graph> {
                     })
             });
 
-        !is_depended_on
-            && !dependencies
-                .iter()
-                .any(|(dep_index, relation)| relation.cleanup && self.executed.contains(dep_index))
+        !is_depended_on && !self.cleans_up_after_something(&index)
     }
 
     /// Whether the node may still complete: it's still running, or it's another
@@ -1150,6 +1215,59 @@ mod tests {
                 assert!(dispatcher.is_needless_cleanup(NodeIndex::new(2)));
             }
 
+            // The parent didn't run its command, but it started the job that it
+            // only waits on, which is typically stopped by the cleanup
+            #[tokio::test(flavor = "multi_thread")]
+            async fn needed_when_parent_started_a_wait_dependency() {
+                // `p` waits on `s`, and `c` cleans up after `p`
+                let action_graph = create_task_graph(
+                    &["s", "p", "c"],
+                    &[
+                        (1, 0, TaskDependencyType::Wait),
+                        (2, 1, TaskDependencyType::Cleanup),
+                    ],
+                );
+                let (context, completed) = create_job_context().await;
+                let mut dispatcher = create_dispatcher(&action_graph, context.clone(), completed);
+
+                assert_eq!(dispatcher.next().await, Some(NodeIndex::new(0)));
+                assert_eq!(dispatcher.next().await, Some(NodeIndex::new(1)));
+
+                // Skipped, or hydrated from the cache, while `s` is running
+                didnt_run(&context, 1);
+
+                assert_eq!(dispatcher.next().await, Some(NodeIndex::new(2)));
+                assert!(!dispatcher.is_needless_cleanup(NodeIndex::new(2)));
+            }
+
+            // The job that the parent waits on was dispatched, but its task is
+            // skipped instead of ran, so there's nothing to stop
+            #[tokio::test(flavor = "multi_thread")]
+            async fn needless_when_wait_dependency_of_parent_never_started() {
+                // `p` waits on `s`, and `c` cleans up after `p`
+                let action_graph = create_task_graph(
+                    &["s", "p", "c"],
+                    &[
+                        (1, 0, TaskDependencyType::Wait),
+                        (2, 1, TaskDependencyType::Cleanup),
+                    ],
+                );
+                let (context, completed) = create_job_context().await;
+                let mut dispatcher = create_dispatcher(&action_graph, context.clone(), completed);
+
+                assert_eq!(dispatcher.next().await, Some(NodeIndex::new(0)));
+
+                dispatcher.mark_never_started(NodeIndex::new(0));
+
+                assert_eq!(dispatcher.next().await, Some(NodeIndex::new(1)));
+
+                // Skipped, as the job that it waits on is skipped
+                didnt_run(&context, 1);
+
+                assert_eq!(dispatcher.next().await, Some(NodeIndex::new(2)));
+                assert!(dispatcher.is_needless_cleanup(NodeIndex::new(2)));
+            }
+
             #[tokio::test(flavor = "multi_thread")]
             async fn not_a_cleanup() {
                 // `t` requires `d`
@@ -1368,6 +1486,125 @@ mod tests {
                 ran(&context, 1);
 
                 assert_eq!(dispatcher.take_cleanups_after_abort(false), indexes(&[4]));
+            }
+
+            // The parent never ran, but the job that it only waits on was
+            // started, which is typically stopped by the cleanup
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_if_parent_started_a_wait_dependency() {
+                // `p` requires `d` and waits on `s`, and `c` cleans up after `p`
+                let action_graph = create_task_graph(
+                    &["d", "s", "p", "c"],
+                    &[
+                        (2, 0, TaskDependencyType::Required),
+                        (2, 1, TaskDependencyType::Wait),
+                        (3, 2, TaskDependencyType::Cleanup),
+                    ],
+                );
+                let (context, completed) = create_job_context().await;
+                let mut dispatcher = create_dispatcher(&action_graph, context.clone(), completed);
+
+                let first = dispatcher.next().await.unwrap();
+                let second = dispatcher.next().await.unwrap();
+
+                assert_eq!(
+                    FxHashSet::from_iter([first, second]),
+                    FxHashSet::from_iter(indexes(&[0, 1]))
+                );
+
+                // Aborted once `d` failed, so `p` never ran, while `s` is running
+                ran(&context, 0);
+
+                assert_eq!(dispatcher.take_cleanups_after_abort(false), indexes(&[3]));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_if_wait_dependency_of_parent_never_started() {
+                // `p` requires `d`, and waits on `s` (which also requires `d`),
+                // and `c` cleans up after `p`
+                let action_graph = create_task_graph(
+                    &["d", "s", "p", "c"],
+                    &[
+                        (1, 0, TaskDependencyType::Required),
+                        (2, 0, TaskDependencyType::Required),
+                        (2, 1, TaskDependencyType::Wait),
+                        (3, 2, TaskDependencyType::Cleanup),
+                    ],
+                );
+                let (context, completed) = create_job_context().await;
+                let mut dispatcher = create_dispatcher(&action_graph, context.clone(), completed);
+
+                assert_eq!(dispatcher.next().await, Some(NodeIndex::new(0)));
+
+                // Aborted once `d` failed, so neither `s` or `p` ever ran
+                ran(&context, 0);
+
+                assert!(dispatcher.take_cleanups_after_abort(false).is_empty());
+                assert!(!dispatcher.is_waiting_on_cleanups(false));
+            }
+
+            // Another cleanup that has something to clean up requires it,
+            // so it must run first, even when it has nothing to clean up
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_if_required_by_a_cleanup_that_runs() {
+                // `c1` cleans up after `p1` (which requires `d`), and `c2`
+                // cleans up after `p2`, and requires `c1`
+                let action_graph = create_task_graph(
+                    &["d", "p1", "p2", "c1", "c2"],
+                    &[
+                        (1, 0, TaskDependencyType::Required),
+                        (3, 1, TaskDependencyType::Cleanup),
+                        (4, 2, TaskDependencyType::Cleanup),
+                        (4, 3, TaskDependencyType::Required),
+                    ],
+                );
+                let (context, completed) = create_job_context().await;
+                let mut dispatcher = create_dispatcher(&action_graph, context.clone(), completed);
+
+                let first = dispatcher.next().await.unwrap();
+                let second = dispatcher.next().await.unwrap();
+
+                assert_eq!(
+                    FxHashSet::from_iter([first, second]),
+                    FxHashSet::from_iter(indexes(&[0, 2]))
+                );
+
+                // Aborted once `p2` failed, so `p1` never ran
+                ran(&context, 0);
+                ran(&context, 2);
+
+                assert_eq!(dispatcher.take_cleanups_after_abort(false), indexes(&[3]));
+                assert!(dispatcher.is_waiting_on_cleanups(false));
+
+                ran(&context, 3);
+
+                assert_eq!(dispatcher.take_cleanups_after_abort(false), indexes(&[4]));
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_if_required_by_a_cleanup_that_doesnt_run() {
+                // `c1` cleans up after `p1`, and `c2` cleans up after `p2`,
+                // and requires `c1`, where both `p1` and `p2` require `d`
+                let action_graph = create_task_graph(
+                    &["d", "p1", "p2", "c1", "c2"],
+                    &[
+                        (1, 0, TaskDependencyType::Required),
+                        (2, 0, TaskDependencyType::Required),
+                        (3, 1, TaskDependencyType::Cleanup),
+                        (4, 2, TaskDependencyType::Cleanup),
+                        (4, 3, TaskDependencyType::Required),
+                    ],
+                );
+                let (context, completed) = create_job_context().await;
+                let mut dispatcher = create_dispatcher(&action_graph, context.clone(), completed);
+
+                assert_eq!(dispatcher.next().await, Some(NodeIndex::new(0)));
+
+                // Aborted once `d` failed, so neither `p1` or `p2` ever ran
+                ran(&context, 0);
+
+                assert!(dispatcher.take_cleanups_after_abort(false).is_empty());
+                assert!(!dispatcher.is_waiting_on_cleanups(false));
             }
 
             #[tokio::test(flavor = "multi_thread")]

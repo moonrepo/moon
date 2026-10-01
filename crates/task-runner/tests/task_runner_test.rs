@@ -365,6 +365,45 @@ mod task_runner {
                 assert_eq!(result.operations[1].status, ActionStatus::Cached);
             }
 
+            // Another task depends on it running after it (cleanup), or alongside
+            // it (wait), so it must run its command, instead of being hydrated
+            #[tokio::test(flavor = "multi_thread")]
+            async fn running_again_reexecutes_task_if_it_must_always_run() {
+                for is_cleanup in [true, false] {
+                    let container = TaskRunnerContainer::new_os("runner", "create-file").await;
+                    container.sandbox.enable_git();
+
+                    let mut runner = container.create_runner();
+                    let node = container.create_action_node();
+                    let mut context = ActionContext::default();
+
+                    if is_cleanup {
+                        context
+                            .cleanup_targets
+                            .insert(container.task.target.clone());
+                    } else {
+                        context.wait_targets.insert(container.task.target.clone());
+                    }
+
+                    let before = runner.run_with_panic(&context, &node).await.unwrap();
+                    let result = runner.run_with_panic(&context, &node).await.unwrap();
+
+                    assert_eq!(before.hash, result.hash);
+
+                    for run in [&before, &result] {
+                        assert!(
+                            run.operations.iter().any(|op| op.meta.is_task_execution()
+                                && op.status == ActionStatus::Passed)
+                        );
+                        assert!(
+                            !run.operations
+                                .iter()
+                                .any(|op| op.meta.is_output_hydration())
+                        );
+                    }
+                }
+            }
+
             mod glob_outputs {
                 use super::*;
 
@@ -1407,6 +1446,132 @@ mod task_runner {
                 .unwrap();
 
             assert_eq!(operation.status, ActionStatus::Passed);
+        }
+
+        // The pipeline was aborted or interrupted before the command could be
+        // ran, so it must not run, as nothing would terminate its process
+        mod when_stopped {
+            use super::*;
+
+            fn assert_skipped(runner: &TaskRunner) {
+                assert_eq!(runner.state.target.as_ref().unwrap(), &TargetState::Skipped);
+                assert_eq!(
+                    runner.operations.get_last_execution().unwrap().status,
+                    ActionStatus::Skipped
+                );
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_aborted() {
+                let container = TaskRunnerContainer::new_os("runner", "success").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+                let context = ActionContext::default();
+
+                context.abort_token.cancel();
+
+                runner.execute(&context, &node).await.unwrap();
+
+                assert_skipped(&runner);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_interrupted() {
+                let container = TaskRunnerContainer::new_os("runner", "success").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+                let context = ActionContext::default();
+
+                context.cancel_token.cancel();
+
+                runner.execute(&context, &node).await.unwrap();
+
+                assert_skipped(&runner);
+            }
+
+            // Cleanups still run once aborted, for the tasks that have ran
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_a_cleanup_if_aborted() {
+                let container = TaskRunnerContainer::new_os("runner", "success").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+                let mut context = ActionContext::default();
+
+                context
+                    .cleanup_targets
+                    .insert(container.task.target.clone());
+                context.abort_token.cancel();
+
+                runner.execute(&context, &node).await.unwrap();
+
+                assert_eq!(
+                    runner.state.target.as_ref().unwrap(),
+                    &TargetState::Passthrough
+                );
+                assert_eq!(
+                    runner.operations.get_last_execution().unwrap().status,
+                    ActionStatus::Passed
+                );
+            }
+
+            // But not once interrupted
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_a_cleanup_if_interrupted() {
+                let container = TaskRunnerContainer::new_os("runner", "success").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+                let mut context = ActionContext::default();
+
+                context
+                    .cleanup_targets
+                    .insert(container.task.target.clone());
+                context.cancel_token.cancel();
+
+                runner.execute(&context, &node).await.unwrap();
+
+                assert_skipped(&runner);
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_aborted_while_waiting_on_the_mutex() {
+                let container = TaskRunnerContainer::new_os("runner", "with-mutex").await;
+                container.sandbox.enable_git();
+
+                let mut runner = container.create_runner();
+                let node = container.create_action_node();
+                let context = ActionContext::default();
+
+                // Held by another task
+                let mutex = context.get_or_create_mutex("lock").await;
+                let guard = mutex.lock().await;
+
+                let (result, _) = tokio::join!(runner.execute(&context, &node), async {
+                    // Give the runner a moment to start waiting
+                    tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+
+                    context.abort_token.cancel();
+
+                    drop(guard);
+                });
+
+                result.unwrap();
+
+                assert_skipped(&runner);
+                assert!(
+                    runner
+                        .operations
+                        .iter()
+                        .any(|op| op.meta.is_mutex_acquisition())
+                );
+            }
         }
 
         #[tokio::test(flavor = "multi_thread")]

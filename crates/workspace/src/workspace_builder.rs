@@ -714,13 +714,14 @@ impl WorkspaceBuilder {
                 continue;
             }
 
-            // A task being loaded higher up the stack already has a node, but
-            // `internal_load_task` will not return it, as it bails on
-            // everything within the cycle set
-            let dep_node_index = if in_cycle {
-                self.task_data
-                    .get(&dep_target)
-                    .and_then(|build_data| build_data.node_index)
+            // A `cleanup` edge is reversed, so the tasks that are currently being
+            // loaded don't point down to the dependency, and its own dependencies
+            // on them are not cycles. Load it with its own cycle set, otherwise
+            // those edges would be dropped. A task being loaded higher up the
+            // stack already has a node, which is returned as-is.
+            let dep_node_index = if is_cleanup {
+                Box::pin(self.internal_load_task(&dep_config.target, &mut FxHashSet::default()))
+                    .await?
             } else {
                 Box::pin(self.internal_load_task(&dep_config.target, cycle)).await?
             };

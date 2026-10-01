@@ -203,7 +203,9 @@ impl<'task> TaskExecutor<'task> {
                     // Unsuccessful execution (maybe flaky), attempt again
                     else if self.attempt_index < self.attempt_total {
                         // Unless running processes are being terminated
-                        if has_received_signal(&mut signal_receiver) {
+                        if has_received_signal(&mut signal_receiver)
+                            || context.should_stop(&self.task.target)
+                        {
                             debug!(
                                 task_target = self.task.target.as_str(),
                                 "Task was unsuccessful, but not attempting again, as running processes are being terminated",

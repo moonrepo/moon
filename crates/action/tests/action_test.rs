@@ -1,4 +1,4 @@
-use moon_action::{Action, ActionStatus, Operation};
+use moon_action::{Action, ActionStatus, Operation, OperationMeta};
 
 fn task_op(exit_code: Option<i32>, status: ActionStatus) -> Operation {
     let mut op = Operation::task_execution("cmd");
@@ -155,6 +155,19 @@ mod has_executed_task {
         action
             .operations
             .push(task_op(Some(0), ActionStatus::Passed));
+
+        assert!(action.operations.has_executed_task());
+    }
+
+    // A task without a command (typically one that only orchestrates
+    // its dependencies) still ran, so its cleanups must run too
+    #[test]
+    fn true_when_no_op() {
+        let mut action = Action::default();
+        action.operations.push(Operation::new_finished(
+            OperationMeta::NoOperation,
+            ActionStatus::Passed,
+        ));
 
         assert!(action.operations.has_executed_task());
     }

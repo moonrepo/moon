@@ -167,6 +167,11 @@ pub struct ActionGraphBuilder<'query> {
     // Nodes that run *after* another node, as a cleanup. Tracked so that they
     // can be located without having to scan every edge in the graph.
     cleanup_indices: FxHashSet<NodeIndex>,
+
+    // Targets that are depended on to run after (cleanup) or alongside (wait)
+    // another task, which must always run their command when they do.
+    cleanup_targets: FxHashSet<Target>,
+    wait_targets: FxHashSet<Target>,
 }
 
 impl<'query> ActionGraphBuilder<'query> {
@@ -190,6 +195,8 @@ impl<'query> ActionGraphBuilder<'query> {
             primary_targets: FxHashSet::default(),
             serial_edges: FxHashSet::default(),
             cleanup_indices: FxHashSet::default(),
+            cleanup_targets: FxHashSet::default(),
+            wait_targets: FxHashSet::default(),
             changed_files: None,
             workspace_graph,
         })
@@ -214,6 +221,9 @@ impl<'query> ActionGraphBuilder<'query> {
         if !self.primary_targets.is_empty() {
             context.primary_targets = mem::take(&mut self.primary_targets);
         }
+
+        context.cleanup_targets = mem::take(&mut self.cleanup_targets);
+        context.wait_targets = mem::take(&mut self.wait_targets);
 
         if let Some(files) = self.changed_files.take() {
             context.changed_files = files.to_owned();
@@ -821,9 +831,14 @@ impl<'query> ActionGraphBuilder<'query> {
                     // is reversed and must be linked by the caller, and they
                     // take no part in the serial chain
                     if matches!(dep.type_of, TaskDependencyType::Cleanup) {
+                        self.cleanup_targets.insert(dep_task.target.clone());
                         deps.cleanups.push(dep_index);
 
                         continue;
+                    }
+
+                    if matches!(dep.type_of, TaskDependencyType::Wait) {
+                        self.wait_targets.insert(dep_task.target.clone());
                     }
 
                     // When serial, this dependency's entire task subtree must
@@ -1253,13 +1268,17 @@ impl<'query> ActionGraphBuilder<'query> {
             if should_run_dependencies {
                 deps = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
             } else {
+                // Cleanup dependencies must always run after the task, even
+                // when its dependencies are not in scope, so they aren't ignored
                 self.ignored_dependencies.insert(
                     task.target.clone(),
-                    task.deps.iter().map(|dep| dep.target.clone()).collect(),
+                    task.deps
+                        .iter()
+                        .filter(|dep| !matches!(dep.type_of, TaskDependencyType::Cleanup))
+                        .map(|dep| dep.target.clone())
+                        .collect(),
                 );
 
-                // Cleanup dependencies must always run after the task,
-                // even when its dependencies are not in scope
                 deps =
                     Box::pin(self.internal_run_task_dependencies(task, &child_reqs, state, true))
                         .await?;

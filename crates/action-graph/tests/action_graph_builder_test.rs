@@ -3191,9 +3191,16 @@ mod action_graph_builder {
                 .await
                 .unwrap();
 
-            let (_, graph) = builder.build();
+            let (context, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
+
+            // Tracked, as it must always run its command
+            assert_eq!(
+                map_targets(context.cleanup_targets.into_iter().collect()),
+                ["proj:teardown"]
+            );
+            assert!(context.wait_targets.is_empty());
 
             // The cleanup edge is reversed, it runs after the task
             let edges = map_edges(&graph);
@@ -3253,9 +3260,16 @@ mod action_graph_builder {
                 .await
                 .unwrap();
 
-            let (_, graph) = builder.build();
+            let (context, graph) = builder.build();
 
             assert_snapshot!(graph.to_dot());
+
+            // Tracked, as it must always run its command
+            assert_eq!(
+                map_targets(context.wait_targets.into_iter().collect()),
+                ["proj:server"]
+            );
+            assert!(context.cleanup_targets.is_empty());
 
             assert!(map_edges(&graph).contains(&(
                 "RunTask(proj:waits)".into(),
@@ -3456,7 +3470,18 @@ mod action_graph_builder {
                 .await
                 .unwrap();
 
-            let (_, graph) = builder.build();
+            let (context, graph) = builder.build();
+
+            // The cleanup is linked, so only the others are ignored
+            assert_eq!(
+                map_targets(
+                    context.ignored_dependencies[&Target::parse("proj:args-parent").unwrap()]
+                        .iter()
+                        .cloned()
+                        .collect()
+                ),
+                ["proj:setup"]
+            );
 
             assert!(find_task_args(&graph, "proj:setup").is_empty());
             assert_eq!(
@@ -3580,6 +3605,41 @@ mod action_graph_builder {
             assert_eq!(graph.get_cleanup_indices().len(), 1);
         }
 
+        // Maps are equal regardless of the order of their keys,
+        // so the same cleanup must not be inserted twice
+        #[tokio::test(flavor = "multi_thread")]
+        async fn shares_a_cleanup_when_env_is_ordered_differently() {
+            let sandbox = create_sandbox("dep-types");
+            let mut container = ActionGraphContainer::new(sandbox.path());
+
+            let wg = container.create_workspace_graph().await;
+            let mut builder = container.create_builder(wg.clone()).await;
+
+            for id in ["env-first", "env-second"] {
+                let task = wg.get_task_from_project("proj", id).unwrap();
+
+                builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap();
+            }
+
+            let (_, graph) = builder.build();
+            let edges = map_edges(&graph);
+
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:env-first)".into(),
+                "cleanup".into()
+            )));
+            assert!(edges.contains(&(
+                "RunTask(proj:teardown)".into(),
+                "RunTask(proj:env-second)".into(),
+                "cleanup".into()
+            )));
+            assert_eq!(graph.get_cleanup_indices().len(), 1);
+        }
+
         #[tokio::test(flavor = "multi_thread")]
         async fn expands_cleanups_as_dependents() {
             let sandbox = create_sandbox("dep-types");
@@ -3691,7 +3751,14 @@ mod action_graph_builder {
 
             assert_eq!(
                 map_targets(wg.tasks.dependencies_of(teardown.as_ref())),
-                vec!["proj:args-parent", "proj:base", "proj:other", "proj:serial"]
+                vec![
+                    "proj:args-parent",
+                    "proj:base",
+                    "proj:env-first",
+                    "proj:env-second",
+                    "proj:other",
+                    "proj:serial"
+                ]
             );
         }
     }

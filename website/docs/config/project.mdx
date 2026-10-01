@@ -872,14 +872,26 @@ tasks:
 
 Cleanup dependencies:
 
-- Run once this task has ran its command, whether it passed or failed. When this task did not run
-  its command, because it was skipped (one of its own dependencies failed), or hydrated from the
-  cache, there's nothing to clean up, so the cleanup dependency is skipped as well (unless it was
-  explicitly requested, or another task depends on it).
-- Run once when shared by multiple tasks, after all of them.
-- Still run when a failure aborts the pipeline (like with [`moon run`](../commands/run)), for the
-  tasks that ran. They start once the processes that were running have been terminated, after
-  [`pipeline.killProcessThreshold`](./workspace#killprocessthreshold).
+- Run once this task has ran its command, whether it passed or failed. A task with a `noop` command,
+  which typically only orchestrates its dependencies, counts as having ran.
+- Are skipped when there's nothing to clean up, because this task did not run its command: it was
+  skipped, or hydrated from the cache. Unless this task has already started a `wait` dependency
+  (which the cleanup typically stops), the cleanup was explicitly requested, or another task depends
+  on it.
+- Run once when shared by multiple tasks (with the same `args` and `env`), after all of them.
+- Still run when a failure aborts the pipeline (like with [`moon run`](../commands/run)), but only
+  when there's something to clean up. They start once the processes that were running have been
+  terminated, after [`pipeline.killProcessThreshold`](./workspace#killprocessthreshold).
+- Still run when the dependencies of this task are not, like with `--upstream none`.
+- Fail the pipeline when they fail, like any other task, unless they
+  [allow failure](#allowfailure).
+- Run their own dependencies like any other task, as soon as possible, and not after this task. When
+  a failure aborts the pipeline before they have completed, the cleanup is not able to run, so
+  cleanups should be self-contained.
+- Are not ran in CI when their own [`runInCI`](#runinci) option is disabled, even after this task.
+  On the other hand, [`moon ci`](../commands/ci) and [`moon check`](../commands/check) select tasks
+  on their own, so a cleanup that they select is ran like any other task, even when there's nothing
+  to clean up. Mark tasks that should only run as a cleanup as [`internal`](#internal).
 - Can't be [persistent](#persistent), and persistent tasks can't have them, as persistent tasks
   never complete.
 
@@ -888,23 +900,35 @@ Wait dependencies:
 - Only need to have _started_ running, which is not the same as being _ready_ (like a server
   accepting connections). If this task requires the dependency to be ready, it should wait for it
   itself, for example, by polling a health check endpoint.
-- Skip this task when they have already failed by the time this task runs. When they fail after this
-  task has started, this task is not affected.
+- Skip this task when they have already failed, or were skipped, by the time this task runs. When
+  they fail after this task has started, this task keeps running, unless the failure aborts the
+  pipeline (like with [`moon run`](../commands/run)), which terminates this task along with every
+  other running task.
 - Can be [persistent](#persistent), as this task doesn't wait for them to complete. However,
-  persistent tasks don't run in CI by default, so they must enable [`runInCI`](#runinci) when this
-  task runs in CI.
+  persistent tasks don't run in CI by default, and a task that runs in CI can't depend on a task
+  that doesn't (an error is raised), so either enable [`runInCI`](#runinci) for the dependency, or
+  disable it for this task. Be aware that once enabled, [`moon ci`](../commands/ci) also runs the
+  dependency on its own when it's affected, which keeps the pipeline running until it's stopped.
 - Can't be [interactive](#interactive), as interactive tasks run in isolation, so nothing can run
   alongside them.
 - Are not stopped once this task has completed. A persistent dependency keeps running until the
   pipeline is exited, while others keep the pipeline running until they complete. To stop them,
-  pair them with a `cleanup` dependency that does.
+  pair them with a `cleanup` dependency that does, which runs whenever the dependency was started,
+  even when this task was skipped or hydrated from the cache. The dependency must exit successfully
+  when it's stopped (for example, by handling `SIGTERM`), otherwise it has failed like any other
+  task, which fails the pipeline.
+- Are started before the cache of this task is checked, so they're also started (and then stopped by
+  the `cleanup`) when this task is hydrated from the cache. Disable the [`cache`](#cache) of tasks
+  that wait on long-running dependencies, otherwise the dependency is stopped right after it was
+  started, which most processes don't handle gracefully.
 - Don't count towards the pipeline's concurrency limit, so they never prevent the tasks waiting on
   them from running.
 
 Since neither `cleanup` nor `wait` dependencies complete before this task runs, they don't
 contribute to this task's [hash](../concepts/cache#hashing), and their
-[`cacheStrategy`](#cache-strategy) can only be `ignored`. Additionally, a task can't depend on the
-same task with different types.
+[`cacheStrategy`](#cache-strategy) can only be `ignored`. They also always run their command,
+instead of being hydrated from the cache, as this task depends on them running. Additionally, a task
+can't depend on the same task with different types.
 
 :::caution
 
@@ -1758,7 +1782,9 @@ The number of attempts the task will retry execution before returning a failure.
 useful for flaky tasks. Defaults to `0`.
 
 The task is not retried once the pipeline has been aborted (because another task failed), or
-interrupted (like with Ctrl+C), as its running process is terminated.
+interrupted (like with Ctrl+C), as its running process is terminated. Likewise, a task that has yet
+to run its command at that point (it was still generating its hash, or waiting on a
+[mutex](#mutex)), does not run it.
 
 ```yaml title="moon.yml" {5}
 tasks:

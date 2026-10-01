@@ -452,9 +452,25 @@ mod action_pipeline {
             bail: bool,
             concurrency: usize,
         ) -> miette::Result<Vec<Action>> {
+            run_pipeline_with_reqs(
+                sandbox,
+                targets,
+                bail,
+                concurrency,
+                RunRequirements::default(),
+            )
+            .await
+        }
+
+        async fn run_pipeline_with_reqs(
+            sandbox: &Sandbox,
+            targets: &[&str],
+            bail: bool,
+            concurrency: usize,
+            reqs: RunRequirements,
+        ) -> miette::Result<Vec<Action>> {
             let mocker = WorkspaceMocker::new(sandbox.path()).with_default_projects();
 
-            let reqs = RunRequirements::default();
             let mut graph = mocker.create_action_graph().await;
 
             for target in targets {
@@ -483,6 +499,10 @@ mod action_pipeline {
 
         fn has_signal(sandbox: &Sandbox, name: &str) -> bool {
             sandbox.path().join("dep-types").join(name).exists()
+        }
+
+        fn remove_signal(sandbox: &Sandbox, name: &str) {
+            let _ = std::fs::remove_file(sandbox.path().join("dep-types").join(name));
         }
 
         mod wait {
@@ -560,6 +580,117 @@ mod action_pipeline {
                 );
                 assert!(!has_signal(&sandbox, "after-crash-ran"));
             }
+
+            // The dependency never starts (its own dependency failed), so the
+            // task must be skipped as well, instead of running without it
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_the_dependency_is_skipped() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses =
+                    run_targets(&sandbox, &["dep-types:blocked-server-client"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-server)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-server-client)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert!(!has_signal(&sandbox, "blocked-server-ran"));
+                assert!(!has_signal(&sandbox, "blocked-server-client-ran"));
+
+                // Nothing was started, so there's nothing to stop either
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-server-stop)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert!(!has_signal(&sandbox, "blocked-server-stopped"));
+            }
+
+            // A persistent dependency is marked as completed once dispatched,
+            // but it's also skipped when its own dependency failed
+            #[tokio::test(flavor = "multi_thread")]
+            async fn skips_if_the_persistent_dependency_is_skipped() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses =
+                    run_targets(&sandbox, &["dep-types:blocked-persistent-client"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunPersistentTask(dep-types:blocked-persistent-server)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-persistent-client)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert!(!has_signal(&sandbox, "blocked-persistent-server-ran"));
+                assert!(!has_signal(&sandbox, "blocked-persistent-client-ran"));
+
+                // Nothing was started, so there's nothing to stop either
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-server-stop)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert!(!has_signal(&sandbox, "blocked-server-stopped"));
+            }
+
+            // An interactive task runs in isolation, but must not wait on its
+            // dependency to complete, as it only does once the cleanup has stopped
+            // it, and the cleanup is dispatched after the task (this deadlocked
+            // until the dependency timed out)
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_deadlock_an_interactive_task() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses =
+                    run_targets(&sandbox, &["dep-types:interactive-client"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunInteractiveTask(dep-types:interactive-client)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:stop-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:stoppable-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+            }
+
+            // The same applies when the entire pipeline is interactive
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_deadlock_an_interactive_pipeline() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = get_statuses(
+                    run_pipeline_with_reqs(
+                        &sandbox,
+                        &["dep-types:stoppable-client"],
+                        false,
+                        4,
+                        RunRequirements {
+                            interactive: true,
+                            ..RunRequirements::default()
+                        },
+                    )
+                    .await
+                    .unwrap(),
+                );
+
+                assert_eq!(
+                    statuses.get("RunInteractiveTask(dep-types:stoppable-client)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunInteractiveTask(dep-types:stop-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunInteractiveTask(dep-types:stoppable-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+            }
         }
 
         mod cleanup {
@@ -611,6 +742,24 @@ mod action_pipeline {
                     Some(&ActionStatus::Passed)
                 );
                 assert!(has_signal(&sandbox, "failing-cleaned"));
+            }
+
+            // A task without a command (which only orchestrates its
+            // dependencies) still counts as having ran
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_after_a_noop_task() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:noop-parent"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:noop-parent)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:noop-cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert!(has_signal(&sandbox, "noop-cleaned"));
             }
 
             // The task never ran its command, so there's nothing to clean up
@@ -728,6 +877,154 @@ mod action_pipeline {
                 assert_eq!(statuses.get("RunTask(dep-types:blocked-cleanup)"), None);
                 assert!(!has_signal(&sandbox, "blocked-ran"));
                 assert!(!has_signal(&sandbox, "blocked-cleaned"));
+            }
+
+            // The task is skipped, but it has already started the dependency that
+            // it waits on, which is stopped by the cleanup, so there's something
+            // to clean up after all (the dependency never completed otherwise)
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_if_the_skipped_task_started_a_wait_dependency() {
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(&sandbox, &["dep-types:blocked-client"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:blocked-client)"),
+                    Some(&ActionStatus::Skipped)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:stop-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:stoppable-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+            }
+
+            // The same applies when the task is hydrated from the cache, while the
+            // dependencies that run alongside it, and after it, are never hydrated
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_if_the_cached_task_started_a_wait_dependency() {
+                let sandbox = create_sandbox("pipeline");
+                sandbox.enable_git();
+
+                let statuses = run_targets(&sandbox, &["dep-types:cached-client"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:cached-client)"),
+                    Some(&ActionStatus::Passed)
+                );
+
+                remove_signal(&sandbox, "stoppable-started");
+                remove_signal(&sandbox, "stoppable-stop");
+
+                let statuses = run_targets(&sandbox, &["dep-types:cached-client"], false).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:cached-client)"),
+                    Some(&ActionStatus::Cached)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:stop-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:stoppable-server)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert!(has_signal(&sandbox, "stoppable-started"));
+                assert!(has_signal(&sandbox, "stoppable-stop"));
+            }
+
+            // The cleanup has not changed since it last ran, but it must run its
+            // command every time that its task does, instead of being hydrated
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_every_time_instead_of_being_hydrated() {
+                let sandbox = create_sandbox("pipeline");
+                sandbox.enable_git();
+
+                for _ in 0..2 {
+                    remove_signal(&sandbox, "cacheable-cleaned");
+
+                    let statuses =
+                        run_targets(&sandbox, &["dep-types:uncached-parent"], false).await;
+
+                    assert_eq!(
+                        statuses.get("RunTask(dep-types:uncached-parent)"),
+                        Some(&ActionStatus::Passed)
+                    );
+                    assert_eq!(
+                        statuses.get("RunTask(dep-types:cacheable-cleanup)"),
+                        Some(&ActionStatus::Passed)
+                    );
+                    assert!(has_signal(&sandbox, "cacheable-cleaned"));
+                }
+            }
+
+            // The first cleanup has nothing to clean up (its task never ran), but
+            // the second one does, and requires it, so both must run
+            #[tokio::test(flavor = "multi_thread")]
+            async fn runs_a_cleanup_that_another_cleanup_requires_when_bailing() {
+                // Must be registered before anything else uses the registry
+                ProcessRegistry::register(500);
+
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(
+                    &sandbox,
+                    &["dep-types:gated-parent", "dep-types:crashing-parent"],
+                    true,
+                )
+                .await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:crashing-parent)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:first-cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:second-cleanup)"),
+                    Some(&ActionStatus::Passed)
+                );
+                assert!(!has_signal(&sandbox, "gated-ran"));
+            }
+        }
+
+        mod abort {
+            use super::*;
+
+            // The task was dispatched before the pipeline was aborted, but was still
+            // waiting on a mutex, so its command has yet to run, and must not once it
+            // acquires the mutex, as nothing would terminate its process
+            #[tokio::test(flavor = "multi_thread")]
+            async fn doesnt_run_a_task_that_was_waiting_on_a_mutex() {
+                // Must be registered before anything else uses the registry
+                ProcessRegistry::register(500);
+
+                let sandbox = create_sandbox("pipeline");
+                let statuses = run_targets(
+                    &sandbox,
+                    &[
+                        "dep-types:mutex-holder",
+                        "dep-types:mutex-waiter",
+                        "dep-types:mutex-crash",
+                    ],
+                    true,
+                )
+                .await;
+
+                // In case its process was started, and is still running
+                tokio::time::sleep(std::time::Duration::from_millis(750)).await;
+
+                assert_eq!(
+                    statuses.get("RunTask(dep-types:mutex-crash)"),
+                    Some(&ActionStatus::Failed)
+                );
+                assert!(has_signal(&sandbox, "delay-done"));
+                assert!(!has_signal(&sandbox, "holder-done"));
+                assert!(!has_signal(&sandbox, "waiter-ran"));
             }
         }
     }

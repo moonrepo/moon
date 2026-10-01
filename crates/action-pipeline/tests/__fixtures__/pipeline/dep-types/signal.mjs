@@ -46,8 +46,12 @@ switch (action) {
 		break;
 	}
 
-	// Signal that this task has ran, and then fail
+	// Signal that this task has ran, and then fail (after an optional delay)
 	case 'fail': {
+		if (arg) {
+			sleep(Number(arg));
+		}
+
 		signal(name);
 		process.exit(1);
 	}

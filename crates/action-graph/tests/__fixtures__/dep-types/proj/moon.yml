@@ -102,6 +102,25 @@ tasks:
       - target: 'teardown'
         type: 'cleanup'
 
+  # Share the cleanup dep, with the same env in a different order
+  env-first:
+    command: 'env-first'
+    deps:
+      - target: 'teardown'
+        type: 'cleanup'
+        env:
+          X: '1'
+          Y: '2'
+
+  env-second:
+    command: 'env-second'
+    deps:
+      - target: 'teardown'
+        type: 'cleanup'
+        env:
+          Y: '2'
+          X: '1'
+
   # A required chain, the cleanup dep is applied by the test, as it
   # would cycle the task graph if it was configured here
   cycle-parent:

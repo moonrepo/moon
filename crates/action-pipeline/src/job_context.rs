@@ -103,14 +103,18 @@ impl JobContext {
             self.abort_token.cancel();
         }
 
-        self.mark_completed_job(CompletedJob {
+        let job = CompletedJob {
             index: NodeIndex::new(action.node_index),
             started: action.started_at.is_some(),
             failed: action.has_failed(),
             executed: action.operations.has_executed_task(),
-        })
-        .await;
+        };
 
+        // Send the result *before* marking the job as completed. Once nothing
+        // else is running, the dispatcher stops, and the pipeline then stops
+        // receiving results, so a result sent after that would be lost.
         let _ = self.result_sender.send(action).await;
+
+        self.mark_completed_job(job).await;
     }
 }

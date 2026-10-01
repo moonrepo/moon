@@ -19,13 +19,14 @@ use moon_common::{color, is_remote, is_test_env};
 use moon_console::Level;
 use moon_daemon_client::DaemonClient;
 use moon_process::{ProcessRegistry, SignalType};
+use moon_task_runner::is_task_dependencies_complete;
 use moon_workspace_graph::WorkspaceGraph;
 use rustc_hash::FxHashMap;
 use std::mem;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::broadcast::error::RecvError;
-use tokio::sync::{RwLock, Semaphore, mpsc};
+use tokio::sync::{RwLock, Semaphore, mpsc, oneshot};
 use tokio::task::{JoinHandle, JoinSet};
 use tokio_util::sync::CancellationToken;
 use tracing::{debug, instrument, warn};
@@ -182,10 +183,11 @@ impl ActionPipeline {
         // This aggregates completed jobs for the dispatcher
         let (completed_sender, completed_receiver) = mpsc::unbounded_channel::<CompletedJob>();
 
-        // Create job context
+        // Create job context. The tokens are shared with the action context,
+        // so that tasks can check them before they run their command
         let abort_state = Arc::new(AbortState::default());
-        let abort_token = CancellationToken::new();
-        let cancel_token = CancellationToken::new();
+        let abort_token = self.action_context.abort_token.clone();
+        let cancel_token = self.action_context.cancel_token.clone();
 
         let job_context = JobContext {
             abort_token: abort_token.clone(),
@@ -442,6 +444,21 @@ impl ActionPipeline {
                     continue;
                 }
 
+                // Other jobs don't wait for this job to complete: those that only
+                // wait on it to start are released once it has been dispatched, and
+                // a persistent job is marked as completed immediately. But its task
+                // won't run when one of its own dependencies has failed (it's
+                // skipped), so set that state up front, so that they're skipped as
+                // well, instead of running without it
+                let will_be_skipped = (node.is_persistent()
+                    || dispatcher.has_wait_dependents(node_index))
+                    && will_skip_task(node, &job_context, &action_context);
+
+                if will_be_skipped && let ActionNode::RunTask(inner) = node {
+                    action_context.set_target_state(inner.target.clone(), TargetState::Skipped);
+                    dispatcher.mark_never_started(node_index);
+                }
+
                 // Persistent actions are dispatched topologically like any other
                 // action, but they never complete on their own, so they require
                 // some special handling
@@ -451,12 +468,14 @@ impl ActionPipeline {
                     // Mark as completed immediately, otherwise the loop hangs, and
                     // dependents (which must be persistent, or only wait on it to
                     // start) would never dispatch
-                    job_context.mark_completed(node_index, true).await;
+                    job_context
+                        .mark_completed(node_index, !will_be_skipped)
+                        .await;
 
                     // Set the state early since it "never finishes", otherwise the
                     // runner will error about a missing hash if it's a dependency
                     // of another persistent task
-                    if let ActionNode::RunTask(inner) = node {
+                    if !will_be_skipped && let ActionNode::RunTask(inner) = node {
                         action_context
                             .set_target_state(inner.target.clone(), TargetState::Passthrough);
                     }
@@ -493,20 +512,38 @@ impl ActionPipeline {
                 }
 
                 // Otherwise run the action topologically
-                job_handles.standard.spawn(dispatch_job_with_permit(
+                let job = dispatch_job_with_permit(
                     node.to_owned(),
                     node_index.index(),
                     is_cleanup,
                     job_context.clone(),
                     Arc::clone(&app_context),
                     Arc::clone(&action_context),
-                ));
+                );
 
-                // Run this in isolation by exhausting the current list of handles.
-                // Persistent handles are excluded as they never complete!
-                if node.is_interactive()
-                    && exhaust_job_handles(&mut job_handles.standard, &job_context).await
-                {
+                if !node.is_interactive() {
+                    job_handles.standard.spawn(job);
+
+                    continue;
+                }
+
+                // Run this in isolation, by not dispatching another job until it has
+                // completed. Only this job is waited on, and not every job that's
+                // currently running, as some of them may only complete once a job
+                // that has yet to be dispatched has ran (like a job that this job
+                // only waited on to start, which is stopped by a cleanup job)
+                let (completed_sender, completed_receiver) = oneshot::channel::<()>();
+
+                job_handles.standard.spawn(async move {
+                    job.await;
+
+                    let _ = completed_sender.send(());
+                });
+
+                // The sender is dropped without sending if the job panics
+                let _ = completed_receiver.await;
+
+                if job_context.is_aborted_or_cancelled() {
                     stopped = true;
                     break;
                 }
@@ -820,6 +857,25 @@ async fn drain_cleanup_jobs(
             _ = give_up_timer => {}
         };
     }
+}
+
+/// Whether the node's task will be skipped instead of ran, as one of its
+/// dependencies has failed or has been skipped. They have all completed by
+/// the time the node is dispatched, so this is known before it runs.
+fn will_skip_task(
+    node: &ActionNode,
+    job_context: &JobContext,
+    action_context: &ActionContext,
+) -> bool {
+    let ActionNode::RunTask(inner) = node else {
+        return false;
+    };
+
+    job_context
+        .workspace_graph
+        .get_task(&inner.target)
+        .and_then(|task| is_task_dependencies_complete(&task, action_context))
+        .is_ok_and(|complete| !complete)
 }
 
 #[instrument(skip_all)]

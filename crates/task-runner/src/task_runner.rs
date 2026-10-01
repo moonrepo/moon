@@ -45,6 +45,50 @@ pub struct TaskRunner<'task> {
     pub state: TaskRunState,
 }
 
+/// Whether every dependency of the task is in a state that allows the task to
+/// run. Returns false when a dependency has failed or has been skipped, in
+/// which case the task must be skipped as well.
+pub fn is_task_dependencies_complete(task: &Task, context: &ActionContext) -> miette::Result<bool> {
+    if task.deps.is_empty() {
+        return Ok(true);
+    }
+
+    for dep in &task.deps {
+        // Cleanup dependencies run *after* this task, so have not ran yet
+        if matches!(dep.type_of, TaskDependencyType::Cleanup)
+            || context.is_dependency_ignored(&task.target, &dep.target)
+        {
+            continue;
+        }
+
+        if let Some(dep_state) = context.target_states.get_sync(&dep.target) {
+            if dep_state.get().is_complete() {
+                continue;
+            }
+
+            debug!(
+                task_target = task.target.as_str(),
+                dependency_target = dep.target.as_str(),
+                "Task dependency has failed or has been skipped, skipping this task",
+            );
+
+            return Ok(false);
+        }
+        // Wait dependencies only need to have started, so may still be running
+        else if matches!(dep.type_of, TaskDependencyType::Wait) {
+            continue;
+        } else {
+            return Err(TaskRunnerError::MissingDependencyHash {
+                dep_target: dep.target.clone(),
+                target: task.target.clone(),
+            }
+            .into());
+        }
+    }
+
+    Ok(true)
+}
+
 impl<'task> TaskRunner<'task> {
     pub fn new(
         app_context: &'task Arc<AppContext>,
@@ -103,8 +147,18 @@ impl<'task> TaskRunner<'task> {
                 "Caching is enabled for task, will attempt to hydrate and archive outputs"
             );
 
+            // Another task depends on this task running after it (cleanup), or
+            // alongside it (wait), so it must run its command, and not be hydrated
+            if context.should_always_run(&self.task.target) {
+                debug!(
+                    task_target = self.task.target.as_str(),
+                    "Not hydrating task, as another task depends on it running its command"
+                );
+
+                self.cache.data.hash = hash.to_string();
+            }
             // Exit early if this build has already been cached/hashed
-            if self.hydrate(&hash).await? {
+            else if self.hydrate(&hash).await? {
                 return Ok(Some(hash));
             }
 
@@ -369,44 +423,7 @@ impl<'task> TaskRunner<'task> {
 
     #[instrument(skip_all)]
     pub fn is_dependencies_complete(&self, context: &ActionContext) -> miette::Result<bool> {
-        if self.task.deps.is_empty() {
-            return Ok(true);
-        }
-
-        for dep in &self.task.deps {
-            // Cleanup dependencies run *after* this task, so have not ran yet
-            if matches!(dep.type_of, TaskDependencyType::Cleanup)
-                || context.is_dependency_ignored(&self.task.target, &dep.target)
-            {
-                continue;
-            }
-
-            if let Some(dep_state) = context.target_states.get_sync(&dep.target) {
-                if dep_state.get().is_complete() {
-                    continue;
-                }
-
-                debug!(
-                    task_target = self.task.target.as_str(),
-                    dependency_target = dep.target.as_str(),
-                    "Task dependency has failed or has been skipped, skipping this task",
-                );
-
-                return Ok(false);
-            }
-            // Wait dependencies only need to have started, so may still be running
-            else if matches!(dep.type_of, TaskDependencyType::Wait) {
-                continue;
-            } else {
-                return Err(TaskRunnerError::MissingDependencyHash {
-                    dep_target: dep.target.clone(),
-                    target: self.task.target.clone(),
-                }
-                .into());
-            }
-        }
-
-        Ok(true)
+        is_task_dependencies_complete(self.task, context)
     }
 
     #[instrument(skip_all)]
@@ -549,6 +566,16 @@ impl<'task> TaskRunner<'task> {
             return Ok(());
         }
 
+        // The pipeline may have been aborted or interrupted while this task was
+        // preparing to run (generating its hash, checking the cache, etc), in
+        // which case its checks and command must not run, as nothing would
+        // terminate their processes
+        if context.should_stop(&self.task.target) {
+            self.skip_stopped()?;
+
+            return Ok(());
+        }
+
         // Execute the task checks first, if any, and exit early if they fail
         if self.execute_checks().await? {
             self.skip_conditional()?;
@@ -594,6 +621,13 @@ impl<'task> TaskRunner<'task> {
             operation.finish(ActionStatus::Passed);
 
             self.operations.push(operation);
+
+            // Or while it was waiting on the mutex
+            if context.should_stop(&self.task.target) {
+                self.skip_stopped()?;
+
+                return Ok(());
+            }
 
             // This execution is required within this block so that the
             // guard above isn't immediately dropped!
@@ -735,6 +769,25 @@ impl<'task> TaskRunner<'task> {
     #[instrument(skip(self))]
     pub fn skip(&mut self) -> miette::Result<()> {
         debug!(task_target = self.task.target.as_str(), "Skipping task");
+
+        self.operations.push(Operation::new_finished(
+            OperationMeta::TaskExecution(Default::default()),
+            ActionStatus::Skipped,
+        ));
+
+        self.state.target = Some(TargetState::Skipped);
+
+        Ok(())
+    }
+
+    /// Skip the task because the pipeline was aborted or interrupted
+    /// before its command could be ran.
+    #[instrument(skip(self))]
+    pub fn skip_stopped(&mut self) -> miette::Result<()> {
+        debug!(
+            task_target = self.task.target.as_str(),
+            "Skipping task as the pipeline has been aborted or interrupted"
+        );
 
         self.operations.push(Operation::new_finished(
             OperationMeta::TaskExecution(Default::default()),

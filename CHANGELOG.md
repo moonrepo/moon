@@ -33,12 +33,14 @@
   - `required` (default) - Runs before the task, and must complete successfully.
   - `cleanup` - Runs after the task has ran its command, even when the task fails, or the failure
     aborts the pipeline. Useful for tearing down resources, like stopping a database. It's skipped
-    when the task didn't run its command (it was skipped, or hydrated from the cache).
+    when there's nothing to clean up (the task was skipped, or hydrated from the cache, without
+    having started a `wait` dependency).
   - `wait` - Runs before the task, but the task only waits for it to start running, not to complete.
     Useful for long-running dependencies, like a development server, and allows non-persistent tasks
     to depend on persistent tasks.
   - Since `cleanup` and `wait` dependencies don't complete before the task runs, they don't
-    contribute to the task's hash.
+    contribute to the task's hash, and they always run their command, instead of being hydrated from
+    the cache.
 - Changed persistent tasks to run when they are processed in the action graph, instead of being
   batched and ran last, in parallel, once all other actions have finished. Persistent tasks now run
   alongside other tasks, and a persistent task no longer blocks the persistent tasks that depend on
@@ -75,9 +77,19 @@
 - Fixed an issue where a task with `options.retryCount` would attempt to run again after the
   pipeline was aborted (because another task failed) or interrupted (like with Ctrl+C), which
   started a new process that was never terminated, and could continue running after moon exited.
+- Fixed an issue where a task that had yet to run its command when the pipeline was aborted or
+  interrupted (it was still generating its hash, or waiting on a `mutex`) would run it afterwards,
+  which started a process that was never terminated.
+- Fixed an issue where tasks that depend on a persistent task would still run when the persistent
+  task was skipped (because one of its own dependencies failed), when failures don't abort the
+  pipeline (like with `moon ci`).
+- Fixed an issue where a task dependency would be inserted into the action graph (and ran) more than
+  once, when its `env` was defined in a different order by the tasks that depend on it.
 
 #### ⚙️ Internal
 
+- Interactive tasks now only block the pipeline until they have completed themselves, instead of
+  until every task that was already running has completed.
 - Improved the performance of the action pipeline's job dispatcher by 10-15x. Dependency
   relationships are now extracted from the action graph once up front, and completed jobs unblock
   their dependents incrementally, instead of re-traversing the graph for every dispatch check.

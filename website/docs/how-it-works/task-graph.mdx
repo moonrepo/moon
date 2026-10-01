@@ -3,6 +3,7 @@ title: Task graph
 ---
 
 import TaskGraph from '@site/src/components/Docs/TaskGraph';
+import VersionLabel from '@site/src/components/Docs/VersionLabel';
 
 The task graph is a representation of all configured
 [tasks in the workspace](../config/workspace#projects) and their relationships between each other,
@@ -23,7 +24,7 @@ workspace.
 
 A relationship is between a dependent (downstream task) and a dependency/requirement (upstream
 task). Relationships are derived explicitly with the task [`deps`](../config/project#deps) setting,
-and fall into 1 of 2 categories:
+and fall into 1 of 4 categories, based on the [type](../config/project#type) of the dependency:
 
 ### Required
 
@@ -34,6 +35,17 @@ can run. If a required dependency fails, then the owning task will abort.
 
 The opposite of [required](#required), these are dependencies that can either a) not exist during
 task inheritance, or b) run and fail without aborting the owning task.
+
+### Cleanup<VersionLabel version="2.6.0" />
+
+These are dependencies that run _after_ the owning task has ran, even if it failed. Because of this,
+the relationship is reversed in the graph: the cleanup is the dependent (downstream task) of the
+task that it cleans up after, and not its dependency.
+
+### Wait<VersionLabel version="2.6.0" />
+
+These are dependencies that are required to _start_ running before the owning task can run, but not
+to complete, so both run at the same time.
 
 ## What is the graph used for?
 

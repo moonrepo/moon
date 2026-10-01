@@ -1,7 +1,7 @@
 mod utils;
 
 use moon_action::*;
-use moon_action_context::TargetState;
+use moon_action_context::{ActionContext, TargetState};
 use moon_action_graph::{ActionGraph, ActionGraphBuilderOptions, RunRequirements};
 use moon_affected::{AffectedBy, DownstreamScope, UpstreamScope};
 use moon_common::{Id, path::WorkspaceRelativePathBuf};
@@ -2478,6 +2478,205 @@ mod action_graph_builder {
                 let (_, graph) = builder.build();
 
                 assert_snapshot!(graph.to_dot());
+            }
+
+            // Multiple actions may run the same task (with different args or env),
+            // but dependencies are ignored per task, and not per action, so they
+            // must be linked for all of its actions, or for none of them
+            mod multiple_actions {
+                use super::*;
+
+                fn describe(node: &ActionNode) -> String {
+                    match node {
+                        ActionNode::RunTask(inner) if !inner.args.is_empty() => {
+                            format!("{} {}", inner.target, inner.args.join(" "))
+                        }
+                        ActionNode::RunTask(inner) => inner.target.to_string(),
+                        other => other.label(),
+                    }
+                }
+
+                fn map_task_edges(graph: &ActionGraph) -> Vec<(String, String, String)> {
+                    let inner = graph.get_inner_graph();
+
+                    let mut edges = inner
+                        .graph()
+                        .edge_indices()
+                        .filter_map(|edge| {
+                            let (source, target) = inner.edge_endpoints(edge).unwrap();
+                            let source = graph.get_node_from_index(&source).unwrap();
+                            let target = graph.get_node_from_index(&target).unwrap();
+
+                            (matches!(source, ActionNode::RunTask(_))
+                                && matches!(target, ActionNode::RunTask(_)))
+                            .then(|| {
+                                (
+                                    describe(source),
+                                    describe(target),
+                                    inner.edge_weight(edge).unwrap().to_string(),
+                                )
+                            })
+                        })
+                        .collect::<Vec<_>>();
+
+                    edges.sort();
+                    edges
+                }
+
+                fn edge(from: &str, to: &str, type_of: &str) -> (String, String, String) {
+                    (from.to_owned(), to.to_owned(), type_of.to_owned())
+                }
+
+                fn target(id: &str) -> Target {
+                    Target::parse(id).unwrap()
+                }
+
+                async fn build_graph(
+                    ids: &[&str],
+                    dependencies: UpstreamScope,
+                ) -> (ActionContext, ActionGraph) {
+                    let sandbox = create_sandbox("dep-scopes");
+                    let mut container = ActionGraphContainer::new(sandbox.path());
+
+                    let wg = container.create_workspace_graph().await;
+                    let mut builder = container.create_builder(wg.clone()).await;
+
+                    let reqs = RunRequirements {
+                        dependencies,
+                        dependents: DownstreamScope::None,
+                        ..RunRequirements::default()
+                    };
+
+                    for id in ids {
+                        let task = wg.get_task_from_project("proj", id).unwrap();
+
+                        builder.run_task(&task, &reqs).await.unwrap();
+                    }
+
+                    builder.build()
+                }
+
+                // The task is ran with args by another task (its dependencies are
+                // out of scope), and on its own (in scope, but another action)
+                #[tokio::test(flavor = "multi_thread")]
+                async fn links_deps_for_all_actions_when_in_scope_for_a_new_action() {
+                    for ids in [["with-args", "shared"], ["shared", "with-args"]] {
+                        let (context, graph) = build_graph(&ids, UpstreamScope::Direct).await;
+
+                        assert_eq!(
+                            map_task_edges(&graph),
+                            [
+                                edge("proj:shared", "proj:prep", "required"),
+                                edge("proj:shared --force", "proj:prep", "required"),
+                                edge("proj:with-args", "proj:shared --force", "required"),
+                            ],
+                            "{ids:?}"
+                        );
+                        assert!(
+                            !context
+                                .ignored_dependencies
+                                .contains_key(&target("proj:shared")),
+                            "{ids:?}"
+                        );
+                    }
+                }
+
+                // Both actions exist (their dependencies were out of scope)
+                // by the time one of them is revisited in scope
+                #[tokio::test(flavor = "multi_thread")]
+                async fn links_deps_for_all_actions_when_in_scope_for_an_existing_action() {
+                    for ids in [
+                        ["with-args", "without-args", "shared"],
+                        ["without-args", "with-args", "shared"],
+                    ] {
+                        let (context, graph) = build_graph(&ids, UpstreamScope::Direct).await;
+
+                        assert_eq!(
+                            map_task_edges(&graph),
+                            [
+                                edge("proj:shared", "proj:prep", "required"),
+                                edge("proj:shared --force", "proj:prep", "required"),
+                                edge("proj:with-args", "proj:shared --force", "required"),
+                                edge("proj:without-args", "proj:shared", "required"),
+                            ],
+                            "{ids:?}"
+                        );
+                        assert!(
+                            !context
+                                .ignored_dependencies
+                                .contains_key(&target("proj:shared")),
+                            "{ids:?}"
+                        );
+                    }
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn links_deps_for_cleanup_actions_when_in_scope_for_another_action() {
+                    for ids in [["with-cleanup", "shared"], ["shared", "with-cleanup"]] {
+                        let (context, graph) = build_graph(&ids, UpstreamScope::Direct).await;
+
+                        assert_eq!(
+                            map_task_edges(&graph),
+                            [
+                                edge("proj:shared", "proj:prep", "required"),
+                                edge("proj:shared --force", "proj:prep", "required"),
+                                edge("proj:shared --force", "proj:with-cleanup", "cleanup"),
+                            ],
+                            "{ids:?}"
+                        );
+                        assert!(
+                            !context
+                                .ignored_dependencies
+                                .contains_key(&target("proj:shared")),
+                            "{ids:?}"
+                        );
+                    }
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn ignores_deps_for_all_actions_when_never_in_scope() {
+                    for ids in [["with-args", "without-args"], ["without-args", "with-args"]] {
+                        let (context, graph) = build_graph(&ids, UpstreamScope::Direct).await;
+
+                        assert_eq!(
+                            map_task_edges(&graph),
+                            [
+                                edge("proj:with-args", "proj:shared --force", "required"),
+                                edge("proj:without-args", "proj:shared", "required"),
+                            ],
+                            "{ids:?}"
+                        );
+                        assert_eq!(
+                            context.ignored_dependencies,
+                            FxHashMap::from_iter([(
+                                target("proj:shared"),
+                                FxHashSet::from_iter([target("proj:prep")])
+                            )]),
+                            "{ids:?}"
+                        );
+                    }
+                }
+
+                #[tokio::test(flavor = "multi_thread")]
+                async fn ignores_deps_for_all_tasks_when_none_are_in_scope() {
+                    let (context, graph) =
+                        build_graph(&["with-args", "shared"], UpstreamScope::None).await;
+
+                    assert!(map_task_edges(&graph).is_empty());
+                    assert_eq!(
+                        context.ignored_dependencies,
+                        FxHashMap::from_iter([
+                            (
+                                target("proj:shared"),
+                                FxHashSet::from_iter([target("proj:prep")])
+                            ),
+                            (
+                                target("proj:with-args"),
+                                FxHashSet::from_iter([target("proj:shared")])
+                            ),
+                        ])
+                    );
+                }
             }
         }
 

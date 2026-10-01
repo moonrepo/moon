@@ -150,7 +150,18 @@ pub struct ActionGraphBuilder<'query> {
     changed_files: Option<FxHashSet<WorkspaceRelativePathBuf>>,
 
     // Target tracking
+    //
+    // Dependencies that were not linked, as they were out of scope when the
+    // nodes of the task were created. Multiple nodes may run the same task
+    // (with different args or env), but this is tracked per task (not per
+    // node), as that's what a task knows when it runs. So that it's accurate
+    // for all of them, the dependencies of a task are linked for all of its
+    // nodes, or for none of them: the nodes without them are tracked, and
+    // linked once the dependencies are in scope for any of them, and so are
+    // the nodes that are created after that.
     ignored_dependencies: FxHashMap<Target, FxHashSet<Target>>,
+    unlinked_dependencies: FxHashMap<Target, Vec<NodeIndex>>,
+    linked_dependencies: FxHashSet<Target>,
     // Tasks whose dependents were out of scope when their node was created.
     // Consumed when the task is revisited with dependents in scope, since the
     // node-exists early return would otherwise skip the expansion entirely.
@@ -190,6 +201,8 @@ impl<'query> ActionGraphBuilder<'query> {
             nodes: FxHashMap::default(),
             options,
             ignored_dependencies: FxHashMap::default(),
+            unlinked_dependencies: FxHashMap::default(),
+            linked_dependencies: FxHashSet::default(),
             ignored_dependents: FxHashSet::default(),
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
@@ -1213,10 +1226,18 @@ impl<'query> ActionGraphBuilder<'query> {
             id: None,
         });
 
-        let had_ignored_dependencies = if should_run_dependencies {
-            self.ignored_dependencies.remove(&task.target).is_some()
+        // Dependencies are in scope, so they're no longer ignored for this
+        // task, and must be linked for every node that runs it: those that
+        // were created while they were out of scope (which may not be this
+        // node), and those that are created from here on
+        let unlinked_indices = if should_run_dependencies && !task.deps.is_empty() {
+            self.ignored_dependencies.remove(&task.target);
+            self.linked_dependencies.insert(task.target.clone());
+            self.unlinked_dependencies
+                .remove(&task.target)
+                .unwrap_or_default()
         } else {
-            false
+            vec![]
         };
 
         let had_ignored_dependents = if should_run_dependents {
@@ -1227,13 +1248,12 @@ impl<'query> ActionGraphBuilder<'query> {
 
         // Check if the node exists to avoid all the overhead below
         if let Some(index) = self.get_index_from_node(&node) {
-            if had_ignored_dependencies && !task.deps.is_empty() {
+            if !unlinked_indices.is_empty() {
                 child_reqs.skip_affected = true;
 
                 let deps = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
 
-                self.link_edges(index, deps.requirements)?;
-                self.link_cleanup_edges(index, deps.cleanups)?;
+                self.link_task_dependencies(&unlinked_indices, &deps)?;
             }
 
             if had_ignored_dependents {
@@ -1261,11 +1281,17 @@ impl<'query> ActionGraphBuilder<'query> {
         // Insert and then link edges
         let index = self.insert_node(node);
         let mut deps = RunTaskDependencies::default();
+        let mut dep_indices = unlinked_indices;
+
+        dep_indices.push(index);
 
         if !task.deps.is_empty() {
             child_reqs.skip_affected = true;
 
-            if should_run_dependencies {
+            // Also when they're out of scope for this node, but have been
+            // linked for another node of this task (they were in scope),
+            // as they're linked for all of its nodes, or for none of them
+            if should_run_dependencies || self.linked_dependencies.contains(&task.target) {
                 deps = Box::pin(self.run_task_dependencies(task, &child_reqs, state)).await?;
             } else {
                 // Cleanup dependencies must always run after the task, even
@@ -1279,6 +1305,11 @@ impl<'query> ActionGraphBuilder<'query> {
                         .collect(),
                 );
 
+                self.unlinked_dependencies
+                    .entry(task.target.clone())
+                    .or_default()
+                    .push(index);
+
                 deps =
                     Box::pin(self.internal_run_task_dependencies(task, &child_reqs, state, true))
                         .await?;
@@ -1286,8 +1317,7 @@ impl<'query> ActionGraphBuilder<'query> {
         }
 
         self.link_available_edges(index, edges)?;
-        self.link_edges(index, deps.requirements)?;
-        self.link_cleanup_edges(index, deps.cleanups)?;
+        self.link_task_dependencies(&dep_indices, &deps)?;
 
         // And possibly dependents
         if should_run_dependents {
@@ -1676,6 +1706,20 @@ impl<'query> ActionGraphBuilder<'query> {
                 requires = ?added_edges.iter().map(|edge| edge.index()).collect::<Vec<_>>(),
                 "Linking requirements for index"
             );
+        }
+
+        Ok(())
+    }
+
+    /// Link the dependencies of a task to each of the nodes that run it.
+    fn link_task_dependencies(
+        &mut self,
+        indices: &[NodeIndex],
+        deps: &RunTaskDependencies,
+    ) -> miette::Result<()> {
+        for index in indices {
+            self.link_edges(*index, deps.requirements.clone())?;
+            self.link_cleanup_edges(*index, deps.cleanups.clone())?;
         }
 
         Ok(())

@@ -85,6 +85,10 @@
   pipeline (like with `moon ci`).
 - Fixed an issue where a task dependency would be inserted into the action graph (and ran) more than
   once, when its `env` was defined in a different order by the tasks that depend on it.
+- Fixed an issue where a task that is ran more than once in the same pipeline (with different `args`
+  or `env`, as a dependency of other tasks) would fail with a missing dependency hash error, or
+  ignore its own dependencies, when running with `--upstream direct`. Its dependencies are now
+  linked for every instance of the task, once they are in scope for one of them.
 
 #### ⚙️ Internal
 

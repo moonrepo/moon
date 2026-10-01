@@ -38,6 +38,7 @@ tokio-util = { workspace = true }
 tracing = { workspace = true }
 
 [dev-dependencies]
+moon_affected = { path = "../affected" }
 moon_test_utils = { path = "../test-utils" }
 opentelemetry_sdk = { workspace = true }
 serde_json = { workspace = true }

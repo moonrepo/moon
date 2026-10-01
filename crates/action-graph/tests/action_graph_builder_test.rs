@@ -3332,6 +3332,253 @@ mod action_graph_builder {
 
             assert_snapshot!(graph.to_dot());
         }
+
+        // The serial order is a preference, while a dependency is a requirement,
+        // so when the configured order contradicts a dependency between the tasks,
+        // the dependency wins. The ordering edge is skipped when the dependency
+        // was linked first, but must also be removed when it's linked last, which
+        // happens when a task is revisited once its dependencies are in scope
+        mod serial_conflicts {
+            use super::*;
+
+            fn map_task_edges(graph: &ActionGraph) -> Vec<(String, String, String)> {
+                let inner = graph.get_inner_graph();
+
+                let mut edges = inner
+                    .graph()
+                    .edge_indices()
+                    .filter_map(|edge| {
+                        let (source, target) = inner.edge_endpoints(edge).unwrap();
+
+                        match (
+                            graph.get_node_from_index(&source).unwrap(),
+                            graph.get_node_from_index(&target).unwrap(),
+                        ) {
+                            (ActionNode::RunTask(source), ActionNode::RunTask(target)) => Some((
+                                source.target.to_string(),
+                                target.target.to_string(),
+                                inner.edge_weight(edge).unwrap().to_string(),
+                            )),
+                            _ => None,
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                edges.sort();
+                edges
+            }
+
+            fn edge(from: &str, to: &str, type_of: &str) -> (String, String, String) {
+                (
+                    format!("proj:{from}"),
+                    format!("proj:{to}"),
+                    type_of.to_owned(),
+                )
+            }
+
+            async fn build_graph(ids: &[&str], dependencies: UpstreamScope) -> ActionGraph {
+                let sandbox = create_sandbox("serial-conflict");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                let reqs = RunRequirements {
+                    dependencies,
+                    dependents: DownstreamScope::None,
+                    ..RunRequirements::default()
+                };
+
+                for id in ids {
+                    let task = wg.get_task_from_project("proj", id).unwrap();
+
+                    builder
+                        .run_task(&task, &reqs)
+                        .await
+                        .unwrap_or_else(|error| panic!("{ids:?} ({dependencies:?}): {error}"));
+                }
+
+                builder.build().1
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn dependency_wins_when_linked_after_the_serial_order() {
+                let expected = [
+                    edge("first", "second", "required"),
+                    edge("ordered", "first", "required"),
+                    edge("ordered", "second", "required"),
+                ];
+
+                for (ids, scope) in [
+                    // The dependency is linked first, so the order is skipped
+                    (["ordered", "first"], UpstreamScope::Deep),
+                    (["first", "ordered"], UpstreamScope::Direct),
+                    // The dependency is linked once `first` is revisited in scope
+                    (["ordered", "first"], UpstreamScope::Direct),
+                ] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, scope).await),
+                        expected,
+                        "{ids:?} ({scope:?})"
+                    );
+                }
+            }
+
+            #[tokio::test(flavor = "multi_thread")]
+            async fn wait_dependency_wins_when_linked_after_the_serial_order() {
+                let expected = [
+                    edge("first-wait", "second", "wait"),
+                    edge("ordered-wait", "first-wait", "required"),
+                    edge("ordered-wait", "second", "required"),
+                ];
+
+                for (ids, scope) in [
+                    (["ordered-wait", "first-wait"], UpstreamScope::Deep),
+                    (["first-wait", "ordered-wait"], UpstreamScope::Direct),
+                    (["ordered-wait", "first-wait"], UpstreamScope::Direct),
+                ] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, scope).await),
+                        expected,
+                        "{ids:?} ({scope:?})"
+                    );
+                }
+            }
+
+            // `head` requires `tail`, so `tail` (and its own dependency) can no
+            // longer run after `middle`, while `middle` still runs after `head`
+            #[tokio::test(flavor = "multi_thread")]
+            async fn only_removes_the_order_that_conflicts() {
+                let expected = [
+                    edge("head", "tail", "required"),
+                    edge("middle", "head", "required"),
+                    edge("ordered-three", "head", "required"),
+                    edge("ordered-three", "middle", "required"),
+                    edge("ordered-three", "tail", "required"),
+                    edge("tail", "tail-dep", "required"),
+                ];
+
+                for scope in [UpstreamScope::Deep, UpstreamScope::Direct] {
+                    assert_eq!(
+                        map_task_edges(
+                            &build_graph(&["tail", "ordered-three", "head"], scope).await
+                        ),
+                        expected,
+                        "{scope:?}"
+                    );
+                }
+            }
+
+            // `c` requires `b`, which matches the order, so the ordering edge
+            // between them is a dependency from then on, and must not be removed
+            // when `a` requires `c`, which contradicts the order
+            #[tokio::test(flavor = "multi_thread")]
+            async fn keeps_the_order_that_became_a_dependency() {
+                let expected = [
+                    edge("a", "c", "required"),
+                    edge("c", "b", "required"),
+                    edge("ordered-chain", "a", "required"),
+                    edge("ordered-chain", "b", "required"),
+                    edge("ordered-chain", "c", "required"),
+                ];
+
+                for (ids, scope) in [
+                    (["ordered-chain", "c", "a"], UpstreamScope::Deep),
+                    (["ordered-chain", "c", "a"], UpstreamScope::Direct),
+                    (["ordered-chain", "a", "c"], UpstreamScope::Direct),
+                    (["a", "c", "ordered-chain"], UpstreamScope::Direct),
+                ] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, scope).await),
+                        expected,
+                        "{ids:?} ({scope:?})"
+                    );
+                }
+            }
+
+            // The order of `nested` is removed when `inner` is revisited, right
+            // after `inner` has ordered its own dependencies, and that order is
+            // then removed when `one` is revisited, so it must still be known as
+            // an order (removing an edge from the graph moves another)
+            #[tokio::test(flavor = "multi_thread")]
+            async fn removes_orders_one_after_the_other() {
+                let expected = [
+                    edge("inner", "one", "required"),
+                    edge("inner", "two", "required"),
+                    edge("nested", "inner", "required"),
+                    edge("nested", "one", "required"),
+                    edge("one", "two", "required"),
+                ];
+
+                for (ids, scope) in [
+                    (["nested", "inner", "one"], UpstreamScope::Deep),
+                    (["nested", "inner", "one"], UpstreamScope::Direct),
+                    (["one", "inner", "nested"], UpstreamScope::Direct),
+                ] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, scope).await),
+                        expected,
+                        "{ids:?} ({scope:?})"
+                    );
+                }
+            }
+
+            // A cleanup is linked from the cleanup to the task (it runs after it),
+            // which may also contradict an order that was linked before it
+            #[tokio::test(flavor = "multi_thread")]
+            async fn cleanup_wins_when_linked_after_the_serial_order() {
+                let expected = [
+                    edge("cleaned", "setup", "required"),
+                    edge("sequence", "setup", "required"),
+                    edge("sequence", "teardown", "required"),
+                    edge("teardown", "cleaned", "cleanup"),
+                ];
+
+                for ids in [["cleaned", "sequence"], ["sequence", "cleaned"]] {
+                    assert_eq!(
+                        map_task_edges(&build_graph(&ids, UpstreamScope::Deep).await),
+                        expected,
+                        "{ids:?}"
+                    );
+                }
+            }
+
+            // Only orders are removed, so tasks that
+            // depend on each other are still an error
+            #[tokio::test(flavor = "multi_thread")]
+            async fn errors_when_dependencies_cycle() {
+                let sandbox = create_sandbox("serial-conflict");
+                let mut container = ActionGraphContainer::new(sandbox.path());
+
+                let wg = container.create_workspace_graph().await;
+                let mut builder = container.create_builder(wg.clone()).await;
+
+                // first -> second, and then second -> first, which is applied
+                // here, as it would cycle the task graph if it was configured
+                let mut task = wg
+                    .get_task_from_project("proj", "second")
+                    .unwrap()
+                    .as_ref()
+                    .to_owned();
+
+                task.deps.push(TaskDependencyConfig {
+                    target: Target::parse("proj:first").unwrap(),
+                    ..TaskDependencyConfig::default()
+                });
+
+                let error = builder
+                    .run_task(&task, &RunRequirements::default())
+                    .await
+                    .unwrap_err();
+
+                assert!(
+                    error.to_string().contains(
+                        "adding a relationship from action RunTask(proj:second) to RunTask(proj:first) would introduce a cycle"
+                    ),
+                    "{error}"
+                );
+            }
+        }
     }
 
     mod dep_types {

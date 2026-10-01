@@ -169,11 +169,14 @@ pub struct ActionGraphBuilder<'query> {
     passthrough_targets: FxHashSet<Target>,
     primary_targets: FxHashSet<Target>,
 
-    // Serial ordering edges added by `try_link_requirements`. Tracked so the
-    // serial subtree walk doesn't follow them as if they were real dependency
-    // edges (both use `TaskDependencyType::Required`), which would let it escape
-    // into unrelated subtrees when nodes are shared across serial parents.
-    serial_edges: FxHashSet<EdgeIndex>,
+    // Serial ordering edges added by `try_link_edge`, and the order that they
+    // were added in. Tracked so the serial subtree walk doesn't follow them as
+    // if they were real dependency edges (both use `TaskDependencyType::Required`),
+    // which would let it escape into unrelated subtrees when nodes are shared
+    // across serial parents, and so that they can be removed when a dependency
+    // that is linked afterwards contradicts them.
+    serial_edges: FxHashMap<EdgeIndex, usize>,
+    serial_edges_count: usize,
 
     // Nodes that run *after* another node, as a cleanup. Tracked so that they
     // can be located without having to scan every edge in the graph.
@@ -206,7 +209,8 @@ impl<'query> ActionGraphBuilder<'query> {
             ignored_dependents: FxHashSet::default(),
             passthrough_targets: FxHashSet::default(),
             primary_targets: FxHashSet::default(),
-            serial_edges: FxHashSet::default(),
+            serial_edges: FxHashMap::default(),
+            serial_edges_count: 0,
             cleanup_indices: FxHashSet::default(),
             cleanup_targets: FxHashSet::default(),
             wait_targets: FxHashSet::default(),
@@ -1688,16 +1692,17 @@ impl<'query> ActionGraphBuilder<'query> {
         let mut added_edges = vec![];
 
         for (edge, edge_type) in edges {
-            if !self.has_edge_of_type(index, edge, edge_type) {
-                self.graph.add_edge(index, edge, edge_type).map_err(|_| {
-                    ActionGraphError::WouldCycle {
-                        source_action: self.graph.node_weight(index).unwrap().label(),
-                        target_action: self.graph.node_weight(edge).unwrap().label(),
-                    }
-                })?;
+            // A serial ordering edge may already link them in this direction,
+            // which is a dependency from here on, and no longer a preference
+            if let Some(edge_index) = self.find_edge_of_type(index, edge, edge_type) {
+                self.serial_edges.remove(&edge_index);
 
-                added_edges.push(edge);
+                continue;
             }
+
+            self.link_edge(index, edge, edge_type)?;
+
+            added_edges.push(edge);
         }
 
         if !added_edges.is_empty() {
@@ -1706,6 +1711,31 @@ impl<'query> ActionGraphBuilder<'query> {
                 requires = ?added_edges.iter().map(|edge| edge.index()).collect::<Vec<_>>(),
                 "Linking requirements for index"
             );
+        }
+
+        Ok(())
+    }
+
+    /// Link an edge between two nodes, for a dependency of any type. The nodes
+    /// may already be connected in the other direction, which is a cycle,
+    /// unless it's only because of serial ordering edges. Those are a
+    /// preference, while this edge is a requirement, so the ones that
+    /// contradict it are removed.
+    fn link_edge(
+        &mut self,
+        from: NodeIndex,
+        to: NodeIndex,
+        edge_type: TaskDependencyType,
+    ) -> miette::Result<()> {
+        if self.graph.add_edge(from, to, edge_type).is_err()
+            && (!self.unlink_serial_edges(to, from)
+                || self.graph.add_edge(from, to, edge_type).is_err())
+        {
+            return Err(ActionGraphError::WouldCycle {
+                source_action: self.graph.node_weight(from).unwrap().label(),
+                target_action: self.graph.node_weight(to).unwrap().label(),
+            }
+            .into());
         }
 
         Ok(())
@@ -1737,12 +1767,7 @@ impl<'query> ActionGraphBuilder<'query> {
             // The cleanup action may also depend on the node in some other way,
             // which is a separate edge, as both relationships must be honored
             if !self.has_edge_of_type(edge, index, TaskDependencyType::Cleanup) {
-                self.graph
-                    .add_edge(edge, index, TaskDependencyType::Cleanup)
-                    .map_err(|_| ActionGraphError::WouldCycle {
-                        source_action: self.graph.node_weight(edge).unwrap().label(),
-                        target_action: self.graph.node_weight(index).unwrap().label(),
-                    })?;
+                self.link_edge(edge, index, TaskDependencyType::Cleanup)?;
 
                 trace!(
                     index = edge.index(),
@@ -1805,7 +1830,7 @@ impl<'query> ActionGraphBuilder<'query> {
             let mut children = self.graph.children(node_index);
 
             while let Some((edge_index, child_index)) = children.walk_next(&self.graph) {
-                if !self.serial_edges.contains(&edge_index)
+                if !self.serial_edges.contains_key(&edge_index)
                     // Only follow edges that block the node from running. A
                     // `cleanup` edge points from a cleanup action back to the
                     // node it cleans up, so following it would escape into the
@@ -1854,10 +1879,103 @@ impl<'query> ActionGraphBuilder<'query> {
         to: NodeIndex,
         edge_type: TaskDependencyType,
     ) -> bool {
+        self.find_edge_of_type(from, to, edge_type).is_some()
+    }
+
+    fn find_edge_of_type(
+        &self,
+        from: NodeIndex,
+        to: NodeIndex,
+        edge_type: TaskDependencyType,
+    ) -> Option<EdgeIndex> {
         self.graph
             .graph()
             .edges_connecting(from, to)
-            .any(|edge| *edge.weight() == edge_type)
+            .find(|edge| *edge.weight() == edge_type)
+            .map(|edge| edge.id())
+    }
+
+    /// Find the edges of a path that connects the two nodes, if there is one.
+    fn find_path(&self, from: NodeIndex, to: NodeIndex) -> Option<Vec<EdgeIndex>> {
+        let graph = self.graph.graph();
+        let mut parents = FxHashMap::<NodeIndex, (NodeIndex, EdgeIndex)>::default();
+        let mut visited = FxHashSet::from_iter([from]);
+        let mut stack = vec![from];
+
+        while let Some(node_index) = stack.pop() {
+            if node_index == to {
+                let mut path = vec![];
+                let mut current = to;
+
+                while let Some((parent_index, edge_index)) = parents.get(&current) {
+                    path.push(*edge_index);
+                    current = *parent_index;
+                }
+
+                return Some(path);
+            }
+
+            for edge in graph.edges_directed(node_index, Direction::Outgoing) {
+                if visited.insert(edge.target()) {
+                    parents.insert(edge.target(), (node_index, edge.id()));
+                    stack.push(edge.target());
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Remove the serial ordering edges that connect `from` to `to`, as a
+    /// dependency is being linked in the other direction, which would otherwise
+    /// introduce a cycle. A serial ordering edge is a preference, and is skipped
+    /// by [`Self::try_link_edge`] when it contradicts a dependency, but it may
+    /// also be linked before the dependency is. This happens when a node is
+    /// revisited once its dependencies are in scope, or when a node is a
+    /// cleanup of a node that is created afterwards.
+    ///
+    /// While the nodes are connected, the edge that was linked last (of those in
+    /// the path) is removed, as that's the one that would have been skipped if
+    /// the dependency had been linked first. Returns false if the nodes are
+    /// connected by dependencies alone, which is an actual cycle.
+    fn unlink_serial_edges(&mut self, from: NodeIndex, to: NodeIndex) -> bool {
+        while let Some(path) = self.find_path(from, to) {
+            let Some(edge_index) = path
+                .into_iter()
+                .filter(|edge_index| self.serial_edges.contains_key(edge_index))
+                .max_by_key(|edge_index| self.serial_edges[edge_index])
+            else {
+                return false;
+            };
+
+            self.remove_serial_edge(edge_index);
+        }
+
+        true
+    }
+
+    fn remove_serial_edge(&mut self, edge_index: EdgeIndex) {
+        let Some((index, edge)) = self.graph.edge_endpoints(edge_index) else {
+            return;
+        };
+
+        trace!(
+            index = index.index(),
+            requires = ?[edge.index()],
+            "Unlinking serial requirements for index, as they contradict a dependency"
+        );
+
+        // Removing an edge moves the last edge in the graph into its index
+        let last_edge_index = EdgeIndex::new(self.graph.edge_count() - 1);
+
+        self.graph.remove_edge(edge_index);
+        self.serial_edges.remove(&edge_index);
+
+        if last_edge_index != edge_index
+            && let Some(order) = self.serial_edges.remove(&last_edge_index)
+        {
+            self.serial_edges.insert(edge_index, order);
+        }
     }
 
     fn is_persistent_index(&self, index: NodeIndex) -> bool {
@@ -1871,14 +1989,17 @@ impl<'query> ActionGraphBuilder<'query> {
     /// [`Self::link_serial_required_edges`] won't mistake it for a real
     /// dependency. Silently skips the edge if it would introduce a cycle — this
     /// happens when the same task node appears in multiple serial dependency
-    /// chains across different parent tasks.
+    /// chains across different parent tasks, or when the nodes depend on each
+    /// other in the opposite order.
     fn try_link_edge(&mut self, index: NodeIndex, edge: NodeIndex) {
         if !self.has_edge_of_type(index, edge, TaskDependencyType::Required)
             && let Ok(edge_index) = self
                 .graph
                 .add_edge(index, edge, TaskDependencyType::Required)
         {
-            self.serial_edges.insert(edge_index);
+            self.serial_edges
+                .insert(edge_index, self.serial_edges_count);
+            self.serial_edges_count += 1;
 
             trace!(
                 index = index.index(),

@@ -89,6 +89,10 @@
   or `env`, as a dependency of other tasks) would fail with a missing dependency hash error, or
   ignore its own dependencies, when running with `--upstream direct`. Its dependencies are now
   linked for every instance of the task, once they are in scope for one of them.
+- Fixed an issue where the action graph would fail with a cycle error, when the order of
+  dependencies for a task with `options.runDepsInParallel` disabled contradicts a dependency between
+  them, and that dependency is linked after they were ordered (like when running with
+  `--upstream direct`). Dependencies now always take precedence over the configured order.
 
 #### ⚙️ Internal
 

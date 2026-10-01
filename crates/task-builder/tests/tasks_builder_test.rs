@@ -2987,5 +2987,43 @@ tasks:
 
             assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Always);
         }
+
+        // Persistent tasks never complete, so they would keep CI running
+        #[tokio::test(flavor = "multi_thread")]
+        async fn disables_for_persistent_tasks_regardless_of_task_type() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("options-runinci").await;
+
+            for (id, type_of) in [
+                ("persistent-outputs", TaskType::Build),
+                ("persistent-build-type", TaskType::Build),
+                ("persistent-test-type", TaskType::Test),
+                ("persistent-run-type", TaskType::Run),
+            ] {
+                let task = tasks.get(id).unwrap();
+
+                assert!(task.options.persistent, "{id}");
+                assert_eq!(task.type_of, type_of, "{id}");
+                assert_eq!(
+                    task.options.run_in_ci,
+                    TaskOptionRunInCI::Enabled(false),
+                    "{id}"
+                );
+            }
+        }
+
+        #[tokio::test(flavor = "multi_thread")]
+        async fn doesnt_override_explicit_setting_for_persistent_tasks() {
+            let sandbox = create_sandbox("builder");
+            let container = TasksBuilderContainer::new(sandbox.path());
+            let tasks = container.build_tasks("options-runinci").await;
+
+            let task = tasks.get("persistent-custom").unwrap();
+
+            assert!(task.options.persistent);
+            assert_eq!(task.type_of, TaskType::Build);
+            assert_eq!(task.options.run_in_ci, TaskOptionRunInCI::Enabled(true));
+        }
     }
 }

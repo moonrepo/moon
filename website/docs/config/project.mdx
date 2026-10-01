@@ -906,9 +906,11 @@ Wait dependencies:
   other running task.
 - Can be [persistent](#persistent), as this task doesn't wait for them to complete. However,
   persistent tasks don't run in CI by default, and a task that runs in CI can't depend on a task
-  that doesn't (an error is raised), so either enable [`runInCI`](#runinci) for the dependency, or
-  disable it for this task. Be aware that once enabled, [`moon ci`](../commands/ci) also runs the
-  dependency on its own when it's affected, which keeps the pipeline running until it's stopped.
+  that doesn't (an error is raised). To resolve this, either enable [`runInCI`](#runinci) for the
+  dependency (both run in CI), set it to `skip` for the dependency (this task runs in CI without
+  it), or disable it for this task (neither runs in CI). Be aware that once enabled,
+  [`moon ci`](../commands/ci) also runs the dependency on its own when it's affected, which keeps
+  the pipeline running until it's stopped.
 - Can't be [interactive](#interactive), as interactive tasks run in isolation, so nothing can run
   alongside them.
 - Are not stopped once this task has completed. A persistent dependency keeps running until the
@@ -1748,7 +1750,9 @@ tasks:
 ```
 
 Since persistent tasks never complete, non-persistent tasks cannot depend on them, unless they only
-wait for them to start with a [`wait`](#type) dependency.
+wait for them to start with a [`wait`](#type) dependency. For the same reason, they're not ran in CI
+by default, as they would keep the pipeline running, unless [`runInCI`](#runinci) is explicitly
+enabled.
 
 > We suggest using the [`preset`](#preset) setting instead, which enables this setting, amongst
 > other useful settings.
@@ -1854,6 +1858,9 @@ tasks:
     options:
       runInCI: false
 ```
+
+[Persistent](#persistent) tasks default to `false` instead, and must be explicitly enabled to run in
+CI.
 
 #### `runInSyncPhase`<VersionLabel version="2.1.0" />
 

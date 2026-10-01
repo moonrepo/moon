@@ -577,11 +577,13 @@ impl<'proj> TasksBuilder<'proj> {
             };
         }
 
+        // Persistent tasks never complete, so they would keep CI running,
+        // and must be explicitly enabled instead, regardless of their type
         if !state.set_run_in_ci {
-            task.options.run_in_ci = TaskOptionRunInCI::Enabled(matches!(
-                task.type_of,
-                TaskType::Build | TaskType::Test
-            ));
+            task.options.run_in_ci = TaskOptionRunInCI::Enabled(
+                !task.options.persistent
+                    && matches!(task.type_of, TaskType::Build | TaskType::Test),
+            );
         }
 
         if state.shell_disabled {

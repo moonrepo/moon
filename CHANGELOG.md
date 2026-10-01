@@ -93,6 +93,9 @@
   dependencies for a task with `options.runDepsInParallel` disabled contradicts a dependency between
   them, and that dependency is linked after they were ordered (like when running with
   `--upstream direct`). Dependencies now always take precedence over the configured order.
+- Fixed an issue where a persistent task would run in CI by default, when it defined `outputs`, or a
+  `type` of `build` or `test`, which keeps the pipeline running. Persistent tasks no longer run in
+  CI, unless `options.runInCI` is explicitly enabled.
 
 #### ⚙️ Internal
 

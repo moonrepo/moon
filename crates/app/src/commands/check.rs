@@ -2,10 +2,11 @@ use super::exec::*;
 use crate::prompts::select_identifiers;
 use crate::session::{MoonSession, SessionResult};
 use clap::Args;
+use iocraft::prelude::element;
 use moon_affected::{DownstreamScope, UpstreamScope};
 use moon_app_macros::{with_affected_args, with_shared_exec_args};
 use moon_common::Id;
-use moon_console::ui::{SelectOption, SelectProps};
+use moon_console::ui::{Container, Notice, SelectOption, SelectProps, StyledText, Variant};
 use moon_project::Project;
 use moon_task::TargetLocator;
 use std::sync::Arc;
@@ -73,12 +74,42 @@ pub async fn check(session: MoonSession, args: CheckArgs) -> SessionResult {
     // Find all applicable targets
     let mut targets = vec![];
 
-    for project in projects {
+    for project in &projects {
         for task in workspace_graph.get_tasks_from_project(&project.id)? {
             if task.is_build_type() || task.is_test_type() {
                 targets.push(TargetLocator::Qualified(task.target.clone()));
             }
         }
+    }
+
+    // Without targets, the pipeline would prompt for the tasks to run
+    // instead, which are not the tasks that were asked to be checked
+    if targets.is_empty() && args.plan.is_none() {
+        let mut project_ids = projects
+            .iter()
+            .map(|project| format!("<id>{}</id>", project.id))
+            .collect::<Vec<_>>();
+        project_ids.sort();
+
+        session.console.render_err(element! {
+            Container {
+                Notice(variant: Variant::Caution) {
+                    StyledText(
+                        content: "No build or test tasks found. Unable to execute action pipeline."
+                    )
+
+                    #((project_ids.len() < 15).then(|| {
+                        element! {
+                            StyledText(
+                                content: format!("For projects {}.", project_ids.join(", "))
+                            )
+                        }
+                    }))
+                }
+            }
+        })?;
+
+        return Ok(Some(1));
     }
 
     exec(session, {

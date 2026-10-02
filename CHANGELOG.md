@@ -105,6 +105,9 @@
 - Fixed an issue where `moon check` would run persistent tasks (those that define `outputs`, or a
   `type` of `build` or `test`), so the command would never complete. Persistent tasks are now only
   ran by `moon check` when another task depends on them.
+- Fixed an issue where `moon check` would prompt for a list of tasks to run, or fail with an
+  identifier error in non-TTY environments, when the projects being checked have no build or test
+  tasks. It now reports that there's nothing to check.
 
 #### ⚙️ Internal
 
